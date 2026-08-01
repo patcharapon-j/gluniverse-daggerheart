@@ -27,16 +27,17 @@ import {
   traitLabel,
 } from "../config.ts";
 import { cssUrl } from "../assets.ts";
-import { KINDS, byslug } from "../ui/domains.js";
-import { glyph, icon } from "../ui/domains.js";
+import { CLASSES, KINDS, byslug } from "../ui/domains.js";
+import { clazz, glyph, icon } from "../ui/domains.js";
 
 /* ── sigils ───────────────────────────────────────────────────────────
    `icon()` and `glyph()` fetch an SVG and recentre it against its own ink
    bounds, which needs the document — so they are async and cannot be called
    from a render. Everything the character sheet can possibly draw is
    preloaded once instead, and the sheet renders spines only after the map
-   resolves. There are sixteen files and `domains.js` caches them, so this
-   costs one round of fetches per session and nothing thereafter.
+   resolves. There are twenty-five files — nine domain sigils, seven type
+   glyphs and nine class marks — and `domains.js` caches them, so this costs
+   one round of fetches per session and nothing thereafter.
 
    A failed fetch yields an empty string rather than rejecting. A missing
    glyph should cost you one mark, not the whole sheet. */
@@ -54,6 +55,18 @@ export const GLYPHS = [
 
 export type Sigils = Record<string, string>;
 
+/**
+ * A class mark's key. `#` for the same reason `@` marks a type glyph — three
+ * families share one map and a class named for a domain would otherwise
+ * overwrite it.
+ */
+export const classKey = (name?: string): string | undefined => {
+  const slug = String(name ?? "").toLowerCase();
+  // Membership, not just a lowercase — a homebrew class has no mark on disk,
+  // and a key pointing at a fetch that 404'd is worse than no key at all.
+  return CLASSES.includes(slug) ? `#${slug}` : undefined;
+};
+
 let pending: Promise<Sigils> | null = null;
 
 export function loadSigils(): Promise<Sigils> {
@@ -69,6 +82,7 @@ export function loadSigils(): Promise<Sigils> {
     await Promise.all([
       ...DOMAINS.map((s) => safe(s, () => icon(s))),
       ...GLYPHS.map((g) => safe(`@${g}`, () => glyph(g))),
+      ...CLASSES.map((c) => safe(`#${c}`, () => clazz(c))),
     ]);
     return out;
   })();
@@ -102,6 +116,23 @@ export interface CardOptions {
    */
   sigKey?: string;
   sig2Key?: string;
+  /**
+   * The mark and wordmark the *fallback* plate shows in place of artwork.
+   *
+   * The builders default both to the corner sigil and the domain name, which
+   * is right for a card with one domain and wrong for the two that have two.
+   * A class card has no artwork at all — there is no printed class card to
+   * take any from — so its fallback plate is the plate you always see, and it
+   * was drawing Grace under the word "Grace" while Grace and Codex sat in the
+   * corners above it. The class mark is the one thing on a class card that is
+   * about the class rather than about its domains.
+   *
+   * `fbsigKey` travels for the same reason `sigKey` does: `<svg>` does not
+   * survive being stored as chat content.
+   */
+  fbsig?: string;
+  fbsigKey?: string;
+  fbname?: string;
   lvl?: number | null;
   pre?: string;
   rc?: number | null;
@@ -288,12 +319,17 @@ export function cardOf(
     case "class": {
       const p = s.domains?.primary;
       const q = s.domains?.secondary;
+      // The class's own mark, not the first of its two domains'. A class card
+      // never has artwork, so this plate is not a fallback in practice — it is
+      // the picture, every time.
+      const ck = classKey(it.name);
       return {
         ...base,
         d: dom(p),
         d2: q ? dom(q) : undefined,
         sig: sig[p] ?? "", sigKey: p,
         sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
+        fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? it.name : undefined,
         type: "CLASS",
         name: it.name,
         foot: [dom(p).name, q && dom(q).name].filter(Boolean).join(" · "),
@@ -314,12 +350,18 @@ export function cardOf(
     case "subclass": {
       const p = ctx.domains?.primary;
       const q = ctx.domains?.secondary;
+      // Same rule as the class, and it fires far less often — a subclass has
+      // real artwork, so this is only what a card whose fetch never landed
+      // falls back to. It falls back to its class rather than to half its
+      // class's domain pair.
+      const ck = classKey(s.className);
       return {
         ...base,
         d: dom(p),
         d2: q ? dom(q) : undefined,
         sig: sig[p as string] ?? "", sigKey: p,
         sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
+        fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? s.className : undefined,
         type: "SUBCLASS",
         // The rank *is* the fact you want off this row: which of the three
         // cards of this subclass you are holding.

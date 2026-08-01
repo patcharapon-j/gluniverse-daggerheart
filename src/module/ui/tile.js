@@ -3,6 +3,13 @@
 // Landscape builders — the sheet's two densities. Both take the same option
 // object as CARD(), so one item definition drives the card, the tile and the
 // spine with nothing restated.
+//
+// Including `fbsig`: the mark a card with no artwork shows in place of it. All
+// three of these draw the corner sigil there by default, which is right for a
+// domain card and wrong for a class — see the note at the head of card.js. A
+// spine is where it matters most, because a spine's thumb is the *only* art it
+// has, so nine classes with no artwork are nine rows wearing whichever of the
+// nine domain sigils their first domain happens to be.
 import { BOLT, rich } from './card.js';
 
 const vars = (d, d2) => `--dom:${d.light};--dom-dk:${d.dark}` +
@@ -22,7 +29,7 @@ const vars = (d, d2) => `--dom:${d.light};--dom-dk:${d.dark}` +
    and five boxes on a portrait is five boxes you cannot read. The meta line
    already ends in slack on every row we draw. */
 export const SPINE = (o) => {
-  const {d, d2, lvl, pre, rc, type, name, sig, sig2, foot, aside} = o;
+  const {d, d2, lvl, pre, rc, type, name, sig, sig2, fbsig, foot, aside} = o;
   // Same rule as MINI: a kind with ramp:false has no domain hue, so tinting
   // its art would invent one. Matters now that ancestry, community, class and
   // subclass are all drawn as spines.
@@ -47,7 +54,7 @@ export const SPINE = (o) => {
   </div>
   <div class="thumb">
     <div class="img"></div>${ramp ? '<div class="ramp"></div>' : ''}
-    <div class="fb">${sig}</div>
+    <div class="fb">${fbsig || sig}</div>
   </div>
   ${rc == null ? '' : `<div class="rc"><span class="blt">${BOLT}</span><span class="n">${rc}</span></div>`}
   <div class="tbar"></div>
@@ -60,13 +67,13 @@ export const SPINE = (o) => {
    to hold. `scrim:true` drops the paper panel too and puts the name on the
    art under a gradient. */
 export const MINI = (o) => {
-  const {d, d2, lvl, pre, rc, type, name, sig, sig2, foot, scrim} = o;
+  const {d, d2, lvl, pre, rc, type, name, sig, sig2, fbsig, foot, scrim} = o;
   const ramp = o.ramp ?? (d.ramp !== false);
   return `
 <div class="mini${d2 ? ' duo' : ''}${scrim ? ' scrim' : ''}" style="${vars(d, d2)}">
   <div class="plate">
     <div class="img"></div><div class="top"></div>${ramp ? '<div class="ramp"></div>' : ''}
-    <div class="fb">${sig}</div>
+    <div class="fb">${fbsig || sig}</div>
   </div>
   <div class="lvl${d2 ? ' duo' : ''}${lvl == null ? ' solo' : ''}">
     ${lvl == null ? '' : `<span class="v"><span class="n">${
@@ -89,7 +96,7 @@ export const MINI = (o) => {
    items get — the data strip is why, it holds trait/range/damage/burden
    as readily as tier/spellcast. */
 export const TILE = (o) => {
-  const {d, d2, lvl, pre, rc, type, name, text, feats, stats, sig, sig2, foot} = o;
+  const {d, d2, lvl, pre, rc, type, name, text, feats, stats, sig, sig2, fbsig, foot} = o;
   // a grimoire has no single body paragraph — lead with its first spell
   const body = text ?? (feats?.length ? `**${feats[0].n}.** ${feats[0].t}` : '');
   const ramp = o.ramp ?? (d.ramp !== false);
@@ -97,7 +104,7 @@ export const TILE = (o) => {
 <div class="tile${d2 ? ' duo' : ''}" style="${vars(d, d2)}">
   <div class="plate">
     <div class="img"></div>${ramp ? '<div class="ramp"></div>' : ''}
-    <div class="fb">${sig}</div>
+    <div class="fb">${fbsig || sig}</div>
   </div>
   <div class="cap${d2 ? ' duo' : ''}">
     ${lvl == null ? '' : `<span class="v"><span class="n">${

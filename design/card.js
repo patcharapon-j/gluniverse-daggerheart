@@ -8,6 +8,15 @@
 // that has no such number keeps the study's placeholder, because the cell is
 // part of the composition and an empty one reads as a mistake rather than as
 // an absence.
+//
+// `fbsig` and `fbname` are the *fallback* plate's mark and wordmark — what a
+// card with no artwork puts where the artwork would be. They default to the
+// corner sigil and the domain name, which is right for every card that has one
+// domain and wrong for the one that has two. A class card's corners already
+// carry Grace and Codex; drawing Grace a third time, at plate size, under the
+// word "Grace", says nothing the card has not said twice. The class mark says
+// something — see `clazz()` in domains.js, which exists for exactly this and
+// for the sidebar row.
 
 /* ── game-term marking ──────────────────────────────────────────
    Longest-first so "Very Close" wins over "Close" and "Very Far" over "Far". */
@@ -61,7 +70,7 @@ const feature = (f, i, n, runin) => runin
 export const CARD = (opts) => {
   const o = {type:'SPELL', name:'Rain of Blades', corners:chips, cls:'', ...opts};
   const {d, d2, lvl, rc, type, name, text, flavour, feats, stats, tags,
-         sig, sig2, foot, code, corners, cls} = o;
+         sig, sig2, foot, code, fbsig, fbname, corners, cls} = o;
   const runin = o.runin ?? false;
 
   // Ancestry and Community opt out via their token; everything domain-derived
@@ -85,7 +94,7 @@ export const CARD = (opts) => {
           <circle cx="232" cy="62" r="92" stroke-width=".8" stroke-dasharray="3 5"/></g>
         <g fill="currentColor"><path d="M16 222l6 5-6 5z"/><path d="M26 222l6 5-6 5z"/><path d="M36 222l6 5-6 5z"/></g>
       </svg>
-      <div class="mark">${sig}<div class="wordmark">${d.name}</div></div>
+      <div class="mark">${fbsig || sig}<div class="wordmark">${fbname || d.name}</div></div>
     </div>
   </div>
   ${corners(o)}

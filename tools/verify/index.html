@@ -80,7 +80,9 @@ import { A, DMG, FOE, play } from '/design/plate.js';
 import { MARKS, DAMAGE } from '/src/module/ui/mark.js';
 import { GEMS } from '/src/module/ui/gem.js';
 import { CARD, fit } from '/src/module/ui/card.js';
-import { KINDS, byslug, icon, glyph } from '/src/module/ui/domains.js';
+/* `CLASSES` is taken further down by the compendium's own class list, and the
+   two are genuinely different things — nine slugs against nine documents. */
+import { CLASSES as CLASS_SLUGS, KINDS, byslug, icon, glyph, clazz } from '/src/module/ui/domains.js';
 /* And these are the shipping compendium, imported rather than transcribed —
    the point of the deck section is that the *data* is what gets drawn. */
 import HERITAGE from '/src/packs-src/heritage.mjs';
@@ -142,6 +144,7 @@ async function deck() {
   const sig = {};
   for (const d of Object.keys(byslug)) sig[d] = await icon(d);
   for (const g of ['ancestry', 'community']) sig['@' + g] = await glyph(g);
+  for (const c of CLASS_SLUGS) sig['#' + c] = await clazz(c);
 
   const opts = (it) => {
     const s = it.system;
@@ -162,8 +165,11 @@ async function deck() {
       case 'community': return { ...base, d: KINDS.community, sig: sig['@community'],
         type: 'COMMUNITY', foot: 'Heritage', flavour: plainText(s.description),
         feats: feats([s.feature]) };
+      // fbsig: a class card has no artwork, so the fallback plate is the only
+      // picture it ever shows — and its two domains are already in the corners.
       case 'class': return { ...base, d: byslug[s.domains.primary], d2: byslug[s.domains.secondary],
         sig: sig[s.domains.primary], sig2: sig[s.domains.secondary], type: 'CLASS',
+        fbsig: sig['#' + it.name.toLowerCase()], fbname: it.name,
         foot: `${byslug[s.domains.primary].name} · ${byslug[s.domains.secondary].name}`,
         stats: [{ k: 'Evasion', v: s.startingEvasion }, { k: 'Hit Points', v: s.startingHitPoints }],
         flavour: plainText(s.description), feats: feats([s.classFeature, s.hopeFeature]) };
@@ -171,6 +177,7 @@ async function deck() {
         const cls = CLASSES.find(c => c.type === 'class' && c.name === s.className).system.domains;
         return { ...base, d: byslug[cls.primary], d2: byslug[cls.secondary],
           sig: sig[cls.primary], sig2: sig[cls.secondary], type: 'SUBCLASS',
+          fbsig: sig['#' + s.className.toLowerCase()], fbname: s.className,
           name: s.subclassName, foot: s.rank[0].toUpperCase() + s.rank.slice(1),
           stats: s.spellcastTrait
             ? [{ k: 'Spellcast', v: s.spellcastTrait[0].toUpperCase() + s.spellcastTrait.slice(1) }]
@@ -180,10 +187,18 @@ async function deck() {
     }
   };
 
+  /* `noart` goes on the *wrapper*, not on `.card`. The rules are
+     `.dh.noart .card .fb` and `.dh .noart .card .fb` — both want an ancestor,
+     so `class="card noart"` matches neither and the fallback plate stays
+     hidden behind an empty `.img`. Which is exactly how it read here for as
+     long as the section existed: the class card looked like it had artwork
+     that had failed to load, and the plate it was actually meant to be
+     showing was never on screen to be wrong. `sheets/cards.ts` puts it on the
+     wrapper, so this now matches what the sheet does. */
   document.getElementById('deck').innerHTML = DECK.map(it => {
     const o = opts(it);
     return `<div><div class="lbl">${it.type}</div>
-      <div class="dh" style="${o.art}">${CARD({ ...o, cls: o.noart ? 'noart' : '' })}</div></div>`;
+      <div class="dh${o.noart ? ' noart' : ''}" style="${o.art}">${CARD(o)}</div></div>`;
   }).join('');
   fit(document.getElementById('deck'));
 }
@@ -298,8 +313,25 @@ setTimeout(async () => { try {
     i.src = src;
   })));
   const missing = arts.filter((_, i) => !loaded[i]);
-  check('every card\'s header art resolves', arts.length === 5 && !missing.length,
+  check('every card\'s img resolves', arts.length === 5 && !missing.length,
         missing.length ? missing.join(', ') : `${arts.length} images`);
+
+  /* The class card is the one with no artwork — there is no printed class
+     card to take any from — so the fallback plate is the only picture it ever
+     shows, and it has to be showing something the card has not already said.
+     The corners carry Grace and Codex; a fallback plate drawing Grace again,
+     at plate size, under the word "Grace", is a third copy of a fact stated
+     twice. So: the plate is visible, and its mark is not the corner sigil. */
+  const cls = document.querySelector('#deck > div:nth-child(4)');
+  const fb = cls?.querySelector('.card .fb');
+  const shown = fb && getComputedStyle(fb).display !== 'none';
+  const plate = fb?.querySelector('.mark > svg')?.outerHTML;
+  const corner = cls?.querySelector('.lvl .sg > svg')?.outerHTML;
+  const word = fb?.querySelector('.wordmark')?.textContent.trim();
+  check('the class card falls back to its class mark, not a domain sigil',
+        !!shown && !!plate && plate !== corner && word === 'Bard',
+        shown ? `wordmark "${word}", ${plate === corner ? 'SAME as corner sigil' : 'own mark'}`
+              : 'fallback plate is not visible');
 
   /* The class card has no printed number and keeps the placeholder; the
      other four carry their own. */

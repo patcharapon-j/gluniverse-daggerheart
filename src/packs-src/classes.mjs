@@ -9,10 +9,13 @@
  * There is no class *card* in the printed set — a class is a page in the book,
  * not a thing you hold — so the class entry is the one place here with no
  * upstream to check against. Its `description` is therefore held to the same
- * rule the real cards keep to: two sentences of flavour, and every other line
- * on the card is a rule. Evasion, Hit Points, the Hope feature and the class
- * features are what a class actually *is* at the table, and they are what the
- * card should be mostly made of.
+ * rule the real cards keep to: **the chapter's first sentence and nothing
+ * else**, and every other line on the card is a rule. Evasion, Hit Points, the
+ * Hope feature and the class features are what a class actually *is* at the
+ * table, and they are what the card should be mostly made of. The book writes
+ * each class in pairs — an opener saying what it is, then a sentence
+ * elaborating — and the elaboration is the chapter talking, not the card;
+ * `FLAVOUR_SENTENCES` in `tools/check-cards.mjs` is what keeps it out.
  *
  * A subclass expands into three cards — Foundation, Specialization, Mastery —
  * because that is how you actually acquire it: one card now, one several
@@ -36,9 +39,7 @@ const bard = classItem({
   evasion: 10,
   hitPoints: 5,
   items: "A romance novel or a letter never opened",
-  description: `
-  Bards are the most charismatic people in all the realms. Whether performing for an audience or
-  speaking to an individual, bards thrive in social situations.`,
+  description: "Bards are the most charismatic people in all the realms.",
   hopeFeature: feat(
     "Make a Scene",
     `
@@ -157,8 +158,7 @@ const druid = classItem({
   items: "A small bag of rocks and bones or a strange pendant found in the dirt",
   description: `
   Becoming a druid is more than an occupation; it’s a calling for those who wish to learn from and
-  protect the magic of the wilderness. Through years of study and dedication, druids can learn to
-  transform into beasts and shape nature itself.`,
+  protect the magic of the wilderness.`,
   hopeFeature: feat(
     "Evolution",
     `
@@ -303,9 +303,7 @@ const guardian = classItem({
   items: "A totem from your mentor or a secret key",
   description: `
   The title of guardian represents an array of martial professions, speaking more to their moral
-  compass and unshakeable fortitude than the means by which they fight. Guardians are known for
-  fighting with remarkable ferocity even against overwhelming odds, defending their cohort above
-  all else.`,
+  compass and unshakeable fortitude than the means by which they fight.`,
   hopeFeature: feat("Frontline Tank", "Spend 3 Hope to clear 2 Armor Slots."),
   features: feat(
     "Unstoppable",
@@ -417,8 +415,7 @@ const ranger = classItem({
   items: "A trophy from your first kill or a seemingly broken compass",
   description: `
   Rangers are highly skilled hunters who, despite their martial abilities, rarely lend their
-  skills to an army. Through mastery of the body and a deep understanding of the wilderness,
-  rangers become sly tacticians, pursuing their quarry with cunning and patience.`,
+  skills to an army.`,
   hopeFeature: feat(
     "Hold Them Off",
     `
@@ -537,9 +534,7 @@ const rogue = classItem({
   evasion: 12,
   hitPoints: 6,
   items: "A set of forgery tools or a grappling hook",
-  description: `
-  Rogues are scoundrels, often in both attitude and practice. Broadly known as liars and thieves,
-  the best among this class move through the world anonymously.`,
+  description: "Rogues are scoundrels, often in both attitude and practice.",
   hopeFeature: feat(
     "Rogue’s Dodge",
     `
@@ -674,9 +669,7 @@ const seraph = classItem({
   evasion: 9,
   hitPoints: 7,
   items: "A bundle of offerings or a sigil of your god",
-  description: `
-  Seraphs are divine fighters and healers imbued with sacred purpose. It is better to be a
-  seraph’s ally than their enemy, as they are terrifying foes to those who defy their purpose.`,
+  description: "Seraphs are divine fighters and healers imbued with sacred purpose.",
   hopeFeature: feat("Life Support", "Spend 3 Hope to clear a Hit Point on an ally within Close range."),
   features: feat(
     "Prayer Dice",
@@ -792,8 +785,7 @@ const sorcerer = classItem({
   items: "A whispering orb or a family heirloom",
   description: `
   Not all innate magic users choose to hone their craft, but those who do can become powerful
-  sorcerers. The act of becoming a formidable sorcerer is not the practice of acquiring power, but
-  learning to cultivate and control the power one already possesses.`,
+  sorcerers.`,
   hopeFeature: feat(
     "Volatile Magic",
     `
@@ -931,8 +923,7 @@ const warrior = classItem({
   items: "The drawing of a lover or a sharpening stone",
   description: `
   Becoming a warrior requires years, often a lifetime, of training and dedication to the mastery
-  of weapons and violence. Warriors are known to have a favored weapon; to come between them and
-  their blade would be a grievous mistake.`,
+  of weapons and violence.`,
   hopeFeature: feat("No Mercy", "Spend 3 Hope to gain a +1 bonus to your attack rolls until your next rest."),
   features: feat(
     "Class Features",
@@ -1054,8 +1045,7 @@ const wizard = classItem({
   description: `
   Whether through an institution or individual study, those known as wizards acquire and hone
   immense magical power over years of learning using a variety of tools, including books, stones,
-  potions, and herbs. Some wizards dedicate their lives to mastering a particular school of magic,
-  while others learn from a wide variety of disciplines.`,
+  potions, and herbs.`,
   hopeFeature: feat(
     "Not This Time",
     `

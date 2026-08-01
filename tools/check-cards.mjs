@@ -17,10 +17,9 @@
  *
  * The one thing it checks that is *not* wording: class flavour. There is no
  * official class card, so nothing can validate a class description — but the
- * printed cards keep their flavour to a sentence or two and the rulebook's
- * chapter opener runs to a paragraph, and it was the chapter opener that got
- * pasted in. FLAVOUR_SENTENCES is the rule the cards keep and the classes now
- * keep too.
+ * printed cards keep their flavour to a sentence and the rulebook's chapter
+ * opener runs to a paragraph, and it was the chapter opener that got pasted in.
+ * FLAVOUR_SENTENCES is the rule the cards keep and the classes now keep too.
  */
 
 import { readFileSync } from "node:fs";
@@ -31,8 +30,19 @@ import { splitFeatures } from "./fetch-cards.mjs";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FULL = process.argv.includes("--full");
 
-/** A class card is flavour plus rules; two sentences is the flavour's share. */
-const FLAVOUR_SENTENCES = 2;
+/**
+ * A class card is flavour plus rules, and **one sentence** is the flavour's
+ * whole share.
+ *
+ * Two was the first guess and it was too many. The rulebook writes its classes
+ * in pairs — an opener that says what the class *is*, then a second sentence
+ * elaborating — and keeping both put a full paragraph above the stats on a card
+ * whose job is Evasion, Hit Points and two feature runs. The opener alone is
+ * the sentence that does the work; everything after it is the chapter talking,
+ * not the card. So the rule is the chapter's first sentence, verbatim, and
+ * nothing else.
+ */
+const FLAVOUR_SENTENCES = 1;
 
 const load = async (f) =>
   (await import(pathToFileURL(join(ROOT, "src", "packs-src", f)).href)).default;

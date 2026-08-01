@@ -96,8 +96,12 @@ declare module "*/ui/domains.js" {
   export const DOMAINS: any[];
   export const KINDS: Record<string, any>;
   export const byslug: Record<string, any>;
+  /** The nine class slugs, lowercase — the filenames under `assets/classes/`. */
+  export const CLASSES: string[];
   export function icon(slug: string): Promise<string>;
   export function glyph(name: string): Promise<string>;
+  /** A class mark. Not a sigil — see the note in `domains.js`. */
+  export function clazz(name: string): Promise<string>;
 }
 
 declare module "*/ui/peek.js" {
