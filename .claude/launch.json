@@ -5,7 +5,8 @@
       "name": "design-preview",
       "runtimeExecutable": "node",
       "runtimeArgs": ["tools/preview-server.js"],
-      "port": 4173
+      "port": 4173,
+      "autoPort": true
     }
   ]
 }

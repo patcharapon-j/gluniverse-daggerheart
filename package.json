@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit && npm run check",
     "link:dev": "node scripts/link-dev-build.mjs",
     "preview": "node tools/preview-server.js",
-    "build:packs": "node scripts/build-packs.mjs"
+    "build:packs": "npm run cards:check && node scripts/build-packs.mjs",
+    "cards:fetch": "node tools/fetch-cards.mjs",
+    "cards:check": "node tools/check-cards.mjs"
   },
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^3.0.4",

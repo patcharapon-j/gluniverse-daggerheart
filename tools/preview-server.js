@@ -16,6 +16,9 @@ const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  // The compendium source is `.mjs`, and the verify page imports it directly
+  // so that what it draws is the shipping data rather than a copy of it.
+  '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -36,6 +39,17 @@ http
       return;
     }
     if (rel.endsWith('/')) rel += 'index.html';
+
+    // The one alias. Everything the *system* asks for — a domain sigil, a
+    // card's header art, an item's `img` — is written as the route Foundry
+    // mounts us at, and Foundry mounts this folder there. So does this: it is
+    // the same folder, and a verify page that had to rewrite those paths would
+    // be verifying paths it made up rather than the ones we ship.
+    //
+    // Anything before the mount point goes with it, because those routes are
+    // written without a leading slash and a page under /tools/verify/ resolves
+    // them against itself.
+    rel = rel.replace(/^.*?\/systems\/gluniverse-daggerheart\//, '/');
 
     const file = path.join(ROOT, rel);
     // Refuse to serve anything outside the repo.

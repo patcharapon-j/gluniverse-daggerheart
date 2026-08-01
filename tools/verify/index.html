@@ -61,6 +61,9 @@
 <h2><span>// THE PLATE</span>Chat cards, from the ported sheets</h2>
 <div class="stage" id="plates"></div>
 
+<h2><span>// THE DECK</span>Compendium entries, drawn by the vendored builder</h2>
+<div class="stage" id="deck"></div>
+
 <h2><span>// THE RAIL</span>Marks and gems, from the vendored components</h2>
 <div class="stage" id="rail"></div>
 
@@ -76,6 +79,13 @@ import { A, DMG, FOE, play } from '/design/plate.js';
 /* These come from the vendored copies the system actually ships. */
 import { MARKS, DAMAGE } from '/src/module/ui/mark.js';
 import { GEMS } from '/src/module/ui/gem.js';
+import { CARD, fit } from '/src/module/ui/card.js';
+import { KINDS, byslug, icon, glyph } from '/src/module/ui/domains.js';
+/* And these are the shipping compendium, imported rather than transcribed —
+   the point of the deck section is that the *data* is what gets drawn. */
+import HERITAGE from '/src/packs-src/heritage.mjs';
+import CLASSES from '/src/packs-src/classes.mjs';
+import DOMAIN_CARDS from '/src/packs-src/domains.mjs';
 
 const wrap = html => `<div class="dh dh-plate">${html}</div>`;
 
@@ -100,6 +110,84 @@ const foeMiss = {...foe, d20:[7], total:9, hit:false};
 
 document.getElementById('plates').innerHTML =
   [A(duality), A(crit), A(fear), DMG(damage), FOE(foe), FOE(foeMiss)].map(wrap).join('');
+
+/* ── the deck ──────────────────────────────────────────────────────────
+   One of each card subtype, straight out of `src/packs-src/`. This mirrors
+   `sheets/cards.ts` rather than importing it — that file is TypeScript and
+   knows what a Foundry Item is — so it deliberately maps only the four fields
+   the compendium has to get right for a card to be drawable: the art, the
+   printed number, the flavour line and the feature runs. If one of those is
+   missing from the data it is missing from the picture below, and the checks
+   at the foot of the page say which. */
+const DECK = (() => {
+  const one = (arr, type) => arr.find(d => d.type === type);
+  return [
+    one(DOMAIN_CARDS, 'domainCard'),
+    one(HERITAGE, 'ancestry'),
+    one(HERITAGE, 'community'),
+    one(CLASSES, 'class'),
+    one(CLASSES, 'subclass'),
+  ];
+})();
+
+const STOCK = /\/assets\/(domains|types|classes)\//;
+const plainText = html => (html || '')
+  .replace(/<\/(p|ul|li)>/g, '\n').replace(/<li>/g, '\n• ')
+  .replace(/<b>|<\/b>/g, '**').replace(/<i>|<\/i>/g, '*')
+  .replace(/<[^>]*>/g, '').replace(/\s*\n\s*/g, '\n').trim();
+const feats = list => list.filter(f => f?.name)
+  .map(f => ({ n: f.name, t: plainText(f.description) }));
+
+async function deck() {
+  const sig = {};
+  for (const d of Object.keys(byslug)) sig[d] = await icon(d);
+  for (const g of ['ancestry', 'community']) sig['@' + g] = await glyph(g);
+
+  const opts = (it) => {
+    const s = it.system;
+    const base = {
+      name: it.name,
+      code: s.printing?.code || '',
+      // Single quotes: this lands in a double-quoted HTML style attribute.
+      art: `--art:url('${it.img}')`,
+      noart: STOCK.test(it.img),
+    };
+    switch (it.type) {
+      case 'domainCard': return { ...base, d: byslug[s.domain], sig: sig[s.domain],
+        lvl: s.level, rc: s.recallCost, type: s.cardType.toUpperCase(),
+        foot: byslug[s.domain].name, text: plainText(s.description) };
+      case 'ancestry': return { ...base, d: KINDS.ancestry, sig: sig['@ancestry'],
+        type: 'ANCESTRY', foot: 'Heritage', flavour: plainText(s.description),
+        feats: feats([s.topFeature, s.bottomFeature]) };
+      case 'community': return { ...base, d: KINDS.community, sig: sig['@community'],
+        type: 'COMMUNITY', foot: 'Heritage', flavour: plainText(s.description),
+        feats: feats([s.feature]) };
+      case 'class': return { ...base, d: byslug[s.domains.primary], d2: byslug[s.domains.secondary],
+        sig: sig[s.domains.primary], sig2: sig[s.domains.secondary], type: 'CLASS',
+        foot: `${byslug[s.domains.primary].name} · ${byslug[s.domains.secondary].name}`,
+        stats: [{ k: 'Evasion', v: s.startingEvasion }, { k: 'Hit Points', v: s.startingHitPoints }],
+        flavour: plainText(s.description), feats: feats([s.classFeature, s.hopeFeature]) };
+      case 'subclass': {
+        const cls = CLASSES.find(c => c.type === 'class' && c.name === s.className).system.domains;
+        return { ...base, d: byslug[cls.primary], d2: byslug[cls.secondary],
+          sig: sig[cls.primary], sig2: sig[cls.secondary], type: 'SUBCLASS',
+          name: s.subclassName, foot: s.rank[0].toUpperCase() + s.rank.slice(1),
+          stats: s.spellcastTrait
+            ? [{ k: 'Spellcast', v: s.spellcastTrait[0].toUpperCase() + s.spellcastTrait.slice(1) }]
+            : undefined,
+          flavour: plainText(s.description), feats: feats(s.features) };
+      }
+    }
+  };
+
+  document.getElementById('deck').innerHTML = DECK.map(it => {
+    const o = opts(it);
+    return `<div><div class="lbl">${it.type}</div>
+      <div class="dh" style="${o.art}">${CARD({ ...o, cls: o.noart ? 'noart' : '' })}</div></div>`;
+  }).join('');
+  fit(document.getElementById('deck'));
+}
+const deckReady = deck();
 
 document.getElementById('rail').innerHTML = `
 <div class="dh" style="width:288px;background:var(--paper);padding:16px">
@@ -163,7 +251,9 @@ for(const el of document.querySelectorAll('.pl')) play(el);
 /* setTimeout rather than requestAnimationFrame: rAF does not fire in a window
    that is not painting, and a verification page is very often screenshotted
    from a background tab. Same reason the plate's own tumble is on a timer. */
-setTimeout(() => { try {
+setTimeout(async () => { try {
+  // The deck fetches its sigils, so it may still be building.
+  await deckReady;
   const inside = getComputedStyle(document.querySelector('.dh'));
   const outside = getComputedStyle(document.body);
   const lines = [];
@@ -190,6 +280,41 @@ setTimeout(() => { try {
 
   const gems = document.querySelectorAll('#rail .gem').length;
   check('gem row built', gems === 6, `${gems} gems`);
+
+  /* The deck. Five cards, one per subtype, drawn from the shipping packs.
+     What can silently break here is not the CSS but the *data*: art that
+     404s leaves a card looking merely dark, and a footer with no card
+     number looks like a design choice. Neither is visible by eyeballing. */
+  const deckCards = [...document.querySelectorAll('#deck .card')];
+  check('one card of each subtype drawn', deckCards.length === 5, `${deckCards.length} cards`);
+
+  const arts = [...document.querySelectorAll('#deck > div > .dh')]
+    .map(el => (getComputedStyle(el).getPropertyValue('--art').match(/url\(\s*['"]?(.+?)['"]?\s*\)/) || [])[1])
+    .filter(Boolean);
+  const loaded = await Promise.all(arts.map(src => new Promise(done => {
+    const i = new Image();
+    i.onload = () => done(true);
+    i.onerror = () => done(false);
+    i.src = src;
+  })));
+  const missing = arts.filter((_, i) => !loaded[i]);
+  check('every card\'s header art resolves', arts.length === 5 && !missing.length,
+        missing.length ? missing.join(', ') : `${arts.length} images`);
+
+  /* The class card has no printed number and keeps the placeholder; the
+     other four carry their own. */
+  const codes = [...document.querySelectorAll('#deck .ft .mi:last-child')].map(e => e.textContent.trim());
+  const real = codes.filter(c => !/·004$/.test(c));
+  check('printed card numbers reach the footer', real.length === 4, codes.join('  '));
+
+  /* Flavour belongs in .fl. A class or subclass description landing in .tx
+     is the bug this section was added for: it renders as rules text, and
+     rules text is what invites a paragraph of lore. */
+  const flavoured = ['#deck > div:nth-child(2)', '#deck > div:nth-child(3)',
+                     '#deck > div:nth-child(4)', '#deck > div:nth-child(5)'];
+  const inFl = flavoured.filter(s => document.querySelector(`${s} .cnt .fl`)).length;
+  const inTx = flavoured.filter(s => document.querySelector(`${s} .cnt .tx`)).length;
+  check('flavour sits in .fl, not .tx', inFl === 4 && inTx === 0, `${inFl} in .fl, ${inTx} in .tx`);
 
   document.getElementById('ok').innerHTML = lines.join('\n');
 } catch (err) {

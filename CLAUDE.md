@@ -92,6 +92,14 @@ things the port could silently break — that the palette resolves inside `.dh`,
 that it does not leak to `:root`, that a plate is still exactly 300px. Open it
 at `http://localhost:4173/tools/verify/` after any port.
 
+Its last section, THE DECK, imports `src/packs-src/` directly and draws one
+card of each subtype with the vendored builder. What that catches is not CSS
+but *data*: header art that 404s leaves a card merely looking dark, and a
+footer with no card number looks like a design choice. The preview server
+aliases `/systems/gluniverse-daggerheart/` to the repo root so those paths
+resolve exactly as they do in Foundry, rather than being rewritten into
+something the page made up.
+
 ## Compendium content
 
 `src/packs-src/*.mjs` each default-export an array of normalized documents;
@@ -124,19 +132,60 @@ rule: mixed ancestry takes the top of one and the bottom of another, which is
 why a goblin-orc can be Surefooted or Sturdy but never both.
 
 Neither carries a domain mark. In this system a saturated hue means domain, so
-they take the design's own type glyphs from `assets/types/`.
+they take the design's own type glyphs from `assets/types/` — but both now
+carry the card's own header art as their `img`, which is what actually fills
+the plate. The glyph is the fallback for a card whose art is missing.
 
-**Domain card text is extracted, not transcribed.**
-`tools/extract-domain-cards.mjs` reads the Domain Card Reference appendix out
-of `docs/rules/` and writes `src/packs-src/domain-cards.mjs`. It is committed;
-re-run the extractor rather than editing it. Most appendix pages are
-three-column fixed-width text, so the tool finds the gutters and cuts each
-line at its own whitespace — a page-wide cut shears the long body lines one
-way and the indented card titles the other. It refuses to write unless the
-result is nine domains with three cards at level 1 and two at every level
-after, which is what the book contains.
+**Card text is fetched, not transcribed.** `tools/fetch-cards.mjs` reads the
+official [Daggerheart Card Creator](https://cardcreator.daggerheart.com) and
+lands four things in the repo:
 
-    node tools/extract-domain-cards.mjs
+| Output | What it is |
+| --- | --- |
+| `src/packs-src/official-cards.json` | the snapshot, committed so the build never touches the network |
+| `src/packs-src/domain-cards.mjs` | generated — the 189 domain cards |
+| `src/packs-src/card-printings.mjs` | generated — art, artist and card number for the hand-authored kinds |
+| `assets/cards/**.webp` | the header art, plus a `CREDITS.md` naming every artist |
+
+    node tools/fetch-cards.mjs
+
+It is the API and not the book because the API carries **errata** — Splintering
+Strike there is the September 2025 wording and the corebook's is not — and
+because the appendix has no way to give art, an artist credit, or a printed
+card number. It refuses to write unless the result is nine domains with three
+cards at level 1 and two at every level after, eighteen ancestries, nine
+communities and eighteen subclasses.
+
+Upstream is not clean, and the tool does not pretend otherwise: `TYPOS` in it
+is the complete list of what we decline to copy, one entry per defect with the
+reason, and the fetch **fails** if an entry stops matching. That is deliberate
+— upstream having fixed a typo and upstream having rewritten the card around it
+look identical from here, and only one of them is fine.
+
+`heritage.mjs` and `classes.mjs` stay hand-authored, because they hold things
+no API publishes: a class's starting Evasion, the background questions, the
+split of an ancestry's two features into top and bottom. **`tools/check-cards.mjs`
+is what stops them drifting** — it re-derives what every entry should say from
+the snapshot and compares meaning, not typesetting.
+
+    node tools/check-cards.mjs
+
+`npm run build:packs` runs it first, so a hand-edit that drifts from the cards
+fails the build rather than shipping. It reads the committed snapshot, never
+the network, so it is offline and deterministic.
+
+The last thing it checks is not wording. There is no class *card* in the
+printed set, so nothing upstream can validate a class description — and it was
+the rulebook's chapter opener that got pasted into one, five sentences of lore
+on a card whose job is Evasion, Hit Points and two feature runs. A real card
+keeps its flavour to a sentence or two. So does a class now, and the check says
+so if one grows back.
+
+**The art is Darrington Press's, and the rules text is not.** The DPCGL grants
+the text; it does not grant the paintings. `assets/cards/CREDITS.md` says so
+and names all 234 of them. It is committed because the cards are drawn with it
+— unlike `docs/`, which nothing reads — but if this history goes public, that
+folder is the first thing to move into `.gitignore`.
 
 ## Why Svelte
 

@@ -108,6 +108,14 @@ export interface CardOptions {
   type: string;
   name: string;
   foot?: string;
+  /**
+   * The number printed in the card's own footer — "DH106", "DH Core 056/270".
+   *
+   * Only the four subtypes that exist as a physical card have one, and only
+   * because `tools/fetch-cards.mjs` brings it back with the art. Everything
+   * else leaves it unset and keeps the builders' placeholder.
+   */
+  code?: string;
   text?: string;
   flavour?: string;
   feats?: { n: string; t: string }[];
@@ -249,7 +257,13 @@ export function cardOf(
   ctx: CardContext = {},
 ): CardOptions | null {
   const s = it.system ?? {};
-  const base = { id: it.id, k: it.id, art: art(it.img), noart: !hasArt(it.img) };
+  const base = {
+    id: it.id,
+    k: it.id,
+    art: art(it.img),
+    noart: !hasArt(it.img),
+    code: s.printing?.code || undefined,
+  };
 
   switch (it.type) {
     /* A domain card is the shape everything else is a variation on: one
@@ -288,7 +302,12 @@ export function cardOf(
           { k: "Hit Points", v: s.startingHitPoints ?? 6 },
         ],
         feats: feats([s.classFeature, s.hopeFeature]),
-        text: plain(s.description) || undefined,
+        // Flavour, not body text. A class card is Evasion, Hit Points and two
+        // feature runs; the prose is the one line that sets them up, and the
+        // `.fl` slot is the one that says so. It is also the slot that stops
+        // the prose growing — see the class flavour rule in
+        // `tools/check-cards.mjs`.
+        flavour: plain(s.description) || undefined,
       };
     }
 
@@ -310,7 +329,10 @@ export function cardOf(
           ? [{ k: "Spellcast", v: traitLabel(s.spellcastTrait) }]
           : undefined,
         feats: feats(s.features ?? []),
-        text: plain(s.description) || undefined,
+        // "Play the Troubadour if you want to play music to bolster your
+        // allies" is advice about the subclass, not a rule of it — the same
+        // slot an ancestry's one line of flavour takes, for the same reason.
+        flavour: plain(s.description) || undefined,
       };
     }
 
