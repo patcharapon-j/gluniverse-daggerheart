@@ -8,9 +8,15 @@ dist/
 
 # Reference material, not source: the card scans, the corebook text and the
 # UI studies the design was read from. ~290MB of somebody else's work, none of
-# it needed to build — `tools/extract-domain-cards.mjs` reads `docs/rules/`,
-# but its output is committed, so a clone still builds without it. Keep them
-# locally; they do not belong in a public history.
+# it needed to build. Keep them locally; they do not belong in a public
+# history.
+#
+# `assets/cards/` is the one thing of somebody else's that *is* committed, and
+# the line between them is whether it is needed to build. The scans are not —
+# nothing reads them any more, now that `tools/fetch-cards.mjs` takes the card
+# text from the publisher's own API. The header art is: it is what the cards
+# are drawn with. See `assets/cards/CREDITS.md` for what that means, and drop
+# the folder here instead if this history is going public.
 docs/
 
 *.log

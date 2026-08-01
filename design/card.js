@@ -2,6 +2,12 @@
 // single paragraph with a level and a recall cost; ancestry, community and
 // subclass are a flavour line plus named feature runs, with the corner slots
 // collapsing to whatever they actually carry.
+//
+// `code` is the number printed in the footer's right cell — the card's own
+// identity in the set it was printed in, "DH106" or "DH Core 056/270". A card
+// that has no such number keeps the study's placeholder, because the cell is
+// part of the composition and an empty one reads as a mistake rather than as
+// an absence.
 
 /* ── game-term marking ──────────────────────────────────────────
    Longest-first so "Very Close" wins over "Close" and "Very Far" over "Far". */
@@ -55,7 +61,7 @@ const feature = (f, i, n, runin) => runin
 export const CARD = (opts) => {
   const o = {type:'SPELL', name:'Rain of Blades', corners:chips, cls:'', ...opts};
   const {d, d2, lvl, rc, type, name, text, flavour, feats, stats, tags,
-         sig, sig2, foot, corners, cls} = o;
+         sig, sig2, foot, code, corners, cls} = o;
   const runin = o.runin ?? false;
 
   // Ancestry and Community opt out via their token; everything domain-derived
@@ -98,7 +104,7 @@ export const CARD = (opts) => {
       <div class="ft">
         <span class="mi">${foot ?? d.name}</span>
         <div class="tk">${'<i></i>'.repeat(9)}</div>
-        <span class="mi">DH·${d.slug.slice(0,3).toUpperCase()}·004</span>
+        <span class="mi">${code || `DH·${d.slug.slice(0,3).toUpperCase()}·004`}</span>
       </div>
     </div>
   </div>

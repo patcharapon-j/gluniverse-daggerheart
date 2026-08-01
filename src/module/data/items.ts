@@ -34,6 +34,7 @@ import {
   int,
   maybeChoice,
   pool,
+  printingField,
   schema,
   str,
 } from "./fields.ts";
@@ -57,6 +58,7 @@ export class AncestryData extends (TypeDataModel() as any) {
       bottomFeature: featureField(),
       /** Set when this row came from a different ancestry than the card. */
       mixedFrom: str(),
+      printing: printingField(),
     };
   }
 }
@@ -66,6 +68,7 @@ export class CommunityData extends (TypeDataModel() as any) {
     return {
       description: html(),
       feature: featureField(),
+      printing: printingField(),
     };
   }
 }
@@ -120,6 +123,7 @@ export class SubclassData extends (TypeDataModel() as any) {
       /** Blank unless this subclass casts. */
       spellcastTrait: maybeChoice(TRAITS),
       features: arr(featureField()),
+      printing: printingField(),
     };
   }
 }
@@ -146,6 +150,8 @@ export class DomainCardData extends (TypeDataModel() as any) {
 
       /** Cards with a limited number of uses per rest track them here. */
       uses: pool(0),
+
+      printing: printingField(),
     };
   }
 }

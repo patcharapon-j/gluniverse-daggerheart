@@ -118,6 +118,21 @@ export const featureField = (): any =>
     description: html(),
   });
 
+/**
+ * Where a card was printed, and who painted it.
+ *
+ * Only the four subtypes that exist as a physical card carry this — ancestry,
+ * community, subclass and domain card. It is not decoration: we ship the
+ * publisher's header art with the compendium, and art you ship is art you
+ * credit. `code` is the number printed in the card's own footer ("DH106"),
+ * which until now the design filled with a hardcoded placeholder.
+ */
+export const printingField = (): any =>
+  schema({
+    artist: str(),
+    code: str(),
+  });
+
 /** Damage as the stat blocks print it: `2d6+3 phy`. */
 export const damageField = (dice = "d6", count = 1, bonus = 0): any =>
   schema({
