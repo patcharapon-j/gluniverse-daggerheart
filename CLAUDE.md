@@ -177,9 +177,20 @@ the network, so it is offline and deterministic.
 The last thing it checks is not wording. There is no class *card* in the
 printed set, so nothing upstream can validate a class description — and it was
 the rulebook's chapter opener that got pasted into one, five sentences of lore
-on a card whose job is Evasion, Hit Points and two feature runs. A real card
-keeps its flavour to a sentence or two. So does a class now, and the check says
-so if one grows back.
+on a card whose job is Evasion, Hit Points and two feature runs. A class now
+gets **one sentence**: the chapter's opener, verbatim, and nothing after it.
+The book writes each class in pairs — an opener saying what it is, then a
+sentence elaborating — and two was still a paragraph above the stats. The
+check says so if one grows back.
+
+That class card is also the only one in the system with **no artwork**, for the
+same reason it has no upstream: nothing published a painting for a page in a
+book. So it is the one card whose fallback plate is always the picture, and
+`fbsig` is what it draws there — the class mark from `assets/classes/`, not the
+first of its two domain sigils. Grace and Codex are already in the corners; a
+plate repeating Grace under the word "Grace" is a third copy of a fact the card
+stated twice. Subclass takes the same override for the same reason, though it
+almost never shows: subclasses do have art.
 
 **The art is Darrington Press's, and the rules text is not.** The DPCGL grants
 the text; it does not grant the paintings. `assets/cards/CREDITS.md` says so

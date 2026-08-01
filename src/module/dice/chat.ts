@@ -128,6 +128,7 @@ async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promis
       ...card,
       sig: sigils[card.sigKey] ?? "",
       sig2: card.sig2Key ? (sigils[card.sig2Key] ?? "") : undefined,
+      fbsig: card.fbsigKey ? (sigils[card.fbsigKey] ?? "") : undefined,
     });
     const next = document.createRange().createContextualFragment(drawn)
       .firstElementChild as HTMLElement | null;

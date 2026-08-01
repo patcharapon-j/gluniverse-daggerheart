@@ -63,8 +63,10 @@ export const cardWrapper = (card: CardOptions): string =>
  */
 export async function postCard(card: CardOptions, actor?: any): Promise<any> {
   // The sigils are the one part that cannot survive storage, so they are not
-  // stored — `sigKey` is, and the render side resolves it.
-  const { sig: _sig, sig2: _sig2, ...stored } = card;
+  // stored — `sigKey` is, and the render side resolves it. `fbsig` is a sigil
+  // too, and the class card is the one card that is *entirely* fallback plate,
+  // so leaving it out of this list posts a class to chat with a blank one.
+  const { sig: _sig, sig2: _sig2, fbsig: _fbsig, ...stored } = card;
   return ChatMessage.create({
     style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     speaker: ChatMessage.getSpeaker({ actor }),

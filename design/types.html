@@ -41,7 +41,7 @@
 
 <div class="wrap">
 
-<h2><span>// A · FOUR TYPES, ONE COMPONENT</span>Domain · Subclass · Ancestry · Community</h2>
+<h2><span>// A · FIVE TYPES, ONE COMPONENT</span>Domain · Class · Subclass · Ancestry · Community</h2>
 <p class="note">The corner slots are slots, not fixtures. A level numeral appears only if the card has
 one, a second sigil plate only if the card belongs to two domains, the recall chip only if there is a
 cost — so Ancestry and Community collapse to a bare plate holding their type glyph and nothing on the
@@ -65,7 +65,9 @@ separated rather than blobbing.</p>
 <p class="note">A class card's corner plates carry its two <b>domains</b>, because that is what a class
 is — Ranger is Bone and Sage and the duo treatment says so without a word. But a class in a sidebar
 row, a compendium list or a hotbar slot has no card and no plates, and "Ranger" next to a grey square
-is the same square as "Rogue". These are that face. Same rules as the type glyphs above: chamfered,
+is the same square as "Rogue". These are that face — and the class card's own fallback plate in A
+above, which is the same problem stated the other way round: there the plates <i>are</i> present, so
+repeating one of them at plate size is the thing that says nothing. Same rules as the type glyphs above: chamfered,
 solid, one <code>currentColor</code> path family, no interior gutter under ~20 units.
 Two collisions had to be designed around rather than ignored. <b>Ranger</b> is not an arrowhead,
 because <code>primary.svg</code> already is one and a class mark that reads as a weapon slot is worse
@@ -87,6 +89,9 @@ const [midnight, grace, valor, codex, ancestry, community] = await Promise.all([
   glyph('ancestry'), glyph('community'),
 ]);
 const G = { ancestry, community };
+/* The class card below hands this to `fbsig`, so the mark it falls back to is
+   the class's own rather than the first of its two domains'. */
+const CM_BARD = await clazz('bard');
 
 const CARDS = [
   { t:'Domain · Spell', n:'Cost and frequency pulled out of the prose into chips, so a loadout answers “can I afford this” without being read. Everything else is one paragraph — this is the most numerous card in the game and has the busiest corners, so it stays the quietest body.',
@@ -101,6 +106,19 @@ const CARDS = [
         {n:'Power Push', t:'Make a Spellcast Roll against a target within Melee range. On a success, they’re knocked back to Far range and take **d10+2** magic damage using your Proficiency.'},
         {n:'Tava’s Armor', t:'Spend a **Hope** to give a target you can touch a **+1** bonus to their Armor Score until their next rest.'},
         {n:'Ice Spike', t:'Make a Spellcast Roll (12) to summon a large ice spike within Far range. On a success, deal **d6** physical damage using your Proficiency.'}] }) },
+
+  // `w:'noart'` because it is not a toggle here — there is no printed class
+  // card, so there is no artwork to remove and this is simply what the card
+  // is. Drawn with the page's sample photograph it would be the one card on
+  // the page that does not exist.
+  { t:'Class', w:'noart', n:'The only card with no artwork, because there is no printed class card to take any from — so it is the one whose fallback plate you always see, and the case that <code>fbsig</code> exists for. Every other card here falls back to its domain sigil — throw “remove art” to see it. This one falls back to its class mark, because Grace is already in the corner and saying it a third time under the word “Grace” is not a picture. Flavour is held to one sentence: a class is Evasion, Hit Points and two feature runs, and the prose is the line that sets them up.',
+    c:CARD({ d:by('grace'), d2:by('codex'), sig:grace, sig2:codex, fbsig:CM_BARD, fbname:'Bard',
+      type:'CLASS', name:'Bard', foot:'Grace · Codex',
+      stats:[{k:'Evasion', v:10}, {k:'Hit Points', v:5}],
+      flavour:'Bards are the most charismatic people in all the realms.',
+      feats:[
+        {n:'Rally', t:'Once per session, describe how you rally the party and give yourself and each of your allies a Rally Die. At level 1, your Rally Die is a **d6**.'},
+        {n:'Make a Scene', t:'Spend 3 Hope to temporarily *Distract* a target within Close range, giving them a **-2** penalty to their Difficulty.'}] }) },
 
   { t:'Subclass', n:'Two plates blending at the seam, a centred banner blending the two dark values, and a tier bar that grades across its middle quarter. Tier and spellcast trait go in the data strip.',
     c:CARD({ d:by('grace'), d2:by('midnight'), sig:grace, sig2:midnight, type:'ROGUE',
@@ -121,7 +139,10 @@ const CARDS = [
       feats:[{n:'Scoundrel', t:'You have **Advantage** on rolls to negotiate with criminals, detect lies, or find a safe place to hide.'}] }) },
 ];
 
-row.innerHTML = CARDS.map(x => `<div>${x.c}<div class="cap"><b>${x.t}</b>${x.n}</div></div>`).join('');
+/* `w` goes on the wrapper, not on the card: `.noart .card .fb` wants an
+   ancestor, so a class on `.card` itself matches nothing. */
+row.innerHTML = CARDS.map(x =>
+  `<div class="${x.w ?? ''}">${x.c}<div class="cap"><b>${x.t}</b>${x.n}</div></div>`).join('');
 
 glyphs.innerHTML = [
   { t:'Ancestry glyph', c:G.ancestry }, { t:'Community glyph', c:G.community },
