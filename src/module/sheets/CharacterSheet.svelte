@@ -554,6 +554,34 @@
     (sys.experiences ?? []).map((x: any) => ({ name: x.name, modifier: x.modifier })),
   );
 
+  /* ── the one automation ─────────────────────────────────────────────
+     A character with every Stress box marked rolls at disadvantage, and
+     the sheet already knows — the track is eighteen inches away and has
+     been drawing the Vulnerable strip since it filled.
+
+     It is applied *here*, on the way into the popover, rather than in
+     `actions.ts` on the way out. Both would produce the same dice; only
+     this one produces the same dice with the reason next to them. An
+     automation that fires inside the roll is a number the player cannot
+     account for, and the first time they were counting on a clean d12
+     they will believe the system is broken rather than that they are
+     Stressed. So it arrives as a chip in the advantage row, and the sum
+     at the top of the popover already says −1d6 before anyone presses
+     anything.
+
+     Not decline-able, and cancellable exactly the way the rules allow:
+     by having advantage from somewhere else. The popover nets the two
+     because that is what the dice do. */
+  const stressed = $derived(
+    (sys.resources?.stress?.max ?? 0) > 0 &&
+      (sys.resources?.stress?.marked ?? 0) >= (sys.resources?.stress?.max ?? 0),
+  );
+  const forced = $derived(
+    stressed
+      ? [{ k: "stress", v: -1, why: "Every Stress box is marked — this roll is at disadvantage." }]
+      : [],
+  );
+
   async function askTrait(event: MouseEvent, trait: Trait, reaction: boolean | "only" = true) {
     const o = await prep(event.currentTarget as Element, {
       kind: reaction === "only" ? "reaction roll" : `${traitLabel(trait).toLowerCase()} roll`,
@@ -561,6 +589,7 @@
       base: (doc as any).traitMod(trait),
       experiences: xpList,
       purse,
+      forced,
       reaction,
     });
     if (!o) return;
@@ -584,6 +613,7 @@
       base: (doc as any).traitMod(trait),
       experiences: xpList,
       purse,
+      forced,
       reaction: false,
     });
     if (!o) return;

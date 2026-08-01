@@ -140,6 +140,13 @@ declare module "*/ui/prep.js" {
     /** Offer the advantage row. Damage has no advantage. */
     advantage?: boolean;
     /**
+     * Advantage the roller did not choose and cannot decline — a full Stress
+     * track, and whatever else earns a place later. Listed as a named chip
+     * rather than folded into the number: an automation you cannot see is
+     * indistinguishable from a bug the first time it changes a roll.
+     */
+    forced?: { k: string; v: number; why?: string }[];
+    /**
      * `true` offers both buttons, `false` only ROLL, and `"only"` makes the
      * whole popover a reaction — for surfaces that already are one when you
      * press them, like the Evasion crest.

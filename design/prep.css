@@ -147,6 +147,24 @@
 .prep .src.on.neg i{background:var(--wound)}
 .prep .src em{font-style:normal;font-variant-numeric:tabular-nums}
 
+/* A source you did not choose — the sheet noticed your Stress track was
+   full and said so, rather than leaving you to remember it on the eightieth
+   roll of the night. That is the whole of the automation: it is *stated*,
+   in the row where advantage is decided, and then it is in the number.
+
+   A `<span>`, not a `<button>`, because it is not yours to press. A rule
+   you can click away is a rule you will click away by accident, and the
+   roll would then be wrong in the one direction nobody audits. It is still
+   answerable: advantage from anywhere else cancels it one for one, which
+   is exactly what the rules say and needs no special case here.
+
+   The underline is the only new mark — the wound's ink when it is taking
+   away, the plain rule when it is giving — and it is what separates an
+   imposed chip from one you happened to leave switched on. */
+.prep .src.lock,.prep .src.lock:hover{cursor:default;background:var(--sunk-2);color:var(--ink);
+  box-shadow:inset 0 -1px 0 var(--line-2)}
+.prep .src.lock.neg,.prep .src.lock.neg:hover{box-shadow:inset 0 -1px 0 var(--wound)}
+
 /* ── experiences ───────────────────────────────────────────────────
    Borrowed wholesale from the rail's own Experience rows — same material,
    same hierarchy, modifier in gold on the right — because they *are* those

@@ -33,7 +33,7 @@
    Help stacks — each ally who spends a Hope rolls their own d6 — while
    advantage and disadvantage cancel one for one, so the three are summed
    rather than max'd. */
-const netAdv = (st) => (st.adv ? 1 : 0) - (st.dis ? 1 : 0) + st.help;
+const netAdv = (st, forced = 0) => forced + (st.adv ? 1 : 0) - (st.dis ? 1 : 0) + st.help;
 const sign = (n) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);
 
 let live = null;
@@ -60,6 +60,11 @@ export function closePrep() {
  * @param {number}  [o.purse]      how many Hope (or Fear) can be spent
  * @param {string}  [o.currency]   'hope' (default) or 'fear'
  * @param {boolean} [o.advantage]  offer the advantage row. Default true.
+ * @param {Array}   [o.forced]     [{ k, v, why }] — advantage the roller did
+ *        not choose and cannot decline, `v` signed d6 like the rest. It is
+ *        listed in the advantage row rather than folded into the number,
+ *        because an automation you cannot see is indistinguishable from a
+ *        bug the first time it changes a roll you were sure about.
  * @param {boolean|'only'} [o.reaction]
  *        `true` (default) offers both buttons; `false` offers only ROLL;
  *        `'only'` makes the whole popover a reaction — one button, and no
@@ -80,6 +85,12 @@ export function prep(anchor, o = {}) {
   const onlyRxn = o.reaction === 'only';
   const wantRxn = o.reaction !== false && !onlyRxn;
 
+  /* Only meaningful where advantage is, so it is gated on the same flag —
+     a damage roll takes no d6 either way, and a forced source there would
+     be a chip that changed nothing. */
+  const forced = wantAdv ? (o.forced ?? []) : [];
+  const given = forced.reduce((n, f) => n + (f.v ?? 0), 0);
+
   const st = { adv: false, dis: false, help: 0, pick: new Set(), mod: 0 };
 
   const el = document.createElement('div');
@@ -98,7 +109,7 @@ export function prep(anchor, o = {}) {
   const total = () => o.base + st.mod + [...st.pick].reduce((n, i) => n + xp[i].modifier, 0);
 
   function draw() {
-    const n = netAdv(st);
+    const n = netAdv(st, given);
     const die = n
       ? `<i class="d6${n < 0 ? ' neg' : ''}">${n > 0 ? '+' : '−'}${Math.abs(n)}d6</i>`
       : '';
@@ -107,6 +118,8 @@ export function prep(anchor, o = {}) {
       ? `<div class="sec">
            <s>advantage <kbd>A D H</kbd></s>
            <div class="srcs">
+             ${forced.map((f) => `<span class="src lock on${(f.v ?? 0) < 0 ? ' neg' : ''}"${
+               f.why ? ` title="${esc(f.why)}"` : ''}><i></i>${esc(f.k)}</span>`).join('')}
              <button class="src${st.adv ? ' on' : ''}" type="button" data-src="adv"><i></i>adv</button>
              <button class="src${st.dis ? ' on neg' : ' neg'}" type="button" data-src="dis"><i></i>disadv</button>
              <button class="src${st.help ? ' on' : ''}" type="button" data-src="help"><i></i>help${
@@ -193,7 +206,7 @@ export function prep(anchor, o = {}) {
     // and a second settle is silent rather than loud. Guard the cheap way.
     if (!live || live.el !== el) return;
     const result = {
-      advantage: wantAdv ? netAdv(st) : 0,
+      advantage: wantAdv ? netAdv(st, given) : 0,
       experiences: [...st.pick].map((i) => ({ name: xp[i].name, modifier: xp[i].modifier })),
       extra: st.mod ? [{ k: 'modifier', v: st.mod }] : [],
       reaction: !!reaction,

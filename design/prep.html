@@ -104,6 +104,7 @@ work the advantage row and the digits tick Experiences. The result is printed un
   <button class="btn" data-open="loaded">a loaded character</button>
   <button class="btn" data-open="bare">a level-1 character</button>
   <button class="btn" data-open="broke">no hope left</button>
+  <button class="btn" data-open="stressed">stress track full</button>
   <button class="btn fear" data-open="foe">the gm's side</button>
 </div>
 <p id="out"><span>nothing rolled yet.</span></p>
@@ -132,6 +133,8 @@ they were judged in, which changes nothing about what each was arguing.</p>
   <tr><th>on screen</th><th>becomes</th><th>where it lands</th></tr>
   <tr><td>advantage sources, netted</td><td><code>advantage: 2</code></td>
       <td>the <code>2d6kh1</code> term, and the chip on the card</td></tr>
+  <tr><td>a forced source — a full Stress track</td><td>netted into the same <code>advantage</code></td>
+      <td>the same term, because it is the same d6</td></tr>
   <tr><td>an Experience ticked</td><td><code>experiences: [{name, modifier}]</code></td>
       <td>a gold term on the strip — and now a real <code>spendHope(1)</code></td></tr>
   <tr><td>the modifier</td><td><code>extra: [{k:"modifier", v}]</code></td>
@@ -161,6 +164,13 @@ const CASES = {
   loaded: { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 4 },
   bare:   { kind: 'agility roll', label: 'Agility', base: 2, experiences: [], purse: 2 },
   broke:  { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 0 },
+  /* The one automation the sheet performs, and the only forced source there
+     is so far. It is a chip rather than a hidden term for the reason the
+     whole popover exists: the roll should say what is in it. Press A and
+     watch it cancel — that is the rule, not a special case. */
+  stressed: { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 3,
+            forced: [{ k: 'stress', v: -1,
+                       why: 'Every Stress box is marked — this roll is at disadvantage.' }] },
   foe:    { kind: 'adversary attack', label: 'Sword', base: 3, experiences: XP, purse: 5,
             currency: 'fear', reaction: false },
 };
