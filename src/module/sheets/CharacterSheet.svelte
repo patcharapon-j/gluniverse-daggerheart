@@ -427,17 +427,25 @@
     requestAnimationFrame(() => fit(el));
   });
 
-  /* ── fitting the window to the tab ─────────────────────────────────
-     Five tabs of wildly different heights share one window, and the window
-     is sized once when it opens. Advancement is roughly three times the
-     Attack panel; a height that suits one leaves the other either cut off or
-     floating in empty frame.
+  /* ── fitting the window, once ──────────────────────────────────────
+     Five tabs of wildly different heights share one window: Advancement is
+     roughly three times the Attack panel, so a height that suits one leaves
+     the other either cut off or floating in empty frame.
 
-     So the window takes the height of whatever you just opened. The measure
-     is the *scroller's* shortfall rather than the content's absolute height,
-     because that is the number that survives not knowing what the window
-     chrome costs: `natural - clientHeight` is how much taller the box needs
-     to be, in the same units the window is set in, whatever is above it.
+     This used to refit on every tab change, and that was the wrong answer to
+     a real problem. **A window that resizes under you while you are reading
+     it is worse than one that is sometimes too tall.** Switching tabs is a
+     glance — you are checking what is in the vault, not asking the sheet to
+     rearrange the desk — and the window jumping made the tab strip move under
+     the pointer that had just pressed it. The scrollers were always there to
+     take the overflow, and `.scr` has scrolled since it was written.
+
+     So the fit happens once, against whatever tab the sheet opens on, and
+     after that the height is yours. The measure is the *scroller's* shortfall
+     rather than the content's absolute height, because that is the number
+     that survives not knowing what the window chrome costs:
+     `natural - clientHeight` is how much taller the box needs to be, in the
+     same units the window is set in, whatever is above it.
 
      Both scrollers are measured and the larger wins — the rail is the same
      on every tab, and a window sized to a short pane would clip it instead.
@@ -492,11 +500,17 @@
     if (passes > 1) requestAnimationFrame(() => refit(passes - 1));
   }
 
+  /* Deliberately depends on `winEl` and nothing else. `tab` and `peekRows`
+     used to be read here, which is what made every tab change a resize —
+     and `peekRows` is itself derived from `tab`, so it was two subscriptions
+     to the same event. `fitted` is a plain `let` rather than `$state` so
+     setting it cannot re-enter the effect. */
+  let fitted = false;
   $effect(() => {
-    void tab;
-    void peekRows;
-    // Two frames: the first paints the new tab, the second is after `fit`
-    // above has stepped any card's type scale, which changes its height.
+    if (fitted || !winEl) return;
+    fitted = true;
+    // Two frames: the first paints, the second is after `fit` above has
+    // stepped any card's type scale, which changes its height.
     requestAnimationFrame(() => requestAnimationFrame(() => refit()));
   });
 
