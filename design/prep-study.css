@@ -1,0 +1,154 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH PREP · THE STUDY — the three candidates that lost
+
+   Never ported. `duality.css` is the precedent: five answers were drawn
+   there, one became the chat plate, and the other four stayed in the study
+   as the argument for it. Shipping them would put dead selectors in every
+   sheet load and, worse, would let somebody find `.prep.v1` in the system
+   and reasonably conclude it was a thing the system does.
+
+   What they were:
+
+     v1  the unrolled plate    it is the chat card, before it happens
+     v2  the unfolded row      it is the sheet row growing a second line
+     v4  the ledger            it is a statement of what this roll costs
+
+   v3, the console, won and is now simply `.prep` in `prep.css`. The
+   arguments for and against each are on the study page rather than here,
+   because they are about the idea and not about the pixels.
+
+   These build on the shipping component's base, so they have drifted a
+   little from the state they were judged in — the base picked up a sum
+   band and lost a label field. That is the honest cost of not freezing a
+   copy of the whole component per candidate, and it does not change what
+   any of them was arguing.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* The three of them are specimens in a grid, not popovers being opened. */
+.prep.v1,.prep.v2,.prep.v4{position:relative;z-index:auto}
+.prep.v1,.prep.v4{width:296px}
+.prep.v1 .hd,.prep.v4 .hd{padding:11px 13px 9px}
+.prep.v1 .hd b,.prep.v4 .hd b{font-size:14px}
+.prep.v1 .hd .v,.prep.v4 .hd .v{font-size:20px}
+.prep.v1 .bd,.prep.v4 .bd{padding:11px 13px 12px;gap:11px}
+.prep.v1 .sec,.prep.v2 .sec,.prep.v4 .sec{gap:6px}
+.prep.v1 .xr,.prep.v2 .xr,.prep.v4 .xr{padding:6px 9px}
+.prep.v1 .xr b,.prep.v2 .xr b,.prep.v4 .xr b{font-size:11.5px}
+.prep.v1 .xr em,.prep.v2 .xr em,.prep.v4 .xr em{font-size:12.5px}
+.prep.v1 .src,.prep.v2 .src,.prep.v4 .src{padding:5px 8px 4px;font-size:8px}
+.prep.v1 .ft,.prep.v2 .ft,.prep.v4 .ft{gap:1px}
+.prep.v1 .go,.prep.v2 .go,.prep.v4 .go{padding:11px 13px}
+.prep.v1 .esc,.prep.v4 .esc{padding:11px 12px;box-shadow:none}
+
+/* The net, spelled out. The shipping component dropped this — the chip in
+   the sum band is the net, and printing it twice was the duplication the
+   band was introduced to remove. */
+.prep .net{display:flex;align-items:baseline;gap:7px;padding-top:1px}
+.prep .net b{font:700 13px/1 var(--f-display);letter-spacing:-.03em;color:var(--hope-tx);
+  font-variant-numeric:tabular-nums}
+.prep .net.neg b{color:var(--wound)}
+.prep .net.nil b{color:var(--ink-4)}
+.prep .net s{text-decoration:none;font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-4)}
+
+/* The modifier with its label field, which only these three carry. */
+.prep .mod{display:flex;align-items:center;gap:7px}
+.prep .mod input[type=text]{flex:1 1 auto;min-width:0;border:0;background:var(--sunk);
+  padding:6px 8px;color:var(--ink);font:400 11.5px/1 var(--f-ui);
+  outline:1px solid transparent;transition:outline-color .13s}
+.prep .mod input[type=text]::placeholder{color:var(--ink-4)}
+.prep .mod input[type=text]:focus{outline-color:var(--hope)}
+
+/* The reaction as a checkbox, which is what it was before it became a
+   button beside ROLL. */
+.prep .rxn{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+  font:700 8px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);transition:color .13s}
+.prep .rxn:hover{color:var(--ink-2)}
+.prep .rxn i{flex:none;width:7px;height:7px;background:none;
+  box-shadow:inset 0 0 0 1.5px var(--line-2);transform:rotate(45deg);transition:background .13s}
+.prep .rxn.on{color:var(--ink)}
+.prep .rxn.on i{background:var(--ink-2);box-shadow:none}
+
+
+/* ── v1 · THE UNROLLED PLATE ───────────────────────────────────────
+   The plate's own head, its own arithmetic strip, and two dice slots
+   standing empty where the result will land. What you assemble is what
+   gets posted — and the cost is that it spends its top third on dice that
+   have not been rolled. */
+.prep.v1 .slots{display:flex;align-items:center;gap:7px;padding:12px 13px;
+  background:var(--sunk);border-bottom:1px solid var(--line)}
+/* An empty slot is the stone with no light in it — the duality study's own
+   rule, and the reason it is a fill rather than an outline. A clip-path
+   crops an inset shadow to the shape it describes, so a diamond outlined
+   that way draws four faint corners and nothing else. */
+.prep.v1 .st{width:30px;height:30px;flex:none;
+  background:var(--sunk-2);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.prep.v1 .st.h{background:color-mix(in srgb,var(--hope) 17%,var(--sunk-2))}
+.prep.v1 .st.f{background:color-mix(in srgb,var(--fear) 20%,var(--sunk-2))}
+.prep.v1 .st.d6{width:24px;height:24px;background:var(--raise);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.prep.v1 .slots .pend{margin-left:auto;font:700 7.5px/1 var(--f-mono);letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-4)}
+.prep.v1 .strip{display:flex;flex-direction:column;gap:1px}
+.prep.v1 .tm{display:flex;align-items:baseline;gap:8px;padding:4px 0}
+.prep.v1 .tm s{flex:1 1 auto;min-width:0;text-decoration:none;font:700 8px/1.3 var(--f-mono);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prep.v1 .tm b{flex:none;font:700 12px/1 var(--f-display);color:var(--ink-2);
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.prep.v1 .tm.gold s,.prep.v1 .tm.gold b{color:var(--hope-tx)}
+.prep.v1 .tm.sum{border-top:1px solid var(--line);margin-top:3px;padding-top:7px;
+  background:none;display:flex;justify-content:flex-start}
+.prep.v1 .tm.sum s{color:var(--ink-2)}
+.prep.v1 .tm.sum b{font-size:17px;color:var(--ink);letter-spacing:-.02em}
+
+
+/* ── v2 · THE UNFOLDED ROW ─────────────────────────────────────────
+   No head. The row you pressed is still on screen an inch above, and
+   repeating its name would be the popover introducing you to something you
+   are looking at. The least ceremony of the four — and it only works while
+   that row is visible, which fails three-quarters down a scroller. */
+.prep.v2{width:268px;background:var(--sunk);
+  box-shadow:0 16px 34px -12px rgba(0,0,0,.62),inset 0 0 0 1px var(--line),
+             inset 2px 0 0 var(--hope);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.prep.v2 .bd{padding:10px 11px 11px;gap:9px}
+.prep.v2 .xr{background:var(--paper)}
+.prep.v2 .xr.on{background:var(--raise)}
+.prep.v2 .src{background:var(--paper)}
+.prep.v2 .src.on{background:var(--raise)}
+.prep.v2 .mod input[type=text],.prep.v2 .stp{background:var(--paper)}
+.prep.v2 .ft{border-top:0;padding:0 11px 11px}
+.prep.v2 .go{padding:9px 11px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.prep.v2 .esc{padding:9px 10px;background:var(--paper);box-shadow:none}
+
+
+/* ── v4 · THE LEDGER ───────────────────────────────────────────────
+   The price first, and the pips this roll is about to spend drawn already
+   spent. Spending Hope is the only irreversible thing the popover does —
+   and the cost of leading with it is six gems above every roll that spends
+   none of them. */
+.prep.v4 .price{display:flex;align-items:center;gap:10px;padding:10px 13px;
+  background:var(--sunk);border-bottom:1px solid var(--line)}
+.prep.v4 .price > s{flex:none;text-decoration:none;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+.prep.v4 .price .gems{margin-left:auto}
+/* A pip about to be spent: still there, still lit, but going out. Not an
+   empty socket — an empty socket has no lamp in it at all. Drawn by fading
+   the lamp rather than ringing the gem, because a box-shadow on a gem is a
+   *square*: the pip's silhouette comes from its own material, so an
+   outline drawn on the box contradicts the shape instead of following it. */
+.prep.v4 .gem.going .lamp{opacity:.3;filter:saturate(.5)}
+.prep.v4 .gem.going .fx{opacity:.25}
+.prep.v4 .tally{display:flex;align-items:baseline;gap:6px;padding-top:2px}
+.prep.v4 .tally b{font:700 13px/1 var(--f-display);color:var(--hope-tx);
+  font-variant-numeric:tabular-nums}
+.prep.v4 .tally s{text-decoration:none;font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-4)}
+.prep.v4 .tally.nil b{color:var(--ink-4)}
+.prep.v4 .go .pay{font:700 8px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--hope-tx);transition:color .14s}
+.prep.v4 .go:hover .pay{color:rgba(20,22,26,.72)}

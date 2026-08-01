@@ -33,6 +33,7 @@ const MODULES = [
   "track.js",
   "swap.js",
   "menu.js",
+  "prep.js",
 ];
 
 mkdirSync(OUT, { recursive: true });

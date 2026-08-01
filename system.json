@@ -29,6 +29,7 @@
     "styles/sheet.css",
     "styles/plate.css",
     "styles/menu.css",
+    "styles/prep.css",
     "styles/daggerheart-components.css"
   ],
   "languages": [

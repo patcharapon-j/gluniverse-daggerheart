@@ -52,7 +52,9 @@
       "NotYours": "That is not your character to spend for.",
       "AlreadyClaimed": "That has already been taken from this roll.",
       "NoTarget": "Target a token first.",
-      "NoWeapon": "The weapon this attack was made with is no longer on the sheet."
+      "NoWeapon": "The weapon this attack was made with is no longer on the sheet.",
+      "NotEnoughHope": "An Experience costs a Hope, and you are short {need}.",
+      "NotEnoughFear": "An Experience costs a Fear, and the pool is short {need}."
     },
     "Info": {
       "DamageApplied": "{name} took {severity} damage — {marked} Hit Points marked."

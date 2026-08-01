@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/prep.css">
+<link rel="stylesheet" href="/design/prep-study.css">
+<style>
+.cols{display:grid;grid-template-columns:repeat(3,minmax(300px,1fr));gap:22px;align-items:start;
+  grid-template-rows:auto auto auto auto auto auto}
+.col{display:grid;grid-row:span 6;grid-template-rows:subgrid;gap:0}
+.col > header{border-bottom:1px solid #2b3038;padding-bottom:8px;margin-bottom:12px;align-self:end}
+.col > header h3{margin:0;font:700 11px/1 var(--f-mono);letter-spacing:.19em;
+  text-transform:uppercase;color:#e6eaef}
+.col > header em{display:block;margin-top:6px;font-style:normal;font:600 9px/1 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--hope)}
+.col > p{font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 14px}
+.col > p b{color:#c3cbd5;font-weight:600}
+.col > p.against{color:#8d97a3;margin:0 0 16px;padding-left:9px;
+  box-shadow:inset 2px 0 0 #3c434d}
+.col > .slot{margin-bottom:16px}
+.col > .slot > s{display:block;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3);margin:0 0 9px}
+.stage{background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line);padding:16px;
+  display:flex;justify-content:center}
+/* Never shrink: the whole comparison is at the width Foundry actually
+   gives a chat message, and a column that squeezed one candidate by four
+   pixels would be arguing for the other two. */
+.stage > .prep{flex:none;animation:none}
+.tools{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 26px;align-items:center}
+.scroller{overflow-x:auto;padding-bottom:16px}
+.scroller > div{min-width:1060px}
+table.reg{border-collapse:collapse;font:400 12px/1.5 var(--f-ui);color:#a9b2be;margin:0 0 8px}
+table.reg th{text-align:left;font:700 8px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--hope);padding:0 22px 9px 0}
+table.reg td{padding:0 22px 7px 0;vertical-align:top}
+table.reg code{font:500 11px/1 var(--f-mono);color:#c3cbd5}
+.btn{border:0;cursor:pointer;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);padding:10px 15px;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btn:hover{background:var(--hope);color:#14161a;box-shadow:none}
+.btn.fear:hover{background:var(--fear);color:#fff}
+#out{font:500 11.5px/1.6 var(--f-mono);color:var(--hope-tx);margin:0;min-height:19px}
+#out span{color:#7d8794}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>prep</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/prep.html" class="on">prep</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE GAP</span>The engine has been ready for this since it was written</h2>
+<p class="note"><code>rollDuality</code> already takes <code>advantage</code> as a signed count of d6,
+<code>mods</code> as labelled terms and <code>dc</code> as a target number. <code>rollTrait</code> and
+<code>rollAttack</code> take <code>experiences</code> on top of that. <b>Nothing in the sheet passed any
+of it.</b> So this was never a feature being added to the roll engine — it is the one surface that had
+never existed, and the engine is its specification.</p>
+<p class="note">There was a second gap, and it was worse. <code>actions.ts</code> stamps every Experience
+term <code>spent:&nbsp;true</code>, which the chat plate draws in gold — the currency that paid for it.
+Nothing ever called <code>spendHope</code>. <b>An Experience was free and the card said it was not.</b></p>
+
+<h2><span>// THE CONSTRAINT</span>The empty state is the common state</h2>
+<p class="note">Opening on the click that used to roll puts this in front of the most frequent gesture
+in the game — including every roll that needs nothing from it. A level-1 character has no Experiences,
+nothing granting advantage and no reason to type a modifier, and they will meet this popover twice a
+minute for an hour. So the bare case is not an edge case being dutifully covered. <b>It is the case
+that decided this.</b> Roll-ready on the frame it opens, Enter before you have touched anything,
+Escape costing nothing, and visibly shorter when there is less to say.</p>
+
+<h2><span>// THE COMPONENT</span>The console, live</h2>
+<p class="note">The real thing, not a specimen — it opens on <code>&lt;body&gt;</code>, anchors to what
+you pressed, and resolves to the arguments the engine accepts. Press a button and it opens beside it.
+<b>Enter rolls, Shift+Enter reacts, Escape cancels</b>, <code>A</code>/<code>D</code>/<code>H</code>
+work the advantage row and the digits tick Experiences. The result is printed underneath.</p>
+<div class="tools">
+  <button class="btn" data-open="loaded">a loaded character</button>
+  <button class="btn" data-open="bare">a level-1 character</button>
+  <button class="btn" data-open="broke">no hope left</button>
+  <button class="btn fear" data-open="foe">the gm's side</button>
+</div>
+<p id="out"><span>nothing rolled yet.</span></p>
+
+<h2><span>// FOUR ANSWERS</span>Not four skins — four ideas about what this surface is</h2>
+<p class="note">The console won on the second of the two arguments each candidate carries, not the
+first. These are the three it beat, kept the way <code>duality.css</code> keeps the four chat cards
+that lost — they build on the shipping component's base, so they have drifted slightly from the state
+they were judged in, which changes nothing about what each was arguing.</p>
+
+<div class="tools">
+  <b style="font:700 8px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:#7d8794">
+    states</b>
+  <span style="font:400 11.5px/1 var(--f-ui);color:#8d97a3">
+    <b style="color:#c3cbd5">loaded</b> — an Experience in, advantage and a helper, a named +1 ·
+    <b style="color:#c3cbd5">bare</b> — level 1, nothing to offer ·
+    <b style="color:#c3cbd5">broke</b> — no Hope left, and Restrained</span>
+</div>
+
+<div class="scroller"><div>
+  <div class="cols" id="grid"></div>
+</div></div>
+
+<h2><span>// WHAT IT PRODUCES</span>One object, and the engine already accepted it</h2>
+<table class="reg">
+  <tr><th>on screen</th><th>becomes</th><th>where it lands</th></tr>
+  <tr><td>advantage sources, netted</td><td><code>advantage: 2</code></td>
+      <td>the <code>2d6kh1</code> term, and the chip on the card</td></tr>
+  <tr><td>an Experience ticked</td><td><code>experiences: [{name, modifier}]</code></td>
+      <td>a gold term on the strip — and now a real <code>spendHope(1)</code></td></tr>
+  <tr><td>the modifier</td><td><code>extra: [{k:"modifier", v}]</code></td>
+      <td>its own row on the strip</td></tr>
+  <tr><td>the reaction button</td><td><code>reaction: true</code></td>
+      <td>no Hope, no Fear, no GM move</td></tr>
+</table>
+<p class="note">Difficulty is deliberately absent. The engine takes it and the card draws it, but the
+player usually does not know it — so it stays the GM's to set, and the card goes on honestly saying
+there was no target number. The modifier is unlabelled for a smaller reason: the field was one more
+thing to tab through, and the term reads <code>modifier</code> on the card rather than naming its
+cause, which is less than it could say and a trade made on purpose.</p>
+
+</div>
+
+<script type="module">
+import { prep } from '/design/prep.js';
+import { STATES, V1, V2, V4 } from '/design/prep-study.js';
+
+/* ── the live component ─────────────────────────────────────────── */
+const XP = [
+  { name: 'Grew up on the streets', modifier: 2 },
+  { name: 'Silver tongue', modifier: 2 },
+  { name: 'Hunted by the Order', modifier: 3 },
+];
+const CASES = {
+  loaded: { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 4 },
+  bare:   { kind: 'agility roll', label: 'Agility', base: 2, experiences: [], purse: 2 },
+  broke:  { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 0 },
+  foe:    { kind: 'adversary attack', label: 'Sword', base: 3, experiences: XP, purse: 5,
+            currency: 'fear', reaction: false },
+};
+
+const out = document.getElementById('out');
+for (const b of document.querySelectorAll('[data-open]')) {
+  b.addEventListener('click', async () => {
+    const r = await prep(b, CASES[b.dataset.open]);
+    out.innerHTML = r
+      ? JSON.stringify(r, (k, v) => v, 1).replace(/\s+/g, ' ')
+      : '<span>cancelled — and cancelling costs nothing.</span>';
+  });
+}
+
+/* ── the record ─────────────────────────────────────────────────── */
+const VARIANTS = [
+  { t: 'the unrolled plate', tag: 'it is the card, before it happens', f: V1,
+    for: `The plate's own head, its own arithmetic strip, and two dice slots standing empty where the
+      result will land. Tick an Experience and its gold term appears <b>exactly where it will be a
+      second later</b>. There is no translation step: what you assemble is what gets posted.`,
+    against: `The biggest of the four, and it spends its top third on dice that have not been rolled.
+      The bare state is a card with a hole in it.` },
+  { t: 'the unfolded row', tag: 'it is the sheet growing a line', f: V2,
+    for: `No head at all — the row you pressed is still on screen an inch above, and repeating its name
+      would be the popover introducing you to something you are looking at. <b>The least ceremony of the
+      four by a distance</b>, and the bare state is two lines tall.`,
+    against: `It only works while the row is visible, which fails for a weapon three-quarters down a
+      scroller. And with no head, a popover that survives a scroll is a popover about nothing.` },
+  { t: 'the ledger', tag: 'it is what this roll costs', f: V4,
+    for: `The price first, in the gems the sheet already uses, and the pips this roll is about to spend
+      are drawn <b>already spent</b>. Spending Hope is the only irreversible thing this popover does and
+      the only one the others treat as a footnote. The cost travels onto the button.`,
+    against: `It puts the price above the roll on every roll, including the great majority that cost
+      nothing — six gems at the top of a popover about to spend none of them.` },
+];
+
+document.getElementById('grid').innerHTML = VARIANTS.map(v => `
+  <div class="col">
+    <header><h3>${v.t}</h3><em>${v.tag}</em></header>
+    <p>${v.for}</p>
+    <p class="against">${v.against}</p>
+    ${Object.values(STATES).map(s =>
+      `<div class="slot"><s>${s.label}</s><div class="stage">${v.f(s)}</div></div>`).join('')}
+  </div>`).join('');
+
+document.getElementById('lt').onchange = e =>
+  document.documentElement.classList.toggle('light', e.target.checked);
+</script>
+</body>
+</html>

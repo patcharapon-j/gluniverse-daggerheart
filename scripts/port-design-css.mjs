@@ -61,6 +61,7 @@ const SHEETS = [
   "sheet.css",
   "plate.css",
   "menu.css",
+  "prep.css",
 ];
 
 /**
@@ -230,6 +231,13 @@ function port(name) {
     // `.ctxm .mi` becomes `.dh.ctxm .mi`, which matches; `.dh .ctxm .mi`,
     // which is what the scoper would have produced, does not.
     .replaceAll(".ctxm", ".dh.ctxm")
+    // The roll popover, third of the three we draw outside a sheet and for
+    // the identical reason — it opens against a row that may be near the
+    // bottom of a scroller, and `position:fixed` escapes overflow but not
+    // a transformed ancestor. Same trick, same requirement: the *class* is
+    // rewritten, so `.prep .xr` becomes `.dh.prep .xr` rather than the
+    // `.dh .prep .xr` the scoper would have written, which matches nothing.
+    .replaceAll(".prep", ".dh.prep")
     /* `../assets/`, not `systems/gluniverse-daggerheart/assets/`.
        A relative `url()` resolves against the stylesheet it is written in,
        and these end up in `styles/` — so the absolute-looking form was

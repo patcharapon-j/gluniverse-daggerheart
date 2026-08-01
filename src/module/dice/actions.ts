@@ -11,6 +11,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { traitLabel, type Trait } from "../config.ts";
+import { getFear, setFear } from "../settings.ts";
 import { rollDamage, rollDuality, rollFoe } from "./rolls.ts";
 import type { Term } from "./types.ts";
 
@@ -27,9 +28,38 @@ interface Common {
 const experienceTerms = (list: Common["experiences"]): Term[] =>
   (list ?? []).map((e) => ({ k: e.name || "experience", v: e.modifier, spent: true }));
 
+/**
+ * Charge for the Experiences, and refuse the roll if the purse is short.
+ *
+ * The `spent: true` above has been on every Experience term since the card
+ * was written — it is what draws them in gold, the currency that paid — and
+ * nothing ever took the Hope. So an Experience was free and the card said it
+ * was not, which is the worse half of the bug this popover exists to close.
+ *
+ * Charged *before* the dice, not after. A roll is a thing you commit to, and
+ * a payment that landed on the result would let you read the outcome and
+ * then discover you could not afford the roll that produced it. It also
+ * means the popover's own affordability check and this one agree: both ask
+ * the same question of the same number, a moment apart.
+ *
+ * Returns false when it could not pay, and the caller returns null rather
+ * than rolling — quietly rolling a cheaper version of what was asked for
+ * would be the system deciding which Experiences you meant.
+ */
+async function payFor(actor: any, list: Common["experiences"]): Promise<boolean> {
+  const n = list?.length ?? 0;
+  if (!n) return true;
+  if (await actor?.spendHope?.(n)) return true;
+  ui.notifications?.warn(
+    game.i18n.format("DAGGERHEART.Warning.NotEnoughHope", { need: n }),
+  );
+  return false;
+}
+
 /* ── a plain trait roll ──────────────────────────────────────────────── */
 
 export async function rollTrait(actor: any, trait: Trait, opts: Common & { reaction?: boolean } = {}) {
+  if (!(await payFor(actor, opts.experiences))) return null;
   const mods: Term[] = [
     { k: traitLabel(trait).toLowerCase(), v: actor.traitMod(trait) },
     ...experienceTerms(opts.experiences),
@@ -53,7 +83,8 @@ export async function rollTrait(actor: any, trait: Trait, opts: Common & { react
  * thresholds decide what the number means, and the attack card should not
  * pretend to know them.
  */
-export async function rollAttack(actor: any, weapon: any, opts: Common = {}) {
+export async function rollAttack(actor: any, weapon: any, opts: Common & { reaction?: boolean } = {}) {
+  if (!(await payFor(actor, opts.experiences))) return null;
   const trait = (weapon?.system?.trait ?? "agility") as Trait;
   const mods: Term[] = [
     { k: traitLabel(trait).toLowerCase(), v: actor.traitMod(trait) },
@@ -98,16 +129,44 @@ export async function rollWeaponDamage(actor: any, weapon: any, { critical = fal
 
 /* ── the GM's side ───────────────────────────────────────────────────── */
 
+/**
+ * The GM's purse, and the same rule as the player's.
+ *
+ * Fear is a world setting rather than a field on the actor, so it is spent
+ * here rather than through a document method — and only a GM may write it,
+ * which is fine because only a GM rolls an adversary.
+ */
+async function payFearFor(list: Common["experiences"]): Promise<boolean> {
+  const n = list?.length ?? 0;
+  if (!n) return true;
+  const pool = getFear();
+  if (pool < n) {
+    ui.notifications?.warn(
+      game.i18n.format("DAGGERHEART.Warning.NotEnoughFear", { need: n }),
+    );
+    return false;
+  }
+  await setFear(pool - n);
+  return true;
+}
+
 export async function rollAdversaryAttack(
   actor: any,
-  opts: { advantage?: number; target?: any; experiences?: { name: string; modifier: number }[] } = {},
+  opts: {
+    advantage?: number;
+    target?: any;
+    experiences?: { name: string; modifier: number }[];
+    extra?: Term[];
+  } = {},
 ) {
+  if (!(await payFearFor(opts.experiences))) return null;
   const attack = actor.system?.attack ?? { name: "Attack", modifier: 0 };
   // Fear buys Experience on this side the way Hope does on the other, so
   // the term is drawn in violet rather than gold.
   const mods: Term[] = [
     { k: "attack modifier", v: attack.modifier },
     ...(opts.experiences ?? []).map((e) => ({ k: e.name || "experience", v: e.modifier, fear: true })),
+    ...(opts.extra ?? []),
   ];
 
   const targetActor = opts.target?.actor ?? opts.target ?? null;

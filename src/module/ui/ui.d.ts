@@ -123,6 +123,41 @@ declare module "*/ui/menu.js" {
   export function closeMenu(): void;
 }
 
+declare module "*/ui/prep.js" {
+  /** What the popover was asked to offer. */
+  export interface PrepOptions {
+    /** The meta line: "agility roll". */
+    kind?: string;
+    /** What is being rolled: "Agility", "Broadsword". */
+    label?: string;
+    /** The modifier already in the roll, shown beside the name. */
+    base: number;
+    experiences?: { name: string; modifier: number }[];
+    /** How many Hope — or Fear — are available to spend. */
+    purse?: number;
+    /** "fear" runs the whole popover violet; the GM buys Experience with it. */
+    currency?: "hope" | "fear";
+    /** Offer the advantage row. Damage has no advantage. */
+    advantage?: boolean;
+    /**
+     * `true` offers both buttons, `false` only ROLL, and `"only"` makes the
+     * whole popover a reaction — for surfaces that already are one when you
+     * press them, like the Evasion crest.
+     */
+    reaction?: boolean | "only";
+  }
+  /** Exactly the arguments the roll engine already accepts. */
+  export interface PrepResult {
+    advantage: number;
+    experiences: { name: string; modifier: number }[];
+    extra: { k: string; v: number }[];
+    reaction: boolean;
+  }
+  /** Open against an element. Resolves null when cancelled. */
+  export function prep(anchor: Element, opts: PrepOptions): Promise<PrepResult | null>;
+  export function closePrep(): void;
+}
+
 declare module "*/ui/settle.js" {
   export function settled(el: Element): Promise<void>;
 }

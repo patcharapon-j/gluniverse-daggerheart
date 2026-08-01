@@ -1,0 +1,278 @@
+/* Ported from design/prep.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/prep.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   DH PREP — the surface between deciding to roll and rolling
+
+   Every other component in this system is either a record you edit or a
+   result you read. This is the only one that is a *sentence you are still
+   composing*, and it exists because four separate decisions currently have
+   nowhere to be made: advantage and its sources, a flat modifier, which
+   Experiences you are bringing in — and the Hope those Experiences cost,
+   which the chat card has always claimed was paid and never was.
+
+   Four candidates were drawn before this one; `prep-study.css` keeps the
+   three that lost, and `prep.html` states what each of them was for. This
+   is the console, adjusted.
+
+   ── it opens on the click that used to roll ────────────────────────
+   Which makes it load-bearing on the most frequent gesture in the game,
+   including every roll that needs nothing from it. So the empty case is
+   not an edge case, it is the level-1 case, and it governs the design:
+
+     · roll-ready on the frame it opens — Enter works before you touch it
+     · visibly *shorter* when there is less to say, never a fixed box with
+       empty rows in it
+     · Escape is always the way out, and the way out costs nothing
+
+   A popover that is slower than the click it replaced is a regression no
+   amount of capability pays for.
+
+   ── it is the character talking, not the application ───────────────
+   The right-click menu is drawn in --frame and stays dark in both themes
+   because a menu is the app's furniture. This is the opposite: it is about
+   *your* Hope, *your* Experiences, *your* advantage, and it is a
+   continuation of the row you pressed. So it is --paper and it flips with
+   the theme.
+
+   Which costs it the thing --frame got for free. Paper floating over paper
+   is not a separate object, so this needs elevation the menu never did: a
+   real shadow, an asserted hairline, and a 2px gold edge on the leading
+   side — the same device `.rd` uses to tie a readout to the roll that
+   produced it. Here it ties the popover to the row it grew out of.
+
+   ── it lives on <body> ─────────────────────────────────────────────
+   Like the menu and the drag proxy, and for the same reason: a popover
+   opened on a row near the bottom of a scroller is clipped by the
+   scroller. `position: fixed` escapes overflow but not a transformed
+   ancestor, and the sheet has several. Body is the only place that is
+   nobody's inside.
+
+   Which means it wears `.dh` itself rather than sitting under one — see
+   the port script, which rewrites `.dh.prep` to `.dh.dh.prep` for exactly this.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh.prep{
+  position:fixed;z-index:9000;width:262px;
+  font-family:var(--f-ui),system-ui,sans-serif;color:var(--ink);
+  background:var(--paper);
+  box-shadow:0 22px 48px -14px rgba(0,0,0,.7),inset 0 0 0 1px var(--line-2),
+             inset 2px 0 0 var(--hope);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
+  animation:prep-in .13s cubic-bezier(.2,.85,.3,1) both}
+.dh.prep:focus{outline:none}
+@keyframes prep-in{from{opacity:0;transform:translateY(-6px) scale(.985)}
+  to{opacity:1;transform:none}}
+
+/* ── the head ──────────────────────────────────────────────────────
+   What you are rolling, and it is the same two-line identity the weapon
+   row uses: the kind in mono above, the subject in the display face below.
+   The trait's own number rides on the right because it is already part of
+   the sum and pretending otherwise would make the band below look like it
+   was inventing a term. */
+.dh.prep .hd{display:flex;align-items:flex-end;gap:10px;padding:9px 11px 8px;
+  border-bottom:1px solid var(--line)}
+.dh.prep .hd .id{flex:1 1 auto;min-width:0}
+.dh.prep .hd s{display:block;text-decoration:none;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+.dh.prep .hd b{display:block;font:600 12.5px/1.15 var(--f-display);color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dh.prep .hd .v{flex:none;font:700 17px/1 var(--f-display);letter-spacing:-.04em;
+  color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* ── the sum, center stage ─────────────────────────────────────────
+   This is the one number the whole surface exists to produce, and it spent
+   the first draft at 11px in mono on the roll button, competing with the
+   word ROLL for the same eleven pixels. Here it gets the display face at
+   the size the sheet gives a trait, dead centre, above everything that
+   feeds it.
+
+   The advantage die is beside it rather than inside it, because it is not
+   an addend — it is a *die*, still to be rolled, and folding it into "+5"
+   would be the surface stating a total it cannot know yet.
+
+   No caption under it. "+5 ◈+2d6" sitting above a roll button that carries
+   the two duality diamonds is already the whole sentence, and a line
+   spelling out what those add to was the surface explaining its own
+   arithmetic to somebody who can see it. */
+.dh.prep .sum{display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:13px 13px 12px;background:var(--sunk);border-bottom:1px solid var(--line)}
+.dh.prep .sum b{font:700 31px/1 var(--f-display);letter-spacing:-.05em;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+/* The advantage die wears the chip the card gives it — neither stone, so
+   neither diamond. Gold when it is added, the wound's ink when it is taken
+   away, because a subtracted die is a cost and this system draws costs in
+   that red everywhere else. */
+.dh.prep .sum .d6{font-style:normal;font:700 11px/1 var(--f-mono);letter-spacing:.06em;
+  padding:6px 8px 5px;background:var(--raise);color:var(--hope-tx);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.dh.prep .sum .d6.neg{color:var(--wound)}
+
+/* ── the body ──────────────────────────────────────────────────────
+   `gap` rather than per-section margins, so a section that has nothing to
+   draw can return nothing at all and the spacing closes behind it. That is
+   how the empty state gets short without anybody measuring it. */
+.dh.prep .bd{display:flex;flex-direction:column;gap:8px;padding:9px 11px 10px}
+.dh.prep .sec{display:flex;flex-direction:column;gap:4px}
+.dh.prep .sec > s{display:flex;align-items:baseline;justify-content:space-between;
+  text-decoration:none;font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3)}
+/* The key that operates this row, drawn as a key. This is the only surface
+   in the system that shows a shortcut, and the only one where one would be
+   pressed often enough to be worth memorising. */
+.dh.prep kbd{font:700 7px/1 var(--f-mono);letter-spacing:.1em;color:var(--ink-4);
+  background:var(--sunk);padding:3px 4px}
+
+/* ── advantage, as named sources ───────────────────────────────────
+   The engine takes one signed count of d6, because that is what the dice
+   do. But two different rules feed it — advantage and disadvantage cancel
+   one for one, and each ally who Helps rolls their own d6 — and a single
+   ± stepper would let you set a number without ever learning why it was
+   that number. So the sources are named and the net is *shown*, not typed.
+
+   Which also means the card can eventually say what caused it, and the
+   cancelling is visible at the moment it happens rather than implied by a
+   number that quietly went down. */
+.dh.prep .srcs{display:flex;flex-wrap:wrap;gap:4px}
+.dh.prep .src{display:flex;align-items:center;gap:6px;border:0;cursor:pointer;
+  padding:4px 7px 3px;background:var(--sunk);color:var(--ink-3);
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
+  transition:background .13s,color .13s}
+.dh.prep .src:hover{background:var(--sunk-2);color:var(--ink-2)}
+/* The chip's own diamond, the same 6px one the menu rows and the claim
+   buttons carry. Lit gold when the source is contributing; the wound's ink
+   when it is taking away, since disadvantage is not Fear — it is just the
+   other direction, and it costs you. */
+.dh.prep .src i{flex:none;width:6px;height:6px;background:var(--line-2);
+  transform:rotate(45deg);transition:background .13s}
+.dh.prep .src.on{background:var(--sunk-2);color:var(--ink)}
+.dh.prep .src.on i{background:var(--hope)}
+.dh.prep .src.on.neg i{background:var(--wound)}
+.dh.prep .src em{font-style:normal;font-variant-numeric:tabular-nums}
+
+/* ── experiences ───────────────────────────────────────────────────
+   Borrowed wholesale from the rail's own Experience rows — same material,
+   same hierarchy, modifier in gold on the right — because they *are* those
+   rows and a second visual treatment for the same object would be a second
+   thing to learn.
+
+   What is added is the tick and the cost. An Experience you cannot pay for
+   is disabled rather than hidden, for the reason menu.css already gives:
+   a list whose length changes with your state has to be re-read every
+   time, and one whose rows stay put and go quiet can be learned. The
+   reason is on the row rather than in a tooltip, and it is the only place
+   the purse is mentioned at all — the count itself lives on the sheet
+   directly behind this popover, and a second copy could disagree with it. */
+.dh.prep .xps{display:flex;flex-direction:column;gap:2px}
+.dh.prep .xr{display:flex;align-items:center;gap:9px;width:100%;border:0;text-align:left;
+  padding:4px 8px;background:var(--sunk);cursor:pointer;
+  transition:background .14s,transform .14s}
+.dh.prep .xr:hover:not(:disabled){background:var(--sunk-2);transform:translateX(2px)}
+.dh.prep .xr i{flex:none;width:8px;height:8px;background:none;
+  box-shadow:inset 0 0 0 1.5px var(--line-2);transform:rotate(45deg);
+  transition:background .13s,box-shadow .13s}
+.dh.prep .xr b{flex:1 1 auto;min-width:0;font:600 11px/1.25 var(--f-ui);color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dh.prep .xr em{flex:none;font:700 11.5px/1 var(--f-display);font-style:normal;
+  color:var(--hope-tx);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.dh.prep .xr.on{background:var(--sunk-2)}
+.dh.prep .xr.on i{background:var(--hope);box-shadow:none}
+/* The cost, stated on the row that charges it and only once it is being
+   charged. A permanent "−1 HOPE" on every row would read as a price list;
+   this reads as a receipt. */
+.dh.prep .xr .cost{flex:none;font:700 7px/1 var(--f-mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--hope-tx);opacity:0;transition:opacity .13s}
+.dh.prep .xr.on .cost{opacity:1}
+.dh.prep .xr:disabled{cursor:default;opacity:.5}
+.dh.prep .xr:disabled b{color:var(--ink-3)}
+.dh.prep .xr:disabled em{color:var(--ink-4)}
+.dh.prep .xr:disabled .cost{opacity:1;color:var(--ink-4)}
+
+/* Fear buys Experience on the GM's side the way Hope does on the player's,
+   so the same row runs violet there. Same component, same gesture, and the
+   hue is the only thing that says whose economy is being spent. */
+.dh.prep.fear{box-shadow:0 22px 48px -14px rgba(0,0,0,.7),inset 0 0 0 1px var(--line-2),
+           inset 2px 0 0 var(--fear)}
+.dh.prep.fear .xr em,.dh.prep.fear .xr .cost{color:var(--fear-tx)}
+.dh.prep.fear .xr.on i,.dh.prep.fear .src.on i{background:var(--fear)}
+.dh.prep.fear .sum .d6{color:var(--fear-tx)}
+.dh.prep.fear .go:hover{background:var(--fear);color:#fff}
+.dh.prep.fear .go:hover em{color:rgba(255,255,255,.7)}
+.dh.prep.fear .go:hover .dd .h{background:#fff}
+.dh.prep.fear .go:hover .dd .f{background:rgba(255,255,255,.55)}
+
+/* ── the flat modifier ─────────────────────────────────────────────
+   One row, no label field. On the card the term reads "modifier" rather
+   than naming its cause, which is less than it could say and a deliberate
+   trade: at speed the field is one more thing to tab through, and the
+   number is the part that changes the roll. */
+.dh.prep .sec.inline{flex-direction:row;align-items:center;justify-content:space-between;gap:9px}
+.dh.prep .sec.inline > s{padding-top:1px}
+.dh.prep .stp{display:flex;align-items:center;flex:none;background:var(--sunk)}
+.dh.prep .stp button{border:0;background:none;cursor:pointer;width:22px;height:26px;
+  color:var(--ink-3);font:700 13px/1 var(--f-mono);transition:color .12s,background .12s}
+.dh.prep .stp button:hover{color:var(--ink);background:var(--sunk-2)}
+.dh.prep .stp b{min-width:26px;text-align:center;font:700 13px/1 var(--f-display);
+  color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+/* ── the foot ──────────────────────────────────────────────────────
+   The one filled surface, and it earns that the way `.wr .go` does: it is
+   the only thing here you press rather than change.
+
+   It does not repeat the sum. The band above owns that, and a number
+   printed twice is a number you have to check against itself. What the
+   button says instead is how to press it without the mouse, which is the
+   whole argument for this candidate. */
+.dh.prep .ft{display:flex;align-items:stretch;border-top:1px solid var(--line)}
+.dh.prep .go{flex:1 1 auto;border:0;cursor:pointer;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;padding:10px 11px;
+  background:var(--raise);color:var(--ink);
+  transition:background .14s,color .14s;text-align:left}
+.dh.prep .go s{text-decoration:none;font:700 9px/1 var(--f-mono);letter-spacing:.17em;
+  text-transform:uppercase}
+.dh.prep .go em{font-style:normal;font:700 11px/1 var(--f-mono);letter-spacing:.06em;
+  color:var(--ink-3);font-variant-numeric:tabular-nums;transition:color .14s}
+.dh.prep .go:hover{background:var(--hope);color:#14161a}
+.dh.prep .go:hover em{color:rgba(20,22,26,.66)}
+.dh.prep .go:active{transform:translateY(1px)}
+
+/* The duality pair on the button that rolls them, same as the weapon row's
+   — same two dice, same silhouette, 7px. */
+.dh.prep .go .dd{display:flex;gap:3px;flex:none}
+.dh.prep .go .dd i{width:7px;height:7px;transform:rotate(45deg)}
+.dh.prep .go .dd .h{background:var(--hope)}
+.dh.prep .go .dd .f{background:var(--fear)}
+.dh.prep .go:hover .dd .h{background:#14161a}
+.dh.prep .go:hover .dd .f{background:rgba(20,22,26,.55)}
+
+/* ── the reaction, beside the roll ─────────────────────────────────
+   The weapon row's asymmetry, and for a stronger reason than it had there.
+   Attack is gold-edged and carries the two diamonds while damage is plain,
+   which says *sequence*. Here the same treatment says what the two buttons
+   actually differ by: a reaction rolls the same two dice and then throws
+   the duality away — no Hope, no Fear, no GM move — so the button that
+   hands nothing over is the button with no Hope and no Fear drawn on it,
+   and it does not go gold when you reach for it either. Gold is the
+   currency this one cannot pay.
+
+   Secondary, not disabled. It is the right button several times a session,
+   and quiet is not the same as discouraged. */
+.dh.prep .go.rx{flex:none;justify-content:center;background:var(--sunk);color:var(--ink-3);
+  box-shadow:inset 1px 0 0 var(--line)}
+.dh.prep .go.rx:hover{background:var(--sunk-2);color:var(--ink)}
+.dh.prep.fear .go.rx:hover{background:var(--sunk-2);color:var(--ink)}
+
+.dh.prep .esc{flex:none;border:0;cursor:pointer;padding:10px 11px;background:var(--sunk);
+  color:var(--ink-4);font:700 8px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;transition:color .13s,background .13s;
+  box-shadow:inset 1px 0 0 var(--line)}
+.dh.prep .esc:hover{background:var(--sunk-2);color:var(--ink-2)}
+
+/* ── the empty state ───────────────────────────────────────────────
+   A level-1 character with no Experiences and nothing granting advantage
+   gets a popover with one line in it and a button. That is the design
+   working, not the design failing — and the line says what would be here,
+   so the surface is never a mystery about its own purpose. */
+.dh.prep .nil{font:400 10.5px/1.45 var(--f-ui);color:var(--ink-4);margin:0}
+
+@media (prefers-reduced-motion:reduce){
+  .dh.prep,.dh.prep *{animation:none !important;transition:none !important}}

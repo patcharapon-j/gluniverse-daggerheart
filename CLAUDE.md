@@ -52,13 +52,13 @@ furniture. `.tabs button` took the icon font off all thirteen sidebar tabs.
 
 Two consequences worth knowing:
 
-- Anything we draw **outside** a `.dh` root needs the class itself. Two do:
-  the swap's drag proxy and the context menu, both on `<body>` so no scroller
-  can clip them. Both wear `dh`, and the port rewrites `.dragproxy` →
-  `.dh.dragproxy` and `.ctxm` → `.dh.ctxm`. Note it rewrites the *class*, not
-  just the root selector, so descendants work too: `.ctxm .mi` has to become
-  `.dh.ctxm .mi`, and `.dh .ctxm .mi` — what the scoper would have written —
-  matches nothing.
+- Anything we draw **outside** a `.dh` root needs the class itself. Three do:
+  the swap's drag proxy, the context menu and the roll popover, all on
+  `<body>` so no scroller can clip them. All three wear `dh`, and the port
+  rewrites `.dragproxy` → `.dh.dragproxy`, `.ctxm` → `.dh.ctxm` and `.prep` →
+  `.dh.prep`. Note it rewrites the *class*, not just the root selector, so
+  descendants work too: `.ctxm .mi` has to become `.dh.ctxm .mi`, and
+  `.dh .ctxm .mi` — what the scoper would have written — matches nothing.
 - Scoping does **not** help when two of *our own* sheets collide, because both
   are inside `.dh`. That is a name clash in the design system and is fixed in
   `design/`: `.die.win` became `.die.lit` (it was taking `.win`, the sheet
@@ -178,6 +178,41 @@ up and quietly do nothing when there is nothing to draw.
 The vault's own rows carry `data-swap` as well and are excluded from the
 native drag — they already drag on pointer events, and a browser drag
 starting underneath takes the gesture away mid-swap.
+
+## Rolling
+
+Every roll on the character sheet goes through **the roll popover**
+(`design/prep.js` → `ui/prep.js`), which opens on the click that used to
+roll. It is the only surface in this system that is a sentence you are still
+composing rather than a record you edit or a result you read, and it exists
+because four things a roll can carry had nowhere to be said: advantage and
+its sources, a flat modifier, the Experiences you are bringing in, and the
+Hope they cost.
+
+The engine never needed changing. `rollDuality` has taken `advantage` as a
+signed count of d6 and `mods` as labelled terms since it was written, and
+`rollTrait`/`rollAttack` have taken `experiences` on top; nothing had ever
+passed them. `prep()` resolves to exactly that object, or `null` on every way
+out — and every way out is free.
+
+**The empty state is the common state.** A level-1 character has no
+Experiences and nothing granting advantage, and they meet this twice a minute
+for an hour. So it is roll-ready the frame it opens, Enter works before you
+have touched anything, and it is four lines tall. A popover slower than the
+click it replaced would be a regression no capability pays for.
+
+**Experiences now cost Hope, and they always claimed to.** `actions.ts`
+stamps every Experience term `spent: true` — that is what draws it in gold,
+the currency that paid — and nothing ever called `spendHope`. `payFor` charges
+before the dice and refuses the roll if the purse is short, because a payment
+that landed on the result would let you read the outcome and then discover you
+could not afford the roll that produced it. The GM's side is `payFearFor`, and
+Fear is a world setting rather than an actor field, which is why it is spent
+in `actions.ts` rather than through a document method.
+
+Difficulty stays out. The engine takes it and the card draws it, but the
+player usually does not know it, so it remains the GM's to set and the card
+goes on honestly saying there was no target number.
 
 ## Chat
 

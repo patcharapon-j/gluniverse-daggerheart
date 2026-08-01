@@ -35,6 +35,7 @@
   import { CARD, fit } from "../ui/card.js";
   import { closePeeks, peeks } from "../ui/peek.js";
   import { menu } from "../ui/menu.js";
+  import { prep } from "../ui/prep.js";
   import { cardOf, loadSigils, type CardOptions, type Sigils } from "./cards.ts";
   import { postCard } from "./post-card.ts";
   import Marks from "./parts/Marks.svelte";
@@ -522,6 +523,63 @@
     ),
   );
 
+  /* ── rolling ────────────────────────────────────────────────────────
+     Every roll on this sheet goes through the popover, and the popover
+     opens on the click that used to roll. That is a tax on the most
+     frequent gesture in the game, paid so that the four things a roll can
+     carry — advantage and its sources, a modifier, the Experiences you are
+     bringing in, and the Hope they cost — have somewhere to be said. They
+     have been arguments of `rollTrait`/`rollAttack` since those were
+     written; nothing had ever passed them.
+
+     `prep` resolves null on every way out, and every way out is free. The
+     Hope is charged in `actions.ts`, not here, because the popover only
+     ever *proposes* a roll — the sheet is not where money moves. */
+  const purse = $derived(sys.resources?.hope?.value ?? 0);
+  const xpList = $derived(
+    (sys.experiences ?? []).map((x: any) => ({ name: x.name, modifier: x.modifier })),
+  );
+
+  async function askTrait(event: MouseEvent, trait: Trait, reaction: boolean | "only" = true) {
+    const o = await prep(event.currentTarget as Element, {
+      kind: reaction === "only" ? "reaction roll" : `${traitLabel(trait).toLowerCase()} roll`,
+      label: traitLabel(trait),
+      base: (doc as any).traitMod(trait),
+      experiences: xpList,
+      purse,
+      reaction,
+    });
+    if (!o) return;
+    await rollTrait(doc, trait, {
+      advantage: o.advantage,
+      experiences: o.experiences,
+      extra: o.extra,
+      reaction: o.reaction,
+    });
+  }
+
+  /* An attack is an action by definition, so the reaction button is not
+     offered here — a weapon you swing in response to something is still a
+     reaction roll made with the trait, and that is the trait cell's job. */
+  async function askAttack(event: MouseEvent, weaponId: string) {
+    const weapon = item(weaponId);
+    const trait = (weapon?.system?.trait ?? "agility") as Trait;
+    const o = await prep(event.currentTarget as Element, {
+      kind: "attack roll",
+      label: weapon?.name ?? "Attack",
+      base: (doc as any).traitMod(trait),
+      experiences: xpList,
+      purse,
+      reaction: false,
+    });
+    if (!o) return;
+    await rollAttack(doc, weapon, {
+      advantage: o.advantage,
+      experiences: o.experiences,
+      extra: o.extra,
+    });
+  }
+
   function onCardClick(event: MouseEvent) {
     const t = event.target as HTMLElement;
     // Anything that is its own control keeps its own click. A card row is
@@ -935,7 +993,7 @@
                 class="crest ev"
                 type="button"
                 title="Evasion"
-                onclick={() => rollTrait(doc, "agility", { reaction: true })}
+                onclick={(e) => askTrait(e, "agility", "only")}
               >
                 <svg viewBox="0 0 64 66" aria-hidden="true">
                   <path class="gh f" d={ARCH_D} transform="translate(-11.5 0)" />
@@ -1035,15 +1093,17 @@
           <div class="pnl" style="padding:0;border:0">
             <div class="k">Experience</div>
             <div class="xp">
+              <!-- Not a button any more. This row used to roll *Instinct*,
+                   hardcoded, whatever the Experience was — an Experience is
+                   not a trait and does not imply one. It is brought into a
+                   roll from the roll popover, alongside the trait you
+                   actually meant, which is also the only place the Hope it
+                   costs can be taken. The row is here to be read while you
+                   decide, which is why it sits six pixels from the Hope. -->
               {#each sys.experiences ?? [] as x, i (i)}
-                <button
-                  class="r"
-                  type="button"
-                  onclick={() =>
-                    rollTrait(doc, "instinct", { experiences: [{ name: x.name, modifier: x.modifier }] })}
-                >
+                <div class="r" title="Bring this into a roll from the roll popover.">
                   <b>{x.name || "—"}</b><em>{sign(x.modifier)}</em>
-                </button>
+                </div>
               {:else}
                 <p class="ach">No Experiences yet.</p>
               {/each}
@@ -1098,7 +1158,7 @@
             title={sys.spellcastTrait === t
               ? "Spellcast — your subclass casts with this trait"
               : undefined}
-            onclick={() => rollTrait(doc, t as Trait)}
+            onclick={(e) => askTrait(e, t as Trait)}
           >
             <span class="k">{traitLabel(t)}</span>
             <span class="v">{sign(sys.traits?.[t]?.value ?? 0)}</span>
@@ -1157,7 +1217,7 @@
                       class="go"
                       type="button"
                       title="Attack roll — 2d12 + trait"
-                      onclick={() => rollAttack(doc, item((w as any).id))}
+                      onclick={(e) => askAttack(e, (w as any).id)}
                     >
                       <span class="dd"><i class="h"></i><i class="f"></i></span>
                       <em>{sign(sys.traits?.[(w as any).system.trait]?.value ?? 0)}</em>
