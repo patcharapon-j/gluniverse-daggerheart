@@ -1,11 +1,14 @@
 /**
  * The chat plate, once it is in the log.
  *
- * Two jobs: play the arrival on a message that has just landed, and wire the
- * claim row. The buttons are deliberately not fired automatically — a roll
- * *offers* a Hope, and the player takes it. The one exception is the GM's
- * Fear, which is stated on the player's card and applied on the GM's client
- * because only a GM may write the pool.
+ * Three jobs: apply the GM's Fear when a Fear roll is created, play the
+ * arrival on a message that has just landed, and wire the claim row.
+ *
+ * The buttons are deliberately not fired automatically — a roll *offers* a
+ * Hope, and the player takes it. The one exception is the GM's Fear, which
+ * is stated on the player's card and applied on the GM's client because only
+ * a GM may write the pool. That one hangs off creation rather than off
+ * render; see {@link applyFear} for why it has to.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -20,19 +23,6 @@ import { play } from "./arrival.ts";
 
 /** When each message was first announced on this client. */
 const played = new Map<string, number>();
-
-/**
- * The whole arrival, from the first tumble to the last thing that moves.
- *
- * `arrival.ts` tumbles for TUMBLE and then lands, and the longest thing the
- * landing starts is the sweep — 640ms after a 40ms delay, which puts the end
- * of the card at about 1090ms. This was 900, sized for a landing whose
- * longest part was the numeral; the sweep became the *reveal* and got longer,
- * and nothing here noticed. Writing to a message re-renders it, and a
- * re-render replaces the element mid-flight, so the one roll that writes to
- * its own message was also the one roll whose sweep stopped half way across.
- */
-const ARRIVAL = 1200;
 
 /** How old a message may be and still count as having just landed. */
 const FRESH = 5000;
@@ -53,8 +43,8 @@ const FRESH = 5000;
  * skip the tumble — it would flash grey and snap to the answer.
  *
  * Wide enough for a slow frame between the two, and far short of anything
- * that writes to a message later: the GM's Fear lands at {@link ARRIVAL},
- * and a claim button is pressed by a hand.
+ * that writes to a message later — which now means only the claim buttons,
+ * and those are pressed by a hand.
  */
 const TWIN = 250;
 
@@ -81,6 +71,8 @@ const arriving = (message: any): boolean => {
 };
 
 export function registerChat(): void {
+  Hooks.on("createChatMessage", applyFear);
+
   Hooks.on("renderChatMessageHTML", (message: any, html: HTMLElement) => {
     const host = html.querySelector<HTMLElement>(".dh-card");
     if (!host) return;
@@ -100,6 +92,42 @@ export function registerChat(): void {
     if (arriving(message)) play(plate);
     else plate.classList.add("land");
   });
+}
+
+/**
+ * "GM gains a Fear" applies itself, once, on one client — at creation.
+ *
+ * It used to apply on *render*, on a timer long enough for the arrival to
+ * have finished. That was wrong in a way no timer can fix. Writing to a
+ * message re-renders it, a re-render replaces the very element the arrival
+ * is animating, and the delay was a guess about when the card would be done
+ * being a card. The guess held on a bare Foundry and broke the moment
+ * anything else had an opinion about when a message is *shown*: Dice So Nice
+ * keeps the whole `<li>` at `display:none` for four or five seconds while
+ * its own dice roll, and an element with no box runs no animations at all.
+ * So the arrival was spent inside a hidden subtree, the element was replaced
+ * 1.2s in, and what DSN eventually revealed was the replacement — settled,
+ * unswept, with none of the arrival left on it. Fear was the only outcome
+ * this happened to, because it is the only one that writes to itself.
+ *
+ * Creation is the honest moment anyway. The Fear is a fact about the roll,
+ * not about anyone having looked at it, and `createChatMessage` fires once
+ * per client for a genuinely new message and never on a reload — which is
+ * the whole of what the `fearApplied` flag was for. That flag is gone with
+ * it: nothing was ever drawn from it, `.pl-b.done` has no rule in
+ * `plate.css`, so it cost an animation to record something invisible.
+ *
+ * Gating on the active GM makes this one client rather than every GM at the
+ * table. The old code only checked `isGM`, so two GMs meant two Fear.
+ */
+function applyFear(message: any): void {
+  if (game.users?.activeGM !== game.user) return;
+  if (message.getFlag(SYSTEM_ID, "kind") !== "duality") return;
+  const plate: any = message.getFlag(SYSTEM_ID, "plate");
+  // The same three conditions that put the claim on the card — see `claims`
+  // in `plate.ts`. A reaction hands nothing over, and a critical is Hope.
+  if (!plate || plate.rxn || plate.out !== "fear") return;
+  void setFear(getFear() + 1);
 }
 
 /**
@@ -167,34 +195,6 @@ function bindActions(message: any, plate: HTMLElement): void {
       await runAction(act, { message, actor, el });
     });
   }
-
-  /* "GM gains a Fear" applies itself once, on the GM's client only.
-     After the arrival, though, and that delay is load-bearing rather than
-     polite. Writing the flag updates the message, updating the message
-     re-renders it, and re-rendering replaces the very element the tumble is
-     animating — so the dice froze, `played` already held the id, and the
-     replacement got `.land` with nothing to land from. That is the whole of
-     "a roll with Fear does not animate": it was the only outcome that wrote
-     to its own message while its own animation was still running. */
-  const fearClaim = plate.querySelector<HTMLElement>('[data-dh-act="gain-fear"]');
-  if (!fearClaim) return;
-  if (message.getFlag(SYSTEM_ID, "fearApplied")) {
-    fearClaim.classList.add("done");
-    return;
-  }
-  if (!game.user?.isGM) return;
-  setTimeout(
-    () => {
-      void (async () => {
-        if (message.getFlag(SYSTEM_ID, "fearApplied")) return;
-        await setFear(getFear() + 1);
-        await message.setFlag(SYSTEM_ID, "fearApplied", true);
-      })();
-    },
-    // Past the tumble and its landing, so the card is finished being a card
-    // before it is a database write.
-    ARRIVAL,
-  );
 }
 
 async function resolveActor(message: any): Promise<any> {

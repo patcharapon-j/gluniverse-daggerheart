@@ -283,17 +283,26 @@ runs the arrival never wears the veil. See the veil block at the foot of
 both.** `land` means *settled* and is worn by every re-render of the log;
 `play.land` means *this client just watched it land*. Foundry re-renders a
 message whenever anything is written to it, so a rule keyed on `land` alone
-replays each time — and exactly one outcome writes to its own message, the
-GM's Fear at `ARRIVAL`, which is why Fear was the one roll that landed twice.
-The sweep already knew this; the dice, verdict, numeral and claim row did not.
-It costs nothing to qualify because every arrival keyframe ends on the
-element's natural value, so a re-render is handed the end state rather than
-travelling to it.
+replays each time. It costs nothing to qualify because every arrival keyframe
+ends on the element's natural value, so a re-render is handed the end state
+rather than travelling to it.
 
-`ARRIVAL` is that write's delay, and it is measured against **the longest
-thing the landing starts** — currently the sweep, at 640ms after a 40ms delay
-on top of `TUMBLE`. A re-render replaces the element, so a write that lands
-inside the arrival cuts it off mid-flight.
+**Nothing writes to a message while it is arriving, and nothing may.** A
+re-render replaces the element, so a write that lands inside the arrival
+takes the animation with it. The GM's Fear used to apply itself from the
+card on a delay sized to outlast the landing — which worked until Dice So
+Nice, whose module holds the whole `<li>` at `display:none` for four or five
+seconds while its own dice roll. An element with no box runs no animations,
+so the arrival was spent unseen and then destroyed, and what DSN revealed
+was a settled, unswept replacement. Fear was the only outcome it happened to,
+because it was the only one that wrote to itself.
+
+No delay fixes that, because **when a message is shown is not ours to know**.
+So the Fear applies at `createChatMessage` instead — see `applyFear` in
+`dice/chat.ts` — which fires once per client for a genuinely new message and
+never on a reload, and is gated on `game.users.activeGM` so a second GM at
+the table does not gain a second Fear. Anything else that wants to record
+something about a roll belongs there too, not on a timer.
 
 ## Not done yet
 

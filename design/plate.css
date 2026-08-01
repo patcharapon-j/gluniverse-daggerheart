@@ -801,10 +801,13 @@
    every re-render of the log; `.play.land` is the moment of landing, and
    only a plate this client has just watched arrive has both.
 
-   Foundry re-renders a message whenever anything is written to it, and
-   exactly one outcome writes to its own message — the GM's Fear, applied
-   from the card at {@link ARRIVAL} in `dice/chat.ts`. So Fear, and only
-   Fear, landed a second time a moment after it had landed.
+   Foundry re-renders a message whenever anything is written to it — a claim
+   taken, a flag set — and a re-render replaces the element outright. It once
+   also covered the GM's Fear, which applied itself from the card on a timer
+   and so re-rendered the plate a second after it landed; that now happens at
+   creation instead, because no timer can know when a message will actually
+   be *shown* and one that guesses wrong spends the arrival on a hidden
+   element. See `applyFear` in `dice/chat.ts`.
 
    The qualification costs nothing because every keyframe below ends on the
    element's own natural value: scale(1), opacity 1, no transform, a clip
