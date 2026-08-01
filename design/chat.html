@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/chat.css">
+<style>
+/* ── the mock sidebar ──────────────────────────────────────────────
+   Foundry's chat log, near enough: a dark rail, a speaker line the app
+   draws itself, and 300px of content — which is the default dock width
+   and therefore the width this component actually has to work at. */
+.docks{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
+.dock{background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line);
+  padding:12px;display:flex;flex-direction:column;gap:12px}
+.dock.w300{width:324px} .dock.w380{width:404px}
+.dock > b{font:700 8.5px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--frame-tx-3);padding:2px 1px 0}
+.fm{display:flex;flex-direction:column;gap:5px}
+.fm > .sp{display:flex;align-items:baseline;gap:7px;padding:0 2px}
+.fm > .sp b{font:600 11px/1 var(--f-ui);color:var(--frame-tx)}
+.fm > .sp s{text-decoration:none;margin-left:auto;font:400 9.5px/1 var(--f-mono);color:var(--frame-tx-3)}
+
+.cols{display:grid;grid-template-columns:repeat(var(--cols,3),1fr);
+  grid-template-rows:auto auto auto;gap:22px;align-items:start}
+.col{display:grid;grid-row:span 3;grid-template-rows:subgrid;gap:0}
+.col > header{display:flex;align-items:baseline;gap:8px;border-bottom:1px solid #2b3038;
+  padding-bottom:8px;margin-bottom:11px;align-self:end}
+.col > header h3{margin:0;font:700 10.5px/1 var(--f-mono);letter-spacing:.18em;
+  text-transform:uppercase;color:#e6eaef}
+.col > header em{font-style:normal;font:700 9px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--hope);margin-left:auto}
+.col > p{font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 13px}
+.col > p b{color:#c3cbd5;font-weight:600}
+.col .stage{background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line);padding:12px}
+
+/* the five outcomes, and the three kinds */
+.five{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;align-items:start}
+.five > div > b{display:block;font:700 8.5px/1 var(--f-mono);letter-spacing:.17em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 9px}
+
+/* the axes diagram */
+.axes{display:grid;grid-template-columns:auto repeat(2,1fr);gap:2px;max-width:560px;
+  font:600 10px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
+.axes > *{padding:13px 12px;background:var(--paper);color:var(--ink-2)}
+.axes .hd{background:transparent;color:var(--ink-3);font-size:8.5px;letter-spacing:.16em}
+.axes .c{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.axes .c span{font:700 10.5px/1.2 var(--f-mono);letter-spacing:.09em}
+.axes .c s{text-decoration:none;font:400 9.5px/1.3 var(--f-ui);letter-spacing:0;
+  text-transform:none;color:var(--ink-3)}
+.axes .h{box-shadow:inset 2px 0 0 var(--hope)} .axes .h span{color:var(--hope-tx)}
+.axes .f{box-shadow:inset 2px 0 0 var(--fear)} .axes .f span{color:var(--fear-tx)}
+.axes .k{box-shadow:inset 2px 0 0 var(--line-2)} .axes .k span{color:var(--ink)}
+
+.btn{border:0;cursor:pointer;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);padding:9px 14px;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .14s,color .14s}
+.btn:hover{background:var(--hope);color:#14161a;box-shadow:none}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>chat</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html" class="on">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE PROBLEM</span>Two axes, and the sheet only knows one of them</h2>
+<p class="note">Every action roll resolves on two axes at once, and they are independent.
+<b>Hope or Fear</b> is decided by the dice against each other — always knowable, needs nothing from anyone,
+and it is the axis that changes table state: you gain a Hope, or the GM does. <b>Success or failure</b> is
+decided by the total against a Difficulty — which the rules explicitly let the GM keep to themselves, and
+which does not exist at all until a target is picked.</p>
+<p class="note">So the card can <i>always</i> say “15, with Fear” and can only <i>sometimes</i> say “and that
+missed”. Which is the whole design: <b>this card is authoritative about arithmetic and tentative about
+fiction.</b> It states what the dice did, it states what is owed, and it says <code>vs ?</code> rather than
+guessing at a verdict it was never given. The only place the two axes touch is the critical — equal faces
+succeed regardless of the total.</p>
+<div class="axes">
+  <span class="hd"></span><span class="hd">total ≥ difficulty</span><span class="hd">total &lt; difficulty</span>
+  <span class="hd" style="align-self:center">Hope die high</span>
+  <span class="c h"><span>Success with Hope</span><s>gain a Hope</s></span>
+  <span class="c h"><span>Failure with Hope</span><s>gain a Hope anyway</s></span>
+  <span class="hd" style="align-self:center">Fear die high</span>
+  <span class="c f"><span>Success with Fear</span><s>the GM gains a Fear</s></span>
+  <span class="c f"><span>Failure with Fear</span><s>the GM gains a Fear</s></span>
+  <span class="hd" style="align-self:center">equal faces</span>
+  <span class="c k" style="grid-column:span 2"><span>Critical success</span>
+    <s>succeeds either way — gain a Hope, clear a Stress, and an attack deals extra damage</s></span>
+</div>
+
+<h2><span>// THE OPTIONS</span>How much authority does the card have?</h2>
+<p class="note">Same roll, three answers. The dice are identical in all three columns; what differs is how
+much the card is willing to conclude and how much it does on your behalf.</p>
+<div class="cols" id="opts"></div>
+
+<h2><span>// AT WIDTH</span>A log, at the dock width it actually gets</h2>
+<p class="note">Foundry's sidebar is <b>300px</b> by default. That is the real constraint, and it is why this
+is the one component in the system not sized in <code>cqw</code> — a message whose type grows when you drag
+the dock wider reads as a different component at a different width. Extra width goes to the line, not the
+size. Both docks below hold the same six messages.</p>
+<div class="tools">
+  <button class="btn" id="replay">replay the log</button>
+  <button class="btn" id="roll">roll a fresh one</button>
+</div>
+<div class="docks">
+  <div class="dock w300"><b>300 px · default</b><div id="log300"></div></div>
+  <div class="dock w380"><b>380 px · dragged out</b><div id="log380"></div></div>
+</div>
+
+<h2><span>// EVERY STATE</span>Five outcomes, three kinds, and the awkward ones</h2>
+<p class="note">The five action-roll results, plus the three cases that are not action rolls at all: a
+<b>reaction roll</b>, which generates neither Hope nor Fear and so gets neither colour; a <b>damage roll</b>,
+which has no axes; and a <b>critical damage roll</b>, which starts from the maximum the dice could roll and
+then rolls them anyway — the rule most often got wrong at the table, and the best argument for the card
+showing its arithmetic.</p>
+<div class="five" id="five"></div>
+
+<script type="module">
+import { action, damage, MSG, land } from '/design/chat.js';
+
+/* One roll, forced to each outcome, so the three option columns and the
+   five state cards are comparing presentation rather than luck. */
+const fix = (r, o) => {
+  const m = r.mods.reduce((a, x) => a + x.v, 0);
+  const [h, f] = o === 'crit' ? [8, 8]
+    : o === 'sh' ? [10, 6] : o === 'sf' ? [6, 10]
+    : o === 'fh' ? [4, 2]  : [2, 4];
+  return {...r, h, f, total: h + f + m,
+          out: o === 'crit' ? 'crit' : (h > f ? 'hope' : h < f ? 'fear' : 'crit'),
+          crit: h === f, hit: r.dc == null ? null : (h === f || h + f + m >= r.dc)};
+};
+
+const TABBY = {who:'Tabby', label:'Agility Roll · parapet run',
+  mods:[{k:'Agility', v:2}, {k:'Wildborne tracker', v:2, spent:true}], dc:15};
+
+/* ── the three options ────────────────────────────────────────────*/
+const base = fix(action(TABBY), 'sf');
+const OPTS = [
+  {m:'a', t:'A · announce', tag:'a die tray',
+   p:`Dice, total, side. <b>No verdict and no claims</b> — the card reports and the table resolves,
+      which is exactly how the game is played in person. The cost is that the Hope still has to be
+      marked by hand, and it is the most-forgotten piece of bookkeeping in Daggerheart; and a log
+      scrolled back through looks identical whether you hit or missed.`},
+  {m:'b', t:'B · announce and offer', tag:'recommended',
+   p:`Adds the verdict <i>when a Difficulty is known</i> and turns each consequence into an
+      <b>unclaimed button</b>. Nothing is applied that nobody pressed, but nothing is forgotten either —
+      and because a taken claim stays on the card as a receipt, the log shows what was actually
+      collected rather than what was theoretically due.`},
+  {m:'c', t:'C · announce and apply', tag:'no undo',
+   p:`Everything automatic: the Hope pip marked, the GM's Fear incremented, the damage rolled and
+      applied. Fastest when it is right. But a Daggerheart roll is re-negotiated more often than a d20
+      one — wrong trait, an Experience declared late, a Difficulty the GM revises — and each of those
+      is now a state change on two different actors that somebody has to walk back by hand.`},
+];
+document.getElementById('opts').innerHTML = OPTS.map(o => `
+  <div class="col">
+    <header><h3>${o.t}</h3><em>${o.tag}</em></header>
+    <p>${o.p}</p>
+    <div class="stage">${MSG(base, o.m, {next:'Roll damage · 2d8+3'})}</div>
+  </div>`).join('');
+
+/* ── the log ──────────────────────────────────────────────────────*/
+const LOG = () => {
+  const atk = fix(action({who:'Tabby', label:'Longsword · Bloodhusk', mods:[{k:'Agility', v:2}], dc:13}), 'sh');
+  return [
+    {sp:'Tabby',    r: atk, next:'Roll damage · 2d8+3'},
+    {sp:'Tabby',    r: damage({who:'Tabby', label:'Longsword damage', prof:2, die:8, bonus:3})},
+    {sp:'Shepherd', r: fix(action({who:'Shepherd', label:'Instinct Roll · a faster route',
+                      mods:[{k:'Instinct', v:1}], dc:null}), 'fh')},
+    {sp:'Rune',     r: fix(action({who:'Rune', label:'Spellcast Roll · reverse the collapse',
+                      mods:[{k:'Knowledge', v:3}], dc:16}), 'sf')},
+    {sp:'Lavelle',  r: action({who:'Lavelle', label:'Agility Reaction Roll', kind:'reaction',
+                      mods:[{k:'Agility', v:3}], dc:14})},
+    {sp:'Tabby',    r: fix(action({who:'Tabby', label:'Longsword · Bloodhusk',
+                      mods:[{k:'Agility', v:2}], dc:13}), 'crit'), next:'Roll damage · max 2d8 + 2d8+3'},
+  ];
+};
+
+let log = LOG();
+const T = ['19:04', '19:04', '19:06', '19:07', '19:09', '19:11'];
+const paint = () => {
+  const html = log.map((m, i) => `
+    <div class="fm"><div class="sp"><b>${m.sp}</b><s>${T[i]}</s></div>
+      ${MSG(m.r, 'b', {next: m.next})}</div>`).join('');
+  for(const id of ['log300', 'log380']) document.getElementById(id).innerHTML = html;
+};
+const replay = () => {
+  paint();
+  /* Staggered, because six cards landing at once is a flash rather than a
+     log filling up — and the log filling up is the thing being tested. */
+  for(const id of ['log300', 'log380'])
+    [...document.getElementById(id).querySelectorAll('.dhm')].forEach((el, i) =>
+      setTimeout(() => land(el, log[i].r), i * 150));
+};
+paint();
+document.getElementById('replay').addEventListener('click', replay);
+document.getElementById('roll').addEventListener('click', () => {
+  const r = action({who:'Tabby', label:'Longsword · Bloodhusk',
+    mods:[{k:'Agility', v:2}], dc:13, adv: Math.random() < .4 ? 1 : null});
+  log = [...log.slice(1), {sp:'Tabby', r, next: r.hit ? 'Roll damage · 2d8+3' : null}];
+  paint();
+  for(const id of ['log300', 'log380']){
+    const els = [...document.getElementById(id).querySelectorAll('.dhm')];
+    land(els[els.length - 1], r);
+  }
+});
+
+/* A claim, taken. The receipt is the point — see chat.css. It stops being a
+   claim the moment it is taken: the attribute goes, not just the styling,
+   or a second click stacks a second tick on a Hope you only gained once. */
+document.addEventListener('click', e => {
+  const b = e.target.closest('.dhm-b[data-claim]');
+  if(!b) return;
+  b.removeAttribute('data-claim');
+  b.disabled = true;
+  b.classList.add('done');
+  b.insertAdjacentHTML('beforeend', '<em>✓</em>');
+});
+
+/* ── every state ──────────────────────────────────────────────────*/
+const STATES = [
+  ['Critical success',  fix(action(TABBY), 'crit'), 'Roll damage · max 2d8 + 2d8+3'],
+  ['Success with Hope', fix(action(TABBY), 'sh'),   'Roll damage · 2d8+3'],
+  ['Success with Fear', fix(action(TABBY), 'sf'),   'Roll damage · 2d8+3'],
+  ['Failure with Hope', fix(action(TABBY), 'fh'),   null],
+  ['Failure with Fear', fix(action(TABBY), 'ff'),   null],
+  ['Difficulty withheld', fix(action({...TABBY, dc:null}), 'sf'), null],
+  ['With advantage',    action({...TABBY, adv:1}),  'Roll damage · 2d8+3'],
+  ['With disadvantage', action({...TABBY, adv:-1}), null],
+  ['Reaction roll · no Hope, no Fear',
+    action({who:'Lavelle', label:'Agility Reaction Roll', kind:'reaction',
+            mods:[{k:'Agility', v:3}], dc:14}), null],
+  ['Damage', damage({who:'Tabby', label:'Longsword damage', prof:2, die:8, bonus:3}), null],
+  ['Critical damage · max, then rolled',
+    damage({who:'Tabby', label:'Longsword damage', prof:2, die:8, bonus:3, crit:true}), null],
+  ['Damage · six dice at Proficiency 6',
+    damage({who:'Tabby', label:'Greataxe damage', prof:6, die:10, bonus:5, dtype:'mag'}), null],
+  /* The widest this card ever gets: six maximised dice and six rolled ones,
+     which is why the dice row wraps. */
+  ['Critical damage at Proficiency 6 · the worst case',
+    damage({who:'Tabby', label:'Greataxe damage', prof:6, die:10, bonus:5, crit:true}), null],
+];
+document.getElementById('five').innerHTML = STATES.map(([t, r, n]) =>
+  `<div><b>${t}</b>${MSG(r, 'b', {next:n})}</div>`).join('');
+
+document.getElementById('lt').addEventListener('change',
+  e => document.documentElement.classList.toggle('light', e.target.checked));
+</script>
+</div>
+</body>
+</html>

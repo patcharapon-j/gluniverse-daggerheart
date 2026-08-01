@@ -1,0 +1,16 @@
+<!-- Ranger: a track. Bone and Sage — movement and the wild — and the obvious
+     draw is an arrowhead, which is exactly what primary.svg already is. A
+     class mark that reads as a weapon slot is worse than no class mark, so
+     the class takes the other half of its identity: the ground it reads and
+     the companion that walks it.
+     Four shapes where Community has three and Ancestry two, so the set still
+     discriminates by count once silhouette has gone. The toes are large and
+     the pad is deep — a first pass with small toes over a shallow pad read as
+     three dots above a dash, which is a UI affordance and not a footprint.
+     19-unit gutters, the family's floor. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M34 44 58 26 82 44 82 82 58 100 34 82Z"/>
+  <path d="M101 34 125 16 149 34 149 72 125 90 101 72Z"/>
+  <path d="M168 44 192 26 216 44 216 82 192 100 168 82Z"/>
+  <path d="M66 128 184 128 212 172 182 234 68 234 38 172Z"/>
+</svg>

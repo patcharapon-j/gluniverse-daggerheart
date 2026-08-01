@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Loadout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<style>
+/* ── sheet mock ──
+   Not a design, a ruler. The point is to judge the three densities at the
+   width they will actually be, inside a panel that is actually that tall. */
+.sheets{display:flex;flex-wrap:wrap;gap:26px;align-items:start}
+.sheet{width:var(--pw,368px);flex:none;background:#191c21;border:1px solid #262b32;
+  padding:14px;display:flex;flex-direction:column;gap:12px}
+.sheet > header{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid #2b3038;
+  padding-bottom:9px;margin-bottom:2px}
+/* `.sheet > header h3`, not `.sheet h3` — the card's name is an <h3> too,
+   and the unscoped version turned every peeked card's name light grey */
+.sheet > header h3{font:700 12px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:#e6eaef;margin:0}
+.sheet .ct{font:700 11px/1 var(--f-mono);letter-spacing:.14em;color:var(--hope);margin-left:auto}
+.stack{display:flex;flex-direction:column;gap:8px}
+.stack.tight{gap:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hh{font:700 11px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:#8b939e;margin:6px 0 -2px}
+.px{font:700 11px/1 var(--f-mono);letter-spacing:.12em;color:var(--hope);margin-top:10px}
+.px b{color:#e6eaef;font-weight:700}
+
+/* ── hover peek ──
+   The whole case for the spine is that the card is one gesture away, so
+   the study has to show the gesture, not describe it. The peek is the real
+   CARD, rendered once per row and parked in the layout tree — visibility,
+   not display, or fit() would measure it at zero height. */
+.pk{position:relative}
+.pk .peek{position:absolute;left:calc(100% + 16px);top:50%;width:264px;z-index:40;
+  transform:translateY(-50%) translateX(-8px) scale(.97);transform-origin:left center;
+  visibility:hidden;opacity:0;pointer-events:none;
+  transition:opacity .2s cubic-bezier(.2,.8,.25,1),transform .2s cubic-bezier(.2,.8,.25,1),visibility .2s}
+.pk:hover .peek{visibility:visible;opacity:1;transform:translateY(-50%) translateX(0) scale(1)}
+/* the row it belongs to lifts and lights its own edge while open */
+.pk:hover .spine{transform:translateX(4px)}
+.pk:hover{z-index:41}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>loadout</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html" class="on">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="noart"> remove art</label>
+  <label class="tg"><input type="checkbox" id="rampT" checked> domain ramp</label>
+  <label class="tg">panel <input type="range" id="pw" min="300" max="520" value="368"></label>
+  <b id="stat" style="margin-left:auto"></b>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// Q6 · THE LOADOUT ON THE SHEET</span>Three densities, one panel width</h2>
+<p class="note">A Daggerheart loadout is five active cards over a vault of the rest. The panel that has to
+hold them on a sheet is <b>~368px</b> wide — drag the slider to test other widths, everything here is
+container-query driven and holds its proportions. The question is not which looks best in isolation, it is
+which of these you can <i>use</i>: find a card, read its cost, and know what it does, without opening
+anything. All three are the same component vocabulary — level cap, sigil plate, gold hairline, recall
+chip, tier bar — so whichever wins, a row still reads as the card it opens.</p>
+
+<div class="sheets" id="sheets"></div>
+
+<h2><span>// C′ · THE SPINE IN USE</span>Hover to open the card</h2>
+<p class="note">The spine only works if the card is one gesture away, so here is the gesture. What opens
+is the <b>real card</b> — the same component, the same one that goes to chat, at the size it was designed
+for. Nothing is redrawn for the preview, which is the point of building the sheet family out of the card's
+own parts. The level chip is now min-content wide: it holds a numeral and a mark, and every pixel beyond
+what those two need was a pixel taken off the name.</p>
+<div class="sheets"><div class="sheet">
+  <header><h3>Domain loadout</h3><span class="ct">5 / 5</span></header>
+  <div class="stack tight" id="peeks"></div>
+</div></div>
+
+<h2><span>// D · THE CARD WITH ITS BODY DELETED</span>Minis</h2>
+<p class="note">Same portrait, same corners, same seam, same badge — the description is simply gone, and
+the art takes the space it held. Its <i>proportions</i> are not the card's: with no prose to leave room
+for, the numeral, sigil and name all grow against the width, or a mini at a third of the size is just a
+card you cannot read. Three across is the whole point — two across is taller than the tiles for less
+information. The readout under each panel is the rendered size of the name and the type, because that is
+the trade: the spine compresses <i>layout</i> and keeps text at a fixed useful size, the mini compresses
+<b>everything</b>.</p>
+<div class="sheets" id="minis"></div>
+
+<h2><span>// B · WHAT THE TILE IS ALSO FOR</span>Weapons, armour, items</h2>
+<p class="note">The tile is not only a loadout option — it is the shape you already asked for for
+equipment, which is why its data strip is generic. Tier and spellcast on a subclass, trait / range /
+damage / burden on a weapon: same component, same three cells, no new geometry. Graphite where there is
+no domain, exactly as on the cards.</p>
+<div class="sheets"><div class="sheet" style="--pw:520px;width:520px">
+  <header><h3>Equipment</h3><span class="ct">ACTIVE</span></header>
+  <div class="stack" id="gear"></div>
+</div></div>
+
+</div>
+
+<script type="module">
+import { DOMAINS, KINDS, icon, glyph } from './domains.js';
+import { CARD, fit } from './card.js';
+import { SPINE, TILE, MINI } from './tile.js';
+
+const by = s => DOMAINS.find(d => d.slug === s);
+const [midnight, grace, codex, sage, valor] = await Promise.all(
+  ['midnight','grace','codex','sage','valor'].map(icon));
+
+/* A real Rogue loadout: five cards, two domains, mixed levels and costs —
+   including the two hard cases, a duplicate domain and a grimoire. */
+const LOADOUT = [
+  { d:by('midnight'), sig:midnight, lvl:3, rc:2, type:'SPELL', name:'Rain of Blades', foot:'Midnight',
+    tags:['Spend 1 Hope','Spellcast'],
+    text:'Spend a **Hope** to make a Spellcast Roll and conjure throwing blades that strike out at all targets within Very Close range.' },
+  { d:by('grace'), sig:grace, lvl:1, rc:1, type:'ABILITY', name:'Deft Deceiver', foot:'Grace',
+    text:'Spend a **Hope** to gain Advantage on a roll to deceive or trick someone into believing a lie you tell them.' },
+  { d:by('midnight'), sig:midnight, lvl:2, rc:1, type:'ABILITY', name:'Uncanny Disguise', foot:'Midnight',
+    text:'**Mark a Stress** to don the addressed appearance of any humanoid you can see. You have Advantage on rolls to convincingly maintain it.' },
+  { d:by('codex'), sig:codex, lvl:1, rc:2, type:'GRIMOIRE', name:'Book of Ava', foot:'Codex',
+    feats:[
+      {n:'Power Push', t:'Make a Spellcast Roll against a target within Melee range. On a success, they’re knocked back to Far range and take **d10+2** magic damage using your Proficiency.'},
+      {n:'Tava’s Armor', t:'Spend a **Hope** to give a target you can touch a **+1** bonus to their Armor Score until their next rest.'},
+      {n:'Ice Spike', t:'Make a Spellcast Roll (12) to summon a large ice spike within Far range. On a success, deal **d6** physical damage using your Proficiency.'}] },
+  { d:by('grace'), sig:grace, lvl:4, rc:3, type:'SPELL', name:'Enrapture', foot:'Grace',
+    text:'Make a Spellcast Roll against a target within Close range. On a success, they become temporarily *Enraptured*. While Enraptured, a creature is *Restrained* and can only perceive you.' },
+];
+
+const OPTIONS = [
+  { h:'A · Full cards', c:'ct', n:'grid2',
+    r:i => CARD(i),
+    note:'Two up in this panel is 165px a card, where body text lands at 7px. You can tell them apart by art and colour and you cannot read one of them — which means the density buys nothing the spine does not, at three times the height.' },
+  { h:'B · Tiles', c:'ct', n:'stack',
+    r:i => TILE(i),
+    note:'Name, cost, and the first three lines at a legible size — genuinely useful, and exactly as tall as the two-up card grid for far more readable content. But the loadout still owns the whole sheet before armour, weapons or traits get a row, and the three lines are a truncated paragraph rather than a whole thought.' },
+  { h:'C · Spines', c:'ct', n:'stack tight',
+    r:i => SPINE(i),
+    note:'Half the height of either. Level, sigil, name, domain, recall, tier: everything needed to find a card, nothing needed to read it — and the card is one click away, the same card that goes to chat. The art survives as a crop rather than being bled behind the name, where it would have cost the name more than it gained the row.' },
+];
+
+sheets.innerHTML = OPTIONS.map(o => `<div class="sheet">
+  <header><h3>Domain loadout</h3><span class="ct">5 / 5</span></header>
+  <div class="${o.n}">${LOADOUT.map(o.r).join('')}</div>
+  <div class="px" data-h="${o.h}"></div>
+  <div class="cap"><b>${o.h}</b>${o.note}</div>
+</div>`).join('');
+
+peeks.innerHTML = LOADOUT.map(i =>
+  `<div class="pk">${SPINE(i)}<div class="peek">${CARD(i)}</div></div>`).join('');
+
+const MINIS = [
+  { h:'D1 · Mini, three up', c:'ct', n:'grid3', r:i => MINI(i),
+    note:'The art option. Three across fits five in two rows, and it lands close to the spine stack for height — but everything scales with the card, so the name and the type shrink with it. You find a card here by art and colour, the way you find a card in your hand.' },
+  { h:'D2 · Mini, scrim', c:'ct', n:'grid3', r:i => MINI({...i, scrim:true}),
+    note:'No paper panel at all — the name sits on the art under a gradient, and the whole card is picture. Costs the gold seam, which has nothing to divide once there are not two surfaces. Also puts the name at the mercy of whatever the art is doing behind it.' },
+  { h:'D3 · Mini, two up', c:'ct', n:'grid2', r:i => MINI(i),
+    note:'Legible — name and type at close to spine size — but three rows deep. Taller than the tiles, and the tiles at least tell you what the card does. This is the option the numbers kill.' },
+];
+
+minis.innerHTML = MINIS.map(o => `<div class="sheet">
+  <header><h3>Domain loadout</h3><span class="ct">5 / 5</span></header>
+  <div class="${o.n}">${LOADOUT.map(o.r).join('')}</div>
+  <div class="px"></div>
+  <div class="cap"><b>${o.h}</b>${o.note}</div>
+</div>`).join('');
+
+const gearG = await glyph('gear');
+gear.innerHTML = [
+  TILE({ d:KINDS.gear, sig:gearG, type:'WEAPON', name:'Bloodstained Halberd', foot:'Primary · T2',
+    stats:[{k:'Trait',v:'Strength'},{k:'Range',v:'Melee'},{k:'Damage',v:'d10+3'},{k:'Burden',v:'Two'}],
+    text:'Before you make an attack roll, you can **mark a Stress** to gain a **+1** bonus to your Proficiency for that attack.' }),
+  TILE({ d:KINDS.gear, sig:gearG, type:'ARMOR', name:'Gilded Leather Armor', foot:'Equipped · T1',
+    stats:[{k:'Base',v:'4'},{k:'Major',v:'8'},{k:'Severe',v:'17'},{k:'Slots',v:'3 / 4'}],
+    text:'Gain a **+1** bonus to your Evasion. When you mark your last Armor Slot, gain a **+1** bonus to your Evasion until you next take a rest.' }),
+].join('');
+
+noart.onchange = e => document.body.classList.toggle('noart', e.target.checked);
+rampT.onchange = e => document.body.classList.toggle('ramp', e.target.checked);
+pw.oninput = e => document.documentElement.style.setProperty('--pw', e.target.value+'px');
+pw.dispatchEvent(new Event('input'));
+
+await document.fonts.ready;
+fit();
+
+/* Measured, not asserted. Height is half the argument; the other half is
+   whether the text at that height is text or texture, so the type sizes
+   are read off the rendered page rather than worked out from the cqw. */
+const pt = el => el ? Math.round(parseFloat(getComputedStyle(el).fontSize) * 10) / 10 : 0;
+const measure = () => {
+  for(const px of document.querySelectorAll('.px')){
+    const box = px.previousElementSibling;
+    const first = box.firstElementChild;
+    px.innerHTML =
+      `<b>${Math.round(first.getBoundingClientRect().height)}px</b> A ROW` +
+      ` &nbsp;·&nbsp; <b>${Math.round(box.getBoundingClientRect().height)}px</b> FOR FIVE` +
+      ` &nbsp;·&nbsp; NAME <b>${pt(first.querySelector('.nm'))}px</b>` +
+      ` &nbsp;·&nbsp; TYPE <b>${pt(first.querySelector('.tb em, .meta em, .mi b, .ft .tb'))}px</b>`;
+  }
+};
+measure();
+pw.addEventListener('input', () => requestAnimationFrame(measure));
+stat.textContent = '3 densities · 5 cards';
+</script>
+</body>
+</html>

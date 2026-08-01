@@ -1,0 +1,10 @@
+<!-- Equipment: a chamfered plate with a core. Same geometric family as the
+     ancestry and community glyphs, and chamfered rather than round because
+     the chamfer is the card's own corner language. One evenodd path so the
+     ring reads as a ring and the core as a core at ~14px, where a stroked
+     version would fill in solid. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M74 40H176L210 74V176L176 210H74L40 176V74Z
+                               M92 66H158L184 92V158L158 184H92L66 158V92Z
+                               M125 90 160 125 125 160 90 125Z"/>
+</svg>

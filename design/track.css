@@ -1,0 +1,111 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH TRACKS — damage thresholds, and the marked-slot rows beside them
+   Shared by the armour card, the armour tile and the character sheet.
+   One component, because the thing an armour card promises and the thing
+   the sheet tracks are the same number line; if they were drawn twice
+   they would drift.
+
+   Container-query driven like the rest: every measure is cqw of the
+   track's own width, so the same markup works in a 210px card panel and
+   a 440px sheet column.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ══ DAMAGE THRESHOLDS ══════════════════════════════════════════════
+   A number line, not a stat block. Thresholds are *breakpoints* — the
+   number is the boundary between two zones, not a property of either —
+   so the numerals sit astride the joins on their own plates rather than
+   inside the cells, and every join is a hard vertical gold rule. A
+   diagonal join would have been more Endfield and would have blurred
+   the one thing this component exists to state precisely.
+
+   Zone widths are the real spans: 0→Major and Major→Severe are drawn to
+   scale against each other, so armour with thresholds of 7/15 shows a
+   visibly wider Major band than armour at 8/16. The last zone is
+   unbounded, so it gets a fixed width and an arrow instead of a lie
+   about where it ends. */
+.thr{container-type:inline-size;width:100%}
+
+.thr .hd{display:flex;align-items:baseline;gap:2cqw;margin-bottom:2cqw}
+.thr .hd .k{font:700 2.7cqw/1 var(--f-mono);letter-spacing:.18em;text-indent:.18em;
+  text-transform:uppercase;color:var(--ink-3)}
+.thr .hd .note{margin-left:auto;font:700 2.5cqw/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--hope-tx);white-space:nowrap}
+
+/* Clearance for the pins belongs to the track, not to the header — the
+   tile omits the header and the pins still have to land somewhere. */
+.thr .track{position:relative;display:flex;align-items:stretch;margin-top:9.5cqw}
+.thr .seg{position:relative;flex:1 1 0;min-width:0;min-height:15cqw;
+  display:flex;flex-direction:column;justify-content:space-between;gap:1.6cqw;
+  padding:2.4cqw 2.6cqw 2.6cqw}
+/* the tail zone has no upper bound, so it is not drawn to scale */
+.thr .seg.open{flex:0 0 25%}
+
+/* Severity by weight, not hue. Hue in this system means domain, and damage
+   belongs to no domain — so the escalation runs from the paper's own value
+   away to its opposite, which also survives being printed, screenshotted or
+   colour-blind. Tokenised because that direction reverses with the theme:
+   see --sev-* in tokens.css. */
+.thr .s1{background:var(--sev-1);color:var(--sev-1-tx)}
+.thr .s2{background:var(--sev-2);color:var(--sev-2-tx)}
+.thr .s3{background:var(--sev-3);color:var(--sev-3-tx)}
+.thr .s4{background:var(--sev-4);color:var(--sev-4-tx)}
+/* Massive is the optional rule and the only zone that is a warning rather
+   than a fact: hazard hatching in gold at low strength, no new hue. */
+.thr .s4::after{content:"";position:absolute;inset:0;opacity:.16;pointer-events:none;
+  background:repeating-linear-gradient(-45deg,var(--hope) 0 2px,transparent 2px 7px)}
+
+.thr .seg + .seg::before{content:"";position:absolute;z-index:2;left:0;top:0;bottom:0;
+  width:1.5px;background:var(--hope)}
+.thr .tip{flex:none;width:3.4cqw;align-self:stretch;background:var(--tip,var(--sev-3));
+  clip-path:polygon(0 0,100% 50%,0 100%)}
+
+.thr .lb{font:700 2.5cqw/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thr .hp{display:flex;align-items:baseline;gap:1cqw}
+.thr .hp b{font:700 5.6cqw/1 var(--f-display);letter-spacing:-.03em}
+.thr .hp i{font:700 2.4cqw/1 var(--f-mono);letter-spacing:.1em;font-style:normal;opacity:.72}
+
+/* the breakpoint plate: straddles the join, ticks down onto it in gold */
+.thr .pin{position:absolute;z-index:3;left:0;bottom:calc(100% + 2.2cqw);
+  transform:translateX(-50%);background:var(--ink);color:var(--paper);
+  padding:1.2cqw 2.4cqw 1.1cqw;
+  font:700 4.6cqw/1 var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 1.5cqw),calc(100% - 1.5cqw) 100%,
+                    1.5cqw 100%,0 calc(100% - 1.5cqw))}
+.thr .pin::after{content:"";position:absolute;left:50%;top:100%;width:1.5px;height:2.2cqw;
+  background:var(--hope);transform:translateX(-50%)}
+
+/* ── compact ──
+   For the armour tile, where the bar has to live under a name and over
+   three lines of text. Zones go to a single row: label above value is
+   two lines the tile cannot spare. */
+.thr.sm .hd{margin-bottom:1.6cqw}
+.thr.sm .track{margin-top:7.4cqw}
+.thr.sm .seg{min-height:9cqw;flex-direction:row;align-items:center;justify-content:flex-start;
+  gap:1.4cqw;padding:0 2cqw}
+.thr.sm .hp{margin-left:auto}
+.thr.sm .hp b{font-size:4cqw}
+.thr.sm .hp i{display:none}
+.thr.sm .pin{bottom:calc(100% + 1.7cqw);padding:.9cqw 1.9cqw .8cqw;font-size:3.6cqw}
+.thr.sm .pin::after{height:1.7cqw}
+
+/* ══ SLOT ROWS ══════════════════════════════════════════════════════
+   HP, Stress and Armor Slots are all the same thing: a row of boxes you
+   mark. One component, one geometry — chamfered on the same corner as
+   everything else, filled with ink when marked. */
+.slots{container-type:inline-size;width:100%}
+.slots .hd{display:flex;align-items:baseline;gap:2cqw;margin-bottom:2.4cqw}
+.slots .hd .k{font:700 2.7cqw/1 var(--f-mono);letter-spacing:.18em;text-indent:.18em;
+  text-transform:uppercase;color:var(--ink-3)}
+.slots .hd .n{margin-left:auto;font:700 3.2cqw/1 var(--f-display);color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.slots .row{display:flex;gap:1.4cqw}
+.slots .row i{flex:1 1 0;height:5.4cqw;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 1.5cqw),calc(100% - 1.5cqw) 100%,0 100%);
+  transition:background .16s,box-shadow .16s}
+.slots .row i.on{background:var(--ink);box-shadow:none}
+/* Stress is the one track that is spent rather than suffered, so it marks
+   in the same ink but carries a gold edge — the system's only "you did
+   this on purpose" signal. */
+.slots.stress .row i.on{background:var(--ink-2);box-shadow:inset 0 -2px 0 var(--hope)}

@@ -1,0 +1,67 @@
+{
+  "TYPES": {
+    "Actor": {
+      "character": "Character",
+      "adversary": "Adversary",
+      "environment": "Environment",
+      "companion": "Companion"
+    },
+    "Item": {
+      "ancestry": "Ancestry",
+      "community": "Community",
+      "class": "Class",
+      "subclass": "Subclass",
+      "domainCard": "Domain Card",
+      "weapon": "Weapon",
+      "armor": "Armor",
+      "consumable": "Consumable",
+      "loot": "Loot",
+      "feature": "Feature"
+    }
+  },
+  "DAGGERHEART": {
+    "Trait": {
+      "agility": "Agility",
+      "strength": "Strength",
+      "finesse": "Finesse",
+      "instinct": "Instinct",
+      "presence": "Presence",
+      "knowledge": "Knowledge"
+    },
+    "Severity": {
+      "none": "no damage",
+      "minor": "Minor",
+      "major": "Major",
+      "severe": "Severe",
+      "massive": "Massive"
+    },
+    "Settings": {
+      "Fear": "Fear pool",
+      "Theme": "Sheet theme",
+      "ThemeHint": "Dark is the base. Light changes the substrate under the same palette; the window frame stays dark in both, because the frame is the application and not the sheet.",
+      "DiceSoNice": "3D dice on rolls",
+      "DiceSoNiceHint": "Off by default — the chat card draws its own dice, and two answers to the same question is worse than either."
+    },
+    "Theme": {
+      "Dark": "Dark",
+      "Light": "Light"
+    },
+    "Warning": {
+      "LoadoutFull": "Your loadout already holds {max} cards. Send one to the vault first.",
+      "SecondaryBlocked": "Your primary weapon is Two-Handed — there is no free hand for a secondary.",
+      "NotYours": "That is not your character to spend for.",
+      "AlreadyClaimed": "That has already been taken from this roll.",
+      "NoTarget": "Target a token first.",
+      "NoWeapon": "The weapon this attack was made with is no longer on the sheet."
+    },
+    "Info": {
+      "DamageApplied": "{name} took {severity} damage — {marked} Hit Points marked."
+    },
+    "Copy": "{name} (Copy)",
+    "NewItem": "New {kind}",
+    "Delete": {
+      "Title": "Delete item",
+      "Body": "Delete {name} from this character? This cannot be undone."
+    }
+  }
+}

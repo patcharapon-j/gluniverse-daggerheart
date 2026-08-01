@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Thresholds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/track.css">
+<style>
+.sheets{display:flex;flex-wrap:wrap;gap:26px;align-items:start}
+.sheet{width:var(--pw,400px);flex:none;background:#191c21;border:1px solid #262b32;
+  padding:16px;display:flex;flex-direction:column;gap:14px}
+.sheet > header{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid #2b3038;
+  padding-bottom:10px}
+.sheet > header h3{font:700 12px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:#e6eaef;margin:0}
+.sheet .ct{font:700 11px/1 var(--f-mono);letter-spacing:.14em;color:var(--hope);margin-left:auto}
+/* the thresholds live on paper, like the card body — the sheet's dark
+   chrome is the frame, never the surface data sits on */
+.paper{background:var(--paper);padding:16px 16px 18px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%)}
+.paper + .paper{margin-top:-4px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.lab{font:700 11px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:#8b939e;margin:0 0 10px}
+.widths{display:flex;flex-direction:column;gap:26px}
+.widths > div{background:var(--paper);padding:16px}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>thresholds</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html" class="on">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="noart"> remove art</label>
+  <label class="tg"><input type="checkbox" id="mass"> massive damage rule</label>
+  <b id="stat" style="margin-left:auto"></b>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// A · THE BAR</span>A number line, not a stat block</h2>
+<p class="note">A threshold is a <b>boundary</b>, not a property of either side of it — so the numerals sit
+astride the joins on their own plates rather than inside the cells, and each join is a hard vertical gold
+rule. A diagonal join would have been more Endfield and would have blurred the one thing this component
+exists to state precisely. The bounded zones are drawn <b>to scale against each other</b>: chainmail at
+7/15 has spans of 7 and 8, so its Major band is visibly wider than its Minor — that is the whole reason
+this is a bar and not four numbers in boxes. The last zone has no upper bound, so it gets a fixed width
+and an arrow rather than a lie about where it ends. Severity escalates by <b>weight</b> — from the paper's
+own value away to its opposite — because hue in this system means <i>domain</i> and damage belongs to none.
+Which means the ramp has to <i>reverse</i> with the theme: on white paper Severe is the near-black zone, on
+a dark sheet it is the near-white one. It is the only colour in the system that inverts against the theme
+rather than with it.</p>
+<div class="widths" id="widths"></div>
+
+<h2><span>// B · IN CONTEXT</span>The bar is a sheet component</h2>
+<p class="note">The bar earns its space on the sheet, where the thresholds are a thing you read under
+pressure every time you take a hit. On the card and the tile it does not: those already have a data strip,
+and the bar had to shove aside the description to fit. So they get <b>one cell</b> —
+<code>Thresholds 9 / 20</code> — which is how the rules and every armour table quote them anyway. Splitting
+Major and Severe across two cells was inventing a distinction the game does not make.</p>
+<div class="sheets" id="ctx"></div>
+
+</div>
+
+<script type="module">
+import { KINDS, glyph } from './domains.js';
+import { CARD, fit } from './card.js';
+import { TILE } from './tile.js';
+import { THRESHOLDS, SLOTS } from './track.js';
+
+const gearG = await glyph('gear');
+const state = { massive:false };
+
+const ARMOR = {
+  d:KINDS.gear, sig:gearG, type:'ARMOR', name:'Gilded Leather Armor', foot:'Tier 2',
+  major:9, severe:20,
+  text:'Gain a **+1** bonus to your Evasion. When you mark your last Armor Slot, gain a **+1** bonus to your Evasion until you next take a rest.',
+};
+
+function render(){
+  const m = state.massive;
+
+  // Same major/severe span ratios that real armour actually has, so the
+  // to-scale claim is testable rather than asserted.
+  widths.innerHTML = [
+    ['Gambeson · 5 / 11', 5, 11, '210px'],
+    ['Chainmail · 7 / 15', 7, 15, '300px'],
+    ['Full Plate · 11 / 24', 11, 24, '440px'],
+  ].map(([t, maj, sev, w]) => `<div>
+    <p class="lab">${t} &nbsp;—&nbsp; component width ${w}</p>
+    <div style="width:${w}">${THRESHOLDS({major:maj, severe:sev, massive:m,
+      label:'Damage Thresholds', note:'+ your level'})}</div>
+  </div>`).join('');
+
+  // One cell, slash-separated. Major and Severe are always quoted as a pair
+  // in the rules and on every armour table, so splitting them across two
+  // cells was inventing a distinction the game does not make.
+  const TH = `${ARMOR.major} / ${ARMOR.severe}`;
+
+  ctx.innerHTML = `
+  <div class="sheet" style="--pw:300px;width:300px">
+    <header><h3>Armor card</h3><span class="ct">ITEM</span></header>
+    ${CARD({...ARMOR, name:'Gilded Leather', foot:'Armor · T2',
+      stats:[{k:'Base Score',v:'4'},{k:'Thresholds',v:TH},{k:'Evasion',v:'+1'}],
+      text:ARMOR.text})}
+  </div>
+
+  <div class="sheet" style="--pw:420px;width:420px">
+    <header><h3>Armor tile</h3><span class="ct">EQUIPPED</span></header>
+    ${TILE({...ARMOR, stats:[{k:'Base Score',v:'4'},{k:'Thresholds',v:TH},
+      {k:'Slots',v:'3 / 4'},{k:'Evasion',v:'+1'}]})}
+  </div>
+
+  <div class="sheet">
+    <header><h3>Damage &amp; Health</h3><span class="ct">LEVEL 3</span></header>
+    <div class="paper stack">
+      ${THRESHOLDS({major:ARMOR.major + 3, severe:ARMOR.severe + 3, massive:m,
+        label:'Damage Thresholds', note:'Armor 9 / 20 + level 3'})}
+      ${SLOTS({label:'Hit Points', total:7, marked:2})}
+      ${SLOTS({label:'Stress', total:6, marked:4, cls:'stress'})}
+      ${SLOTS({label:'Armor Slots', total:4, marked:1})}
+    </div>
+  </div>`;
+
+  document.fonts.ready.then(() => fit());
+  stat.textContent = m ? 'massive damage · on' : '3 zones';
+}
+
+render();
+noart.onchange = e => document.body.classList.toggle('noart', e.target.checked);
+mass.onchange  = e => { state.massive = e.target.checked; render(); };
+</script>
+</body>
+</html>

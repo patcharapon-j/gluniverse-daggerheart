@@ -1,0 +1,412 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH DUALITY — five roll results
+
+   Five whole answers, not five skins. What they share is the die and the
+   data; everything else — what the card is *about* — differs.
+
+   The shared part is the important part. On the sheet, Hope and Fear are
+   edge-lit glass diamonds (see gem.css), and the rules are unambiguous
+   that the Hope Die and the Fear Die *are* Hope and Fear. So the duality
+   dice here are those gems, carrying a numeral. Not a d12 icon, not a
+   pip cluster: the two stones on your sheet, rolled.
+
+   Endfield's result screens are the other half. What they actually do —
+   look past the sci-fi and it is four moves:
+
+     · a saturated field that owns the whole width, not a tinted strip
+     · the outcome set in display weight, with a ghost copy of the same
+       word at 3× behind it, bleeding off the frame
+     · one enormous numeral, unapologetically the largest thing present
+     · angular shards and mono micro-labels as the connective tissue
+
+   And a rarity ladder that is unmistakable: the top tier is not "the same
+   card in a different colour", it gets material the lower tiers do not
+   have. So a critical here gets foil, shards and a seal — things no other
+   outcome is allowed to use.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the duality die ───────────────────────────────────────────────
+   gem.css's construction, opened up to hold a number: a flat saturated
+   face, a brighter rim where light leaves the edge, and a bloom on a
+   wrapper rather than on the clipped face — declared on the face the
+   filter is generated and then clipped away by the very shape it
+   describes. Losing die is not greyed, it is unlit: same stone, no
+   light in it. */
+.dd{position:relative;display:grid;place-items:center;flex:none;
+  width:var(--sz,36px);height:var(--sz,36px);
+  /* --ink-2, not --ink-3. The losing die is unlit, not unimportant — it is
+     half of "15 with Fear" and gets read every time. At --ink-3 the numeral
+     measured 3.64:1 on the light sheet and 4.43 on the dark one. */
+  --tone:var(--line-2);--rimc:var(--line-2);--facec:var(--sunk);--numc:var(--ink-2)}
+.dd.h{--tone:#d4a72c}
+.dd.f{--tone:#8256cc}
+.dd.h.win{--rimc:#f0cc63;--facec:#d4a72c;--numc:#171008}
+.dd.f.win{--rimc:#a985e8;--facec:#7b4fc0;--numc:#fff}
+.dd .lamp{position:absolute;inset:0}
+.dd.win .lamp{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--tone) 62%,transparent))
+                     drop-shadow(0 0 15px color-mix(in srgb,var(--tone) 30%,transparent))}
+.dd .lamp::before,.dd .lamp::after{content:"";position:absolute;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.dd .lamp::before{inset:0;background:var(--rimc)}
+/* inset on a diamond thickens the rim at the points and thins it on the
+   flats, which is what a cut stone actually does */
+.dd .lamp::after{inset:2.5px;background:var(--facec)}
+.dd em{position:relative;z-index:2;font:700 calc(var(--sz,36px)*.38)/1 var(--f-display);
+  font-style:normal;letter-spacing:-.04em;color:var(--numc);font-variant-numeric:tabular-nums}
+/* the advantage d6 — neither Hope nor Fear, so neither stone. A notched
+   chip, carrying its own sign. */
+.dd.a{--sz:26px}
+.dd.a .lamp::before{clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),
+  calc(100% - 5px) 100%,0 100%,0 5px);background:var(--line-2);inset:0}
+.dd.a .lamp::after{clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),
+  calc(100% - 4px) 100%,0 100%,0 4px);inset:1px;background:var(--sunk-2)}
+.dd.a em{font-size:11px;color:var(--ink-2)}
+.dd.a.neg em{color:var(--fear-tx)}
+
+/* ── shared shell ──────────────────────────────────────────────────*/
+.rc{position:relative;overflow:hidden;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui),system-ui,sans-serif;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
+  box-shadow:0 3px 14px -4px rgba(0,0,0,.6),inset 0 0 0 1px var(--line)}
+.rc.hope,.rc.crit{--o:#d4a72c;--o-tx:var(--hope-tx);--o-ink:#14161a;--o-dk:#6d4a08}
+.rc.fear{--o:#7b4fc0;--o-tx:var(--fear-tx);--o-ink:#fff;--o-dk:#3a1f6b}
+.rc-eye{font:700 8px/1 var(--f-mono);letter-spacing:.22em;text-transform:uppercase}
+.rc-arith{display:flex;flex-wrap:wrap;gap:0 5px;
+  font:500 9.5px/1.5 var(--f-mono);color:var(--ink-3)}
+.rc-arith i{font-style:normal}
+.rc-arith i b{font-weight:700;color:var(--ink-2)}
+.rc-arith i.sp b{color:var(--hope-tx)}
+.rc-arith u{text-decoration:none;color:var(--line-2)}
+.rc-act{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 11px}
+.rc-b{flex:1 1 auto;border:0;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:6px;padding:8px 10px;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .14s,color .14s,box-shadow .14s,transform .1s}
+.rc-b i{flex:none;width:8px;height:8px;background:var(--o);transform:rotate(45deg)}
+.rc-b:hover{background:var(--o);color:var(--o-ink);box-shadow:none}
+.rc-b:hover i{background:var(--o-ink)}
+.rc-b:active{transform:translateY(1px)}
+.rc-b.go{flex:1 1 100%;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line)}
+.rc-b.theirs{cursor:default;background:transparent;color:var(--o-tx);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--o) 42%,transparent)}
+.rc-b.theirs:hover{background:transparent;color:var(--o-tx);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--o) 42%,transparent)}
+
+/* Shards. Endfield's connective tissue and the one motif this system did
+   not already own — hard diagonal slivers, never soft, never rounded.
+   Drawn as a repeating gradient so they cost nothing and tile at any size. */
+.shards{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(114deg,transparent 0 9px,
+    rgba(255,255,255,.055) 9px 10px,transparent 10px 21px,
+    rgba(255,255,255,.03) 21px 23px)}
+
+/* ══ V1 · VERDICT PLATE ════════════════════════════════════════════
+   Endfield's "Operation Success" transposed. The verdict owns a
+   full-bleed saturated field with a ghost copy of itself running off the
+   right edge at 3×, the total is pinned into it at display weight, and
+   everything the card knows sits underneath on ordinary paper.
+
+   The bet: what you remember six messages later is the *word*, so the
+   word gets the plate and the number visits it. */
+.v1 .p{position:relative;overflow:hidden;padding:11px 12px 12px;
+  background:linear-gradient(103deg,var(--o-dk) 0%,var(--o) 78%,
+    color-mix(in srgb,var(--o) 72%,#fff) 100%)}
+.v1 .p .gh{position:absolute;right:-6%;top:50%;transform:translateY(-50%);
+  font:700 52px/.78 var(--f-display);letter-spacing:-.06em;text-transform:uppercase;
+  color:rgba(0,0,0,.14);white-space:nowrap;pointer-events:none;user-select:none}
+.v1 .p .rc-eye{position:relative;display:block;color:rgba(0,0,0,.5)}
+.v1.fear .p .rc-eye{color:rgba(255,255,255,.55)}
+.v1 .p .vv{position:relative;display:flex;align-items:flex-end;gap:10px;margin-top:7px}
+.v1 .p .vv b{flex:1 1 auto;min-width:0;font:700 15px/1.05 var(--f-display);
+  letter-spacing:-.02em;text-transform:uppercase;color:var(--o-ink)}
+.v1 .p .vv u{text-decoration:none;flex:none;font:700 34px/.82 var(--f-display);
+  letter-spacing:-.055em;color:var(--o-ink);font-variant-numeric:tabular-nums}
+.v1 .p .sh{opacity:.5}
+.v1.fear .p .sh{opacity:.75}
+.v1 .st{display:flex;align-items:center;gap:8px;padding:11px 12px 0}
+.v1 .st .rc-arith{margin-left:auto;justify-content:flex-end;text-align:right;max-width:52%}
+.v1 .vs{display:flex;padding:8px 12px 0;font:700 8px/1 var(--f-mono);
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+.v1 .vs s{text-decoration:none;margin-left:auto;color:var(--o-tx)}
+
+/* ══ V2 · DUALITY BEAM ═════════════════════════════════════════════
+   The one concept about the *mechanic* rather than the outcome. Hope and
+   Fear are literally weighed against each other, so the card weighs them:
+   the two stones at the ends of a beam, and the beam filled from each end
+   in proportion to its die. You see the margin — a 12 against an 11 looks
+   nothing like a 12 against a 2, and no other design here shows that at
+   all.
+
+   The seam between the two fills is the result. It is also, on a
+   critical, dead centre, which is the only time this card is symmetrical
+   and is worth more than any badge. */
+.v2 .hd{display:flex;align-items:baseline;gap:8px;padding:10px 12px 0}
+.v2 .hd .rc-eye{color:var(--ink-3)}
+.v2 .hd em{font-style:normal;font:600 11.5px/1.2 var(--f-ui);color:var(--ink);
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v2 .bm{display:flex;align-items:center;gap:9px;padding:13px 12px 0}
+.v2 .beam{position:relative;flex:1 1 auto;height:16px;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}
+.v2 .beam .fh,.v2 .beam .ff{position:absolute;top:0;bottom:0;
+  transition:width .5s cubic-bezier(.22,.9,.24,1)}
+.v2 .beam .fh{left:0;width:calc(var(--hp,50) * 1%);
+  background:linear-gradient(90deg,color-mix(in srgb,#d4a72c 55%,var(--sunk)),#d4a72c);
+  clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.v2 .beam .ff{right:0;width:calc(var(--fp,50) * 1%);
+  background:linear-gradient(270deg,color-mix(in srgb,#7b4fc0 55%,var(--sunk)),#7b4fc0);
+  clip-path:polygon(6px 0,100% 0,100% 100%,0 100%)}
+/* the seam, which is the whole reading */
+.v2 .beam .sm{position:absolute;top:-3px;bottom:-3px;width:2px;z-index:3;
+  left:calc(var(--hp,50) * 1%);transform:translateX(-1px);background:var(--ink);
+  transition:left .5s cubic-bezier(.22,.9,.24,1)}
+.v2 .lb{display:flex;padding:5px 12px 0;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3)}
+.v2 .lb i{font-style:normal}
+.v2 .lb .a{color:var(--hope-tx)} .v2 .lb .b{margin-left:auto;color:var(--fear-tx)}
+.v2 .tt{display:flex;align-items:baseline;gap:9px;padding:11px 12px 0}
+.v2 .tt b{font:700 32px/.85 var(--f-display);letter-spacing:-.055em;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.v2 .tt .rc-arith{flex:1 1 auto}
+.v2 .vv{display:flex;align-items:center;gap:8px;margin-top:11px;padding:8px 12px;
+  background:color-mix(in srgb,var(--o) 13%,var(--sunk));
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--o) 30%,transparent)}
+.v2 .vv b{font:700 9.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--o-tx)}
+.v2 .vv s{margin-left:auto;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+:root.light .v2 .vv{background:color-mix(in srgb,var(--o) 10%,var(--paper))}
+
+/* ══ V3 · MONUMENT ═════════════════════════════════════════════════
+   The number, at a size nothing else on screen competes with, and the
+   verdict turned on its side down a rail — Endfield sets its section
+   labels vertically and it is the one typographic move this system has
+   never used. Everything else retreats to the margins.
+
+   The bet is the opposite of V1's: at a glance in a scrolling log you
+   read the *colour* of the rail, not any word, and the thing you actually
+   came for is the total. So make the total enormous and stop pretending
+   the rest is equally important. */
+.v3{display:flex}
+.v3 .rail{flex:none;width:28px;position:relative;
+  background:linear-gradient(180deg,var(--o-dk),var(--o))}
+.v3 .rail span{position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%) rotate(180deg);writing-mode:vertical-rl;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;
+  color:var(--o-ink);white-space:nowrap}
+.v3 .rail::after{content:"";position:absolute;right:0;top:0;bottom:0;width:1.5px;
+  background:color-mix(in srgb,#fff 45%,transparent)}
+.v3 .bd{flex:1 1 auto;min-width:0}
+.v3 .top{display:flex;align-items:flex-start;gap:9px;padding:11px 12px 0}
+.v3 .top .who{min-width:0}
+.v3 .top .who b{display:block;font:600 11.5px/1.2 var(--f-ui);color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v3 .top .who s{display:block;margin-top:4px;text-decoration:none;
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.v3 .top .dice{margin-left:auto;display:flex;gap:6px;flex:none}
+.v3 .num{position:relative;padding:2px 12px 0;line-height:.8}
+.v3 .num b{font:700 58px/.8 var(--f-display);letter-spacing:-.07em;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.v3 .num s{text-decoration:none;margin-left:8px;font:700 8px/1 var(--f-mono);
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+.v3 .ft{padding:9px 12px 0}
+.v3 .ft .rc-arith{padding-top:8px;box-shadow:inset 0 1px 0 var(--line)}
+
+/* ══ V4 · GAUGE ════════════════════════════════════════════════════
+   An instrument, which is the Endfield HUD's other register: ruled
+   tracks, tick marks, tiny numerals, a needle. The roll is plotted
+   against the Difficulty rather than described relative to it — you see
+   that you cleared 15 by three, or missed it by one, which is the fact
+   the table argues about and no other version of this card shows.
+
+   It is also the only one that degrades honestly: with no Difficulty
+   the tick simply is not there, and the bar is still a bar. */
+.v4 .hd{display:flex;align-items:baseline;gap:8px;padding:10px 12px 0}
+.v4 .hd .rc-eye{color:var(--ink-3);flex:none}
+.v4 .hd em{font-style:normal;font:600 11.5px/1.2 var(--f-ui);color:var(--ink);
+  margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v4 .gg{position:relative;margin:14px 12px 0;height:34px}
+.v4 .trk{position:absolute;left:0;right:0;bottom:12px;height:11px;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line)}
+.v4 .trk .fl{position:absolute;left:0;top:0;bottom:0;width:calc(var(--pc,50) * 1%);
+  background:linear-gradient(90deg,var(--o-dk),var(--o));
+  clip-path:polygon(0 0,100% 0,calc(100% - 5px) 100%,0 100%);
+  transition:width .55s cubic-bezier(.22,.9,.24,1)}
+/* the ruler: a tick every 5, drawn once as a gradient */
+.v4 .trk::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(16.666% - 1px),
+    color-mix(in srgb,var(--line-2) 70%,transparent) calc(16.666% - 1px) 16.666%)}
+/* the Difficulty, which is the only mark on this instrument that matters */
+.v4 .dcm{position:absolute;bottom:6px;width:2px;height:23px;background:var(--ink);
+  left:calc(var(--dc,50) * 1%);transform:translateX(-1px);z-index:3}
+.v4 .dcm s{position:absolute;bottom:-13px;left:50%;transform:translateX(-50%);
+  text-decoration:none;font:700 7.5px/1 var(--f-mono);letter-spacing:.1em;color:var(--ink-2);
+  white-space:nowrap}
+.v4 .ndl{position:absolute;bottom:23px;left:calc(var(--pc,50) * 1%);
+  transform:translateX(-50%);z-index:4;
+  transition:left .55s cubic-bezier(.22,.9,.24,1)}
+.v4 .ndl b{display:block;font:700 15px/1 var(--f-display);letter-spacing:-.04em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.v4 .ndl::after{content:"";position:absolute;left:50%;top:100%;margin-left:-4px;
+  border:4px solid transparent;border-top-color:var(--o)}
+.v4 .st{display:flex;align-items:center;gap:9px;padding:12px 12px 0}
+.v4 .st .rc-arith{margin-left:auto;justify-content:flex-end;text-align:right;max-width:56%}
+.v4 .vv{display:flex;align-items:center;gap:8px;margin-top:11px;padding:8px 12px;
+  background:color-mix(in srgb,var(--o) 13%,var(--sunk));
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--o) 30%,transparent)}
+.v4 .vv b{font:700 9.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--o-tx)}
+.v4 .vv s{margin-left:auto;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+:root.light .v4 .vv{background:color-mix(in srgb,var(--o) 10%,var(--paper))}
+
+/* ══ V5 · DECKMATE ═════════════════════════════════════════════════
+   The result as a member of the deck. It takes the domain card's own
+   chrome — the dark cap block with a numeral over a sigil, the gold
+   hairline down its inner edge, the ramped art plate, the tier bar along
+   the bottom — and fills those slots with the roll: the total is the
+   numeral, the winning stone is the sigil, the outcome is the type badge.
+
+   The bet: a chat log full of these looks like the same game as the
+   sheet, because it is made of the same parts. The risk is the opposite
+   one — a result is an event, not an object you own, and this is the
+   design most likely to read as "a card you can pick up". */
+.v5{display:flex;min-height:96px}
+.v5 .cap{position:relative;flex:none;min-width:60px;
+  background:linear-gradient(180deg,var(--o-dk),color-mix(in srgb,var(--o-dk) 62%,#000));
+  display:flex;flex-direction:column;align-items:stretch;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%)}
+.v5 .cap::after{content:"";position:absolute;top:0;bottom:0;right:0;width:1.5px;
+  background:var(--hope);z-index:2}
+.v5 .cap .n{flex:1 1 auto;display:grid;place-items:center;padding:8px 9px 6px}
+.v5 .cap .n b{font:700 30px/.85 var(--f-display);letter-spacing:-.06em;color:#fff;
+  font-variant-numeric:tabular-nums}
+.v5 .cap .sg{flex:none;background:var(--o);display:grid;place-items:center;padding:7px 0 9px}
+.v5 .bd{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+  background:radial-gradient(126% 118% at 62% 34%,var(--tint),
+    color-mix(in srgb,var(--o) 20%,var(--tint)))}
+.v5 .bd .tb{display:flex;align-items:center;gap:7px;padding:8px 11px 7px;
+  background:color-mix(in srgb,var(--o-dk) 88%,#000)}
+.v5 .bd .tb b{font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:#fff}
+.v5 .bd .tb s{margin-left:auto;text-decoration:none;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+/* --ink, not a hardcoded near-black. The plate is --tint mixed with the
+   outcome, and --tint is white on the light theme and #0f1216 on the dark
+   one — exactly like a domain card's plate. Ink fixed to dark put dark
+   type on a dark plate everywhere the sheet is dark, which is the default. */
+.v5 .bd .mid{flex:1 1 auto;padding:9px 11px 10px}
+.v5 .bd .mid > b{display:block;font:700 12.5px/1.15 var(--f-display);letter-spacing:-.01em;
+  text-transform:uppercase;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v5 .bd .mid .rc-arith{margin-top:6px}
+.v5 .bd .dice{position:absolute;right:9px;bottom:11px;display:flex;gap:5px}
+.v5 .bd::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:var(--o);z-index:3}
+
+/* ══ CRITICAL ══════════════════════════════════════════════════════
+   The top of a rarity ladder gets material the tiers below do not have,
+   not a brighter version of the same material. Three things belong to a
+   critical and to nothing else:
+
+     foil    a moving gradient across the outcome field
+     shards  hard diagonal slivers, lit
+     seal    a struck mark that lands after everything else has settled
+
+   All three are gold, because a critical counts as a roll with Hope. */
+.rc.crit{--o:#d4a72c;--o-dk:#8a6810}
+.rc.crit::before{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;
+  box-shadow:inset 0 0 0 1.5px var(--hope),inset 0 0 24px -6px color-mix(in srgb,var(--hope) 60%,transparent)}
+.foil{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(104deg,transparent 30%,
+    rgba(255,236,176,.5) 46%,rgba(255,255,255,.72) 51%,rgba(255,222,130,.45) 57%,transparent 74%);
+  background-size:260% 100%;animation:foil 2.6s cubic-bezier(.42,0,.3,1) .5s 2 both}
+@keyframes foil{from{background-position:170% 0}to{background-position:-70% 0}}
+/* the seal — struck, not faded. It arrives last and it arrives hard. */
+.seal{position:absolute;z-index:9;pointer-events:none;
+  right:10px;top:9px;display:flex;align-items:center;gap:5px;
+  padding:5px 8px 5px 7px;background:var(--hope);color:#14161a;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.19em;text-transform:uppercase;
+  box-shadow:0 4px 14px -3px rgba(212,167,44,.75)}
+.seal i{width:7px;height:7px;background:#14161a;transform:rotate(45deg)}
+.rc.crit.play .seal{animation:seal .42s cubic-bezier(.2,1.5,.4,1) .62s both}
+@keyframes seal{0%{opacity:0;transform:scale(2.1) rotate(-8deg)}
+  62%{opacity:1;transform:scale(.94) rotate(0)}100%{opacity:1;transform:scale(1)}}
+.rc.crit > .shards{z-index:6;background:repeating-linear-gradient(114deg,transparent 0 8px,
+  rgba(255,236,176,.16) 8px 10px,transparent 10px 19px,
+  rgba(255,255,255,.1) 19px 21px)}
+/* White slivers over white paper are no slivers at all — on the light
+   sheet the shards have to cut the other way. */
+:root.light .rc.crit > .shards{background:repeating-linear-gradient(114deg,transparent 0 8px,
+  rgba(138,104,16,.16) 8px 10px,transparent 10px 19px,
+  rgba(109,74,8,.09) 19px 21px)}
+
+/* The seal takes the top-right corner, so on a critical every concept
+   gives that corner up. Reserved rather than overlapped: the things
+   living there are a die, a Difficulty and a label, and none of them is
+   decoration that can be sat on. */
+/* 92px = the seal's 74 + its 10 inset + 8 of air. Measured, not guessed:
+   at 80 the reserve replaced the 12px gutter rather than adding to it, so
+   V3's second die sat 4px under the seal's corner. */
+.v1.crit .p .rc-eye{padding-right:92px}
+.v3.crit .top{padding-right:92px}
+.crit .v5 .tb{padding-right:92px}
+/* V2 and V4 put the roll's name in that corner, and at 300px a 92px
+   reserve ellipsed it — losing information on the one roll where the
+   table is paying attention. So on those two the seal drops its word and
+   keeps its mark. The band underneath already says "critical success";
+   up here the seal is the *material*, not the label. */
+.v2.crit .hd,.v4.crit .hd{padding-right:46px}
+.v2.crit .seal b,.v4.crit .seal b{display:none}
+.v2.crit .seal,.v4.crit .seal{padding:6px 7px}
+/* V3's rail and V5's cap are the two places a critical can afford a full
+   gold field rather than a tint — they are already saturated. */
+.v3.crit .rail{background:linear-gradient(180deg,#8a6810,#d4a72c 55%,#f2d987)}
+.crit .v5 .cap{background:linear-gradient(180deg,#6d4a08,#a37f18)}
+.v2.crit .beam .fh,.v2.crit .beam .ff{background:linear-gradient(90deg,#8a6810,#f0cc63)}
+.v2.crit .beam .sm{background:#fff;box-shadow:0 0 8px 2px rgba(255,236,176,.9)}
+.v4.crit .trk .fl{width:100%!important}
+
+/* ══ ARRIVAL ═══════════════════════════════════════════════════════
+   A chat message is the one place motion carries information rather than
+   decorating it: it is how you know something landed in a log you were
+   not watching. So the sweep runs the full width once on the wipe curve
+   — steady traverse, not the front-loaded travel curve, which puts the
+   band off the far edge for two thirds of its duration.
+
+   The result is written into the markup before any of this runs. The
+   tumble only overwrites the display, so with no frames at all the card
+   is still correct — which matters, because somebody else is reading it. */
+.rc.play{animation:rc-in .32s cubic-bezier(.2,.85,.3,1) both}
+@keyframes rc-in{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+.rc.play::after{content:"";position:absolute;inset:0;z-index:7;pointer-events:none;
+  width:32%;background:linear-gradient(90deg,transparent 0,
+    color-mix(in srgb,var(--o) 12%,transparent) 60%,
+    color-mix(in srgb,var(--o) 38%,transparent) 92%,var(--o) 100%);
+  animation:rc-swp .64s cubic-bezier(.33,.28,.25,1) .04s both}
+@keyframes rc-swp{0%{opacity:0;transform:translateX(-120%)}
+  13%{opacity:1} 84%{opacity:1} 100%{opacity:0;transform:translateX(325%)}}
+
+.rc.rolling .dd{--rimc:var(--line-2)!important;--facec:var(--sunk)!important;
+  --numc:var(--ink-3)!important}
+.rc.rolling .dd .lamp{filter:none}
+.rc.rolling .rc-arith,.rc.rolling .rc-act{opacity:.2}
+.rc.rolling .v-word{opacity:.25}
+
+.rc.land .dd.win{animation:dd-land .4s cubic-bezier(.16,1.06,.3,1) both}
+.rc.land .dd.win:nth-of-type(2){animation-delay:.06s}
+@keyframes dd-land{0%{transform:scale(.6)}54%{transform:scale(1.14)}100%{transform:scale(1)}}
+.rc.land .rc-act{animation:rc-fade .3s ease-out .16s both}
+@keyframes rc-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* the verdict wipes rather than fades — a sentence that fades in has
+   always already been there */
+.rc.land .v-word{animation:rc-wipe .36s cubic-bezier(.22,.9,.24,1) .06s both}
+@keyframes rc-wipe{from{opacity:0;clip-path:inset(0 100% 0 0)}
+  to{opacity:1;clip-path:inset(0 -3px 0 0)}}
+.rc.land .rc-big{animation:rc-big .36s cubic-bezier(.16,1.06,.3,1) both}
+@keyframes rc-big{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  .rc,.rc *,.rc.play::after{animation:none!important;transition:none!important}
+  .rc.play::after{display:none}
+  .rc.rolling .rc-arith,.rc.rolling .rc-act,.rc.rolling .v-word{opacity:1}}

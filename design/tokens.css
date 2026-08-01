@@ -1,0 +1,167 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH TOKENS
+
+   Dark is the base theme. That is a change of substrate, not a repaint,
+   so the palette had to be split into *roles* first — every hardcoded
+   hex that used to assume a white sheet now names what it is for. The
+   roles are:
+
+     --paper    the sheet. What you read values off.
+     --sunk     a recess in the sheet: an empty box, an experience row,
+                a gold pip. Always *away* from the ink.
+     --sunk-2   that recess, hovered. Always *toward* the ink — which is
+                why it cannot be one delta shared by both themes: light
+                hover darkens, dark hover lightens.
+     --raise    a paper surface, hovered.
+     --line     hairline. --line-2 is the same hairline asserted.
+     --ink      /-2 /-3   text, in three weights of presence.
+     --tint     what a domain hue mixes *into* when it lands on paper.
+                Was a literal #fff in four files.
+     --sev-1..3 damage severity, which is expressed as weight rather than
+                hue — so on a dark sheet the ramp runs the other way and
+                Severe is the near-white one.
+
+   The frame is dark in both themes and always was: window chrome and the
+   tab strip are the Foundry app, not the character sheet. Those tokens
+   do not flip.
+
+   Only :root and .light ship to Foundry; the page chrome at the bottom is
+   scaffolding for the study pages.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --f-display:"Google Sans"; --f-ui:"Google Sans Text"; --f-mono:"Google Sans Code";
+
+  /* Two golds, for contrast not semantics: --hope is the fill and is
+     illegible as text on either substrate. --hope-tx is the same hue
+     pushed to ~5:1 against the paper of the current theme. */
+  --hope:#d4a72c;
+  --fear:#7b4fc0;
+  /* Gold against a fill of *known* value, so these do not flip with the
+     theme — they flip with whatever they are sitting on. The damage band
+     needs both in the same row, since its zones run pale to dark in one
+     theme and dark to pale in the other. */
+  --gold-on-dark:#e9cf83; --gold-on-pale:#8a6810;
+
+  --art:url("/design/assets/art-sample-01.png");
+  --dom:#1b686f; --dom-dk:#0b494f;
+
+  /* the gold divider. Shared, because the type badge has to offset by
+     exactly this much to sit above the rule rather than on top of it. */
+  --rule:2px;
+
+  /* ── the frame — dark in both themes ── */
+  --frame:#0b0d10; --frame-2:#101317; --frame-line:#272d36;
+  --frame-tx:#c3cbd5; --frame-tx-2:#8b939e; --frame-tx-3:#646c77;
+}
+
+/* ── dark · the default ────────────────────────────────────────────
+   Cool and desaturated rather than neutral grey. A warm gold and a
+   violet both sit on this without the substrate arguing with either,
+   which a true neutral does not manage — at #1a1a1a the gold reads
+   olive. */
+:root{
+  --paper:#171a1f;
+  --sunk:#0f1216; --sunk-2:#1c2027; --raise:#20242b;
+  --line:#2b313a; --line-2:#3a424e;
+  --ink:#e8ecf1; --ink-2:#a9b2be; --ink-3:#78818e;
+  /* A fourth step, added for one job: text that is on the sheet to be
+     found rather than to be read — the action verbs under a trait. It sits
+     below the label ink, so a cell can hold a label and an aside without
+     the two competing, and it is the floor. Anything quieter than this
+     fails contrast against --paper and should not be on the sheet at all. */
+  --ink-4:#59616c;
+  --tint:#0f1216;
+  --hope-tx:#e0b647; --fear-tx:#a688ea;
+  --scroll:#39404a;
+
+  /* severity by weight. On a dark sheet the heaviest mark is the
+     lightest one, so the ramp inverts and Severe becomes near-white. */
+  --sev-1:#22262d; --sev-1-tx:var(--ink-2);
+  --sev-2:#5b636e; --sev-2-tx:#f2f5f8;
+  --sev-3:#d3d9e0; --sev-3-tx:#12141a;
+  --sev-4:#f4f7fa; --sev-4-tx:#0b0d10;
+
+  /* gem sockets on paper — a hole in whatever the sheet is made of */
+  --socket-p:#0e1115; --socket-line-p:#2b313a;
+  --scarbg-p:#0a0c0f; --xmark-p:#8a939f;
+
+  /* the three marks. See the block below for why they are hues at all. */
+  --wound:#c8484f; --wound-d:#7d1a20; --wound-gl:#e4545c;
+  --strain:#8fd0e0; --strain-d:#1d5162;
+  --plate:#e6edf4; --plate-d:#6f7986; --plate-fl:#ffd97a;
+}
+
+/* ── the marks ─────────────────────────────────────────────────────
+   Three tracks, three materials, and this is the one place the system's
+   "hue means domain" rule is deliberately suspended — because Hit Points,
+   Stress and Armor Slots are the three things you mark under pressure and
+   the cost of confusing them is a wrong decision at the table. They are
+   told apart by *substance* first (a wound bleeds, a strain is scored, a
+   plate fractures) and by hue second, so the distinction survives a
+   screenshot, a colour-blind reader and the light theme.
+
+     --wound   fresh blood at the surface, --wound-d the depth of the cut,
+               --wound-gl what wells up around it.
+     --strain  a scored line catching light, --strain-d the groove under it.
+               Cold on purpose: it is the only quadrant of the wheel left
+               once gold is Hope, violet is Fear and red is a wound — and
+               it means a Stress mark turning violet at max is unmissable.
+     --plate   steel, --plate-d its shadowed facet, --plate-fl the strike.
+               Gold only as the flash: armour is the one mark that is not
+               a colour, it is an event.
+
+   Values differ per theme by more than lightness. On white paper a wound
+   has to be darker than the paper to read as a hole in it; on a dark sheet
+   it has to be brighter. Same rule as --sev-*: weight away from the
+   substrate, not a fixed brightness. */
+
+/* ── light ─────────────────────────────────────────────────────────
+   Kept, and kept working. The whole reason the roles above exist is
+   that the substrate is a variable; a theme that only runs one way is
+   a theme with the assumptions still baked in. */
+:root.light{
+  --paper:#f7f8f9;
+  --sunk:#eef1f3; --sunk-2:#e5eaed; --raise:#e9edef;
+  --line:#d6dade; --line-2:#b9c0c7;
+  --ink:#14161a; --ink-2:#3a4049; --ink-3:#7b828d;
+  --ink-4:#9aa1aa;
+  --tint:#ffffff;
+  --hope-tx:#8a6810; --fear-tx:#6d3fa3;
+  --scroll:#c9d0d6;
+
+  --sev-1:#e4e7ea; --sev-1-tx:var(--ink-2);
+  --sev-2:#767d88; --sev-2-tx:#ffffff;
+  --sev-3:#2b3037; --sev-3-tx:#ffffff;
+  --sev-4:#14161a; --sev-4-tx:#ffffff;
+
+  --socket-p:#e2e6ea; --socket-line-p:#c3cad1;
+  --scarbg-p:#dde1e5; --xmark-p:#6b7480;
+
+  --wound:#b02a33; --wound-d:#5e0d12; --wound-gl:#c8343e;
+  --strain:#1f7085; --strain-d:#0a3646;
+  --plate:#39424c; --plate-d:#9aa3ad; --plate-fl:#a87d10;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+/* darker than it was: a dark sheet has to sit *above* the studio, and at
+   the old #2b313b top stop the backdrop was lighter than the paper. */
+body{font-family:var(--f-ui),system-ui,sans-serif;
+  background:radial-gradient(130% 100% at 50% -20%,#191d24 0%,#0d1013 55%,#060709 100%) fixed;
+  color:#e6eaef;padding:0 0 100px}
+.wrap{max-width:1300px;margin:0 auto;padding:0 26px}
+.bar{position:sticky;top:0;z-index:99;backdrop-filter:blur(14px);
+  background:rgba(10,12,15,.88);border-bottom:1px solid #22272f;padding:12px 0;margin-bottom:32px}
+.bar .wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.bar b{font:600 10px/1 var(--f-mono);letter-spacing:.2em;color:#7d8794;text-transform:uppercase}
+.bar a{font:600 10px/1 var(--f-mono);letter-spacing:.16em;color:#9aa3ae;text-transform:uppercase;text-decoration:none}
+.bar a:hover,.bar a.on{color:var(--hope)}
+.tg{display:flex;align-items:center;gap:7px;font:400 12.5px/1 var(--f-ui);color:#9aa3ae;cursor:pointer;user-select:none}
+input[type=range]{width:140px;accent-color:var(--hope)}
+h2{font:600 15px/1 var(--f-display);color:#fff;margin:54px 0 6px}
+h2 span{font:600 10px/1 var(--f-mono);letter-spacing:.22em;color:var(--hope);display:block;margin-bottom:9px}
+.note{font:400 12.5px/1.6 var(--f-ui);color:#96a0ac;max-width:760px;margin:0 0 26px}
+.note code{font:500 11.5px/1 var(--f-mono);color:#c3cbd5}
+.cap{font:400 11px/1.5 var(--f-ui);color:#8d97a3;margin-top:10px}
+.cap b{display:block;color:#e2e7ec;font-weight:600;font-size:11.5px;margin-bottom:2px}
+.cap em{font-style:normal;color:var(--hope);font-weight:600}

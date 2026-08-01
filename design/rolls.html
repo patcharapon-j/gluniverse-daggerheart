@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Rolls</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/plate.css">
+<style>
+/* fixed 322, not 1fr: a chat card is 300px in Foundry and does not
+   scale, so a stage that stretches would be showing a component that
+   does not exist. */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,322px);gap:18px;
+  align-items:start;justify-content:start}
+.grid > .slot > s{display:block;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.stage{background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line);padding:11px}
+.btn{border:0;cursor:pointer;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);padding:9px 14px;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btn:hover{background:var(--hope);color:#14161a;box-shadow:none}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 22px;align-items:center}
+.shapes{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin:0 0 8px}
+.shapes > figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:9px}
+/* a figure holding several dice lays them out in a row, not a column —
+   the column flex was stacking the three helpers vertically */
+.shapes > figure > .row{display:flex;gap:7px;align-items:center}
+.shapes figcaption{font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);text-align:center}
+.two{display:grid;grid-template-columns:repeat(auto-fill,322px);gap:18px;
+  justify-content:start;align-items:start;margin-bottom:8px}
+.two > div > h3{margin:0 0 4px;font:700 11px/1 var(--f-mono);letter-spacing:.19em;
+  text-transform:uppercase;color:#e6eaef}
+.two > div > em{display:block;margin-bottom:10px;font-style:normal;font:600 9px/1 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--hope)}
+.two > div > p{font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:12px 0 0}
+.two > div > p b{color:#c3cbd5;font-weight:600}
+.two .stage + .stage{margin-top:12px}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>rolls</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html" class="on">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE d6</span>Advantage is one die, with a sign</h2>
+<p class="note">Advantage adds a <b>d6</b>; disadvantage subtracts one. They cancel one-for-one across
+every source — the book is explicit that you will <i>never</i> roll both — so this is one object carrying a
+sign rather than two independent slots. A d6's face is a square, so that is the silhouette, and it is drawn
+<b>smaller than the duality dice</b> because it is a smaller die and because the pair should stay the
+subject of the strip.</p>
+<p class="note">Advantage is a lit steel chip. Disadvantage is <b>the same chip as a negative</b> — dark
+face, lit rim. Same die doing the opposite job, and no new hue spent on something the arithmetic line
+already names in words. The sign lives on the arithmetic, where it can be read.</p>
+<div class="shapes" id="shapes"></div>
+<p class="note">More than one d6 happens exactly one way: <b>Help an Ally</b>. Any number of PCs can spend a
+Hope to help, each rolls a d6, and you take the <i>highest</i>. So several land and one counts — and the
+ones that don't are <b>crossed off with an X</b>.</p>
+<p class="note">Unlit alone was not enough, and the reason is worth stating: the losing <i>duality</i> die
+is unlit too, and <b>that die still counts</b> — both duality dice are summed into the total. A helper's d6
+that didn't win is thrown away entirely. Two different fates were wearing the same face. So the X means one
+thing and one thing only — <b>this did not count</b> — nothing else on any card is allowed to use it, and
+it's drawn in <code>--xmark-p</code>, the material this system already uses for a struck-out scar. It does
+largely cover the numeral, and that is the trade rather than a compromise: a discarded helper’s face value
+is trivia, the arithmetic line already reports the one that counted, and <b>a strike you have to look twice
+at is not a strike</b>.</p>
+<p class="note">Each die also tumbles inside its own range on arrival: a d6 that flashes an 11 on its way
+down is a d6 lying about what it is.</p>
+
+<h2><span>// REACTION ROLLS</span>The duality is rolled, then thrown away</h2>
+<p class="note">A reaction roll uses the Duality Dice and then discards the duality: <b>no Hope, no Fear,
+no GM move</b>, and nobody may help you. So it does not get a Hope or Fear field — colouring it gold would
+promise a token nobody is going to hand you. Graphite, and the dice keep their own colours, because the
+dice are still the dice.</p>
+<p class="note">It has nothing to claim either, so the action row carries the <b>consequence</b> instead —
+which is what a reaction roll is actually for. And with no Difficulty there is nothing true it can say, so
+<b>it says nothing</b>: the sentence is omitted and the total stands alone. No placeholder, no chip, no
+announcement that a Difficulty is missing. A card narrating its own ignorance is worse than a card that is
+quiet — the dice, the total and the arithmetic are all still there and all still correct. Same rule on
+every card type: a missing Difficulty is not a fact worth a slot.</p>
+<p class="note">A critical reaction is still the top rung and still red — but it isn't Hope. You clear no
+Stress and gain no Hope; you <b>ignore the effects that would still have hit you on a success</b>.</p>
+<div class="grid" id="rxn"></div>
+
+<h2><span>// DAMAGE</span>A quantity, not an outcome</h2>
+<p class="note">No duality axis and no verdict — the only question about a damage roll is how big. So the
+parts take new jobs: the sentence slot carries the damage <b>type</b>, which is the one thing about a
+damage number that changes what happens to it; the meta line carries the notation; the number is the card.
+Proficiency is the die <i>count</i>, so a Proficiency of 3 with a d8 weapon is three chips, and a critical
+at Proficiency 6 is twelve.</p>
+<p class="note">And the card stops at the number. How many Hit Points this becomes depends on thresholds,
+armour, resistance and immunity that all live on the <i>target</i> — so it states the damage and offers to
+apply it, rather than claiming an outcome it cannot know. Same posture the duality card takes toward the
+fiction.</p>
+<p class="note"><b>Critical damage</b> starts from the highest value the dice could roll, then rolls them
+as usual and adds. That is two different kinds of number in one row, so the struck set is tagged
+<code>MAX</code>, drawn as the deep cut with a bright rim, and — the part that matters —
+<b>it does not tumble on arrival.</b> It was not rolled, it was awarded, and animating it would be the one
+visual claim on this card that is false.</p>
+
+<p class="note">And it is the <b>black bar</b>, not the wound plate. Endfield's other and more-used
+register: near-black, with the colour reduced to a lit lower edge and the numeral. It draws a line the
+family needed — <b>colour means something happened to you; damage is a number you hand to someone else</b>
+— and it keeps the only two saturated reds in the system from landing one message apart.</p>
+<div class="tools">
+  <button class="btn" id="play">play every card</button>
+  <button class="btn" id="reroll">reroll</button>
+</div>
+<div class="grid" id="dmg"></div>
+
+<h2><span>// EVERY TYPE, IN A LOG</span>What a real exchange looks like</h2>
+<p class="note">Attack, damage, the reaction it forces, and a critical chain — in order, at 300px, the way
+they will actually stack in the sidebar. This is the only view that shows whether the five registers stay
+apart from each other when they are three inches tall and touching.</p>
+<div class="grid" id="log"></div>
+
+<script type="module">
+import { A, DMG, DIE, advVal, play } from '/design/plate.js';
+
+const ART = '/design/assets/art-sample-01.png';
+const TABBY = {who:'Tabby', img:ART};
+const MODS = [{k:'Agility', v:2}, {k:'Wildborne tracker', v:2, spent:true}];
+
+const adv = (dice, neg) => ({dice, neg:!!neg});
+
+const act = (o, dc, h, f, over = {}) => {
+  const a = over.adv ?? null;
+  const m = (over.mods ?? MODS).reduce((x, y) => x + y.v, 0);
+  const total = h + f + m + advVal({adv:a});
+  return {...TABBY, label:'Agility · parapet run', mods:over.mods ?? MODS,
+    h, f, adv:a, dc, out:o, total, hit: o === 'crit' || total >= (dc ?? 0), ...over};
+};
+const rxn = (o, dc, h, f, over = {}) =>
+  ({...act(o, dc, h, f, over), rxn:true, kind:'reaction roll',
+    label:over.label ?? 'Agility · the blast'});
+
+const sum = a => a.reduce((x, y) => x + y, 0);
+const dmg = (over = {}) => {
+  const r = {...TABBY, label:'Broadsword', kind:'damage roll', die:'d8', n:3,
+    rolls:[5, 2, 7], max:null, dtype:'physical', mods:[{k:'modifier', v:3}], bonus:null, ...over};
+  r.total = sum(r.rolls) + (r.max ? sum(r.max) : 0) + (r.bonus?.v ?? 0) + sum(r.mods.map(m => m.v));
+  return r;
+};
+
+/* ── the d6, alone ────────────────────────────────────────────────*/
+document.getElementById('shapes').innerHTML = [
+  [DIE(10, 'h win', 44, 12), 'd12 · hope'],
+  [DIE(6, 'f', 44, 12), 'd12 · unlit'],
+  [DIE(5, 'sq a', 34, 6), 'd6 · advantage'],
+  [DIE(3, 'sq a neg', 34, 6), 'd6 · disadvantage'],
+  [`<span class="row">${DIE(6, 'sq a', 34, 6)}${DIE(2, 'sq a dim', 34, 6)}${
+     DIE(4, 'sq a dim', 34, 6)}</span>`, 'three helpers · two crossed off'],
+  [DIE(7, 'sq w', 30, 8), 'damage · d8'],
+  [DIE(8, 'sq w max', 30), 'damage · struck at max'],
+].map(([m, c]) => `<figure>${m}<figcaption>${c}</figcaption></figure>`).join('');
+
+/* ── reaction ─────────────────────────────────────────────────────*/
+const RXN = [
+  ['success · vs 14', () => [rxn('hope', 14, 10, 6), null]],
+  ['failure · take the damage', () => [rxn('fear', 14, 3, 5), 'Take 3d12 physical damage']],
+  /* nothing true to say, so nothing said: no sentence, no chip */
+  ['difficulty withheld', () => [rxn('hope', null, 10, 6), null]],
+  /* the disadvantage die is what turns this one over: 15 without it, 11 with */
+  ['disadvantage turns it over', () => [rxn('fear', 14, 5, 6, {adv:adv([4], true)}),
+    'Take 3d12 physical damage']],
+  ['critical · ignore the effect', () => [rxn('crit', 14, 8, 8), null]],
+  ['no portrait', () => [rxn('hope', 14, 10, 6, {img:null}), null]],
+];
+
+/* ── damage ───────────────────────────────────────────────────────*/
+const DMGS = [
+  ['proficiency 3 · d8 weapon', () => dmg({})],
+  ['critical · max struck, then rolled', () => dmg({max:[8, 8, 8], rolls:[4, 6, 3]})],
+  ['proficiency 6 · d10 spell, with a Rally die', () => dmg({n:6, die:'d10', dtype:'magic',
+    label:'Arcane torrent', rolls:[9, 2, 7, 4, 10, 6], bonus:{k:'Rally d6', v:5, mx:6}})],
+  ['critical at proficiency 6 · twelve dice', () => dmg({n:6, die:'d10', dtype:'magic',
+    label:'Arcane torrent', max:[10, 10, 10, 10, 10, 10], rolls:[9, 2, 7, 4, 10, 6]})],
+  ['no modifier', () => dmg({mods:[]})],
+  ['no portrait', () => dmg({img:null})],
+];
+
+/* ── the log ──────────────────────────────────────────────────────*/
+const LOG = () => [
+  ['1 · the attack', A(act('hope', 15, 10, 6, {label:'Agility · broadsword swing'}),
+    'Roll damage · 3d8+3')],
+  ['2 · the damage', DMG(dmg({}))],
+  ['3 · the reaction it forces', A(rxn('fear', 14, 3, 5), 'Take 3d12 physical damage')],
+  ['4 · a critical attack', A(act('crit', 15, 8, 8, {label:'Agility · broadsword swing'}),
+    'Roll damage · 3d8+3')],
+  ['5 · and its critical damage', DMG(dmg({max:[8, 8, 8], rolls:[4, 6, 3]}))],
+  ['6 · helped by two allies', A(act('hope', 15, 9, 4, {adv:adv([6, 2])}), 'Roll damage · 3d8+3')],
+  ['7 · no difficulty, so no verdict', A(rxn('hope', null, 10, 6), null)],
+];
+
+const paint = () => {
+  document.getElementById('rxn').innerHTML = RXN.map(([lb, mk]) => {
+    const [r, next] = mk();
+    return `<div class="slot"><s>${lb}</s><div class="stage">${A(r, next)}</div></div>`;
+  }).join('');
+
+  document.getElementById('dmg').innerHTML = DMGS.map(([lb, mk]) =>
+    `<div class="slot"><s>${lb}</s><div class="stage">${DMG(mk())}</div></div>`).join('');
+
+  document.getElementById('log').innerHTML = LOG().map(([lb, html]) =>
+    `<div class="slot"><s>${lb}</s><div class="stage">${html}</div></div>`).join('');
+};
+
+const playAll = () => {
+  const cards = [...document.querySelectorAll('.pl')];
+  cards.forEach((el, i) => setTimeout(() => play(el), (i % 5) * 850 + Math.floor(i / 5) * 70));
+};
+
+paint();
+document.getElementById('play').addEventListener('click', playAll);
+document.getElementById('reroll').addEventListener('click', () => { paint(); playAll(); });
+document.getElementById('lt').addEventListener('change',
+  e => document.documentElement.classList.toggle('light', e.target.checked));
+</script>
+</div>
+</body>
+</html>

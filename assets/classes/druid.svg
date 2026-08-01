@@ -1,0 +1,12 @@
+<!-- Druid: a two-tier conifer. Arcana and Sage — the natural world, and the
+     only thing in nature with a silhouette that survives being reduced to
+     triangles. A leaf needs a curve to stay a leaf; a tree does not.
+     The tiers overlap deliberately and fill as one shape, so there are no
+     interior gutters to blob shut at small sizes — the outline does all the
+     work. Trunk is 34 wide against a 174-wide canopy, which is what keeps it
+     from reading as an arrow with a tail. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M125 16 184 104 66 104Z"/>
+  <path d="M125 76 212 176 38 176Z"/>
+  <path d="M108 176 142 176 142 234 108 234Z"/>
+</svg>

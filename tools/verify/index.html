@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · port check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- The *ported* sheets, exactly as system.json loads them. If the
+     :root → .dh rewrite broke anything, it breaks here. -->
+<link rel="stylesheet" href="/styles/tokens.css">
+<link rel="stylesheet" href="/styles/frame.css">
+<link rel="stylesheet" href="/styles/mark.css">
+<link rel="stylesheet" href="/styles/gem.css">
+<link rel="stylesheet" href="/styles/track.css">
+<link rel="stylesheet" href="/styles/pool.css">
+<link rel="stylesheet" href="/styles/tile.css">
+<link rel="stylesheet" href="/styles/card.css">
+<link rel="stylesheet" href="/styles/roll.css">
+<link rel="stylesheet" href="/styles/swap.css">
+<link rel="stylesheet" href="/styles/sheet.css">
+<link rel="stylesheet" href="/styles/plate.css">
+<!-- Last, exactly as system.json loads it: the Svelte components' own styles.
+     Leaving it out is how the first pass missed that the sheet's stack is not
+     the study page's stack. -->
+<link rel="stylesheet" href="/styles/daggerheart-components.css">
+
+<style>
+  /* This page stands in for the Foundry document, which is the one thing the
+     ported sheets no longer bring with them — they style a subtree now. */
+  html,body{margin:0}
+  body{background:radial-gradient(130% 100% at 50% -20%,#191d24 0%,#0d1013 55%,#060709 100%) fixed;
+       font-family:"Google Sans Text",system-ui,sans-serif;padding:0 0 80px}
+  .dh{--art:url("/design/assets/art-sample-01.png")}
+  .hd{position:sticky;top:0;z-index:9;background:rgba(10,12,15,.9);backdrop-filter:blur(14px);
+      border-bottom:1px solid #22272f;padding:11px 26px;display:flex;gap:20px;align-items:center}
+  .hd b{font:700 10px/1 "Google Sans Code",monospace;letter-spacing:.2em;color:#7d8794;text-transform:uppercase}
+  .hd label{font:400 12px/1 "Google Sans Text",sans-serif;color:#9aa3ae;display:flex;gap:6px;align-items:center}
+  h2{font:600 14px/1 "Google Sans",sans-serif;color:#fff;margin:40px 26px 14px}
+  h2 span{display:block;font:600 9.5px/1 "Google Sans Code",monospace;letter-spacing:.22em;
+          color:#d4a72c;margin-bottom:8px}
+  .stage{display:flex;flex-wrap:wrap;gap:22px;padding:0 26px;align-items:flex-start}
+  /* A chat card is a fixed 300px in Foundry and does not scale. */
+  .stage .dh{width:300px}
+  .lbl{font:700 8px/1 "Google Sans Code",monospace;letter-spacing:.16em;color:#7d8794;
+       margin-bottom:8px}
+  #ok{margin:34px 26px 0;font:500 12px/1.7 "Google Sans Code",monospace;color:#9aa3ae;white-space:pre}
+  #ok b{color:#7ddc8f;font-weight:700}
+  #ok em{color:#ff7a5c;font-style:normal;font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <b>ported stylesheet check</b>
+  <label><input type="checkbox" id="lt"> light substrate</label>
+</div>
+
+<h2><span>// THE PLATE</span>Chat cards, from the ported sheets</h2>
+<div class="stage" id="plates"></div>
+
+<h2><span>// THE RAIL</span>Marks and gems, from the vendored components</h2>
+<div class="stage" id="rail"></div>
+
+<h2><span>// THE PANE</span>Where the traits strip belongs</h2>
+<div class="stage" id="traits"></div>
+
+<pre id="ok"></pre>
+
+<script type="module">
+/* The plate markup comes from design/plate.js — the accepted source — so what
+   is under test here is the *stylesheet* port and nothing else. */
+import { A, DMG, FOE, play } from '/design/plate.js';
+/* These come from the vendored copies the system actually ships. */
+import { MARKS, DAMAGE } from '/src/module/ui/mark.js';
+import { GEMS } from '/src/module/ui/gem.js';
+
+const wrap = html => `<div class="dh dh-plate">${html}</div>`;
+
+const duality = {
+  who:'Tabby', label:'Agility', kind:'attack roll', img:'/design/assets/art-sample-01.png',
+  h:9, f:4, out:'hope', total:15, dc:13, hit:true,
+  mods:[{k:'agility', v:2}]
+};
+const crit = {...duality, h:7, f:7, out:'crit', total:16};
+const fear = {...duality, h:3, f:10, out:'fear', total:14, hit:true};
+
+const damage = {
+  who:'Tabby', label:'Broadsword', img:'/design/assets/art-sample-01.png',
+  n:2, die:'d8', rolls:[6,3], total:12, dtype:'physical', mods:[{k:'weapon', v:3}]
+};
+
+const foe = {
+  who:'RIBBET BANDIT', label:'Hammer', d20:[15], total:17, target:'Tabby',
+  dc:12, hit:true, mods:[{k:'attack modifier', v:2}]
+};
+const foeMiss = {...foe, d20:[7], total:9, hit:false};
+
+document.getElementById('plates').innerHTML =
+  [A(duality), A(crit), A(fear), DMG(damage), FOE(foe), FOE(foeMiss)].map(wrap).join('');
+
+document.getElementById('rail').innerHTML = `
+<div class="dh" style="width:288px;background:var(--paper);padding:16px">
+  ${DAMAGE({major:8, severe:15, hp:7, marked:2, span:7})}
+  ${MARKS({label:'Stress', total:6, marked:6, kind:'stress', vuln:true, span:7})}
+  ${MARKS({label:'Slots', total:4, marked:1, kind:'armor'})}
+  <div class="pool" style="margin-top:14px">
+    <div class="hd"><span class="k">Hope</span><span class="n">4<s> / 6</s></span></div>
+    ${GEMS({cur:4, max:6, scars:0, sz:32, gap:10, ground:'paper'})}
+  </div>
+</div>`;
+
+/* The pane, twice.
+   Left: the traits strip inside .scr, where the first version put it — it is
+   tab content, so it scrolls away and it only exists on one tab out of five.
+   Right: a direct child of .pane above the tab bar, which is where the design
+   puts it and what `flex:none` on .trs is for.
+   Both carry the Svelte scope class, so the component stylesheet applies. */
+const SV = 'svelte-1fgn1r';
+const TR = [['Agility','+2',true],['Strength','+1',false],['Finesse','+1',false],
+            ['Instinct','+0',false],['Presence','+0',false],['Knowledge','−1',false]];
+
+const trs = `<div class="trs ${SV}">${TR.map(([k,v,on]) =>
+  `<button type="button" class="tr ${on ? 'on' : ''} ${SV}"><span class="k">${k}</span><span
+     class="v">${v}</span><i class="mk"></i></button>`).join('')}</div>`;
+
+const tabs = `<div class="tabs"><button class="on">loadout</button><button>vault</button
+  ><button>gear</button><span class="ct">prof 1</span></div>`;
+
+const filler = `<div class="pnl"><div class="k">Active weapons</div></div>`.repeat(6);
+
+const pane = (inside) => `
+  <div class="dh" style="width:420px">
+    <div class="win" style="--w:100%">
+      <div class="bd" style="--h:340px">
+        <div class="pane">
+          ${inside ? tabs + `<div class="scr">${trs}${filler}</div>`
+                   : trs + tabs + `<div class="scr">${filler}</div>`}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+document.getElementById('traits').innerHTML = `
+  <div>
+    <div class="lbl">BEFORE · inside .scr</div>${pane(true)}
+  </div>
+  <div>
+    <div class="lbl">AFTER · child of .pane</div>${pane(false)}
+  </div>`;
+
+document.getElementById('lt').addEventListener('change', e =>
+  document.documentElement.classList.toggle('dh-light', e.target.checked));
+
+for(const el of document.querySelectorAll('.pl')) play(el);
+
+/* Two things the port could have silently broken, checked rather than
+   eyeballed: that the palette actually resolves inside .dh, and that it does
+   *not* resolve outside it. A token that still lands on :root would look
+   perfect here and leak into every other package in Foundry. */
+/* setTimeout rather than requestAnimationFrame: rAF does not fire in a window
+   that is not painting, and a verification page is very often screenshotted
+   from a background tab. Same reason the plate's own tumble is on a timer. */
+setTimeout(() => { try {
+  const inside = getComputedStyle(document.querySelector('.dh'));
+  const outside = getComputedStyle(document.body);
+  const lines = [];
+  const check = (label, pass, detail) =>
+    lines.push(`${pass ? '<b>PASS</b>' : '<em>FAIL</em>'}  ${label}${detail ? '  — ' + detail : ''}`);
+
+  const paper = inside.getPropertyValue('--paper').trim();
+  const leak = outside.getPropertyValue('--paper').trim();
+  check('palette resolves inside .dh', !!paper, `--paper: ${paper || 'unset'}`);
+  check('palette does NOT leak to :root', !leak, leak ? `--paper leaked as ${leak}` : 'clean');
+
+  const dice = document.querySelectorAll('.pl .die').length;
+  const cores = document.querySelectorAll('.pl .die .core').length;
+  check('dice built with all three layers', dice > 0 && dice === cores, `${dice} dice / ${cores} cores`);
+
+  const cards = [...document.querySelectorAll('#plates > .dh')];
+  const widths = new Set(cards.map(c => Math.round(c.getBoundingClientRect().width)));
+  check('every plate is 300px', widths.size === 1 && widths.has(300), [...widths].join(', ') + 'px');
+
+  // 7 Hit Points + 6 Stress + 4 Armor Slots; 2 + 6 + 1 of them marked.
+  const boxes = document.querySelectorAll('#rail .mk .row > i').length;
+  const marked = document.querySelectorAll('#rail .mk .row > i.on').length;
+  check('mark rows built', boxes === 17 && marked === 9, `${boxes} boxes, ${marked} marked`);
+
+  const gems = document.querySelectorAll('#rail .gem').length;
+  check('gem row built', gems === 6, `${gems} gems`);
+
+  document.getElementById('ok').innerHTML = lines.join('\n');
+} catch (err) {
+  document.getElementById('ok').innerHTML = `<em>THREW</em>  ${err.message}`;
+} }, 700);
+</script>
+</body>
+</html>

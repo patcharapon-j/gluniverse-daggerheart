@@ -1,0 +1,13 @@
+<!-- Seraph: a winged mote. Splendor and Valor. Wings are the one class cue in
+     Daggerheart that is already literal on the card art, so the glyph does
+     not have to invent anything — it has to reduce.
+     Swept bars rather than feathered outlines: two parallelograms angled down
+     and out read as flight from the angle alone, and feathers are the first
+     thing to disappear. The centre lozenge is taller than wide so it does not
+     become a fourth diamond in a set that already has the ancestry pair and
+     the gear core. 20-unit gutters. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M70 78 70 120 14 174 14 128Z"/>
+  <path d="M180 78 180 120 236 174 236 128Z"/>
+  <path d="M125 70 160 125 125 190 90 125Z"/>
+</svg>

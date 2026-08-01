@@ -1,0 +1,9 @@
+<!-- Consumable: a stoppered vessel. A vial, a canister and a cartridge all
+     resolve to this silhouette, which is the genre-neutrality test the rest of
+     the set has to pass too — narrow stoppered neck, shoulders, chamfered
+     base. Solid rather than outlined: at 13px an outlined vessel fills in and
+     becomes a blob, and the silhouette is doing all the work anyway.
+     Distinct from gear.svg's ring-and-core by having no interior at all. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M92 18 158 18 158 40 150 40 150 70 198 140 198 206 174 230 76 230 52 206 52 140 100 70 100 40 92 40Z"/>
+</svg>

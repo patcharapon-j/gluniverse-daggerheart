@@ -1,0 +1,999 @@
+/* Ported from design/plate.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/plate.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   DH PLATE — A, and the four arrangements it beat
+
+   A is the card. B–E are frozen below as the record of the choice; they
+   pick up the die and the red critical for free because both live in
+   shared rules, and they do not get the portrait, which is A's.
+
+   Since A was chosen: the total lost its underline and gained weight,
+   the die's numeral is bigger and actually centred, the critical went
+   red end to end, and a portrait went in behind the field.
+
+   ── the die is a d12 now ──────────────────────────────────────────
+   A pentagon, because a pentagon is the *face* of a dodecahedron — the
+   shape you are actually looking at when a d12 lands. It keeps the gem
+   construction (flat saturated face, brighter rim where the light leaves
+   the edge, bloom on a wrapper so the filter is not clipped away by the
+   shape it describes) and it keeps Hope's gold and Fear's violet. What
+   it gives up is the diamond, which stays where it belongs: on the
+   sheet, as the pip you mark. A die you roll and a pip you fill are two
+   different objects and it was worth two different silhouettes.
+
+   ── the number is the subject ─────────────────────────────────────
+   It was 34px sharing a baseline with the verdict. It is 48 now, it sits
+   alone, it has no underline through it — it is marked up as a <u> so
+   the three parts of that row name themselves without a class each, and
+   the default decoration was drawing a line through the one glyph on the
+   card nobody should have to read past — and it is stroked, because
+   Google Sans stops at 700 and 700 was already where it started.
+
+   ── no Difficulty says nothing about itself ───────────────────────
+   Most duality rolls are made without one, and the card simply says
+   "WITH HOPE" — which is the whole truth of that roll. It does not
+   announce the absence. There is no "no difficulty" chip and no
+   placeholder about waiting: a missing Difficulty is not a fact worth a
+   slot, and a card narrating its own ignorance is worse than a card
+   that is quiet. On a reaction roll, where there is no Hope-or-Fear
+   sentence to fall back on, the sentence is omitted entirely and the
+   number stands alone.
+
+   ── and the critical is red, all the way through ──────────────────
+   Endfield's red is not a colour, it is a rung. Normal / Hard / Brutal:
+   the top one is not more red than the others, it is a saturated red
+   field *plus material* — a bloom, embers, a decorated cap — that the
+   tiers below simply do not have. Same with the I/II/III/IV threat
+   plates: the live one is lit and bracketed.
+
+   The gold is gone from it. The argument for gold was that a critical
+   counts as a roll with Hope — true as a rule, and wrong as a picture:
+   it made the loudest object on the card look like it was wearing
+   another outcome's jewellery, and the eye went to the gold first. The
+   Hope is stated where it actually lives, in the "+1 Hope" the card
+   hands you. So the critical is one material end to end, and it carries
+   four things nothing below it may: embers, a bracket, a lit glass edge,
+   and a struck badge.
+
+   The one honest cost: red is already --wound on this sheet, the
+   material of a Hit Point. This red is hotter, lighter and glows, and
+   it never appears on a mark — but it is a real adjacency and it is
+   recorded here rather than discovered later.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* #d1332a, not the #e0392c I started with. White on that measured 4.38:1
+   and the verdict is 15px bold — which is *not* large text (that starts
+   at 18.66px bold), so it needs the full 4.5. One notch darker puts it at
+   4.98 and the red is no less hot for it. */
+.dh{
+  --crit:#d1332a; --crit-dk:#7d1410; --crit-hi:#ff7a5c;
+  /* The bracket, the ring and the seal were gold. They are red now —
+     the critical is one material all the way through rather than a red
+     field wearing gold jewellery. #ffd8cb is the ember-white end of the
+     red ramp: 3.81:1 on the field, which clears the 3:1 a non-text
+     graphic needs, where the true --crit-hi managed 1.94 and vanished.
+     The Hope in a critical is still stated — it is the "+1 Hope" the
+     card offers you, which is where the rule actually lives. */
+  --crit-br:#ffd8cb;
+  /* --crit is a *fill*, and like --hope it is illegible as text: on the
+     dark sheet it measured 3.05:1 against paper. --crit-tx is the same
+     red pushed until it carries itself, and like --hope-tx it flips with
+     the substrate rather than staying put. */
+  --crit-tx:#f0705f;
+  /* the same job for the wound, which is a fill for the identical reason */
+  --wound-tx:#e2727a;
+}
+html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
+
+/* ── the dice ──────────────────────────────────────────────────────
+   Three silhouettes, and only three.
+
+   The duality die and the adversary's d20 are drawn as the *solid*,
+   seen down a face normal — not as one face of it. That is the shape a
+   reader already has in their hand, and it is the reason a d12 and a
+   d20 are told apart on a table at a glance: a dodecahedron is round
+   and a d20 is angular, long before you count anything.
+
+     d12  decagon, front face a pentagon at 0.618 of the radius, five
+          facets between them.
+     d20  hexagon, front face an upward triangle at 0.618 of the radius,
+          six facets.
+
+   Both are the true face-on projection, and both land on the same
+   number. Down a 5-fold axis a dodecahedron's front-face vertices
+   project to radius 1.0514 and its silhouette vertices to 1.7013; down
+   a 3-fold axis an icosahedron's to 1.1547 and 1.8683. Both ratios are
+   0.618 — φ−1, the golden section that builds both solids.
+
+   The d12 was drawn as a pentagon for a while, on the argument that a
+   decagon at 38px is a coin. It was — but the fault was the shading,
+   not the silhouette: with a flat ring and no lit edges *any* ten-sided
+   outline is a disc. Faceted properly it reads as the solid, and the
+   silhouette differing from the front face is exactly what makes it
+   read as a solid rather than as one face seen straight on. Same reason
+   the d20 works.
+
+   Everything else stays a square: the advantage d6 (whose face really
+   is a square) and the damage dice. That part of the old rule holds and
+   for the old reason — a d8 face and a d10 face are shapes nobody
+   recognises at 26px, and a reader squinting at a silhouette to learn
+   something the arithmetic line states in words is doing the harder
+   thing. The d20 is the exception because in this game it is rolled
+   exactly once, by the GM, at you: it never competes for meaning, so
+   its shape is not asking you to tell two things apart. It is telling
+   you which side of the table the card came from. */
+/* Vertices every 36° from the top, radius 50. The old pentagon had to
+   be stretched 1.1056 to fill its box; a decagon fills it already, so
+   the shape is regular and concentric and nothing downstream has to
+   carry a correction. */
+.dh .die{position:relative;display:grid;place-items:center;flex:none;
+  width:var(--sz,38px);height:var(--sz,38px);
+  --face:polygon(50% 0,79.39% 9.55%,97.55% 34.55%,97.55% 65.45%,79.39% 90.45%,
+    50% 100%,20.61% 90.45%,2.45% 65.45%,2.45% 34.55%,20.61% 9.55%);
+  --core:polygon(50% 19.1%,79.39% 40.45%,68.16% 75%,31.84% 75%,20.61% 40.45%);
+  --nudge:.0121;--rim:2.5px;
+  --tone:var(--line-2);--rimc:var(--line-2);--facec:var(--sunk);--numc:var(--ink-2)}
+/* `lit`, not `win`. A study page loads one stylesheet at a time and can
+   afford a short word twice; a game system loads all of them into one
+   document, and there `.win` is already the sheet's window — so the losing
+   die was being drawn as a 880px-wide paper panel with a drop shadow, which
+   is what "a corner-cut square over the dice" looks like from the outside.
+   Lit is also the truer word: what this class does is light the die, and it
+   is the same thing being said on the d20 and on the kept advantage chip. */
+.dh .die.h{--tone:#d4a72c} .dh .die.f{--tone:#8256cc}
+.dh .die.h.lit{--rimc:#f2d178;--facec:#d4a72c;--numc:#171008}
+.dh .die.f.lit{--rimc:#ab88ea;--facec:#7b4fc0;--numc:#fff}
+.dh .die .lamp{position:absolute;inset:0}
+.dh .die.lit .lamp{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--tone) 60%,transparent))
+                      drop-shadow(0 0 15px color-mix(in srgb,var(--tone) 28%,transparent))}
+.dh .die .lamp::before,.dh .die .lamp::after{content:"";position:absolute;clip-path:var(--face)}
+.dh .die .lamp::before{inset:0;background:var(--rimc)}
+.dh .die .lamp::after{inset:var(--rim);background:var(--ring,var(--facec))}
+
+/* ── the facets ────────────────────────────────────────────────────
+   The ring around the front face is shaded by a conic with hard stops
+   on the facet boundaries, plus a lit edge on each boundary.
+
+   The edge is not a hairline. A 1px stroke at these sizes is a
+   sub-pixel line at partial alpha — the same grey smudge the X ran
+   into. It is a 5° *wedge*, which is 2px at the outer rim and 1.2px at
+   the inner one, so it never falls below the rendering floor at any
+   radius. Without it a cosine ramp leaves two adjacent facets within
+   two points of each other on the dark side and the boundary between
+   them disappears; that is precisely why the first decagon read as a
+   coin, and it was the shading at fault rather than the silhouette.
+
+   And the edge is exactly --facec — the brightest value the ring is
+   allowed. A real edge catches the light, so this is right physically,
+   and it stays inside the guarantee below.
+
+   The ring only ever *darkens*. That is the correct lighting — the
+   front face is square to you and catches the most light, the folded-
+   back facets less — and it is also the guarantee: no numeral ever sits
+   on anything lighter than the face colour it was measured against, so
+   every contrast figure on this sheet still holds with the facets on.
+
+   Sector values are cos of the angle to a light at the upper left,
+   mapped to 6–26% black. The floor is 6 rather than 0 so the front
+   face's own outline never disappears into the facet next to it on the
+   lit side; the ceiling is 26 because that is where the gold d12's dark
+   numeral still measures 4.8:1 against the deepest facet, and it is the
+   dark-ink dice, not the white-ink ones, that a darker ring costs. */
+.dh .die .core{position:absolute;inset:0;z-index:1;clip-path:var(--core);background:var(--facec)}
+.dh .die{--ring:conic-gradient(from 0deg,
+  var(--facec) 0 2.5deg,
+  color-mix(in srgb,#000 14%,var(--facec)) 2.5deg 69.5deg,
+  var(--facec) 69.5deg 74.5deg,
+  color-mix(in srgb,#000 25%,var(--facec)) 74.5deg 141.5deg,
+  var(--facec) 141.5deg 146.5deg,
+  color-mix(in srgb,#000 23%,var(--facec)) 146.5deg 213.5deg,
+  var(--facec) 213.5deg 218.5deg,
+  color-mix(in srgb,#000 12%,var(--facec)) 218.5deg 285.5deg,
+  var(--facec) 285.5deg 290.5deg,
+  color-mix(in srgb,#000 6%,var(--facec)) 290.5deg 357.5deg,
+  var(--facec) 357.5deg 360deg)}
+
+/* ── the square: d6 and damage ─────────────────────────────────────
+   Flat, and no core — a d6 seen face-on *is* one square and there is
+   nothing folded back to shade. */
+.dh .die.sq{--face:polygon(0 0,100% 0,100% 100%,0 100%);--nudge:0;--rim:2px;
+  --ring:var(--facec)}
+.dh .die.sq .core{display:none}
+
+/* ── the d20 ───────────────────────────────────────────────────────
+   Hexagon, front face an upward triangle at the same 0.618. Six facets
+   rather than five, so the light gets its own six-step ramp. */
+.dh .die.d20{--face:polygon(50% 0,93.3% 25%,93.3% 75%,50% 100%,6.7% 75%,6.7% 25%);
+  --core:polygon(50% 19.1%,76.76% 65.45%,23.24% 65.45%);
+  /* regular and concentric, so the centroid is the centre and the only
+     offset left is the font's own 1.21% */
+  --nudge:.0121;
+  --ring:conic-gradient(from 0deg,
+    var(--facec) 0 2.5deg,
+    color-mix(in srgb,#000 13%,var(--facec)) 2.5deg 57.5deg,
+    var(--facec) 57.5deg 62.5deg,
+    color-mix(in srgb,#000 23%,var(--facec)) 62.5deg 117.5deg,
+    var(--facec) 117.5deg 122.5deg,
+    color-mix(in srgb,#000 26%,var(--facec)) 122.5deg 177.5deg,
+    var(--facec) 177.5deg 182.5deg,
+    color-mix(in srgb,#000 19%,var(--facec)) 182.5deg 237.5deg,
+    var(--facec) 237.5deg 242.5deg,
+    color-mix(in srgb,#000 9%,var(--facec)) 242.5deg 297.5deg,
+    var(--facec) 297.5deg 302.5deg,
+    color-mix(in srgb,#000 6%,var(--facec)) 302.5deg 357.5deg,
+    var(--facec) 357.5deg 360deg)}
+/* "20" is two digits on a triangle, so it comes down a step. It still
+   overhangs the front face onto the upper facets, and that is correct:
+   the numeral is painted on the die, not fitted inside one plane of it.
+   Which is exactly why the ring may only darken. */
+.dh .die.d20 em{font-size:calc(var(--sz,38px)*.40)}
+
+/* Advantage is a lit steel chip. Disadvantage is the *same chip as a
+   negative* — dark face, lit rim — because it is the same die doing the
+   opposite job, and inventing a hue for it would spend one of the four
+   colours this system has on something the arithmetic line already says
+   in words. Fixed hexes, not theme tokens: a die is a rendered object
+   with its own material, the way the Hope die is.
+
+   When several allies Help, each rolls a d6 and only the highest counts.
+   The ones that did not win are unlit — exactly the grammar the losing
+   duality die already uses, so there is nothing new to learn. */
+.dh .die.a{--tone:#dfe6ee;--rimc:#f7fafd;--facec:#dbe3ec;--numc:#14161a}
+.dh .die.a.neg{--tone:#c3ccd8;--rimc:#c3ccd8;--facec:#101318;--numc:#eef2f7}
+
+/* ── crossed off ───────────────────────────────────────────────────
+   Unlit was not enough. The losing *duality* die is unlit too, and that
+   die still counts — both duality dice are summed. A helper's d6 that
+   did not win is thrown away entirely, and those are two different
+   fates that were wearing the same face.
+
+   So the X means one thing and one thing only: **this did not count.**
+   Nothing else on any card may use it. It is --xmark-p, the material
+   this system already uses for a struck-out scar.
+
+   It does largely cover the numeral, and that is the right trade rather
+   than a compromise: a discarded helper's face value is trivia, the
+   arithmetic line already reports the one that counted, and a strike you
+   have to look twice at is not a strike. */
+/* --ring flattened with it: a die that did not count is not being lit
+   from anywhere, and it keeps the strike's halo — which is drawn in
+   --facec — matching every pixel it crosses. */
+.dh .die.dim{--tone:var(--line-2);--rimc:var(--line-2);--facec:var(--sunk);--numc:var(--ink-2);
+  --ring:var(--sunk)}
+/* Thickness scales with the die, so a 26px damage chip and a 44px display
+   die carry the same *proportion* of stroke rather than the same pixel —
+   at a flat 1.5px the mark read as a smear on the small ones and as a
+   blot on the large. */
+.dh .die.dim::before,.dh .die.dim::after{content:"";position:absolute;z-index:3;pointer-events:none;
+  /* max(1px, …) because .028 of a 29px chip is 0.8px, and a sub-pixel
+     line does not render as a thin line — it renders as a grey smudge at
+     partial alpha, which is the one thing a strike must not be. */
+  left:13%;right:13%;height:max(1px,calc(var(--sz,38px)*.028));
+  top:calc(50% - max(.5px,var(--sz,38px)*.014));background:var(--xmark-p);
+  /* a halo in the face's own colour. --xmark-p and --ink-2 are one step
+     apart in value, so without it the strike and the numeral merged into
+     a single grey blob and neither read. The halo cuts the X out of the
+     digit rather than laying it on top. */
+  box-shadow:0 0 0 calc(var(--sz,38px)*.022) var(--facec)}
+.dh .die.dim::before{transform:rotate(42deg)}
+.dh .die.dim::after{transform:rotate(-42deg)}
+
+/* Damage dice are the wound: the material a Hit Point is made of, and
+   the one place this card is allowed to use that red. On a critical the
+   maximised set is struck rather than rolled, so it is shown as the deep
+   cut with a bright rim — it did not land there, it was awarded. */
+/* fixed, like every other die material — --wound flips with the sheet
+   and took white down to 4.67:1 on the dark theme */
+.dh .die.w{--tone:#bd3f47;--rimc:#e2727a;--facec:#bd3f47;--numc:#fff}
+.dh .die.w.max{--tone:#e2727a;--rimc:#ffe9ea;--facec:#5e1116;--numc:#fff}
+/* The numeral goes on the front face, and every shape here is a regular
+   polygon concentric with its box — so its area centroid is simply the
+   centre, 50%. The 6.5% nudge the old stretched pentagon needed is
+   gone with the stretch.
+
+   What is left is the font's own offset, unchanged and still derived:
+   Google Sans has ascent .965 and descent .285, so at line-height 1 the
+   baseline sits .840em down the line box; the digits' ink runs from the
+   baseline to .735em above it, centred .3675em above it — putting the
+   ink's centre at 48.79% of the die. 50 − 48.79 = 1.21%. Scale-
+   invariant, because the font size is a fraction of --sz.
+
+   Bigger too — .44 of the die rather than .37 — and thickened with a
+   stroke, because Google Sans stops at 700 and 700 at 17px on a lit gold
+   face is thinner than the face deserves. */
+.dh .die em{position:relative;z-index:2;
+  transform:translateY(calc(var(--sz,38px) * var(--nudge,.065)));
+  font:700 calc(var(--sz,38px)*.44)/1 var(--f-display);font-style:normal;
+  letter-spacing:-.045em;color:var(--numc);font-variant-numeric:tabular-nums;
+  -webkit-text-stroke:calc(var(--sz,38px)*.016) currentColor}
+/* A square's centroid *is* its centre, so --nudge is 0 and the numeral
+   sits where the grid already put it. */
+
+/* ── shell ─────────────────────────────────────────────────────────*/
+.dh .pl{position:relative;overflow:hidden;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui),system-ui,sans-serif;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
+  box-shadow:0 3px 14px -4px rgba(0,0,0,.6),inset 0 0 0 1px var(--line)}
+.dh .pl.hope{--o:#d4a72c;--o-dk:#6d4a08;--o-hi:#f2d178;--o-tx:var(--hope-tx);--o-ink:#14161a}
+.dh .pl.fear{--o:#7b4fc0;--o-dk:#3a1f6b;--o-hi:#ab88ea;--o-tx:var(--fear-tx);--o-ink:#fff}
+.dh .pl.crit{--o:var(--crit);--o-dk:var(--crit-dk);--o-hi:var(--crit-hi);
+  --o-tx:var(--crit-tx);--o-ink:#fff}
+/* A reaction roll rolls the Duality Dice and then throws the duality
+   away: no Hope, no Fear, no GM move. So it does not get a Hope or Fear
+   field. Colouring it gold would promise a token nobody is going to
+   hand you. Graphite, and the dice keep their own colours because the
+   dice are still the dice. */
+.dh .pl.flat{--o:#5c636d;--o-dk:#262a31;--o-hi:#8d95a1;--o-tx:var(--ink-2);--o-ink:#fff}
+/* Damage is the wound: the material a Hit Point is made of. Fixed
+   values rather than the --wound token, because a card field is a
+   rendered surface and does not flip with the sheet's substrate — the
+   same reason the Hope field is a literal gold. */
+.dh .pl.wound{--o:#bd3f47;--o-dk:#5e1116;--o-hi:#e2727a;--o-tx:var(--wound-tx);--o-ink:#fff}
+
+/* A flex row rather than one truncating line, so that when this has to
+   give something up it gives up the right thing. The name is flex:none —
+   it is the answer to "whose roll is this" and it is never the part that
+   goes. The label shrinks and ellipses, which on a critical with a long
+   name costs the tail of the flavour and keeps the trait. */
+.dh .pl-eye{display:flex;align-items:baseline;min-width:0;
+  font:700 8px/1 var(--f-mono);letter-spacing:.22em;text-transform:uppercase}
+.dh .pl-eye b{flex:none;font-weight:700;letter-spacing:.14em}
+.dh .pl-eye u{flex:none;text-decoration:none;opacity:.6;margin:0 5px}
+/* .15em rather than the name's .22: the name is a caption and wants the
+   air, the label is a sentence and does not. It also buys back the ~12px
+   that made a critical ellipse "parapet run" one character short. */
+.dh .pl-eye i{flex:0 1 auto;min-width:0;font-style:normal;letter-spacing:.15em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* text-decoration:none because this is a <u> — it is a <u> so that the
+   markup names the three parts of the row (verdict, total, label) without
+   a class each, and it was drawing its own underline through the one
+   glyph on the card nobody should have to read past.
+
+   Heavier by stroke rather than weight: Google Sans ships 400–700 and the
+   total was already at 700. A 1.2px stroke on a 48px glyph is about a
+   half-step of weight — enough that the number stops being "large text"
+   and starts being the object the card is about. */
+.dh .pl-num{font:700 48px/.82 var(--f-display);letter-spacing:-.055em;
+  font-variant-numeric:tabular-nums;display:block;text-decoration:none;
+  -webkit-text-stroke:1.2px currentColor}
+.dh .pl-vb{font:700 15px/1.05 var(--f-display);letter-spacing:-.015em;text-transform:uppercase;
+  display:block}
+/* the ghost — a copy of the outcome at 3×, running off the frame. Endfield
+   does this on every hero panel and it is the cheapest way to make a
+   300px box feel like it was cropped out of something larger. */
+.dh .pl-gh{position:absolute;font:700 54px/.78 var(--f-display);letter-spacing:-.065em;
+  text-transform:uppercase;white-space:nowrap;pointer-events:none;user-select:none;
+  color:rgba(0,0,0,.15)}
+.dh .pl.fear .pl-gh{color:rgba(255,255,255,.13)}
+.dh .pl.crit .pl-gh{color:rgba(0,0,0,.2)}
+.dh .pl.flat .pl-gh,.dh .pl.wound .pl-gh,.dh .pl.foe .pl-gh{color:rgba(255,255,255,.13)}
+
+/* The whole line moved up one step of presence. At --ink-3 the labels —
+   "dice", "Agility", the name of the feature you spent — measured 3.64:1
+   on the light sheet, and that line is the audit trail: it is the only
+   place the card shows its work. The hierarchy is kept by pushing the
+   values to full --ink rather than by holding the labels down. */
+.dh .pl-arith{display:flex;flex-wrap:wrap;gap:0 5px;font:500 9.5px/1.5 var(--f-mono);color:var(--ink-2)}
+.dh .pl-arith i{font-style:normal} .dh .pl-arith i b{font-weight:700;color:var(--ink)}
+/* the operator is not decoration — the term prints Math.abs and the sign
+   lives here, so a faint + or − loses the only thing that says which way
+   a modifier went */
+.dh .pl-arith i.sp b{color:var(--hope-tx)} .dh .pl-arith u{text-decoration:none;color:var(--ink-2)}
+/* a term the GM paid Fear for. Same slot, same grammar as .sp — marked
+   in the currency that bought it, and the two sides of the table never
+   wear each other's colour. */
+.dh .pl-arith i.fe b{color:var(--fear-tx)}
+
+/* The meta line. `no difficulty` is set in the same weight as `vs 15`
+   because it is the same kind of fact — the GM is allowed to withhold a
+   Difficulty, and a card that renders that as a gap reads as broken. */
+/* --ink-2. At --ink-3 this line measured 3.64:1 on the light sheet, and
+   8px mono is the smallest type on the card — the one place there is no
+   margin to spend. */
+.dh .pl-meta{display:flex;gap:8px;padding:9px 12px 0;font:700 8px/1 var(--f-mono);
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2)}
+.dh .pl-meta s{text-decoration:none;margin-left:auto;color:var(--o-tx)}
+
+.dh .pl-act{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 11px}
+.dh .pl-b{flex:1 1 auto;border:0;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:6px;padding:8px 10px;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .14s,color .14s,box-shadow .14s,transform .1s}
+.dh .pl-b i{flex:none;width:8px;height:8px;background:var(--o);transform:rotate(45deg)}
+.dh .pl-b:hover{background:var(--o);color:var(--o-ink);box-shadow:none}
+.dh .pl-b:hover i{background:var(--o-ink)}
+.dh .pl-b:active{transform:translateY(1px)}
+.dh .pl-b.go{flex:1 1 100%;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line)}
+.dh .pl-b.theirs{cursor:default;background:transparent;color:var(--o-tx);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--o) 42%,transparent)}
+.dh .pl-b.theirs:hover{background:transparent;color:var(--o-tx);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--o) 42%,transparent)}
+
+.dh .shards{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(114deg,transparent 0 9px,rgba(255,255,255,.06) 9px 10px,
+    transparent 10px 21px,rgba(255,255,255,.032) 21px 23px)}
+.dh .pl.fear .shards{opacity:.85}
+
+/* the dice strip, shared by every variant */
+.dh .pl-st{display:flex;align-items:center;gap:9px;padding:11px 12px 0}
+.dh .pl-st .pl-arith{margin-left:auto;justify-content:flex-end;text-align:right;max-width:54%}
+
+/* ══ A · PLATE ═════════════════════════════════════════════════════
+   V1 as chosen. The field owns the full width, the verdict sits on it,
+   the number is alone underneath at 48 with the ghost running out behind
+   it — and the portrait is now under all of it on the left.
+
+   ── the field's luminance band ─────────────────────────────────────
+   The old gradient ran --o-dk → --o → near-white, and that was a bug I
+   had not caught: on the Hope plate the ink is *dark*, the gradient's
+   dark end was on the left, and the verdict was landing on #6d4a08 at
+   2.27:1. The band is set from the ink now, not from taste:
+
+     hope   ink is dark, so the field may go as light as it likes and
+            bottoms out at #a38122 — 4.92:1, the last stop that holds.
+     fear   ink is white, so the field tops out at --o itself: 5.64.
+     crit   same rule, tops out at --o: 4.98.
+
+   Which is why Hope runs light→deep and Fear/critical run deep→light.
+   It is one rule, not two: the field always starts at the end its own
+   ink is safest on. The near-white stop is gone; the lift it used to
+   give now comes from the portrait, the shards and the foil, which are
+   better at it anyway. */
+.dh .a1 .p{position:relative;overflow:hidden;isolation:isolate;padding:11px 12px 13px}
+.dh .a1.hope .p{background:linear-gradient(103deg,#e8cb75 0,#d4a72c 62%,#a38122 100%)}
+.dh .a1.fear .p{background:linear-gradient(103deg,#331b5e 0,#6a41ab 62%,#7b4fc0 100%)}
+.dh .a1.crit .p{background:linear-gradient(103deg,#71120e 0,#b32720 62%,#d1332a 100%)}
+.dh .a1.flat .p{background:linear-gradient(103deg,#22262d 0,#4b515a 62%,#5c636d 100%)}
+.dh .a1 .p .pl-gh{right:-5%;bottom:-12px}
+/* opaque, not .52/.6 alpha. It carries the character's name now, and at
+   the old alpha the eyebrow measured 2.34–3.79:1 depending where along
+   the field it fell — the weakest text on the card, holding the one
+   thing the card exists to attribute. */
+.dh .a1 .p .pl-eye{position:relative;z-index:2;color:var(--o-ink)}
+.dh .a1 .p .pl-eye u{opacity:.55}
+/* justify-content matters only when the sentence is absent — a reaction
+   with no Difficulty has nothing true to say, so the number is alone and
+   still belongs on the right, where it is on every other card. */
+.dh .a1 .p .row{position:relative;z-index:2;display:flex;align-items:flex-end;gap:10px;margin-top:9px;
+  justify-content:flex-end}
+.dh .a1 .p .pl-vb{flex:1 1 auto;min-width:0;color:var(--o-ink);padding-bottom:3px}
+.dh .a1 .p .pl-num{flex:none;color:var(--o-ink)}
+
+/* ── the portrait ──────────────────────────────────────────────────
+   Endfield never drops a portrait into a panel as a picture — it drops
+   it in as *tone*: one channel, bled off the edge, sitting under the
+   type rather than beside it. Same here. The face is the fastest way to
+   answer "who rolled this", far faster than a name on the meta line, and
+   it costs no layout at all because it lives behind type that was
+   already there.
+
+   ── it is a duotone, not a photograph ─────────────────────────────
+   The first version locked the blend by direction — screen on Hope so it
+   could only lighten, multiply on Fear so it could only darken — on the
+   argument that this made it impossible to break the text's contrast.
+   Which was true, and which made it nearly invisible, because the end of
+   the field I put it on is the end its own blend has no headroom at: a
+   screen over pale gold has almost nowhere left to go.
+
+   So the constraint is stated directly instead. The image is mapped into
+   a two-colour ramp whose *endpoints are both inside the band its ink
+   needs*, and every pixel is a blend of those two, so every pixel is in
+   band by construction:
+
+              shadow  ->  ink        light  ->  ink      luminance span
+     hope    #a8831f      5.12:1     #ecd889   12.68:1        2.8x
+     fear    #150929     19.04:1     #6f5b94    5.86:1         25x
+     crit    #3a0705     17.32:1     #955247    5.88:1         11x
+
+   Hope's shadow is the binding constraint — its ink is the dark one, so
+   the portrait's darks cannot go below 4.5:1 against near-black and the
+   ramp is inherently flatter there than on Fear. That is a real property
+   of a dark-on-bright plate, not something to tune away.
+
+   Built as three layers so each step stays bounded:
+     .por   the shadow colour, and the mask that fades it off
+     u      the image, greyscaled and clamped to --pk by brightness()
+     b      the hue, multiplied onto it — max per channel becomes --pT
+     i      screens the pair onto the shadow: A + k*T*(1 - A)
+   The tint is what keeps a Fear silhouette violet and a critical red
+   instead of both going the grey a plain screen gives you. */
+.dh .a1 .por{position:absolute;left:0;top:0;bottom:0;width:70%;pointer-events:none;
+  isolation:isolate;background:var(--pA);
+  -webkit-mask-image:linear-gradient(90deg,#000 0 34%,rgba(0,0,0,.55) 68%,transparent 96%),
+    linear-gradient(#000 0 62%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0 34%,rgba(0,0,0,.55) 68%,transparent 96%),
+    linear-gradient(#000 0 62%,transparent 100%);
+  -webkit-mask-composite:source-in;mask-composite:intersect}
+.dh .a1 .por i{position:absolute;inset:0;isolation:isolate;mix-blend-mode:screen}
+/* contrast() before brightness() pushes more of the image to the two ends
+   of the ramp, which is what makes a narrow band still read as a figure.
+   It clamps at 1 and brightness() scales after, so the ceiling is still
+   exactly --pk. */
+/* The same three framing variables the sheet's diorama reads, set on the
+   portrait from the actor's own `portrait.plate`. This panel is a different
+   shape from the diorama and always was — a crop that centres a face in a
+   180px band puts a chin here — so it gets its own framing rather than
+   inheriting one that was judged against another box. Defaults hold the old
+   fixed 50%/10% behaviour for anything that has never been framed. */
+.dh .a1 .por u{position:absolute;inset:0;background:var(--pic) 50% 10%/cover;
+  transform:translate(var(--fx,0%),var(--fy,0%)) scale(var(--fz,1));
+  filter:grayscale(1) contrast(1.32) brightness(var(--pk))}
+.dh .a1 .por b{position:absolute;inset:0;background:var(--pT);mix-blend-mode:multiply}
+.dh .a1.hope .por{--pA:#a8831f;--pT:#ffdf9a;--pk:.78}
+.dh .a1.fear .por{--pA:#150929;--pT:#c4a9ff;--pk:.50}
+.dh .a1.crit .por{--pA:#3a0705;--pT:#ffa892;--pk:.46}
+.dh .a1.flat .por{--pA:#16191e;--pT:#c8d2de;--pk:.44}
+/* No edge, no vignette, no hairline where it ends. The mask is a plain
+   fade to nothing because anything drawn at the boundary reads as a seam,
+   and a seam is the opposite of what "faded at the edge" asked for. */
+
+/* ══ DAMAGE ════════════════════════════════════════════════════════
+   A damage roll has no duality axis and no verdict — it is a quantity,
+   and the only question about it is how big. So the parts change job:
+   the sentence slot carries the damage *type* (the one thing about a
+   damage number that changes what happens to it), the meta line carries
+   the notation, and the number is the whole card.
+
+   The card is authoritative about the number and says nothing about Hit
+   Points, which is the same posture the duality card takes toward the
+   fiction — how many HP this becomes depends on thresholds, armour and
+   resistance that live on the target, not here.
+
+   Two registers, because this is the one call I did not want to make
+   alone:
+
+     .wound      the wound plate — A's own grammar in the wound's red
+     .wound.blk  the black bar — colour reduced to a lit lower edge
+
+   The bar exists because red is now doing two jobs on this card family,
+   and a saturated red damage plate lands one message after a saturated
+   red critical. The bar sidesteps that entirely by saying: an *outcome*
+   is coloured, a *quantity* is not. */
+.dh .a1.blk .p{background:linear-gradient(96deg,#0a0c0f 0,#14171c 58%,
+    color-mix(in srgb,var(--o) 20%,#14171c) 100%);
+  box-shadow:inset 0 -2px 0 var(--o)}
+.dh .a1.blk .p .pl-eye{color:#dfe5ec}
+.dh .a1.blk .p .pl-vb{color:#eef2f7}
+.dh .a1.blk .p .pl-num{color:var(--o-hi)}
+.dh .a1.blk .p .pl-gh{color:color-mix(in srgb,var(--o) 26%,transparent)}
+.dh .a1.blk .por{--pA:#0b0e12;--pT:#e8c6c4;--pk:.42}
+
+/* The dice get their own row rather than sharing one with the
+   arithmetic. At Proficiency 6 a critical rolls twelve of them — six
+   struck at maximum and six rolled — and twelve chips plus a breakdown
+   do not fit across 276px without one of them becoming unreadable. */
+.dh .dmg-st{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:11px 12px 0}
+.dh .dmg-st .grp{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+/* --ink-2: the + is not decoration, it is the sentence "and these were
+   added to those", and at --ink-3 it measured 4.43:1 */
+.dh .dmg-st .op{font:700 12px/1 var(--f-mono);color:var(--ink-2);margin:0 1px}
+/* the maximised set is tagged, because "these were not rolled" is the
+   whole of the critical damage rule and a bright die alone does not say
+   it */
+.dh .dmg-st .grp > s{align-self:stretch;display:grid;place-items:center;text-decoration:none;
+  padding:0 5px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line-2);
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2)}
+.dh .a1 .pl-arith.dmg-a{padding:9px 12px 0}
+
+/* ══ B · SPLIT ═════════════════════════════════════════════════════
+   Endfield's "Total Test Criteria 45" block: the number gets a saturated
+   field of its own, hard against the verdict's darker one. Two fields,
+   one seam, and the seam is where the eye lands.
+
+   It is the only variant where the number is not merely large — it is
+   *housed*, which is a different kind of emphasis and reads at a smaller
+   size than A needs. */
+.dh .b1 .p{display:flex;align-items:stretch;background:var(--o-dk);position:relative;overflow:hidden}
+.dh .b1 .p .lf{flex:1 1 auto;min-width:0;padding:11px 11px 12px;position:relative}
+.dh .b1 .p .pl-gh{left:-4px;bottom:-14px;font-size:46px;color:rgba(255,255,255,.09)}
+.dh .b1 .p .pl-eye{position:relative;color:rgba(255,255,255,.5)}
+.dh .b1 .p .pl-vb{position:relative;margin-top:9px;color:#fff;font-size:14px}
+/* The highlight stop is pulled back to 55% of itself. At full --o-hi the
+   numeral's cap height reached into a zone where white measured 2.56:1 —
+   under the 3:1 large-text floor, on the largest glyph on the card. */
+.dh .b1 .p .rt{flex:none;display:grid;place-items:center;padding:0 13px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--o-hi) 55%,var(--o)) 0,
+    var(--o) 55%,var(--o-dk) 100%);
+  clip-path:polygon(9px 0,100% 0,100% 100%,0 100%)}
+.dh .b1 .p .rt .pl-num{color:var(--o-ink);font-size:44px}
+
+/* ══ C · WEDGE ═════════════════════════════════════════════════════
+   The field's lower edge is a hard diagonal and the dice sit *across*
+   it — half on the colour, half on the paper. Endfield breaks its own
+   panel boundaries constantly and it is the single move that most makes
+   a flat rectangle stop looking like a flat rectangle.
+
+   The cost is real estate: a wedge needs headroom, so this is the
+   tallest of the five. */
+.dh .c1 .p{position:relative;padding:11px 12px 30px;
+  background:linear-gradient(101deg,var(--o-dk) 0,var(--o) 74%,
+    color-mix(in srgb,var(--o) 72%,#fff) 100%);
+  clip-path:polygon(0 0,100% 0,100% 74%,0 100%)}
+.dh .c1 .p .pl-gh{right:-5%;top:4px;font-size:50px}
+.dh .c1 .p .pl-eye{position:relative;color:rgba(0,0,0,.52)}
+.dh .c1.fear .p .pl-eye,.dh .c1.crit .p .pl-eye{color:rgba(255,255,255,.6)}
+.dh .c1 .p .pl-vb{position:relative;margin-top:9px;color:var(--o-ink)}
+.dh .c1 .cross{display:flex;align-items:center;gap:10px;padding:0 12px;margin-top:-30px;
+  position:relative;z-index:3}
+.dh .c1 .cross .pl-num{color:var(--ink);margin-left:auto}
+.dh .c1 .pl-st{padding-top:12px}
+
+/* ══ D · BLACK BAR ═════════════════════════════════════════════════
+   Endfield's other register and the one it uses more: content on a
+   near-black bar, with the colour reduced to a lit edge, a chip and the
+   numeral. Restrained — and restraint is what buys the critical its
+   shock, because when this card *does* flood red you have never seen it
+   flood anything.
+
+   It is also the only variant that does not fight a domain card for
+   attention when both are on screen. */
+.dh .d1 .p{position:relative;overflow:hidden;padding:12px 12px 13px;
+  background:linear-gradient(96deg,#0a0c0f 0,#14171c 58%,
+    color-mix(in srgb,var(--o) 16%,#14171c) 100%);
+  box-shadow:inset 0 -2px 0 var(--o)}
+.dh .d1 .p .pl-gh{right:-5%;bottom:-14px;font-size:52px;
+  color:color-mix(in srgb,var(--o) 22%,transparent)}
+.dh .d1 .p .pl-eye{position:relative;color:#6f7783}
+.dh .d1 .p .row{position:relative;display:flex;align-items:flex-end;gap:10px;margin-top:9px}
+.dh .d1 .p .pl-vb{flex:1 1 auto;min-width:0;color:#e8ecf1;padding-bottom:3px}
+/* the chip: a lit block behind the verdict's first word, Endfield's
+   "/Recommended Operator Level [LV.90]" move */
+.dh .d1 .p .pl-vb b{display:inline-block;background:var(--o);color:var(--o-ink);
+  padding:2px 6px 3px;margin-right:5px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%)}
+.dh .d1 .p .pl-num{flex:none;color:var(--o-hi)}
+
+/* ══ E · STACK ═════════════════════════════════════════════════════
+   The verdict broken across two lines at full display weight, the way a
+   result screen sets a headline, with the number outdented into the
+   right margin and the dice tucked under the eyebrow. The most
+   typographic of the five and the most compact — no strip, no second
+   row, the dice are part of the header.
+
+   Reads fastest of all five at a glance. Reads worst if the roll's name
+   is long, because there is nowhere for it to go but the meta line. */
+.dh .e1 .p{position:relative;overflow:hidden;padding:11px 12px 12px;
+  background:linear-gradient(107deg,var(--o-dk) 0,var(--o) 80%,
+    color-mix(in srgb,var(--o) 68%,#fff) 100%)}
+.dh .e1 .p .pl-gh{right:-6%;top:50%;transform:translateY(-50%);font-size:64px}
+.dh .e1 .p .hd{position:relative;display:flex;align-items:center;gap:7px}
+.dh .e1 .p .pl-eye{color:rgba(0,0,0,.52);flex:1 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dh .e1.fear .p .pl-eye,.dh .e1.crit .p .pl-eye{color:rgba(255,255,255,.6)}
+.dh .e1 .p .hd .dice{display:flex;gap:5px;flex:none}
+.dh .e1 .p .row{position:relative;display:flex;align-items:flex-end;gap:10px;margin-top:11px}
+.dh .e1 .p .pl-vb{flex:1 1 auto;min-width:0;color:var(--o-ink);font-size:17px;line-height:1.02;
+  padding-bottom:2px}
+.dh .e1 .p .pl-vb s{display:block;text-decoration:none;font-size:12px;opacity:.72}
+/* the un-stacked case: one line, at the size the pair would have occupied */
+.dh .e1 .p .pl-vb .one{display:block;font-size:20px;letter-spacing:-.02em}
+.dh .e1 .p .pl-num{flex:none;color:var(--o-ink);font-size:52px}
+.dh .e1 .pl-arith{padding:11px 12px 0}
+
+/* ══ CRITICAL ══════════════════════════════════════════════════════
+   Red, plus material. The rung above, not the same rung brighter.
+
+     bracket  a lit frame on the card, which no other outcome has
+     embers   drifting up out of the field
+     foil     one sweep of light across the whole plate
+     glass    a lit inner edge, brightest at the top-left corner
+     seal     struck, after everything else has settled
+
+   All of it red now. It used to be gold-on-red on the argument that a
+   critical counts as a roll with Hope — true as a rule, but as a picture
+   it made the loudest thing on the card look like it was wearing a
+   different outcome's jewellery, and the eye read gold first. The Hope
+   is still stated where it belongs: the card hands you a "+1 Hope" to
+   take. So the critical is one material end to end, and the ramp does
+   the work gold was doing — --crit-dk in the shadow, --crit in the
+   field, --crit-br at the edges where it is hottest. */
+.dh .pl.mat{box-shadow:0 3px 22px -4px rgba(209,51,42,.55),inset 0 0 0 1px var(--crit)}
+/* the glass edge: a lit rim plus an inner bloom, both red. The rim runs
+   the whole frame at --crit-hi and the bloom pools in from it, which is
+   what makes the boundary read as a lit edge rather than a border. */
+.dh .pl.mat::before{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;
+  box-shadow:inset 0 0 0 1.5px var(--crit-hi),
+             inset 0 0 28px -8px color-mix(in srgb,var(--crit-hi) 78%,transparent),
+             inset 0 1px 0 0 color-mix(in srgb,var(--crit-br) 55%,transparent)}
+/* the bracket — two corners only, the way Endfield frames a live tier.
+   --crit-br rather than --crit-hi: at 1.94:1 the hot red vanished into
+   the field it was framing, and a frame you cannot see is not a frame. */
+.dh .pl.mat::after{content:"";position:absolute;inset:0;z-index:9;pointer-events:none;
+  background:
+    linear-gradient(var(--crit-br),var(--crit-br)) 0 0/19px 2px no-repeat,
+    linear-gradient(var(--crit-br),var(--crit-br)) 0 0/2px 19px no-repeat,
+    linear-gradient(var(--crit-br),var(--crit-br)) 100% 0/19px 2px no-repeat,
+    linear-gradient(var(--crit-br),var(--crit-br)) 100% 0/2px 19px no-repeat}
+.dh .pl.mat .shards{background:repeating-linear-gradient(114deg,transparent 0 8px,
+  rgba(255,216,203,.22) 8px 10px,transparent 10px 19px,rgba(255,255,255,.1) 19px 21px)}
+html.dh-light .dh .pl.mat .shards{background:repeating-linear-gradient(114deg,transparent 0 8px,
+  rgba(90,20,10,.18) 8px 10px,transparent 10px 19px,rgba(0,0,0,.08) 19px 21px)}
+/* the critical's own strip: gold on red, not the paper strip the others get */
+.dh .pl.mat .pl-num,.dh .pl.mat .pl-vb{text-shadow:0 2px 10px rgba(125,20,16,.55)}
+
+.dh .embers{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:5}
+/* embers off a red fire, which is what they should always have been */
+.dh .embers i{position:absolute;bottom:-6px;width:3px;height:3px;background:var(--crit-br);
+  opacity:0;box-shadow:0 0 6px 1px rgba(255,122,92,.85)}
+.dh .pl.mat.play .embers i{animation:ember 1.5s ease-out both}
+.dh .embers i:nth-child(1){left:12%;animation-delay:.30s}
+.dh .embers i:nth-child(2){left:27%;width:2px;height:2px;animation-delay:.52s}
+.dh .embers i:nth-child(3){left:44%;animation-delay:.38s}
+.dh .embers i:nth-child(4){left:61%;width:2px;height:2px;animation-delay:.66s}
+.dh .embers i:nth-child(5){left:74%;animation-delay:.45s}
+.dh .embers i:nth-child(6){left:89%;width:2px;height:2px;animation-delay:.58s}
+@keyframes ember{
+  0%{opacity:0;transform:translateY(0) scale(.7)}
+  18%{opacity:1}
+  70%{opacity:.85}
+  100%{opacity:0;transform:translateY(-52px) scale(.4)}}
+
+.dh .foil{position:absolute;inset:0;pointer-events:none;z-index:6;mix-blend-mode:screen;
+  background:linear-gradient(104deg,transparent 32%,rgba(255,150,120,.44) 46%,
+    rgba(255,236,230,.74) 51%,rgba(255,110,80,.42) 57%,transparent 74%);
+  background-size:250% 100%;opacity:0}
+.dh .pl.mat.play .foil{animation:foil 2.4s cubic-bezier(.42,0,.3,1) .42s 2 both}
+@keyframes foil{from{background-position:165% 0;opacity:1}to{background-position:-65% 0;opacity:1}}
+
+/* The badge, red. --crit-hi as the field with near-black on it measures
+   7.06:1 — the brightest, highest-contrast object anywhere on any card in
+   this system, which is exactly the job. Dark ink rather than white,
+   because white on --crit-hi is 2.56 and 7.5px mono has no margin. */
+.dh .seal{position:absolute;z-index:10;right:10px;top:9px;pointer-events:none;
+  display:flex;align-items:center;gap:5px;padding:5px 8px 5px 7px;
+  background:linear-gradient(150deg,#ff9d85 0,var(--crit-hi) 62%,#e8543a 100%);color:#2a0705;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.19em;text-transform:uppercase;
+  box-shadow:0 4px 18px -3px rgba(255,122,92,.9)}
+.dh .seal i{width:7px;height:7px;background:#2a0705;transform:rotate(45deg)}
+.dh .pl.mat.play .seal{animation:seal .42s cubic-bezier(.2,1.5,.4,1) .6s both}
+@keyframes seal{0%{opacity:0;transform:scale(2.2) rotate(-9deg)}
+  62%{opacity:1;transform:scale(.93) rotate(0)}100%{opacity:1;transform:scale(1)}}
+/* Every variant gives up its top-right corner on a critical — and in A
+   and D the 48px numeral rises into that corner too, so the verdict row
+   drops 10px as well. Measured: the seal ends at y=35 and the row's cap
+   height began at 28. */
+.dh .a1.mat .p .pl-eye,.dh .c1.mat .p .pl-eye,.dh .d1.mat .p .pl-eye{padding-right:92px}
+.dh .a1.mat .p .row,.dh .d1.mat .p .row{margin-top:19px}
+/* E has no corner to give. Its top line already carries the eyebrow *and*
+   the dice, so even a 46px mark-only reserve ellipsed the roll's name —
+   and losing the name on the one roll the table is watching is the worst
+   trade on this page.
+
+   So E is the one variant with no seal, and it can afford that: its
+   headline already sets CRITICAL at display weight across two lines,
+   which is what the seal exists to say. It keeps the other four
+   materials — red field, bracket, embers, foil. Noted rather than hidden:
+   it is a real difference between the five. */
+.dh .e1.mat .seal{display:none}
+/* B has no free right corner — that side is the number's own field — so
+   its seal takes the top-left instead, which is where Endfield puts the
+   Brutal tier's extra material anyway. */
+.dh .b1.mat .seal{right:auto;left:10px}
+.dh .b1.mat .p .lf{padding-top:38px}
+
+/* ── arrival ───────────────────────────────────────────────────────*/
+.dh .pl.play{animation:pl-in .32s cubic-bezier(.2,.85,.3,1) both}
+@keyframes pl-in{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+/* `.play.land`, not `.play`: the sweep is now the *reveal*, so it runs
+   when the answer arrives rather than while the dice are still deciding.
+   Both classes, because `.land` alone is also what an already-settled
+   message wears on every re-render of the log, and a card that swept
+   each time you scrolled past it would be a card announcing nothing. */
+.dh .pl.play.land > .swp{position:absolute;inset:0;z-index:7;pointer-events:none;width:32%;
+  background:linear-gradient(90deg,transparent 0,color-mix(in srgb,var(--o) 12%,transparent) 60%,
+    color-mix(in srgb,var(--o) 40%,transparent) 92%,var(--o) 100%);
+  animation:pl-swp .64s cubic-bezier(.33,.28,.25,1) .04s both}
+@keyframes pl-swp{0%{opacity:0;transform:translateX(-120%)}
+  13%{opacity:1} 84%{opacity:1} 100%{opacity:0;transform:translateX(325%)}}
+
+/* [data-mx] only: the maximised dice on a critical never went unlit,
+   because they never rolled */
+.dh .pl.rolling .die[data-mx]{--rimc:var(--line-2)!important;--facec:var(--sunk)!important;
+  --numc:var(--ink-2)!important}
+.dh .pl.rolling .die[data-mx] .lamp{filter:none}
+.dh .pl.rolling .pl-arith,.dh .pl.rolling .pl-act{opacity:.2}
+.dh .pl.rolling .pl-vb{opacity:.25}
+
+/* `.play.land` throughout, and for the reason the sweep already says: the
+   two classes mean different things. `.land` is the settled state, worn by
+   every re-render of the log; `.play.land` is the moment of landing, and
+   only a plate this client has just watched arrive has both.
+
+   Foundry re-renders a message whenever anything is written to it, and
+   exactly one outcome writes to its own message — the GM's Fear, applied
+   from the card at {@link ARRIVAL} in `dice/chat.ts`. So Fear, and only
+   Fear, landed a second time a moment after it had landed.
+
+   The qualification costs nothing because every keyframe below ends on the
+   element's own natural value: scale(1), opacity 1, no transform, a clip
+   path outside the box. A re-render is simply handed that end state instead
+   of travelling to it, which is what a settled card is. */
+.dh .pl.play.land .die.lit,.dh .pl.play.land .die.w,.dh .pl.play.land .die.a:not(.dim){
+  animation:d12-land .4s cubic-bezier(.16,1.06,.3,1) both}
+.dh .pl.play.land .die.lit + .die.lit{animation-delay:.06s}
+/* A critical at Proficiency 6 lands twelve dice. Past the sixth the
+   stagger stops accumulating, or the last one arrives most of a second
+   after the number it belongs to. */
+.dh .pl.play.land .dmg-st .die:nth-child(n+2){animation-delay:.04s}
+.dh .pl.play.land .dmg-st .die:nth-child(n+5){animation-delay:.08s}
+.dh .pl.play.land .dmg-st .die:nth-child(n+8){animation-delay:.12s}
+@keyframes d12-land{0%{transform:scale(.6)}54%{transform:scale(1.14)}100%{transform:scale(1)}}
+.dh .pl.play.land .pl-vb{animation:pl-wipe .36s cubic-bezier(.22,.9,.24,1) .06s both}
+@keyframes pl-wipe{from{opacity:0;clip-path:inset(0 100% 0 0)}
+  to{opacity:1;clip-path:inset(0 -4px 0 0)}}
+.dh .pl.play.land .pl-num{animation:pl-num .4s cubic-bezier(.16,1.06,.3,1) .04s both}
+@keyframes pl-num{from{opacity:0;transform:translateY(8px) scale(.94)}
+  to{opacity:1;transform:none}}
+.dh .pl.play.land .pl-act{animation:pl-fade .3s ease-out .16s both}
+@keyframes pl-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  .dh .pl,.dh .pl *{animation:none!important;transition:none!important}
+  .dh .pl.play > .swp,.dh .embers,.dh .foil{display:none}
+  .dh .pl.rolling .pl-arith,.dh .pl.rolling .pl-act,.dh .pl.rolling .pl-vb{opacity:1}}
+
+
+/* ══ THE GM SIDE ═══════════════════════════════════════════════════
+   The d20's geometry lives up with the other dice; only its materials
+   are here.
+
+   A natural 20 hits regardless and starts damage at maximum, so it is
+   the top rung and wears the top rung's red. It was still *rolled*,
+   though, so unlike the awarded damage dice it tumbles on arrival. */
+.dh .die.d20.nat{--tone:var(--crit-hi);--rimc:#ffd8cb;--facec:#d1332a;--numc:#fff}
+/* On this side advantage is a second d20 taken high, disadvantage a
+   second taken low — not the PC's added d6. Different mechanic, and the
+   X earns its keep by meaning the same thing in both: this did not
+   count. Declared after .die.w so the strike wins the cascade. */
+.dh .die.d20.dim{--tone:var(--line-2);--rimc:var(--line-2);--facec:var(--sunk);
+  --numc:var(--ink-2);--ring:var(--sunk)}
+
+/* ── FOE_KIN · the one that lost ───────────────────────────────────
+   A's plate with a hostile field, kept as the record of the choice. It
+   parsed cleanly in isolation and lost in the log: the GM read as one
+   more participant at the table, which is the one thing the GM is not.
+   Frozen the way B–E are. */
+.dh .pl.foe{--o:#bd3f47;--o-dk:#5e1116;--o-hi:#e2727a;--o-tx:var(--wound-tx);--o-ink:#fff}
+.dh .a1.foe .p{background:linear-gradient(103deg,#4a0d12 0,#96262e 62%,#bd3f47 100%)}
+/* Endpoints inside the band by construction: sRGB alpha interpolation is
+   per-channel linear and lin() is monotone, so every blended pixel lands
+   between #3d0d11 and the highlight, for any image the GM drops in.
+
+   .44, not the .50 this started at. The bound has to include the shard
+   stripe, which lays 6% white over whatever is under it — at .50 the
+   portrait's brightest pixel plus a stripe took white ink to 4.31:1.
+   Below .44 the portrait stops being the binding constraint entirely and
+   the field's own light end takes over at 4.79, so there is nothing left
+   to buy by going darker. */
+.dh .a1.foe .por{--pA:#3d0d11;--pT:#ffb0b8;--pk:.44}
+
+/* ── FOE · the GM card ─────────────────────────────────────────────
+   Near-black throughout rather than a field on a card, one lit rail
+   down the left, the number two sizes down, and — the part carrying
+   most of the work — no cut corner. That notch is the family mark on
+   every player card in this system, so removing it says "not one of
+   yours" before any hue does. No portrait either, which is the price.
+
+   This card is a rendered dark surface, not a sheet — the same posture
+   the damage bar takes — so it re-declares the *roles* locally rather
+   than overriding a list of colours. Everything downstream (the dice,
+   the strike, the arithmetic, the buttons) then resolves against a dark
+   substrate in both themes, which is exactly what the role tokens were
+   split out for. */
+.dh .pl.g1{--o:#bd3f47;--o-dk:#5e1116;--o-hi:#e2727a;--o-tx:#e2727a;--o-ink:#fff;
+  --paper:#0c0e12;--sunk:#12151a;--raise:#151920;--line:#1e232a;--line-2:#2c323b;
+  --ink:#e8ecf1;--ink-2:#98a2af;--ink-3:#7f8a97;--xmark-p:#8a939f;
+  /* the two currency inks are pinned to their dark-substrate values too.
+     On the light sheet --fear-tx flips to #6d3fa3, which is correct for
+     a light sheet and 2.66:1 on this one — the same trap --wound once
+     sprang on the damage die. */
+  --fear-tx:#a688ea;--hope-tx:#e0b647;
+  background:var(--paper);color:var(--ink);clip-path:none;
+  box-shadow:0 3px 14px -4px rgba(0,0,0,.7),inset 0 0 0 1px #232830}
+/* ── the rail is the whole signal ──────────────────────────────────
+   This card has exactly one mark, so the mark carries the outcome. Red
+   on a hit, cold steel on a miss, hot on a critical. Before this the
+   two outcomes were told apart only by the words, which is the slowest
+   way to answer the fastest question a GM card is asked — did it land.
+
+   4px, not 3: it is a graphic carrying meaning now, not a decoration,
+   and at 3 it read as a border. */
+.dh .g1{--rail:var(--o)}
+.dh .g1.hot{--rail:var(--crit-hi)}
+.dh .g1.cold{--rail:#5c636d}
+.dh .g1 .rail{position:absolute;left:0;top:0;bottom:0;width:4px;z-index:3;
+  background:linear-gradient(180deg,
+    color-mix(in srgb,#fff 34%,var(--rail)) 0,var(--rail) 42%,
+    color-mix(in srgb,#000 52%,var(--rail)) 100%)}
+.dh .g1.hot .rail{box-shadow:0 0 12px 0 color-mix(in srgb,var(--crit-hi) 70%,transparent)}
+.dh .g1 .p{position:relative;padding:11px 12px 12px 16px}
+.dh .g1 .pl-eye{color:var(--ink-3)}
+.dh .g1 .p .row{display:flex;align-items:flex-end;gap:10px;margin-top:8px;justify-content:flex-end}
+/* mono, not display. The player cards say their outcome in a voice; this
+   one reports it. */
+.dh .g1 .p .pl-vb{flex:1 1 auto;min-width:0;color:var(--ink);padding-bottom:2px;
+  font:700 11.5px/1.15 var(--f-mono);letter-spacing:.13em}
+/* A miss took nothing from anybody, so its sentence steps back a weight
+   rather than shouting a non-event. */
+.dh .g1.cold .p .pl-vb{color:var(--ink-2)}
+/* Ink, not --o-hi. That red is the damage bar's numeral and a damage
+   card lands one message after this one — two different objects back to
+   back in the same clothes. Red means a quantity of harm now and
+   nothing else; a d20 against Evasion is a comparison. */
+.dh .g1 .p .pl-num{flex:none;color:var(--ink);font-size:38px}
+.dh .g1.cold .p .pl-num{color:var(--ink-2)}
+.dh .g1 .pl-st{padding-left:15px}
+.dh .g1 .pl-meta{padding-left:15px;color:var(--ink-3)}
+.dh .g1 .pl-act{padding-left:15px}
+/* the badge would sit on the rail, and the rail is the card's one mark */
+.dh .g1.mat .seal{right:10px}
+.dh .g1.mat .p{padding-top:34px}
+
+
+/* ══ THE VEIL ══════════════════════════════════════════════════════
+   A plate used to arrive already wearing its answer.
+
+   The field was gold before the first tumble step. The ghost word behind
+   the number said HOPE. The claim row offered "+1 Hope". A critical
+   brought a red bloom, an ember shower and a struck badge with it. So by
+   the time the dice started spinning, every person at the table knew the
+   result except the one watching the dice — and they were watching them
+   for nothing. The tumble was a four hundred millisecond apology for a
+   card that had already spoken.
+
+   So everything that *states* the outcome is held back until it is the
+   outcome. The plate rolls in graphite — the same neutral a reaction
+   roll wears permanently, which is the honest colour for "this has no
+   answer yet" — and the answer arrives all at once on landing, carried
+   in by the sweep, which is why the sweep moved to `.land`.
+
+   Held back, not withheld. The markup is complete from the first frame
+   and the result was decided before any of this ran; the veil only
+   paints over it. A client that never runs the arrival — an old message
+   scrolled back into view, a reader on reduced motion — never wears the
+   veil at all and sees the finished card immediately. Nothing here is
+   load-bearing for correctness, and it must never become so.
+
+   What stays visible during the roll is everything that was true before
+   it: who rolled, against what, the notation, and the dice themselves
+   going round. That is a card that is *rolling*, rather than a card
+   pretending it has nothing to say. */
+
+/* The roles, neutralised at the source — every hue downstream resolves
+   through these four, so one override covers the field, the buttons, the
+   sweep and the meta line without naming any of them. */
+.dh .pl.veil{--o:#5c636d;--o-dk:#262a31;--o-hi:#8d95a1;--o-tx:var(--ink-2);--o-ink:#fff}
+/* The fields are literal gradients rather than role colours — three
+   hand-set stops chosen against each outcome's own ink — so they are the
+   one thing the roles cannot reach, and each needs saying. */
+.dh .a1.veil .p{background:linear-gradient(103deg,#22262d 0,#4b515a 62%,#5c636d 100%)}
+.dh .a1.blk.veil .p{background:linear-gradient(96deg,#0a0c0f 0,#14171c 58%,#22262d 100%);
+  box-shadow:inset 0 -2px 0 #5c636d}
+.dh .a1.veil .por{--pA:#16191e;--pT:#c8d2de;--pk:.44}
+/* The GM card's whole outcome is one rail: red hit, steel miss, hot
+   critical. Neutral is the miss colour, which is also the only one of
+   the three that promises nothing. */
+.dh .g1.veil{--rail:#5c636d}
+
+/* The words. Opacity rather than visibility, because the layout must not
+   move when they arrive — the card is already at its final height while
+   it rolls, and a plate that grew a line on landing would shove the rest
+   of the chat log down under it. */
+.dh .pl .pl-gh,.dh .pl .pl-meta,.dh .pl .shards{transition:opacity .42s ease-out .06s}
+.dh .pl.veil .pl-gh,.dh .pl.veil .pl-meta,.dh .pl.veil .shards{opacity:0;transition:none}
+.dh .pl.veil .pl-vb,.dh .pl.veil .pl-act{opacity:0}
+
+/* The critical's material is the loudest tell on the card — four things
+   nothing below it may have, all four of them visible before a die has
+   stopped. `display:none` rather than `opacity:0` so that lifting the
+   veil starts the ember, foil and seal animations from their first frame
+   instead of dropping the reader into the middle of one. */
+.dh .pl.veil .embers,.dh .pl.veil .foil,.dh .pl.veil .seal{display:none}
+.dh .pl.veil.mat::before,.dh .pl.veil.mat::after{display:none}
+.dh .pl.veil.mat{box-shadow:0 3px 14px -4px rgba(0,0,0,.6),inset 0 0 0 1px var(--line)}
+.dh .g1.veil.mat{box-shadow:0 3px 14px -4px rgba(0,0,0,.7),inset 0 0 0 1px #232830}
+.dh .pl.veil.mat .pl-num,.dh .pl.veil.mat .pl-vb{text-shadow:none}

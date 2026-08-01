@@ -1,0 +1,9 @@
+<!-- Primary weapon: one spearhead, apex up, filling the frame. A point is the
+     one weapon idea that is not a genre — a sword, a rifle and a boarding pike
+     all resolve to it, where a crossguard resolves to fantasy. Chamfered
+     shoulders and a short tang so it belongs to the same cut-corner family as
+     the equipment plate rather than reading as a UI arrow.
+     Symmetric about x=125: half-widths 61, 47, 18. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M125 16 186 140 172 178 143 190 143 234 107 234 107 190 78 178 64 140Z"/>
+</svg>

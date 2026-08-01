@@ -1,0 +1,18 @@
+<!-- Warrior: two crossed swords. Blade and Bone — the one class where the
+     weapon *is* the identity rather than a tool it happens to hold, which is
+     why this glyph gets to be the literal one.
+     Six paths, and the four extra ones are the entire design. Two tapered
+     bars crossing is a close button; nothing about a taper survives at list
+     size. What makes it a pair of swords is the crossguard — a bar across the
+     axis at three-fifths of the way down, with a stub of grip past it. Read
+     the shape and you are counting hilts, not strokes.
+     Distinct from primary.svg and secondary.svg by angle rather than count:
+     those are points-up and parallel, this is a diagonal cross. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M26 26 62 46 164 148 148 164 46 62Z"/>
+  <path d="M186 130 194 138 138 194 130 186Z"/>
+  <path d="M178 166 212 200 200 212 166 178Z"/>
+  <path d="M224 26 188 46 86 148 102 164 204 62Z"/>
+  <path d="M64 130 56 138 112 194 120 186Z"/>
+  <path d="M72 166 38 200 50 212 84 178Z"/>
+</svg>

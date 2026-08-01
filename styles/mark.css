@@ -1,0 +1,390 @@
+/* Ported from design/mark.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/mark.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   DH MARKS — the boxes you cross off
+
+   Hit Points, Stress and Armor Slots are one component: a row of square
+   boxes you mark. Square because the printed sheet is square, and because
+   the diamond is spoken for — Hope and Fear own that silhouette, and the
+   whole point of giving them a shape nothing else uses is that nothing
+   else uses it.
+
+   The box is crossed out, not filled. That is what the printed sheet
+   does, it is what every player already does with a pen, and it survives
+   a theme change in a way an ink fill does not: on a dark sheet "filled
+   with ink" has to mean *lighter*, which is the opposite of what filling
+   in means.
+
+   THE BOX DOES NOT MOVE. It used to compress and overshoot on every mark,
+   which is the gem's grammar borrowed wholesale — and wrong here, because
+   Hope arrives one at a time and Hit Points arrive three at a time. Seven
+   boxes bouncing is a row of jelly. Everything the box has to say it says
+   without a transform: the recess flushes, the ring flashes, and it is
+   still. All the motion belongs to the mark.
+
+   And the three marks are three different events, so they are three
+   different animations, not one animation in three colours:
+
+     HIT POINTS   a wound. The gash lands whole and fast — you do not
+                  watch a wound being drawn — and then bleeds: the glow
+                  wells up over 340ms, four times longer than the strike.
+                  Two arms, staggered, because it tore twice.
+     STRESS       a strain. The mark is *scraped* in along its own axis
+                  under load, cold and thin, and the recess flickers the
+                  way something does when it is being scored rather than
+                  struck.
+     ARMOR SLOTS  a blow. Both arms land together — one impact, not two
+                  strokes — with a gold flash and a hard square ring, and
+                  the box's corners are broken away where the mark exits.
+
+   track.css still owns the cqw-scaled versions for cards and tiles. This
+   file is the sheet's, and it is px, because a window is chrome.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .mk{width:100%}
+.dh .mk > .hd{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
+.dh .mk > .hd .k{font:700 8.5px/1 var(--f-mono);letter-spacing:.18em;text-indent:.18em;
+  text-transform:uppercase;color:var(--ink-3)}
+.dh .mk > .hd .n{margin-left:auto;font:700 13px/1 var(--f-display);color:var(--ink);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.dh .mk > .hd .n s{text-decoration:none;color:var(--ink-3)}
+
+/* ── the box ───────────────────────────────────────────────────────
+   The box itself is a frame and nothing else. The fill, the ring and the
+   chamfer all live on <u>, because a clip-path clips descendants and the
+   armour break has to be able to reach past the edge it is breaking.
+   `max-width` so a 3-slot armour row does not draw three tiles. */
+/* Sized for --n boxes, which is not always how many boxes the row has. Hit
+   Points and Stress are 7 and 6 in the same column; divided independently
+   that is two box sizes one above the other, and two sizes read as two
+   kinds of thing. They are the same box, so both rows are sized for the
+   larger count and the shorter one ends early. `min()` keeps the cap. */
+.dh .mk .row{display:flex;gap:var(--gap,4px);align-items:flex-start}
+.dh .mk .row i{position:relative;flex:0 0 auto;aspect-ratio:1;cursor:pointer;
+  width:min(34px,calc((100% - (var(--n,7) - 1) * var(--gap,4px)) / var(--n,7)))}
+.dh .mk .row i > u{position:absolute;inset:0;display:block;background:var(--sunk);
+  box-shadow:inset 0 0 0 1.5px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .18s cubic-bezier(.2,.8,.25,1),box-shadow .18s}
+.dh .mk .row i:hover > u{box-shadow:inset 0 0 0 1.5px var(--line-2)}
+/* A crossed box is spent, so it recedes: the ring drops to nothing and the
+   fill goes flat. All the presence moves into the mark. */
+.dh .mk .row i.on > u{background:var(--sunk-2);box-shadow:inset 0 0 0 1.5px transparent}
+/* Armour is the exception. A struck plate keeps its outline — it is armour
+   — and the ring is the thing the break has to break: with it gone there is
+   nothing for a chip to be a chip *of*. The recess also darkens rather than
+   lightening, which is what a dent does. */
+.dh .mk.armor .row i.on > u{background:var(--sunk);box-shadow:inset 0 0 0 1.5px var(--line-2)}
+/* Armor slots take a second chamfer so the row reads as the shield's, not
+   the body's, at a glance — the same tell the Evasion/Armor plates use. */
+.dh .mk.armor .row i > u{clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),
+  calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px))}
+
+/* ── the mark ──────────────────────────────────────────────────────
+   Filled, not stroked. --mk is the body, --mk2 the core, --gl whatever the
+   mark gives off. Named per track here so everything below can be written
+   once and every track can still be its own material. */
+.dh .mk .row i > .x{position:absolute;inset:0;width:100%;height:100%;overflow:visible;
+  pointer-events:none}
+.dh .mk.hp     .row i{--mk:var(--wound); --mk2:var(--wound-d); --gl:var(--wound-gl)}
+.dh .mk.stress .row i{--mk:var(--strain);--mk2:var(--strain-d);--gl:var(--strain)}
+.dh .mk.armor  .row i{--mk:var(--plate); --mk2:var(--plate-d); --gl:var(--plate-fl)}
+/* The fallback matters more than it looks. A mark drawn outside any of the
+   three tracks — an advancement slot, a consumable charge — has no --mk at
+   all, and `fill:var(--mk)` with nothing to resolve is an invalid property
+   that falls back to SVG's initial fill, which is *black*. On a dark sheet
+   that is an invisible X: the box looks empty and reads as unmarked. So the
+   neutral mark names its own colour, and it names --ink, which is the one
+   value guaranteed to be legible on whatever the paper currently is. */
+.dh .x .bd{fill:var(--mk,var(--ink))}
+/* The core is an edge, not a spine — offset across the stroke rather than
+   centred on it. So on a wound it is the wet highlight along the lip of the
+   tear and it is *lighter* than the body; on a plate it is the shadowed
+   bevel down one side and it is darker. Same construction, opposite sign. */
+.dh .x .cr{fill:var(--mk2,var(--ink-3))}
+.dh .mk.hp    .x .cr{fill:var(--wound-gl)}
+.dh .mk.armor .x .cr{fill:var(--plate-d)}
+/* the second scratch: the same pen, most of the way lifted */
+.dh .x .ex{fill:color-mix(in srgb,var(--mk) 52%,transparent)}
+
+/* The arm's own group carries the animation; the outer group carries the
+   mirror as an attribute, which a CSS transform here would otherwise
+   overwrite. fill-box so percentages and origins are the arm's, not the
+   viewBox's — the two arms then behave identically in their own frames and
+   the mirror does the rest. */
+.dh .x .ar > g{transform-box:fill-box;transform-origin:50% 50%;opacity:0}
+.dh .mk .row i.on .x .ar > g{opacity:1;transform:none}
+
+/* ── hit points · a wound ──────────────────────────────────────────
+   No draw-on. A cut is not a gesture you watch happen, it is a thing that
+   has happened — so the gash arrives whole in 160ms from 1.5× with a
+   fraction of rotation, and the *bleed* is what takes its time. Second arm
+   at +70ms going on, and the first at +60ms coming off, so undoing runs the
+   sequence backwards rather than replaying it. */
+.dh .mk.hp .x .ar > g{transform:scale(1.5) rotate(-7deg);
+  transition:opacity .09s linear,transform .17s cubic-bezier(.15,.95,.3,1)}
+.dh .mk.hp .row i.on .x .ar.b > g{transition-delay:.07s}
+.dh .mk.hp .row i:not(.on) .x .ar.a > g{transition-delay:.06s}
+/* The welling. Both states declare the same filter function list or the
+   interpolation falls back to a hard swap, so the "off" state is a
+   drop-shadow of zero rather than `none`. */
+.dh .mk.hp .row i > .x{filter:drop-shadow(0 0 0 transparent);transition:filter .38s ease-out}
+.dh .mk.hp .row i.on > .x{filter:drop-shadow(0 0 3.4px
+  color-mix(in srgb,var(--wound-gl) 62%,transparent))}
+/* Fresh, then not. The gash lands almost white-hot and darkens into the
+   wound over half a second — which is the one thing the other two tracks
+   do not do, and the reason this is the most prominent of the three rather
+   than the least. Steel does not oxidise while you watch and a scratch does
+   not change colour at all; blood does. */
+.dh .mk.hp .row i.hit .bd{animation:wdFresh .52s cubic-bezier(.3,0,.55,1) both}
+.dh .mk.hp .row i.hit .cr{animation:wdFreshCore .52s cubic-bezier(.3,0,.55,1) both}
+@keyframes wdFresh{
+  0%  {fill:color-mix(in srgb,var(--wound-gl) 42%,#fff)}
+  100%{fill:var(--mk)}}
+@keyframes wdFreshCore{
+  0%  {fill:color-mix(in srgb,var(--wound-gl) 30%,#fff)}
+  100%{fill:var(--wound-gl)}}
+
+/* ── stress · a strain ─────────────────────────────────────────────
+   Scraped, not struck. The arm enters offset back along its own axis and
+   is dragged into place — and because the second arm is a mirror, the same
+   local offset is up-and-left for one and up-and-right for the other,
+   which is exactly right: both travel along themselves. */
+.dh .mk.stress .x .ar > g{transform:translate(-27%,-27%) scale(.88);
+  transition:opacity .1s linear,transform .2s cubic-bezier(.3,.85,.28,1)}
+.dh .mk.stress .row i.on .x .ar.b > g{transition-delay:.08s}
+.dh .mk.stress .row i:not(.on) .x .ar.a > g{transition-delay:.07s}
+.dh .mk.stress .row i > .x{filter:drop-shadow(0 0 0 transparent);transition:filter .26s ease-out}
+.dh .mk.stress .row i.on > .x{filter:drop-shadow(0 0 1.7px
+  color-mix(in srgb,var(--strain) 42%,transparent))}
+
+/* ── armor · a blow ────────────────────────────────────────────────
+   One impact. No stagger, no overshoot, no easing out of a bounce: it
+   arrives in 130ms from 1.9× and stops dead. */
+.dh .mk.armor .x .ar > g{transform:scale(1.9);
+  transition:opacity .07s linear,transform .13s cubic-bezier(.1,.9,.25,1)}
+.dh .mk.armor .row i > .x{filter:drop-shadow(0 0 0 transparent);transition:filter .2s ease-out}
+.dh .mk.armor .row i.on > .x{filter:drop-shadow(0 .5px 1.2px rgba(0,0,0,.55))}
+
+/* The break is the box's own outline, not something drawn on top of it. A
+   different clip-path when marked is a genuinely different silhouette — a
+   shard sheared off the corner the mark exits through, and a nick out of
+   the right edge. The vertex counts do not match the unbroken shape, so it
+   cannot interpolate, and it should not: a fracture is instantaneous. */
+.dh .mk.armor .row i.on > u{clip-path:polygon(
+  34% 0, 100% 0,
+  100% 26%, 88% 40%, 100% 53%,
+  100% calc(100% - 6px), calc(100% - 6px) 100%,
+  6px 100%, 0 calc(100% - 6px),
+  0 40%, 13% 24%, 3% 14%)}
+/* The cracks then draw outward from the impact, once the blow has landed. */
+.dh .x .bk{opacity:0;transition:opacity .1s linear}
+.dh .mk .row i.on .x .bk{opacity:1;transition-delay:.06s}
+.dh .x .bk .ck{fill:none;stroke:var(--plate-d);stroke-width:.55;stroke-linecap:round;
+  stroke-dasharray:12;stroke-dashoffset:12;transition:stroke-dashoffset .3s ease-out}
+.dh .mk .row i.on .x .bk .ck{stroke-dashoffset:0;transition-delay:.12s}
+
+/* ── the transients ────────────────────────────────────────────────
+   Drawn on <b>, which is outside the recess's clip. One per track, and
+   they are different objects, not one object recoloured: blood blooms,
+   a scrape sweeps, and steel rings. */
+.dh .mk .row i > b{position:absolute;inset:0;display:block;opacity:0;pointer-events:none}
+
+.dh .mk.hp .row i.hit > b{opacity:1;inset:-10%;
+  background:radial-gradient(closest-side,
+    color-mix(in srgb,var(--wound-gl) 62%,transparent),transparent 70%);
+  animation:wdBloom .58s cubic-bezier(.2,.7,.25,1) both}
+@keyframes wdBloom{0%{transform:scale(.34);opacity:0}
+                   18%{opacity:1}
+                   100%{transform:scale(2.3);opacity:0}}
+
+/* A scratch makes no shockwave. What it makes is a highlight travelling
+   along the thing being scored, so this is a band, not a ring. */
+.dh .mk.stress .row i.hit > b{opacity:1;inset:-14%;
+  background:linear-gradient(135deg,transparent 40%,
+    color-mix(in srgb,var(--strain) 72%,transparent) 50%,transparent 60%);
+  animation:stScrape .36s cubic-bezier(.25,.8,.3,1) both}
+@keyframes stScrape{0%{transform:translate(-42%,-42%);opacity:0}
+                    28%{opacity:.85}
+                    100%{transform:translate(34%,34%);opacity:0}}
+
+.dh .mk.armor .row i.hit > b{opacity:1;inset:-6%;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--plate-fl) 85%,transparent);
+  animation:plRing .4s cubic-bezier(.1,.75,.2,1) both}
+@keyframes plRing{0%{transform:scale(.7);opacity:0}
+                  10%{opacity:1}
+                  100%{transform:scale(1.75);opacity:0}}
+
+/* ── the recess reacts, without moving ─────────────────────────────
+   Background and box-shadow only. This is the whole of what the box is
+   allowed to do, and it is enough: a flush of colour where the mark landed
+   reads as the surface responding, and it cannot make a row of seven
+   wobble. */
+.dh .mk.hp .row i.hit > u{animation:pitBlood .44s cubic-bezier(.2,.7,.3,1) both}
+@keyframes pitBlood{
+  0%  {background:color-mix(in srgb,var(--wound) 52%,var(--sunk));
+       box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--wound-gl) 88%,transparent)}
+  18% {background:color-mix(in srgb,var(--wound) 30%,var(--sunk))}
+  100%{background:var(--sunk-2);box-shadow:inset 0 0 0 1.5px transparent}}
+
+/* Two steps, not one ramp. Strain is not a single event — it is something
+   giving, catching, and giving again. */
+.dh .mk.stress .row i.hit > u{animation:pitStrain .4s linear both}
+@keyframes pitStrain{
+  0%  {background:color-mix(in srgb,var(--strain) 30%,var(--sunk))}
+  20% {background:var(--sunk-2)}
+  34% {background:color-mix(in srgb,var(--strain) 18%,var(--sunk))}
+  100%{background:var(--sunk-2)}}
+
+.dh .mk.armor .row i.hit > u{animation:pitPlate .42s cubic-bezier(.15,.8,.3,1) both}
+@keyframes pitPlate{
+  0%  {background:color-mix(in srgb,var(--plate-fl) 60%,var(--sunk));
+       box-shadow:inset 0 0 0 2.5px var(--plate-fl)}
+  14% {background:color-mix(in srgb,var(--plate-fl) 26%,var(--sunk))}
+  100%{background:var(--sunk);box-shadow:inset 0 0 0 1.5px var(--line-2)}}
+
+/* Clearing carries no transient and no flush: nothing struck the box,
+   something left it. The mark retracting is the whole event. */
+
+@media (prefers-reduced-motion:reduce){
+  .dh .mk .row i,.dh .mk .row i > u,.dh .mk .row i > b,.dh .x .ar > g,.dh .x .bk,.dh .x .bk .ck{
+    animation:none !important;transition:none !important}}
+
+/* ══ VULNERABLE ═════════════════════════════════════════════════════
+   The one idle animation in the entire system, and the exception proves
+   the rule: gem.css bans idle motion because six things breathing all
+   session is six things asking for attention for nothing. This strip
+   only exists while a condition is active. It is not decoration that
+   happens to move — the movement *is* the alarm, and it stops the
+   instant the condition clears.
+
+   Violet, because in this system violet is Fear and Fear is what is
+   happening to you. It is the only place Fear's hue appears on a player
+   sheet, which is exactly why it lands — and it is the reason Stress's
+   own mark is cold rather than violet: a track whose resting colour was
+   already Fear's could not turn into it.
+
+   The wording is the rule as written, not the intuition: Vulnerable
+   means rolls *against you* have advantage. Marking further Stress with
+   no slots left costs a Hit Point instead. */
+.dh .mk .vuln{display:none}
+/* full-bleed to the section's edges, so the strip reads as belonging to the
+   sheet rather than to the box row. --pad is whatever the container's own
+   horizontal padding is; the section declares it. */
+/* The ends fade, or the run reads as clipped text rather than as text
+   passing through. 16px is about one glyph — enough to sell the motion,
+   short enough that nothing is ever unreadable inside the strip. */
+.dh .mk.max .vuln{display:block;position:relative;overflow:hidden;
+  margin:10px calc(-1 * var(--pad,14px)) -4px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 16px,
+    #000 calc(100% - 16px),transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 16px,
+    #000 calc(100% - 16px),transparent);
+  background:color-mix(in srgb,var(--fear) 17%,var(--paper));
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--fear) 46%,transparent),
+             inset 0 -1px 0 color-mix(in srgb,var(--fear) 46%,transparent);
+  animation:vulnIn .32s cubic-bezier(.2,.85,.3,1) both}
+/* Two copies of the run, translated by exactly half the track. A single
+   copy scrolled off the left edge leaves a gap crossing the strip. */
+.dh .mk .vuln .trk{display:flex;width:max-content;padding:6px 0;
+  animation:vulnRun 17s linear infinite}
+.dh .mk .vuln .trk > span{display:flex;flex:none;align-items:center;
+  font:700 8px/1 var(--f-mono);letter-spacing:.22em;text-transform:uppercase;
+  color:var(--fear-tx);white-space:nowrap}
+.dh .mk .vuln .trk > span > i{font-style:normal;padding:0 14px}
+/* the separator is the diamond again, at 4px — Fear's shape, marking Fear's
+   strip, small enough to be punctuation */
+.dh .mk .vuln .trk > span > b{flex:none;width:4px;height:4px;background:var(--fear);
+  transform:rotate(45deg)}
+/* first term of the run carries the weight; the rest is the consequence */
+.dh .mk .vuln .trk > span > i:first-child{color:var(--fear-tx);font-weight:700;
+  letter-spacing:.3em}
+
+@keyframes vulnRun{to{transform:translateX(-50%)}}
+@keyframes vulnIn{from{opacity:0;transform:scaleY(.2)}to{opacity:1;transform:scaleY(1)}}
+/* The count stops being a count and starts being a verdict, and every mark
+   in the row changes material with it — the cold scratch becomes Fear's
+   violet. Scoped by :has(.vuln) rather than to .stress: `max` is set by the
+   driver on any full row, and a full Armor row is a normal Tuesday — only a
+   row that asked for the condition gets the condition's colour. */
+.dh .mk.max:has(.vuln) > .hd .n{color:var(--fear-tx)}
+.dh .mk.max:has(.vuln) .row i{--mk:var(--fear-tx);
+  --mk2:color-mix(in srgb,var(--fear) 72%,#000);--gl:var(--fear-tx)}
+
+@media (prefers-reduced-motion:reduce){
+  .dh .mk .vuln .trk{animation:none !important}
+  .dh .mk.max .vuln{animation:none !important}}
+
+/* ══ THE DAMAGE TRACK ═══════════════════════════════════════════════
+   Thresholds and Hit Points fused into one object, because they were
+   never two: the thresholds tell you how many boxes a hit costs, and the
+   boxes are where you pay. Drawn apart they cost two headers, two labels
+   and ~90px of a 236px rail; drawn together they cost one of each and 78.
+
+   The breakpoint numerals used to float on plates above the bar, straddling
+   the joins — correct about the semantics (a threshold is a boundary, not a
+   property of either side) and far too expensive in height. They now sit
+   flush inside the zone they open, hard against the gold rule, which says
+   the same thing by adjacency instead of by position. Gold, everywhere,
+   because gold is already what a join is drawn in.  */
+.dh .dmg .band{display:flex;align-items:stretch;height:26px}
+.dh .dmg .z{position:relative;flex:1 1 0;min-width:0;display:flex;align-items:center;gap:5px;
+  padding:0 6px}
+/* Severe is unbounded, so it cannot be drawn to scale — and every fixed
+   share tried for it (34%, 32%) elided its own label at some rail width,
+   because the share was chosen against one width and the rail has several.
+
+   So it takes the width of its contents and nothing more. Minor and Major
+   then split what is left in proportion to their real spans, which is the
+   comparison that actually carries information — 7 against 8 — while Severe
+   simply cannot clip, at any width, without anyone having to pick a number. */
+.dh .dmg .z.open{flex:0 0 auto}
+/* Severity by weight, not hue — hue in this system means domain, and damage
+   belongs to none. Survives print, screenshot and colour-blindness, and it
+   is the one ramp that has to *invert* between themes: see --sev-* in
+   tokens.css. */
+.dh .dmg .s1{background:var(--sev-1);color:var(--sev-1-tx)}
+.dh .dmg .s2{background:var(--sev-2);color:var(--sev-2-tx)}
+.dh .dmg .s3{background:var(--sev-3);color:var(--sev-3-tx)}
+.dh .dmg .z + .z::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:var(--hope);z-index:2}
+.dh .dmg .tip{flex:none;width:10px;align-self:stretch;background:var(--sev-3);
+  clip-path:polygon(0 0,100% 50%,0 100%)}
+
+/* The number the player is actually looking for. Display face, not mono —
+   it is a value, and every other value on this sheet is display face. */
+.dh .dmg .bp{flex:none;font:700 13.5px/1 var(--f-display);font-style:normal;letter-spacing:-.03em;
+  color:var(--gold-on-dark);font-variant-numeric:tabular-nums}
+/* Minor sits next to the paper and so tracks the theme's text gold. Severe
+   is the extreme of the weight ramp, which means it is the *dark* zone in
+   light mode and the *pale* one in dark mode — the only place in the system
+   where a colour has to invert against the theme rather than with it. */
+.dh .dmg .s1 .bp{color:var(--hope-tx)}
+html.dh-light .dh .dmg .s3 .bp{color:var(--gold-on-dark)}
+html:not(.dh-light) .dh .dmg .s3 .bp{color:var(--gold-on-pale)}
+.dh .dmg .lb{font:700 7.5px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;
+  opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* The cost is drawn as marks, not as a number. "2 HP" needed the words to
+   disambiguate it from the breakpoint numeral six pixels to its left, and
+   the words are what pushed Severe's label into an ellipsis at rail width.
+
+   They were little grey squares, which said the right thing in the wrong
+   vocabulary: the boxes underneath are not squares any more, they are red
+   marks. So these are the same mark at tick size and in the same red, and
+   the band now says "this zone costs you two of those" by drawing two of
+   those. The neutral arm rather than the wound's, because a 9px organic
+   tear is a smudge — the colour carries it. */
+/* 7.5px, not 9. A mark is a wider glyph than the square it replaced, and at
+   9px the three in the Severe zone bought their width straight out of
+   Major's label — which went to an ellipsis at rail width. */
+.dh .dmg .cost{margin-left:auto;flex:none;display:flex;gap:.5px;align-items:center}
+.dh .dmg .cost .xm{display:block;width:7.5px;height:7.5px;fill:var(--wound)}
+/* Severe is the extreme of the weight ramp and so inverts with the theme —
+   the wound has to go the other way on it, exactly like the gold numeral
+   two cells to the left. */
+html:not(.dh-light) .dh .dmg .s3 .cost .xm{fill:var(--wound-d)}
+html.dh-light .dh .dmg .s3 .cost .xm{fill:color-mix(in srgb,var(--wound) 45%,#fff)}
+html.dh-light .dh .dmg .s2 .cost .xm{fill:color-mix(in srgb,var(--wound) 55%,#fff)}
+
+/* fused: the boxes hang directly off the band, no gap, no second header */
+.dh .dmg .row{margin-top:6px}

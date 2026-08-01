@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · The Design System — a study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   This page is deliberately self-contained. Every specimen below is
+   rendered with the real technique it documents, copied out of the
+   production stylesheets — so an agent reading this can lift the CSS
+   rather than reimplement from a description.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --f-display:"Google Sans"; --f-ui:"Google Sans Text"; --f-mono:"Google Sans Code";
+  --hope:#d4a72c; --fear:#7b4fc0;
+  --crit:#d1332a; --crit-dk:#7d1410; --crit-hi:#ff7a5c; --crit-br:#ffd8cb; --crit-tx:#f0705f;
+  --wound-tx:#e2727a;
+  --paper:#171a1f; --sunk:#0f1216; --sunk-2:#1c2027; --raise:#20242b;
+  --line:#2b313a; --line-2:#3a424e;
+  --ink:#e8ecf1; --ink-2:#a9b2be; --ink-3:#78818e;
+  --tint:#0f1216; --hope-tx:#e0b647; --fear-tx:#a688ea;
+  --wound:#c8484f; --strain:#8fd0e0; --plate:#e6edf4;
+  --xmark-p:#8a939f;
+  --frame:#0b0d10; --frame-line:#272d36;
+}
+:root.light{
+  --paper:#f7f8f9; --sunk:#eef1f3; --sunk-2:#e5eaed; --raise:#e9edef;
+  --line:#d6dade; --line-2:#b9c0c7;
+  --ink:#14161a; --ink-2:#3a4049; --ink-3:#7b828d;
+  --tint:#ffffff; --hope-tx:#8a6810; --fear-tx:#6d3fa3;
+  --crit-tx:#a8241c; --wound-tx:#a02730;
+  --wound:#b02a33; --strain:#1f7085; --plate:#39424c; --xmark-p:#6b7480;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--f-ui),system-ui,sans-serif;
+  background:radial-gradient(130% 100% at 50% -20%,#191d24 0,#0d1013 55%,#060709 100%) fixed;
+  color:#e6eaef;padding:0 0 120px;-webkit-font-smoothing:antialiased}
+:root.light body{background:radial-gradient(130% 100% at 50% -20%,#fdfdfe 0,#eef1f4 55%,#e2e6eb 100%) fixed;
+  color:#14161a}
+.wrap{max-width:1120px;margin:0 auto;padding:0 30px}
+
+/* ── bar ── */
+.bar{position:sticky;top:0;z-index:99;backdrop-filter:blur(14px);
+  background:rgba(10,12,15,.9);border-bottom:1px solid #22272f;padding:12px 0}
+:root.light .bar{background:rgba(250,251,252,.9);border-bottom-color:#d9dee3}
+.bar .wrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.bar b{font:700 10px/1 var(--f-mono);letter-spacing:.2em;color:var(--hope-tx);text-transform:uppercase}
+.bar a{font:600 10px/1 var(--f-mono);letter-spacing:.15em;color:var(--ink-2);
+  text-transform:uppercase;text-decoration:none}
+.bar a:hover{color:var(--ink)}
+.tg{margin-left:auto;display:flex;align-items:center;gap:7px;font:400 12px/1 var(--f-ui);
+  color:var(--ink-3);cursor:pointer;user-select:none}
+
+/* ── masthead ── */
+.mast{padding:74px 0 10px;position:relative;overflow:hidden}
+.mast .eyebrow{font:700 10px/1 var(--f-mono);letter-spacing:.3em;text-transform:uppercase;
+  color:var(--hope-tx);margin-bottom:18px}
+.mast h1{font:700 clamp(38px,6.4vw,68px)/.94 var(--f-display);letter-spacing:-.035em;
+  margin:0 0 20px;color:var(--ink);max-width:15ch}
+.mast h1 em{font-style:normal;color:var(--ink-3)}
+.mast p{font:400 15px/1.62 var(--f-ui);color:var(--ink-2);max-width:66ch;margin:0 0 14px}
+.mast .ghost{position:absolute;right:-3%;top:44px;font:700 190px/.7 var(--f-display);
+  letter-spacing:-.07em;color:rgba(255,255,255,.028);pointer-events:none;user-select:none}
+:root.light .mast .ghost{color:rgba(0,0,0,.035)}
+.rule{height:2px;background:var(--hope);margin:34px 0 0;
+  clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+
+/* ── sections ── */
+section{padding-top:64px;scroll-margin-top:70px}
+h2{margin:0 0 8px;font:700 22px/1.15 var(--f-display);letter-spacing:-.022em;color:var(--ink)}
+h2 span{display:block;font:700 10px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;
+  color:var(--hope-tx);margin-bottom:11px}
+h3{margin:34px 0 8px;font:700 11px/1 var(--f-mono);letter-spacing:.19em;text-transform:uppercase;
+  color:var(--ink)}
+p{font:400 13.5px/1.68 var(--f-ui);color:var(--ink-2);max-width:74ch;margin:0 0 13px}
+p b,li b{color:var(--ink);font-weight:600}
+code{font:500 12px/1 var(--f-mono);color:var(--hope-tx);
+  background:rgba(212,167,44,.09);padding:2px 5px}
+ul{margin:0 0 13px;padding-left:19px;max-width:74ch}
+li{font:400 13.5px/1.62 var(--f-ui);color:var(--ink-2);margin-bottom:7px}
+a.in{color:var(--hope-tx)}
+
+/* a law: the thing another agent must not break */
+.law{position:relative;background:var(--paper);padding:15px 18px 16px 20px;margin:0 0 16px;
+  max-width:74ch;box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)}
+.law::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--hope)}
+.law s{display:block;text-decoration:none;font:700 8px/1 var(--f-mono);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--hope-tx);margin-bottom:8px}
+.law p{margin:0;color:var(--ink);font-size:13px}
+.law.warn::before{background:var(--crit)}
+.law.warn s{color:var(--crit-tx)}
+
+/* The stage follows the theme even though the real Foundry frame does not.
+   Several specimens (the unlit die, the mark box) are built from role tokens
+   and flip with the substrate — showing a light-theme component on a dark
+   backdrop would misreport the one thing this page is about. */
+.stage{background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line);padding:20px;
+  margin:0 0 16px}
+:root.light .stage{background:#e7ebef;box-shadow:inset 0 0 0 1px #d3d9df}
+.stage.pale{background:var(--paper);box-shadow:inset 0 0 0 1px var(--line)}
+.cap{font:400 11px/1.5 var(--f-ui);color:var(--ink-2);margin:9px 0 22px;max-width:74ch}
+
+/* spec table */
+.tw{overflow-x:auto;margin:0 0 16px}
+.tw table{min-width:600px;margin:0}
+table{width:100%;border-collapse:collapse;font:400 12px/1.5 var(--f-ui);color:var(--ink-2);
+  margin:0 0 16px}
+th{font:700 8.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);
+  text-align:left;padding:0 14px 9px 0;border-bottom:1px solid var(--line-2);white-space:nowrap}
+td{padding:8px 14px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td code{background:none;padding:0;color:var(--ink)}
+td.n{font:500 12px/1.5 var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.sw{display:inline-block;width:11px;height:11px;margin-right:7px;vertical-align:-1px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.tile{background:var(--paper);padding:12px 13px 14px;box-shadow:inset 0 0 0 1px var(--line)}
+.tile i.bar{display:block;height:44px;margin-bottom:10px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.tile b{display:block;font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink);margin-bottom:5px}
+.tile s{display:block;text-decoration:none;font:400 10.5px/1.45 var(--f-ui);color:var(--ink-2)}
+
+/* ══ SPECIMENS — lifted verbatim from plate.css ═══════════════════ */
+.die{position:relative;display:grid;place-items:center;flex:none;
+  width:var(--sz,38px);height:var(--sz,38px);
+  --face:polygon(50% 0,79.39% 9.55%,97.55% 34.55%,97.55% 65.45%,79.39% 90.45%,
+    50% 100%,20.61% 90.45%,2.45% 65.45%,2.45% 34.55%,20.61% 9.55%);
+  --core:polygon(50% 19.1%,79.39% 40.45%,68.16% 75%,31.84% 75%,20.61% 40.45%);
+  --nudge:.0121;--rim:2.5px;
+  --tone:var(--line-2);--rimc:var(--line-2);--facec:var(--sunk);--numc:var(--ink-2)}
+.die.h{--tone:#d4a72c} .die.f{--tone:#8256cc}
+.die.h.lit{--rimc:#f2d178;--facec:#d4a72c;--numc:#171008}
+.die.f.lit{--rimc:#ab88ea;--facec:#7b4fc0;--numc:#fff}
+.die .lamp{position:absolute;inset:0}
+.die.lit .lamp{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--tone) 60%,transparent))
+                      drop-shadow(0 0 15px color-mix(in srgb,var(--tone) 28%,transparent))}
+.die .lamp::before,.die .lamp::after{content:"";position:absolute;clip-path:var(--face)}
+.die .lamp::before{inset:0;background:var(--rimc)}
+.die .lamp::after{inset:var(--rim);background:var(--ring,var(--facec))}
+.die .core{position:absolute;inset:0;z-index:1;clip-path:var(--core);background:var(--facec)}
+.die{--ring:conic-gradient(from 0deg,
+  var(--facec) 0 2.5deg,
+  color-mix(in srgb,#000 14%,var(--facec)) 2.5deg 69.5deg,
+  var(--facec) 69.5deg 74.5deg,
+  color-mix(in srgb,#000 25%,var(--facec)) 74.5deg 141.5deg,
+  var(--facec) 141.5deg 146.5deg,
+  color-mix(in srgb,#000 23%,var(--facec)) 146.5deg 213.5deg,
+  var(--facec) 213.5deg 218.5deg,
+  color-mix(in srgb,#000 12%,var(--facec)) 218.5deg 285.5deg,
+  var(--facec) 285.5deg 290.5deg,
+  color-mix(in srgb,#000 6%,var(--facec)) 290.5deg 357.5deg,
+  var(--facec) 357.5deg 360deg)}
+.die.sq{--face:polygon(0 0,100% 0,100% 100%,0 100%);--nudge:0;--rim:2px;--ring:var(--facec)}
+.die.sq .core{display:none}
+.die.d20{--face:polygon(50% 0,93.3% 25%,93.3% 75%,50% 100%,6.7% 75%,6.7% 25%);
+  --core:polygon(50% 19.1%,76.76% 65.45%,23.24% 65.45%);--nudge:.0121;
+  --ring:conic-gradient(from 0deg,
+    var(--facec) 0 2.5deg,
+    color-mix(in srgb,#000 13%,var(--facec)) 2.5deg 57.5deg,
+    var(--facec) 57.5deg 62.5deg,
+    color-mix(in srgb,#000 23%,var(--facec)) 62.5deg 117.5deg,
+    var(--facec) 117.5deg 122.5deg,
+    color-mix(in srgb,#000 26%,var(--facec)) 122.5deg 177.5deg,
+    var(--facec) 177.5deg 182.5deg,
+    color-mix(in srgb,#000 19%,var(--facec)) 182.5deg 237.5deg,
+    var(--facec) 237.5deg 242.5deg,
+    color-mix(in srgb,#000 9%,var(--facec)) 242.5deg 297.5deg,
+    var(--facec) 297.5deg 302.5deg,
+    color-mix(in srgb,#000 6%,var(--facec)) 302.5deg 357.5deg,
+    var(--facec) 357.5deg 360deg)}
+.die.d20 em{font-size:calc(var(--sz,38px)*.40)}
+.die.d20.nat{--tone:var(--crit-hi);--rimc:#ffd8cb;--facec:#d1332a;--numc:#fff}
+.die.a{--tone:#dfe6ee;--rimc:#f7fafd;--facec:#dbe3ec;--numc:#14161a}
+.die.a.neg{--tone:#c3ccd8;--rimc:#c3ccd8;--facec:#101318;--numc:#eef2f7}
+.die.w{--tone:#bd3f47;--rimc:#e2727a;--facec:#bd3f47;--numc:#fff}
+.die.w.max{--tone:#e2727a;--rimc:#ffe9ea;--facec:#5e1116;--numc:#fff}
+.die.dim{--tone:var(--line-2);--rimc:var(--line-2);--facec:var(--sunk);--numc:var(--ink-2);
+  --ring:var(--sunk)}
+.die.dim::before,.die.dim::after{content:"";position:absolute;z-index:3;pointer-events:none;
+  left:13%;right:13%;height:max(1px,calc(var(--sz,38px)*.028));
+  top:calc(50% - max(.5px,var(--sz,38px)*.014));background:var(--xmark-p);
+  box-shadow:0 0 0 calc(var(--sz,38px)*.022) var(--facec)}
+.die.dim::before{transform:rotate(42deg)}
+.die.dim::after{transform:rotate(-42deg)}
+.die em{position:relative;z-index:2;
+  transform:translateY(calc(var(--sz,38px) * var(--nudge,.065)));
+  font:700 calc(var(--sz,38px)*.44)/1 var(--f-display);font-style:normal;
+  letter-spacing:-.045em;color:var(--numc);font-variant-numeric:tabular-nums;
+  -webkit-text-stroke:calc(var(--sz,38px)*.016) currentColor}
+.dicerow{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.dicerow figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.dicerow figcaption{font:700 7.5px/1.4 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  color:var(--ink-2);text-align:center;max-width:11ch}
+
+/* the plate facsimile */
+.pl{position:relative;overflow:hidden;background:var(--paper);color:var(--ink);width:300px;
+  font-family:var(--f-ui),system-ui,sans-serif;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
+  box-shadow:0 3px 14px -4px rgba(0,0,0,.6),inset 0 0 0 1px var(--line)}
+.pl.hope{--o:#d4a72c;--o-hi:#f2d178;--o-tx:var(--hope-tx);--o-ink:#14161a}
+.pl.fear{--o:#7b4fc0;--o-hi:#ab88ea;--o-tx:var(--fear-tx);--o-ink:#fff}
+.pl .p{position:relative;overflow:hidden;isolation:isolate;padding:11px 12px 13px}
+.pl.hope .p{background:linear-gradient(103deg,#e8cb75 0,#d4a72c 62%,#a38122 100%)}
+.pl.fear .p{background:linear-gradient(103deg,#331b5e 0,#6a41ab 62%,#7b4fc0 100%)}
+.pl-gh{position:absolute;font:700 54px/.78 var(--f-display);letter-spacing:-.065em;
+  text-transform:uppercase;white-space:nowrap;pointer-events:none;user-select:none;
+  color:rgba(0,0,0,.15);right:-5%;bottom:-12px}
+.pl.fear .pl-gh{color:rgba(255,255,255,.13)}
+.shards{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(114deg,transparent 0 9px,rgba(255,255,255,.06) 9px 10px,
+    transparent 10px 21px,rgba(255,255,255,.032) 21px 23px)}
+.pl-eye{position:relative;z-index:2;display:flex;align-items:baseline;min-width:0;
+  font:700 8px/1 var(--f-mono);letter-spacing:.22em;text-transform:uppercase;color:var(--o-ink)}
+.pl-eye b{flex:none;letter-spacing:.14em}
+.pl-eye u{flex:none;text-decoration:none;opacity:.55;margin:0 5px}
+.pl-eye i{flex:0 1 auto;min-width:0;font-style:normal;letter-spacing:.15em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl .row{position:relative;z-index:2;display:flex;align-items:flex-end;gap:10px;margin-top:9px;
+  justify-content:flex-end}
+.pl-vb{flex:1 1 auto;min-width:0;font:700 15px/1.05 var(--f-display);letter-spacing:-.015em;
+  text-transform:uppercase;color:var(--o-ink);padding-bottom:3px}
+.pl-num{flex:none;font:700 48px/.82 var(--f-display);letter-spacing:-.055em;
+  font-variant-numeric:tabular-nums;text-decoration:none;color:var(--o-ink);
+  -webkit-text-stroke:1.2px currentColor}
+.pl-st{display:flex;align-items:center;gap:9px;padding:11px 12px 0}
+.pl-arith{display:flex;flex-wrap:wrap;gap:0 5px;font:500 9.5px/1.5 var(--f-mono);color:var(--ink-2);
+  margin-left:auto;justify-content:flex-end;text-align:right;max-width:54%}
+.pl-arith i{font-style:normal} .pl-arith i b{font-weight:700;color:var(--ink)}
+.pl-arith i.sp b{color:var(--hope-tx)} .pl-arith u{text-decoration:none;color:var(--ink-2)}
+.pl-meta{display:flex;gap:8px;padding:9px 12px 0;font:700 8px/1 var(--f-mono);
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2)}
+.pl-meta s{text-decoration:none;margin-left:auto;color:var(--o-tx)}
+.pl-act{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 11px}
+.pl-b{flex:1 1 auto;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  gap:6px;padding:8px 10px;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .14s,color .14s,box-shadow .14s}
+.pl-b i{flex:none;width:8px;height:8px;background:var(--o);transform:rotate(45deg)}
+.pl-b:hover{background:var(--o);color:var(--o-ink);box-shadow:none}
+.pl-b:hover i{background:var(--o-ink)}
+
+/* the GM card */
+.g1{position:relative;overflow:hidden;width:300px;font-family:var(--f-ui),sans-serif;
+  --o:#bd3f47;--o-tx:#e2727a;
+  --paper:#0c0e12;--sunk:#12151a;--raise:#151920;--line:#1e232a;--line-2:#2c323b;
+  --ink:#e8ecf1;--ink-2:#98a2af;--ink-3:#7f8a97;--xmark-p:#8a939f;
+  --fear-tx:#a688ea;--hope-tx:#e0b647;
+  background:var(--paper);color:var(--ink);
+  box-shadow:0 3px 14px -4px rgba(0,0,0,.7),inset 0 0 0 1px #232830;--rail:var(--o)}
+.g1.hot{--rail:var(--crit-hi)} .g1.cold{--rail:#5c636d}
+.g1 .rail{position:absolute;left:0;top:0;bottom:0;width:4px;z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,#fff 34%,var(--rail)) 0,var(--rail) 42%,
+    color-mix(in srgb,#000 52%,var(--rail)) 100%)}
+.g1.hot .rail{box-shadow:0 0 12px 0 color-mix(in srgb,var(--crit-hi) 70%,transparent)}
+.g1 .p{position:relative;padding:11px 12px 12px 16px}
+.g1 .pl-eye{color:var(--ink-3)}
+.g1 .row{display:flex;align-items:flex-end;gap:10px;margin-top:8px;justify-content:flex-end}
+.g1 .pl-vb{color:var(--ink);padding-bottom:2px;font:700 11.5px/1.15 var(--f-mono);
+  letter-spacing:.13em;text-transform:uppercase}
+.g1.cold .pl-vb,.g1.cold .pl-num{color:var(--ink-2)}
+.g1 .pl-num{color:var(--ink);font-size:38px}
+.g1 .pl-st,.g1 .pl-meta{padding-left:15px}
+
+/* shape demo */
+.shapes{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.shapes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.shapes figcaption{font:700 7.5px/1.4 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  color:var(--ink-2);text-align:center;max-width:14ch}
+.cutbox{width:92px;height:64px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--line-2)}
+.cut9 {clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+.cut15{clip-path:polygon(0 0,100% 0,100% calc(100% - 15px),calc(100% - 15px) 100%,0 100%)}
+.cut5 {clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.cutno{}
+.gem{width:44px;height:44px;background:var(--hope);transform:rotate(45deg);
+  box-shadow:0 0 12px 0 rgba(212,167,44,.5)}
+.gem.fe{background:var(--fear);box-shadow:0 0 12px 0 rgba(123,79,192,.5)}
+.boxsq{width:44px;height:44px;background:var(--sunk);box-shadow:inset 0 0 0 1.5px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+
+/* TOC */
+.toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;
+  background:var(--line);margin:0 0 8px;box-shadow:0 0 0 1px var(--line)}
+.toc a{display:flex;gap:11px;background:var(--paper);padding:12px 14px;text-decoration:none;
+  transition:background .14s}
+.toc a:hover{background:var(--sunk-2)}
+.toc a i{font:700 9px/1.5 var(--f-mono);color:var(--hope-tx);font-style:normal;flex:none}
+.toc a s{text-decoration:none;font:600 12px/1.45 var(--f-ui);color:var(--ink)}
+.toc a s em{display:block;font-style:normal;font-weight:400;font-size:11px;color:var(--ink-2);
+  margin-top:2px}
+@media(max-width:760px){.mast .ghost{display:none}}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>DH · design study</b>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/gm.html">gm</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/">cards</a>
+  <label class="tg"><input type="checkbox" id="lt"> light theme</label>
+</div></div>
+
+<div class="wrap">
+
+<div class="mast">
+  <div class="ghost">DH</div>
+  <div class="eyebrow">// reference · gluniverse-daggerheart</div>
+  <h1>A system built from<br>light, weight and<br><em>derived numbers.</em></h1>
+  <p>This is the design study for a Daggerheart implementation on Foundry VTT v14. It documents a
+  visual language taken from <b>Arknights: Endfield</b> — its typographic discipline, its use of
+  saturated fields as <i>tiers</i> rather than decoration, its habit of breaking panel boundaries — and
+  pulled back from the sci-fi surface into something genre-neutral, because Daggerheart is not
+  only a fantasy game.</p>
+  <p>It is written for <b>another agent</b>. Everything below is a rule with a reason attached, and
+  every specimen is rendered with the production technique rather than described. Where a number
+  appears, it was derived or measured; none of them are taste. The last section is the working
+  method — read it before changing anything.</p>
+  <div class="rule"></div>
+</div>
+
+<div class="toc" id="toc"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s1">
+<h2><span>// 01 · origin</span>What was taken from Endfield, and what was left behind</h2>
+
+<p>Endfield's interface is loud, but it is not loud everywhere at once. Studying the screenshots,
+five moves do nearly all the work — and only one of them is science fiction.</p>
+
+<div class="grid2">
+  <div class="tile"><b>Taken · red is a rung, not a colour</b><s>Normal / Hard / <i>Brutal</i>: the top
+    tier is not <i>more red</i>, it is a saturated red field <b>plus material</b> — a bloom, embers, a
+    decorated cap — that the tiers below simply do not have. Same with the I/II/III/IV threat plates:
+    the live one is lit and bracketed, the dormant ones are flat.</s></div>
+  <div class="tile"><b>Taken · the ghost word</b><s>A copy of the headline at 3× running off the frame
+    at 3–15% alpha. The cheapest way to make a small box feel like it was cropped out of something
+    larger. On every hero panel Endfield ships.</s></div>
+  <div class="tile"><b>Taken · portrait as tone</b><s>Endfield never drops a portrait in as a picture.
+    It goes in as one channel, bled off the edge, <i>under</i> the type rather than beside it — so it
+    costs no layout at all.</s></div>
+  <div class="tile"><b>Taken · the mono eyebrow</b><s><code>// EVENT CENTER</code>, wide-tracked
+    uppercase mono over everything. It is the system's connective tissue and it is what makes an
+    otherwise plain panel read as instrumentation.</s></div>
+  <div class="tile"><b>Taken · broken boundaries</b><s>Objects sitting <i>across</i> a panel edge —
+    half on the colour, half off it. The single move that most stops a rectangle looking like a
+    rectangle.</s></div>
+  <div class="tile"><b>Left behind · the sci-fi surface</b><s>No hexagons, no reticles, no fake
+    telemetry, no Chinese-industrial hazard stripes, no glitch. Those are Endfield's <i>fiction</i>,
+    not its craft. Daggerheart has to survive a pirate campaign and a cyberpunk one in the same
+    stylesheet.</s></div>
+</div>
+
+<div class="law"><s>the substitution</s><p>Where Endfield uses <b>yellow-black industrial</b> as its
+accent, this system uses <b>Daggerheart's own two currencies</b> — gold for Hope, violet for Fear.
+That single swap does most of the de-sci-fi-ing on its own, because the palette stops citing a
+factory and starts citing the game.</p></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s2">
+<h2><span>// 02 · the substrate</span>The palette is a set of roles, not a set of colours</h2>
+
+<p>Dark is the base theme and light is a class on <code>&lt;html&gt;</code>. That is a change of
+<b>substrate</b>, not a repaint — so the palette is split into roles first. Every value names what it
+is <i>for</i>, and each theme answers the same question its own way.</p>
+
+<div class="tw"><table>
+<thead><tr><th>Role</th><th>What it means</th><th>Dark</th><th>Light</th></tr></thead>
+<tbody>
+<tr><td><code>--paper</code></td><td>the sheet — what you read values off</td>
+  <td class="n"><span class="sw" style="background:#171a1f"></span>#171a1f</td>
+  <td class="n"><span class="sw" style="background:#f7f8f9"></span>#f7f8f9</td></tr>
+<tr><td><code>--sunk</code></td><td>a recess in the sheet. Always <i>away</i> from the ink</td>
+  <td class="n"><span class="sw" style="background:#0f1216"></span>#0f1216</td>
+  <td class="n"><span class="sw" style="background:#eef1f3"></span>#eef1f3</td></tr>
+<tr><td><code>--sunk-2</code></td><td>that recess, hovered. Always <i>toward</i> the ink — which is
+  why it cannot be one shared delta: light hover darkens, dark hover lightens</td>
+  <td class="n"><span class="sw" style="background:#1c2027"></span>#1c2027</td>
+  <td class="n"><span class="sw" style="background:#e5eaed"></span>#e5eaed</td></tr>
+<tr><td><code>--raise</code></td><td>a paper surface, hovered</td>
+  <td class="n"><span class="sw" style="background:#20242b"></span>#20242b</td>
+  <td class="n"><span class="sw" style="background:#e9edef"></span>#e9edef</td></tr>
+<tr><td><code>--line</code> / <code>-2</code></td><td>hairline, and the same hairline asserted</td>
+  <td class="n"><span class="sw" style="background:#2b313a"></span>#2b313a ·
+    <span class="sw" style="background:#3a424e"></span>#3a424e</td>
+  <td class="n"><span class="sw" style="background:#d6dade"></span>#d6dade ·
+    <span class="sw" style="background:#b9c0c7"></span>#b9c0c7</td></tr>
+<tr><td><code>--ink</code> / <code>-2</code> / <code>-3</code></td><td>text in three weights of presence</td>
+  <td class="n"><span class="sw" style="background:#e8ecf1"></span>#e8ecf1 ·
+    <span class="sw" style="background:#a9b2be"></span>#a9b2be ·
+    <span class="sw" style="background:#78818e"></span>#78818e</td>
+  <td class="n"><span class="sw" style="background:#14161a"></span>#14161a ·
+    <span class="sw" style="background:#3a4049"></span>#3a4049 ·
+    <span class="sw" style="background:#7b828d"></span>#7b828d</td></tr>
+<tr><td><code>--tint</code></td><td>what a domain hue mixes <i>into</i> when it lands on paper.
+  Was a literal <code>#fff</code> in four files</td>
+  <td class="n">#0f1216</td><td class="n">#ffffff</td></tr>
+<tr><td><code>--sev-1..4</code></td><td>damage severity, expressed as <b>weight</b> not hue — so on a
+  dark sheet the ramp runs the other way and Severe is the near-white one</td>
+  <td class="n">#22262d → #f4f7fa</td><td class="n">#e4e7ea → #14161a</td></tr>
+</tbody>
+</table></div>
+
+<div class="law"><s>substrate law</s><p>The dark theme is <b>cool and desaturated</b>, not neutral grey.
+At a true neutral <code>#1a1a1a</code> the gold reads olive. A warm gold and a violet both have to sit
+on this substrate without it arguing with either, and only a cool base manages that.</p></div>
+
+<div class="law"><s>frame law</s><p>The <b>frame does not flip</b>. Window chrome and the tab strip are
+dark in both themes because they are the <i>Foundry app</i>, not the character sheet. Everything you
+read a value off is paper; everything that holds it is frame. Two exceptions, both about depth rather
+than data: the portrait diorama and the Evasion/Armor silhouettes.</p></div>
+
+<h3>Fill versus text — every accent is a pair</h3>
+<p>A saturated hue that works as a <b>fill</b> is almost never legible as <b>text</b>, and the two
+diverge differently per theme. So each accent ships twice.</p>
+<div class="tw"><table>
+<thead><tr><th>Pair</th><th>Fill</th><th>Text (dark)</th><th>Text (light)</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Hope</td><td class="n"><span class="sw" style="background:#d4a72c"></span>#d4a72c</td>
+  <td class="n"><span class="sw" style="background:#e0b647"></span>#e0b647</td>
+  <td class="n"><span class="sw" style="background:#8a6810"></span>#8a6810</td>
+  <td><code>--hope</code> is illegible as text on either substrate</td></tr>
+<tr><td>Fear</td><td class="n"><span class="sw" style="background:#7b4fc0"></span>#7b4fc0</td>
+  <td class="n"><span class="sw" style="background:#a688ea"></span>#a688ea</td>
+  <td class="n"><span class="sw" style="background:#6d3fa3"></span>#6d3fa3</td>
+  <td>same rule, opposite direction</td></tr>
+<tr><td>Critical</td><td class="n"><span class="sw" style="background:#d1332a"></span>#d1332a</td>
+  <td class="n"><span class="sw" style="background:#f0705f"></span>#f0705f</td>
+  <td class="n"><span class="sw" style="background:#a8241c"></span>#a8241c</td>
+  <td><code>--crit</code> measured 3.05:1 on paper</td></tr>
+<tr><td>Wound</td><td class="n"><span class="sw" style="background:#c8484f"></span>#c8484f</td>
+  <td class="n"><span class="sw" style="background:#e2727a"></span>#e2727a</td>
+  <td class="n"><span class="sw" style="background:#a02730"></span>#a02730</td>
+  <td>a fill for the identical reason</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s3">
+<h2><span>// 03 · colour law</span>Four hues, and each one means exactly one thing</h2>
+
+<p>The system runs on a near-neutral field with a very small number of hues, and each is spent on a
+single meaning. Introducing a fifth hue is the most expensive change anyone can make here.</p>
+
+<div class="tw"><table>
+<thead><tr><th>Hue</th><th>Means</th><th>May appear on</th><th>May never</th></tr></thead>
+<tbody>
+<tr><td><span class="sw" style="background:#d4a72c"></span><b>Gold</b></td><td>Hope</td>
+  <td>the Hope gem, the Hope field, a spent-Hope term, the level plate, gold coins, the seam rule</td>
+  <td>be a generic "highlight" or a hover state</td></tr>
+<tr><td><span class="sw" style="background:#7b4fc0"></span><b>Violet</b></td><td>Fear</td>
+  <td>the Fear die, the Fear field, a term the GM paid Fear for</td>
+  <td>appear on the player's side as decoration</td></tr>
+<tr><td><span class="sw" style="background:#c8484f"></span><b>Red</b></td><td>harm — and, one rung up, a critical</td>
+  <td>Hit Point marks, damage dice, the damage plate, the critical's material</td>
+  <td>mark anything that is not harm</td></tr>
+<tr><td><span class="sw" style="background:#8fd0e0"></span><b>Cold blue</b></td><td>Stress</td>
+  <td>the Stress mark only</td>
+  <td>anything else at all</td></tr>
+</tbody>
+</table></div>
+
+<p><b>Cold blue is not an aesthetic choice.</b> It is the only quadrant of the wheel left once gold is
+Hope, violet is Fear and red is a wound — and choosing it means a Stress mark turning violet at
+maximum is unmissable.</p>
+
+<h3>Red is a rung</h3>
+<p>Directly from Endfield. A critical is not "the same card, brighter" — it is a red field <b>plus
+four materials nothing below it may have</b>: embers, a corner bracket, a lit glass edge, and a struck
+badge.</p>
+
+<div class="grid3">
+  <div class="tile"><i class="bar" style="background:linear-gradient(103deg,#71120e,#b32720 62%,#d1332a)"></i>
+    <b>critical field</b><s>deep → hot, so white ink starts on the safe end</s></div>
+  <div class="tile"><i class="bar" style="background:#ffd8cb"></i><b>the bracket</b>
+    <s>3.81:1 on the field. The true hot red managed 1.94 and vanished — a frame you cannot see is
+    not a frame</s></div>
+  <div class="tile"><i class="bar" style="background:linear-gradient(150deg,#ff9d85,#ff7a5c 62%,#e8543a)"></i>
+    <b>the badge</b><s>near-black on it at 7.06:1 — the brightest, highest-contrast object anywhere in
+    the system, which is exactly the job</s></div>
+  <div class="tile"><i class="bar" style="background:#c8484f"></i><b>the wound</b>
+    <s>what red already means: one Hit Point</s></div>
+  <div class="tile"><i class="bar" style="background:linear-gradient(103deg,#e8cb75,#d4a72c 62%,#a38122)"></i>
+    <b>hope field</b><s>light → deep, <i>because Hope's ink is the dark one</i></s></div>
+  <div class="tile"><i class="bar" style="background:linear-gradient(103deg,#331b5e,#6a41ab 62%,#7b4fc0)"></i>
+    <b>fear field</b><s>deep → light, same rule, opposite ink</s></div>
+</div>
+
+<div class="law"><s>gradient law</s><p>A field's luminance band is set <b>by its own ink</b>, never by
+taste. It always starts at the end its ink is safest on. Hope's ink is dark so the field may go as
+light as it likes and bottoms out at <code>#a38122</code> (4.92:1); Fear's ink is white so the field
+tops out at <code>--o</code> itself (5.64:1); critical the same (4.98:1). One rule, two directions.</p></div>
+
+<div class="law warn"><s>the honest cost, recorded not hidden</s><p>Red is already <code>--wound</code>,
+the material of a Hit Point, and the critical is also red. The critical's red is hotter, lighter and
+glows, and it never appears on a mark — but it <b>is</b> a real adjacency. It is written down here
+rather than discovered in play. Anything that widens this adjacency is a regression.</p></div>
+
+<h3>The gold that was removed</h3>
+<p>The critical used to be gold-on-red, on the argument that a critical counts as a roll with Hope.
+True as a rule, and <b>wrong as a picture</b>: it made the loudest object on the card look like it was
+wearing another outcome's jewellery, and the eye went to the gold first. The Hope is still stated —
+in the <i>+1 Hope</i> the card hands you, which is where the rule actually lives.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s4">
+<h2><span>// 04 · typography</span>Three faces, and a strict division of labour</h2>
+
+<div class="tw"><table>
+<thead><tr><th>Face</th><th>Job</th><th>Typical setting</th></tr></thead>
+<tbody>
+<tr><td><code>Google Sans</code><br><span style="color:var(--ink-3)">--f-display</span></td>
+  <td><b>Numbers and verdicts.</b> Anything that is the answer to the question the component exists to
+  answer</td>
+  <td>totals at 48px/.82, <code>-.055em</code>, tabular; verdicts at 15px uppercase</td></tr>
+<tr><td><code>Google Sans Text</code><br><span style="color:var(--ink-3)">--f-ui</span></td>
+  <td><b>Prose.</b> Card rules text, descriptions, anything read as a sentence</td>
+  <td>12–13.5px, line-height 1.55–1.68</td></tr>
+<tr><td><code>Google Sans Code</code><br><span style="color:var(--ink-3)">--f-mono</span></td>
+  <td><b>Labels, eyebrows, arithmetic.</b> Everything instrumental — the connective tissue borrowed
+  from Endfield</td>
+  <td>7.5–11px, 700, uppercase, tracked <code>.13–.24em</code></td></tr>
+</tbody>
+</table></div>
+
+<div class="law"><s>tracking law</s><p>Mono tracking encodes <b>rank</b>, not decoration. A name is a
+caption and wants air at <code>.22em</code>; a label is a sentence and does not, at
+<code>.15em</code>. Section eyebrows sit widest at <code>.24em</code>. Getting this wrong reads
+immediately as amateur, and the fix is never "pick a nicer number" — it is deciding what rank the run
+holds.</p></div>
+
+<h3>Weight is bought with stroke, not with a heavier cut</h3>
+<p>Google Sans ships 400–700, and the display numerals already start at 700. Extra mass comes from
+<code>-webkit-text-stroke</code>: <code>1.2px</code> on a 48px total is about a half-step of weight —
+enough that the number stops being "large text" and starts being the object the card is about. The
+die's numeral uses <code>.016 × --sz</code>, which is the same half-step made scale-invariant.</p>
+
+<div class="law warn"><s>markup trap</s><p>The total is marked up as a <code>&lt;u&gt;</code> so the
+three parts of its row name themselves without a class each — and it was drawing its own underline
+<b>through the one glyph on the card nobody should have to read past</b>. Every semantic element used
+for structure here carries an explicit <code>text-decoration</code> and an explicit
+<code>color</code>: Foundry ships an <code>h3{color:…}</code> rule that beats inheritance.</p></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s5">
+<h2><span>// 05 · geometry</span>Silhouette carries meaning before colour does</h2>
+
+<h3>The cut corner is the family mark</h3>
+<p>One 45° chamfer on the <b>bottom-right</b>, on everything the player owns. It scales with the
+object's importance, and it is the single strongest identity signal in the system — which is why
+removing it is how the GM's card is othered.</p>
+
+<div class="stage">
+  <div class="shapes">
+    <figure><div class="cutbox cut15"></div><figcaption>15px<br>domain card</figcaption></figure>
+    <figure><div class="cutbox cut9"></div><figcaption>9px<br>chat card</figcaption></figure>
+    <figure><div class="cutbox cut5"></div><figcaption>5px<br>button, chip</figcaption></figure>
+    <figure><div class="cutbox cutno"></div><figcaption style="color:var(--crit-tx)">none<br>not yours</figcaption></figure>
+  </div>
+</div>
+<p class="cap">The Foundry window takes 14px, the mark boxes 5px, armour slots take a second chamfer on
+the opposite corner so the row reads as the shield's at a glance.</p>
+
+<h3>Three silhouettes, and only three</h3>
+<p>A <b>diamond</b> is Hope and Fear and nothing else. A <b>square</b> is a box you mark, and a coin is
+the only circle besides the Proficiency dots. A die you roll and a pip you fill are two different
+objects and it was worth two different shapes.</p>
+
+<div class="stage">
+  <div class="shapes">
+    <figure><div class="gem"></div><figcaption>hope · a gem, lit</figcaption></figure>
+    <figure><div class="gem fe"></div><figcaption>fear · same, violet</figcaption></figure>
+    <figure><div class="boxsq"></div><figcaption>a box you cross off</figcaption></figure>
+    <figure><div style="width:44px;height:44px;border-radius:50%;background:var(--sunk);
+      box-shadow:inset 0 0 0 1.5px var(--line-2),inset 0 -3px 6px -3px rgba(255,255,255,.3)"></div>
+      <figcaption>a coin · struck</figcaption></figure>
+  </div>
+</div>
+<p class="cap"><b>Struck, not lit.</b> The gem is a light and carries no gradient; a coin is metal, so
+it gets a rim, an inner ring and a specular arc. That contrast is how you know at a glance that one is
+a resource and the other is a mood.</p>
+
+<h3>A die is drawn as the solid, seen down a face normal</h3>
+<p>Not as one face of it. That is the shape a reader already has in their hand, and it is why a d12
+and a d20 are told apart on a table at a glance — a dodecahedron is round, a d20 is angular, long
+before anyone counts anything.</p>
+
+<div class="stage">
+  <div class="dicerow" id="dice"></div>
+</div>
+
+<div class="tw"><table>
+<thead><tr><th>Die</th><th>Silhouette</th><th>Front face</th><th>Facets</th><th>Front-face R</th><th>Silhouette R</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td><b>d12</b> — duality</td><td>decagon</td><td>pentagon</td><td class="n">5</td>
+  <td class="n">1.0514</td><td class="n">1.7013</td><td class="n">0.618</td></tr>
+<tr><td><b>d20</b> — the GM's</td><td>hexagon</td><td>upward triangle</td><td class="n">6</td>
+  <td class="n">1.1547</td><td class="n">1.8683</td><td class="n">0.618</td></tr>
+<tr><td><b>d6</b> — advantage, damage</td><td>square</td><td>—</td><td class="n">0</td>
+  <td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+</tbody>
+</table></div>
+
+<p>Both ratios are <code>0.618</code> = <b>φ−1</b>, the golden section that builds both solids. The
+projections were computed from the actual vertex coordinates — icosahedron down a 3-fold axis,
+dodecahedron down a 5-fold axis — not eyeballed.</p>
+
+<div class="law"><s>the correction worth keeping</s><p>The d12 was drawn as a stylised pentagon for a
+while, on the argument that a decagon at 38px is a coin. <b>It was — but the fault was the shading,
+not the silhouette.</b> With a flat ring and no lit edges, <i>any</i> ten-sided outline is a disc.
+Faceted properly it reads as the solid, and the silhouette differing from the front face is exactly
+what makes it read as a solid rather than as one face seen straight on.</p></div>
+
+<p>Everything else stays a square. A d8 face and a d10 face are shapes nobody recognises at 26px, and
+a reader squinting at a silhouette to learn something the arithmetic line already states in words is
+doing the harder thing. The d20 is the exception because in this game it is rolled exactly once, by
+the GM, at you — it never competes for meaning, so its shape is not asking you to tell two things
+apart. <b>It is telling you which side of the table the card came from.</b></p>
+
+<h3>The numeral's offset is derived, and scale-invariant</h3>
+<p>Every shape is a regular polygon concentric with its box, so its area centroid is simply 50%. What
+remains is the <i>font's</i> own offset: Google Sans has ascent .965 and descent .285, so at
+line-height 1 the baseline sits .840em down the line box and the digits' ink is centred .3675em above
+it — putting ink centre at <b>48.79%</b> of the die. <code>50 − 48.79 = 1.21%</code>, hence
+<code>--nudge:.0121</code>. It is scale-invariant because the font size is a fraction of
+<code>--sz</code>.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s6">
+<h2><span>// 06 · material &amp; light</span>Objects are lit, not merely coloured</h2>
+
+<p>This is where the "premium" reads from. Nothing in the system is a flat rectangle with a border;
+every object states what it is made of and where the light is.</p>
+
+<h3>The gem construction</h3>
+<p>Used by every die and every Hope pip: a <b>flat saturated front face</b>, a <b>brighter rim where
+the light leaves the edge</b>, and a <b>bloom on a wrapper element</b> — the wrapper matters, because a
+<code>filter</code> applied to the clipped shape itself is clipped away by the very shape it is
+describing.</p>
+
+<h3>The facet ring</h3>
+<p>A <code>conic-gradient</code> with hard stops on the facet boundaries, plus a lit edge at each
+boundary. Sector values are <b>cos of the angle to a light at the upper left</b>, mapped to
+<b>6–26% black</b>.</p>
+<ul>
+<li>The floor is 6, not 0, so the front face's own outline never disappears into the facet beside it
+on the lit side.</li>
+<li>The ceiling is 26 because that is where the gold d12's dark numeral still measures 4.8:1 on its
+deepest facet — and it is the dark-ink dice, not the white-ink ones, that a darker ring costs.</li>
+<li>The lit edge is a <b>5° wedge</b>, not a stroke: 2px at the outer rim and 1.2px at the inner one,
+so it never falls below the rendering floor at any radius. It is painted in exactly
+<code>--facec</code>, because a real edge catches the light.</li>
+</ul>
+
+<div class="law"><s>the only-darkens guarantee</s><p>The ring may <b>only ever darken</b>. That is
+correct lighting — the front face is square to you and catches the most light — and it is also a
+contract: <b>no numeral ever sits on anything lighter than the face colour it was measured against</b>,
+so every contrast figure in this system survives the facets. The numeral is painted <i>on the die</i>,
+not fitted inside one plane of it — "20" on a triangle overhangs onto the upper facets, which is
+precisely why the guarantee has to hold.</p></div>
+
+<div class="law warn"><s>rendering floor</s><p>A 1px line at these sizes is a <b>sub-pixel line at
+partial alpha</b> — it does not render as a thin line, it renders as a grey smudge. Anything that
+must read as a hard mark is expressed as a proportion with a <code>max()</code> floor:
+<code>max(1px, --sz × .028)</code>. This has bitten the facet edge, the strike-out X and the die rim.</p></div>
+
+<h3>The strike — one meaning, nothing else may borrow it</h3>
+<p>Unlit was not enough. The losing <i>duality</i> die is unlit and it <b>still counts</b> — both
+duality dice are summed. A helper's d6 that did not win is thrown away entirely. Two different fates
+were wearing the same face.</p>
+<div class="law"><s>the X means one thing</s><p><b>This did not count.</b> Nothing else on any card may
+use it. It is <code>--xmark-p</code>, the material already used for a struck-out scar, and it carries
+a halo in the face's own colour — because <code>--xmark-p</code> and <code>--ink-2</code> are one step
+apart in value, and without the halo the strike and the numeral merge into a single grey blob.</p></div>
+
+<h3>Critical materials</h3>
+<div class="tw"><table>
+<thead><tr><th>Material</th><th>Construction</th></tr></thead>
+<tbody>
+<tr><td><b>glass edge</b></td><td>lit rim <code>inset 0 0 0 1.5px --crit-hi</code> plus an inner bloom
+  pooling in from it — that pairing is what makes the boundary read as a lit edge rather than a border</td></tr>
+<tr><td><b>bracket</b></td><td>two corners only, the way Endfield frames a live tier. 19×2px arms in
+  <code>--crit-br</code></td></tr>
+<tr><td><b>embers</b></td><td>six 2–3px sparks with per-child delays, rising 52px over 1.5s, fading in
+  at 18% and out at 100%</td></tr>
+<tr><td><b>foil</b></td><td>one <code>mix-blend-mode:screen</code> sweep across the whole plate, 2.4s,
+  run twice</td></tr>
+<tr><td><b>seal</b></td><td>a struck badge, arriving <i>after</i> everything else has settled, on an
+  overshoot curve <code>cubic-bezier(.2,1.5,.4,1)</code></td></tr>
+</tbody>
+</table></div>
+
+<h3>Shards</h3>
+<p>A repeating 114° stripe at 3–6% white laid over every coloured field. It is barely visible and it
+is doing real work: it stops a large flat gradient reading as a swatch. On a critical it warms to
+<code>rgba(255,216,203,.22)</code> and flips to dark stripes in the light theme.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s7">
+<h2><span>// 07 · the portrait</span>A duotone whose endpoints are both in band by construction</h2>
+
+<p>The first version locked the blend by <i>direction</i> — <code>screen</code> on Hope so it could
+only lighten, <code>multiply</code> on Fear so it could only darken — on the argument that this made
+breaking the text's contrast impossible. That was true, and it made the portrait nearly invisible:
+the end of the field it sits on is the end its own blend has no headroom at.</p>
+
+<div class="law"><s>state the constraint, do not approximate it</s><p>The image is mapped into a
+<b>two-colour ramp whose endpoints both sit inside the band its ink needs</b>. Every pixel is a blend
+of those two, so <b>every pixel is in band by construction</b> — no tuning, no per-image luck, and it
+holds for any art a user drops in.</p></div>
+
+<p>Four layers, each bounded:</p>
+<ul>
+<li><code>.por</code> — the shadow colour, and the mask that fades it off the edge</li>
+<li><code>u</code> — the image, greyscaled and clamped to <code>--pk</code> by
+  <code>brightness()</code>. <code>contrast(1.32)</code> runs <i>before</i> it, pushing more of the
+  image to the two ends of the ramp, which is what makes a narrow band still read as a figure</li>
+<li><code>b</code> — the hue, multiplied on, so a Fear silhouette stays violet instead of going grey</li>
+<li><code>i</code> — screens the pair onto the shadow: <code>A + k·T·(1−A)</code></li>
+</ul>
+
+<div class="tw"><table>
+<thead><tr><th>Field</th><th>Shadow → ink</th><th>Light → ink</th><th>--pk</th><th>Span</th></tr></thead>
+<tbody>
+<tr><td><b>hope</b></td><td class="n">#a8831f · 5.12:1</td><td class="n">#ecd889 · 12.68:1</td>
+  <td class="n">.78</td><td class="n">2.5×</td></tr>
+<tr><td><b>fear</b></td><td class="n">#150929 · 19.04:1</td><td class="n">#6f5b94 · 5.86:1</td>
+  <td class="n">.50</td><td class="n">3.2×</td></tr>
+<tr><td><b>critical</b></td><td class="n">#3a0705 · 17.32:1</td><td class="n">#955247 · 5.88:1</td>
+  <td class="n">.46</td><td class="n">2.9×</td></tr>
+</tbody>
+</table></div>
+
+<p><b>Hope is the flat one, and it has to be.</b> Its ink is the dark one, so the portrait's shadows
+can never go below 4.5:1 against near-black. That is a property of a dark-on-bright plate, not
+something to tune away.</p>
+
+<div class="law warn"><s>the bound must include everything laid over it</s><p><code>--pk</code> on the
+hostile field is <code>.44</code>, not the <code>.50</code> it started at — because the bound has to
+include the <b>shard stripe</b>, which lays 6% white over whatever is under it. At .50 the portrait's
+brightest pixel plus a stripe took white ink to 4.31:1. Below .44 the portrait stops being the binding
+constraint at all and the field's own light end takes over at 4.79.</p></div>
+
+<p class="cap">The mask is a plain fade to nothing — no edge, no vignette, no hairline. Anything drawn
+at the boundary reads as a seam, and a seam is the opposite of what "faded at the edge" asked for.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s8">
+<h2><span>// 08 · contrast</span>Every number here was measured, and the failures are recorded</h2>
+
+<p>Nothing in this system is set by eye. The working loop is: build it, probe it with a script that
+walks to the first opaque background and computes the real ratio in <i>both</i> themes, and only then
+call it done.</p>
+
+<div class="tw"><table>
+<thead><tr><th>Threshold</th><th>Value</th><th>Applies to</th></tr></thead>
+<tbody>
+<tr><td>Normal text</td><td class="n">4.5:1</td><td>everything under 18.66px bold / 24px regular</td></tr>
+<tr><td>Large text</td><td class="n">3:1</td><td><b>starts at 18.66px bold</b> — a 15px bold verdict is
+  <i>not</i> large text and needs the full 4.5</td></tr>
+<tr><td>Non-text graphic</td><td class="n">3:1</td><td>rails, brackets, silhouettes, marks</td></tr>
+</tbody>
+</table></div>
+
+<h3>Failures found by measuring, not by looking</h3>
+<div class="tw"><table>
+<thead><tr><th>What</th><th>Was</th><th>Now</th></tr></thead>
+<tbody>
+<tr><td>critical field red</td><td class="n">#e0392c · 4.38:1</td>
+  <td class="n">#d1332a · 4.98:1 — no less hot for it</td></tr>
+<tr><td>the bracket</td><td class="n">--crit-hi · 1.94:1 (vanished)</td>
+  <td class="n">--crit-br #ffd8cb · 3.81:1</td></tr>
+<tr><td>Hope field, dark end</td><td class="n">#6d4a08 · 2.27:1 under the verdict</td>
+  <td class="n">band set from the ink; bottoms at #a38122 · 4.92:1</td></tr>
+<tr><td>seal ink</td><td class="n">white on --crit-hi · 2.56:1</td>
+  <td class="n">near-black · 7.06:1</td></tr>
+<tr><td>the arithmetic line</td><td class="n">--ink-3 · 3.64:1 (light theme)</td>
+  <td class="n">--ink-2; hierarchy kept by <i>raising the values</i>, not holding the labels down</td></tr>
+<tr><td>B's numeral field</td><td class="n">white · 2.56:1 at full --o-hi</td>
+  <td class="n">highlight stop pulled back to 55% of itself</td></tr>
+<tr><td>damage die numeral</td><td class="n">white on --wound · 4.67:1 when the token flipped</td>
+  <td class="n">fixed hex — a die is a rendered object with its own material</td></tr>
+<tr><td>GM card's Fear ink</td><td class="n">--fear-tx flips to #6d3fa3 · 2.66:1</td>
+  <td class="n">pinned locally, because that card is a dark surface in both themes</td></tr>
+</tbody>
+</table></div>
+
+<div class="law warn"><s>the token-flip trap</s><p>A <b>rendered surface</b> — a coloured field, a
+damage bar, the GM card — does not flip with the sheet's substrate. Any theme-reactive token used
+inside one will silently invert and destroy its own contrast in one of the two themes. Either use
+fixed hexes, or <b>re-declare the role tokens locally</b> so everything downstream resolves against
+the right substrate. This trap has been sprung three separate times.</p></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s9">
+<h2><span>// 09 · motion</span>Every animation is an event, and different events move differently</h2>
+
+<div class="law"><s>motion law</s><p>Motion states <b>what happened</b>. Three marks that are three
+different events get three different animations, <b>not one animation in three colours</b>. If two
+things move the same way, a reader is entitled to assume they are the same kind of thing.</p></div>
+
+<div class="tw"><table>
+<thead><tr><th>Event</th><th>Motion</th><th>Timing</th></tr></thead>
+<tbody>
+<tr><td><b>card arrival</b></td><td>7px drop with a light sweep raking across behind it</td>
+  <td class="n">.32s <code>(.2,.85,.3,1)</code> + .64s sweep</td></tr>
+<tr><td><b>dice landing</b></td><td>overshoot to 1.14 and settle</td>
+  <td class="n">.4s <code>(.16,1.06,.3,1)</code>, .06s stagger</td></tr>
+<tr><td><b>verdict</b></td><td>wipe in from the left via <code>clip-path:inset()</code></td>
+  <td class="n">.36s, +.06s</td></tr>
+<tr><td><b>total</b></td><td>rises 8px from 94% scale</td><td class="n">.4s, +.04s</td></tr>
+<tr><td><b>a Hit Point</b></td><td>the gash lands <i>whole</i> from 1.5× — you do not watch a wound
+  being drawn — then <b>bleeds</b>. Two arms, staggered, because it tore twice</td>
+  <td class="n">160ms strike, 340ms bleed, arm 2 at +70ms</td></tr>
+<tr><td><b>a Stress</b></td><td>scraped in along its own axis under load, cold and thin; the recess
+  flickers the way something does when it is scored rather than struck</td><td class="n">—</td></tr>
+<tr><td><b>an Armor slot</b></td><td>both arms land <i>together</i> — one impact, not two strokes —
+  with a gold flash and a hard square ring, and the box's corners break away where the mark exits</td>
+  <td class="n">—</td></tr>
+<tr><td><b>critical seal</b></td><td>struck, from 2.2× with a −9° rotation, <i>after</i> everything
+  else has settled</td><td class="n">.42s <code>(.2,1.5,.4,1)</code>, delay .6s</td></tr>
+</tbody>
+</table></div>
+
+<div class="law"><s>stillness law</s><p><b>The box does not move.</b> It used to compress and overshoot
+on every mark — the gem's grammar borrowed wholesale, and wrong here, because Hope arrives one at a
+time and Hit Points arrive three at a time. Seven boxes bouncing is a row of jelly. The recess
+flushes, the ring flashes, and the box is still. <b>All the motion belongs to the mark.</b></p></div>
+
+<p>Staggers must <b>stop accumulating</b>. A critical at Proficiency 6 lands twelve dice; past the
+sixth the delay is capped, or the last die arrives most of a second after the number it belongs to.
+And every animation is disabled wholesale under
+<code>@media (prefers-reduced-motion:reduce)</code> — including the ambient ones, with any
+opacity-dimming states restored to full.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s10">
+<h2><span>// 10 · the card</span>Anatomy, and what a card is not allowed to do</h2>
+
+<div class="stage" style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+  <div id="cardA"></div>
+  <div id="cardB"></div>
+</div>
+<p class="cap">A chat card is a fixed <b>300px</b> in Foundry and does not scale. Study stages are
+therefore fixed-width too — a stage that stretches is showing a component that does not exist.</p>
+
+<div class="tw"><table>
+<thead><tr><th>Part</th><th>Holds</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td><b>the field</b></td><td>full-bleed colour, the eyebrow, the verdict, the total</td>
+  <td>luminance band set by its own ink</td></tr>
+<tr><td><b>the eyebrow</b></td><td>who rolled it · what they rolled</td>
+  <td>a flex row, not one truncating line. The <b>name is <code>flex:none</code></b> — it is the
+  answer to "whose roll is this" and is never what gets given up. The label shrinks and ellipses</td></tr>
+<tr><td><b>the total</b></td><td>the number</td>
+  <td>48px, <b>alone</b>, no underline through it, on its own row</td></tr>
+<tr><td><b>the ghost</b></td><td>the outcome again at 54px, running off the frame</td>
+  <td>3–15% alpha, <code>pointer-events:none</code>, <code>user-select:none</code></td></tr>
+<tr><td><b>the strip</b></td><td>the dice, and the arithmetic pushed right</td>
+  <td>the audit trail — the only place the card shows its work. Capped at 54% width</td></tr>
+<tr><td><b>the meta line</b></td><td>what kind of roll · versus what</td>
+  <td>8px mono, the smallest type on the card and the one place with no contrast margin</td></tr>
+<tr><td><b>the actions</b></td><td>what you may do next</td>
+  <td>chamfered buttons; a button that is not yours is outlined, not filled</td></tr>
+</tbody>
+</table></div>
+
+<div class="law"><s>silence law</s><p><b>A card does not narrate its own ignorance.</b> Most duality
+rolls are made without a Difficulty, and the card simply says <i>WITH HOPE</i> — which is the whole
+truth of that roll. There is no "no difficulty" chip and no placeholder about waiting. A missing fact
+is not a fact worth a slot, and a card announcing what it does not know is worse than a card that is
+quiet. On a reaction roll, where there is no Hope-or-Fear sentence to fall back on, the sentence is
+omitted entirely and the number stands alone.</p></div>
+
+<div class="law"><s>authority law</s><p>A card is <b>authoritative about its own number and says
+nothing about anyone else's state</b>. A damage card reports a quantity; how many Hit Points that
+becomes depends on thresholds, armour and resistance that live on the <i>target</i>, not here.</p></div>
+
+<h3>The five arrangements, and why A won</h3>
+<p>Five layouts were built to the same data and kept side by side rather than described. B–E are
+<b>frozen in the repository</b> as the record of the choice — nothing about them is being proposed;
+they are there so the reason A won stays legible.</p>
+<ul>
+<li><b>B · Split</b> — the number is <i>housed</i> in its own saturated field. Reads bigger at a
+smaller size. Endfield's <i>Total Test Criteria · 45</i> block.</li>
+<li><b>C · Wedge</b> — the field's lower edge is a hard diagonal and the dice sit <i>across</i> it.
+The strongest anti-rectangle move; costs the most height.</li>
+<li><b>D · Black bar</b> — colour reduced to a lit lower edge. Quietest by a mile, and quiet is what
+buys the critical its shock. The only one that does not fight a domain card for attention.</li>
+<li><b>E · Stack</b> — the verdict broken across two lines at display weight. Fastest to read;
+worst with a long name, and the only variant with no room for a seal.</li>
+<li><b>A · Plate</b> — full-bleed field, ghost running off the frame, the total alone at 48. Won on
+having the most room to absorb the cases the card has to <i>survive</i> rather than show off in: a
+long name, an actor with no art, a critical at Proficiency 6.</li>
+</ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s11">
+<h2><span>// 11 · the GM</span>Othering, and the one mark that carries the outcome</h2>
+
+<p>The GM is a <b>force</b>, not a participant. Two candidates were built: the player card wearing a
+hostile red field, and a deliberately othered object. Both parsed cleanly in isolation. The second
+won, and the reason only appeared in a <b>log</b> — a real chat sequence — where the first read as one
+more participant at the table, which is the one thing the GM is not.</p>
+
+<div class="stage" style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+  <div id="gmA"></div><div id="gmB"></div><div id="gmC"></div>
+</div>
+
+<ul>
+<li><b>No cut corner.</b> That notch is the family mark on every player card in this system, so its
+absence says "not one of yours" before any hue does.</li>
+<li><b>No portrait, no field.</b> Near-black throughout, one lit rail down the left. The number drops
+two sizes.</li>
+<li><b>The verdict is set in mono, not display.</b> The player cards say their outcome in a voice;
+this one <i>reports</i> it.</li>
+<li><b>The rail carries the outcome</b> — red on a hit, cold steel on a miss, hot on a critical. The
+card has exactly one mark, so the mark does the work. It is 4px, not 3: at 3 it read as a border, and
+this is a graphic carrying meaning.</li>
+</ul>
+
+<div class="law"><s>two lit states, one unlit</s><p>A lit rail means a hit is being <b>claimed</b>. A
+withheld Difficulty claims nothing, so it is unlit alongside the miss. An earlier version computed
+<code>hit = total &gt;= (dc ?? 0)</code>, which collapsed <i>unknown</i> into <i>true</i> and painted a
+red rail on a card that had said nothing. <b>Unknown is a third value and must be modelled as one.</b></p></div>
+
+<div class="law warn"><s>the collision only a log exposes</s><p>The GM numeral used to be the wound
+highlight — which is the <i>damage bar's</i> numeral colour, and a damage card lands one message
+after this one. Two different objects back to back in the same clothes took back the very thing the
+othering was bought to do. The numeral is <code>--ink</code> now. <b>Red means a quantity of harm and
+nothing else; a d20 against Evasion is a comparison.</b></p></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="s12">
+<h2><span>// 12 · method</span>How to extend this without degrading it</h2>
+
+<p>These are the rules the system was actually built under. They matter more than any individual
+value on this page, because they are what produced the values.</p>
+
+<div class="law"><s>01 · derive, do not eyeball</s><p>If a number can be computed, compute it. Die
+geometry from vertex coordinates. Facet values from the cosine of the angle to the light. The
+numeral's offset from the font's ascent and descent metrics. Edge widths from the sub-pixel rendering
+floor at both radii. A number chosen by eye is a number nobody can defend later — and, in practice,
+it is the one that turns out to be wrong.</p></div>
+
+<div class="law"><s>02 · verify by measurement, not by looking</s><p>Screenshot it, then <i>probe</i>
+it: walk to the first opaque background and compute the real contrast in both themes; re-derive each
+total from its own printed terms; detect clipping and escapes; sample after the animation has landed
+to prove every die is inside its own range. Bugs found this way include a die that never landed, an
+arithmetic line that did not match its own total, and a study page's own CSS leaking into the
+component it was displaying.</p></div>
+
+<div class="law"><s>03 · judge in context, never in isolation</s><p>Both GM candidates were fine alone.
+The <b>log</b> is what exposed the damage-bar collision. Any new card must be reviewed in a real
+sequence beside the cards it will actually appear next to.</p></div>
+
+<div class="law"><s>04 · freeze the losers</s><p>Rejected variants stay in the repository, minus
+whatever was specific to the winner, and pick up shared improvements for free. They are not proposals
+— they are the record of the choice, so the reason the winner won stays legible to whoever arrives
+next.</p></div>
+
+<div class="law"><s>05 · write the cost down</s><p>Where a decision has a real downside — red doing
+two jobs, E having no seal, the strike covering its own numeral — it is stated in a comment at the
+point of the decision. A cost recorded is a cost the next person can weigh. A cost discovered in play
+is a bug.</p></div>
+
+<div class="law"><s>06 · one hue, one meaning</s><p>Before adding a colour, establish that no existing
+one can carry the job and that the new one will never appear anywhere else. The system's legibility
+comes from the smallness of the palette, and every addition spends that down.</p></div>
+
+<div class="law"><s>07 · scope every selector</s><p>Class names here are short and generic —
+<code>.rc</code>, <code>.nm</code>, <code>.tb</code>, <code>.p</code>. Unscoped they reach into
+Foundry's own chrome the moment this ships. Short names are worth keeping; global ones are not. State
+<code>color</code> and <code>text-decoration</code> explicitly on every semantic element, because
+Foundry has host rules that beat inheritance.</p></div>
+
+<div class="law warn"><s>08 · the study page is not the component</s><p>Twice, a study page's own CSS
+matched inside a card it was displaying and repainted it. Use direct-child combinators for page
+chrome (<code>.vs .cards &gt; s</code>, never <code>.vs .cards s</code>), and never let a stage
+stretch a component past the width it will really have.</p></div>
+
+<h3>File map</h3>
+<div class="tw"><table>
+<thead><tr><th>File</th><th>Owns</th></tr></thead>
+<tbody>
+<tr><td><code>tokens.css</code></td><td>the role palette, both themes, and the frame. <b>Only
+  <code>:root</code> and <code>.light</code> ship to Foundry</b> — the rest is study-page scaffolding</td></tr>
+<tr><td><code>plate.css</code> / <code>.js</code></td><td>chat cards: the dice, the duality plate, damage,
+  the critical, the GM card, and B–E frozen</td></tr>
+<tr><td><code>card.css</code> / <code>.js</code></td><td>the domain/ancestry/subclass card. Container-query
+  driven — every internal dimension in <code>cqw</code>, so it is proportionally identical at any width</td></tr>
+<tr><td><code>sheet.css</code> / <code>.js</code></td><td>the character sheet: the 288px rail, the
+  diorama, defence silhouettes, tabs, advancement</td></tr>
+<tr><td><code>mark.css</code></td><td>Hit Points, Stress, Armor Slots — the boxes you cross off</td></tr>
+<tr><td><code>gem.css</code>, <code>track.css</code></td><td>the Hope gem; the cqw-scaled marks for cards
+  and tiles</td></tr>
+<tr><td><code>*.html</code></td><td>study pages. Each one carries its own reasoning in prose next to the
+  thing it is reasoning about — <b>keep them in sync when the CSS changes</b></td></tr>
+</tbody>
+</table></div>
+
+<div class="law"><s>where the reasoning lives</s><p>Every stylesheet in this system opens with a block
+comment explaining <i>why</i>, and individual rules carry the failure that produced them. <b>Read the
+comments before changing a value.</b> Most of them exist because the obvious value was tried first and
+measured wrong.</p></div>
+</section>
+
+<div class="rule" style="margin-top:70px"></div>
+<p style="margin-top:22px;font:400 11px/1.6 var(--f-mono);color:var(--ink-2)">
+gluniverse-daggerheart · design study · rendered with the production technique it documents
+</p>
+
+</div>
+
+<script>
+/* the specimens, built from the same helper the production code uses */
+const DIE = (v, cls, sz) =>
+  `<i class="die ${cls}" style="--sz:${sz}px"><b class="lamp"></b><b class="core"></b><em>${v}</em></i>`;
+
+document.getElementById('dice').innerHTML = [
+  [DIE(10,'h win',54), 'd12 · hope, won'],
+  [DIE(6,'f',54),      'd12 · fear, unlit'],
+  [DIE(11,'f win',54), 'd12 · fear, won'],
+  [DIE(17,'d20 w win',54), 'd20 · the GM’s'],
+  [DIE(20,'d20 nat',54),   'd20 · natural 20'],
+  [DIE(9,'d20 dim',54),    'd20 · did not count'],
+  [DIE(5,'sq a',44),       'd6 · advantage'],
+  [DIE(3,'sq a neg',44),   'd6 · disadvantage'],
+  [DIE(8,'sq w',44),       'damage'],
+  [DIE(8,'sq w max',44),   'damage · awarded'],
+].map(([m,c]) => `<figure>${m}<figcaption>${c}</figcaption></figure>`).join('');
+
+const PLATE = (o, verb, num, ghost, dc) => `
+<div class="pl ${o}">
+  <div class="p">
+    <span class="shards"></span>
+    <span class="pl-gh">${ghost}</span>
+    <span class="pl-eye"><b>TABBY</b><u>·</u><i>Agility · parapet run</i></span>
+    <span class="row"><b class="pl-vb">${verb}</b><u class="pl-num">${num}</u></span>
+  </div>
+  <div class="pl-st">
+    ${DIE(o==='hope'?10:4, o==='hope'?'h win':'h', 38)}
+    ${DIE(o==='hope'?6:11, o==='hope'?'f':'f win', 38)}
+    <div class="pl-arith"><i><b>${o==='hope'?10:4}</b> hope</i><u>+</u><i><b>${o==='hope'?6:11}</b> fear</i><u>+</u><i><b>2</b> Agility</i><u>+</u><i class="sp"><b>2</b> Wildborne tracker</i></div>
+  </div>
+  <div class="pl-meta"><span>duality roll</span>${dc?`<s>vs ${dc}</s>`:''}</div>
+  <div class="pl-act"><button class="pl-b"><i></i>Roll damage · 2d8+3</button></div>
+</div>`;
+
+document.getElementById('cardA').innerHTML = PLATE('hope','success with hope',20,'HOPE',15);
+document.getElementById('cardB').innerHTML = PLATE('fear','with fear',19,'FEAR',null);
+
+const GM = (cls, verb, num, kind, dc) => `
+<div class="g1 ${cls}">
+  <span class="rail"></span>
+  <div class="p">
+    <span class="pl-eye"><b>RIBBET BANDIT</b><u>·</u><i>Hammer</i></span>
+    <span class="row"><b class="pl-vb">${verb}</b><u class="pl-num">${num}</u></span>
+  </div>
+  <div class="pl-st">${DIE(num-2, cls==='hot' ? 'd20 nat' : 'd20 w win', 32)}
+    <div class="pl-arith"><i><b>${num-2}</b> d20</i><u>+</u><i><b>2</b> attack modifier</i></div>
+  </div>
+  <div class="pl-meta"><span>${kind}</span>${dc?`<s>vs evasion ${dc}</s>`:''}</div>
+</div>`;
+
+document.getElementById('gmA').innerHTML = GM('','hit Tabby',15,'adversary attack',12);
+document.getElementById('gmB').innerHTML = GM('cold','missed Tabby',9,'adversary attack',12);
+document.getElementById('gmC').innerHTML = GM('hot','critical hit Tabby',22,'adversary attack',12);
+
+/* table of contents, built from the sections themselves */
+document.getElementById('toc').innerHTML = [...document.querySelectorAll('section')]
+  .map(s => {
+    const h = s.querySelector('h2');
+    const n = h.querySelector('span').textContent.replace('//','').trim();
+    const t = n.split('·')[1].trim();
+    return `<a href="#${s.id}"><i>${n.split('·')[0].trim()}</i><s>${t}
+      <em>${h.childNodes[h.childNodes.length-1].textContent.trim()}</em></s></a>`;
+  }).join('');
+
+document.getElementById('lt').addEventListener('change',
+  e => document.documentElement.classList.toggle('light', e.target.checked));
+</script>
+</body>
+</html>

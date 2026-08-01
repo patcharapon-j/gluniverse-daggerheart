@@ -1,0 +1,13 @@
+<!-- Bard: an eighth note. Grace and Codex — performance and language.
+     A plectrum was drawn first and thrown away: reduced to a chamfered
+     silhouette it is a shield with two slots in it, which is the one shape
+     this whole set is trying not to be.
+     A note is the only music mark that is a *shape* rather than an
+     instrument, so it stays out of the genre argument the type glyphs also
+     had to stay out of. Head chamfered rather than elliptical, flag a solid
+     wedge rather than a curve, to hold the family's line. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M36 172 66 152 104 152 124 172 124 200 94 220 56 220 36 200Z"/>
+  <path d="M124 40 148 40 148 200 124 200Z"/>
+  <path d="M148 40 216 76 216 120 148 84Z"/>
+</svg>

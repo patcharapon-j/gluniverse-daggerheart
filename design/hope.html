@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Hope &amp; Fear</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/pool.css">
+<link rel="stylesheet" href="/design/gem.css">
+<style>
+.grid{display:flex;flex-wrap:wrap;gap:26px;align-items:start}
+.card2{flex:1 1 400px;min-width:360px;background:#15181d;
+  box-shadow:inset 0 0 0 1px #22272e;padding:22px 24px 24px}
+.card2 h4{font:700 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--hope);margin:0 0 16px}
+.card2.f h4{color:#a986e4}
+.rowlab{font:700 9px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:#6d7681;margin:0 0 8px}
+.band{background:#191c21;box-shadow:inset 0 0 0 1px #262b32;padding:13px 15px;margin-bottom:15px}
+.sheet{background:var(--paper);padding:13px 15px;margin-bottom:15px}
+.spec{display:flex;gap:34px;align-items:center;padding:8px 0 20px}
+
+/* a Foundry viewport corner: dark scene, the HUD docked into its chrome */
+.vp{position:relative;background:#0d0f12;overflow:hidden;
+  background-image:radial-gradient(120% 90% at 30% 10%,#232a33 0%,#12151a 60%,#0a0c0f 100%);
+  box-shadow:inset 0 0 0 1px #23282f;padding:24px 18px;
+  display:flex;justify-content:center;align-items:center}
+.vp::before{content:"";position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(#1b2029 1px,transparent 1px),
+    linear-gradient(90deg,#1b2029 1px,transparent 1px);background-size:56px 56px}
+.vp .hud{position:relative;z-index:2}
+.vpc{font:400 10.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:#6d7681;margin:10px 0 0}
+
+.btns{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+.btns button{border:0;cursor:pointer;background:#242931;box-shadow:inset 0 0 0 1px #343b45;
+  color:#c3cbd5;font:700 9.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  padding:10px 14px;transition:background .14s,color .14s,box-shadow .14s;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btns button:hover{background:var(--hope);color:#14161a;box-shadow:none}
+.btns.f button:hover{background:var(--fear);color:#fff}
+.tot{float:right;font:700 13px/1 var(--f-display);color:#fff;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums}
+
+/* the sheet header band the Hope pool lives in */
+.place{display:flex;flex-wrap:wrap;gap:26px;align-items:start}
+.hdr{width:368px;flex:none;background:#191c21;box-shadow:inset 0 0 0 1px #262b32;overflow:hidden;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)}
+.hdr .id{display:flex;align-items:center;gap:12px;padding:13px 16px;
+  border-bottom:1px solid #262b32}
+.hdr .id .pf{width:44px;height:44px;flex:none;background:var(--art) center/cover,#2a3039;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)}
+.hdr .id div{min-width:0}
+.hdr .id b{display:block;font:700 15px/1.05 var(--f-display);color:#fff;
+  letter-spacing:-.01em;text-transform:uppercase}
+.hdr .id span{display:block;font:700 9.5px/1 var(--f-mono);letter-spacing:.18em;
+  text-transform:uppercase;color:#8b939e;margin-top:5px}
+.hdr .id .lv{margin-left:auto;flex:none;background:var(--hope);color:#14161a;
+  font:700 15px/1 var(--f-display);padding:7px 10px 6px;letter-spacing:-.02em;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.hdr .nums{display:flex}
+.hdr .nums > div{flex:1 1 0;padding:10px 12px 11px;border-right:1px solid #262b32}
+.hdr .nums > div:last-child{border-right:0}
+.hdr .nums .k{display:block;font:700 8.5px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:#7d8794}
+.hdr .nums .v{display:block;font:700 21px/1 var(--f-display);color:#fff;margin-top:6px;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.hdr .nums .v s{text-decoration:none;font-size:12px;color:#7d8794}
+.hdr .hp{padding:13px 16px 15px;border-top:1px solid #262b32}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>hope &amp; fear</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html" class="on">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg">hope <input type="range" id="h" min="0" max="6" value="4"></label>
+  <label class="tg">fear <input type="range" id="f" min="0" max="12" value="7"></label>
+  <label class="tg"><input type="checkbox" id="sc"> two scars</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE SPLIT</span>Two owners, two places, one geometry</h2>
+<p class="note">Hope is per-character: six slots, spent on purpose, carried between sessions, and
+<b>permanently crossed out by scars</b> — cross out the last one and the character's journey ends, so
+the track has three states, not two. Fear is the GM's: twelve, and the rules explicitly say to
+<i>keep this pool visible to players</i>, so it is not a GM-only panel — it is a public strip docked in
+Foundry's own chrome, outside every sheet. They never sit next to each other, which is exactly what lets
+them share a shape without reading as one bar.</p>
+<p class="note">Gold stays chrome everywhere else in this system — a 1.5–2px line, never a fill. That is
+what frees it to mean Hope here: this is the <b>only</b> place in the interface where gold is a filled
+shape. Fear is the same object in violet, so nothing has to be re-learned to read the GM's strip.</p>
+
+<h2><span>// THE GEM</span>A lit pane of glass, not a bead</h2>
+<p class="note">A square turned 45°, because every other component in this system is a chamfered
+rectangle — it is the one silhouette that belongs to nothing else, and it is what the printed sheet
+already uses for Hope. A lit gem is <b>flat colour</b>: no shading gradient, no specular. All the depth
+is at the boundary — a bright rim where the light exits the edge, a refraction band falling off inward
+from it, and a bloom outside. The bloom <b>follows the diamond</b>, via a <code>drop-shadow</code> on a
+wrapper rather than a <code>box-shadow</code> on the shape; painting order is filter then clip-path, so a
+shadow declared on the clipped element gets trimmed away by the very outline it was meant to describe.</p>
+<p class="note"><b>There is no idle animation anywhere.</b> Six things breathing on a character sheet is
+six things asking for attention all day for nothing; the whole motion budget is spent on the moment the
+value changes, which is the only moment that carries information. A <b>scarred slot is struck through</b>
+with two strokes that overhang the shape — a permanent wound, drawn the way you would cross something off
+on paper, not a hatch fill that reads as merely unavailable.</p>
+
+<div class="grid">
+  <div class="card2">
+    <h4>Hope <span class="tot" id="hn">4 / 6</span></h4>
+    <div class="spec" id="hspec"></div>
+    <p class="rowlab">header band · 30px</p>
+    <div class="band" id="hrow"></div>
+    <p class="rowlab">on paper · 30px</p>
+    <div class="sheet paper" id="hrow2"></div>
+    <div class="btns">
+      <button data-h="1">gain 1</button>
+      <button data-h="-1">spend 1</button>
+      <button data-h="-3">spend 3 · tag team</button>
+      <button data-h="reset">reset</button>
+    </div>
+  </div>
+
+  <div class="card2 f">
+    <h4>Fear · GM <span class="tot" id="fn">7 / 12</span></h4>
+    <div class="spec" id="fspec"></div>
+    <p class="rowlab">the glow rides the pool, not the pip</p>
+    <div class="band" id="frow"></div>
+    <p class="rowlab">3 · 7 · 12 of 12, side by side</p>
+    <div class="band" id="fscale"></div>
+    <div class="btns f">
+      <button data-f="1">gain 1</button>
+      <button data-f="-1">spend 1</button>
+      <button data-f="-2">spend 2 · fear feature</button>
+      <button data-f="reset">reset</button>
+    </div>
+  </div>
+</div>
+
+<h2><span>// IN PLACE</span>Hope in the sheet header band</h2>
+<p class="note">The band carries identity, the four always-visible numbers, and Hope. Nothing else on the
+sheet is gold-filled, so the eye goes straight to it without the pool needing to be large.</p>
+<div class="place"><div class="hdr" id="hdr"></div></div>
+
+<h2><span>// IN THE HUD</span>Twelve, docked in Foundry's chrome</h2>
+<p class="note">Public to the table — the rules ask the GM to keep the pool visible. Players see the same
+strip without the steppers. Drag the fear slider or use the steppers; the whole strip's glow eases up
+behind the pip that changed, which is what sells twelve as worse than eleven.</p>
+<div class="place" style="flex-direction:column;align-items:stretch">
+  <div class="vp" id="fhud"></div>
+  <p class="vpc">gm view · steppers</p>
+  <div class="vp" id="fhud2" style="margin-top:10px"></div>
+  <p class="vpc">player view · read only</p>
+</div>
+
+</div>
+
+<script type="module">
+import { GEM, GEMS, setPool } from './gem.js';
+import { POOL, FEAR_HUD } from './pool.js';
+
+const st = {h:4, f:7, scars:0};
+
+const paint = () => {
+  hspec.innerHTML = GEM({sz:76}) + GEM({sz:44}) + GEM({sz:30}) + GEM({on:false, sz:30})
+                  + GEM({scar:true, sz:30}) + GEM({scar:true, sz:44});
+  fspec.innerHTML = GEM({fear:true, sz:76, i:1}) + GEM({fear:true, sz:76, i:.55})
+                  + GEM({fear:true, sz:44, i:.35}) + GEM({fear:true, on:false, sz:30});
+
+  hrow.innerHTML  = GEMS({cur:st.h, max:6, scars:st.scars, sz:30, gap:11});
+  hrow2.innerHTML = GEMS({cur:st.h, max:6, scars:st.scars, sz:30, gap:11});
+  frow.innerHTML  = GEMS({cur:st.f, max:12, fear:true, sz:26, gap:8});
+  fscale.innerHTML = [3, 7, 12].map(c =>
+    `<div style="display:flex;align-items:center;gap:10px;margin:6px 0">
+       <span class="rowlab" style="margin:0;width:34px">${c}</span>
+       ${GEMS({cur:c, max:12, fear:true, sz:22, gap:6})}</div>`).join('');
+
+  hdr.innerHTML = `
+    <div class="id">
+      <div class="pf"></div>
+      <div><b>Aliyah Vance</b><span>Elf · Wildborne · Ranger</span></div>
+      <div class="lv">3</div>
+    </div>
+    <div class="nums">
+      <div><span class="k">Evasion</span><span class="v">11</span></div>
+      <div><span class="k">Armor</span><span class="v">4</span></div>
+      <div><span class="k">HP</span><span class="v">5<s>/7</s></span></div>
+      <div><span class="k">Stress</span><span class="v">2<s>/6</s></span></div>
+    </div>
+    <div class="hp">${POOL({label:'Hope', cur:st.h, max:6, scars:st.scars, dark:true, sz:26, gap:9})}</div>`;
+
+  fhud.innerHTML  = FEAR_HUD({cur:st.f, max:12});
+  fhud2.innerHTML = FEAR_HUD({cur:st.f, max:12, gm:false});
+};
+paint();
+
+const rows = sel => [...document.querySelectorAll(sel)];
+function setH(v){
+  st.h = Math.max(0, Math.min(6 - st.scars, v));
+  rows('#hrow .gems, #hrow2 .gems, #hdr .gems').forEach(r => setPool(r, st.h));
+  hn.textContent = `${st.h} / ${6 - st.scars}`;
+  const n = hdr.querySelector('.hd .n');
+  if(n) n.innerHTML = `${st.h}<s> / ${6 - st.scars}</s>`;
+  h.value = st.h;
+}
+function setF(v){
+  st.f = Math.max(0, Math.min(12, v));
+  rows('#frow .gems, #fhud .gems, #fhud2 .gems').forEach(r => setPool(r, st.f, {fear:true, max:12}));
+  fn.textContent = `${st.f} / 12`;
+  f.value = st.f;
+  rows('#fhud .tally, #fhud2 .tally').forEach(t => t.innerHTML = `${st.f}<s>/12</s>`);
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.h) setH(b.dataset.h === 'reset' ? 4 : st.h + +b.dataset.h);
+  if(b.dataset.f) setF(b.dataset.f === 'reset' ? 7 : st.f + +b.dataset.f);
+});
+h.oninput = e => setH(+e.target.value);
+f.oninput = e => setF(+e.target.value);
+sc.onchange = e => { st.scars = e.target.checked ? 2 : 0;
+  st.h = Math.min(st.h, 6 - st.scars); paint(); setH(st.h); };
+</script>
+</body>
+</html>

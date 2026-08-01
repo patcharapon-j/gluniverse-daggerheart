@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Card types</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<style>
+.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw,260px),1fr));gap:24px;align-items:start}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>card types</b>
+  <a href="/design/types.html" class="on">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="noart"> remove art</label>
+  <label class="tg"><input type="checkbox" id="rampT" checked> domain ramp</label>
+  <label class="tg">size <input type="range" id="size" min="190" max="360" value="260"></label>
+  <b id="stat" style="margin-left:auto"></b>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// A · FOUR TYPES, ONE COMPONENT</span>Domain · Subclass · Ancestry · Community</h2>
+<p class="note">The corner slots are slots, not fixtures. A level numeral appears only if the card has
+one, a second sigil plate only if the card belongs to two domains, the recall chip only if there is a
+cost — so Ancestry and Community collapse to a bare plate holding their type glyph and nothing on the
+right. The gold divider is one continuous line: flat across the panel, up the badge's slope, then along
+its top edge to the card's right edge. The art plate never exceeds <b>half the card height</b>, so a
+sparse card gets white space above the footer instead of a plate that swallows the composition.
+Subclass takes its two colours from its class's domain pair rather than any invented palette:
+<b>Bard = Grace + Codex</b>, <b>Rogue = Grace + Midnight</b>. Graphite on Ancestry and Community, with
+the ramp suppressed, so a saturated hue on a card always means <i>domain</i>.</p>
+<div class="row" id="row"></div>
+
+<h2><span>// B · TYPE GLYPHS</span>Drawn, not sourced</h2>
+<p class="note">Ancestry and Community have no sigil, so they needed one. Both are deliberately
+geometric — the nine domain marks are organic silhouettes and a type glyph should not be mistaken for
+one. Ancestry is two interlocking diamonds knocked through with <code>fill-rule:evenodd</code>, since a
+stroked outline fills in solid at ~14px. Community is three hexes with ~20-unit gaps so they stay
+separated rather than blobbing.</p>
+<div class="row" id="glyphs"></div>
+
+<h2><span>// C · CLASS MARKS</span>Nine, and none of them a sigil</h2>
+<p class="note">A class card's corner plates carry its two <b>domains</b>, because that is what a class
+is — Ranger is Bone and Sage and the duo treatment says so without a word. But a class in a sidebar
+row, a compendium list or a hotbar slot has no card and no plates, and "Ranger" next to a grey square
+is the same square as "Rogue". These are that face. Same rules as the type glyphs above: chamfered,
+solid, one <code>currentColor</code> path family, no interior gutter under ~20 units.
+Two collisions had to be designed around rather than ignored. <b>Ranger</b> is not an arrowhead,
+because <code>primary.svg</code> already is one and a class mark that reads as a weapon slot is worse
+than none. <b>Guardian</b> is not a shield, for the reason <code>armor.svg</code> is not either — the
+rail already spends a shield on Armor Score. The one redundancy left standing is <b>Wizard</b>, whose
+book echoes its own Codex domain; the alternative was a staff, which is the Druid conifer's silhouette
+at list size.</p>
+<div class="row" id="classes"></div>
+
+</div>
+
+<script type="module">
+import { DOMAINS, KINDS, CLASSES, icon, glyph, clazz } from './domains.js';
+import { CARD, fit } from './card.js';
+
+const by = s => DOMAINS.find(d => d.slug === s);
+const [midnight, grace, valor, codex, ancestry, community] = await Promise.all([
+  icon('midnight'), icon('grace'), icon('valor'), icon('codex'),
+  glyph('ancestry'), glyph('community'),
+]);
+const G = { ancestry, community };
+
+const CARDS = [
+  { t:'Domain · Spell', n:'Cost and frequency pulled out of the prose into chips, so a loadout answers “can I afford this” without being read. Everything else is one paragraph — this is the most numerous card in the game and has the busiest corners, so it stays the quietest body.',
+    c:CARD({ d:by('midnight'), sig:midnight, lvl:3, rc:2, type:'SPELL',
+      name:'Rain of Blades', foot:'Midnight · T1', tags:['Spend 1 Hope','Spellcast'],
+      text:'Spend a **Hope** to make a Spellcast Roll and conjure throwing blades that strike out at all targets within Very Close range.' }) },
+
+  { t:'Domain · Grimoire', n:'The case the single paragraph could not hold: a grimoire is a bundle of named spells. Same banded runs as Ancestry, indexed because there is more than one. Real text — Book of Ava, Codex level 1.',
+    c:CARD({ d:by('codex'), sig:codex, lvl:1, rc:2, type:'GRIMOIRE',
+      name:'Book of Ava', foot:'Codex · T1',
+      feats:[
+        {n:'Power Push', t:'Make a Spellcast Roll against a target within Melee range. On a success, they’re knocked back to Far range and take **d10+2** magic damage using your Proficiency.'},
+        {n:'Tava’s Armor', t:'Spend a **Hope** to give a target you can touch a **+1** bonus to their Armor Score until their next rest.'},
+        {n:'Ice Spike', t:'Make a Spellcast Roll (12) to summon a large ice spike within Far range. On a success, deal **d6** physical damage using your Proficiency.'}] }) },
+
+  { t:'Subclass', n:'Two plates blending at the seam, a centred banner blending the two dark values, and a tier bar that grades across its middle quarter. Tier and spellcast trait go in the data strip.',
+    c:CARD({ d:by('grace'), d2:by('midnight'), sig:grace, sig2:midnight, type:'ROGUE',
+      name:'Nightwalker', foot:'Grace + Midnight',
+      stats:[{k:'Tier', v:'Foundation'}, {k:'Spellcast', v:'Finesse'}],
+      feats:[{n:'Shadow Stepper', t:'You can move from shadow to shadow. When you move into an area of darkness, you can **mark a Stress** to disappear and reappear inside another shadow within Far range. When you reappear, you are *Cloaked*.'}] }) },
+
+  { t:'Ancestry', n:'Graphite, no ramp, no numerals. Flavour line then two feature runs — the tightest case the panel has to hold.',
+    c:CARD({ d:KINDS.ancestry, sig:G.ancestry, type:'ANCESTRY', name:'Katari', foot:'Ancestry',
+      flavour:'Katari are feline humanoids with retractable claws, vertically slit pupils, and high, triangular ears.',
+      feats:[
+        {n:'Feline Instincts', t:'When you make an Agility Roll, you can **spend 2 Hope** to reroll your Hope Die.'},
+        {n:'Retracting Claws', t:'Make an Agility Roll to scratch a target within Melee range. On a success, they become temporarily *Vulnerable*.'}] }) },
+
+  { t:'Community', n:'Same skeleton as Ancestry with one feature. Only the badge and the glyph separate them — the cost of keeping colour meaningful.',
+    c:CARD({ d:KINDS.community, sig:G.community, type:'COMMUNITY', name:'Slyborne', foot:'Community',
+      flavour:'Being part of a slyborne community means you come from a group that operates outside the law, including all manner of criminals, grifters, and con artists.',
+      feats:[{n:'Scoundrel', t:'You have **Advantage** on rolls to negotiate with criminals, detect lies, or find a safe place to hide.'}] }) },
+];
+
+row.innerHTML = CARDS.map(x => `<div>${x.c}<div class="cap"><b>${x.t}</b>${x.n}</div></div>`).join('');
+
+glyphs.innerHTML = [
+  { t:'Ancestry glyph', c:G.ancestry }, { t:'Community glyph', c:G.community },
+  { t:'Midnight, for scale', c:midnight }, { t:'Valor, for scale', c:valor },
+].map(x => `<div>
+  <div style="background:#5c636d;display:grid;place-items:center;aspect-ratio:1;color:#fff">
+    <div style="width:46%;display:grid">${x.c}</div></div>
+  <div class="cap"><b>${x.t}</b></div></div>`).join('');
+
+/* Drawn at two sizes at once. The class marks are the only glyphs in the
+   system that have to survive a 24px sidebar row *and* stand up as a plate,
+   so the small copy sits beside the large one and any that only works at one
+   of the two is visibly the odd one out. */
+const CM = await Promise.all(CLASSES.map(clazz));
+classes.innerHTML = CLASSES.map((n, i) => `<div>
+  <div style="background:#5c636d;display:grid;place-items:center;aspect-ratio:1;color:#fff">
+    <div style="width:46%;display:grid">${CM[i]}</div></div>
+  <div class="cap"><b>${n}</b>
+    <span style="display:inline-grid;width:24px;height:24px;vertical-align:-6px;
+      background:#5c636d;color:#fff;place-items:center">
+      <span style="width:64%;display:grid">${CM[i]}</span></span> at 24px</div>
+  </div>`).join('');
+
+noart.onchange = e => document.body.classList.toggle('noart', e.target.checked);
+rampT.onchange = e => document.body.classList.toggle('ramp', e.target.checked);
+size.oninput = e => document.documentElement.style.setProperty('--cw', e.target.value+'px');
+size.dispatchEvent(new Event('input'));
+
+// after fonts, or the metrics are the fallback face's and cost a line
+await document.fonts.ready;
+fit();
+stat.textContent = `${CARDS.length} types · ` +
+  [...row.querySelectorAll('.card')].map(c => c.dataset.u).join(' ');
+</script>
+</body>
+</html>

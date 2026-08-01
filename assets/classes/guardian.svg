@@ -1,0 +1,12 @@
+<!-- Guardian: a battlement. Blade and Valor, and the class is defined by what
+     it stands in front of rather than what it carries, so the glyph is the
+     wall and not the weapon.
+     Explicitly not a shield: the rail already spends a shield silhouette on
+     Armor Score, and armor.svg deliberately avoided one for the same reason —
+     a third would make three unrelated things look like one number.
+     Three merlons rather than four, because an odd count has a centre and
+     reads as a face-on wall; an even one reads as a bar chart. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M30 62 74 62 74 96 106 96 106 62 144 62 144 96 176 96 176 62 220 62
+           220 176 190 212 60 212 30 176Z"/>
+</svg>

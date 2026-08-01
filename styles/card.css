@@ -1,0 +1,294 @@
+/* Ported from design/card.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/card.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   DH CARD — shared component
+   Container-query driven: every internal dimension is expressed in cqw,
+   so the card is proportionally identical at any width. Never introduce
+   px-based type or spacing in here or it will break at small sizes.
+
+   Every rule is scoped under .card, without exception. The names in here
+   are short and generic — .rc, .fb, .nm, .tb, .tx, .ft — and unscoped they
+   reached into the tile and the spine, and would reach into Foundry's own
+   chrome the moment this ships. Short names are worth keeping; global ones
+   are not.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .card{position:relative;width:100%;aspect-ratio:5/7;background:var(--paper);color:var(--ink);
+  display:flex;flex-direction:column;overflow:hidden;isolation:isolate;container-type:inline-size;
+  /* The two knobs fit() turns, in that order: the plate gives up height
+     first, and only when it has nothing left does the prose compact. */
+  --plate:50%; --u:1cqw;
+  box-shadow:0 18px 34px -12px rgba(0,0,0,.72),0 3px 10px rgba(0,0,0,.42);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 15px),calc(100% - 15px) 100%,0 100%);
+  transition:transform .3s cubic-bezier(.2,.8,.25,1),box-shadow .3s}
+.dh .card:hover{transform:translateY(-5px);box-shadow:0 28px 48px -12px rgba(0,0,0,.82)}
+
+/* ── art plate ──
+   Rigid: grow 0 *and* shrink 0, so nothing about the text can move it. Half
+   the card is the ceiling and 40% the floor, and the value between them is
+   fit()'s to choose — flex would have split the pressure between plate and
+   panel proportionally, which is neither of those numbers. */
+.dh .card .plate{position:relative;flex:0 0 var(--plate);overflow:hidden}
+.dh .card .plate .img{position:absolute;inset:0;background:var(--art) 44% 22%/cover no-repeat}
+/* neutral — no desaturation or recolour, only enough darkening for the corners to read */
+.dh .card .plate .top{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.30),rgba(0,0,0,0) 26%)}
+/* domain ramp: multiply, rising from the art's bottom edge over ~1/4 of the card.
+   Ramps to #fff rather than transparent — white is the identity for multiply,
+   so the gradient fades to no effect instead of to a grey haze. */
+.dh .card .plate .ramp{position:absolute;left:0;right:0;bottom:0;height:35cqw;display:none;
+  mix-blend-mode:multiply;
+  background:linear-gradient(to top,color-mix(in srgb,var(--dom) 88%,#fff),#fff)}
+.dh.ramp .card .plate .ramp{display:block}
+
+/* ── fallback: mark exactly centred, wordmark hung beneath it ── */
+/* --tint, not #fff. The ramp above is `multiply` over a photograph, where
+   white is the blend identity and so is correct on any substrate; this is a
+   *substitute* for the photograph and has to be made of whatever the sheet
+   is made of. Same distinction everywhere a domain hue is mixed below. */
+.dh .card .fb{position:absolute;inset:0;display:none;place-items:center;padding-bottom:9cqw;overflow:hidden;
+  background:radial-gradient(120% 100% at 62% 36%,var(--tint),
+    color-mix(in srgb,var(--dom) 9%,var(--tint)) 55%,color-mix(in srgb,var(--dom) 21%,var(--tint)))}
+/* `.dh.noart` is the study page's own switch, thrown once for a whole page.
+   `.noart` on an ancestor is the same fact stated per card, and a real sheet
+   needs that one: a character holds nine cards and the artwork is a property
+   of each of them, not of the document they happen to be listed in. Most
+   items in a running game have no art at all, so the fallback is the normal
+   case there rather than a mode. */
+.dh.noart .card .plate .img,.dh.noart .card .plate .top,.dh.noart .card .plate .ramp,
+.dh .noart .card .plate .img,.dh .noart .card .plate .top,.dh .noart .card .plate .ramp{display:none}
+.dh.noart .card .fb,.dh .noart .card .fb{display:grid}
+.dh .card.force-fb .plate .img,.dh .card.force-fb .plate .top,.dh .card.force-fb .plate .ramp{display:none}
+.dh .card.force-fb .fb{display:grid}
+.dh .card .fb .tech{position:absolute;inset:0;color:var(--dom);opacity:.3}
+.dh .card .fb .mark{position:relative;width:41%;color:var(--dom);
+  filter:drop-shadow(0 4px 12px color-mix(in srgb,var(--dom) 32%,transparent))}
+.dh .card .fb .mark>svg{width:100%;height:auto;display:block}
+.dh .card .fb .wordmark{position:absolute;left:-40%;right:-40%;top:108%;text-align:center;
+  font:700 4.4cqw/1 var(--f-mono);letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;color:var(--dom)}
+
+/* ── corner blocks ────────────────────────────────────────────────
+   Level and recall are a mirrored pair pinned to the top corners, each
+   carrying one 45° cut on its *inner* corner and a gold hairline along
+   its bottom, clipped by that chamfer so the rule stops on the diagonal.
+
+   Level leads with the numeral, as the official card does: Google Sans
+   has a cap height of ~0.71em, so 10cqw of numeral stands ~7.1cqw against
+   a sigil held just under it at ~6.8cqw. No divider between the two cells
+   — the value change from --dom-dk to --dom is the seam. The word LEVEL
+   sits behind the numeral as a watermark instead of beside it as a label. */
+.dh .card .lvl,.dh .card .rc{position:absolute;top:0;z-index:8;background:var(--dom-dk);
+  box-shadow:0 4px 12px rgba(0,0,0,.44)}
+/* min-width, not width: Daggerheart levels reach 10, and two digits at 10cqw
+   overrun a fixed 13.5cqw cell. The block grows instead of cramping. */
+.dh .card .lvl{left:0;min-width:13.5cqw;display:flex;flex-direction:column;align-items:stretch;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 2.7cqw),calc(100% - 2.7cqw) 100%,0 100%)}
+.dh .card .rc{right:0;height:8.4cqw;display:flex;align-items:center;gap:1.4cqw;padding:0 2.9cqw 0 3.2cqw;
+  clip-path:polygon(0 0,100% 0,100% 100%,2.7cqw 100%,0 calc(100% - 2.7cqw))}
+.dh .card .lvl::after,.dh .card .rc::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.5px;background:var(--hope)}
+
+.dh .card .lvl .v{position:relative;display:grid;place-items:center;padding:1.2cqw 1.7cqw 1cqw}
+.dh .card .lvl .k{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+  font:700 2.6cqw/1 var(--f-mono);letter-spacing:.2em;text-indent:.2em;color:#fff;opacity:.18}
+.dh .card .lvl .n{position:relative;font:700 10cqw/1 var(--f-display);color:#fff;letter-spacing:-.05em}
+/* sized off height, not width — the cell widens for two-digit levels and the
+   sigil must not grow with it. */
+.dh .card .lvl .sg{height:10.5cqw;background:var(--dom);display:grid;place-items:center}
+/* Pure ink — recentre() tight-crops the viewBox, so this is the mark's real
+   height, not a box it sits inside. Ceiling is ~7.1cqw: that is the numeral's
+   cap height, and past it the sigil starts to outweigh the level. */
+.dh .card .lvl .sg svg{height:6.6cqw;width:auto;color:#fff;display:block}
+
+/* Two domains — subclass. One gradient across the *whole* block rather than a
+   blend applied to the lower plate: bleeding only downward left the top plate
+   flat and the seam read as an accident. Solid at both ends, grading across
+   the middle quarter — the same rule the tier bar uses. */
+.dh .card .lvl.duo{background:linear-gradient(180deg,var(--dom) 0 38%,var(--dom-2) 62% 100%)}
+.dh .card .lvl.duo .sg{background:none}
+
+.dh .card .rc .blt{width:2.5cqw;color:var(--hope);display:block}
+.dh .card .rc .blt svg{width:100%;height:auto;display:block}
+.dh .card .rc .n{font:700 5.7cqw/1 var(--f-display);color:#fff;letter-spacing:-.04em}
+
+/* ── lower panel, overlapping the plate ── */
+.dh .card .lower{position:relative;margin-top:-7%;z-index:6;flex:1 1 auto;min-height:0;display:flex}
+.dh .card .body{position:relative;flex:1 1 auto;min-width:0;background:var(--paper);
+  padding:2.8cqw 5.5% 4.6%;box-shadow:0 -9px 20px -8px rgba(20,22,26,.34);
+  display:flex;flex-direction:column}
+/* Takes the slack, so the footer stays pinned to the bottom edge and a sparse
+   card's white space lands above it rather than under the art.
+   min-height:0 + overflow:hidden is also the measuring device: it is the one
+   box that clips when the text will not fit, which is what fit() watches. */
+.dh .card .cnt{flex:1 1 auto;min-height:0;overflow:hidden;padding-bottom:calc(3.4*var(--u))}
+
+/* ── seam ─────────────────────────────────────────────────────────
+   One continuous gold line: flat across the panel, up the badge's diagonal,
+   then along the badge's top edge to the card's right edge.
+   Built as a flex row, not a border. The badge is auto-width, so the flat
+   segment has to be a flex:1 filler that ends exactly where the badge begins
+   — no length in CSS could have known where that is. */
+.dh .card .seam{position:absolute;left:0;right:0;bottom:100%;height:6cqw;
+  display:flex;align-items:stretch;z-index:3}
+.dh .card .seam > i{flex:1 1 auto;align-self:flex-end;height:var(--rule);background:var(--hope)}
+.dh .card .seam > i:last-child{flex:0 0 0}
+.dh .card .tb{position:relative;flex:none;background:var(--hope);color:#fff;
+  display:flex;align-items:center;padding:0 5.5% 0 4.6cqw;
+  clip-path:polygon(3.9cqw 0,100% 0,100% 100%,0 100%)}
+/* The dark fill. Inset off the top *and* stepped right along the diagonal — a
+   top inset alone tapers the gold to nothing at the foot of the slope instead
+   of holding a constant band up it. */
+.dh .card .tb::before{content:"";position:absolute;top:var(--rule);left:0;right:0;bottom:0;
+  background:var(--dom-dk);
+  clip-path:polygon(calc(3.9cqw + 2.4px) 0,100% 0,100% 100%,2.4px 100%)}
+.dh .card .tb em{position:relative;color:#fff;font:700 2.9cqw/1 var(--f-mono);letter-spacing:.2em;
+  text-indent:.2em;font-style:normal}
+
+/* Two domains — subclass. The badge centres into a banner cut on both sides,
+   and the gold runs up one slope, across the top, and down the other. */
+.dh .card.duo .seam > i:last-child{flex:1 1 auto}
+.dh .card.duo .tb{padding:0 5.4cqw;
+  clip-path:polygon(3.4cqw 0,calc(100% - 3.4cqw) 0,100% 100%,0 100%)}
+.dh .card.duo .tb::before{background:linear-gradient(90deg,var(--dom-dk),var(--dom-2-dk));
+  clip-path:polygon(calc(3.4cqw + 2.4px) 0,calc(100% - 3.4cqw - 2.4px) 0,
+                    calc(100% - 2.4px) 100%,2.4px 100%)}
+
+/* ══ body type scale ═══════════════════════════════════════════════
+   Everything below is a multiple of --u (default 1cqw), and --u is the only
+   thing fit() moves. The card is a fixed 5:7 box holding authored text of
+   unknown length — no hand-tuned scale survives contact with a grimoire —
+   so the panel earns the right to compact itself.
+
+   Chrome stays on raw cqw and never scales: corners, seam, badge, footer,
+   tier bar. A compacted card must still sit in a row of cards without
+   reading as a different component; only its prose is allowed to differ. */
+
+/* Google Sans stops at 700 — the extra mass comes from stroke and tracking.
+   `color` is stated, not inherited: this is an <h3>, and any host stylesheet
+   with an `h3{color:...}` rule beats inheritance from .card. Foundry has
+   one; so did the sheet mock on the loadout page, which is how this was
+   found. The same applies to every element selector the card uses. */
+.dh .card .nm{font-family:var(--f-display);font-weight:700;font-size:calc(7.5*var(--u));line-height:1.02;
+  color:var(--ink);letter-spacing:-.012em;text-transform:uppercase;
+  margin:calc(1.4*var(--u)) 0 calc(2*var(--u));-webkit-text-stroke:.4px currentColor}
+
+/* ── cost / frequency chips ───────────────────────────────────────
+   The one thing the official domain card makes you re-read prose for: what
+   it costs to fire and how often. Pulled out as authored metadata, so a
+   player scanning a loadout can answer "can I afford this" without reading. */
+.dh .card .tags{display:flex;flex-wrap:wrap;gap:calc(1.5*var(--u));margin:0 0 calc(2.8*var(--u))}
+.dh .card .tags span{display:inline-flex;align-items:center;gap:calc(1.2*var(--u));
+  background:color-mix(in srgb,var(--dom) 11%,var(--tint));color:var(--ink-2);
+  font-family:var(--f-mono);font-weight:700;font-size:calc(2.5*var(--u));line-height:1;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:calc(1.3*var(--u)) calc(1.9*var(--u)) calc(1.3*var(--u)) calc(1.4*var(--u));
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 1.5cqw),calc(100% - 1.5cqw) 100%,0 100%)}
+.dh .card .tags span::before{content:"";flex:none;width:calc(1.5*var(--u));height:calc(1.5*var(--u));background:var(--dom)}
+
+/* ── data strip ───────────────────────────────────────────────────
+   A saturated bar over a row of labelled cells. Subclass uses it for tier
+   and spellcast trait; it is deliberately generic so weapons and armour
+   can reuse it for trait / range / damage / burden without a new component. */
+.dh .card .stats{display:flex;border-top:2px solid var(--dom);margin:0 0 calc(3*var(--u))}
+.dh .card .stats > div{flex:1 1 0;min-width:0;display:flex;flex-direction:column;
+  gap:calc(1*var(--u));padding-top:calc(1.7*var(--u))}
+.dh .card .stats > div + div{border-left:1px solid var(--line);padding-left:calc(2.8*var(--u))}
+.dh .card .stats .k{font-family:var(--f-mono);font-weight:700;font-size:calc(2.25*var(--u));line-height:1;
+  letter-spacing:.18em;text-indent:.18em;text-transform:uppercase;color:var(--ink-3)}
+.dh .card .stats .v{font-family:var(--f-display);font-weight:700;font-size:calc(4*var(--u));line-height:1;
+  letter-spacing:-.01em;text-transform:uppercase;color:var(--ink)}
+
+/* flavour — what the thing *is*, before what it *does*. Set apart by a rule
+   in the domain tint rather than by italics alone, so the distinction is
+   structural and survives being skimmed. */
+.dh .card .fl{font-family:var(--f-ui);font-style:italic;font-weight:400;font-size:calc(3.7*var(--u));
+  line-height:1.38;color:var(--ink-3);margin:0 0 calc(3*var(--u));
+  padding-left:calc(2.8*var(--u));border-left:2px solid color-mix(in srgb,var(--dom) 50%,var(--tint))}
+
+/* ── feature runs · banded ────────────────────────────────────────
+   Not the official card's inline `*Name:* text`. Each feature gets a header
+   band — marker, index, name in caps, hairline to the edge — then its body
+   at full width. Costs ~4.7u more per feature than the run-in form and
+   buys a card you can skim instead of read. */
+.dh .card .feat + .feat{margin-top:calc(3*var(--u))}
+.dh .card .fh{display:flex;align-items:center;gap:calc(1.5*var(--u));margin-bottom:calc(1.5*var(--u))}
+.dh .card .fh i{flex:none;width:calc(1.9*var(--u));height:calc(1.9*var(--u));background:var(--dom)}
+.dh .card .fh .ix{font-family:var(--f-mono);font-weight:700;font-size:calc(2.3*var(--u));line-height:1;
+  letter-spacing:.1em;color:var(--ink-3)}
+.dh .card .fh b{font-family:var(--f-display);font-weight:700;font-size:calc(3.35*var(--u));line-height:1;
+  letter-spacing:.015em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+/* shrinks to nothing rather than pushing a long name out of the card */
+.dh .card .fh::after{content:"";flex:1 1 0;min-width:0;height:1px;background:var(--line)}
+
+/* ── feature runs · run-in ────────────────────────────────────────
+   The band costs a whole line plus its margins per feature. A grimoire is
+   three of them and cannot afford it, so the name runs into the paragraph
+   instead: marker, name in caps, a short rule, then the text. Buys back
+   ~4.7u each — about a fifth of the panel on Book of Ava — while keeping
+   the marker and the caps that made the band scannable. */
+.dh .card .feat.ri + .feat.ri{margin-top:calc(2.2*var(--u))}
+.dh .card .rn{font-family:var(--f-display);font-weight:700;font-size:calc(3.35*var(--u));
+  letter-spacing:.015em;text-transform:uppercase;color:var(--ink)}
+.dh .card .rn::before{content:"";display:inline-block;vertical-align:.04em;
+  width:calc(1.7*var(--u));height:calc(1.7*var(--u));background:var(--dom);
+  margin-right:calc(1.3*var(--u))}
+.dh .card .rn::after{content:"";display:inline-block;vertical-align:.32em;
+  width:calc(2.2*var(--u));border-top:1px solid var(--line);
+  margin:0 calc(1.3*var(--u))}
+
+/* variant: a hairline between spells, paid for out of the margins so it
+   costs nothing in height */
+.dh .card.rules .feat.ri + .feat.ri{border-top:1px solid var(--line);
+  margin-top:calc(1.9*var(--u));padding-top:calc(1.9*var(--u))}
+
+/* 1.38, not the 1.46 a paragraph of prose would want. These are two to four
+   line runs in a fixed box, not body copy — the tighter setting reads the
+   same and gives back most of a line every four. */
+.dh .card .tx,.dh .card .feat p{font-family:var(--f-ui);font-weight:400;font-size:calc(4.25*var(--u));
+  line-height:1.38;color:var(--ink-2);margin:0}
+.dh .card .tx b,.dh .card .feat b{font-weight:700;color:var(--ink)}
+.dh .card .tx i,.dh .card .feat p i{font-style:italic}
+.dh .card .tx b.t-hope,.dh .card .feat b.t-hope{color:var(--hope-tx)}
+.dh .card .tx b.t-fear,.dh .card .feat b.t-fear{color:var(--fear-tx)}
+.dh .card .tx + .feat{margin-top:calc(3*var(--u))}
+
+.dh .card .ft{display:flex;justify-content:space-between;align-items:center;gap:2cqw;
+  padding-top:2cqw;border-top:1px solid var(--line)}
+.dh .card .ft .who{display:flex;align-items:center;gap:1.5cqw;min-width:0}
+/* the sigil's only home now that it is out of the level chip */
+.dh .card .ft .sig{width:3.6cqw;height:3.6cqw;color:var(--dom);flex:none}
+.dh .card .ft .sig svg{width:100%;height:100%;display:block}
+.dh .card .mi{font:500 2.5cqw/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.dh .card .tk{display:flex;gap:1.5px;align-items:flex-end}
+.dh .card .tk i{width:1.2px;height:1.4cqw;background:var(--line)}
+.dh .card .tk i:nth-child(3n){height:2.4cqw;background:var(--ink-3)}
+.dh .card .bar4{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--dom);z-index:9}
+.dh .card .bar4::after{content:"";position:absolute;right:0;top:0;bottom:0;width:26%;background:var(--hope)}
+/* two domains: solid at each end, blending only across the middle quarter */
+.dh .card.duo .bar4{background:linear-gradient(90deg,var(--dom) 0 37%,var(--dom-2) 63% 100%)}
+
+/* ── arrival ───────────────────────────────────────────────────────
+   A card posted to chat used to simply *be there* on the next frame,
+   while a roll landing beside it tumbled, swept and seated. Two things
+   from the same system arriving in the same column, one of them with a
+   voice and one without.
+
+   So the card gets the plate's entry, verbatim — the same distance, the
+   same curve, the same duration — and then its two corner tabs seat a
+   beat behind it. That is the whole of it. A card is a static object
+   being handed over, not an event resolving, and anything more here
+   would be the card claiming to be the second thing.
+
+   `backwards`, not `both`. The card's rest state carries a hover lift on
+   a transform transition, and an animation filling forwards would pin
+   `transform:none` permanently and take the lift with it — the card
+   would arrive beautifully and then never respond to a pointer again.
+   Backwards fill covers the delay and hands the element back afterwards. */
+.dh .card.arrive{animation:card-in .32s cubic-bezier(.2,.85,.3,1) backwards}
+@keyframes card-in{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+/* Out from under the card's own top edge, which is why they are clipped
+   rather than faded: these two are physically tabs on the card, and a tab
+   that dissolves into place was never attached to anything. */
+.dh .card.arrive .lvl,.dh .card.arrive .rc{animation:card-tab .3s cubic-bezier(.2,.9,.3,1) .1s backwards}
+@keyframes card-tab{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  .dh .card.arrive,.dh .card.arrive .lvl,.dh .card.arrive .rc{animation:none}}

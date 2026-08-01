@@ -1,0 +1,12 @@
+<!-- Secondary weapon: the same spearhead, twice, at 56%. Count is what this
+     glyph family already discriminates by — Ancestry is two lozenges and
+     Community is three hexes — and it is the only cue that survives 14px
+     intact, where a size difference needs the other icon present to be read
+     at all. Two points also happens to be the literal answer: the secondary
+     slot is where a second weapon goes.
+     The 22-unit gutter is the same clearance the community hexes keep, which
+     is what stops them blobbing into one shape when the chip is small. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M80 44 114 120 106 143 89 150 89 209 71 209 71 150 54 143 46 120Z"/>
+  <path d="M170 44 204 120 196 143 179 150 179 209 161 209 161 150 144 143 136 120Z"/>
+</svg>

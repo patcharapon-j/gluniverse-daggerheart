@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/mark.css">
+<link rel="stylesheet" href="/design/sheet.css">
+<style>
+.cols{display:grid;grid-template-columns:repeat(var(--cols,3),1fr);
+  grid-template-rows:auto auto auto;gap:22px;align-items:start}
+.col{display:grid;grid-row:span 3;grid-template-rows:subgrid;gap:0}
+.col > header{display:flex;align-items:baseline;gap:9px;border-bottom:1px solid #2b3038;
+  padding-bottom:9px;margin-bottom:12px;align-self:end}
+.col > header h3{margin:0;font:700 11px/1 var(--f-mono);letter-spacing:.2em;
+  text-transform:uppercase;color:#e6eaef}
+.col > header em{font-style:normal;font:700 10px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--hope);margin-left:auto}
+.col > p{font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 14px}
+.col > p b{color:#c3cbd5;font-weight:600}
+
+/* ── a mock sheet pane ─────────────────────────────────────────────
+   The window chrome matters in this question and nowhere else: option A's
+   whole cost is that the two lists sit behind different tabs, and you
+   cannot see that cost unless the tab strip is drawn. */
+.fr{background:var(--paper);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)}
+.fr + .fr{margin-top:0}
+.tbs{display:flex;gap:0;background:var(--frame-2);border-bottom:1px solid var(--frame-line)}
+.tbs i{font-style:normal;font:600 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--frame-tx-3);padding:9px 13px;border-bottom:2px solid transparent}
+.tbs i.on{color:var(--hope);border-bottom-color:var(--hope)}
+.pn{padding:12px 13px 14px}
+.pn + .pn{border-top:1px solid var(--line)}
+.pn > .k{display:flex;align-items:baseline;gap:8px;margin-bottom:9px;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.pn > .k s{margin-left:auto;text-decoration:none;font-size:8.5px;color:var(--hope-tx);
+  letter-spacing:.12em}
+.rows{display:grid;gap:7px}
+
+/* the arrow between A's two frames — the gesture crossing a tab boundary */
+.thru{display:flex;align-items:center;gap:10px;padding:11px 2px;
+  font:600 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.thru:before,.thru:after{content:"";height:1px;flex:1;background:var(--line)}
+.thru b{color:var(--hope-tx);font-weight:700}
+
+/* ── the three states a row can be in during a swap ────────────────
+   Armed, target and inert. Drawn once here and reused by the prototype,
+   because a study that mocks a state its prototype implements differently
+   is a study of nothing. */
+.pk.arm .spine{filter:none;transform:translateX(4px)}
+.pk.arm:after{content:"";position:absolute;inset:-1.5px;pointer-events:none;
+  box-shadow:0 0 0 1.5px var(--hope)}
+/* A target keeps its colour. Dulling it and ringing it says two opposite
+   things at once — and the target list is the one you are reading hardest,
+   since the question is which of these five is worst. Only the vault rows
+   that lost the arming go quiet. */
+.pk.tgt:after{content:"";position:absolute;inset:-1.5px;pointer-events:none;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--hope) 62%,transparent);
+  transition:box-shadow .15s}
+.pk.tgt:hover:after{box-shadow:0 0 0 1.5px var(--hope)}
+.pk.dim{opacity:.34}
+
+/* the cost, on the thing that costs — never in a dialog */
+.cost{display:flex;align-items:center;gap:8px;margin:0 0 9px;padding:7px 10px;
+  background:var(--sunk);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.cost em{font-style:normal;font:700 8.5px/1 var(--f-mono);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-3)}
+.cost b{font:600 11px/1.3 var(--f-ui);color:var(--ink);margin-left:auto}
+.cost b.free{color:var(--hope-tx)}
+.cost b.no{color:var(--sev-2-tx)}
+
+/* option C's active marker — one list, five of them lit. Scoped to .one, and
+   it has to be: `.pk:not(.liv)` unscoped is every row on the page, so the
+   other two columns and the prototype all went grey the first time. */
+.one .act{position:absolute;z-index:6;left:-2px;top:0;bottom:7px;width:6px;
+  background:var(--line-2)}
+.one .pk.liv .act{background:var(--hope)}
+.one .pk.liv .spine{filter:none}
+.one .pk:not(.liv) .spine{filter:saturate(.22)}
+
+/* ── the prototype ─────────────────────────────────────────────────*/
+/* 620px is the sheet's *pane*, not the window — the rail takes the rest. The
+   row is container-query sized, so a prototype in a 900px column is a
+   prototype of a row nobody will ever see. */
+.demo{display:grid;grid-template-columns:620px minmax(0,300px);gap:22px;align-items:start}
+#stage .rows{grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:10px}
+.side{position:sticky;top:70px;display:grid;gap:14px}
+.side .box{background:var(--paper);padding:13px 14px 15px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%)}
+.side .box > .k{font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 10px;display:flex;align-items:baseline}
+.side .box > .k button{margin-left:auto;font:700 8.5px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);background:none;border:0;cursor:pointer;padding:0}
+.side .box > .k button:hover{color:var(--hope)}
+.sw{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;
+  font:500 12px/1.3 var(--f-ui);color:var(--ink)}
+.sw input{position:absolute;opacity:0;pointer-events:none}
+.sw u{position:relative;display:block;width:34px;height:18px;flex:none;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line-2);transition:background .18s,box-shadow .18s;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.sw u:after{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;
+  background:var(--ink-3);transition:transform .2s cubic-bezier(.2,.8,.25,1),background .18s;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%)}
+.sw input:checked + u{background:color-mix(in srgb,var(--hope) 22%,var(--sunk));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 55%,transparent)}
+.sw input:checked + u:after{transform:translateX(16px);background:var(--hope)}
+.sw s{text-decoration:none;display:block;font:400 10.5px/1.4 var(--f-ui);color:var(--ink-3);
+  margin-top:3px}
+.side .lg{font:400 11px/1.5 var(--f-ui);color:var(--ink-3);margin:10px 0 0}
+.side .lg b{color:var(--ink-2);font-weight:600}
+
+/* the empty loadout slot — the gear tab's empty slot, at row height */
+.slotx{min-height:55px;display:flex;align-items:center;gap:10px;padding:0 13px;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.slotx b{font:600 11px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.slotx span{font:400 11.5px/1.3 var(--f-ui);color:var(--ink-3);opacity:.7}
+.pk.tgt .slotx,.slotx:hover{background:var(--sunk-2)}
+
+/* a shelve control, on the row, visible on hover only — putting a card back
+   is free and frequent and should not need arming */
+.pk .shv{position:absolute;z-index:7;right:8px;bottom:8px;opacity:0;
+  font:600 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);background:var(--frame);border:0;padding:5px 8px;cursor:pointer;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:opacity .15s,color .15s}
+.pk:hover .shv{opacity:1}
+.pk .shv:hover{color:var(--hope)}
+
+.say{font:500 11.5px/1.5 var(--f-ui);color:var(--ink-2);margin:0 0 9px;min-height:17px}
+.say b{color:var(--hope-tx)}
+.say i{font-style:normal;color:var(--sev-2-tx)}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>vault</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html" class="on">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+  <label class="tg"><input type="checkbox" id="ar" checked> art</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// DECIDED</span>B, with drag, and two arrivals</h2>
+<p class="note"><b>The vault tab holds both lists.</b> Loadout on top, vault below, and every swap happens
+there. Click a vault row to arm it and a loadout row to land it; or <b>drag</b> one onto the other. Both
+paths run the same three lines and produce the same animation, so there is nothing to learn twice and
+nothing that can drift apart. Click-to-arm is the one that always works — touch, keyboard, a hand that
+cannot hold a button down — and drag is the one anyone who has used a deckbuilder tries first. Neither is
+the real one.</p>
+<p class="note"><b>The motion is a FLIP, and it had to be.</b> Committing a swap repaints the pane, which
+destroys every row — there is nothing left to transition. So the rects are measured before the repaint and
+again after, and the difference is played backwards: the row appears to travel from where it was to where
+it now is, having never moved. Every other row flips too, at a shorter duration, so the list closes over
+the gap instead of snapping. On a <i>drop</i> the card is already under the pointer, so its live rect
+overrides its captured one — it flies from the hand while everything else flies from where it was.</p>
+<p class="note"><b>Two arrivals, same construction, opposite readings.</b> A <b>recall</b> is the sheet
+committing: a lit band wipes left to right with a hard gold leading edge, corner brackets snap onto the two
+square corners, and the card's colour comes back up as it comes to hand. A <b>shelve</b> is that wipe run
+backwards and dark, with no accent and no brackets, and the folder tab slides in — filing something away
+should not be celebrated. Both are clipped to the row's own chamfer, so the light stops where the corner is
+cut; that one detail is most of why it reads as a machined panel rather than a glow.</p>
+<p class="note"><b>Three bugs worth keeping.</b> The drag was bound to <code>.win</code>, and picking a card
+up <i>arms</i> it, and arming repaints — so the drag spent the rest of its life talking to a detached tree:
+proxy followed the pointer, hit test found nothing, drop silently did nothing. It is bound to the layer
+now and looks the window up per call. The empty slot used <code>height:100%</code> and collapsed to 15px
+whenever it was alone in its grid row — the row it was 100% of is sized by its contents, and its only
+content was the slot; it takes the spine's own <code>aspect-ratio:100/19</code> instead. And the shelve
+button was being swallowed by the swap's own "a control is a control" guard, which exists to keep other
+people's buttons out, not its own.</p>
+
+<p class="note"><b>Rests are run at the table, for this version.</b> No downtime moves, no short/long, nothing
+cleared automatically — the Resting switch is the whole of it, set by hand. That makes it the only thing on
+screen that knows whether a swap is free, so it says which state it is <i>in</i> rather than restating the
+rule: “free while resting” is true in both positions and answers nothing. While it is on the strip carries a
+gold edge, because nothing but a hand turns it off and the failure mode is a sheet quietly giving away Stress
+it should have charged.</p>
+
+<h2><span>// WHAT THE RULES SAY</span>Two prices, and the sheet already prints one of them</h2>
+<p class="note">Five active domain cards, maximum. Subclass, ancestry and community don’t count toward it
+and are always active — which is why they live in the main tab and not here. Everything else you own sits
+in the vault, and there are exactly two ways to move a card out of it:</p>
+<p class="note"><b>At the start of a rest, free</b>, and before any downtime moves. Swap as many as you
+like. This is where nearly every swap happens.<br>
+<b>Any other time, mark Stress equal to that card’s Recall Cost.</b> That is the number already sitting in
+the corner chip of every domain row on this sheet — which means the price is <i>already drawn</i>, on the
+thing it prices, and has been since the first card template. The interaction just has to spend it.</p>
+<p class="note">One more, from the fine print: a spell already in play <b>stays in play</b> after you vault
+the card that cast it. So a vaulted card is not an undone card, and the vault tab should never read as a
+graveyard.</p>
+
+<h2><span>// THE PROBLEM</span>A swap is two-sided, and the two sides are on different tabs</h2>
+<p class="note">At 5/5 there is no such thing as “add a card”. Something leaves. So the gesture needs two
+picks, and the pick that decides the whole thing — <i>is this better than the worst one I’m holding?</i> —
+requires seeing both lists at once. Right now the loadout is in the main tab and the vault is in the vault
+tab, and you can’t see both. That is the actual thing to fix; the button is downstream of it.</p>
+
+<div class="cols" id="q" style="--cols:3"></div>
+
+<h2><span>// TRY IT</span>Option B, live</h2>
+<p class="note">Click a vault row to arm it, then click a loadout row to trade — or an empty slot to fill
+it. Escape or a click anywhere else cancels. The Stress is real: flip <b>Resting</b> off and the swap
+charges the incoming card’s Recall Cost against the track on the right, and refuses when you can’t pay.
+Hover a loadout row for <b>shelve</b>, which is free in both directions of the rules — only the recall is
+priced.</p>
+
+<div class="demo">
+  <div id="stage"></div>
+  <div class="side">
+    <div class="box">
+      <span class="k">Rest</span>
+      <label class="sw"><input type="checkbox" id="rest" checked><u></u>
+        <span>Resting<s>Swaps are free at the start of a rest, before downtime moves.</s></span></label>
+    </div>
+    <div class="box" id="trk"></div>
+    <p class="lg">The cost strip appears <b>on the vault panel</b> the moment a card is armed, and says
+    what this specific swap costs before you pick the card that leaves. A dialog after the fact would be
+    the same information at the wrong end of the decision.</p>
+  </div>
+</div>
+
+<script type="module">
+import { SPINE } from '/design/tile.js';
+import { icon } from '/design/domains.js';
+import { byslug } from '/design/domains.js';
+import { MARKS } from '/design/mark.js';
+import { fit } from '/design/card.js';
+
+const by = s => byslug[s];
+const [bone, sage, valor, grace, splendor] = await Promise.all(
+  ['bone','sage','valor','grace','splendor'].map(icon));
+const SIG = {bone, sage, valor, grace, splendor};
+
+/* Real cards off the Bone/Sage list, recall costs included, because the whole
+   question is what a recall costs and a mock with rc:1 everywhere answers it
+   by accident. */
+const mk = (dom, lvl, rc, type, name) =>
+  ({d:by(dom), sig:SIG[dom], lvl, rc, type, name, foot:by(dom).name});
+
+const LOAD0 = [
+  mk('bone',1,1,'ABILITY','Hold Them Off'),
+  mk('sage',1,0,'ABILITY','Gifted Tracker'),
+  mk('bone',2,1,'ABILITY','Untouchable'),
+  mk('sage',2,2,'SPELL','Vicious Entangle'),
+  mk('bone',3,2,'ABILITY','Signature Move'),
+];
+const VAULT0 = [
+  mk('sage',1,1,'ABILITY','Nature’s Tongue'),
+  mk('bone',1,1,'ABILITY','Deft Maneuvers'),
+  mk('valor',2,1,'ABILITY','Bare Bones'),
+  mk('grace',1,1,'ABILITY','Deft Deceiver'),
+  mk('splendor',2,2,'SPELL','Healing Hands'),
+];
+
+const STAMP = `<span class="stamp"><svg viewBox="0 0 14 14" fill="currentColor">
+  <path d="M1 2h12v3H1z"/><path d="M2.2 6h9.6l-.7 6H2.9z" opacity=".62"/>
+  <path d="M5.2 7.6h3.6v1.3H5.2z" fill="#000" opacity=".38"/></svg></span>`;
+
+const row = (c, cls = '', extra = '') =>
+  `<div class="pk ${cls}">${SPINE(c)}${extra}</div>`;
+
+/* ── the three options, as static mockups ──────────────────────────*/
+const OPTS = [
+  {t:'A · arm here, land there', tag:'cheapest',
+   p:`Keep the two tabs. A <b>recall</b> control on a vault row arms it and throws you to the main
+      tab with the five loadout rows lit as targets. Nothing moves, nothing merges, and it works at
+      any window width. But the decision is made across a page turn: you arm looking at one list and
+      choose looking at the other, so the one comparison the choice is actually made on — <i>is this
+      better than what I’d drop?</i> — is the one thing you never see.`,
+   html: () => `
+    <div class="fr">
+      <div class="tbs"><i>main</i><i class="on">vault</i><i>gear</i></div>
+      <div class="pn"><div class="k">Vault<s>5 stored</s></div>
+        <div class="rows">${[VAULT0[4], VAULT0[2]].map((c,i) =>
+          row(c, i ? 'vl dim' : 'vl arm', STAMP)).join('')}</div></div>
+    </div>
+    <div class="thru"><b>tab change</b></div>
+    <div class="fr">
+      <div class="tbs"><i class="on">main</i><i>vault</i><i>gear</i></div>
+      <div class="pn"><div class="k">Domain loadout<s>choose one to replace</s></div>
+        <div class="rows">${LOAD0.slice(0,4).map(c => row(c,'tgt')).join('')}</div></div>
+    </div>`},
+
+  {t:'B · the vault tab holds both', tag:'recommended',
+   p:`The vault tab grows a <b>loadout strip</b> at the top: your five, live, above the vault below
+      them. One screen, both lists, one place where swapping is a thing that happens — which is also
+      what finally earns the vault its tab, since today it is a list you can only look at. The five
+      rows appear in two tabs, and that is the honest cost of it.`,
+   html: () => `
+    <div class="fr">
+      <div class="tbs"><i>main</i><i class="on">vault</i><i>gear</i></div>
+      <div class="pn"><div class="k">Loadout<s>5 / 5 · choose one to replace</s></div>
+        <div class="rows">${LOAD0.slice(0,3).map(c => row(c,'tgt')).join('')}</div></div>
+      <div class="pn"><div class="k">Vault<s>5 stored</s></div>
+        <div class="cost"><em>Recall</em><b class="free">Free — resting</b></div>
+        <div class="rows">${[VAULT0[4], VAULT0[2], VAULT0[3]].map((c,i) =>
+          row(c, i ? 'vl dim' : 'vl arm', STAMP)).join('')}</div></div>
+    </div>`},
+
+  {t:'C · one list, five of them lit', tag:'purest',
+   p:`Delete the split. There is one <b>Domain cards</b> list holding everything you own, sorted, and
+      the five active ones carry a lit edge; clicking an edge toggles it, and at 5/5 lighting a sixth
+      arms the trade. Truest to the fiction — they are all just your cards — and nothing is drawn
+      twice. It degrades though: at level 10 that is a list of eleven where “which five” is a hunt,
+      and the loadout panel in the main tab still has to exist, so the split comes back anyway.`,
+   html: () => `
+    <div class="fr one">
+      <div class="tbs"><i>main</i><i class="on">cards</i><i>gear</i></div>
+      <div class="pn"><div class="k">Domain cards<s>5 of 10 active</s></div>
+        <div class="rows">${[
+          [LOAD0[0],1],[VAULT0[1],0],[LOAD0[2],1],[VAULT0[2],0],
+          [LOAD0[3],1],[VAULT0[4],0],[LOAD0[4],1]
+        ].map(([c,on]) => row(c, on ? 'liv' : '', '<span class="act"></span>')).join('')}</div></div>
+    </div>`},
+];
+
+document.getElementById('q').innerHTML = OPTS.map(o => `
+  <div class="col">
+    <header><h3>${o.t}</h3><em>${o.tag}</em></header>
+    <p>${o.p}</p>
+    <div>${o.html()}</div>
+  </div>`).join('');
+
+/* ── the prototype ─────────────────────────────────────────────────*/
+const S = {load: LOAD0.slice(), vault: VAULT0.slice(), stress: 1, max: 6,
+           resting: true, armed: null, say: ''};
+
+const stage = document.getElementById('stage');
+const trk = document.getElementById('trk');
+
+function cost(){
+  if(S.armed == null) return null;
+  return S.resting ? 0 : S.vault[S.armed].rc;
+}
+function payable(){
+  const c = cost();
+  return c === 0 || S.stress + c <= S.max;
+}
+
+function paint(){
+  const c = cost(), armed = S.armed != null;
+  const strip = !armed ? '' : `<div class="cost"><em>Recall</em><span
+      style="font:500 11.5px/1.3 var(--f-ui);color:var(--ink-2)">${S.vault[S.armed].name}</span>
+    <b class="${c === 0 ? 'free' : payable() ? '' : 'no'}">${
+      c === 0 ? 'Free — resting'
+      : payable() ? `Mark ${c} Stress`
+      : `Needs ${c} Stress — ${S.max - S.stress} left`}</b></div>`;
+
+  stage.innerHTML = `
+  <div class="fr">
+    <div class="tbs"><i>main</i><i class="on">vault</i><i>gear</i><i>advancement</i><i>bio</i></div>
+    <div class="pn"><div class="k">Loadout<s>${S.load.length} / 5${
+      armed ? ' · choose one to replace' : ''}</s></div>
+      <div class="rows">${
+        S.load.map((c, i) => row(c, armed ? 'tgt' : '',
+          `<button class="shv" data-shv="${i}">shelve</button>`)
+          .replace('class="pk ', `data-ld="${i}" class="pk `)).join('')
+        + Array.from({length: 5 - S.load.length}, () =>
+          `<div class="pk ${armed ? 'tgt' : ''}" data-ld="-1"><div class="slotx">
+             <b>Empty</b><span>${armed ? 'click to move the armed card in' : 'room for one more'}</span>
+           </div></div>`).join('')}</div></div>
+    <div class="pn"><div class="k">Vault<s>${S.vault.length} stored</s></div>
+      ${strip}
+      <div class="rows">${S.vault.map((c, i) =>
+        row(c, `vl ${S.armed === i ? 'arm' : armed ? 'dim' : ''}`, STAMP)
+          .replace('class="pk ', `data-vt="${i}" class="pk `)).join('')}</div></div>
+  </div>`;
+
+  trk.innerHTML = `<span class="k">Stress<button id="rs">reset</button></span>
+    ${MARKS({label:'Stress', total:S.max, marked:S.stress, kind:'stress', head:false})}
+    <p class="say">${S.say || '&nbsp;'}</p>`;
+  trk.querySelector('#rs').onclick = () => {
+    Object.assign(S, {load:LOAD0.slice(), vault:VAULT0.slice(), stress:1, armed:null, say:''});
+    paint();
+  };
+  fit(stage);
+}
+
+function arm(i){ S.armed = S.armed === i ? null : i; S.say = ''; paint(); }
+
+function land(li){
+  const c = cost();
+  if(!payable()){
+    S.say = `<i>Not enough Stress.</i> ${S.vault[S.armed].name} recalls for ${c}.`;
+    return paint();
+  }
+  const card = S.vault.splice(S.armed, 1)[0];
+  if(li >= 0){ S.vault.push(S.load[li]); S.load[li] = card; }
+  else S.load.push(card);
+  S.stress += c;
+  S.say = c ? `<b>${card.name}</b> recalled · marked ${c} Stress`
+            : `<b>${card.name}</b> recalled · free, you’re resting`;
+  S.armed = null;
+  paint();
+}
+
+stage.addEventListener('click', e => {
+  const shv = e.target.closest('[data-shv]');
+  if(shv){
+    S.vault.push(S.load.splice(+shv.dataset.shv, 1)[0]);
+    S.armed = null; S.say = 'Shelved — putting a card back is always free.';
+    return paint();
+  }
+  const vt = e.target.closest('[data-vt]');
+  if(vt) return arm(+vt.dataset.vt);
+  const ld = e.target.closest('[data-ld]');
+  if(ld && S.armed != null) return land(+ld.dataset.ld);
+  if(S.armed != null){ S.armed = null; S.say = ''; paint(); }
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && S.armed != null){ S.armed = null; S.say = ''; paint(); }
+});
+document.getElementById('rest').addEventListener('change', e => {
+  S.resting = e.target.checked; paint();
+});
+
+paint();
+
+/* page chrome */
+document.getElementById('lt').addEventListener('change',
+  e => document.documentElement.classList.toggle('light', e.target.checked));
+document.getElementById('ar').addEventListener('change',
+  e => document.body.classList.toggle('ramp', e.target.checked));
+</script>
+</div>
+</body>
+</html>

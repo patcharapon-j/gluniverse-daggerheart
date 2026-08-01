@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Bone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/mark.css">
+<link rel="stylesheet" href="/design/sheet.css">
+<style>
+.rows{display:grid;gap:8px;max-width:520px}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:26px;align-items:start}
+.pair > div > b{display:block;font:700 9px/1 var(--f-mono);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+
+/* the saturation ladder */
+.lad{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:8px;margin:0 0 8px}
+.lad > div{background:var(--paper);padding:9px 9px 11px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)}
+.lad i{display:block;height:44px;margin-bottom:8px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.lad b{display:block;font:700 9px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink);margin-bottom:4px}
+.lad s{display:block;text-decoration:none;font:400 9.5px/1.35 var(--f-mono);color:var(--ink-3)}
+.lad .flag b{color:var(--fear-tx)}
+.lad .flag{box-shadow:inset 0 0 0 1.5px var(--fear-tx)}
+
+/* option columns */
+.cols{display:grid;grid-template-columns:repeat(var(--cols,4),1fr);
+  grid-template-rows:auto auto auto;gap:20px;align-items:start}
+.col{display:grid;grid-row:span 3;grid-template-rows:subgrid;gap:0}
+.col > header{display:flex;align-items:baseline;gap:8px;border-bottom:1px solid #2b3038;
+  padding-bottom:8px;margin-bottom:11px;align-self:end}
+.col > header h3{margin:0;font:700 10.5px/1 var(--f-mono);letter-spacing:.18em;
+  text-transform:uppercase;color:#e6eaef}
+.col > header em{font-style:normal;font:700 9px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--hope);margin-left:auto}
+.col > p{font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 13px}
+.col > p b{color:#c3cbd5;font-weight:600}
+.col .rows{max-width:none}
+
+/* Each option substitutes a colour the builders write inline, so it has to
+   be !important — vars(d,d2) puts --dom on the element itself. Same reason
+   the gear study needed it.
+
+   Scoped to `.bo`, and that is the whole point: the first version set --dom
+   on every .spine in the column, which repainted the Community and Item rows
+   in Bone's colour too. Every column then showed four identical rows and
+   "proved" that all four options work. The graphite rows are the control. */
+.b1 .bo .spine{--dom:#868686!important;--dom-dk:#65625c!important}
+.b2 .bo .spine{--dom:#8f8578!important;--dom-dk:#6b6357!important}
+.b3 .bo .spine{--dom:#7d8794!important;--dom-dk:#565f6b!important}
+.b4 .bo .spine{--dom:#868686!important;--dom-dk:#65625c!important}
+/* B ships one pair for both themes, like every other domain — see the DECIDED
+   note. The light-theme variant this column used to carry was dropped with it. */
+:root.light .b3 .bo .spine{--dom:#68727f!important;--dom-dk:#454e5a!important}
+/* option D moves the *non-domain* grey instead, which is the one this
+   system invented and therefore the one it is free to move */
+.b4 .gr .spine{--dom:#3d434c!important;--dom-dk:#22262c!important}
+:root.light .b4 .gr .spine{--dom:#454b54!important;--dom-dk:#2a2f36!important}
+
+.sw{display:flex;gap:5px;margin:0 0 10px}
+.sw i{display:block;flex:1;height:16px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%)}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>bone</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html" class="on">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+  <label class="tg"><input type="checkbox" id="ar" checked> art</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// DECIDED</span>B — warm it. <code>#8f8578</code> / <code>#6b6357</code></h2>
+<p class="note"><b>Shipped in <code>domains.js</code>.</b> Bone keeps its value and changes temperature: old
+ivory rather than neutral grey. It is the smallest possible departure from the printed colour — a player
+who has seen a physical Bone card still recognises the row — and it is the only move that puts Bone in a
+family of its own, because warm is the one direction nothing else on this sheet occupies.</p>
+<p class="note"><b>One pair, both themes.</b> A darker light-theme variant reads better on white paper, and
+the study carried one for a while, but no other domain has a per-theme value and Bone does not earn the
+mechanism: <code>--dom</code> is decorative here — every white-on-colour surface already draws from
+<code>--dom-dk</code> — and a domain whose identity colour shifts with the sheet chrome is a domain a
+player cannot learn. Option A is still rendered below in its printed colour, so the two are comparable.</p>
+
+<h2><span>// THE MEASUREMENT</span>It is not a contrast problem</h2>
+<p class="note">Bone reads <b>4.79</b> against the dark sheet and <b>3.42</b> against the light one — better
+than five of the other eight domains on the dark side. Contrast is not what is wrong with it. What is wrong
+is one number: <b>saturation 0</b>. Every other domain sits between 50 and 87 — and the <i>non-domain</i>
+graphite sits at 16, which is where the real trouble is. Bone and “no domain” are the only two entries in
+this whole palette from the same family, and they are told apart by <b>value alone</b>. Every other domain
+is separated from graphite by hue, which nothing erodes; value is exactly what a colour ramp laid over
+artwork does erode.</p>
+<div class="lad" id="lad"></div>
+
+<h2><span>// THE COLLISION</span>Grey already means something here</h2>
+<p class="note">This system spent grey early and deliberately: <b>a saturated hue means domain</b>, and
+graphite means <i>no domain</i>. That is why Ancestry, Community and every piece of equipment are
+<code>#5c636d</code> with the colour ramp suppressed — a sword belongs to no domain, so it gets no hue.
+Bone is a domain wearing the one colour reserved for things that are not domains. Below: a Bone card and
+three non-domain cards, as they actually appear.</p>
+<div class="rows" id="clash"></div>
+
+<h2><span>// THE OPTIONS</span>Four ways out, one of which changes nothing official</h2>
+<p class="note">These are the official daggerheart.org values, which is not nothing — a player who has seen
+a printed Bone card should recognise the row. Each column shows a Bone row above a Community row, because
+the pair is the whole question: they must not read as the same kind of thing.</p>
+<div class="cols" id="opts" style="--cols:4"></div>
+
+<script type="module">
+import { SPINE } from '/design/tile.js';
+import { DOMAINS, byslug, icon, glyph, KINDS } from '/design/domains.js';
+
+const [bone, sage, ancG, comG, gearG] = await Promise.all(
+  [icon('bone'), icon('sage'), glyph('ancestry'), glyph('community'), glyph('gear')]);
+
+/* ── the ladder ───────────────────────────────────────────────────*/
+const lum = h => {
+  const n = parseInt(h.slice(1), 16);
+  const c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => {
+    v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
+  return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+};
+const cr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+                       return (x + .05) / (y + .05); };
+const sat = h => { const n = parseInt(h.slice(1), 16);
+  const r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  return mx ? Math.round((mx - mn) / mx * 100) : 0; };
+
+document.getElementById('lad').innerHTML =
+  [...DOMAINS, {name:'“no domain”', light:KINDS.gear.light, dark:KINDS.gear.dark}]
+  .sort((a, b) => sat(a.light) - sat(b.light))
+  .map(d => `
+    <div class="${sat(d.light) < 20 ? 'flag' : ''}">
+      <i style="background:linear-gradient(180deg,${d.light} 0 62%,${d.dark} 62% 100%)"></i>
+      <b>${d.name}</b><s>sat ${sat(d.light)}<br>${cr(d.light, '#171a1f').toFixed(2)} : 1</s>
+    </div>`).join('');
+
+/* ── the collision ────────────────────────────────────────────────*/
+const bn = (over = {}) => ({d:byslug.bone, sig:bone, lvl:2, rc:1,
+  type:'ABILITY', name:'Untouchable', foot:'Bone', ...over});
+const nd = [
+  {d:KINDS.ancestry,  sig:ancG,  type:'ANCESTRY',  name:'Elf',        foot:'Heritage'},
+  {d:KINDS.community, sig:comG,  type:'COMMUNITY', name:'Wildborne',  foot:'Heritage'},
+  {d:KINDS.gear,      sig:gearG, type:'ITEM',      name:'Premium Bedroll', foot:'Common'},
+];
+document.getElementById('clash').innerHTML =
+  [SPINE(bn()), ...nd.map(c => SPINE(c))].join('');
+
+/* ── the options ──────────────────────────────────────────────────*/
+const OPTS = [
+  {k:'b1', t:'A · leave it', tag:'official',
+   p:`<b>#868686</b>, unchanged. It is the printed colour and a Ranger who has seen a physical
+      Bone card should recognise the row. The cost is the whole section above: on this sheet the one
+      grey domain says “not a domain”, and it says it next to the cards that genuinely are not.`},
+  {k:'b2', t:'B · warm it', tag:'recommended',
+   p:`Same value, <b>a temperature</b> — <code>#8f8578</code>, old ivory rather than neutral grey.
+      It is the smallest possible departure from the printed colour, it is more <i>bone</i> than
+      neutral grey ever was, and it leaves the graphite family in the one direction nothing else on
+      this sheet is using. Splendor is the nearest neighbour and is three times more saturated.`},
+  {k:'b3', t:'C · cool it', tag:'crowded',
+   p:`Steel — <code>#7d8794</code>. Reads well and is arguably more “tactics and the body”. But it
+      moves <i>toward</i> the graphite it needs to escape, and the blue quadrant is already Codex and
+      Midnight. This is the option that looks fine alone and worst in the set.`},
+  {k:'b4', t:'D · move the other grey', tag:'no official change',
+   p:`Leave Bone exactly as printed and darken the <b>non-domain</b> graphite instead —
+      <code>#3d434c</code>, well below every domain. That grey is this system's own invention, so it
+      is the one thing here we are genuinely free to move. But it is not free: against the dark sheet
+      that cap drops from <b>2.89 : 1</b> to <b>1.76 : 1</b>, and it is worn by every weapon, every
+      piece of loot and both heritage cards. This fixes one domain by making the largest category on
+      the sheet muddier.`},
+];
+
+document.getElementById('opts').innerHTML = OPTS.map(o => `
+  <div class="col">
+    <header><h3>${o.t}</h3><em>${o.tag}</em></header>
+    <p>${o.p}</p>
+    <div class="${o.k}">
+      <div class="rows">
+        <div class="bo">${SPINE(bn())}</div>
+        <div class="gr">${SPINE(nd[1])}</div>
+        <div class="gr">${SPINE(nd[2])}</div>
+      </div>
+    </div>
+  </div>`).join('');
+
+document.getElementById('lt').addEventListener('change',
+  e => document.documentElement.classList.toggle('light', e.target.checked));
+document.getElementById('ar').addEventListener('change',
+  e => document.body.classList.toggle('ramp', e.target.checked));
+</script>
+</div>
+</body>
+</html>

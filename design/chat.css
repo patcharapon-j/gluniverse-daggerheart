@@ -1,0 +1,258 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH CHAT — the roll result
+
+   The most-seen surface in the system. A sheet is opened a few times a
+   session; this appears every time anyone touches a die, and it stacks
+   into a log that gets scrolled back through.
+
+   Two things make it different from every other component here.
+
+   1. It does not scale. The card, spine, tile and mini are all sized in
+      cqw because they live at whatever size their pane gives them. A chat
+      message lives in a sidebar that is 300px by default and maybe 380px
+      if you drag it — and type that grows with the sidebar is type that
+      reads as a different component at a different dock width. So this
+      one is in px, and the extra width goes to the *line*, not the size.
+
+   2. It is a record, not a control. It is written once and then scrolled
+      past a hundred times. Which means the thing that has to survive at a
+      glance, six messages up, is not the total — it is the outcome. That
+      is why the outcome owns the edge, the rule and the band, and the
+      total is merely large.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dhm{position:relative;overflow:hidden;
+  background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui),system-ui,sans-serif;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
+  box-shadow:0 2px 10px -3px rgba(0,0,0,.5),inset 0 0 0 1px var(--line)}
+
+/* The outcome is one variable, set once, and everything downstream reads
+   it: the edge, the rule, the winning die, the band, the claim button.
+   A result is one colour all the way down or it is not one result. */
+.dhm.hope,.dhm.crit{--o:var(--hope);--o-tx:var(--hope-tx);--o-ink:#14161a}
+.dhm.fear{--o:var(--fear);--o-tx:var(--fear-tx);--o-ink:#fff}
+/* The wound colour owns the edge and stops there. Set as the band's text
+   too it measured 3.63:1 on the dark card — and there is no --wound-tx to
+   reach for, because the wound is a *material* on the marks and not a text
+   role. Same call roll.css made for the readout's damage tag. */
+.dhm.dmg {--o:var(--wound);--o-tx:var(--ink-2);--o-ink:#fff}
+/* A reaction roll generates neither Hope nor Fear, so it gets neither
+   colour. Not a failure state — a different kind of roll, and the grey
+   says so before the label does. */
+.dhm.none{--o:var(--line-2);--o-tx:var(--ink-2);--o-ink:var(--ink)}
+.dhm::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:var(--o);z-index:4}
+
+/* ── the head ──────────────────────────────────────────────────────
+   Name, then what was rolled. Foundry puts the speaker in its own
+   header above this, but that header is the *message*'s and can be
+   restyled or suppressed by a module — a card that is unreadable
+   without its frame is a card with a dependency. So it says who again,
+   quietly, and pays 12px for the privilege. */
+.dhm-k{display:flex;align-items:baseline;gap:8px;padding:9px 12px 8px 13px;
+  border-bottom:var(--rule) solid var(--o)}
+.dhm-nm{font:700 8px/1 var(--f-mono);letter-spacing:.17em;text-transform:uppercase;
+  color:var(--ink-3);flex:none}
+.dhm-lb{font:600 12px/1.15 var(--f-ui);color:var(--ink);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The Difficulty lives in the band and nowhere else. It was in this header
+   too for a version, which put "vs 15" twice on a 300px card — and the
+   copy in the header was the useless one, since it sat above the total
+   rather than beside the verdict it decides. */
+
+/* ── the dice ──────────────────────────────────────────────────────
+   Same three silhouettes as the sheet's own readout, and for the same
+   reason: diamond is Duality, chamfered square is damage, and the
+   notched square is the extra d6 that is neither. You know which kind
+   of roll you scrolled past before you have read a number. */
+.dhm-bd{display:flex;align-items:center;gap:10px;padding:12px 12px 11px 13px}
+/* Wraps, because a critical at Proficiency 6 is twelve dice — six maximised
+   and six rolled — and twelve of anything does not fit across 300px. The
+   total keeps its corner; the dice take as many lines as they need. */
+.dhm-dice{display:flex;align-items:center;flex-wrap:wrap;gap:6px 7px;flex:1 1 auto;min-width:0}
+.dhm .dc{position:relative;flex:none;width:34px;height:34px;display:grid;place-items:center;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line-2);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.dhm .dc b{font:700 13px/1 var(--f-display);color:var(--ink-2);letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums}
+/* Only the die that decided it is lit. The other is still read — it is
+   half the sentence "15 with Fear" — it just is not the half that spoke. */
+.dhm .dc.win{box-shadow:none;background:var(--fill)}
+.dhm .dc.h{--fill:var(--hope)}
+.dhm .dc.f{--fill:var(--fear)}
+.dhm .dc.h.win b{color:#14161a}
+.dhm .dc.f.win b{color:#fff}
+/* damage: chamfered, smaller, and there can be six of them */
+.dhm .dc.p{width:27px;height:27px;background:var(--sev-2);box-shadow:none;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%)}
+.dhm .dc.p b{color:var(--sev-2-tx);font-size:11px}
+/* the maximised dice a critical starts from — same shape, hollow, because
+   they were not rolled */
+.dhm .dc.p.mx{background:transparent;box-shadow:inset 0 0 0 1.5px var(--sev-2)}
+.dhm .dc.p.mx b{color:var(--ink-2)}
+/* advantage / disadvantage: notched on the leading corner instead, and it
+   carries its own sign rather than borrowing a colour. Gold is Hope and
+   violet is Fear; an advantage die is neither and must not look like it. */
+.dhm .dc.a{width:26px;height:26px;background:var(--sunk-2);
+  box-shadow:inset 0 0 0 1px var(--line-2);
+  clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+.dhm .dc.a b{font-size:10.5px;color:var(--ink-2)}
+.dhm .dc.a.neg b{color:var(--fear-tx)}
+
+.dhm-tot{margin-left:auto;display:flex;align-items:baseline;gap:5px;flex:none}
+.dhm-tot b{font:700 30px/1 var(--f-display);letter-spacing:-.05em;color:var(--ink);
+  font-variant-numeric:tabular-nums;min-width:38px;text-align:right;display:inline-block}
+.dhm-tot s{text-decoration:none;font:700 8px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3)}
+
+/* ── the arithmetic ────────────────────────────────────────────────
+   Every term, spelled out. This is the line that stops the "wait, what
+   was your Agility again?" that a bare total invites — and it is the one
+   part of the card that is genuinely an audit trail, so it is set in the
+   mono face and kept quiet. */
+.dhm-mod{display:flex;flex-wrap:wrap;gap:0 6px;padding:0 12px 11px 13px;
+  font:500 9.5px/1.5 var(--f-mono);color:var(--ink-3)}
+.dhm-mod i{font-style:normal}
+.dhm-mod i b{font-weight:700;color:var(--ink-2)}
+/* a term the roll only has because a Hope was spent on it */
+.dhm-mod i.sp b{color:var(--hope-tx)}
+.dhm-mod u{text-decoration:none;color:var(--line-2)}
+
+/* ── the band ──────────────────────────────────────────────────────
+   The one line that has to survive being scrolled past. Full bleed,
+   because a result that is indented reads as a footnote to the number
+   above it, and the number is the part nobody remembers. */
+.dhm-v{display:flex;align-items:center;gap:8px;padding:8px 12px 8px 13px;
+  background:color-mix(in srgb,var(--o) 13%,var(--sunk));
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--o) 26%,transparent)}
+/* Lighter, and mixed into paper rather than into the recess. --hope-tx is
+   defined as ~5:1 against *paper*, so a gold tint over a gold-lit recess
+   spends that margin twice: the dark card measured 7.96 and the light one
+   4.18 with the same rule. This is the same lesson as the vault's mute
+   opacity — one value cannot serve both substrates. */
+:root.light .dhm-v{background:color-mix(in srgb,var(--o) 10%,var(--paper))}
+.dhm-v > b{font:700 9.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--o-tx)}
+/* "vs 15" or "vs ?" — and the question mark is the honest state, not a
+   missing one. The GM is allowed to keep a Difficulty to themselves. */
+.dhm-v > s{margin-left:auto;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.dhm-v > s.q{color:var(--o-tx);opacity:.72}
+
+/* ── the claims ────────────────────────────────────────────────────
+   What the roll owes somebody. Offered, not applied: pressing is the
+   act of taking it, and a claim that has been taken says so and stops
+   being a button — so a log scrolled back through shows what was
+   actually collected, not what was theoretically due. */
+.dhm-act{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 11px 13px}
+.dhm-b{flex:1 1 auto;min-width:0;border:0;cursor:pointer;position:relative;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 10px;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s,color .14s,transform .1s}
+.dhm-b:hover{background:var(--o);color:var(--o-ink);box-shadow:none}
+.dhm-b:active{transform:translateY(1px)}
+.dhm-b i{flex:none;width:8px;height:8px;background:var(--o);transform:rotate(45deg)}
+.dhm-b:hover i{background:var(--o-ink)}
+/* Stress is cleared, not gained, and it is its own material on the sheet —
+   the claim carries the same cold blue so the pip you are about to clear
+   is recognisable from the button that clears it. */
+.dhm-b.st i{background:var(--strain);transform:none;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%)}
+.dhm-b.st:hover{background:var(--strain);color:#0a3646}
+.dhm-b.st:hover i{background:#0a3646}
+/* the follow-on roll, which is not a claim — it is the next thing to do */
+.dhm-b.go{flex:1 1 100%;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line)}
+.dhm-b.go:hover{background:var(--hope);color:#14161a;box-shadow:none}
+.dhm-b.go i{background:var(--sev-2);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%);
+  transform:none}
+.dhm-b.go:hover i{background:#14161a}
+
+.dhm-b.done{cursor:default;background:transparent;color:var(--ink-3);
+  box-shadow:inset 0 0 0 1px var(--line)}
+.dhm-b.done:hover{background:transparent;color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line)}
+.dhm-b.done:active{transform:none}
+.dhm-b.done i{background:var(--line-2)}
+.dhm-b.done:hover i{background:var(--line-2)}
+.dhm-b.done em{font-style:normal;color:var(--o-tx);margin-left:2px}
+
+/* A claim nobody at this seat can take — the Fear that belongs to the GM,
+   seen from a player's chair. Shown, because "the GM gained a Fear" is
+   information the player needs; not pressable, because it is not theirs. */
+.dhm-b.theirs{cursor:default;background:transparent;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--o) 40%,transparent);
+  color:var(--o-tx)}
+.dhm-b.theirs:hover{background:transparent;color:var(--o-tx);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--o) 40%,transparent)}
+.dhm-b.theirs:active{transform:none}
+
+/* ── critical ──────────────────────────────────────────────────────
+   The one outcome the table reacts to out loud, so it is the one that
+   gets a flourish. Both dice are lit, because on a critical both dice
+   won — dimming one of them would say the opposite of what happened. */
+.dhm.crit .dc.h,.dhm.crit .dc.f{box-shadow:0 0 0 2px color-mix(in srgb,var(--hope) 50%,transparent)}
+.dhm.crit .dhm-v{background:linear-gradient(90deg,
+  color-mix(in srgb,var(--hope) 22%,var(--sunk)),color-mix(in srgb,var(--hope) 9%,var(--sunk)))}
+:root.light .dhm.crit .dhm-v{background:linear-gradient(90deg,
+  color-mix(in srgb,var(--hope) 15%,var(--paper)),color-mix(in srgb,var(--hope) 6%,var(--paper)))}
+
+/* ── arrival ───────────────────────────────────────────────────────
+   A chat message is the one place in this system where motion is not
+   decoration: it is how you know something new landed in a log you were
+   not looking at. So the sweep runs the full width once, at the wipe
+   curve rather than the travel curve — see swap.css for why those are
+   two different curves — and everything else is fast enough to be over
+   before you have finished reading the name. */
+.dhm.in{animation:dhm-in .3s cubic-bezier(.2,.85,.3,1) both}
+@keyframes dhm-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.dhm.in::after{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;
+  background:linear-gradient(90deg,transparent 0,
+    color-mix(in srgb,var(--o) 10%,transparent) 62%,
+    color-mix(in srgb,var(--o) 34%,transparent) 93%,var(--o) 100%);
+  width:34%;animation:dhm-swp .62s cubic-bezier(.33,.28,.25,1) .04s both}
+@keyframes dhm-swp{
+  0%{opacity:0;transform:translateX(-120%)}
+  14%{opacity:1} 82%{opacity:1}
+  100%{opacity:0;transform:translateX(310%)}}
+
+/* While it tumbles nothing on screen is a number that is not the number:
+   the dice are unlit, the total is a placeholder and the band is blank.
+   The result was decided before any of this ran — see chat.js. */
+.dhm.rolling .dc{background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line-2)}
+.dhm.rolling .dc b{color:var(--ink-3)}
+.dhm.rolling .dc.p{background:var(--sunk)}
+.dhm.rolling .dhm-v > b,.dhm.rolling .dhm-mod{opacity:.22}
+.dhm.rolling .dhm-act{opacity:0}
+
+.dhm.land .dc.win,.dhm.land .dc.p{animation:dhm-die .38s cubic-bezier(.16,1.05,.3,1) both}
+.dhm.land .dc:nth-child(2){animation-delay:.05s}
+.dhm.land .dc:nth-child(3){animation-delay:.1s}
+.dhm.land .dc:nth-child(4){animation-delay:.15s}
+.dhm.land .dc:nth-child(5){animation-delay:.2s}
+.dhm.land .dc:nth-child(6){animation-delay:.25s}
+/* Past six the stagger stops rather than stretching. Twelve dice at 50ms
+   apiece is 600ms of settling, which is longer than the whole arrival —
+   the tail lands together and the sequence still reads left to right. */
+.dhm.land .dc:nth-child(n+7){animation-delay:.3s}
+@keyframes dhm-die{0%{transform:scale(.62)}52%{transform:scale(1.12)}100%{transform:scale(1)}}
+.dhm.land .dhm-tot b{animation:dhm-tot .34s cubic-bezier(.16,1.05,.3,1) both}
+@keyframes dhm-tot{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+/* The band wipes rather than fades. It is the sentence the card exists to
+   say, and a sentence that fades in has always already been there. */
+.dhm.land .dhm-v > b{animation:dhm-band .34s cubic-bezier(.22,.9,.24,1) .06s both}
+@keyframes dhm-band{from{opacity:0;clip-path:inset(0 100% 0 0)}
+  to{opacity:1;clip-path:inset(0 -2px 0 0)}}
+.dhm.land .dhm-act{animation:dhm-act .3s ease-out .14s both}
+@keyframes dhm-act{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.dhm.land.crit .dhm-v > b{animation:dhm-band .34s cubic-bezier(.22,.9,.24,1) .06s both,
+  dhm-crit 1.05s ease-in-out .4s 2}
+@keyframes dhm-crit{50%{opacity:.34}}
+
+@media (prefers-reduced-motion:reduce){
+  .dhm,.dhm *,.dhm.in::after{animation:none!important}
+  .dhm.in::after{display:none}
+  .dhm.rolling .dhm-act{opacity:1}}

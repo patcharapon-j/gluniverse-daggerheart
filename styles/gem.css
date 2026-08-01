@@ -1,0 +1,225 @@
+/* Ported from design/gem.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/gem.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   DH GEMS — the Hope and Fear diamond
+
+   A nod to the printed sheet, which marks Hope in diamonds. Everything
+   else in this interface is a chamfered rectangle, so a square turned 45°
+   is the one silhouette that belongs to nothing else — which is what lets
+   it carry the two metacurrencies and stops anything else borrowing it.
+
+   A lit gem is a piece of edge-lit coloured glass: a flat saturated face,
+   a brighter rim where the light exits the edge, a refraction band falling
+   inward from it, and a bloom outside. No gradient on the face, no
+   specular, no shading — those made it a rendered bead, and a bead is an
+   object you look at rather than a light you read.
+
+     .lamp   carries the bloom, and nothing else; see below
+     .pit    the face, clipped to the diamond
+     .edge   the refraction band, inside the rim
+     .rim    the lit edge itself
+     .fx     transient: the gain ring, the spend streak
+
+   There is no idle animation anywhere in this file. Six things breathing
+   on a character sheet is six things asking for attention, all day, for
+   nothing. The whole motion budget is spent on the moment the value
+   changes, which is the only moment that carries information.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Registered so it can be interpolated — Fear's output rides the pool's
+   fullness, and an unregistered custom property is a token stream that
+   steps in one frame instead of easing. */
+@property --i{syntax:'<number>';inherits:true;initial-value:1}
+
+.dh .gem{position:relative;display:block;flex:none;
+  width:var(--sz,30px);height:var(--sz,30px);
+  --tone:#d4a72c; --deep:#6d4a08;
+  --i:1}
+.dh .gem.fear{--tone:#8256cc; --deep:#3a1f6b;
+  transition:--i .5s cubic-bezier(.2,.8,.25,1)}
+.dh .gem > b,.dh .gem .lamp > b{position:absolute;display:block;pointer-events:none}
+
+/* The bloom lives on a wrapper, not on the diamond. Painting order is
+   filter → clip-path → mask, so a drop-shadow declared on the clipped
+   element is generated and then immediately clipped off by the very shape
+   it was meant to describe. Declared on the parent it reads the child's
+   alpha and follows the diamond exactly — which is the whole point, since
+   the previous build used a border-radius:50% box-shadow and hung a
+   circular halo off a four-cornered shape.
+
+   Two stops, not one: a tight bright core and a wide faint field. A single
+   drop-shadow is either a hard outline or a haze, never a lamp. */
+.dh .gem .lamp{position:absolute;inset:0}
+.dh .gem.on .lamp{filter:
+  drop-shadow(0 0 calc(var(--sz,30px) * .10) color-mix(in srgb,var(--tone) 70%,transparent))
+  drop-shadow(0 0 calc(var(--sz,30px) * .34) color-mix(in srgb,var(--tone) 40%,transparent))}
+
+/* An unlit gem is a hole in whatever it sits on, so the socket follows the
+   ground. The dark values are the var() fallback rather than a declaration
+   on .gem — declared there they would beat the value a paper container
+   inherits down, since a property set on the element itself always wins. */
+.dh .gem .pit{inset:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  background:var(--socket,#1b1f26);
+  box-shadow:inset 0 0 0 1px var(--socket-line,#2b313a)}
+
+/* One element, two rings, evenodd between them. A border cannot do this on
+   a clipped diamond, and two stacked elements would need their inner edges
+   to agree at every size. */
+.dh .gem .rim{inset:0;background:var(--socket-line,#2b313a);
+  clip-path:polygon(evenodd,
+    50% 0,100% 50%,50% 100%,0 50%,
+    50% 7%,93% 50%,50% 93%,7% 50%)}
+
+/* The refraction: a bright band just inside the rim, falling off inward.
+   Same painting-order trick as the bloom, used the other way round — the
+   ring is drawn hard on the child, the wrapper's filter blurs it, and the
+   wrapper's clip-path then trims the spill back to the diamond. Order is
+   filter → clip-path, so the softness survives inward and the silhouette
+   stays exact. A hard-edged ring here read as a second outline, which is
+   the opposite of glass. */
+.dh .gem .edge{inset:0;opacity:0;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  filter:blur(max(1px,calc(var(--sz,30px) * .05)))}
+.dh .gem .edge > i{position:absolute;inset:0;display:block;background:rgba(255,255,255,.5);
+  clip-path:polygon(evenodd,
+    50% 2%,98% 50%,50% 98%,2% 50%,
+    50% 21%,79% 50%,50% 79%,21% 50%)}
+
+/* ── lit ──────────────────────────────────────────────────────────
+   Face flat. The edge is where the light leaves, so it is the only thing
+   brighter than the body. */
+.dh .gem.on .pit{background:var(--tone);box-shadow:none}
+.dh .gem.on .rim{background:color-mix(in srgb,var(--tone) 34%,#fff)}
+.dh .gem.on .edge{opacity:.85}
+
+/* Fear is the same object in the GM's hand, and the only thing that ramps
+   is how hard it burns. Intensity is a property of the *pool*, not of a
+   pip — at eleven of twelve every diamond is brighter, not just the
+   eleventh — so twelve reads as worse than three without a second hue, an
+   extra element, or anything moving. The face stays flat at every value;
+   what changes is which flat colour it is, and how far the bloom reaches. */
+.dh .gem.fear.on .pit{background:color-mix(in srgb,var(--tone) calc(46% + 54% * var(--i)),var(--deep))}
+.dh .gem.fear.on .rim{background:color-mix(in srgb,var(--tone) calc(16% + 30% * var(--i)),#fff)}
+.dh .gem.fear.on .edge{opacity:calc(.28 + .57 * var(--i))}
+.dh .gem.fear.on .lamp{filter:
+  drop-shadow(0 0 calc(var(--sz,30px) * (.05 + .11 * var(--i)))
+    color-mix(in srgb,var(--tone) calc(28% + 44% * var(--i)),transparent))
+  drop-shadow(0 0 calc(var(--sz,30px) * (.12 + .34 * var(--i)))
+    color-mix(in srgb,var(--tone) calc(12% + 32% * var(--i)),transparent))}
+
+/* ── scarred ──────────────────────────────────────────────────────
+   Struck out, not emptied. A hatch fill said "unavailable"; this is a
+   character taking a permanent wound, and crossing out the last slot ends
+   them — so it is two strokes drawn straight through the slot and past its
+   edges, the way you would cross something off on paper.
+
+   45°, which puts each stroke parallel to two of the diamond's four edges.
+   That is deliberate: the strokes read as having been drawn *across* the
+   shape rather than as part of its geometry, and the overhang is what
+   makes it look done by hand rather than rendered by the sheet. */
+.dh .gem.scar .pit{background:var(--scarbg,#15181d);box-shadow:inset 0 0 0 1px var(--socket-line,#2b313a)}
+.dh .gem.scar .rim{background:var(--socket-line,#2b313a);opacity:.55}
+.dh .gem.scar::before,.dh .gem.scar::after{content:"";position:absolute;z-index:4;
+  left:50%;top:50%;width:calc(var(--sz,30px) * 1.16);
+  height:max(1.6px,calc(var(--sz,30px) * .075));
+  background:var(--xmark,#98a1ad);border-radius:1px;pointer-events:none}
+.dh .gem.scar::before{transform:translate(-50%,-50%) rotate(45deg)}
+.dh .gem.scar::after {transform:translate(-50%,-50%) rotate(-45deg)}
+
+/* ══ GAIN AND SPEND ═════════════════════════════════════════════════
+   The whole motion budget, spent here. Endfield's transition grammar is
+   hard, fast and geometric: an overshoot measured in single frames, a
+   secondary element that is pure outline, and no bounce on the way out.
+
+   Gain and spend are deliberately asymmetric. Gaining is a snap into a
+   socket. Spending is a departure — the light gathers, collapses, and
+   leaves upward, because it went into something. */
+.dh .gem.gain{animation:gemIn .42s cubic-bezier(.16,1.05,.3,1) both}
+.dh .gem.gain .fx{opacity:1;inset:-6%;
+  background:color-mix(in srgb,var(--tone) 68%,#fff);
+  clip-path:polygon(evenodd,
+    50% 0,100% 50%,50% 100%,0 50%, 50% 12%,88% 50%,50% 88%,12% 50%);
+  animation:ringOut .5s cubic-bezier(.12,.7,.2,1) both}
+
+.dh .gem.spend{animation:gemOut .38s cubic-bezier(.4,0,.85,.3) both}
+.dh .gem.spend .fx{opacity:1;inset:auto;left:45%;width:10%;bottom:34%;height:150%;
+  transform-origin:50% 100%;
+  background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--tone) 66%,#fff));
+  animation:streak .46s cubic-bezier(.2,.7,.25,1) both}
+
+/* The socket keeps a memory of what left it. Animated as a background
+   colour on the clipped face, not as an inset shadow: an inset shadow is
+   drawn against the padding box, so on a diamond-clipped element it hugs
+   the square and survives the clip only as four blobs at the vertices. */
+.dh .gem.after .pit{animation:afterglow .7s cubic-bezier(.3,0,.7,1) both}
+.dh .gem.after .lamp{animation:afterbloom .7s cubic-bezier(.3,0,.7,1) both}
+
+/* Fear does not snap, it catches — and it does not collapse, it is doused.
+   Both still animate the gem itself rather than only a child, because the
+   JS clears these classes when the gem's own animations finish. */
+.dh .gem.fear.gain{animation:catch .5s cubic-bezier(.14,.95,.3,1) both}
+.dh .gem.fear.spend{animation:douse .42s cubic-bezier(.35,0,.8,.4) both}
+.dh .gem.fear.spend .fx{left:32%;width:36%;height:52%;bottom:32%;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(150,130,180,.45),transparent 74%);
+  animation:smoke .8s cubic-bezier(.25,.6,.3,1) both}
+
+@keyframes gemIn{
+  0%  {transform:scale(.44) rotate(-14deg);filter:brightness(2.8) saturate(.4)}
+  34% {transform:scale(1.17) rotate(3deg); filter:brightness(1.9)}
+  62% {transform:scale(.975) rotate(0);    filter:brightness(1.1)}
+  100%{transform:scale(1);                 filter:brightness(1)}}
+@keyframes gemOut{
+  0%  {transform:scale(1);   opacity:1;filter:brightness(1)}
+  20% {transform:scale(1.14);opacity:1;filter:brightness(2.9)}
+  100%{transform:scale(.36); opacity:0;filter:brightness(1.4)}}
+@keyframes ringOut{0%{transform:scale(.62);opacity:0}
+                   16%{opacity:.9}
+                   100%{transform:scale(2.4);opacity:0}}
+@keyframes streak{0%{transform:scaleY(.12);opacity:0}
+                  22%{opacity:.9}
+                  100%{transform:scaleY(1) translateY(-64%);opacity:0}}
+@keyframes afterglow{0%{background:color-mix(in srgb,var(--tone) 40%,var(--socket,#1b1f26))}
+                     100%{background:var(--socket,#1b1f26)}}
+/* the same two-stop lamp, decaying to nothing — the function list has to
+   match at both ends or filter interpolation falls back to a hard swap */
+@keyframes afterbloom{
+  0%  {filter:drop-shadow(0 0 calc(var(--sz,30px) * .10) color-mix(in srgb,var(--tone) 46%,transparent))
+              drop-shadow(0 0 calc(var(--sz,30px) * .30) color-mix(in srgb,var(--tone) 26%,transparent))}
+  100%{filter:drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent)}}
+@keyframes catch{0%{transform:scale(.6);filter:brightness(2.4)}
+                 22%{transform:scale(1.14);filter:brightness(1.8)}
+                 58%{transform:scale(.98);filter:brightness(1.08)}
+                 100%{transform:scale(1);filter:brightness(1)}}
+@keyframes douse{0%{transform:scale(1);opacity:1;filter:brightness(1)}
+                 18%{transform:scale(1.1);filter:brightness(2)}
+                 100%{transform:scale(.42);opacity:0;filter:brightness(1)}}
+@keyframes smoke{0%{transform:translateY(0) scale(.45);opacity:0}
+                 26%{opacity:.5}
+                 100%{transform:translateY(-135%) scale(1.9);opacity:0}}
+
+/* ══ ROW ════════════════════════════════════════════════════════════ */
+.dh .gems{display:flex;align-items:center;gap:var(--gap,9px)}
+/* The two grounds. Anything holding gems declares which it is — and what
+   "paper" *is* now depends on the theme, so the socket values are tokens
+   rather than literals. See --socket-p in tokens.css. */
+.dh .gems.paper,.dh .paper .gems{--socket:var(--socket-p); --socket-line:var(--socket-line-p);
+  --scarbg:var(--scarbg-p); --xmark:var(--xmark-p)}
+
+/* A bloom needs somewhere dark to fall. On a *white* sheet gold at full
+   spread has almost no contrast to work with and reads as a smudge around
+   the shape, so there it tightens to a halo and the rim carries the light
+   instead — which was always a concession, not a preference.
+
+   On a dark sheet that concession is unnecessary: the paper is dark enough
+   to hold a bloom, so Hope on the rail gets the same lamp it has in the
+   header band. This is the single largest thing dark mode buys. */
+html.dh-light .dh .gems.paper .gem.on .lamp,html.dh-light .dh .paper .gems .gem.on .lamp{filter:
+  drop-shadow(0 0 calc(var(--sz,30px) * .07) color-mix(in srgb,var(--tone) 58%,transparent))
+  drop-shadow(0 0 calc(var(--sz,30px) * .16) color-mix(in srgb,var(--tone) 26%,transparent))}
+html.dh-light .dh .gems.paper .gem.on .rim,html.dh-light .dh .paper .gems .gem.on .rim{
+  background:color-mix(in srgb,var(--tone) 62%,#fff)}
+
+/* The state change still lands; only the flourish goes. */
+@media (prefers-reduced-motion:reduce){
+  .dh .gem,.dh .gem *{animation:none !important;transition:none !important}
+}

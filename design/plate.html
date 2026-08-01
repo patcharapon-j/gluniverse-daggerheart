@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Plate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/plate.css">
+<style>
+.cols{display:grid;grid-template-columns:repeat(4,minmax(300px,1fr));gap:20px;align-items:start;
+  grid-template-rows:auto auto auto auto auto}
+/* minmax(0,1fr), not the implicit auto column. An auto track sizes to its
+   content's max-content and does not get clamped back to the grid item's
+   own width, so column E rendered its 300px card at 378 and blew the
+   track — which would have made E look roomier than the other four for
+   no reason at all. */
+.col{display:grid;grid-row:span 5;grid-template-rows:subgrid;
+  grid-template-columns:minmax(0,1fr);min-width:0;gap:0}
+.col > header{border-bottom:1px solid #2b3038;padding-bottom:8px;margin-bottom:12px;align-self:end}
+.col > header h3{margin:0;font:700 11px/1 var(--f-mono);letter-spacing:.19em;
+  text-transform:uppercase;color:#e6eaef}
+.col > header em{display:block;margin-top:6px;font-style:normal;font:600 9px/1 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--hope)}
+.col > p{font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 14px}
+.col > p b{color:#c3cbd5;font-weight:600}
+.col > .slot{margin-bottom:14px}
+.col > .slot > s{display:block;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.stage{background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line);padding:11px}
+.btn{border:0;cursor:pointer;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);padding:9px 14px;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btn:hover{background:var(--hope);color:#14161a;box-shadow:none}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 22px;align-items:center}
+.scroller{overflow-x:auto;padding-bottom:14px}
+.scroller > div{min-width:1348px}
+.shapes{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:0 0 8px}
+.shapes > figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:9px}
+.shapes figcaption{font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3)}
+.reds{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;max-width:800px}
+.reds > div{background:var(--paper);padding:10px 11px 12px}
+.reds i{display:block;height:42px;margin-bottom:9px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.reds b{display:block;font:700 8.5px/1 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink);margin-bottom:4px}
+.reds s{display:block;text-decoration:none;font:400 9.5px/1.4 var(--f-ui);color:var(--ink-3)}
+/* fixed 322, not minmax(322,1fr). A chat card is 300px in Foundry and it
+   does not scale — a stage that stretches would be showing a component
+   that does not exist. */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,322px);gap:18px;
+  align-items:start;justify-content:start}
+.grid > .slot > s{display:block;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>plate</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html" class="on">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE DIE</span>The solid, not one face of it</h2>
+<p class="note">It started as a single pentagon — the face a d12 shows you when it lands. It is the whole
+<b>solid</b> now, seen down a face normal: decagon outline, a pentagon inside it at 0.618 of the radius for
+the front face, and five facets between them. That is the shape a player already has in their hand, and it
+is why a d12 and a d20 are told apart across a table long before anyone counts anything — a dodecahedron is
+round and a d20 is angular.</p>
+<p class="note">Both are the <b>true</b> projection and both land on the same number. Down a 5-fold axis a
+dodecahedron's front-face vertices project to radius 1.0514 and its silhouette vertices to 1.7013; down a
+3-fold axis an icosahedron's to 1.1547 and 1.8683. Both ratios are <code>0.618</code> — φ−1, the golden
+section that builds both solids. So the <a href="/design/gm.html" style="color:var(--hope)">d20</a> is a
+hexagon with an upward triangle at 0.618R, and the d12 is a decagon with a pentagon at 0.618R.</p>
+<p class="note">The d12 was drawn as a pentagon for a while, on the argument that a decagon at 38px is a
+coin. <b>It was — but the fault was the shading, not the silhouette.</b> With a flat ring and no lit edges
+<i>any</i> ten-sided outline is a disc. Faceted properly it reads as the solid, and the silhouette differing
+from the front face is exactly what makes it read as a solid rather than as one face seen straight on.</p>
+<p class="note">It keeps the gem construction — flat saturated front face, a brighter rim where the light
+leaves the edge, a bloom on a wrapper so the filter is not clipped away by the shape it describes — and it
+keeps Hope's gold and Fear's violet. What it gives up is the diamond, and that is the right trade:
+<b>the diamond stays on the sheet, where it is the pip you mark.</b> The losing die is still unlit rather
+than greyed. The advantage <b>d6</b> is a square, because that is a d6’s face and there is nothing folded
+back to shade — see <a href="/design/rolls.html" style="color:var(--hope)">rolls</a> for what it does and
+how several of them behave when allies Help.</p>
+<div class="shapes" id="shapes"></div>
+<p class="note">The facets are told apart by <b>value</b> first — a conic with hard stops on the facet
+boundaries — and then by a lit edge at each boundary, which is what rescued the decagon. That edge is not a
+hairline: a 1px stroke at these sizes is a sub-pixel line at partial alpha, the same grey smudge the X ran
+into, so it is a <b>5° wedge</b> — 2px at the outer rim, 1.2px at the inner one, never below the rendering
+floor at any radius. It is painted in exactly the face colour, because a real edge catches the light.</p>
+<p class="note">And the ring <b>only ever darkens</b>: the front face is square to you and catches the most
+light. That is correct lighting and it is also the guarantee — no numeral ever sits on anything lighter than
+the face colour it was measured against, so every contrast figure on this sheet survives the facets. Sector
+values are cos of the angle to a light at the upper left, mapped to 6–26% black: the floor is 6 so the front
+face's outline never vanishes into the facet beside it on the lit side, and the ceiling is 26 because that
+is where the gold d12's dark numeral still measures 4.8:1 on its deepest facet.</p>
+<p class="note">The numeral is <b>bigger</b> (.44 of the die rather than .37) and <b>thickened with a
+stroke</b>, because Google Sans stops at 700 and 700 on a lit gold face is thinner than the face deserves.
+And it is genuinely centred. Every shape here is now a regular polygon concentric with its box, so its area
+centroid is simply 50% — the 6.5% correction the old <i>stretched</i> pentagon needed went away with the
+stretch. What is left is the font's own offset, derived rather than tuned: Google Sans has ascent .965 and
+descent .285, so the baseline sits .840em down the line box and the digits' ink is centred .3675em above it
+— putting the ink's centre at 48.79% of the die. <code>50 − 48.79 = 1.21%</code>, and it is scale-invariant
+because the font size is a fraction of <code>--sz</code>.</p>
+
+<h2><span>// THE PORTRAIT</span>Who rolled it, answered before you read anything</h2>
+<p class="note">Endfield never drops a portrait into a panel as a picture — it drops it in as <b>tone</b>:
+one channel, bled off the edge, sitting under the type rather than beside it. The face is far faster than a
+name at answering <i>whose roll is this</i>, and here it costs no layout at all, because it lives behind
+type that was already there.</p>
+<p class="note">The first pass locked the blend by <i>direction</i> — <code>screen</code> on Hope so it could
+only lighten, <code>multiply</code> on Fear so it could only darken — so that it was impossible to break the
+text's contrast. True, and nearly invisible: the end of the field I put it on is the end that blend has no
+headroom at. A screen over pale gold has almost nowhere left to go.</p>
+<p class="note">So the constraint is stated directly instead. The image is mapped into a <b>two-colour
+ramp whose endpoints both sit inside the band its ink needs</b>, and every pixel is a blend of those two, so
+every pixel is in band by construction — no tuning, no per-image luck. Built as three layers, each bounded:
+the shadow colour, the image greyscaled and clamped by <code>brightness()</code>, the hue multiplied onto it
+so a Fear silhouette stays violet instead of going grey, then screened onto the shadow. Measured on the
+sample art, all three use their whole permitted range end to end.</p>
+<div class="reds" id="ramp"></div>
+<p class="note"><b>Hope is the flat one, and it has to be.</b> Its ink is the dark one, so the portrait's
+shadows can never go below 4.5:1 against near-black — the ramp bottoms out at <code>#a8831f</code> and spans
+2.5×, where Fear's runs from near-black to mid-violet and spans 3.2×. That is a property of a dark-on-bright
+plate, not something to tune away.</p>
+<div class="grid" id="portrait"></div>
+
+<h2><span>// THE RED</span>How Endfield actually uses it</h2>
+<p class="note">Red is never a colour there, it is a <b>rung</b>. Normal / Hard / <i>Brutal</i>: the top tier
+is not more red than the two below it, it is a saturated red field <i>plus material</i> — a bloom, embers, a
+decorated cap — that the lower tiers simply do not have. The I / II / III / IV threat plates do the same
+thing: the live one is lit and bracketed, the dormant ones are flat.</p>
+<p class="note">So the critical is <b>red end to end</b> now. It was gold-on-red on the argument that a
+critical counts as a roll with Hope — true as a rule, but as a picture it made the loudest thing on the card
+look like it was wearing another outcome's jewellery, and the eye read gold first. The Hope is still stated
+where it belongs: the card hands you a <i>+1 Hope</i> to take. The ramp does the work the gold was doing —
+<code>--crit-dk</code> in the shadow, <code>--crit</code> in the field, <code>--crit-br</code> at the edges
+where it is hottest.</p>
+<div class="reds" id="reds"></div>
+<p class="note">The honest cost: red is already <code>--wound</code> on this sheet, the material of a Hit
+Point. This one is hotter, lighter and glows, and it never appears on a mark — but it is a real adjacency,
+so it is written down here rather than discovered in play.</p>
+
+<h2><span>// THE PLATE</span>A, across every state it has</h2>
+<p class="note">Full-bleed field, ghost word running off the frame, the total at <b>48px, alone, and with
+no underline through it</b>. The field's luminance band is set by its own ink now, which is why Hope runs
+light&nbsp;→&nbsp;deep and Fear runs deep&nbsp;→&nbsp;light: one rule, and the near-white stop that used to
+put dark ink on <code>#6d4a08</code> at 2.27:1 is gone.</p>
+<div class="tools">
+  <button class="btn" id="play">play every card</button>
+  <button class="btn" id="reroll">reroll</button>
+</div>
+<div class="grid" id="states"></div>
+
+<h2><span>// THE FOUR THAT LOST</span>Frozen, as the record of the choice</h2>
+<p class="note">B–E are kept exactly as they were shown, minus the portrait, which is A's. They pick up the
+red critical and the new die for free because both live in shared rules. Nothing here is being proposed —
+it is here so the reason A won stays legible.</p>
+<div class="scroller"><div>
+<div class="cols" id="cols"></div>
+</div></div>
+
+<script type="module">
+import { RENDER, A, DIE, play } from '/design/plate.js';
+
+const ART = '/design/assets/art-sample-01.png';
+const TABBY = {who:'Tabby', label:'Agility · parapet run', img:ART,
+  mods:[{k:'Agility', v:2}, {k:'Wildborne tracker', v:2, spent:true}]};
+
+const make = (o, dc, seed = 0, over = {}) => {
+  const [h, f] = o === 'crit' ? [8, 8]
+    : o === 'hope' ? [10, 6 - seed] : [4 + seed, 11];
+  const m = TABBY.mods.reduce((a, x) => a + x.v, 0);
+  return {...TABBY, h, f, adv:null, dc, total:h + f + m, out:o,
+          hit: o === 'crit' || h + f + m >= (dc ?? 0), ...over};
+};
+
+const OPTS = [
+  {k:'B', t:'B · Split', tag:'the number is housed',
+   p:`Endfield's <i>Total Test Criteria · 45</i> block: the number gets a saturated field of its own,
+      hard against the verdict's darker one, and the seam between them is where the eye lands. The only
+      variant where the number is not merely large but <b>housed</b> — which reads bigger at a smaller
+      size than A needs.`},
+  {k:'C', t:'C · Wedge', tag:'breaks its own edge',
+   p:`The field's lower edge is a hard diagonal and the dice sit <i>across</i> it, half on the colour and
+      half on the paper. Endfield breaks its panel boundaries constantly and it is the single move that
+      most stops a flat rectangle looking like a flat rectangle. <b>Costs height</b> — a wedge needs
+      headroom, so this is the tallest.`},
+  {k:'D', t:'D · Black bar', tag:'restraint buys the shock',
+   p:`Endfield's other register, and the one it uses far more: content on a near-black bar with the colour
+      reduced to a lit lower edge, a chip behind the first word, and the numeral. Quietest by a mile — and
+      quiet is exactly what buys the critical its shock, because <b>you will never have seen this card
+      flood anything.</b> Also the only one that does not fight a domain card for attention.`},
+  {k:'E', t:'E · Stack', tag:'fastest to read',
+   p:`The verdict broken across two lines at full display weight, the way a result screen sets a headline,
+      the number outdented to 52 and the dice tucked up beside the eyebrow. <b>No second row at all</b> —
+      the most compact and the fastest to read at a glance. Weakest when the roll's name is long, because
+      there is nowhere for it to go: its top line already carries the eyebrow <i>and</i> the dice, which is
+      also why it is <b>the one variant with no seal</b> — reserving a corner for one ellipsed the name.
+      It still gets the red field, the bracket, the embers and the foil, and its headline already sets
+      CRITICAL at display weight, which is what a seal is for.`},
+];
+
+const ROWS = [
+  ['no difficulty · the common case', k => make(k === 'D' || k === 'B' ? 'fear' : 'hope', null)],
+  ['against a difficulty',            k => make(k === 'D' || k === 'B' ? 'hope' : 'fear', 15)],
+  ['critical',                        () => make('crit', 15)],
+];
+
+/* A's own matrix. Both axes, both directions, plus the two cases the
+   card has to survive rather than show off in: a long name, and an actor
+   with no art at all. */
+const roll = (o, dc, h, f, over = {}) => {
+  const m = TABBY.mods.reduce((a, x) => a + x.v, 0);
+  return {...TABBY, h, f, adv:null, dc, out:o, total:h + f + m,
+          hit: o === 'crit' || h + f + m >= (dc ?? 0), ...over};
+};
+const STATES = [
+  ['no difficulty · with Hope',   () => roll('hope', null, 10, 6)],
+  ['no difficulty · with Fear',   () => roll('fear', null, 4, 11)],
+  ['vs 15 · success with Hope',   () => roll('hope', 15, 10, 6)],
+  ['vs 15 · failure with Fear',   () => roll('fear', 15, 2, 5)],
+  ['vs 15 · success with Fear',   () => roll('fear', 15, 4, 11)],
+  ['vs 15 · failure with Hope',   () => roll('hope', 15, 5, 3)],
+  ['critical · the top rung',     () => roll('crit', 15, 8, 8)],
+  ['critical · no difficulty',    () => roll('crit', null, 11, 11)],
+  ['no portrait · an actor with no art', () => roll('hope', 15, 10, 6, {img:null})],
+  ['a long name, at 300px',       () => roll('fear', 15, 4, 11,
+    {who:'Vaskaryn the Undimmed', label:'Instinct · reading the treeline'})],
+];
+
+let seed = 0;
+const paint = () => {
+  document.getElementById('states').innerHTML = STATES.map(([lb, mk]) =>
+    `<div class="slot"><s>${lb}</s><div class="stage">${A(mk(), 'Roll damage · 2d8+3')}</div></div>`
+  ).join('');
+
+  document.getElementById('cols').innerHTML = OPTS.map(o => `
+    <div class="col">
+      <header><h3>${o.t}</h3><em>${o.tag}</em></header>
+      <p>${o.p}</p>
+      ${ROWS.map(([lb, mk]) => {
+        const r = mk(o.k); r.h = r.out === 'crit' ? r.h : r.h + (r.out === 'hope' ? 0 : seed);
+        return `<div class="slot"><s>${lb}</s>
+          <div class="stage">${RENDER[o.k](mk(o.k), 'Roll damage · 2d8+3')}</div></div>`;
+      }).join('')}
+    </div>`).join('');
+};
+
+const playAll = () => {
+  const cards = [...document.querySelectorAll('#portrait .pl, #states .pl, #cols .pl')];
+  cards.forEach((el, i) => setTimeout(() => play(el), (i % 4) * 900 + Math.floor(i / 4) * 70));
+};
+
+paint();
+document.getElementById('play').addEventListener('click', playAll);
+document.getElementById('reroll').addEventListener('click', () => {
+  seed = (seed + 1) % 4; paint(); playAll();
+});
+
+/* the portrait study: the same face on all three fields, so the two
+   blend modes can be compared against each other rather than described */
+document.getElementById('portrait').innerHTML = [
+  ['hope · screen, so it may only lighten',  roll('hope', null, 10, 6)],
+  ['fear · multiply, so it may only darken', roll('fear', null, 4, 11)],
+  ['critical · multiply, on red',            roll('crit', 15, 8, 8)],
+  ['and with no portrait at all',            roll('hope', null, 10, 6, {img:null})],
+].map(([lb, r]) => `<div class="slot"><s>${lb}</s>
+  <div class="stage">${A(r, 'Roll damage · 2d8+3')}</div></div>`).join('');
+
+document.getElementById('shapes').innerHTML = [
+  [DIE(10, 'h lit', 54), 'Hope · won'],
+  [DIE(6,  'f', 54),     'Fear · unlit'],
+  [DIE(11, 'f lit', 54), 'Fear · won'],
+  [DIE(3,  'h', 54),     'Hope · unlit'],
+  [DIE(8,  'h lit', 54), 'critical · both'],
+  [DIE(8,  'f lit', 54), ''],
+  [DIE(5, 'sq a', 40, 6),     'd6 · advantage'],
+  [DIE(3, 'sq a neg', 40, 6), 'd6 · disadvantage'],
+].map(([m, c]) => `<figure>${m}<figcaption>${c}</figcaption></figure>`).join('');
+
+document.getElementById('ramp').innerHTML = [
+  ['linear-gradient(90deg,#a8831f,#ecd889)', 'hope ramp',
+   '#a8831f 5.12:1 → #ecd889 12.68:1 · span 2.5×'],
+  ['linear-gradient(90deg,#150929,#6f5b94)', 'fear ramp',
+   '#150929 19.04:1 → #6f5b94 5.86:1 · span 3.2×'],
+  ['linear-gradient(90deg,#3a0705,#955247)', 'critical ramp',
+   '#3a0705 17.32:1 → #955247 5.88:1 · span 2.9×'],
+].map(([bg, b, s]) => `<div><i style="background:${bg}"></i><b>${b}</b><s>${s}</s></div>`).join('');
+
+document.getElementById('reds').innerHTML = [
+  ['linear-gradient(103deg,#71120e,#b32720 62%,#d1332a)', 'critical field',
+   'deep → hot, so white ink starts on the safe end'],
+  ['#ffd8cb', 'the bracket', '3.81:1 on the field — the true hot red managed 1.94 and vanished'],
+  ['linear-gradient(150deg,#ff9d85,#ff7a5c 62%,#e8543a)', 'the badge',
+   'near-black on it at 7.06:1 — the brightest object in the system'],
+  ['var(--wound)', 'the wound', 'what red already means here: one Hit Point'],
+  ['linear-gradient(103deg,#e8cb75,#d4a72c 62%,#a38122)', 'hope field',
+   'light → deep, because Hope’s ink is the dark one'],
+  ['linear-gradient(103deg,#331b5e,#6a41ab 62%,#7b4fc0)', 'fear field', ''],
+].map(([bg, b, s]) => `<div><i style="background:${bg}"></i><b>${b}</b><s>${s}</s></div>`).join('');
+
+document.getElementById('lt').addEventListener('change',
+  e => document.documentElement.classList.toggle('light', e.target.checked));
+</script>
+</div>
+</body>
+</html>

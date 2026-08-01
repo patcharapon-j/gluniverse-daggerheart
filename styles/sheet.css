@@ -1,0 +1,627 @@
+/* Ported from design/sheet.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/sheet.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   DH SHEET — the rail layout
+
+   Candidate C, built out. A persistent left rail carries identity and
+   every value you touch during a roll; the pane beside it changes. The
+   rail never scrolls at a default window, so nothing vital leaves the
+   screen, and the body keeps its full height for a loadout or an
+   inventory that wants to breathe.
+
+   One rule held from the thresholds panel: data lives on paper, the frame
+   is only ever the frame. Window chrome and the tab strip are dark in both
+   themes because they are the Foundry app, not the sheet. Everything you
+   read a value off is paper — and what paper *is* now comes from tokens,
+   so the sheet is dark by default and light by adding one class.
+
+   The two exceptions are both deliberate and both about depth, not data:
+   the portrait diorama, which is a picture, and the Evasion/Armor plates,
+   which are silhouettes borrowed from the printed sheet.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the Foundry window ────────────────────────────────────────────
+   position:relative because the peek layer is its child. That is not a
+   detail — it is the fix for a card being clipped by the tab pane's
+   scroller, see peek.js. */
+.dh .win{position:relative;width:var(--w,880px);flex:none;background:var(--paper);
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.8),inset 0 0 0 1px var(--frame-line);
+  display:flex;flex-direction:column;overflow:hidden;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%)}
+.dh .win > .tt{flex:none;display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;
+  background:var(--frame);box-shadow:inset 0 -1px 0 var(--frame-line)}
+.dh .win > .tt b{font:700 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--frame-tx)}
+.dh .win > .tt s{margin-left:auto;text-decoration:none;font:700 11px/1 var(--f-mono);
+  color:var(--frame-tx-3);letter-spacing:.3em}
+.dh .win > .bd{position:relative;flex:1 1 auto;min-height:0;display:flex;height:var(--h,720px)}
+/* container so the tab strip can drop its counter when the pane is narrow */
+.dh .win .pane{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+  container-type:inline-size}
+
+.dh .scr{overflow-y:auto;overflow-x:hidden;min-height:0;flex:1 1 auto;
+  scrollbar-width:thin;scrollbar-color:var(--scroll) transparent;
+  /* reserved, not conditional: the gutter appearing and disappearing was
+     shifting the rail's contents 8px sideways on the first mark */
+  scrollbar-gutter:stable}
+.dh .scr::-webkit-scrollbar{width:8px}
+.dh .scr::-webkit-scrollbar-thumb{background:var(--scroll)}
+
+/* ── the rail ──────────────────────────────────────────────────────
+   288px with 18px of side padding, which leaves 252px of content. Was
+   268/14: the damage band fitted and nothing else had any air, and at 14px
+   the boxes and the coins both ran close enough to the border to read as
+   touching it. The extra 20px of width all goes to padding — the content
+   measures are unchanged, they just stopped being pressed against the
+   edges. --pad is published because a full-bleed strip inside a section
+   (the Vulnerable marquee) has to know what to cancel. */
+.dh .rail{width:288px;flex:none;display:flex;flex-direction:column;min-height:0;
+  border-right:1px solid var(--line);background:var(--paper)}
+/* `.rail > .sec`, which is what this was, matched nothing: the sections are
+   children of the rail's *scroller*, not of the rail. So every section in
+   this rail has been running with no padding and no divider — which is
+   exactly the "too close to the edge, too close to each other" the layout
+   was being accused of. It was not a value that needed tuning; the rule was
+   never applying. Descendant now, and :first-child rather than
+   :first-of-type because the scroller's children are all sections. */
+.dh .rail .sec{--pad:18px;padding:13px var(--pad) 15px;border-top:1px solid var(--line)}
+.dh .rail .sec:first-child{border-top:0}
+.dh .rail .scr{padding-bottom:12px}
+/* two tracks in one section: closer than two sections would be, further
+   apart than two rows of the same track */
+.dh .rail .sec > .mk + .mk{margin-top:14px}
+
+/* ── the diorama ───────────────────────────────────────────────────
+   The portrait is the one thing on a character sheet that is not
+   information, and treating it as a 44px avatar wastes the only chance
+   the interface gets to say who this is. Full-bleed, tall, with the name
+   set on the art under a scrim rather than beside it — the art is the
+   panel, not a field inside one.
+
+   The scrim is two stops, not one: a short hard fade under the text so
+   the name always has ink beneath it, and a long soft one above so the
+   image does not appear to end. */
+.dh .dio{position:relative;flex:none;height:var(--dio,180px);overflow:hidden;background:#20242b}
+/* The framing lives in three variables so it can be set from one inline
+   style and read the same way in both places the picture is shown.
+   Percentages, because the frame is the thing that changes size — a pixel
+   offset that was right at 288px is wrong the moment the window is dragged.
+
+   The Ken Burns is now *only* on hover. It used to sit at 1.02 at rest and
+   go to 1.07, which was fine while nobody could frame anything and wrong
+   the moment they could: what you set would have been shown to you 2%
+   tighter than you set it, on the one surface where you were looking
+   straight at it. Rest is exactly the framing; the drift is a flourish
+   added on top of it. */
+.dh .dio .img{position:absolute;inset:0;background:var(--art) center 22%/cover;
+  transform:translate(var(--fx,0%),var(--fy,0%)) scale(var(--fz,1));
+  transition:transform 6s cubic-bezier(.2,.6,.3,1)}
+.dh .dio:hover .img{transform:translate(var(--fx,0%),var(--fy,0%)) scale(calc(var(--fz,1)*1.05))}
+/* …and not at all while you are framing. A six-second drift under the
+   hand that is trying to place a face is the interface arguing with you. */
+.dh .dio.framing .img,.dh .dio.framing:hover .img{
+  transition:none;transform:translate(var(--fx,0%),var(--fy,0%)) scale(var(--fz,1))}
+.dh .dio .scrim{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(12,14,18,.55) 0%,rgba(12,14,18,0) 26%),
+             linear-gradient(0deg,rgba(10,12,15,.94) 0%,rgba(10,12,15,.74) 26%,
+                                  rgba(10,12,15,0) 62%)}
+/* a hairline of light along the bottom edge, so the diorama reads as lit
+   from the sheet below rather than as a photo pasted on */
+.dh .dio::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(212,167,44,.5) 30%,
+                             rgba(212,167,44,.5) 70%,transparent)}
+.dh .dio .nm{position:absolute;left:18px;right:18px;bottom:15px;z-index:2}
+.dh .dio .nm b{display:block;font:700 19px/1.02 var(--f-display);color:#fff;letter-spacing:-.02em;
+  text-transform:uppercase;text-shadow:0 1px 12px rgba(0,0,0,.6)}
+.dh .dio .nm span{display:block;font:700 8.5px/1.5 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:#b6bec8;margin-top:7px}
+.dh .dio .nm span em{font-style:normal;color:var(--hope)}
+/* the level plate is the sheet's other gold fill and it sits in the frame,
+   never on paper, so it and Hope never share a surface */
+.dh .dio .lv{position:absolute;top:0;right:0;z-index:2;display:flex;align-items:baseline;gap:4px;
+  background:var(--hope);color:#14161a;padding:7px 10px 6px;
+  clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 calc(100% - 7px))}
+.dh .dio .lv i{font:700 8px/1 var(--f-mono);letter-spacing:.16em;font-style:normal;text-transform:uppercase}
+/* `b` when you are reading it and an `input.b` when you may change it. The
+   two are styled as one thing on purpose: the plate *is* the field, and a
+   level that grows a box and a spinner when the sheet becomes editable
+   would put a form control in the middle of a picture. */
+.dh .dio .lv b,.dh .dio .lv .b{font:700 16px/1 var(--f-display);letter-spacing:-.03em;
+  width:2.2ch;border:0;background:transparent;color:inherit;padding:0;
+  font-variant-numeric:tabular-nums;text-align:center;appearance:textfield}
+.dh .dio .lv .b::-webkit-outer-spin-button,.dh .dio .lv .b::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
+.dh .dio .lv .b:focus{outline:1px solid rgba(20,22,26,.55);outline-offset:2px}
+
+/* ── setting and framing the picture ───────────────────────────────
+   The portrait is the largest single thing on the sheet and it was the one
+   thing you could not change. Two controls, both of them out of the way
+   until you go looking: the diorama is a picture, and a picture with a
+   toolbar bolted to it is a widget.
+
+   They sit top-left because the top-right is the level plate's corner and
+   the bottom is the name — the only quiet corner it has. */
+.dh .dio .fr{position:absolute;left:0;top:0;z-index:4;display:flex;gap:1px;
+  opacity:0;transition:opacity .14s}
+.dh .dio:hover .fr,.dh .dio.framing .fr{opacity:1}
+.dh .dio .ctl{border:0;cursor:pointer;padding:6px 9px 5px;
+  background:rgba(10,12,15,.78);color:#c3ccd8;
+  font:700 8px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% 100%,5px 100%,0 calc(100% - 5px))}
+.dh .dio .ctl:hover{background:rgba(10,12,15,.94);color:#fff}
+.dh .dio .ctl.on{background:var(--hope);color:#14161a}
+
+/* The framing bar takes the name's place rather than sitting above it.
+   While you are framing, the name is the least useful thing on the panel —
+   it is the one part of it you are not changing — and stacking the bar on
+   top of it would put controls over the picture you are trying to judge. */
+.dh .dio .fx{position:absolute;left:0;right:0;bottom:0;z-index:4;display:none;
+  align-items:center;gap:8px;padding:8px 10px;background:rgba(8,10,13,.88)}
+.dh .dio.framing .fx{display:flex}
+.dh .dio.framing .nm{display:none}
+.dh .dio .fx .seg{display:flex;gap:1px;flex:none}
+.dh .dio .fx .z{margin-left:auto;font:700 8px/1 var(--f-mono);letter-spacing:.12em;
+  color:#8d95a1;font-variant-numeric:tabular-nums}
+
+/* ── framing the card: the card ────────────────────────────────────
+   This was an empty rectangle at the plate's aspect ratio, drawn over the
+   diorama. It got the shape right and everything else wrong.
+
+   A portrait on the roll plate is not a picture in a box. It is one
+   channel, tinted by the outcome, bled off its right edge by a mask, with
+   the roller's name across the top of it and a 48px numeral sitting in the
+   corner. Where a face lands relative to *those* is the entire question,
+   and an outline cannot answer it — so you framed against a rectangle and
+   found out what you had really done one message later, which is exactly
+   the failure the guide was added to prevent.
+
+   So the preview is the panel itself, drawn by the same builder the card
+   is drawn by, and you drag inside it. It is scaled to the width of the
+   rail — the framing is stored in percentages, so a smaller copy crops
+   identically to the real one and there is nothing to reconcile.
+
+   `.pv` is a live plate, so everything below is only placement: the design
+   for what is inside it lives in plate.css and must not be restated here. */
+.dh .dio .pv{position:absolute;left:50%;top:50%;z-index:3;display:none;width:300px;
+  transform:translate(-50%,-50%) scale(var(--pvz,1));transform-origin:50% 50%;
+  /* filter, not box-shadow: the plate draws its own, including the inset
+     hairline that is part of its edge, and overriding the property to lift
+     it off the diorama would take the hairline with it. */
+  filter:drop-shadow(0 10px 16px rgba(0,0,0,.7))}
+.dh .dio.framing.plate .pv{display:block}
+/* The diorama is backdrop now, not subject — dropped far enough back that
+   the panel reads as the thing on top, and kept visible so the picture you
+   are moving is still legible past the edges of the crop you are judging. */
+.dh .dio.framing.plate .img{filter:brightness(.34) saturate(.5)}
+.dh .dio.framing{cursor:grab}
+.dh .dio.framing:active{cursor:grabbing}
+/* Nothing inside the preview is a target — it is one surface to drag, and a
+   pointer that changed shape over the numeral would say otherwise. */
+.dh .dio .pv *{pointer-events:none}
+
+/* ── defence ───────────────────────────────────────────────────────
+   A nod to the printed sheet, which distinguishes these two by silhouette
+   and not by label: Evasion is an arch, Armor is a shield. That is worth
+   borrowing exactly because it is pre-verbal — you find your Evasion by
+   shape, at a glance, dozens of times a session, without reading a word.
+
+   The arch carries an after-image: the same outline, twice, offset left,
+   occluded on its right by the solid arch drawn over it. The previous
+   version used two gold ticks *outside* the silhouette to mean a blow
+   going wide, and they read as exactly what they were — two stray
+   diagonals next to a number, belonging to nothing. An after-image cannot
+   read as stray: it is the shape's own contour, so it is either motion or
+   it is nothing.
+
+   `crest`, not `pl`. These were `.pl` for "plate", which the chat card also
+   calls its root — and a game system loads both stylesheets into one
+   document, so the arch and the shield were being handed the chat plate's
+   paper fill, its inset hairline and its 9px corner cut. Two short names
+   for two different plates is a study-page luxury; the shapes here are
+   heraldry, and heraldry has its own word. */
+.dh .dfn{display:flex;gap:13px;align-items:flex-start}
+.dh .dfn .crest{position:relative;flex:none;width:58px;height:64px;
+  display:grid;place-items:center}
+.dh .dfn .crest svg{position:absolute;inset:0;width:100%;height:100%}
+.dh .dfn .crest .sil{fill:var(--sunk);stroke:var(--ink-2);stroke-width:1.6}
+.dh .dfn .crest .gh{fill:none;stroke:var(--hope-tx);stroke-width:1.6;stroke-linejoin:round}
+.dh .dfn .crest .gh.n{opacity:.62}
+.dh .dfn .crest .gh.f{opacity:.3}
+/* the arch's mass is low and the shield's is high, so a single centred
+   numeral sits wrong in one of them — each gets its own optical centre */
+.dh .dfn .crest .v{position:relative;z-index:2;font:700 25px/1 var(--f-display);letter-spacing:-.04em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+/* nudged right, away from its own trail — a numeral sitting on the ghost
+   outlines is the one thing that would make the trail read as clutter again */
+.dh .dfn .crest.ev .v{margin:5px 0 0 2px}
+.dh .dfn .crest .v.sh{margin-top:-3px}
+.dh .dfn .side{flex:1 1 auto;min-width:0;padding-top:2px}
+.dh .dfn .k{display:block;font:700 8.5px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);text-align:center}
+.dh .dfn .crest + .k,.dh .dfn .cap{margin-top:7px}
+
+/* ── experience ────────────────────────────────────────────────────
+   In the rail rather than behind a tab, because an Experience is consulted
+   at exactly the moment you are deciding whether to spend a Hope, and Hope
+   is six pixels away. The modifier is the value, so it gets the display
+   face and the gold; the phrase is the label. */
+.dh .xp{display:flex;flex-direction:column;gap:2px}
+.dh .xp .r{display:flex;align-items:center;gap:10px;padding:5px 9px;background:var(--sunk);
+  cursor:pointer;transition:background .14s,transform .14s}
+.dh .xp .r:hover{background:var(--sunk-2);transform:translateX(2px)}
+.dh .xp .r b{font:600 12px/1.25 var(--f-ui);color:var(--ink);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dh .xp .r em{margin-left:auto;flex:none;font:700 13px/1 var(--f-display);font-style:normal;
+  color:var(--hope-tx);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* ── gold ──────────────────────────────────────────────────────────
+   Currency should feel like currency. These are the only circles in the
+   system besides the Proficiency dots, and the only other gold fill
+   besides Hope — which is fine, and is in fact the point: a coin is
+   literally gold and literally round, so it competes with nothing. Hope is
+   a diamond and it is the only diamond.
+
+   Struck, not lit. The gem is a light and carries no gradient; a coin is
+   metal, so it gets a rim, an inner ring and a single specular arc, and it
+   tilts under the cursor. That contrast is doing work — it is how you know
+   at a glance that one of these is a resource and the other is a mood. */
+.dh .gld .rows{display:flex;flex-direction:column;gap:9px}
+.dh .gld .ln{display:flex;align-items:center;gap:11px}
+.dh .gld .ln > .k{flex:none;width:48px;font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3)}
+.dh .gld .ln .set{flex:1 1 auto;display:flex;gap:3px;min-width:0}
+.dh .gld .ln .set i{position:relative;flex:1 1 0;aspect-ratio:1;max-width:19px;cursor:pointer;
+  background:var(--sunk);box-shadow:inset 0 0 0 1.5px var(--line);
+  transition:background .16s,box-shadow .16s,transform .16s}
+.dh .gld .ln .set i:hover{transform:translateY(-2px)}
+/* handful = coin, bag = pouch, chest = box. Three silhouettes, so the row
+   you are looking at is identifiable without its label. */
+.dh .gld .hf .set i{border-radius:50%}
+/* A rounded-corner variant of a circle is not a different shape at 19px —
+   the first pass tried that and the two rows were indistinguishable. This
+   is a sack: a cinched neck, a wide body, a flat base. */
+.dh .gld .bg .set i{clip-path:polygon(30% 0,70% 0,66% 20%,100% 58%,88% 100%,12% 100%,0 58%,34% 20%)}
+/* 22, not 28. A chest is wider than a coin and should be, but aspect-ratio:1
+   means every pixel of width is also a pixel of row height — and the chest
+   row is one pip, so it was buying 9px of rail with nothing in it. */
+.dh .gld .ch .set i{max-width:22px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+/* the chest gets a lid, or it is just a square with nothing to say */
+.dh .gld .ch .set i::before{content:"";position:absolute;left:0;right:0;top:34%;height:1.5px;
+  background:var(--line)}
+.dh .gld .ch .set i.on::before{background:#a37d18;z-index:2}
+
+.dh .gld .set i.on{background:var(--hope);
+  box-shadow:inset 0 0 0 1.5px #a37d18, inset 0 0 0 3.5px rgba(255,255,255,.28)}
+/* the specular: one arc, upper left, clipped to the coin by the parent */
+.dh .gld .set i.on::after{content:"";position:absolute;left:14%;top:12%;width:42%;height:30%;
+  border-radius:50%;background:rgba(255,255,255,.5);pointer-events:none}
+.dh .gld .ch .set i.on::after{border-radius:1px;left:10%;top:14%;width:34%;height:18%}
+
+/* Landing, not blooming: a coin arrives by flipping onto its face. Short —
+   this fires ten at a time when a purse is emptied. */
+.dh .gld .set i.flip{animation:coin .32s cubic-bezier(.2,.85,.3,1) both}
+@keyframes coin{
+  0%  {transform:rotateY(90deg) translateY(-6px);opacity:.4}
+  55% {transform:rotateY(-12deg) translateY(0)}
+  100%{transform:rotateY(0)     translateY(0);opacity:1}}
+/* Both of these have to *end neutral*. The class is not cleared — nothing
+   needs to know when a coin has landed — so with fill-mode:both whatever the
+   last keyframe says is where the coin lives from then on. The first version
+   ended at scale(.86) and every spent coin stayed permanently shrunk. */
+.dh .gld .set i.drop{animation:coinOut .26s cubic-bezier(.3,0,.7,1) both}
+@keyframes coinOut{
+  0%  {transform:scale(1)}
+  42% {transform:scale(.82) translateY(3px)}
+  100%{transform:scale(1)   translateY(0)}}
+@media (prefers-reduced-motion:reduce){.dh .gld .set i{animation:none !important}}
+
+/* ── generic panel ─────────────────────────────────────────────────*/
+.dh .pnl{padding:14px 16px 16px;border-top:1px solid var(--line)}
+.dh .pnl:first-child{border-top:0}
+.dh .pnl > .k{display:flex;align-items:baseline;gap:8px;margin-bottom:11px;
+  font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.dh .pnl > .k s{margin-left:auto;text-decoration:none;font-size:9px;color:var(--hope-tx)}
+/* A panel heading's one action, if it has one. It inherits the heading's
+   own type rather than declaring any, so it reads as part of the label and
+   not as a control parked next to it — the panel is quiet furniture and a
+   button with a box on it would be the loudest thing on the tab. Gold only
+   on hover: this is available, not urgent. */
+.dh .pnl > .k .nw{margin-left:auto;border:0;background:none;padding:0;cursor:pointer;
+  font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--ink-3);
+  transition:color .12s}
+.dh .pnl > .k s + .nw{margin-left:0}
+.dh .pnl > .k .nw:hover{color:var(--hope-tx)}
+
+/* "There is nothing here." Seven panels say it and only the one inside the
+   advancement tab was ever styled, so the other six were browser default
+   serif in the middle of a sheet that has no serif anywhere.
+
+   Quiet ink and the body face. An empty panel is not an error — a new
+   character has six of them — and a sheet that set this in anything louder
+   would be reporting a problem instead of a state. */
+.dh .ach{font:400 11.5px/1.5 var(--f-ui);color:var(--ink-3);margin:0;padding:2px 0 3px}
+/* A way out of the empty state, in the sentence that describes it. Underlined
+   rather than made a button: it is a phrase in a line of prose, and a box
+   around two words in the middle of a sentence is a worse object than a link. */
+.dh .ach .nw{border:0;background:none;padding:0;cursor:pointer;font:inherit;
+  color:var(--hope-tx);text-decoration:underline;text-underline-offset:2px}
+.dh .ach .nw:hover{color:var(--hope)}
+
+/* ── traits ────────────────────────────────────────────────────────*/
+.dh .trs{display:flex;gap:1px;background:var(--line);flex:none}
+.dh .trs .tr{position:relative;flex:1 1 0;min-width:0;background:var(--paper);padding:9px 4px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;
+  transition:background .14s}
+.dh .trs .tr:hover{background:var(--raise)}
+/* The name and the number are what this cell is *for*, and they were being
+   out-argued by their own supporting cast — three verbs and a mark are four
+   more things in the box than there used to be, and the label was still set
+   at the size it had when it was the only text in it. So the name comes up a
+   step in size and two in ink, and the numeral takes the rest: at 27px it is
+   the largest thing on the pane, which is right, because "what do I add" is
+   the question this row exists to answer. */
+.dh .trs .tr .k{font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dh .trs .tr .v{font:700 27px/1 var(--f-display);letter-spacing:-.045em;color:var(--ink);
+  font-variant-numeric:tabular-nums;-webkit-text-stroke:.4px currentColor}
+.dh .trs .tr .mk{width:5px;height:5px;background:var(--line);transform:rotate(45deg)}
+.dh .trs .tr.on .mk{background:var(--ink)}
+
+/* ── the spellcast trait ───────────────────────────────────────────
+   Your subclass names one of the six as the trait you cast with, and until
+   you have it memorised that fact lives two tabs away on a card. It belongs
+   here, on the trait it is about.
+
+   This said SPELLCAST in 7px mono on a line of its own — and because a
+   badge that exists on one cell of six makes that cell taller and the row
+   ragged, the line had to be *reserved on all six*. Nine pixels of nothing
+   under five traits, to caption the sixth. That is a caption charging rent
+   to the cells it does not describe, and the cost showed: the strip grew a
+   fourth register, and the three verbs — the part a new player actually
+   reads — sat one step further from the number they belong to.
+
+   So the cell says it, rather than a line inside the cell. Three marks,
+   one colour, no layout at all:
+
+     the top edge   gold, full width — the only thing here visible from
+                    across the strip, and what makes "which one" a glance
+                    rather than a read
+     the spark      a four-point star seated on that edge. Concave where
+                    the trait mark below is convex: the sheet's diamond,
+                    sharpened. It is the one glyph in this system that
+                    means magic, and it costs nine pixels of empty corner
+     the name       gold ink, the sheet's accent for "the part of this row
+                    that is yours"
+
+   Gold *ink* on the name and gold *fill* on the two marks. The fill rule
+   holds — the level plate and the Hope gems are still the only large
+   objects made of it — and a 2px edge and a 9px star are not a field.
+
+   The word itself moves to the title, which is where a fact you need once
+   and then never again belongs. */
+.dh .trs .tr.cast{box-shadow:inset 0 2px 0 var(--hope)}
+.dh .trs .tr.cast .k{color:var(--hope-tx)}
+.dh .trs .tr.cast::after{content:"";position:absolute;top:1px;right:4px;width:9px;height:9px;
+  background:var(--hope);pointer-events:none;
+  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+/* The three actions the book prints under each trait. They are not rules —
+   nothing on the sheet reads them — they are the answer to "which of these
+   six do I roll for this?", which is the question a new player actually has
+   at the table. So they sit at the bottom of the cell, in the quietest ink
+   the palette has, stacked rather than run together: three short words in a
+   column scan as a list of options, one comma'd line scans as prose and
+   gets skipped. `hyphens:none` because "Comprehend" is the longest of the
+   eighteen and a narrow window would otherwise break it in half. */
+.dh .trs .tr .vb{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:1px}
+.dh .trs .tr .vb i{font:400 8.5px/1 var(--f-ui);font-style:normal;color:var(--ink-4);
+  hyphens:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dh .trs .tr:hover .vb i{color:var(--ink-3)}
+
+/* ── tabs ──────────────────────────────────────────────────────────
+   Six of them now, which is more than a 620px window can hold at the old
+   padding. The strip scrolls rather than wrapping — a wrapped tab strip
+   changes the pane's height, and the pane's height is what everything else
+   is measured against. The counter is the first thing to go. */
+.dh .tabs{display:flex;background:var(--frame-2);padding:0 6px;flex:none;
+  overflow-x:auto;scrollbar-width:none}
+.dh .tabs::-webkit-scrollbar{display:none}
+.dh .tabs button{flex:none;border:0;cursor:pointer;background:transparent;color:var(--frame-tx-2);
+  position:relative;font:700 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  padding:11px 12px 10px;transition:color .14s,background .14s}
+.dh .tabs button:hover{color:var(--frame-tx)}
+.dh .tabs button.on{color:var(--ink);background:var(--paper)}
+.dh .tabs button.on::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  background:var(--hope)}
+.dh .tabs .ct{margin-left:auto;align-self:center;padding:0 10px 0 14px;flex:none;
+  font:700 9px/1 var(--f-mono);letter-spacing:.14em;color:var(--frame-tx-3);white-space:nowrap}
+@container (max-width:560px){.dh .tabs .ct{display:none}}
+
+/* ── advancement ───────────────────────────────────────────────────
+   The printed character guide, slot counts and all. The slot boxes are the
+   Hit Point box at half size and they animate identically, because an
+   advancement is also a thing you cross off — and a system where every
+   permanent choice is the same gesture is one you learn once.
+
+   A tier you have not reached is dimmed rather than hidden. Seeing what
+   level 5 offers is most of why anyone opens this tab. */
+.dh .adv .ach{font:400 11.5px/1.5 var(--f-ui);color:var(--ink-3);margin:0 0 11px;
+  padding-left:9px;border-left:2px solid var(--line)}
+.dh .adv .row{display:flex;align-items:flex-start;gap:11px;padding:4px 0}
+.dh .adv .row .lb{font:400 11.5px/1.36 var(--f-ui);color:var(--ink-2);min-width:0}
+/* exhausted: every slot marked, so the option is spent for this tier */
+.dh .adv .row.done .lb{color:var(--ink-3)}
+/* `container-type` and `width` are reset, not merely left unset, because
+   `.slots` is a name two components share: track.css's slot row — HP, Stress
+   and Armor Slots as one full-width component — declares
+   `.slots{container-type:inline-size;width:100%}` unscoped.
+
+   No study page loads both files, so the clash is invisible here and real in
+   the system, which loads every stylesheet at once. An inline-size container
+   does not size to its contents, so the advancement row stopped shrink-
+   wrapping its three boxes, took the whole row, and squeezed the option's
+   label to nothing. Stating both properties makes this rule independent of
+   whether the other file is present or which order the two arrive in. */
+.dh .adv .slots{flex:none;display:flex;gap:3px;padding-top:1px;
+  container-type:normal;width:auto}
+/* The same box as the rail's, at 15px and with the neutral arm. The clip
+   lives on <u> here too even though nothing in an advancement slot ever
+   breaks its edge — one structure, so the two can never drift. */
+.dh .adv .slots > i{position:relative;width:15px;height:15px;flex:none;cursor:pointer}
+.dh .adv .slots > i > u{position:absolute;inset:0;display:block;background:var(--sunk);
+  box-shadow:inset 0 0 0 1.25px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%);
+  transition:background .16s,box-shadow .16s}
+.dh .adv .slots > i:hover > u{box-shadow:inset 0 0 0 1.25px var(--line-2)}
+.dh .adv .slots > i.on > u{background:var(--sunk-2);box-shadow:inset 0 0 0 1.25px transparent}
+.dh .adv .slots > i > .x{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* No fill here. The neutral mark names --ink itself now, in mark.css, which
+   is where the three tracks name theirs — this used to be a second copy of
+   that decision and a second chance for it to drift. */
+/* The core is depth, and at 15px there is no depth to describe — a 7px
+   inner shape on a 15px box is a speck, not a facet. */
+.dh .adv .slots .cr,.dh .adv .slots > i > b{display:none}
+.dh .adv .slots > i > .x .ar > g{transform-box:fill-box;transform-origin:50% 50%;
+  opacity:0;transform:scale(.3);
+  transition:opacity .1s linear,transform .18s cubic-bezier(.16,1.05,.3,1)}
+.dh .adv .slots > i.on > .x .ar > g{opacity:1;transform:none}
+.dh .adv .slots > i.on > .x .ar.b > g{transition-delay:.06s}
+.dh .adv .slots > i:not(.on) > .x .ar.a > g{transition-delay:.05s}
+/* the printed sheet's heavier frame: this option costs both of the level's
+   two choices, and the frame is the only thing that says so */
+.dh .adv .slots.pair{gap:2px;padding:2px;box-shadow:0 0 0 1.5px var(--ink-3)}
+.dh .adv.shut{opacity:.42}
+.dh .adv.shut .slots > i{pointer-events:none}
+
+/* ── proficiency ───────────────────────────────────────────────────*/
+.dh .prof{display:flex;align-items:center;gap:14px;margin-bottom:13px}
+.dh .prof .set{display:flex;gap:6px}
+.dh .prof .set i{width:15px;height:15px;border-radius:50%;background:var(--sunk);
+  box-shadow:inset 0 0 0 1.5px var(--line)}
+.dh .prof .set i.on{background:var(--ink);box-shadow:none}
+/* Sits against the dots rather than at the right edge. Right-aligned it read
+   as a second, unrelated figure — the numeral *is* the count of filled dots
+   and belongs next to them. */
+.dh .prof .n{font:700 20px/1 var(--f-display);letter-spacing:-.04em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ── borrowed components, re-scaled ────────────────────────────────
+   card.css and tile.css are cqw-driven so one definition serves a 210px
+   card panel and a 440px sheet column. Inside a window they are handed a
+   fixed pixel width by the grid instead; nothing needs overriding, which
+   is the payoff for having built them that way. Only the pool needs a
+   nudge, because its header was sized for a card. */
+.dh .win .pool .hd{margin-bottom:10px}
+.dh .win .pool .hd .k{font-size:8.5px}
+.dh .win .pool .hd .n{font-size:14px}
+
+/* The pane is ~610px at a default window and a spine is cqw-scaled — one per
+   row it renders at nearly twice the size it was measured at in the loadout
+   study, where the panel was 368px. Two up puts it back at ~290px, which is
+   the width it was actually designed for. This is the cq architecture doing
+   its job: the fix is the column count, not an override. */
+.dh .win .stack{display:flex;flex-direction:column;gap:6px}
+.dh .win .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:10px}
+.dh .win .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+
+/* ── gear slots ────────────────────────────────────────────────────
+   Three slots, drawn as three slots. An empty one keeps its frame and its
+   label; a blocked one says why. The two-handed rule is the kind of thing a
+   sheet should enforce silently and explain loudly — the alternative is an
+   argument at the table in session four. */
+.dh .slots3{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));
+  gap:12px;align-items:start}
+.dh .slot .sh{display:flex;align-items:baseline;gap:8px;margin-bottom:7px;
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3)}
+.dh .slot .sh button{margin-left:auto;border:0;background:transparent;cursor:pointer;padding:2px 0;
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);transition:color .14s}
+.dh .slot .sh button:hover{color:var(--hope-tx)}
+.dh .slot .ph{display:flex;flex-direction:column;justify-content:center;gap:6px;
+  padding:20px 15px;min-height:104px;background:var(--sunk);
+  box-shadow:inset 0 0 0 1.5px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+.dh .slot .ph b{font:600 12.5px/1 var(--f-ui);color:var(--ink-2)}
+.dh .slot .ph span{font:400 11px/1.5 var(--f-ui);color:var(--ink-3)}
+/* Violet, because a blocked slot is a rule acting on you rather than a
+   choice you have not made yet — the same distinction the Vulnerable strip
+   draws, and the only other place on this sheet that Fear's hue appears. */
+.dh .slot.blocked .ph{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--fear) 42%,transparent)}
+.dh .slot.blocked .ph b{color:var(--fear-tx)}
+
+/* ── carried ───────────────────────────────────────────────────────
+   The same tile as an equipped item, with the verb on a bar that rises out
+   of the bottom edge on hover — visible only while you are pointing at the
+   thing it applies to. Except when it cannot be equipped: then the bar is
+   always up, because the reason is the whole message. */
+.dh .eqp{position:relative;cursor:pointer}
+.dh .eqp .act{position:absolute;left:0;right:0;bottom:0;z-index:6;text-align:center;
+  padding:6px 0 7px;font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:#14161a;background:var(--hope);
+  opacity:0;transform:translateY(100%);
+  transition:opacity .18s cubic-bezier(.2,.8,.25,1),transform .18s cubic-bezier(.2,.8,.25,1)}
+.dh .eqp:hover .act{opacity:1;transform:none}
+.dh .eqp.no{cursor:not-allowed}
+.dh .eqp.no .tile{filter:saturate(.25);opacity:.55}
+.dh .eqp.no .act{opacity:1;transform:none;background:var(--sunk-2);color:var(--ink-3);
+  box-shadow:inset 0 0 0 1px var(--line-2)}
+
+/* ── the peek ──────────────────────────────────────────────────────
+   The layer is a child of the window and outside every scroller, which is
+   the whole point — see peek.js. It is clipped by the window and by
+   nothing else, and the window is the one boundary a card genuinely must
+   not cross.
+
+   The cards are parked with visibility rather than display, or fit() would
+   measure them at zero height and every peek would render uncompacted. */
+.dh .peeklayer{position:absolute;inset:0;z-index:60;pointer-events:none}
+.dh .peeklayer .pkc{position:absolute;left:0;top:0;width:262px;
+  visibility:hidden;opacity:0;transform:translateX(-8px) scale(.97);
+  filter:drop-shadow(0 18px 34px rgba(0,0,0,.55));
+  transition:opacity .2s cubic-bezier(.2,.8,.25,1),transform .2s cubic-bezier(.2,.8,.25,1),
+             visibility .2s}
+.dh .peeklayer .pkc.on{visibility:visible;opacity:1;transform:translateX(0) scale(1)}
+/* Pinned. A hover peek dies as soon as you move toward it, which is fine for
+   "which card is this" and useless for "read this card" — so a click holds it.
+   The state has to be visible or the card looks like a hover that forgot to
+   close: it sits deeper, and its own gold rule brightens. */
+.dh .peeklayer .pkc.pin{filter:drop-shadow(0 24px 44px rgba(0,0,0,.72))}
+.dh .peeklayer .pkc.pin::after{content:"";position:absolute;inset:-2px;pointer-events:none;
+  box-shadow:0 0 0 1.5px color-mix(in srgb,var(--hope) 60%,transparent)}
+.dh .pk{position:relative}
+.dh .pk:hover .spine{transform:translateX(4px)}
+
+/* ── the vault ─────────────────────────────────────────────────────
+   The same spine as the loadout, because it is the same card. Drawing the
+   vault as a mini said "different kind of thing"; the truth is "same
+   thing, not in hand", and the row you want is the one you can compare
+   line-for-line against your loadout when you swap on a rest.
+
+   Desaturated, not dimmed: opacity would take the name down with the
+   colour, and the name is what you are reading. The domain hue is the only
+   thing that should go quiet. */
+.dh .pk.vl .spine{filter:saturate(.22)}
+.dh .pk.vl:hover .spine{filter:saturate(1)}
+/* A tab down the right edge, like the label on a filed folder — not a badge
+   dropped on the artwork. The first version was a chip in the bottom-right
+   corner and it sat on both the thumbnail and the tier bar, which is two
+   things it had no business covering. `bottom:7px` is exactly the spine's
+   chamfer, so the tab stops where the row's corner is cut and the tier bar
+   stays visible underneath it. */
+.dh .pk.vl .stamp{position:absolute;z-index:6;right:0;top:0;bottom:7px;width:22px;
+  pointer-events:none;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--frame) 86%,transparent);
+  box-shadow:inset 1px 0 0 color-mix(in srgb,var(--hope) 40%,transparent);
+  clip-path:polygon(0 6px,100% 0,100% 100%,0 100%);
+  transition:opacity .2s cubic-bezier(.2,.8,.25,1),transform .2s cubic-bezier(.2,.8,.25,1)}
+.dh .pk.vl .stamp svg{width:12px;height:12px;display:block;color:var(--hope)}
+.dh .pk.vl .stamp em{display:none}
+/* it has said its thing; out of the way once you are looking at the card */
+.dh .pk.vl:hover .stamp{opacity:0;transform:translateX(8px)}
+
+/* ── study page chrome ─────────────────────────────────────────────*/
+.dh .lay{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+.dh .mm{font:500 10.5px/1.7 var(--f-mono);color:#7d8794;margin-top:12px}
+.dh .mm b{color:#e2e7ec;font-weight:700}
+.dh .mm em{font-style:normal;color:#e0803a}

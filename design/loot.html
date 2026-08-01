@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Loot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/mark.css">
+<link rel="stylesheet" href="/design/sheet.css">
+<style>
+.cols{display:grid;grid-template-columns:repeat(var(--cols,3),1fr);
+  grid-template-rows:auto auto auto;gap:22px;align-items:start;margin-bottom:14px}
+.col{display:grid;grid-row:span 3;grid-template-rows:subgrid;gap:0}
+.col > header{display:flex;align-items:baseline;gap:9px;border-bottom:1px solid #2b3038;
+  padding-bottom:9px;margin-bottom:12px;align-self:end}
+.col > header h3{margin:0;font:700 11px/1 var(--f-mono);letter-spacing:.2em;
+  text-transform:uppercase;color:#e6eaef}
+.col > header em{font-style:normal;font:700 10px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--hope);margin-left:auto}
+.col > p{font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 14px}
+.paper{background:var(--paper);padding:14px;display:flex;flex-direction:column;gap:9px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%)}
+.paper .k{font:700 8px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3);display:flex;align-items:baseline;gap:8px;margin:2px 0 1px}
+.paper .k s{text-decoration:none;color:var(--ink-3);opacity:.6;margin-left:auto;letter-spacing:.12em}
+
+/* the plain inventory line — what a torch gets */
+.ln{display:flex;align-items:baseline;gap:9px;background:var(--sunk);padding:8px 11px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%)}
+.ln b{font:500 12px/1.3 var(--f-ui);color:var(--ink)}
+.ln em{font-style:normal;font:500 9.5px/1 var(--f-mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);margin-left:auto}
+
+/* ── the charge widgets ───────────────────────────────────────────
+   All four sit in the same place: their own row under the name, right
+   aligned, so the only thing being compared is the counter itself. */
+.ch{display:flex;align-items:center;gap:6px;margin:0 0 1.6cqw}
+.ch > s{text-decoration:none;font:700 1.8cqw/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3)}
+.ch > .w{margin-left:auto;display:flex;align-items:center;gap:.55cqw}
+
+/* A · a numeral */
+.ch .num{font:700 4.2cqw/1 var(--f-display);color:var(--ink);letter-spacing:-.03em}
+.ch .num i{font-style:normal;font-size:.62em;opacity:.6;margin-right:.08em}
+
+/* B · pips — quantity held, which is the gold purse's grammar. Filled in ink
+   rather than gold: the purse's pips are gold because they are gold, and a
+   gold pip anywhere else on this sheet says Hope. */
+.ch .pip{width:2.6cqw;height:2.6cqw;display:block;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line-2);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.ch .pip.on{background:var(--ink);box-shadow:none}
+
+/* C · crossed boxes — the mark's grammar, borrowed */
+.ch .bx{width:3.1cqw;height:3.1cqw}
+.ch .mk{--gap:.6cqw}
+.ch .mk .row i{width:3.1cqw}
+
+/* D · depth — the plate carries the count as physical layers */
+.stk{position:absolute;z-index:5;left:0;right:0;bottom:0;display:flex;
+  flex-direction:column;gap:1px;padding:0 8% 6%}
+.stk i{display:block;height:1.5cqw;background:var(--ink);opacity:.9;
+  box-shadow:0 0 0 1px rgba(0,0,0,.55);
+  clip-path:polygon(0 0,100% 0,100% 60%,92% 100%,8% 100%,0 60%)}
+.stk i.off{background:transparent;box-shadow:inset 0 0 0 1px var(--ink);opacity:.4}
+
+/* ── rarity ramp ──────────────────────────────────────────────────
+   Value, not hue — the option that lost for tier, which fits here because a
+   party's loot spans all four rarities at once where their weapons are all
+   one tier. */
+.r1 .tile{--dom:#454b54!important;--dom-dk:#262a2f!important}
+.r2 .tile{--dom:#5c636d!important;--dom-dk:#31363c!important}
+.r3 .tile{--dom:#828c9a!important;--dom-dk:#474f5a!important}
+.r4 .tile{--dom:#c8d2de!important;--dom-dk:#6d7885!important}
+:root.light .r1 .tile{--dom:#a5adb7!important;--dom-dk:#767d86!important}
+:root.light .r2 .tile{--dom:#78818e!important;--dom-dk:#464d56!important}
+:root.light .r3 .tile{--dom:#525a64!important;--dom-dk:#2b3138!important}
+:root.light .r4 .tile{--dom:#22272e!important;--dom-dk:#0d1013!important}
+
+.four{display:grid;grid-template-columns:repeat(var(--cols,4),1fr);gap:16px;align-items:start}
+.four > div > b{display:block;font:700 9px/1 var(--f-mono);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.pad{background:var(--paper);padding:14px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%)}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>loot</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html" class="on">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+  <label class="tg"><input type="checkbox" id="ar" checked> art</label>
+  <label class="tg">columns <input type="range" id="cn" min="1" max="4" step="1" value="3"></label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// DECIDED</span>B, the X, and the word — with one change</h2>
+<p class="note"><b>Q1 · B, but as rows rather than tiles.</b> Loot with a rules paragraph earns a card;
+a torch stays a line. The card is not laid out in the panel though — the panel is the same spine the
+domain loadout uses, with the full card on hover and <b>pinned on click</b>. A hover peek dies the moment
+you move toward it, which is fine for “which card is this” and useless for “read this card”, and a rules
+paragraph is something you read. Click again, click anywhere else, or press Escape to drop it.<br>
+<b>Q2 · the crossed box</b>, and it crosses from the left like every other row of boxes on the sheet.
+The neutral mark now names its own colour — see below.<br>
+<b>Q3 · a word.</b> No ramp. The rarity is in the footer and the footer is enough.</p>
+<p class="note"><b>The X had a real bug in it, and it was invisible in exactly the wrong direction.</b>
+The three tracks each name their own <code>--mk</code>; a mark drawn outside all three — an advancement
+slot, a consumable charge — named none, and <code>fill:var(--mk)</code> with nothing to resolve is an
+invalid property that falls back to SVG's initial fill, which is <b>black</b>. On a dark sheet that is an
+X you cannot see: the box reads as unmarked. The advancement slots had been papering over it with their
+own <code>fill:var(--ink)</code>, which is why it never showed up. The neutral mark names
+<code>--ink</code> itself now, in one place, and the slots' copy is gone.</p>
+
+<h2><span>// WHAT THE RULES SAY</span>Three things, and one of them is already done</h2>
+<p class="note"><b>Treasure is finished.</b> There is no treasure object in Daggerheart — loot is items and
+consumables, and money is gold, which is handfuls, bags and chests and is already on the rail.</p>
+<p class="note"><b>Items</b> are loot you keep and use repeatedly until you lose them. <b>Consumables</b>
+are used once, and the rule that matters is this one: <i>you can hold up to five of each consumable at a
+time</i>. That makes a consumable the first thing on this sheet that is both a card and a resource — a
+count that goes down — and this sheet already owns two grammars for that. Both kinds carry the same four
+rarities: Common, Uncommon, Rare, Legendary.</p>
+
+<h2><span>// QUESTION 1</span>What earns a card</h2>
+<p class="note">Your inventory currently reads “Torch, 50 ft of rope, a rival’s letter”. A torch is not a
+card. But a Gem of Alacrity’s text is a <i>rule</i>, and a rule you cannot see is a rule you will not use.
+Same loot in all three columns.</p>
+<div class="cols" id="q1"></div>
+
+<h2><span>// QUESTION 2</span>How five charges go to zero</h2>
+<p class="note">Same consumable, four counters, all in the same place — a row of its own under the name,
+so the only thing being compared is the counter. The question underneath is which grammar a consumable
+belongs to: <b>quantity held</b>, which on this sheet is the gold purse’s filled pips, or <b>quantity
+spent</b>, which is the crossed box. They are opposites, and picking the wrong one means the row reads
+backwards under pressure.</p>
+<div class="four" id="q2" style="--cols:4"></div>
+
+<h2><span>// QUESTION 3</span>How rarity reads</h2>
+<p class="note">Four steps, and this is the same wall we hit with tier: there is no hue left to spend.
+The difference is that a party’s loot genuinely spans all four rarities at once, where their weapons are
+all the same tier — so the value ramp that bought nothing there may buy something here.</p>
+<div class="four" id="q3" style="--cols:3"></div>
+
+<script type="module">
+import { TILE } from '/design/tile.js';
+import { glyph, KINDS } from '/design/domains.js';
+import { XBOX } from '/design/mark.js';
+
+/* Real loot off the chapter 2 tables, text included, because a counter that
+   looks fine against lorem ipsum is a counter that has not been tested. */
+const ITEMS = [
+  {n:'Premium Bedroll',  r:1, t:'During downtime, you automatically **clear a Stress**.'},
+  {n:'Alistair’s Torch', r:2, t:'You can light this magic torch at will. The flame’s light fills a much larger space than it should, enough to illuminate a cave bright as day.'},
+  {n:'Speaking Orbs',    r:3, t:'This pair of orbs allows any creatures holding them to communicate with each other across any distance.'},
+  {n:'Gem of Alacrity',  r:4, t:'You can attach this gem to a weapon, allowing you to use your **Agility** when making an attack with that weapon.'},
+];
+const CONSUMABLES = [
+  {n:'Minor Health Potion', r:1, held:3, t:'**Clear 1d4 Hit Points.**'},
+  {n:'Improved Grindletooth Venom', r:3, held:1,
+   t:'Apply this venom to a weapon that deals physical damage to **add a d8** to your next damage roll with that weapon.'},
+];
+/* Things you merely have. No rules text, no card — this is the line the
+   whole first question is about. */
+const MUNDANE = ['Torch', '50 ft of rope', 'A rival’s letter', 'Chalk'];
+
+const RARE = ['Common', 'Uncommon', 'Rare', 'Legendary'];
+const MAX = 5;
+
+const sig = await glyph('gear');
+const tile = (o, extra = {}) => TILE({
+  d: KINDS.gear, sig, type: extra.type ?? 'ITEM',
+  name: o.n, foot: extra.foot ?? RARE[o.r - 1], text: o.t, ...extra});
+
+/* The widget goes in its own row directly under the name rather than beside
+   it: five of anything does not fit next to a title at tile width, and a
+   counter that has to shrink to fit is a counter you will misread. */
+const inject = (html, row) => {
+  const d = document.createElement('div');
+  d.innerHTML = html;
+  d.querySelector('.tile .hd').insertAdjacentHTML('afterend', row);
+  return d.innerHTML;
+};
+const plate = (html, stack) => {
+  const d = document.createElement('div');
+  d.innerHTML = html;
+  d.querySelector('.tile .plate').insertAdjacentHTML('beforeend', stack);
+  return d.innerHTML;
+};
+
+const line = s => `<div class="ln"><b>${s}</b></div>`;
+
+/* ── Q1 ─────────────────────────────────────────────────────────── */
+const Q1 = [
+  {k:'A', t:'One list', v:'the printed sheet',
+   p:'Everything is a line under Inventory, exactly as the paper sheet does it. Nothing to build, and a Gem of Alacrity’s rule is a name you have to remember the rest of.',
+   body: () => `<div class="k">Inventory<s>${MUNDANE.length + ITEMS.length + CONSUMABLES.length} carried</s></div>
+     ${[...MUNDANE, ...ITEMS.map(i => i.n), ...CONSUMABLES.map(c => `${c.n} ×${c.held}`)].map(line).join('')}`},
+
+  {k:'B', t:'Rules text earns a card', v:'recommended',
+   p:'The line is whether the thing <i>does</i> something. Loot with a rules paragraph becomes a tile you can read; a torch stays a line. Two sections, because they are two kinds of possession.',
+   body: () => `<div class="k">Loot<s>${ITEMS.length + CONSUMABLES.length} carried</s></div>
+     ${[...CONSUMABLES.map(c => tile(c, {type:'CONSUMABLE'})), ...ITEMS.map(i => tile(i))].join('')}
+     <div class="k">Inventory<s>${MUNDANE.length} carried</s></div>
+     ${MUNDANE.map(line).join('')}`},
+
+  {k:'C', t:'Everything is a card', v:'no line at all',
+   p:'Every possession is a tile. Consistent, and it spends a hundred pixels of a scrolling tab on the fact that you are carrying chalk.',
+   body: () => `<div class="k">Inventory<s>${MUNDANE.length + ITEMS.length + CONSUMABLES.length} carried</s></div>
+     ${[...CONSUMABLES.map(c => tile(c, {type:'CONSUMABLE'})), ...ITEMS.map(i => tile(i)),
+        ...MUNDANE.map(n => tile({n, r:1, t:''}, {foot:'Mundane'}))].join('')}`},
+];
+
+q1.innerHTML = Q1.map(o => `
+  <div class="col">
+    <header><h3>${o.k} · ${o.t}</h3><em>${o.v}</em></header>
+    <p>${o.p}</p>
+    <div class="paper">${o.body()}</div>
+  </div>`).join('');
+
+/* ── Q2 ─────────────────────────────────────────────────────────── */
+const held = CONSUMABLES[0].held;
+const wrap = w => `<div class="ch"><s>Charges</s><div class="w">${w}</div></div>`;
+
+const Q2 = [
+  {k:'A', t:'A numeral', v:'smallest',
+   p:'One number, in the tile’s own display face. Says nothing about the ceiling, which means it survives a rule change — and it is the only option that does not tell you at a glance that you are nearly out.',
+   html: () => inject(tile(CONSUMABLES[0], {type:'CONSUMABLE'}),
+     wrap(`<span class="num"><i>×</i>${held}</span>`))},
+
+  {k:'B', t:'Filled pips', v:'recommended',
+   p:'Five sockets, three filled — <b>quantity held</b>, which is exactly what the gold purse already draws and exactly what a consumable is. The empties carry the ceiling for free, so “two more before I am out” is a glance.',
+   html: () => inject(tile(CONSUMABLES[0], {type:'CONSUMABLE'}),
+     wrap(Array.from({length: MAX}, (_, i) =>
+       `<i class="pip${i < held ? ' on' : ''}"></i>`).join('')))},
+
+  {k:'C', t:'Crossed boxes', v:'the mark’s grammar',
+   p:'The sheet’s own mark, at pip size. Familiar — but the crossed box means <b>spent</b> everywhere else on this sheet, so a full row would read as an empty pouch. It is the same information stated backwards.',
+   html: () => inject(tile(CONSUMABLES[0], {type:'CONSUMABLE'}),
+     wrap(`<span class="mk" style="display:flex"><span class="row" style="display:flex;gap:3px">${
+       Array.from({length: MAX}, (_, i) => XBOX(i >= held)).join('')}</span></span>`))},
+
+  {k:'D', t:'Depth on the plate', v:'no counter at all',
+   p:'The art plate carries the count as physical layers — three vials, two empty slots. The most tactile, and the least readable the moment the count is four or five.',
+   html: () => plate(tile(CONSUMABLES[0], {type:'CONSUMABLE'}),
+     `<div class="stk">${Array.from({length: MAX}, (_, i) =>
+       `<i class="${i < MAX - held ? 'off' : ''}"></i>`).join('')}</div>`)},
+];
+
+q2.innerHTML = Q2.map(o => `
+  <div><b>${o.k} · ${o.t} — ${o.v}</b>
+    <p style="font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 12px">${o.p}</p>
+    <div class="pad">${o.html()}</div></div>`).join('');
+
+/* ── Q3 ─────────────────────────────────────────────────────────── */
+const ramp = ITEMS.map(i => `<div class="r${i.r}">${tile(i)}</div>`).join('');
+const words = ITEMS.map(i => tile(i)).join('');
+const pips = ITEMS.map(i => inject(tile(i), wrap(
+  Array.from({length: 4}, (_, n) => `<i class="pip${n < i.r ? ' on' : ''}"></i>`).join('')
+).replace('Charges', 'Rarity'))).join('');
+
+const Q3 = [
+  {k:'A', t:'A word', v:'no accent',
+   p:'Rarity is already printed in the footer and nothing else changes. Costs nothing, and is invisible until you read it.', html: words},
+  {k:'B', t:'A value ramp', v:'recommended',
+   p:'The chip runs near-black at Common to near-white at Legendary. Not a hue, so it cannot be mistaken for a domain — and unlike tier, a shelf of loot actually spans the whole ramp.', html: ramp},
+  {k:'C', t:'Rarity pips', v:'explicit',
+   p:'One to four pips, counted rather than judged. Unambiguous; also a second pip row on a tile that may already have a charge row.', html: pips},
+];
+
+q3.innerHTML = Q3.map(o => `
+  <div><b>${o.k} · ${o.t} — ${o.v}</b>
+    <p style="font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 12px">${o.p}</p>
+    <div class="pad" style="display:flex;flex-direction:column;gap:9px">${o.html}</div></div>`).join('');
+
+lt.onchange = e => document.documentElement.classList.toggle('light', e.target.checked);
+ar.onchange = e => document.body.classList.toggle('noart', !e.target.checked);
+/* One control for all three questions, clamped per section — nothing here has
+   four columns of content except question 2, and a slider that lies about
+   what it does is worse than no slider. */
+cn.oninput = e => {
+  const n = +e.target.value;
+  q1.style.setProperty('--cols', Math.min(3, n));
+  q2.style.setProperty('--cols', n);
+  q3.style.setProperty('--cols', Math.min(3, n));
+};
+</script>
+</div>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Equipment accent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<style>
+/* subgrid, so the four descriptions can be whatever length they need to be
+   and the tiles still start on the same line. A comparison where one column
+   sits 20px lower than the others is comparing two things at once. */
+.cols{display:grid;grid-template-columns:repeat(var(--cols,4),1fr);
+  grid-template-rows:auto auto auto auto;gap:22px 22px;align-items:start}
+@media (max-width:1180px){.cols{--cols:2}}
+.col{display:grid;grid-row:span 4;grid-template-rows:subgrid;gap:0}
+.col > header{display:flex;align-items:baseline;gap:9px;border-bottom:1px solid #2b3038;
+  padding-bottom:9px;margin-bottom:12px;align-self:end}
+.col > header h3{margin:0;font:700 11px/1 var(--f-mono);letter-spacing:.2em;
+  text-transform:uppercase;color:#e6eaef}
+.col > header em{font-style:normal;font:700 10px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--hope);margin-left:auto}
+.col > p{font:400 11.5px/1.55 var(--f-ui);color:#96a0ac;margin:0 0 14px}
+.paper{background:var(--paper);padding:13px;display:flex;flex-direction:column;gap:9px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%)}
+
+/* The builders write --dom inline off the kind, which is right everywhere
+   except here: this page's whole job is to substitute a different accent into
+   the same tile. Inline styles are only beatable with !important, so that is
+   what a study page uses — and it keeps the alternatives in CSS, which is the
+   only way they can also answer the light theme.
+
+   ── C · tier as a value ramp on the same graphite ────────────────
+   Not a hue. It is the one axis left once the nine domains have taken the
+   wheel and gold and violet have taken Hope and Fear. */
+.t1 .tile,.t1 i{--dom:#454b54!important;--dom-dk:#262a2f!important}
+.t2 .tile,.t2 i{--dom:#5c636d!important;--dom-dk:#31363c!important}
+.t3 .tile,.t3 i{--dom:#78818e!important;--dom-dk:#434a53!important}
+.t4 .tile,.t4 i{--dom:#97a1ae!important;--dom-dk:#565e69!important}
+:root.light .t1 .tile,:root.light .t1 i{--dom:#9aa2ac!important;--dom-dk:#6a717a!important}
+:root.light .t2 .tile,:root.light .t2 i{--dom:#78818e!important;--dom-dk:#464d56!important}
+:root.light .t3 .tile,:root.light .t3 i{--dom:#5c636d!important;--dom-dk:#31363c!important}
+:root.light .t4 .tile,:root.light .t4 i{--dom:#3d434b!important;--dom-dk:#1d2126!important}
+
+/* ── D · a hue per slot ───────────────────────────────────────────
+   Desaturated far enough that none of them is mistakable for a domain,
+   which is also the reason none of them is very legible as a hue. */
+.sl-primary   .tile,.sl-primary i  {--dom:#4a5f7d!important;--dom-dk:#26344a!important}
+.sl-secondary .tile,.sl-secondary i{--dom:#6b5a45!important;--dom-dk:#3d3226!important}
+.sl-armor     .tile,.sl-armor i    {--dom:#4d6b5a!important;--dom-dk:#273d31!important}
+
+/* the glyph strip — each mark at every size it is ever asked to survive */
+.glyphs{display:flex;flex-wrap:wrap;gap:34px;background:var(--paper);padding:22px 24px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)}
+.gl{display:flex;flex-direction:column;gap:12px}
+.gl > b{font:700 10px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+.gl .sizes{display:flex;align-items:flex-end;gap:16px}
+.gl .sz{display:flex;flex-direction:column;align-items:center;gap:7px}
+.gl .sz span{font:500 9px/1 var(--f-mono);color:var(--ink-3)}
+/* on the accent, because that is the only ground it is ever drawn on */
+.gl .sz i{display:grid;place-items:center;background:var(--ink-3);padding:22%}
+.gl .sz svg{display:block;width:auto;color:var(--paper)}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin:12px 0 0;align-self:start}
+.legend div{display:flex;align-items:center;gap:7px;font:500 11px/1 var(--f-mono);
+  letter-spacing:.1em;text-transform:uppercase;color:#96a0ac}
+.legend i{width:15px;height:15px;display:block;background:var(--dom)}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>equipment accent</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html" class="on">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+  <label class="tg"><input type="checkbox" id="ar" checked> art</label>
+  <!-- The accent on a tile is a chip and a 3px bar, which is most of the
+       answer on its own — but judge it at the size you would actually read
+       it, and then at two-up where the difference has room to argue. -->
+  <label class="tg">columns <input type="range" id="cn" min="1" max="4" step="1" value="4"></label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE QUESTION</span>Weapons and armour have no domain — should they have a hue?</h2>
+<p class="note">Every card in this system says which domain it belongs to with a saturated colour, and the
+nine domains have taken most of the wheel: purple, red, grey, blue, magenta, teal, green, olive, orange.
+Gold is Hope and violet is Fear. Ancestry and Community are graphite because a heritage has no domain,
+and equipment currently shares that graphite for the same reason.</p>
+<p class="note">That works right up until the gear tab, where four graphite tiles sit in a row and nothing
+distinguishes a bow from a breastplate at a glance. The question is whether that is a problem worth
+spending a colour on — and there is no colour left to spend, so anything below that introduces one is
+really introducing an <i>ambiguity</i>: you would see a coloured chip and have to ask which domain it was
+before realising it was not one.</p>
+
+<h2><span>// THE SLOT GLYPHS</span>Three marks, told apart by count</h2>
+<p class="note">The slot is the one thing about a piece of gear you cannot read off its own stats, so it
+gets the mark rather than the word. All three are drawn the way the ancestry and community glyphs are —
+filled paths, no strokes, chamfers rather than curves — and they are discriminated by <b>count</b>,
+because that is what survives 13px, which is the size the tile's chip actually renders at.
+A <b>primary</b> weapon is one spearhead: a point is the only weapon idea that is not a genre, where a
+crossguard is immediately fantasy. A <b>secondary</b> is two of the same head at 56%, which is also the
+literal reading of the slot. <b>Armor</b> is three bands tapering downward — no points anywhere, which is
+the whole distinction, and tapering because a stack that narrows is a torso while a stack that does not is
+a menu icon. Judge them at 13px; the rest of the strip is only there to show what is being lost.</p>
+
+<div class="glyphs" id="glyphs"></div>
+
+<h2><span>// THE OPTIONS</span>Four accents, seven items</h2>
+<div class="cols" id="cols"></div>
+
+<h2><span>// THE ARGUMENT</span>What the chip already has room for</h2>
+<p class="note">The chip on a domain card holds a numeral above a mark, and the numeral is the card's
+<b>level</b> — the one number you sort and shop by. A weapon has exactly one number like that and it is
+its <b>tier</b>. Option B puts the tier where the level goes, using the component that already exists,
+in the position your eye already checks. It costs no hue, it cannot be confused with a domain, and it
+survives the light theme, a screenshot and a colour-blind reader without any of them being a special
+case — which is the same argument that made the three damage marks differ by substance before they
+differed by colour.</p>
+
+<script type="module">
+import { TILE } from '/design/tile.js';
+import { glyph } from '/design/domains.js';
+import { KINDS } from '/design/domains.js';
+
+/* Real tables, across tiers, because a ramp cannot be judged on one value.
+   Tier 2 and 3 entries are here rather than in sheet.js — the character owns
+   what she owns, and a study should not put an Advanced Dualstaff in her hands
+   to make a point about chips. */
+const KIT = [
+  {slot:'primary',   tier:1, name:'Wyrmwood Longbow',    trait:'Agility',  range:'Very Far', die:8,  bonus:3, burden:'Two-Handed',
+   text:'On a successful attack, **mark a Stress** to make the target *Vulnerable*.'},
+  {slot:'primary',   tier:1, name:'Hunter’s Broadsword', trait:'Agility',  range:'Melee',    die:8,  bonus:0, burden:'One-Handed',
+   text:'**Reliable.** Gain a **+1** bonus to your attack rolls with this weapon.'},
+  {slot:'secondary', tier:1, name:'Round Shield',        trait:'Strength', range:'Melee',    die:4,  bonus:0, burden:'One-Handed',
+   text:'**Protective.** Gain a **+1** bonus to your Armor Score.'},
+  {slot:'armor',     tier:1, name:'Gambeson Armor',      base:4, major:4,  severe:12,
+   text:'Gain a **+1** bonus to your Evasion while you have at least one unmarked Armor Slot.'},
+  {slot:'primary',   tier:2, name:'Improved Greatsword', trait:'Strength', range:'Melee',    die:10, bonus:3, burden:'Two-Handed',
+   text:'**Massive.** −1 to Evasion; roll an additional damage die and drop the lowest result.'},
+  {slot:'armor',     tier:3, name:'Advanced Chainmail',  base:5, major:9,  severe:20,
+   text:'**Heavy.** −1 to Evasion.'},
+  {slot:'primary',   tier:3, name:'Advanced Dualstaff',  trait:'Instinct', range:'Far',      die:6,  bonus:9, burden:'Two-Handed',
+   text:'A staff of paired ends, spun rather than swung.'},
+];
+
+const CAP = {primary:'Primary', secondary:'Secondary', armor:'Armor'};
+
+const tile = (w, sig, o = {}) => TILE({
+  d: o.d ?? KINDS.gear, sig: sig[w.slot],
+  lvl: o.lvl ?? null, pre: o.lvl == null ? null : 'T',
+  type: w.slot === 'armor' ? 'ARMOR' : 'WEAPON',
+  name: w.name,
+  foot: o.foot ?? `${CAP[w.slot]} · T${w.tier}`,
+  stats: w.slot === 'armor'
+    ? [{k:'Base',v:w.base},{k:'Major',v:w.major},{k:'Severe',v:w.severe},{k:'Slots',v:w.base}]
+    : [{k:'Trait',v:w.trait},{k:'Range',v:w.range},
+       {k:'Damage',v:`d${w.die}${w.bonus ? `+${w.bonus}` : ''}`},{k:'Burden',v:w.burden}],
+  text: w.text});
+
+/* Four treatments of the same seven items. Each is a wrapper class plus, at
+   most, a numeral — no option gets a different tile, or the comparison would
+   be between two designs rather than between one design's four accents. */
+const OPTS = [
+  {k:'A', t:'Graphite', v:'status quo',
+   p:'No accent at all. A saturated hue means domain in this system and a sword belongs to none, so equipment reads neutral and the tier lives in the footer with the slot.',
+   row: (w, sig) => `<div>${tile(w, sig)}</div>`},
+
+  {k:'B', t:'Graphite + tier', v:'recommended',
+   p:'The same graphite, with the tier in the cell a domain card puts its level in. The number you sort by, in the position your eye already checks, at the cost of no hue whatsoever.',
+   row: (w, sig) => `<div>${tile(w, sig, {lvl:w.tier, foot:CAP[w.slot]})}</div>`},
+
+  {k:'C', t:'Tier as a ramp', v:'value, not hue',
+   p:'Tier drives the chip’s value on the same graphite — T1 nearly black, T4 nearly white. Reads instantly across a shelf, and is the one axis left that no domain has claimed. Four greys is also four greys.',
+   row: (w, sig) => `<div class="t${w.tier}">${tile(w, sig, {lvl:w.tier, foot:CAP[w.slot]})}</div>`},
+
+  {k:'D', t:'A hue per slot', v:'answers the gear tab',
+   p:'Hand, off-hand and body get three hues. It is the thing you actually scan the carried list for — but it spends colour on a distinction the slot label already makes, and every hue here is a domain hue with the saturation taken out.',
+   row: (w, sig) => `<div class="sl-${w.slot}">${tile(w, sig, {lvl:w.tier, foot:CAP[w.slot]})}</div>`},
+];
+
+/* A glyph per slot, not one for all equipment. The slot is the only thing
+   about a piece of gear you cannot read off its own stats. */
+const [pri, sec, arm] = await Promise.all(
+  ['primary', 'secondary', 'armor'].map(glyph));
+const sig = {primary: pri, secondary: sec, armor: arm};
+
+document.getElementById('glyphs').innerHTML = Object.entries(sig).map(([k, s]) => `
+  <div class="gl"><b>${CAP[k]}</b><div class="sizes">${[13, 20, 32, 56].map(n =>
+    `<div class="sz"><i style="width:${Math.round(n * 1.9)}px;height:${Math.round(n * 1.9)}px">${
+      s.replace('<svg', `<svg style="height:${n}px"`)}</i><span>${n}px</span></div>`).join('')}
+  </div></div>`).join('');
+document.getElementById('cols').innerHTML = OPTS.map(o => `
+  <div class="col">
+    <header><h3>${o.k} · ${o.t}</h3><em>${o.v}</em></header>
+    <p>${o.p}</p>
+    <div class="paper">${KIT.map(w => o.row(w, sig)).join('')}</div>
+    <div class="legend">${
+      o.k === 'C' ? [1,2,3,4].map(n => `<div class="t${n}"><i></i>T${n}</div>`).join('')
+    : o.k === 'D' ? Object.keys(CAP).map(s => `<div class="sl-${s}"><i></i>${CAP[s]}</div>`).join('')
+    : ''}</div>
+  </div>`).join('');
+
+lt.onchange = e => document.documentElement.classList.toggle('light', e.target.checked);
+ar.onchange = e => document.body.classList.toggle('noart', !e.target.checked);
+cn.oninput  = e => cols.style.setProperty('--cols', e.target.value);
+</script>
+</div>
+</body>
+</html>

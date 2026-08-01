@@ -1,0 +1,57 @@
+/* Ported from design/pool.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/pool.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   DH POOLS — Hope and Fear
+
+   One component, two owners. Hope is per-character and lives on the
+   sheet; Fear is the GM's and lives in Foundry's own HUD, public to the
+   table because the rules say so. They are never adjacent, which is why
+   they can share a geometry without reading as one track.
+
+   Gold stays chrome elsewhere in this system — a 1.5-2px line, never a
+   fill. That is what lets it mean Hope here: this is the only place in
+   the whole interface where gold is a *filled shape*. Form carries the
+   semantics, so the hue does not have to be reserved.
+
+   The pips themselves are in gem.css. This file is only what surrounds
+   them: the label/tally header and the HUD strip. Three candidate forms
+   (cells, chips, hero) used to live here; the diamond replaced all three.
+   ══════════════════════════════════════════════════════════════════ */
+.dh .pool{--tone:var(--hope); --tone-tx:var(--hope-tx); --key:var(--ink-3); --num:var(--ink)}
+.dh .pool.fear{--tone:#8256cc; --tone-tx:#b79ae8}
+/* --tone-tx is the *text* weight of the hue and has to flip with the ground:
+   the light-mode gold is #8a6810, which is 2.4:1 on a dark panel. Derived from
+   --tone rather than hard-coded so it holds for Fear too. */
+.dh .pool.dark{--key:#8b939e; --num:#e6eaef;
+  --tone-tx:color-mix(in srgb,var(--tone) 66%,#fff)}
+
+.dh .pool .hd{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.dh .pool .hd .k{font:700 9.5px/1 var(--f-mono);letter-spacing:.18em;text-indent:.18em;
+  text-transform:uppercase;color:var(--key)}
+.dh .pool .hd .n{margin-left:auto;font:700 13px/1 var(--f-display);color:var(--num);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.dh .pool .hd .n s{text-decoration:none;color:var(--key);font-weight:700}
+
+/* ══ GM HUD ═════════════════════════════════════════════════════════
+   Not a sheet, not a window — a strip docked in Foundry's own chrome,
+   visible to everyone all the time. Dark, one saturated hue, chamfered
+   on the same corner as everything else. Steppers only for the GM. */
+.dh .hud{display:inline-flex;align-items:center;gap:14px;padding:9px 14px 9px 16px;
+  background:rgba(14,16,20,.93);backdrop-filter:blur(14px);
+  box-shadow:inset 0 0 0 1px #2c323b,0 10px 24px -8px rgba(0,0,0,.7);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+.dh .hud > .k{font:700 9.5px/1 var(--f-mono);letter-spacing:.24em;text-indent:.24em;
+  text-transform:uppercase;color:#8b939e}
+/* Every measure inside the HUD is px, because Foundry's chrome does not scale. */
+.dh .hud .pool{flex:none}
+
+.dh .hud .stp{display:flex;flex-direction:column;gap:3px;margin-left:2px}
+.dh .hud .stp button{width:20px;height:15px;padding:0;border:0;cursor:pointer;
+  background:#242931;box-shadow:inset 0 0 0 1px #343b45;color:#c3cbd5;
+  font:700 11px/1 var(--f-mono);transition:background .14s,color .14s}
+.dh .hud .stp button:hover{background:var(--fear);color:#fff;box-shadow:none}
+/* the tally is the number even when the pips are not — a GM says "I have
+   four Fear" out loud, and the HUD should not make them count pips */
+.dh .hud .tally{font:700 21px/1 var(--f-display);color:#e6eaef;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;min-width:1.6ch;text-align:right}
+.dh .hud .tally s{text-decoration:none;font-size:11px;color:#7d8794;margin-left:1px}

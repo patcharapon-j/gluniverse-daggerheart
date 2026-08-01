@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Level block</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<style>
+.sizes{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap}
+.sizes>div{flex:none}
+.sizes .cap{max-width:none;text-align:center}
+.nine{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}
+.detail{display:flex;gap:34px;align-items:flex-start;flex-wrap:wrap;
+  background:#101418;border:1px solid #222a33;padding:26px}
+.detail .card{width:300px}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>level block</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html" class="on">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="noart"> remove art</label>
+  <label class="tg"><input type="checkbox" id="rampT" checked> domain ramp</label>
+  <b id="stat" style="margin-left:auto"></b>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// SHIPPED</span>M1, adjusted</h2>
+<p class="note">Gold separator between the numeral and the sigil is gone — the value change from
+<code>--dom-dk</code> to <code>--dom</code> is the seam now, which is quieter and stops the block
+reading as two stacked chips. <code>LV</code> is gone too; <b>LEVEL</b> sits behind the numeral at
+<code>2.6cqw</code> and <b>18% opacity</b>. The gold hairline along the block's bottom edge stays,
+since that is what pairs it with the recall chip on the right.</p>
+
+<div class="detail" id="detail"></div>
+
+<h2><span>// STRESS</span>Does the watermark survive?</h2>
+<p class="note">The watermark is the one element here that is genuinely small — <code>2.6cqw</code> is
+<b>5.2px</b> on a 200px card. Below it renders at four widths so you can call whether it stays as
+texture or turns to mud. Everything else scales with it.</p>
+<div class="sizes" id="sizes"></div>
+
+<h2><span>// SWEEP</span>All nine, no art</h2>
+<p class="note">Fallback state, where the block sits on a pale field instead of dark art — the
+worst case for the white sigil on <code>--dom</code>. Bone is the one to judge.</p>
+<div class="nine" id="nine"></div>
+
+</div>
+
+<script type="module">
+import { DOMAINS, icon } from './domains.js';
+import { CARD, T_SPELL, fit } from './card.js';
+
+const marks = Object.fromEntries(await Promise.all(DOMAINS.map(async d => [d.slug, await icon(d.slug)])));
+const by = s => DOMAINS.find(d => d.slug === s);
+
+detail.innerHTML =
+  CARD({d:by('midnight'), sig:marks.midnight, text:T_SPELL, rc:2}) +
+  CARD({d:by('valor'), sig:marks.valor, text:T_SPELL, lvl:10, rc:1, type:'GRIMOIRE',
+        name:'Ward of the Vigil', cls:'force-fb'});
+
+sizes.innerHTML = [200,240,290,340].map(w => `<div style="width:${w}px">
+  ${CARD({d:by('arcana'), sig:marks.arcana, text:T_SPELL, lvl:7, rc:3})}
+  <div class="cap"><b>${w}px</b>watermark ≈ ${(w*0.026).toFixed(1)}px</div></div>`).join('');
+
+nine.innerHTML = DOMAINS.map(d => `<div>
+  ${CARD({d, sig:marks[d.slug], text:T_SPELL, lvl:5, rc:2, cls:'force-fb'})}
+  <div class="cap"><b>${d.name}</b></div></div>`).join('');
+
+noart.onchange = e => document.body.classList.toggle('noart', e.target.checked);
+rampT.onchange = e => document.body.classList.toggle('ramp', e.target.checked);
+await document.fonts.ready;
+fit();
+stat.textContent = 'level block · shipped';
+</script>
+</body>
+</html>

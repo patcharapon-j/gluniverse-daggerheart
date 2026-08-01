@@ -1,0 +1,13 @@
+<!-- Rogue: a domino mask. Grace and Midnight — a face you present and a face
+     you do not — with the eye slots cut on a slant so the thing has an
+     expression at 24px, where a level pair reads as a socket wrench.
+     Wide and shallow on purpose. Drawn tall it is a shield with two holes in
+     it, and this set already refuses shields twice (see guardian.svg). The
+     198×118 footprint is what makes it a face.
+     A hood was the alternative and it loses: a hood at list size is a
+     silhouette with nothing inside it, which is every other filled blob. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M26 78 224 78 224 138 196 178 125 196 54 178 26 138Z
+                               M54 106 106 106 106 128 54 140Z
+                               M144 106 196 106 196 140 144 128Z"/>
+</svg>

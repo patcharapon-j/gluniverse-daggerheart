@@ -1,0 +1,228 @@
+/* ══════════════════════════════════════════════════════════════════
+   FRAME
+
+   What the study pages got for free from owning a whole document, and a
+   Foundry system has to ask for: box-sizing, a font stack, and an inherited
+   ink colour. `.dh` is the root every sheet and every chat plate carries —
+   the palette is declared on it (see tokens.css) rather than on :root, so
+   `--ink` and `--paper` never leave our subtree.
+
+   The window chrome does not flip with the theme, and never did. A Foundry
+   window is the *application*, not the sheet inside it; the sheet is the
+   thing made of paper and the frame is the thing holding it.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh,
+.dh *,
+.dh *::before,
+.dh *::after {
+  box-sizing: border-box;
+}
+
+.dh {
+  font-family: var(--f-ui), "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  /* Foundry's chat log and sheet bodies both inherit a line-height that
+     fights the design's own metrics. Reset once, here. */
+  line-height: 1.45;
+}
+
+/* ── the window ──────────────────────────────────────────────────────
+   ApplicationV2 draws the frame; we only take the content region and the
+   one chamfer that marks a window as ours. 14px, the largest step of the
+   family mark — the domain card is 15, the chat card 9, a button 5. */
+
+.application.dh-sheet {
+  --dh-chamfer: 14px;
+  background: var(--frame);
+  border: 1px solid var(--frame-line);
+  color: var(--frame-tx);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--dh-chamfer)),
+    calc(100% - var(--dh-chamfer)) 100%,
+    0 100%
+  );
+}
+
+.application.dh-sheet .window-header {
+  background: var(--frame-2);
+  border-bottom: 1px solid var(--frame-line);
+  color: var(--frame-tx);
+}
+
+.application.dh-sheet .window-title {
+  font: 600 12px/1 var(--f-mono), ui-monospace, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--frame-tx-2);
+}
+
+/* The sheet fills the content region exactly. Any padding here is padding
+   the design already accounted for inside its own rail-and-pane layout,
+   applied twice. */
+.application.dh-sheet .window-content {
+  padding: 0;
+  overflow: hidden;
+  background: var(--frame);
+}
+
+/* And it has to be *told* to, which is the difference between a study page
+   and a sheet.
+
+   `design/sheet.css` gives `.win` a fixed `--w` and `.bd` a fixed `--h`,
+   because a study page owns the whole document and picks the stage it draws
+   on. A Foundry window does not: the height is the user's, set by dragging
+   the corner, and the sheet has to take it. Passing `--h:100%` is not enough
+   on its own — a percentage height resolves against the parent, and every
+   parent up to `.window-content` was auto, so the chain never reached a real
+   number. `.win` grew to its own content instead and `overflow:hidden` above
+   simply cut off whatever did not fit.
+
+   That is one bug with five faces, one per tab: nothing scrolled, because
+   nothing was ever shorter than the box it was in. Advancement showed it
+   worst because advancement is the tallest tab.
+
+   `min-height:0` on the flex children is the other half. A flex item's
+   default `min-height:auto` refuses to shrink below its content, so without
+   it `.scr` reports the full content height, the scrollbar never appears,
+   and the overflow moves up to the window instead. */
+.application.dh-sheet .window-content > .win {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.application.dh-sheet .win > .bd,
+.application.dh-sheet .win .pane,
+.application.dh-sheet .win .rail {
+  min-height: 0;
+}
+
+/* ── our objects in the chat log ─────────────────────────────────────
+   A plate and a card are finished objects. They have their own edge, their
+   own corner cut and their own shadow, and Foundry's message box has all
+   three as well — so a plate in the log was a bordered panel inside a
+   bordered panel, which reads as a screenshot of a card rather than a card.
+   The message frame goes; ours is the one that stays.
+
+   `:has(.dh-plate)` and not `:has(> .dh-plate)`. Foundry wraps message
+   content in `.message-content`, so our object is a grandchild — the child
+   combinator matched nothing, which is why the frame was still there. */
+
+.chat-message:has(.dh-plate),
+.chat-message:has(.dh-card) {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  margin: 0 0 9px;
+}
+
+.chat-message:has(.dh-plate) .message-content,
+.chat-message:has(.dh-card) .message-content {
+  padding: 0;
+  margin: 0;
+}
+
+/* Foundry's own message chrome is not deleted, because the three things in
+   it are all things you want: who posted it, when, and how to take it back.
+   It is restated in our own type instead — one 8px mono line at the ink the
+   sheet uses for captions.
+
+   Below the object rather than above it. Above, the caption is the first
+   thing in the message and the eye reads it before the thing it captions;
+   `flexcol` on `.chat-message` means one `order` moves it without touching
+   Foundry's markup. */
+.chat-message:has(.dh-plate) .message-header,
+.chat-message:has(.dh-card) .message-header {
+  order: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  padding: 5px 2px 0;
+  border: 0;
+  background: none;
+  font: 700 8px/1 var(--f-mono), ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.chat-message:has(.dh-plate) .message-sender,
+.chat-message:has(.dh-card) .message-sender {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-message:has(.dh-plate) .message-metadata,
+.chat-message:has(.dh-card) .message-metadata {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font: inherit;
+  color: inherit;
+}
+
+/* The delete control is the one thing here that does something, and it is
+   irreversible — so it stays quiet until you are actually on the message,
+   and it never occupies a slot that could reflow the line when it appears. */
+.chat-message:has(.dh-plate) .message-delete,
+.chat-message:has(.dh-card) .message-delete {
+  opacity: 0;
+  transition: opacity 0.12s;
+  color: var(--ink-3);
+}
+.chat-message:has(.dh-plate):hover .message-delete,
+.chat-message:has(.dh-card):hover .message-delete {
+  opacity: 1;
+}
+.chat-message:has(.dh-plate) .message-delete:hover,
+.chat-message:has(.dh-card) .message-delete:hover {
+  color: var(--wound-tx);
+}
+
+.chat-message .dh-plate {
+  margin: 0;
+}
+
+/* ── a posted card ───────────────────────────────────────────────────
+   The same 5:7 card the peek layer draws, at the log's width rather than the
+   peek's 262px.
+
+   Only a width is set. `.card` is its own inline-size container and every
+   measurement inside it is in `cqw`, so this wrapper's job is to be the one
+   number the card scales from — and nothing else. */
+.chat-message .dh-card {
+  width: 100%;
+  max-width: 300px;
+  margin: 0;
+}
+
+/* ── scrollbars ──────────────────────────────────────────────────────
+   Scoped, because a system that restyles every scrollbar in the client is
+   a system that has restyled the module sidebar too. */
+
+.dh ::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+.dh ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dh ::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 5px;
+}
+.dh ::-webkit-scrollbar-thumb:hover {
+  background: var(--line-2);
+}

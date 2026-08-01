@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<style>
+.row{display:grid;grid-template-columns:repeat(3,minmax(0,304px));gap:26px;align-items:start}
+.sweep{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw,200px),1fr));gap:20px}
+.swatch{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+.tbl{width:100%;border-collapse:collapse;font:400 12px/1.5 var(--f-ui);color:#b6bec8;max-width:760px}
+.tbl th{font:600 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:#7d8794;
+  text-align:left;padding:0 14px 9px 0;border-bottom:1px solid #2a313a}
+.tbl td{padding:7px 14px 7px 0;border-bottom:1px solid #1e242b;vertical-align:middle}
+.tbl .ic{width:24px;height:24px}
+.tbl code{font:500 11px/1 var(--f-mono);color:#dfe4ea}
+@media(max-width:1000px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>card</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/" class="on">sweep</a>
+  <label class="tg"><input type="checkbox" id="noart"> remove art</label>
+  <label class="tg"><input type="checkbox" id="rampT" checked> domain ramp</label>
+  <label class="tg">size <input type="range" id="size" min="150" max="330" value="205"></label>
+  <b id="stat" style="margin-left:auto"></b>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// A · THE CARD</span>Slim corners · auto-width badge · terms marked</h2>
+<p class="note">Corners are now a matched pair of auto-width chips, one row tall — the pick from the
+<a href="/design/corners.html" style="color:var(--hope)">corner study</a> replaces this default. The type
+badge shrinks to its label and the panel's gold <code>border-top</code> is the full-width rule. The domain
+sigil stays in the top-left block, in its own square in the domain light value.</p>
+<div class="row" id="row"></div>
+
+<h2><span>// B · DOMAIN SWEEP</span>All nine</h2>
+<div class="sweep" id="sweep"></div>
+
+<h2><span>// C · TOKENS</span>Official domain colours &amp; marks</h2>
+<table class="tbl" id="tbl"><thead><tr><th>Icon</th><th>Domain</th><th>Light</th><th>Dark</th><th>Classes</th></tr></thead><tbody></tbody></table>
+
+</div>
+
+<script type="module">
+import { DOMAINS, icon } from './domains.js';
+import { CARD, TERMS, T_SPELL, T_TERMS, fit } from './card.js';
+
+const marks = Object.fromEntries(await Promise.all(DOMAINS.map(async d => [d.slug, await icon(d.slug)])));
+const mid = DOMAINS.find(d => d.slug === 'midnight');
+
+row.innerHTML = [
+  {t:'With art', d:'Untouched. Only the domain ramp at the base ties it to the palette — toggle it off in the bar to compare.',
+   c:CARD({d:mid,text:T_SPELL,sig:marks.midnight})},
+  {t:'Without art', d:'Mark exactly vertically centred, wordmark hung directly beneath it.',
+   c:CARD({d:mid,text:T_SPELL,sig:marks.midnight,cls:'force-fb'})},
+  {t:'Long label + long text', d:'Badge grows to fit GRIMOIRE; the panel grows to fit the text and the plate shrinks to meet it.',
+   c:CARD({d:mid,rc:2,type:'GRIMOIRE',name:'Dark Whispers',text:T_TERMS,sig:marks.midnight})},
+].map(x => `<div>${x.c}<div class="cap"><b>${x.t}</b>${x.d}</div></div>`).join('');
+
+sweep.innerHTML = DOMAINS.map(d => `<div>${CARD({d,text:T_SPELL,sig:marks[d.slug]})}
+  <div class="cap"><b><span class="swatch" style="background:${d.light}"></span>${d.name}</b>${d.blurb}</div></div>`).join('');
+
+tbl.querySelector('tbody').innerHTML = DOMAINS.map(d => `<tr>
+  <td><div class="ic" style="color:${d.light}">${marks[d.slug]}</div></td>
+  <td style="color:#e6eaef;font-weight:600">${d.name}</td>
+  <td><code>${d.light}</code></td><td><code>${d.dark}</code></td>
+  <td>${d.classes.join(' · ')}</td></tr>`).join('');
+
+noart.onchange = e => document.body.classList.toggle('noart', e.target.checked);
+rampT.onchange = e => document.body.classList.toggle('ramp', e.target.checked);
+size.oninput = e => document.documentElement.style.setProperty('--cw', e.target.value+'px');
+size.dispatchEvent(new Event('input'));
+await document.fonts.ready;
+fit();
+stat.textContent = `${DOMAINS.length} domains · ${TERMS.length} terms`;
+</script>
+</body>
+</html>

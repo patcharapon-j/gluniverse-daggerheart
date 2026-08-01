@@ -1,0 +1,132 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH ATTACK — the only control on the sheet
+
+   Every other component here is a record you edit. This one is a button
+   you press, and it has to look like it: the two roll buttons are the only
+   filled, raised surfaces on the whole sheet, and the only things that
+   respond to being pressed rather than to being changed.
+
+   The hierarchy inside a row is deliberate and it is not left-to-right
+   importance. The weapon's *name* is the smallest thing in the row,
+   because you already know what you are holding. The numbers are the
+   largest, because those are the two facts you are reaching for.
+   ══════════════════════════════════════════════════════════════════ */
+
+.atk{display:flex;flex-direction:column;gap:6px}
+
+.wr{display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--sunk);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
+  transition:background .16s}
+.wr:hover{background:var(--sunk-2)}
+/* A slot with nothing in it is still a slot. Dashed, hollow, and it keeps
+   its label — the shape of the row is what tells you something is missing. */
+.wr.off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line);
+  clip-path:none}
+.wr.off .id b{color:var(--ink-3)}
+
+.wr > .sl{flex:none;width:58px;font:700 7.5px/1.35 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3)}
+.wr .id{flex:1 1 auto;min-width:0}
+.wr .id b{display:block;font:600 12.5px/1.2 var(--f-ui);color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wr .id span{display:block;margin-top:3px;font:700 7.5px/1 var(--f-mono);letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the weapon's feature is the one part of that line that changes the roll */
+.wr .id span em{font-style:normal;color:var(--hope-tx)}
+
+/* ── the buttons ───────────────────────────────────────────────────
+   Attack is gold-edged and carries the two diamonds; damage is plain. That
+   asymmetry is the sequence: you roll to hit, and only sometimes roll
+   damage. A pair of equally weighted buttons would have implied a choice
+   between them. */
+.wr .go{flex:none;border:0;cursor:pointer;position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:7px 11px 6px;min-width:70px;
+  background:var(--raise);box-shadow:inset 0 0 0 1px var(--line-2);color:var(--ink);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s,transform .1s}
+.wr .go em{font:700 15px/1 var(--f-display);font-style:normal;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums}
+.wr .go s{text-decoration:none;font:700 7px/1 var(--f-mono);letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3)}
+.wr .go:hover{background:var(--hope);color:#14161a;box-shadow:none}
+.wr .go:hover s{color:rgba(20,22,26,.62)}
+/* Pressed, not bounced. 40ms and one pixel — a control that overshoots
+   feels like a toy, and this one is pressed dozens of times a session. */
+.wr .go:active{transform:translateY(1px)}
+
+/* The duality pair, drawn on the button that rolls them. Same silhouette as
+   Hope and Fear in the rail, at 7px, because they are the same two dice. */
+.wr .go .dd{display:flex;gap:3px;margin-bottom:1px}
+.wr .go .dd i{width:7px;height:7px;transform:rotate(45deg)}
+.wr .go .dd .h{background:var(--hope)}
+.wr .go .dd .f{background:var(--fear)}
+.wr .go:hover .dd .h{background:#14161a}
+.wr .go:hover .dd .f{background:rgba(20,22,26,.55)}
+
+/* ── the readout ───────────────────────────────────────────────────
+   Empty until something is rolled, and it does not reserve its own height:
+   a permanent empty strip under the weapons would read as a broken
+   component every time the sheet is opened. */
+.rd{display:none}
+.rd.on{display:flex;align-items:center;gap:12px;padding:11px 12px;margin-top:2px;
+  background:var(--sunk-2);
+  box-shadow:inset 2px 0 0 var(--edge,var(--line-2));
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
+  animation:rdIn .26s cubic-bezier(.2,.85,.3,1) both}
+.rd.hope{--edge:var(--hope)}
+.rd.fear{--edge:var(--fear)}
+.rd.crit{--edge:var(--hope)}
+.rd.dmg {--edge:var(--wound)}
+@keyframes rdIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+.rd .dice{display:flex;gap:9px;flex:none}
+/* The duality dice are diamonds and the damage dice are chamfered squares.
+   One glance at the silhouette says which roll this was, before the tag,
+   before the numbers, before anything is read. */
+.rd .dc{position:relative;width:30px;height:30px;display:grid;place-items:center;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line-2);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.rd .dc b{font:700 12px/1 var(--f-display);color:var(--ink-2);
+  font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.rd .dc.p{clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%);
+  width:26px;height:26px}
+/* Only the die that decided it is lit — the other is still a die, still
+   read, just not the one that spoke. */
+.rd .dc.h.win{background:var(--hope);box-shadow:none}
+.rd .dc.f.win{background:var(--fear);box-shadow:none}
+.rd .dc.h.win b,.rd .dc.f.win b{color:#12141a}
+.rd .dc.f.win b{color:#fff}
+.rd .dc.p{background:var(--sev-2)}
+.rd .dc.p b{color:var(--sev-2-tx)}
+
+.rd .sum{display:flex;align-items:baseline;gap:6px;flex:none}
+.rd .sum s{text-decoration:none;font:700 11px/1 var(--f-mono);color:var(--ink-3)}
+.rd .sum b{font:700 25px/1 var(--f-display);letter-spacing:-.045em;color:var(--ink);
+  font-variant-numeric:tabular-nums;min-width:34px;display:inline-block}
+.rd .tag{font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--edge,var(--ink-2))}
+.rd.dmg .tag{color:var(--ink-2)}
+.rd .src{margin-left:auto;font:700 7.5px/1 var(--f-mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* While it tumbles the dice are unlit and the total is a placeholder, so
+   nothing on screen is ever a number that is not the number. */
+.rd.rolling .dc{background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line-2)}
+.rd.rolling .dc b{color:var(--ink-3)}
+.rd.rolling .tag{opacity:.3}
+.rd.land .dc.win{animation:dcLand .38s cubic-bezier(.16,1.05,.3,1) both}
+.rd.land .sum b{animation:sumLand .34s cubic-bezier(.16,1.05,.3,1) both}
+@keyframes dcLand{0%{transform:scale(.6)}52%{transform:scale(1.13)}100%{transform:scale(1)}}
+@keyframes sumLand{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:none}}
+
+/* A critical is the only result that gets an outright flourish — it is the
+   one outcome the table reacts to out loud. */
+.rd.crit .dc.win{box-shadow:0 0 0 2px color-mix(in srgb,var(--hope) 55%,transparent)}
+.rd.crit .tag{animation:critPulse 1.1s ease-in-out 3}
+@keyframes critPulse{50%{opacity:.35}}
+
+@media (prefers-reduced-motion:reduce){
+  .rd,.rd *{animation:none !important}}

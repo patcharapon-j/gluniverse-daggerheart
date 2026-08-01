@@ -1,0 +1,231 @@
+/* ══════════════════════════════════════════════════════════════════
+   THE SWAP — arming, dragging, and the two arrivals
+
+   Every state here is a state of a row you can already see, so none of it
+   redraws anything: the spine is untouched and everything is an overlay on
+   the .pk wrapper. That is what lets a swap animate at all — the thing in
+   flight during a FLIP is the real row, not a picture of one.
+
+   The vocabulary is the frame's, not the card's: hard 1.5px gold hairlines,
+   a hatch for absence, a wipe with a lit leading edge. Those are chrome
+   gestures — they belong to the app acting on a card, not to the card. The
+   card's own vocabulary (the domain hue, the tier bar, the recall chip)
+   stays exactly as it is, because the card has not changed. Only where it
+   is has changed.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── armed ─────────────────────────────────────────────────────────
+   One card is held; the rest of its list steps back so the eye goes to the
+   other panel, which is where the decision is. Not hidden — you must be
+   able to change your mind about which card you are holding without
+   putting it down first. */
+.pnl.swap.armed .pk.mute{opacity:.32}
+/* Not one number for both themes. A row at 32% over a dark sheet is quiet;
+   the same row at 32% over white paper is gone — and the whole reason these
+   stay visible is that you must be able to change your mind about which
+   card you are holding. */
+:root.light .pnl.swap.armed .pk.mute{opacity:.44}
+.pk.arm .spine{filter:none;transform:translateX(4px)}
+.pk.arm::after{content:"";position:absolute;inset:-1.5px;z-index:7;pointer-events:none;
+  box-shadow:0 0 0 1.5px var(--hope)}
+
+/* ── a target ──────────────────────────────────────────────────────
+   A hairline, not a fill and not a dimming. The five loadout rows are the
+   list you are reading *hardest* while a card is armed — the question is
+   which of them is worst — so anything that degrades their legibility is
+   working against the decision it is supposed to be helping. */
+.pnl.swap.armed .pk[data-ld]::after{content:"";position:absolute;inset:-1.5px;z-index:7;
+  pointer-events:none;transition:box-shadow .15s;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--hope) 55%,transparent)}
+.pnl.swap.armed .pk[data-ld]:hover::after,
+.pk[data-ld].over::after,
+.pnl.vaultp.over{box-shadow:0 0 0 1.5px var(--hope)}
+.pnl.vaultp.over{position:relative;z-index:1}
+
+/* the empty slot — the gear tab's empty slot at row height, because it is
+   the same statement: this is a place a thing goes, and nothing is in it */
+/* The spine's own aspect ratio, not a height. `height:100%` was the obvious
+   version and collapsed the slot to 15px whenever it was the only cell in
+   its grid row — the row it was supposed to be 100% of is sized by its
+   contents, and its only content was this. The spine is 100/19 of its own
+   width; so is the hole where one is missing, at every column width. */
+.mtslot{aspect-ratio:100/19;display:flex;align-items:center;gap:10px;padding:0 13px;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
+  transition:background .16s}
+.pk[data-ld]:hover .mtslot,.pk[data-ld].over .mtslot{background:var(--sunk-2)}
+.mtslot b{font:700 9px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+.mtslot span{font:400 11.5px/1.3 var(--f-ui);color:var(--ink-3);opacity:.72}
+
+/* ── shelve ────────────────────────────────────────────────────────
+   Putting a card back is free, one-sided and frequent, so it does not need
+   arming — it needs a button, and the button appears on the row you are
+   already pointing at. */
+.pk .shv{position:absolute;z-index:8;right:7px;bottom:9px;opacity:0;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--frame-tx-2);background:var(--frame);border:0;padding:5px 8px;cursor:pointer;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:opacity .16s,color .16s,transform .16s cubic-bezier(.2,.8,.25,1);
+  transform:translateX(5px)}
+.pk:hover .shv{opacity:1;transform:none}
+.pk .shv:hover{color:var(--hope)}
+.dragging .pk .shv{opacity:0}
+
+/* ── the cost ──────────────────────────────────────────────────────
+   On the panel, above the list, stating the price of the armed card before
+   you pick the one that leaves. A confirmation after the fact would be the
+   same sentence at the wrong end of the decision. */
+.swcost{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:7px 10px;
+  background:var(--sunk);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.swcost > em{font-style:normal;font:400 11.5px/1.3 var(--f-ui);color:var(--ink-3)}
+.swcost > em b{color:var(--ink-2);font-weight:600}
+/* A mode nothing but a hand turns off should be visible without being read.
+   The strip carries a gold edge while it is on, so a sheet left resting says
+   so from across the room rather than only in its own sentence. */
+.swcost.on{background:color-mix(in srgb,var(--hope) 9%,var(--sunk));
+  box-shadow:inset 2px 0 0 var(--hope)}
+.swcost.on > em b{color:var(--hope-tx)}
+.swcost > .p{margin-left:auto;font:600 11px/1.3 var(--f-ui);color:var(--ink);
+  display:flex;align-items:center;gap:7px}
+.swcost > .p.free{color:var(--hope-tx)}
+.swcost > .p.no{color:var(--fear-tx)}
+/* the price, spelled in the mark it will actually make */
+.swcost .pips{display:flex;gap:3px}
+.swcost .pips i{display:block;width:8px;height:8px;background:var(--strain);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%)}
+.swcost > .p.no .pips i{background:var(--fear-tx)}
+
+/* the rest switch. A sheet that defaulted to "resting" would hand out free
+   swaps in the middle of a fight and never mention it, so it defaults off:
+   the priced state is the normal state of play, and going free is a thing
+   you say out loud. */
+.rst{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+  font:600 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.rst input{position:absolute;opacity:0;pointer-events:none}
+.rst u{position:relative;display:block;width:28px;height:15px;flex:none;background:var(--sunk-2);
+  box-shadow:inset 0 0 0 1px var(--line-2);transition:background .18s,box-shadow .18s;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%)}
+.rst u::after{content:"";position:absolute;left:3px;top:3px;width:9px;height:9px;
+  background:var(--ink-3);transition:transform .2s cubic-bezier(.2,.8,.25,1),background .18s;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%)}
+.rst input:checked + u{background:color-mix(in srgb,var(--hope) 24%,var(--sunk));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 55%,transparent)}
+.rst input:checked + u::after{transform:translateX(13px);background:var(--hope)}
+.rst input:checked ~ span{color:var(--hope-tx)}
+
+/* ── the drag ──────────────────────────────────────────────────────*/
+
+/* What is left behind. A hatch rather than an empty box, because an empty
+   box is a state this list already has — an unfilled loadout slot — and the
+   hole a dragged card leaves is not that. */
+.pk.lift > .spine,.pk.lift > .stamp,.pk.lift > .shv{opacity:0}
+.pk.lift::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
+  background:repeating-linear-gradient(45deg,transparent 0 5px,
+      color-mix(in srgb,var(--line-2) 60%,transparent) 5px 6px),var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line)}
+
+/* The card in the hand. Positioned by script, scaled by CSS — one transform
+   each, because two owners of one transform is a fight nobody wins. */
+.dragproxy{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;will-change:transform}
+.dragproxy .in{position:relative;height:100%;transform-origin:50% 50%;
+  animation:dp-lift .16s cubic-bezier(.2,.9,.25,1) both;
+  filter:saturate(1) drop-shadow(0 16px 26px rgba(0,0,0,.55))}
+.dragproxy .in::after{content:"";position:absolute;inset:-1.5px;pointer-events:none;
+  box-shadow:0 0 0 1.5px var(--hope)}
+.dragproxy .spine{transform:none!important;box-shadow:none}
+@keyframes dp-lift{from{transform:scale(1)}to{transform:scale(1.035)}}
+
+/* a peek that follows a card being dragged is a card you cannot see past */
+.dragging .peeklayer{display:none}
+.dragging{cursor:grabbing}
+.pk[data-drag]{cursor:grab}
+
+/* ── the two arrivals ──────────────────────────────────────────────
+   Same construction, opposite readings. A recall is the sheet *committing*
+   to something — bright leading edge, left to right, brackets snapping onto
+   the corners as it lands, colour coming back up as the card comes to hand.
+   A shelve is the same wipe run backwards and dark, with no brackets and no
+   accent: filing something away should not be celebrated, and a card in the
+   vault is still a card you own.
+
+   Both are clipped to the row's own chamfer, so the light stops where the
+   corner is cut. That single detail is most of why it reads as a machined
+   panel rather than a glow. */
+.pk .swp{position:absolute;inset:0;z-index:9;pointer-events:none;overflow:hidden;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.pk .swp::before,.pk .swp::after{content:"";position:absolute;opacity:0}
+.pk .swp::before{top:0;bottom:0;left:0;width:38%}
+
+.pk.recalled .swp::before{
+  background:linear-gradient(90deg,transparent 0,
+    color-mix(in srgb,var(--hope) 14%,transparent) 58%,
+    color-mix(in srgb,var(--hope) 40%,transparent) 94%,var(--hope) 100%);
+  animation:swp-in .58s cubic-bezier(.33,.28,.25,1) .06s both}
+/* Nearly linear on purpose. The first version used the same front-loaded
+   curve as the travel, which put the band across the row inside 120ms and
+   off the far edge for the rest of the animation — a flash you register
+   without ever seeing what flashed. A wipe wants a steady traverse; only
+   the card's *travel* wants the decisive curve. */
+@keyframes swp-in{
+  0%{opacity:0;transform:translateX(-120%)}
+  14%{opacity:1}
+  84%{opacity:1}
+  100%{opacity:0;transform:translateX(275%)}}
+
+/* Brackets on the two square corners. The third is chamfered and a bracket
+   drawn into a cut corner reads as a rendering fault, so it does not get one
+   — the chamfer is already the loudest thing about that corner. */
+.pk .swp::after{inset:0;
+  background:
+    linear-gradient(var(--hope),var(--hope)) 0 0/17px 1.5px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 0 0/1.5px 17px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 0 100%/17px 1.5px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 0 100%/1.5px 17px no-repeat}
+.pk.recalled .swp::after{animation:swp-lock .44s cubic-bezier(.2,.9,.25,1) .2s both}
+@keyframes swp-lock{
+  0%{opacity:0;transform:translateX(-7px)}
+  26%{opacity:1;transform:none}
+  64%{opacity:1}
+  100%{opacity:0}}
+
+/* colour returning as the card comes to hand, and draining as it goes back */
+.pk.recalled .spine{animation:sat-up .34s ease-out both}
+@keyframes sat-up{from{filter:saturate(.22)}to{filter:saturate(1)}}
+
+.pk.shelved .swp::before{width:46%;
+  background:linear-gradient(270deg,transparent 0,rgba(0,0,0,.34) 60%,rgba(0,0,0,.55) 100%);
+  animation:swp-out .5s cubic-bezier(.33,.28,.25,1) both}
+@keyframes swp-out{
+  0%{opacity:0;transform:translateX(240%)}
+  16%{opacity:1}
+  84%{opacity:1}
+  100%{opacity:0;transform:translateX(-115%)}}
+.pk.shelved .spine{animation:sat-dn .42s ease-in both}
+@keyframes sat-dn{from{filter:saturate(1)}to{filter:saturate(.22)}}
+/* the folder tab arriving, rather than simply being there on the next frame */
+.pk.shelved .stamp{animation:stamp-in .34s cubic-bezier(.2,.9,.25,1) .16s both}
+@keyframes stamp-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+
+/* ── refused ───────────────────────────────────────────────────────
+   A recall you cannot pay for is refused by the thing that cannot pay: the
+   Stress row flinches and its unmarked boxes flash violet, which is the
+   colour this sheet already uses for "a rule is acting on you". No dialog —
+   the answer is a fact about a track that is right there on screen, and a
+   modal would hide it to tell you about it. */
+.mk.deny .row{animation:deny-shake .3s cubic-bezier(.36,.07,.19,.97) both}
+.mk.deny .row i:not(.on) > u{animation:deny-flash .42s ease-out both}
+@keyframes deny-shake{
+  0%,100%{transform:none} 18%{transform:translateX(-4px)}
+  46%{transform:translateX(3px)} 74%{transform:translateX(-2px)}}
+@keyframes deny-flash{
+  0%{box-shadow:inset 0 0 0 1.5px var(--line)}
+  22%{box-shadow:inset 0 0 0 1.5px var(--fear-tx)}
+  100%{box-shadow:inset 0 0 0 1.5px var(--line)}}
+
+@media (prefers-reduced-motion: reduce){
+  .mk.deny .row,.mk.deny .row i:not(.on) > u{animation:none}
+  .pk .swp{display:none}
+  .pk.recalled .spine,.pk.shelved .spine,.pk.shelved .stamp,.dragproxy .in{animation:none}
+}

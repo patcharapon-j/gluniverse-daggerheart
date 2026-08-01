@@ -1,0 +1,80 @@
+/* Ported from design/menu.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/menu.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   DH MENU — the right-click menu
+
+   Everything on this sheet you can do, you can do by pressing something
+   you can see. That is the right default and it is also why the sheet ran
+   out of room: a card row already carries a shelve button, a charge strip
+   and a click that posts it to chat, and it still had no way to say
+   "open this", "copy this", "this one was a mistake". Those three are
+   real, rare, and would each cost a permanent control on every row to
+   serve an action taken once a session.
+
+   So they go where rare-and-real belongs. The row stays a card.
+
+   ── it is the frame's furniture, not the sheet's ───────────────────
+   Drawn in --frame rather than --paper, and dark in both themes, for the
+   same reason the window chrome and the tab strip are: a menu is the
+   application talking, not the character. It also has to float above a
+   sheet that is itself --paper, and paper on paper needs a border to be
+   a separate object at all. This one needs nothing — it is a different
+   material.
+
+   ── it lives on <body> ─────────────────────────────────────────────
+   Like the drag proxy, and for the same reason: a menu opened on a row
+   near the bottom of a scroller is clipped by the scroller. `position:
+   fixed` escapes overflow but not a transformed ancestor, and the sheet
+   has several. Body is the only place that is nobody's inside.
+
+   Which means it wears `.dh` itself rather than sitting under one — see
+   the port script, which rewrites `.dh.ctxm` to `.dh.dh.ctxm` for exactly this.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh.ctxm{position:fixed;z-index:9000;min-width:172px;max-width:264px;
+  background:var(--frame);color:var(--frame-tx);
+  font-family:var(--f-ui),system-ui,sans-serif;
+  box-shadow:0 20px 44px -12px rgba(0,0,0,.86),inset 0 0 0 1px var(--frame-line);
+  /* the family's cut corner, at the menu's scale */
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
+  padding:0 0 9px;animation:ctxm-in .11s cubic-bezier(.2,.85,.3,1) both}
+@keyframes ctxm-in{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* Whose menu this is. A right-click is aimed at one row out of twelve
+   and the menu opens over the others, so it names its subject or the
+   next click is a guess. Truncated rather than wrapped: a two-line
+   heading would push the first action away from the pointer that opened
+   it, and the pointer is already where the first action should be. */
+.dh.ctxm .hd{display:block;padding:9px 12px 8px;border-bottom:1px solid var(--frame-line);
+  font:700 8px/1 var(--f-mono),ui-monospace,monospace;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--frame-tx-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.dh.ctxm .mi{display:flex;align-items:center;gap:9px;width:100%;border:0;background:none;
+  padding:7px 13px 6px;cursor:pointer;text-align:left;
+  font:700 9.5px/1.25 var(--f-mono),ui-monospace,monospace;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--frame-tx)}
+/* The same diamond the claim buttons on a chat plate carry, so a row you
+   press looks the same wherever this system puts one. */
+.dh.ctxm .mi i{flex:none;width:7px;height:7px;background:var(--frame-tx-3);
+  transform:rotate(45deg);transition:background .1s}
+.dh.ctxm .mi:hover{background:var(--frame-2);color:#fff}
+.dh.ctxm .mi:hover i{background:var(--hope)}
+/* Disabled rather than absent. A menu whose length changes with the state
+   of the thing it is about makes you re-read it every time; one whose rows
+   stay put and go quiet can be learned. The tooltip says why. */
+.dh.ctxm .mi:disabled{cursor:default;color:var(--frame-tx-3);opacity:.55}
+.dh.ctxm .mi:disabled:hover{background:none;color:var(--frame-tx-3)}
+.dh.ctxm .mi:disabled:hover i{background:var(--frame-tx-3)}
+
+/* Destructive, and marked as destructive before it is pressed rather than
+   after. Red on the mark and the label both — the wound's own ink, which
+   is the only red this system uses for "this costs you something". */
+.dh.ctxm .mi.warn{color:var(--wound-tx)}
+.dh.ctxm .mi.warn i{background:var(--wound-tx)}
+.dh.ctxm .mi.warn:hover{background:#2a1216;color:#ffb8bd}
+.dh.ctxm .mi.warn:hover i{background:#ffb8bd}
+
+.dh.ctxm .sep{display:block;height:1px;margin:5px 0;background:var(--frame-line)}
+
+@media (prefers-reduced-motion:reduce){.dh.ctxm{animation:none}}

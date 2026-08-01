@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Character sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/pool.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/mark.css">
+<link rel="stylesheet" href="/design/roll.css">
+<link rel="stylesheet" href="/design/swap.css">
+<link rel="stylesheet" href="/design/sheet.css">
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>character sheet</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html" class="on">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+  <label class="tg">width <input type="range" id="w" min="620" max="1180" step="20" value="920"></label>
+  <label class="tg">height <input type="range" id="ht" min="520" max="1000" step="20" value="860"></label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE MARKS</span>Three tracks, three materials</h2>
+<p class="note"><b>The mark is a filled shape now, not a stroke.</b> A stroked X is one width from end
+to end, which is what a printer does and not what a pen, a blade or a hammer does — every real mark is
+thin where it enters, widest where the force was, and thin again where it leaves. So each arm is a
+spindle running corner to corner — a mark that stops short of the edge is a decoration sitting inside a
+box; a mark that crosses it is the box crossed out — and the <i>profile</i> is where each track's
+character lives before any colour is applied. Hit Points get a seventeen-point tear whose centreline
+<b>bows off the diagonal</b>, because flesh does not part in a line. Stress gets a hairline scratch, dead
+straight and doubled, because something dragged under load rarely leaves one line. Armor gets a chisel:
+four points, straight edges, twice the weight of the other two.</p>
+<p class="note"><b>Two things had to be wrong first.</b> Width: at a quarter of their own length these
+were not strokes at all — two spindles that fat cross in a lozenge as big as either of them, and the eye
+resolves the whole thing as one four-pointed star. A pen stroke is under a tenth of its length. And the
+core, which is the inner shading: scaled about the box centre, a 0.46 copy of a spindle is the middle
+third of it — <i>precisely</i> the patch where the two arms already overlap — so it lands on the crossing
+and puts a hole in the star. It is narrowed <b>across</b> the arm instead, and offset rather than centred:
+a centred inner shape reads as a symmetric facet, which is what kept both the wound and the plate looking
+like folded paper. Shifted, it becomes an edge — a wet highlight along the lip of the tear, a fuller down
+the middle of the blade.</p>
+<p class="note"><b>Damage and Stress share a box size.</b> Seven and six divided independently is two
+different box sizes stacked in one column, and two sizes read as two kinds of thing. They are the same
+box, so both rows are sized for the larger count and the shorter one just ends early. The damage band's
+cost cells changed for the same reason: they were little grey squares, which said the right thing in the
+wrong vocabulary now that the boxes underneath are red marks. They are the same mark at tick size and in
+the same red, so the band says "this zone costs two of those" by drawing two of those.</p>
+<p class="note"><b>The box no longer moves.</b> It used to compress and overshoot on every mark, which is
+the gem's grammar borrowed wholesale — and wrong here, because Hope arrives one at a time and Hit Points
+arrive three at a time. Seven boxes bouncing is a row of jelly. Everything the box has to say it now says
+without a transform: the recess flushes with the mark's colour and the ring flashes, and it is still. All
+the motion belongs to the mark.</p>
+<p class="note"><b>And the three arrivals are three different events.</b> A <b>wound</b> lands whole and
+fast — you do not watch a cut being drawn — and then bleeds, the glow welling up over 340ms, four times
+longer than the strike itself; two arms, staggered, because it tore twice. <b>Stress</b> is <i>scraped</i>
+in along its own axis under load, and the recess flickers twice rather than flushing once, because strain
+is something giving, catching and giving again. <b>Armor</b> is a blow: both arms land together, one
+impact, with a gold flash and a hard square ring — and the box's corners are <i>broken away</i> where the
+mark exits, filled with the sheet's own colour so the corner is gone rather than shaded, with the fracture
+edge stroked back in and two hairline cracks drawing inward after. That break is the reason the clip-path
+moved off the box and onto a child: a clipped element clips its descendants, so a box that clipped itself
+could never be broken by anything.</p>
+<p class="note"><b>Stress is cold on purpose.</b> Gold is Hope, violet is Fear, red is a wound — a cyan
+scratch is the quadrant of the wheel that is left, and it is the reason a full Stress row turning violet
+is unmissable. A track whose resting colour was already Fear's could not turn into it. This is also the
+one place the system's "hue means domain" rule is suspended, and it is worth suspending: these are the
+three things you mark under pressure, and the cost of confusing them is a wrong decision at the table.
+They are told apart by <i>substance</i> first and hue second, so the distinction survives a screenshot and
+the light theme both.</p>
+
+<h2><span>// THE ATTACK BAR</span>The only control on the sheet</h2>
+<p class="note">Everything else here is a record you edit. This is a button you press, and it does the two
+sums players actually get wrong. Attack is <code>2d12 + trait</code> plus whatever the weapon's feature
+adds — the Broadsword's <i>Reliable</i> is a number the sheet applies, not a sentence someone has to
+remember. Damage is <b>Proficiency copies of the die</b>, not one die; this is the single most-missed rule
+in the game and the sheet already knows your Proficiency, so there is no excuse for making anyone multiply
+it themselves. The two dice on the button are the system's own diamonds because they <i>are</i> the system's
+own diamonds; damage dice are chamfered squares instead, so the silhouette tells you which roll you are
+looking at before you have read a number. Rolling with Hope grants you one, and a critical grants a Hope
+and clears a Stress — watch the rail.</p>
+<p class="note"><b>The dice tumble on a timer, not on <code>requestAnimationFrame</code></b>, and that is
+the same bug as <code>settle.js</code>'s wearing a different hat: rAF does not fire in a window that is
+not painting, so the first version left <code>rolling</code> latched the moment the sheet was occluded —
+grey dice and a placeholder total on a roll that had already been decided. A timer is <i>throttled</i> in
+the background rather than stopped, so the tumble degrades to a couple of steps and the result still
+lands, which is the right way round. The result was never at stake either way: it is decided before any
+of this runs and written into the markup first, and the tumble only ever overwrites the display.</p>
+
+<h2><span>// EQUIPMENT</span>Two hands, and a rule about them</h2>
+<p class="note">Three slots, drawn as three slots, with everything else you own listed underneath — click a
+carried item to equip it. The <b>Secondary</b> slot is where the rules get interesting: you cannot hold one
+if your primary needs both hands, so with the Wyrmwood Longbow equipped the slot is <i>blocked</i> and says
+why, in violet, because a blocked slot is a rule acting on you rather than a choice you have not made yet.
+Equip the Broadsword and the Round Shield becomes available; equip the shield and the Armor <b>Score</b> in
+the rail goes to 5 while the Armor <b>Slots</b> stay at 4 — those were one field and are now two, because
+they are two numbers and a shield only raises one of them.</p>
+
+<h2><span>// THE SHEET</span>Rail and pane</h2>
+<p class="note"><b>The class tab is gone.</b> A character has exactly one ancestry, one community, one
+class and between one and three subclass cards — its contents could never change, and a tab whose contents
+never change is a heading that costs a click. Those four are rows in the main tab now, last, where they
+cost almost nothing: the tab is ordered by how often each thing is reached for, the same rule the rail
+follows. The attack bar is touched every round, the loadout every few, and the class and heritage cards
+are read carefully once and then almost never — which is why they are <b>spines with the card on hover</b>,
+the same row the domain loadout uses, rather than four fixed cards at full size. Four permanent paragraphs
+at the bottom of the tab you open most is a lot of sheet to spend on text nobody re-reads, and it means
+every card here is now reached the same way.</p>
+<p class="note"><b>Dark is the base theme, and it is a substrate change rather than a repaint.</b>
+Every hex that assumed a white sheet became a role — <code>--paper</code>, <code>--sunk</code>,
+<code>--tint</code>, <code>--sev-1..4</code>, and now the three mark palettes. The damage band is the
+interesting one: severity is expressed as <i>weight</i>, so the ramp runs the other way in the dark and
+Severe becomes the near-white zone. Toggle <b>light</b> above; a wound has to be darker than white paper
+to read as a hole in it and brighter than a dark sheet, so those values differ by more than lightness.</p>
+<p class="note"><b>Everything is live.</b> Mark Hit Points, Stress, Armor Slots and advancement slots by
+clicking a box; click a coin to count it; roll attacks and damage; equip and unequip gear. Hover any
+row — loadout, vault, class, subclass, ancestry, community — for the full card — those render into a layer that is a child of the sheet <i>body</i> rather
+than of the tab pane, because a pane that scrolls clips its own children and no z-index fixes that.</p>
+<p class="note"><b>Both animation drivers were leaking their state classes, and one of the leaks was not
+cosmetic.</b> <code>Animation.finished</code> looks like the right completion signal and does not settle in
+this engine — a CSS animation reaches <code>playState:"finished"</code> with the promise still pending,
+verified against a two-line control animation on a bare div. So the cleanup never ran: every marked box
+kept <code>hit</code>, and every spent Hope gem kept <code>on spend</code>, which means <i>a spent Hope
+stayed lit</i>. It failed in the direction that looks like nothing is wrong, which is how it survived a
+round of verification that only checked the animations fired. <code>animationend</code> was the obvious
+replacement and is only half an answer — it needs frames, and an occluded window advances the timeline
+without producing any. So <code>settle.js</code> races the event count against a deadline it reads back off
+<code>getComputedTiming().endTime</code>: not a magic number, and still correct when a duration changes in
+the CSS.</p>
+
+<div class="lay" id="lay"></div>
+
+<div class="btns">
+  <button data-d="1">take 1 hp</button>
+  <button data-d="2">major hit · 2 hp</button>
+  <button data-d="3">severe hit · 3 hp</button>
+  <button data-s="1">mark stress</button>
+  <button data-s="9">fill stress · vulnerable</button>
+  <button data-a="1">mark armor</button>
+  <button data-a="9">break all armor</button>
+  <button data-g="1">+1 handful</button>
+  <button data-r="1">short rest · clear 2</button>
+  <button data-r="all">reset</button>
+</div>
+
+<div class="mm" id="mm"></div>
+
+</div>
+
+<script type="module">
+import { PC, ADV, KIT, LOOT, CHARGES, SWAP, LOADCAP, recallCost, canPay,
+         deck, SHEET, atkSlots, eq, twoHanded, armorSlots } from './sheet.js';
+import { fit } from './card.js';
+import { setMarks } from './mark.js';
+import { setPool } from './gem.js';
+import { peeks } from './peek.js';
+import { swaps, capture, flip } from './swap.js';
+import { settled } from './settle.js';
+import { duality, damage, showRoll } from './roll.js';
+
+const D = await deck();
+const st = {tab:'loadout', w:920, h:860};
+
+const lay = document.getElementById('lay');
+const win = () => lay.querySelector('.win');
+
+function paint(){
+  lay.style.setProperty('--w', st.w + 'px');
+  lay.style.setProperty('--h', st.h + 'px');
+  lay.innerHTML = SHEET(st.tab, D);
+  fit(lay);                                   // includes the parked peek cards
+  peeks(win());
+  measure();
+}
+
+/* ── the swap ─────────────────────────────────────────────────────
+   swap.js owns the pointer and the motion; this owns the data and the
+   repaint. Both commit paths land here, which is the point: a card moved
+   by drag and a card moved by two clicks run the same three lines and so
+   cannot end up looking or behaving differently.
+
+   `capture()` has to run before the repaint and `flip()` after it, because
+   a repaint destroys every row — there is nothing left to transition, so
+   the rects are measured on both sides and the difference is played
+   backwards. `from` is the dragged card's live rect: on a drop it is
+   already under the pointer, and flipping it from its old slot would send
+   it back up the screen before bringing it down again. */
+function move(fn, moved, from, mode){
+  const before = capture(win());
+  fn();
+  paint();
+  flip(win(), before, {moved, from, mode});
+}
+
+const swapApi = {
+  armed: () => SWAP.armed,
+  can: vi => canPay(D.vault[vi]),
+  arm: vi => { SWAP.armed = SWAP.armed === vi ? null : vi; paint(); },
+
+  recall(vi, li, from){
+    const card = D.vault[vi];
+    if(!card || !canPay(card)) return refuse(card);
+    // a real row is a trade; an empty slot is a straight move in
+    const trade = li >= 0 && li < D.loadout.length;
+    if(!trade && D.loadout.length >= LOADCAP) return;
+    const cost = recallCost(card);
+    move(() => {
+      D.vault.splice(vi, 1);
+      if(trade){ D.vault.push(D.loadout[li]); D.loadout[li] = card; }
+      else D.loadout.push(card);
+      SWAP.armed = null;
+    }, card.k, from, 'recall');
+    /* Marked after the repaint on purpose. Set before it, the boxes would
+       render already crossed and the strike would never play — and the
+       strike is the whole point of paying for something. */
+    if(cost) setStress(PC.stressMarked + cost);
+  },
+
+  shelve(li, from){
+    const card = D.loadout[li];
+    if(!card) return;
+    move(() => { D.loadout.splice(li, 1); D.vault.push(card); SWAP.armed = null; },
+         card.k, from, 'shelve');
+  },
+
+  refuse,
+};
+
+/* The refusal is the Stress track saying no, not a dialog. It is the thing
+   that cannot pay, so it is the thing that should flinch. */
+function refuse(){
+  const mk = $('#vit .stress');
+  if(!mk) return;
+  mk.classList.remove('deny'); void mk.offsetWidth; mk.classList.add('deny');
+  settled(mk).then(() => mk.classList.remove('deny'));
+}
+
+/* ── state → view ─────────────────────────────────────────────────
+   Every setter animates rather than repainting: a repaint would restart
+   the boxes from scratch and lose the very transition the component
+   exists for. Only a tab change, an equip or a resize goes through paint(). */
+const $ = s => lay.querySelector(s);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const setHP     = v => { PC.hpMarked = clamp(v, 0, PC.hp);         setMarks($('#vit .dmg'), PC.hpMarked); };
+const setStress = v => { PC.stressMarked = clamp(v, 0, PC.stress); setMarks($('#vit .stress'), PC.stressMarked); };
+const setArmor  = v => { PC.armorMarked = clamp(v, 0, armorSlots()); setMarks($('.dfn .mk'), PC.armorMarked); };
+
+function setHope(v){
+  PC.hope = clamp(v, 0, 6 - PC.scars);
+  setPool($('#hp .gems'), PC.hope);
+  $('#hp .hd .n').innerHTML = `${PC.hope}<s> / ${6 - PC.scars}</s>`;
+}
+
+/* Gold carries its own tiny driver rather than reusing setMarks: coins land
+   by flipping, boxes land by compressing, and the two rows are not the same
+   gesture even though they are the same diff. */
+function setGold(key, v, max){
+  PC.gold[key] = clamp(v, 0, max);
+  const row = $(`.gld .${key} .set`);
+  [...row.children].forEach((c, i) => {
+    const want = i < PC.gold[key];
+    if(want === c.classList.contains('on')) return;
+    c.classList.remove('flip', 'drop');
+    void c.offsetWidth;
+    c.classList.toggle('on', want);
+    c.classList.add(want ? 'flip' : 'drop');
+  });
+  const tally = $('.gld').closest('.pnl').querySelector('.k s');
+  if(tally) tally.textContent = `${PC.gold.bg}b · ${PC.gold.hf}h`;
+}
+
+/* ── rolling ──────────────────────────────────────────────────────
+   The outcome is spent where the rules say it is spent: a roll with Hope
+   grants a Hope, a critical grants a Hope and clears a Stress. Doing it
+   here rather than leaving it to the player is the entire argument for a
+   digital sheet — the rail moves, so the result is not a number you then
+   have to go and act on. Fear goes to the GM and so has nowhere to land on
+   this sheet, which is why only two of the three do anything. */
+function rollAtk(key){
+  const s = atkSlots().find(x => x.key === key);
+  if(!s || !s.w) return;
+  const r = duality(s.mod);
+  showRoll($('.atk .rd'), r, `${s.w.name} · attack`);
+  if(r.out === 'hope') setHope(PC.hope + 1);
+  if(r.out === 'crit'){ setHope(PC.hope + 1); setStress(PC.stressMarked - 1); }
+}
+function rollDmg(key){
+  const w = eq(key);
+  if(w) showRoll($('.atk .rd'), damage(PC.prof, w.die, w.bonus), `${w.name} · damage`);
+}
+
+/* Equipping repaints, because it changes the thresholds, the Armor Score,
+   the slot count and both attack rows at once — there is no partial update
+   here that is not just paint() written out longhand. */
+function equip(key){
+  const w = KIT[key];
+  if(!w || (w.slot === 'secondary' && twoHanded())) return;
+  PC.equip[w.slot] = key;
+  // A two-handed primary takes the other hand with it, silently, because
+  // that is what picking it up does.
+  if(w.slot === 'primary' && w.burden === 'Two-Handed') PC.equip.secondary = null;
+  if(w.slot === 'armor') PC.armorMarked = Math.min(PC.armorMarked, w.base);
+  paint();
+}
+
+/* ── interaction ──────────────────────────────────────────────────
+   Clicking a box sets the count to that box, which is how a paper sheet
+   works: you do not toggle the fourth box, you mark up to it. Clicking a
+   box that is already the last marked one clears it, so the same gesture
+   undoes. Advancement slots use the identical rule. */
+const upto = (row, el) => [...row.children].indexOf(el) + 1;
+const target = (row, el) => {
+  const n = upto(row, el), cur = row.querySelectorAll('.on').length;
+  return n === cur ? n - 1 : n;
+};
+
+lay.addEventListener('click', e => {
+  const tab = e.target.closest('[data-tab]');
+  // an armed card does not survive leaving the tab that armed it — the
+  // loadout it was going to replace is no longer on screen
+  if(tab){ st.tab = tab.dataset.tab; SWAP.armed = null; paint(); return; }
+
+  const atk = e.target.closest('[data-atk]');
+  if(atk){ rollAtk(atk.dataset.atk); return; }
+  const dmg = e.target.closest('[data-dmg]');
+  if(dmg){ rollDmg(dmg.dataset.dmg); return; }
+
+  const un = e.target.closest('[data-un]');
+  if(un){ PC.equip[un.dataset.un] = null; paint(); return; }
+  const on = e.target.closest('[data-eq]');
+  if(on){ equip(on.dataset.eq); return; }
+
+  const box = e.target.closest('.mk .row > i');
+  if(box){
+    const mk = box.closest('.mk'), to = target(box.parentElement, box);
+    if(mk.classList.contains('dmg')) setHP(to);
+    else if(mk.classList.contains('stress')) setStress(to);
+    else setArmor(to);
+    measure(); return;
+  }
+
+  /* Advancement is repainted rather than animated on purpose: the boxes are
+     driven by ADV, marking one can exhaust its option and dim the label, and
+     a transition on a row that is also changing colour is two stories. */
+  const slot = e.target.closest('.adv .slots > i');
+  if(slot && !slot.closest('.adv.shut')){
+    const set = slot.parentElement, [ti, oi] = set.dataset.adv.split('.').map(Number);
+    ADV[ti].opts[oi].on = target(set, slot);
+    paint(); return;
+  }
+
+  /* A consumable's charges. Same "click the box you want to be the last full
+     one, click it again to give it back" gesture as every other row of boxes
+     on this sheet — target() is the shared rule, so a charge behaves like a
+     Hit Point without either of them knowing about the other. Repainted
+     rather than animated: the panel heading carries a total that has to move
+     with it, and a header that lags its own row is worse than no animation. */
+  const chg = e.target.closest('[data-ch]');
+  if(chg){
+    const o = LOOT.find(x => x.k === chg.dataset.ch);
+    if(o){ o.held = CHARGES - target(chg.parentElement, chg); paint(); }
+    return;
+  }
+
+  const coin = e.target.closest('.gld .set > i');
+  if(coin){
+    const row = coin.parentElement;
+    setGold(coin.closest('.ln').classList[1], target(row, coin), row.children.length);
+    return;
+  }
+
+  const gem = e.target.closest('#hp .gem');
+  if(gem) setHope(target(gem.parentElement, gem));
+});
+
+/* Resting is a mode, so it repaints — every price on the panel changes. */
+lay.addEventListener('change', e => {
+  const r = e.target.closest('[data-rest]');
+  if(r){ SWAP.resting = r.checked; paint(); }
+});
+
+document.querySelector('.btns').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const d = b.dataset;
+  if(d.d) setHP(PC.hpMarked + +d.d);
+  if(d.s) setStress(+d.s === 9 ? PC.stress : PC.stressMarked + +d.s);
+  if(d.a) setArmor(+d.a === 9 ? armorSlots() : PC.armorMarked + +d.a);
+  if(d.g) setGold('hf', PC.gold.hf + +d.g, 10);
+  if(d.r === '1'){ setStress(PC.stressMarked - 2); setHP(PC.hpMarked - 1); }
+  if(d.r === 'all'){
+    setHP(2); setStress(3); setArmor(1); setHope(4);
+    setGold('hf', 7, 10); setGold('bg', 3, 10); setGold('ch', 0, 1);
+  }
+  measure();
+});
+
+w.oninput  = e => { st.w = +e.target.value; paint(); };
+ht.oninput = e => { st.h = +e.target.value; paint(); };
+lt.onchange = e => document.documentElement.classList.toggle('light', e.target.checked);
+
+function measure(){
+  const rail = lay.querySelector('.rail');
+  const rs   = rail.querySelector('.scr');
+  const pane = lay.querySelector('.pane .scr');
+  const railOver = Math.max(0, rs.scrollHeight - rs.clientHeight);
+  const clip = [...lay.querySelectorAll('.dmg .lb, .trs .tr .k, .xp .r b, .wr .id b')]
+    .filter(el => el.scrollWidth > el.clientWidth + 1).length;
+  const tabs = lay.querySelector('.tabs');
+  document.getElementById('mm').innerHTML =
+    `<b>rail</b> 288px · content ${rs.scrollHeight}px in ${rs.clientHeight}px`
+    + (railOver ? ` · <em>scrolls ${railOver}px</em>` : ' · fits')
+    + `<br><b>pane</b> ${Math.round(pane.getBoundingClientRect().width)}px wide · `
+    + `${pane.clientHeight}px tall · overflow ${Math.max(0, pane.scrollHeight - pane.clientHeight)}px`
+    + `<br><b>tabs</b> ${tabs.scrollWidth}px in ${tabs.clientWidth}px`
+    + (tabs.scrollWidth > tabs.clientWidth ? ` · <em>scrolls</em>` : ' · fit')
+    + `<br><b>labels</b> ${clip ? `<em>${clip} clipped</em>` : 'all fit'}`
+    + `<br><br>window ${st.w} × ${st.h}`;
+}
+
+/* Bound once, on `lay` rather than on the window — see swap.js. Everything
+   else here re-binds per paint because its state lives in the pane; the
+   swap's state lives in SWAP, and its pointer has to survive the repaint
+   that arming a card causes. */
+swaps(lay, swapApi);
+paint();
+</script>
+</body>
+</html>

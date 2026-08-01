@@ -1,0 +1,12 @@
+<!-- Sorcerer: a bolt. Arcana and Midnight, and the book's word for the class is
+     *volatile* — power that arrives rather than power that is built. A bolt
+     is the only shape in the set with no axis of symmetry at all, which is
+     the point: everything else here is balanced and this one is not.
+     Limbs ~50 units thick. A first pass at half that was a hairline once the
+     mark was recentred to fill its box — every other glyph here is mass, and
+     a thin one does not look like a sibling, it looks like a mistake.
+     The kink is off-centre and the lower limb is the longer, so it falls
+     rather than hangs; a symmetric zigzag reads as a chart. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M146 8 60 138 112 138 88 242 190 100 134 100 178 8Z"/>
+</svg>

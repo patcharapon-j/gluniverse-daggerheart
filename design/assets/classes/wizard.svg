@@ -1,0 +1,12 @@
+<!-- Wizard: an open codex. The one redundancy in the set and a deliberate one —
+     Wizard is Codex and Splendor, so a card can end up showing the Codex
+     domain mark in its corner and a book here. That is not two glyphs saying
+     different things badly; it is the same fact twice, and the alternative
+     (a staff) collides head-on with the Druid conifer, which is the same tall
+     centred vertical at 24px.
+     Two panels canted up at the outer edges, spine gap 22 — the pages have to
+     rise or the shape is a bow tie. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M20 74 114 48 114 198 20 212Z"/>
+  <path d="M230 74 136 48 136 198 230 212Z"/>
+</svg>

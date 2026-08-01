@@ -1,0 +1,14 @@
+<!-- Armor: three chamfered bands, tapering downward. Not a shield — the sheet
+     already spends a shield silhouette on the Armor Score in the rail, and a
+     second one here would say the two are the same number when they are not.
+     Not the equipment plate either, whose ring-and-core is the *generic* gear
+     mark and has to stay available for items.
+     Tapering is what keeps three stacked bars from reading as a menu icon: a
+     stack that narrows is a torso, a stack that does not is a list. No points
+     anywhere, which is the whole distinction from the two weapon glyphs.
+     20-unit gutters, the family's floor for staying separate at 14px. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M34 34 216 34 216 74 202 88 48 88 34 74Z"/>
+  <path d="M48 108 202 108 202 148 188 162 62 162 48 148Z"/>
+  <path d="M66 182 184 182 184 216 160 236 90 236 66 216Z"/>
+</svg>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Density</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<style>
+.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw,300px),1fr));gap:24px;align-items:start}
+.uu{font:700 11px/1 var(--f-mono);letter-spacing:.14em;color:var(--hope);margin-top:8px}
+.uu.warn{color:#e0603c}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>density</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/density.html" class="on">density</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/armor.html">armor</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/loot.html">loot</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/duality.html">duality</a>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/corners.html">level</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="noart"> remove art</label>
+  <label class="tg">size <input type="range" id="size" min="200" max="420" value="300"></label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// A · THE WORST CASE</span>Book of Ava, three ways</h2>
+<p class="note">The plate is rigid — <code>flex:0 0</code>, so nothing about the text can move it. It is
+<b>50%</b> unless the panel comes up short, and then it gives ground down to <b>40%</b> and no further;
+below that the composition stops being a card with art on it. Only when 40% is still not enough does the
+type scale start. <b>A is what ships</b> — the band is what makes a grimoire skimmable rather than three
+paragraphs to read, and the plate concession is what pays for it. B and C stay here as the record of what
+the cheap form would have bought.</p>
+<div class="row" id="ava"></div>
+
+<h2><span>// B · THE SCALE IS EARNED, NOT GUESSED</span>Same card, four lengths</h2>
+<p class="note">A layout that only works for the text I happened to test with is not a layout — authors
+will write long features. So the panel measures itself: <code>.cnt</code> is the one box allowed to clip,
+and the card gives ground in a fixed order — plate first, then prose. Wrapped text falls off with roughly
+the <i>square</i> of the scale — a smaller size gives both shorter lines and fewer of them — so a 12% cut
+buys ~23% of height. Chrome never scales: the corners, seam, badge, footer and tier bar are on raw
+<code>cqw</code>, so a compacted card still sits in a row without reading as a different component.
+Body leading is now <b>1.38</b> rather than 1.46 — these are two-to-four line runs in a fixed box, not
+body copy, and the tighter setting reads the same while giving back most of a line every four.</p>
+<div class="row" id="stress"></div>
+
+</div>
+
+<script type="module">
+import { DOMAINS, icon } from './domains.js';
+import { CARD, fit } from './card.js';
+
+const by = s => DOMAINS.find(d => d.slug === s);
+const [codex, midnight] = await Promise.all([icon('codex'), icon('midnight')]);
+
+const AVA = {
+  d:by('codex'), sig:codex, lvl:1, rc:2, type:'GRIMOIRE', name:'Book of Ava', foot:'Codex · T1',
+  feats:[
+    {n:'Power Push', t:'Make a Spellcast Roll against a target within Melee range. On a success, they’re knocked back to Far range and take **d10+2** magic damage using your Proficiency.'},
+    {n:'Tava’s Armor', t:'Spend a **Hope** to give a target you can touch a **+1** bonus to their Armor Score until their next rest.'},
+    {n:'Ice Spike', t:'Make a Spellcast Roll (12) to summon a large ice spike within Far range. On a success, deal **d6** physical damage using your Proficiency.'}],
+};
+
+const A = [
+  { t:'A · banded  ← shipped', n:'Marker, index, name, hairline to the edge — then the body at full width. Three bands cost three whole lines plus their margins, and the plate concession is what pays for them. Worth it: this is the only one of the three you can find a spell in without reading.',
+    c:CARD({ ...AVA, runin:false }) },
+  { t:'B · run-in', n:'The name runs into its own paragraph: marker, name in caps, a short rule, then the text. Buys back ~4.7u each and keeps the marker and the caps, but the three spells stop being three things and become one block.',
+    c:CARD({ ...AVA, runin:true }) },
+  { t:'C · run-in + rules', n:'The hairline tries to buy the separation back for free, out of the margins. At card size it is nearly invisible — cost without benefit.',
+    c:CARD({ ...AVA, runin:true, cls:'rules' }) },
+];
+
+const T = 'Spend a **Hope** to make a Spellcast Roll and conjure throwing blades that strike out at all targets within Very Close range.';
+const S = [
+  { t:'Short', n:'One sentence. Half the panel is deliberate white space above a pinned footer.',
+    x:{ text:'Mark a **Stress** to become *Cloaked* until you next make an Attack Roll.' } },
+  { t:'Normal', n:'The length most domain cards actually run. No compaction.',
+    x:{ text:T, tags:['Spend 1 Hope','Spellcast'] } },
+  { t:'Long', n:'A wordy card with chips. The scale starts to move.',
+    x:{ text:T + ' Targets you hit are knocked back to Close range and take **d8+3** physical damage using your Proficiency. On a critical success, they are also temporarily *Vulnerable*.', tags:['Spend 1 Hope','Spellcast','Once per rest'] } },
+  { t:'Abusive', n:'More than anyone should write on a card. It still fits, and the chrome has not moved a pixel.',
+    x:{ text:T + ' Targets you hit are knocked back to Close range and take **d8+3** physical damage using your Proficiency. On a critical success, they are also temporarily *Vulnerable*. While the blades hang in the air, any creature that moves through the affected area must make a Reaction Roll (13) or take **d6** physical damage. You can **mark a Stress** at the start of your turn to keep the blades aloft for another exchange.', tags:['Spend 1 Hope','Spellcast','Once per rest'] } },
+];
+
+ava.innerHTML = A.map(x => `<div>${x.c}<div class="uu"></div><div class="cap"><b>${x.t}</b>${x.n}</div></div>`).join('');
+stress.innerHTML = S.map(x => `<div>${CARD({ d:by('midnight'), sig:midnight, lvl:3, rc:2,
+  type:'SPELL', name:'Rain of Blades', foot:'Midnight · T1', ...x.x })}
+  <div class="uu"></div><div class="cap"><b>${x.t}</b>${x.n}</div></div>`).join('');
+
+noart.onchange = e => document.body.classList.toggle('noart', e.target.checked);
+size.oninput = e => document.documentElement.style.setProperty('--cw', e.target.value+'px');
+size.dispatchEvent(new Event('input'));
+
+await document.fonts.ready;
+fit();
+for(const card of document.querySelectorAll('.card')){
+  const l = card.parentElement.querySelector('.uu');
+  l.textContent = `PLATE ${card.dataset.plate}%  ·  TYPE SCALE ${card.dataset.u}`;
+  l.classList.toggle('warn', +card.dataset.u <= .8);
+}
+</script>
+</body>
+</html>

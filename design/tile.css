@@ -1,0 +1,327 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH SHEET FAMILY — spine, tile, mini
+   The card is 5:7 and belongs in chat and in a browser. On a sheet it has
+   to give something up: its axis, its body, or both. All three of these
+   are the *same* component vocabulary as the card — level cap, sigil
+   plate, gold hairline, recall chip, tier bar — so a player recognises a
+   row as the card it opens rather than as a list item that happens to be
+   nearby.
+
+   Container-query driven like the card: every measure is cqw of the row's
+   own width, so one component is proportionally identical in a 300px
+   sidebar and a 520px panel.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ══ SPINE ═════════════════════════════════════════════════════════
+   The card's chrome with the body removed. Identity only — level, sigil,
+   name, domain, recall, tier — at ~19% of the card's height. No prose,
+   because prose at this size is texture: five spines fit in the space of
+   one card, and the card itself is one click away. */
+.spine{position:relative;container-type:inline-size;width:100%;aspect-ratio:100/19;
+  background:var(--paper);color:var(--ink);display:flex;align-items:stretch;
+  overflow:hidden;isolation:isolate;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
+  box-shadow:0 2px 8px -2px rgba(0,0,0,.55);
+  transition:transform .22s cubic-bezier(.2,.8,.25,1),box-shadow .22s}
+.spine:hover{transform:translateX(4px);box-shadow:-4px 4px 14px -3px rgba(0,0,0,.6)}
+
+/* The card's top-left block, stood on end: numeral over sigil, dark over
+   saturated, chamfered on the inner corner, gold hairline on the inner edge.
+
+   Width is min-content plus a hair — the block holds a numeral and a mark
+   and nothing else, so any width beyond what those two need is width taken
+   off the name. min-width, not width, because levels reach 10. The two
+   cells split the full row height between them; neither floats in a bed of
+   dark, which is what made the block read as wider than it was. */
+.spine .cap{position:relative;z-index:3;flex:none;min-width:11cqw;background:var(--dom-dk);
+  display:flex;flex-direction:column;align-items:stretch;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 2.4cqw),calc(100% - 2.4cqw) 100%,0 100%)}
+.spine .cap::after{content:"";position:absolute;top:0;bottom:0;right:0;width:1.5px;background:var(--hope)}
+.spine .cap .v{flex:1 1 auto;display:grid;place-items:center;padding:0 1.3cqw}
+.spine .cap .n{font:700 7.6cqw/1 var(--f-display);color:#fff;letter-spacing:-.05em}
+/* the unit in front of the numeral — "T" for a tier, where a domain card's
+   number is a bare level. Small and quiet: it qualifies the number, it is not
+   part of it, and at full weight "T1" reads as a two-digit value. */
+.spine .cap .n i,.tile .cap .n i,.mini .lvl .n i{font-style:normal;font-size:.56em;
+  letter-spacing:0;opacity:.72;margin-right:.05em;vertical-align:.15em}
+.spine .cap .sg{flex:none;height:8cqw;background:var(--dom);display:grid;place-items:center}
+.spine .cap .sg svg{height:5cqw;width:auto;color:#fff;display:block}
+/* No level — the sigil takes the whole cap rather than sitting in a stub. It
+   is drawn a little larger because it is now the cap's only content, but only
+   a little: at 8.6cqw it spanned 78% of the cap's width against the 46% every
+   levelled row shows, and one row's mark being twice its neighbour's is louder
+   than the difference it is reporting. */
+.spine .cap.solo .sg{flex:1 1 auto;height:auto}
+.spine .cap.solo .sg svg{height:6.6cqw}
+/* ...and when two of them share a cap with no level, back to the family size.
+   A mark sized to own the whole 19cqw cap fills half of it edge to edge, so
+   the pair ran together and read as one overlapping shape rather than as two
+   domains. Two marks in a cap are just marks. */
+.spine .cap.solo.duo .sg svg{height:5cqw}
+/* two domains, as on the card: solid at both ends, grading across the middle */
+.spine .cap.duo{background:linear-gradient(180deg,var(--dom) 0 38%,var(--dom-2) 62% 100%)}
+.spine .cap.duo .sg{background:none}
+
+.spine .mid{position:relative;z-index:3;flex:1 1 auto;min-width:0;
+  display:flex;flex-direction:column;justify-content:center;gap:1.3cqw;padding:0 3cqw}
+/* Two lines, not one. A domain card is named in three short words and never
+   needed the second — but loot is named "Improved Grindletooth Venom", and a
+   row that ellipses the only thing identifying it is a row you have to hover
+   to read. Two lines of name plus the meta line is 48px inside a 55px row, so
+   the row height does not move; the clamp keeps a fourth word from moving it. */
+.spine .nm{font:700 5.2cqw/1.08 var(--f-display);letter-spacing:-.01em;text-transform:uppercase;
+  color:var(--ink);margin:0;overflow:hidden;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+/* Three lines at a smaller face, and a tighter gap to pay for the third:
+   39.5 + 2.3 + 12 = 54px inside a 55px row, so the row height still does not
+   move. That is the whole constraint — one row height, or the loot panel
+   becomes a ragged column and stops reading as a list. */
+.spine .mid.long{gap:.8cqw}
+.spine .mid.long .nm{font-size:4.2cqw;-webkit-line-clamp:3}
+.spine .meta{display:flex;align-items:center;gap:1.8cqw;min-width:0;
+  font:700 2.3cqw/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+/* --dom-dk, not --dom: white on a light domain like Bone is 2.9:1 */
+.spine .meta em{flex:none;font-style:normal;color:#fff;background:var(--dom-dk);
+  padding:.9cqw 1.3cqw .9cqw 1.5cqw;letter-spacing:.18em}
+.spine .meta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ── the meta line's aside ─────────────────────────────────────────
+   A consumable's charges. The boxes are the sheet's own mark at row scale,
+   crossed as they are spent — which is the same direction Hit Points and
+   Stress read in, so nobody has to learn a second convention for "gone".
+   `flex:none` and `margin-left:auto`: the rarity word ellipses before the
+   charges give up a pixel, because the word is the thing you can guess. */
+.spine .meta .chg{flex:none;margin-left:auto;display:flex;gap:.7cqw;align-items:center}
+.spine .meta .chg > i{position:relative;display:block;width:3.4cqw;height:3.4cqw;cursor:pointer}
+.spine .meta .chg > i > u{position:absolute;inset:0;display:block;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - .7cqw),calc(100% - .7cqw) 100%,0 100%);
+  transition:background .16s,box-shadow .16s}
+.spine .meta .chg > i:hover > u{box-shadow:inset 0 0 0 1px var(--line-2)}
+.spine .meta .chg > i.on > u{background:var(--sunk-2);box-shadow:inset 0 0 0 1px transparent}
+.spine .meta .chg > i > .x{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* the core is a facet and there is no facet at 10px; the bloom is a transient
+   that belongs to a resource you lose, not one you spend on purpose */
+.spine .meta .chg .cr,.spine .meta .chg > i > b{display:none}
+.spine .meta .chg > i > .x .ar > g{transform-box:fill-box;transform-origin:50% 50%;
+  opacity:0;transform:scale(.3);
+  transition:opacity .1s linear,transform .18s cubic-bezier(.16,1.05,.3,1)}
+.spine .meta .chg > i.on > .x .ar > g{opacity:1;transform:none}
+.spine .meta .chg > i.on > .x .ar.b > g{transition-delay:.06s}
+.spine .meta .chg > i:not(.on) > .x .ar.a > g{transition-delay:.05s}
+
+/* A crop, not a wash. Art bled behind the name would cost the name more
+   than it gains the row; held to its own chamfered plate it stays art. */
+.spine .thumb{position:relative;z-index:2;flex:none;width:28cqw;overflow:hidden;
+  clip-path:polygon(2.6cqw 0,100% 0,100% 100%,0 100%,0 2.6cqw)}
+.spine .thumb .img{position:absolute;inset:0;background:var(--art) 52% 20%/cover no-repeat}
+.spine .thumb .ramp{position:absolute;inset:0;display:none;mix-blend-mode:multiply;
+  background:linear-gradient(90deg,#fff,color-mix(in srgb,var(--dom) 62%,#fff))}
+body.ramp .spine .thumb .ramp{display:block}
+/* the ramp above is multiply over art, so #fff is the blend identity and
+   stays; the fallback below *replaces* the art and is made of the sheet */
+.spine .thumb .fb{position:absolute;inset:0;display:none;place-items:center;
+  background:radial-gradient(120% 120% at 58% 40%,var(--tint),color-mix(in srgb,var(--dom) 22%,var(--tint)))}
+.spine .thumb .fb svg{width:34%;height:auto;color:var(--dom);display:block}
+/* Per-card as well as per-page — see the note in card.css. */
+body.noart .spine .thumb .img,body.noart .spine .thumb .ramp,
+.noart .spine .thumb .img,.noart .spine .thumb .ramp{display:none}
+body.noart .spine .thumb .fb,.noart .spine .thumb .fb{display:grid}
+
+/* the card's top-right corner, unchanged in geometry and unchanged in job */
+.spine .rc{position:absolute;z-index:4;top:0;right:0;height:7.4cqw;background:var(--dom-dk);
+  display:flex;align-items:center;gap:1.1cqw;padding:0 2.4cqw 0 2.7cqw;
+  clip-path:polygon(0 0,100% 0,100% 100%,2.4cqw 100%,0 calc(100% - 2.4cqw))}
+.spine .rc .blt{width:2.1cqw;color:var(--hope);display:block}
+.spine .rc .blt svg{width:100%;height:auto;display:block}
+.spine .rc .n{font:700 4.4cqw/1 var(--f-display);color:#fff;letter-spacing:-.04em}
+
+.spine .tbar{position:absolute;z-index:5;left:0;right:0;bottom:0;height:3px;background:var(--dom)}
+.spine .tbar::after{content:"";position:absolute;right:0;top:0;bottom:0;width:26%;background:var(--hope)}
+.spine.duo .tbar{background:linear-gradient(90deg,var(--dom) 0 37%,var(--dom-2) 63% 100%)}
+
+/* ══ TILE ══════════════════════════════════════════════════════════
+   The middle density, and the shape weapons, armour and items get. Art
+   on the left with the level cap over it, a gold rule for the seam, then
+   a panel with a name, a data strip and two clamped lines. Everything a
+   player needs to *use* the thing; the card is still where you go to read
+   about it. */
+/* 5:2.1, not 5:2 — a two-line name over a four-cell strip over three lines
+   of text is 41cqw, and the extra 2cqw is what stops the worst case from
+   pushing its own footer out of the box. */
+.tile{position:relative;container-type:inline-size;width:100%;aspect-ratio:5/2.1;
+  background:var(--paper);color:var(--ink);display:flex;align-items:stretch;
+  overflow:hidden;isolation:isolate;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
+  box-shadow:0 6px 16px -6px rgba(0,0,0,.62),0 2px 6px rgba(0,0,0,.4);
+  transition:transform .26s cubic-bezier(.2,.8,.25,1),box-shadow .26s}
+.tile:hover{transform:translateY(-3px);box-shadow:0 12px 24px -8px rgba(0,0,0,.7)}
+
+.tile .plate{position:relative;flex:none;width:36%;overflow:hidden}
+.tile .plate .img{position:absolute;inset:0;background:var(--art) 48% 18%/cover no-repeat}
+/* the card's ramp turned 90° — rises from the seam rather than from the base */
+.tile .plate .ramp{position:absolute;inset:0;display:none;mix-blend-mode:multiply;
+  background:linear-gradient(90deg,#fff 40%,color-mix(in srgb,var(--dom) 78%,#fff))}
+body.ramp .tile .plate .ramp{display:block}
+.tile .plate .fb{position:absolute;inset:0;display:none;place-items:center;
+  background:radial-gradient(120% 120% at 56% 40%,var(--tint),color-mix(in srgb,var(--dom) 20%,var(--tint)))}
+.tile .plate .fb svg{width:44%;height:auto;color:var(--dom);display:block}
+body.noart .tile .plate .img,body.noart .tile .plate .ramp,
+.noart .tile .plate .img,.noart .tile .plate .ramp{display:none}
+body.noart .tile .plate .fb,.noart .tile .plate .fb{display:grid}
+/* the seam, vertical: the card's gold rule doing the same job on the other axis */
+.tile .plate::after{content:"";position:absolute;z-index:2;top:0;bottom:0;right:0;
+  width:2px;background:var(--hope)}
+
+.tile .cap{position:absolute;z-index:4;top:0;left:0;min-width:9.5cqw;background:var(--dom-dk);
+  display:flex;flex-direction:column;align-items:stretch;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 1.9cqw),calc(100% - 1.9cqw) 100%,0 100%)}
+.tile .cap::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.2px;background:var(--hope)}
+/* No LEVEL watermark here. The card's cap is ~90px wide and the watermark
+   reads as texture behind the numeral; the tile's is 32px, where the same
+   watermark is 6px of dirt. */
+.tile .cap .v{position:relative;display:grid;place-items:center;padding:.8cqw 1.2cqw .7cqw}
+.tile .cap .n{position:relative;font:700 6.8cqw/1 var(--f-display);color:#fff;letter-spacing:-.05em}
+.tile .cap .sg{height:7.2cqw;background:var(--dom);display:grid;place-items:center}
+.tile .cap .sg svg{height:4.5cqw;width:auto;color:#fff;display:block}
+.tile .cap.duo{background:linear-gradient(180deg,var(--dom) 0 38%,var(--dom-2) 62% 100%)}
+.tile .cap.duo .sg{background:none}
+
+.tile .body{position:relative;flex:1 1 auto;min-width:0;min-height:0;overflow:hidden;
+  display:flex;flex-direction:column;padding:2.6cqw 3.2cqw 3cqw}
+.tile .hd{display:flex;align-items:flex-start;gap:2cqw;margin-bottom:1.5cqw}
+.tile .nm{flex:1 1 auto;min-width:0;font:700 4.9cqw/1.05 var(--f-display);letter-spacing:-.012em;
+  text-transform:uppercase;color:var(--ink);margin:0;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.tile .rc{flex:none;height:5.6cqw;background:var(--dom-dk);color:#fff;
+  display:flex;align-items:center;gap:.9cqw;padding:0 1.7cqw 0 1.9cqw;
+  clip-path:polygon(0 0,100% 0,100% 100%,1.8cqw 100%,0 calc(100% - 1.8cqw))}
+.tile .rc .blt{width:1.6cqw;display:block;color:var(--hope)}
+.tile .rc .blt svg{width:100%;height:auto;display:block}
+.tile .rc .n{font:700 3.4cqw/1 var(--f-display);letter-spacing:-.04em}
+
+/* the card's data strip, same markup, sized for the tile */
+.tile .stats{display:flex;border-top:1.5px solid var(--dom);margin:0 0 1.8cqw}
+/* basis auto, not 0: equal fifths cannot hold STRENGTH next to TWO, and the
+   trait names are the longest values the strip ever carries. Cells take the
+   width their content needs and share what is left. */
+.tile .stats > div{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:.7cqw;
+  padding:1.1cqw 1.4cqw 0 0}
+.tile .stats > div + div{border-left:1px solid var(--line);padding-left:1.6cqw}
+.tile .stats .k{font:700 1.7cqw/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+/* 2.5cqw: four cells across a 64%-width panel gives each ~55px at a 368px
+   tile, and STRENGTH is the longest value the strip ever has to hold. */
+.tile .stats .v{font:700 2.5cqw/1 var(--f-display);text-transform:uppercase;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* flex:none — with display:-webkit-box its automatic minimum size is not
+   its content, so as a shrinkable item it collapses to nothing instead of
+   clipping. Silent disappearance is the one failure mode a layout must not
+   have. */
+.tile .tx{flex:none;font:400 2.7cqw/1.38 var(--f-ui);color:var(--ink-2);margin:0;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.tile .tx b{font-weight:700;color:var(--ink)}
+.tile .tx i{font-style:italic}
+.tile .tx b.t-hope{color:var(--hope-tx)}
+.tile .tx b.t-fear{color:var(--fear-tx)}
+/* pushed to the bottom edge so tiles of different content still line up */
+.tile .ft{margin-top:auto;padding-top:1.6cqw;display:flex;justify-content:space-between;
+  align-items:center;gap:1.6cqw;border-top:1px solid var(--line)}
+.tile .mi{font:500 1.8cqw/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);white-space:nowrap}
+.tile .tb{font:700 1.8cqw/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:#fff;background:var(--dom-dk);padding:.8cqw 1.2cqw .8cqw 1.4cqw}
+
+.tile .tbar{position:absolute;z-index:5;left:0;right:0;bottom:0;height:3px;background:var(--dom)}
+.tile .tbar::after{content:"";position:absolute;right:0;top:0;bottom:0;width:26%;background:var(--hope)}
+.tile.duo .tbar{background:linear-gradient(90deg,var(--dom) 0 37%,var(--dom-2) 63% 100%)}
+
+/* ══ MINI ══════════════════════════════════════════════════════════
+   The card with its body removed. Still 5:7, still opens the same way,
+   but the panel is a name and a caption instead of a paragraph — so the
+   art gets ~76% of the card instead of 50%, and three fit across a sheet
+   panel where two full cards did not.
+
+   Its proportions are NOT the card's. The card spends its chrome budget
+   leaving room for prose; with the prose gone the numeral, the sigil and
+   the name all grow relative to the card — otherwise a mini at a third of
+   the width is just a card you cannot read. */
+.mini{position:relative;container-type:inline-size;width:100%;aspect-ratio:5/7;
+  background:var(--paper);color:var(--ink);display:flex;flex-direction:column;
+  overflow:hidden;isolation:isolate;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%);
+  box-shadow:0 8px 18px -8px rgba(0,0,0,.66),0 2px 6px rgba(0,0,0,.42);
+  transition:transform .26s cubic-bezier(.2,.8,.25,1),box-shadow .26s}
+.mini:hover{transform:translateY(-4px);box-shadow:0 16px 30px -8px rgba(0,0,0,.78)}
+
+.mini .plate{position:relative;flex:1 1 auto;overflow:hidden}
+.mini .plate .img{position:absolute;inset:0;background:var(--art) 46% 16%/cover no-repeat}
+.mini .plate .top{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.34),rgba(0,0,0,0) 30%)}
+.mini .plate .ramp{position:absolute;left:0;right:0;bottom:0;height:42cqw;
+  mix-blend-mode:multiply;display:none;
+  background:linear-gradient(to top,color-mix(in srgb,var(--dom) 88%,#fff),#fff)}
+body.ramp .mini .plate .ramp{display:block}
+.mini .plate .fb{position:absolute;inset:0;display:none;place-items:center;
+  background:radial-gradient(120% 100% at 60% 38%,var(--tint),color-mix(in srgb,var(--dom) 20%,var(--tint)))}
+.mini .plate .fb svg{width:46%;height:auto;color:var(--dom);display:block}
+body.noart .mini .plate .img,body.noart .mini .plate .top,body.noart .mini .plate .ramp,
+.noart .mini .plate .img,.noart .mini .plate .top,.noart .mini .plate .ramp{display:none}
+body.noart .mini .plate .fb,.noart .mini .plate .fb{display:grid}
+
+/* the card's corner pair, geometry unchanged, scaled up ~40% against the width */
+.mini .lvl{position:absolute;z-index:8;top:0;left:0;min-width:19cqw;background:var(--dom-dk);
+  display:flex;flex-direction:column;align-items:stretch;box-shadow:0 3px 9px rgba(0,0,0,.44);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 3.8cqw),calc(100% - 3.8cqw) 100%,0 100%)}
+.mini .rc{position:absolute;z-index:8;top:0;right:0;height:11.6cqw;background:var(--dom-dk);
+  display:flex;align-items:center;gap:1.9cqw;padding:0 4cqw 0 4.4cqw;box-shadow:0 3px 9px rgba(0,0,0,.44);
+  clip-path:polygon(0 0,100% 0,100% 100%,3.7cqw 100%,0 calc(100% - 3.7cqw))}
+.mini .lvl::after,.mini .rc::after{content:"";position:absolute;left:0;right:0;bottom:0;
+  height:1.5px;background:var(--hope)}
+.mini .lvl .v{display:grid;place-items:center;padding:1.7cqw 2.4cqw 1.3cqw}
+.mini .lvl .n{font:700 13.5cqw/1 var(--f-display);color:#fff;letter-spacing:-.05em}
+.mini .lvl .sg{height:14.6cqw;background:var(--dom);display:grid;place-items:center}
+.mini .lvl .sg svg{height:9cqw;width:auto;color:#fff;display:block}
+.mini .lvl.solo .sg{height:17cqw}
+.mini .lvl.solo .sg svg{height:10.5cqw}
+.mini .lvl.duo{background:linear-gradient(180deg,var(--dom) 0 38%,var(--dom-2) 62% 100%)}
+.mini .lvl.duo .sg{background:none}
+.mini .rc .blt{width:3.3cqw;color:var(--hope);display:block}
+.mini .rc .blt svg{width:100%;height:auto;display:block}
+.mini .rc .n{font:700 7.8cqw/1 var(--f-display);color:#fff;letter-spacing:-.04em}
+
+.mini .foot{position:relative;z-index:6;flex:none;background:var(--paper);
+  padding:3.6cqw 4.6cqw 4.8cqw}
+/* the card's seam, same flex-filler trick, same climb up the badge slope */
+.mini .seam{position:absolute;left:0;right:0;bottom:100%;height:8.4cqw;
+  display:flex;align-items:stretch;z-index:3}
+.mini .seam > i{flex:1 1 auto;align-self:flex-end;height:2px;background:var(--hope)}
+.mini .tb{position:relative;flex:none;background:var(--hope);color:#fff;
+  display:flex;align-items:center;padding:0 4.6cqw 0 6.2cqw;
+  clip-path:polygon(5.2cqw 0,100% 0,100% 100%,0 100%)}
+.mini .tb::before{content:"";position:absolute;top:2px;left:0;right:0;bottom:0;background:var(--dom-dk);
+  clip-path:polygon(calc(5.2cqw + 2.4px) 0,100% 0,100% 100%,2.4px 100%)}
+.mini .tb em{position:relative;font:700 4.1cqw/1 var(--f-mono);letter-spacing:.16em;
+  text-indent:.16em;font-style:normal}
+/* min-height of exactly two lines, always. Without it a one-line name gives
+   its card a taller art plate than its neighbour's, and a row of minis is
+   the one place that shows — the plate is flex:1, so the foot's height is
+   the art's height, inverted. */
+.mini .nm{font:700 9.6cqw/1.04 var(--f-display);letter-spacing:-.018em;text-transform:uppercase;
+  color:var(--ink);margin:0 0 1.8cqw;min-height:calc(9.6cqw * 1.04 * 2);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.mini .mi{display:block;font:700 4.1cqw/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* variant: no paper panel at all — the name sits on the art under a scrim.
+   Buys back the whole foot as art and costs the gold seam, which has
+   nothing to divide once there are no two surfaces to divide. */
+.mini.scrim .foot{position:absolute;left:0;right:0;bottom:0;background:none;
+  padding:16cqw 4.6cqw 5.4cqw;
+  background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.74) 52%,rgba(0,0,0,.9))}
+.mini.scrim .nm{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.mini.scrim .mi{color:rgba(255,255,255,.7)}
+.mini.scrim .mi b{font-weight:700;color:#fff;background:var(--dom-dk);
+  padding:.9cqw 1.4cqw .9cqw 1.6cqw;margin-right:1.4cqw}
+
+.mini .tbar{position:absolute;z-index:9;left:0;right:0;bottom:0;height:3px;background:var(--dom)}
+.mini .tbar::after{content:"";position:absolute;right:0;top:0;bottom:0;width:26%;background:var(--hope)}
+.mini.duo .tbar{background:linear-gradient(90deg,var(--dom) 0 37%,var(--dom-2) 63% 100%)}

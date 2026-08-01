@@ -1,0 +1,113 @@
+{
+  "id": "gluniverse-daggerheart",
+  "title": "GLUniverse — Daggerheart",
+  "description": "An unofficial Foundry VTT game system for Daggerheart: duality dice, Hope and Fear, domain card loadouts, and a sheet built for the table rather than the rulebook.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "patcharapon-j"
+    }
+  ],
+  "esmodules": [
+    "module/daggerheart.js"
+  ],
+  "styles": [
+    "styles/tokens.css",
+    "styles/frame.css",
+    "styles/mark.css",
+    "styles/gem.css",
+    "styles/track.css",
+    "styles/pool.css",
+    "styles/tile.css",
+    "styles/card.css",
+    "styles/roll.css",
+    "styles/swap.css",
+    "styles/sheet.css",
+    "styles/plate.css",
+    "styles/menu.css",
+    "styles/daggerheart-components.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "packs": [
+    {
+      "name": "classes",
+      "label": "Classes & Subclasses",
+      "path": "packs/classes",
+      "type": "Item",
+      "system": "gluniverse-daggerheart",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "heritage",
+      "label": "Ancestries & Communities",
+      "path": "packs/heritage",
+      "type": "Item",
+      "system": "gluniverse-daggerheart",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "domains",
+      "label": "Domain Cards",
+      "path": "packs/domains",
+      "type": "Item",
+      "system": "gluniverse-daggerheart",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    }
+  ],
+  "documentTypes": {
+    "Actor": {
+      "character": {},
+      "adversary": {},
+      "environment": {},
+      "companion": {}
+    },
+    "Item": {
+      "ancestry": {},
+      "community": {},
+      "class": {},
+      "subclass": {},
+      "domainCard": {},
+      "weapon": {},
+      "armor": {},
+      "consumable": {},
+      "loot": {},
+      "feature": {}
+    },
+    "ChatMessage": {
+      "duality": {},
+      "damage": {},
+      "adversary": {}
+    }
+  },
+  "grid": {
+    "distance": 5,
+    "units": "ft"
+  },
+  "primaryTokenAttribute": "resources.hitPoints",
+  "secondaryTokenAttribute": "resources.stress",
+  "url": "https://github.com/patcharapon-j/gluniverse-daggerheart",
+  "manifest": "https://github.com/patcharapon-j/gluniverse-daggerheart/releases/latest/download/system.json",
+  "download": "https://github.com/patcharapon-j/gluniverse-daggerheart/releases/download/v0.1.0/system.zip",
+  "readme": "https://github.com/patcharapon-j/gluniverse-daggerheart/blob/main/README.md",
+  "bugs": "https://github.com/patcharapon-j/gluniverse-daggerheart/issues",
+  "license": "https://github.com/patcharapon-j/gluniverse-daggerheart/blob/main/LICENSE"
+}
