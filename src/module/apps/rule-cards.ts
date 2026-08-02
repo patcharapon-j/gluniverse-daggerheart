@@ -202,6 +202,8 @@ export interface RefreshRow {
   text: string;
   /** "1 / 2", when the sheet is actually tracking a use pool. */
   uses?: string;
+  /** The owned Item this row came from, when there is one. */
+  itemId?: string;
 }
 
 export interface RefreshLane {
@@ -237,31 +239,43 @@ export async function ruleCardsPanel(
      height and every peek would render uncompacted. */
   const cards: string[] = [];
 
+  /** Turn an owned, printed Item into the same full-card peek used above. */
+  const peekFor = (it: any): string | undefined => {
+    const held = it && HELD.has(it.type) ? it : null;
+    const card = held ? cardOf(held as any, sig, ctx) : null;
+    if (!card) return undefined;
+
+    const key = `p${cards.length}`;
+    cards.push(
+      `<div class="pkc${card.noart ? " noart" : ""}" data-peek="${key}" style="${attr(
+        card.art ?? "",
+      )}">${CARD(card)}</div>`,
+    );
+    return key;
+  };
+
   const body = entries
     .map(({ rule, note }) => {
       const it = sourceItem(actor, rule);
-      const held = it && HELD.has(it.type) ? it : null;
-      const card = held ? cardOf(held as any, sig, ctx) : null;
-
-      if (!card) return line({ ...rule, note });
+      const peek = peekFor(it);
+      if (!peek) return line({ ...rule, note });
 
       /* Drawn exactly as the sheet draws it, including the features this rule
          is not. The row already says which rule matched; the card's claim is
          *this is the object it is printed on*, and an ancestry card with one
          of its two features quietly removed is no longer that object. */
-      const key = `p${cards.length}`;
-      cards.push(
-        `<div class="pkc${card.noart ? " noart" : ""}" data-peek="${key}" style="${attr(
-          card.art ?? "",
-        )}">${CARD(card)}</div>`,
-      );
-      return line({ ...rule, note, peek: key });
+      return line({ ...rule, note, peek });
     })
     .join("");
 
   const lanes = lane
     ? `<div class="rf"><div class="k">${esc(lane.heading)}</div>${lane.rows
-        .map((r) => line(r))
+        .map((r) => {
+          const it = r.itemId
+            ? [...(actor?.items ?? [])].find((item: any) => item.id === r.itemId)
+            : sourceItem(actor, r);
+          return line({ ...r, peek: peekFor(it) });
+        })
         .join("")}</div>`
     : "";
 
