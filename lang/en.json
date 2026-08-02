@@ -61,7 +61,8 @@
       "NotEnoughExperiences": "This advancement raises two Experiences, and there are fewer than two to raise. Add them on the adjust tab.",
       "NoSelection": "Select the token or tokens this lands on first.",
       "NoCharacter": "No character is assigned to you — select a token you own, or ask your GM to assign one.",
-      "NoFeatureCost": "{name} costs {cost}, and you cannot pay it."
+      "NoFeatureCost": "{name} costs {cost}, and you cannot pay it.",
+      "OtherSubclass": "Still holding {names}. That card was not added by character creation, so it has been left alone — remove it by hand if you meant to change subclass."
     },
     "Info": {
       "DamageApplied": "{name} took {severity} damage — {marked} Hit Points marked.",
@@ -81,37 +82,45 @@
       "Title": "{name} takes damage",
       "Apply": "Take it",
       "Incoming": "incoming",
-      "Relevant": "Your own cards on armour",
+      "Relevant": "Can reduce this",
       "Reduce": "Reduce by",
       "PaidWith": "Paid with",
       "Marks": "mark {n} Hit Points",
       "Nothing": "Nothing",
-      "NoHit": "Nothing lands — there is nothing to soften.",
+      "NoHit": "Nothing lands.",
       "From": "{base} → {now}",
-      "Rule": "The rules give you one Armor Slot per hit, and one slot is one threshold.",
-      "BeyondRule": "Past the one Armor Slot the rules give you — whatever is buying this should be printed on one of your own cards.",
+      "Rule": "One Armor Slot lowers the damage by one threshold.",
+      "BeyondRule": "Past one Armor Slot — a card is paying for this.",
       "MarksOne": "mark 1 Hit Point"
     },
     "Rest": {
       "Short": "short rest",
       "Long": "long rest",
       "Title": "{kind}",
-      "ShortHint": "The rules give you {n} downtime moves, and this sheet does not insist. Take one and the sheet changes under you, so the next choice is made knowing what the first one gave.",
-      "LongHint": "The rules give you {n} downtime moves, and this sheet does not insist. Each is applied the moment you take it.",
-      "Relevant": "Your own cards on resting",
+      "Hint": "{n} downtime moves. Each applies the moment you take it.",
+      "Relevant": "Changes this rest",
+      "Refreshes": "Refreshed by this rest",
       "Done": "Done",
-      "Granted": "{n} downtime moves — {from} gives you more than the printed two. Nothing here insists on the number.",
+      "Granted": "{n} downtime moves — {from}.",
       "Taken": "{n} of {of} taken",
-      "Take": "take",
-      "Move": "Downtime",
       "Undo": "undo",
-      "Grants": "grants a downtime move"
+      "Grants": "extra move",
+      "NoMoves": "No downtime moves taken.",
+      "Refreshed": "{n} cards refreshed.",
+      "RefreshedOne": "1 card refreshed."
     },
     "Copy": "{name} (Copy)",
     "NewItem": "New {kind}",
     "Delete": {
       "Title": "Delete item",
       "Body": "Delete {name} from this character? This cannot be undone."
+    },
+    "Create": {
+      "Title": "Make a character",
+      "TitleFor": "Make a character · {name}",
+      "ChangeClassTitle": "Change class?",
+      "ChangeClassHint": "Becoming a {name} takes these with it. Anything you dragged in yourself is left alone.",
+      "ChangeClassOk": "Change it"
     }
   }
 }

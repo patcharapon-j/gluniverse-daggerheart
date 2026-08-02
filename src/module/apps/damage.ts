@@ -61,8 +61,8 @@
 import { SEVERITY, SEVERITY_COST, type Severity } from "../config.ts";
 import type { DamagePlan, DamageSpend } from "../documents/actor.ts";
 import { DAMAGE, XMARK } from "../ui/mark.js";
-import { ARMOUR_RX, rulesAbout } from "./rules.ts";
-import { ruleCardsPanel } from "./rule-cards.ts";
+import { REDUCE_RX, rulesAbout } from "./rules.ts";
+import { ruleCardsPanel, wireRulePeeks } from "./rule-cards.ts";
 import { dhDialog } from "./dialog.ts";
 
 const esc = (s: string) => foundry.utils.escapeHTML(s);
@@ -141,10 +141,20 @@ export async function takeDamage(
   /* Your own cards, drawn as cards. "Takaia Armored Beetles · Loadout" over a
      paragraph is a rule; the tile is the object the rule is printed on, and
      the question this dialog asks — is there something in my hand that gets me
-     out of this — is a question about objects. */
+     out of this — is a question about objects.
+
+     And *only* that question. This used to match on the subject — armour,
+     severity, thresholds — which swept in every passive bonus the character
+     carries: a weapon's Protective is "+1 to your Armor Score", Bare Bones is
+     "your damage thresholds equal your level". Both are real rules and both
+     were already applied before the dialog opened; the Armor Score is the
+     purse and the thresholds are the band this hit is being measured against.
+     A card printing them under a heading that promises a way out is the
+     dialog asking you to re-check arithmetic it did. `REDUCE_RX` matches
+     offers rather than topics — see the note on it in `rules.ts`. */
   const panel = await ruleCardsPanel(
     actor,
-    rulesAbout(actor, ARMOUR_RX).map((rule) => ({ rule })),
+    rulesAbout(actor, REDUCE_RX).map((rule) => ({ rule })),
     game.i18n.localize("DAGGERHEART.Damage.Relevant"),
   );
 
@@ -210,6 +220,7 @@ export async function takeDamage(
       if (host) host.innerHTML = band();
       const rules = q<HTMLElement>(".rules-host");
       if (rules) rules.innerHTML = panel;
+      wireRulePeeks(root);
 
       const field = q<HTMLInputElement>(".amtin");
       const vd = q(".vd");

@@ -14,10 +14,18 @@
 <link rel="stylesheet" href="/design/mark.css">
 <!-- And both dialogs now draw things from further afield. `tile.css` is the
      landscape card — the rules panels draw the actual card a rule is printed
-     on, and the downtime move is a sibling of that component. `plate.css` is
-     the die: a rest's d4 lands as the same object a damage card draws, because
-     that is where this table already reads a rolled number. -->
+     on, at a density of their own, and the downtime move is a sibling of that
+     component. `plate.css` is here for the card the rest *posts*, not for the
+     dialog: the die left the move square when the square arrived, because a
+     die at that size is a chip with a numeral on it. See `.dtm .dt .reel` for
+     what replaced it and `.rest .r` for where the die still belongs. -->
 <link rel="stylesheet" href="/design/tile.css">
+<!-- The 5:7 card the rules panel peeks, and the layer it is parked in. Both
+     are somebody else's file — card.css draws the card, sheet.css draws the
+     layer — and that is the point: this panel hosts the sheet's peek rather
+     than restyling a copy of it. Loading them here is what makes the study
+     page describe the system rather than a version of it. -->
+<link rel="stylesheet" href="/design/card.css">
 <link rel="stylesheet" href="/design/plate.css">
 <link rel="stylesheet" href="/design/sheet.css">
 <link rel="stylesheet" href="/design/dlg.css">
@@ -74,11 +82,26 @@
   is what the roll popover is — at a size a popover cannot hold.
 </p>
 <p class="note">
-  Both of the two below draw <b>cards</b> now, and neither draws one of its own. The rules a
-  character carries are printed on objects they are holding, so the panel shows the object; a
-  downtime move is the same kind of thing you pick up, so it takes the card's shape; and a rest's
-  die lands as the same <code>.die</code> a damage card draws. Nothing here is a second dialect for
-  something the table already reads elsewhere.
+  Both of the two below draw <b>cards</b>, and neither draws one of its own. The rules a character
+  carries are printed on objects they are holding, so the panel shows the object; a downtime move is
+  the same kind of thing you pick up, so it takes the card's shape. Nothing here is a second dialect
+  for something the table already reads elsewhere.
+</p>
+<p class="note">
+  What both panels also do is <b>rank</b> what they found. A rule that mentions armour is not the
+  same as a rule that can spend something to stop this hit, and a card that says “once per rest” is
+  not the same as one that changes the rest — the first of each pair is arithmetic the sheet has
+  already done or a receipt it is about to write. So the damage dialog drops the passives entirely
+  and the rest gives the receipts a lane of their own, one step quieter.
+</p>
+<p class="note">
+  Every rule is a <b>line</b>, in both lanes. Five tiles is five hundred pixels of panel under a
+  dialog whose controls are all above it, and a reader scrolling a deck to find one name is not
+  being helped by the pictures. What a line opens is the one distinction left worth drawing: a
+  <b>class feature</b> is printed on nothing — you cannot spend it, move it or lose it, the text is
+  the whole of it — so the line opens the rule. A <b>domain card, ancestry, community or
+  subclass</b>, or the armour you are wearing, is an object in somebody's hand, so the line opens
+  the card.
 </p>
 
 <div class="cols">
@@ -132,21 +155,51 @@
 
 <script type="module">
 import { DAMAGE, XMARK } from '/design/mark.js';
-import { TILE } from '/design/tile.js';
+import { CARD, fit } from '/design/card.js';
 import { DIE } from '/design/plate.js';
 import { byslug, icon } from '/design/domains.js';
 
 /* The sigils the tiles wear. Fetched and recentred against their own ink
    bounds, exactly as the sheet does it — see domains.js. */
 const SIG = Object.fromEntries(await Promise.all(
-  ['sage','bone','splendor'].map(async s => [s, await icon(s)])));
+  ['sage','splendor'].map(async s => [s, await icon(s)])));
 
-/* A card as the rules panel draws it: the landscape tile, un-clamped, with the
-   matched rule printed in it whole. `noart` because this page ships no
-   artwork, so every one falls back to the sigil plate — which is also what a
-   card whose art never fetched looks like in the system. */
-const CRD = (o, note) => `<div class="crd noart">${
-  note ? `<span class="wh">${note}</span>` : ''}${TILE(o)}</div>`;
+/* One row of the rules panel, in either lane and of either kind — a name,
+   where it came from, and one gesture to open what is behind it.
+
+   What is behind it is the one distinction here worth drawing. A class
+   feature is not printed on anything, so the row grows the rule underneath
+   itself. A domain card, an ancestry, a community, a subclass — or the armour
+   you are wearing — is an object the player is holding, so the row peeks the
+   card: the 5:7 playing card, the same `.pkc` the sheet's spines peek, in the
+   same layer and with the same manners.
+
+   No modifier class between the two kinds: which one a row is *is* whether it
+   carries `data-peek`. */
+const LN = ({ n, src, note, uses, peek, t }) => `<div class="ln" tabindex="0"${
+    peek ? ` data-peek="${peek}"` : ''}>
+  <span class="hd"><b>${n}</b><em>${src}</em>${
+    note ? `<s class="wh">${note}</s>` : uses ? `<s>${uses}</s>` : ''}</span>
+  ${peek ? '' : `<p>${t}</p>`}
+</div>`;
+
+/* The layer the cards are parked in, rendered once rather than on demand —
+   fit() can only measure a card that is in the document, and the cards are
+   held with `visibility` rather than `display` for exactly that reason.
+
+   `noart` because this page ships no artwork, so every card falls back to the
+   sigil plate, which is also what a card whose art never fetched looks like in
+   the system. */
+const PKL = (cards) => `<div class="peeklayer">${cards.map(([key, o]) =>
+  `<div class="pkc noart" data-peek="${key}">${CARD(o)}</div>`).join('')}</div>`;
+
+/* The panel's other lane. A card that only says "once per rest" is not asking
+   you to do anything — the rest gives its use back whether or not you read it
+   — so it is the same row one step quieter, under a heading that says which
+   sentence it is. See `.rl .rf` in dlg.css, and `rechargeOnly` in
+   `apps/rules.ts` for how the two lanes are told apart. */
+const RF = (heading, rows) =>
+  `<div class="rf"><div class="k">${heading}</div>${rows.map(LN).join('')}</div>`;
 
 /* ══ the damage dialog ═══════════════════════════════════════════════
    The band is `mark.css`'s — the same object the rail draws — with three
@@ -198,14 +251,29 @@ document.getElementById('dmg').innerHTML = `
     </span></div>
   </div>
   <p class="out"></p>
+  <!-- Two rows, and neither is "Bare Bones — when you have no armor equipped,
+       your damage thresholds equal your level". That used to sit here as a
+       third card, and it is a rule this dialog has *already applied*: those
+       thresholds are the band eighty pixels above it. A card printing them
+       under a heading that promises a way out asks the reader to re-check
+       arithmetic the sheet did. Only what can still be spent while the hit is
+       landing survives — see REDUCE_RX in apps/rules.ts.
+
+       The two that remain are the two kinds of thing this panel holds. The
+       beetles are a domain card — an object in the loadout — so the row opens
+       the card. The class feature under it is printed on nothing, so the row
+       opens the rule, which is all there is of it. (That one is invented for
+       this page: what it is demonstrating is the shape, and a class feature
+       is exactly the case with no card behind it.) -->
   <div class="rl">
-    <div class="k">Your own cards on armour</div>
-    ${CRD({ d: byslug.sage, sig: SIG.sage, lvl: 3, rc: 1, type: 'SPELL',
+    <div class="k">Can reduce this</div>
+    ${LN({ n: 'Takaia Armored Beetles', src: 'Loadout', peek: 'beetles' })}
+    ${LN({ n: 'Unyielding', src: 'Guardian',
+      t: 'Spend a <b>Hope</b> to reduce the severity of an incoming attack by one threshold.' })}
+    ${PKL([['beetles', {
+      d: byslug.sage, sig: SIG.sage, lvl: 3, rc: 1, type: 'SPELL',
       name: 'Takaia Armored Beetles', foot: 'Sage',
-      text: 'Mark a **Stress** to conjure armored beetles that encircle you. When you next take damage, reduce the **severity** by one threshold. You can spend a **Hope** to keep the beetles for the rest of the scene.' })}
-    ${CRD({ d: byslug.bone, sig: SIG.bone, lvl: 1, rc: 0, type: 'ABILITY',
-      name: 'Bare Bones', foot: 'Bone',
-      text: 'When you have no armor equipped, your **damage thresholds** equal your level.' })}
+      text: 'Mark a **Stress** to conjure armored beetles that encircle you. When you next take damage, reduce the **severity** by one threshold. You can spend a **Hope** to keep the beetles for the rest of the scene.' }]])}
   </div>
 </div>`;
 
@@ -292,11 +360,11 @@ document.getElementById('dmg').innerHTML = `
 
     /* The stepper's note says only what the arrow cannot: that nothing landed.
        The from→to sentence rides on the arrow itself. */
-    note.textContent = maxRungs() === 0 ? 'Nothing lands — there is nothing to soften.' : '';
+    note.textContent = maxRungs() === 0 ? 'Nothing lands.' : '';
 
     out.textContent = (spend.rungs > 1 || spend.armor > 1 || spend.stress || spend.hope)
-      ? 'Past the one Armor Slot the rules give you — whatever is buying this should be printed on one of your own cards.'
-      : 'The rules give you one Armor Slot per hit, and one slot is one threshold.';
+      ? 'Past one Armor Slot — a card is paying for this.'
+      : 'One Armor Slot lowers the damage by one threshold.';
 
     root.querySelector('.st.rung').classList.toggle('live', spend.rungs > 0);
     root.querySelector('.st.pay').classList.toggle('live',
@@ -355,7 +423,6 @@ document.getElementById('pick').innerHTML = `
 
 /* ── downtime ──────────────────────────────────────────────────────── */
 const TIER = 2;
-const DIE_PX = 46;
 const NOTATION = `1d4 + ${TIER}`;
 const MOVES = [
   { id:'wounds',  n:'Tend to Wounds', t:'Clear 1d4 + Tier Hit Points.',  roll:true,  did:'Hit Points' },
@@ -371,47 +438,77 @@ const MOVES = [
 const ALLOW = 3;
 
 const plate = (m) => m.roll
-  ? `<span class="cast">${DIE('', 'd4', DIE_PX)}</span><span class="nt">${NOTATION}</span>`
+  ? `<span class="cast"><span class="fx">—</span></span><span class="nt">${NOTATION}</span>`
   : `<span class="cast"><span class="fx">${m.fx}</span></span><span class="nt">${m.cap}</span>`;
 
 document.getElementById('rest').innerHTML = `
 <div class="dtm">
-  <p class="ach">${ALLOW} downtime moves — Celestial Trance gives you more than the printed
-    two. Nothing here insists on the number.</p>
-  <div class="moves">${MOVES.map(m =>
-    `<button type="button" class="dt" data-move="${m.id}">
-      <span class="tray">${plate(m)}</span>
-      <span class="bd">
-        <span class="hd"><b>${m.n}</b>${m.roll ? `<s>${NOTATION}</s>` : ''}</span>
-        <span class="tx">${m.t}</span>
-        <span class="ft"><span class="tb">Downtime</span><span class="ct"></span>
-          <span class="go">take</span></span>
-      </span>
+  <p class="ach">${ALLOW} downtime moves — Celestial Trance.</p>
+  <div class="moves" style="--cols:${MOVES.length}">${MOVES.map(m =>
+    `<button type="button" class="dt" data-move="${m.id}" title="${m.t}">
+      <span class="plate">${plate(m)}</span>
+      <span class="bd"><b>${m.n}</b><span class="tx">${m.t}</span></span>
+      <span class="ct"></span>
       <span class="tbar"></span>
     </button>`).join('')}</div>
   <div class="log"></div>
   <p class="tally"></p>
   <div class="rl">
-    <div class="k">Your own cards on resting</div>
-    ${CRD({ d: byslug.splendor, sig: SIG.splendor, lvl: 2, rc: 1, type: 'ABILITY',
+    <div class="k">Changes this rest</div>
+    ${LN({ n: 'Celestial Trance', src: 'Loadout', note: 'extra move', peek: 'trance' })}
+    ${RF('Refreshed by this rest', [
+      { n: 'Deft Maneuvers', src: 'Loadout', t: 'Once per rest, mark a Stress to sprint anywhere within Far range without making an Agility Roll.' },
+      { n: 'Rune Ward', src: 'Loadout', uses: '0 / 1', t: 'You have a protective ward. When you or an ally within Close range takes damage, you can spend the ward to reduce the severity by one threshold.' },
+    ])}
+    ${PKL([['trance', {
+      d: byslug.splendor, sig: SIG.splendor, lvl: 2, rc: 1, type: 'ABILITY',
       name: 'Celestial Trance', foot: 'Splendor',
-      text: 'During a rest, you can drop into a trance to choose an additional downtime move.' },
-      'grants a downtime move')}
+      text: 'During a rest, you can drop into a trance to choose an additional downtime move.' }]])}
   </div>
 </div>`;
 
-const TUMBLE_MS = 620;
+/* ── the reel ───────────────────────────────────────────────────────
+   A strip of candidate totals scrolled to a stop on the real one. The
+   result is decided before it starts — that is true of every die in this
+   system — so what matters is that the value is *seen* unsettled first,
+   and that the answer never shows until it arrives. Hence the candidates
+   are drawn from the range the roll could have produced and the final one
+   is excluded from every cell but the last.
+
+   Cells are stepped in whole `REEL_PX`, which is `.dtm .dt .reel i`'s own
+   height in dlg.css. The two have to agree. */
+const REEL_CELLS = 9;
+const REEL_PX = 26;
+const REEL_MS = 780;
 const RESOLVE_MS = 300;
-function tumble(cell, faces, final, then){
-  cell.classList.remove('roll'); void cell.offsetWidth; cell.classList.add('roll');
-  const t0 = performance.now();
-  const tick = () => {
-    const t = performance.now() - t0;
-    if(t >= TUMBLE_MS){ cell.textContent = final; cell.classList.remove('roll'); then(); return; }
-    cell.textContent = 1 + Math.floor(Math.random() * faces);
-    setTimeout(tick, 34 + (t / TUMBLE_MS) * 90);
-  };
-  tick();
+
+function reel(cast, lo, hi, final, then){
+  if(hi <= lo || matchMedia('(prefers-reduced-motion: reduce)').matches){
+    cast.innerHTML = `<span class="fx">${final}</span>`;
+    then();
+    return;
+  }
+  const cells = [];
+  for(let i = 0; i < REEL_CELLS; i++){
+    let v = final;
+    while(v === final) v = lo + Math.floor(Math.random() * (hi - lo + 1));
+    cells.push(v);
+  }
+  cells.push(final);
+  cast.innerHTML = `<span class="slot"><span class="reel">${
+    cells.map(v => `<i>${v}</i>`).join('')}</span></span>`;
+  const strip = cast.querySelector('.reel');
+  /* The start value has to reach the browser before the end value does, or
+     there is nothing to transition from and the strip jumps. `offsetHeight`
+     flushes it — and deliberately not a `requestAnimationFrame`, which is the
+     obvious reach and is wrong twice: rAF does not fire in a tab that is not
+     painting, so a rest opened on a background window would sit on a reel
+     that never lands and never applies. A reflow is unconditional. */
+  strip.style.transform = 'translateY(0)';
+  void strip.offsetHeight;
+  strip.style.transition = `transform ${REEL_MS}ms cubic-bezier(.16,.72,.24,1)`;
+  strip.style.transform = `translateY(-${REEL_CELLS * REEL_PX}px)`;
+  setTimeout(then, REEL_MS);
 }
 
 /* A move is *taken*, not ticked. Tend to Wounds rolls a die, and what you do
@@ -422,15 +519,19 @@ function tumble(cell, faces, final, then){
 
    Three things this study is showing that the row it replaced could not:
 
-   THE MOVE IS A CARD, in `tile.css`'s vocabulary but not `.tile` — a tile is
-   built from a domain, a sigil and a level and a downtime move has none of
-   the three, so it is a sibling rather than an instance.
+   THE MOVE IS A SQUARE, in `tile.css`'s vocabulary but not `.tile` — a tile
+   is built from a domain, a sigil and a level and a downtime move has none of
+   the three, so it is a sibling rather than an instance. It was a landscape
+   card until the arithmetic was done on it: four of those, stacked, is four
+   hundred and fifty pixels before the first press, and everything this dialog
+   is about happens underneath them.
 
-   THE DIE ROLLS IN IT, in the panel where the card would carry its artwork,
-   and lands as `plate.css`'s own `.die`: the silhouette carrying the face,
-   with the total in the caption. In the system the tumble is Dice So Nice's,
-   thrown into that same box — see `dice/inplace.ts`. Here it is ours, which is
-   also what a table with the module switched off gets.
+   THE VALUE ROLLS IN IT, in the panel where a card would carry its artwork.
+   That used to be a die — `plate.css`'s silhouette, and a real Dice So Nice
+   one posed in the tray — and a die drawn small enough for a hundred-pixel
+   square is a chip with a numeral on it, so the number itself is what moves
+   now. It also settles the face-versus-total question by dissolving it: a
+   reel is not a d4 and claims nothing, so it lands on the total.
 
    AND IT CAN BE TAKEN BACK. Applying on the press is what makes the second
    move informed; it is also what makes a misclick a fact about your character.
@@ -452,8 +553,7 @@ function tumble(cell, faces, final, then){
 
   const idle = (card) => {
     const m = MOVES.find(x => x.id === card.dataset.move);
-    card.querySelector('.cast').innerHTML =
-      m.roll ? DIE('', 'd4', DIE_PX) : `<span class="fx">${m.fx}</span>`;
+    card.querySelector('.cast').innerHTML = `<span class="fx">${m.roll ? '—' : m.fx}</span>`;
     card.querySelector('.nt').textContent = m.roll ? NOTATION : m.cap;
     delete card.dataset.shown;
   };
@@ -490,14 +590,13 @@ function tumble(cell, faces, final, then){
   };
 
   const settle = (card, m) => {
-    const finish = (face, total) => {
-      if (m.roll) {
-        card.querySelector('.cast').innerHTML = DIE(face, 'd4 lit', DIE_PX);
-        card.querySelector('.nt').innerHTML = `= <b>${total}</b>`;
-      }
+    const finish = (total) => {
+      // The reel's own last cell is already the answer, so the settled value
+      // replaces the strip rather than being animated into place again.
+      if (m.roll) card.querySelector('.cast').innerHTML = `<span class="fx">${total}</span>`;
       card.classList.remove('rolling');
       card.classList.add('done');
-      // Let the die be read before the track moves under it.
+      // Let the number be read before the track moves under it.
       setTimeout(() => {
         const o = { k: `o${++seq}`, id: m.id, name: m.n, n: m.roll ? total : null,
           did: m.roll ? `cleared ${total} ${m.did}` : 'gained 1 Hope' };
@@ -510,10 +609,9 @@ function tumble(cell, faces, final, then){
       }, m.roll ? RESOLVE_MS : 0);
     };
 
-    if (!m.roll) { finish(0, 0); return; }
-    const face = 1 + Math.floor(Math.random() * 4);
-    card.querySelector('.cast').innerHTML = '<span class="tmb">—</span>';
-    tumble(card.querySelector('.tmb'), 4, face, () => finish(face, face + TIER));
+    if (!m.roll) { finish(0); return; }
+    const total = 1 + Math.floor(Math.random() * 4) + TIER;
+    reel(card.querySelector('.cast'), TIER + 1, TIER + 4, total, () => finish(total));
   };
 
   for (const card of cards) {
@@ -543,17 +641,125 @@ function tumble(cell, faces, final, then){
   sync();
 }
 
-/* ── the card the rest posts ───────────────────────────────────────── */
+/* ── the card the rest posts ─────────────────────────────────────────
+   A row is the plate's grammar: the die that produced it, the name, and
+   the amount at display size with its unit under it — in the track's own
+   material, which is the one place this system suspends "hue means
+   domain". It used to be a name, a small gold "1d4+Tier = 5" and the
+   sentence "cleared 5 Hit Points": three statements of one fact, and the
+   one anybody scrolls back for was the middle number of the sentence.
+
+   The die shows the *face* while the numeral shows what it was worth. The
+   dialog's reel is allowed to dissolve that distinction because there is no
+   die in it; a card with a die drawn on it is not. */
+const RROW = (o) => `<div class="r${o.n === 0 ? ' zero' : ''}"${o.t ? ` data-t="${o.t}"` : ''}>
+  ${o.face == null ? '' : `<span class="dc">${DIE(o.face, 'd4 lit')}</span>`}
+  <span class="bd"><b>${o.name}</b><s>${o.verb}</s></span>
+  ${o.unit ? `<span class="v"><b>${o.n}</b><em>${o.unit}</em></span>` : ''}
+</div>`;
+
 document.getElementById('restcard').innerHTML = `
 <div class="rest">
   <div class="k">Short Rest<s>Vess</s></div>
-  <div class="r"><span class="hd"><b>Tend to Wounds</b><s>1d4+Tier = 5</s></span>
-    <p>cleared 5 Hit Points</p></div>
-  <div class="r"><span class="hd"><b>Clear Stress</b><s>1d4+Tier = 4</s></span>
-    <p>cleared 4 Stress</p></div>
-  <div class="r"><span class="hd"><b>Prepare</b></span><p>gained 1 Hope</p></div>
-  <p class="ach">2 cards regained their uses.</p>
+  ${RROW({ face: 3, name: 'Tend to Wounds', verb: 'cleared', n: 5, unit: 'Hit Points', t: 'hitPoints' })}
+  ${RROW({ face: 2, name: 'Clear Stress', verb: 'cleared', n: 4, unit: 'Stress', t: 'stress' })}
+  ${RROW({ face: 1, name: 'Repair Armor', verb: 'repaired', n: 0, unit: 'Armor Slots', t: 'armorSlots' })}
+  ${RROW({ name: 'Prepare', verb: 'gained', n: 1, unit: 'Hope', t: 'hope' })}
+  <p class="ach">2 cards refreshed.</p>
 </div>`;
+
+/* ── the peek ───────────────────────────────────────────────────────
+   The sheet's, framed by the screen. peek.js positions and clamps against
+   the sheet window because that is the boundary a peek on a sheet must not
+   cross; a dialog is 500px of chrome floating over a board, so the frame is
+   the viewport — `position:fixed` on the layer, the same arithmetic against
+   innerWidth/innerHeight. Everything a player learned about the gesture on
+   the sheet holds: right of the row, flipped when there is no room, centred
+   and clamped, hover shows and click pins.
+
+   apps/rule-cards.ts carries this same function for the system. */
+const GAP = 14, EDGE = 12;
+
+function wirePeeks(root){
+  const layer = root.querySelector('.rl .peeklayer');
+  if(!layer) return;
+
+  /* Onto <body>, and in the system it is not optional: Foundry gives every
+     `.window-content` a backdrop-filter, and a filtered element is the
+     containing block for its own fixed descendants — so a layer that says
+     `fixed` inside a dialog is still framed by the dialog. The host carries
+     `dh` for the palette; the layer stays a descendant of it, so every rule
+     sheet.css writes for `.peeklayer` and `.pkc` lands untouched. This page
+     has no such ancestor and does it anyway, or it would be describing a
+     system it does not match. */
+  const host = document.createElement('div');
+  host.className = 'peekhost';
+  host.append(layer);
+  document.body.append(host);
+
+  // fit() measures wrapped text, so it needs the face it will be drawn in
+  fit(layer);
+  document.fonts?.ready.then(() => fit(layer));
+
+  let open = null, pinned = false;
+  const cardFor = row => layer.querySelector(`.pkc[data-peek="${row.dataset.peek}"]`);
+
+  // only close(true) clears a pin, so pointer traffic cannot dismiss one
+  const close = (force) => {
+    if(pinned && !force) return;
+    if(open) open.classList.remove('on','pin');
+    open = null; pinned = false;
+  };
+
+  const show = (row, pin) => {
+    const card = cardFor(row);
+    if(!card) return;
+    if(card === open){ if(pin){ pinned = true; card.classList.add('pin'); } return; }
+    close(true);
+
+    const r = row.getBoundingClientRect();
+    const w = card.offsetWidth, h = card.offsetHeight;
+    const vw = innerWidth, vh = innerHeight;
+
+    // right of the row by default; flipped rather than squeezed
+    let left = r.right + GAP, side = 'left';
+    if(left + w > vw - EDGE){ left = r.left - GAP - w; side = 'right'; }
+    if(left < EDGE){ left = Math.max(EDGE, (vw - w) / 2); side = 'center'; }
+
+    // centred on its row, then clamped into the screen
+    const mid = r.top + r.height / 2 - h / 2;
+    const top = Math.min(Math.max(EDGE, mid), Math.max(EDGE, vh - h - EDGE));
+
+    card.style.left = Math.round(left) + 'px';
+    card.style.top = Math.round(top) + 'px';
+    card.style.transformOrigin = side === 'center' ? 'center center' : `${side} center`;
+    card.classList.add('on');
+    if(pin) card.classList.add('pin');
+    open = card; pinned = !!pin;
+  };
+
+  root.addEventListener('pointerover', e => {
+    const t = e.target instanceof Element ? e.target : null;
+    if(!t) return;
+    const row = t.closest('.rl .ln[data-peek]');
+    if(row) show(row); else close();
+  });
+  /* Hover shows, click pins. A hover peek dies the moment you move toward it,
+     which is fine for "which card is this" and useless for "read this card" —
+     and reading it is the entire reason the panel exists. */
+  root.addEventListener('click', e => {
+    const t = e.target instanceof Element ? e.target : null;
+    const row = t?.closest('.rl .ln[data-peek]');
+    if(!row){ close(true); return; }
+    if(pinned && cardFor(row) === open) close(true); else show(row, true);
+  });
+  root.addEventListener('keydown', e => { if(e.key === 'Escape' && open){ e.stopPropagation(); close(true); } });
+  root.addEventListener('scroll', () => close(true), true);
+  addEventListener('resize', () => close(true));
+}
+
+wirePeeks(document.getElementById('dmg'));
+wirePeeks(document.getElementById('rest'));
 
 document.getElementById('lt').onchange = e =>
   document.documentElement.classList.toggle('light', e.target.checked);
@@ -562,7 +768,8 @@ document.getElementById('rm').onchange = e => {
   if(!e.target.checked) return;
   const s = document.createElement('style');
   s.id = 'rmstyle';
-  s.textContent = '.tmb.roll,.dt.done .die,.dt.lands .bd::after{animation:none !important}';
+  s.textContent = '.dt.done .fx,.dt.lands .bd::after{animation:none !important}' +
+    '.rl .ln,.rl .ln > p,.rl .ln > .crd{transition:none !important}';
   document.head.append(s);
 };
 </script>

@@ -144,6 +144,42 @@ export class CharacterData extends (TypeDataModel() as any) {
 
       experiences: arr(experienceField()),
 
+      /* ── what character creation wrote down ──────────────────────────
+         Almost nothing, and that is the design.
+
+         Whether a creation step is *done* is derived from the sheet on every
+         open — a class Item means you chose a class, an ancestry and a
+         community mean you chose a heritage — for the reason the advancement
+         marks are derived: there is then only one record, so it cannot
+         disagree with itself. A stored cursor would go stale the first time
+         somebody deleted their class from the gear tab.
+
+         Two things genuinely cannot be re-derived, so they are the only two
+         written here.
+
+         `finished` — because **done is a decision, not a fact**. A player
+         whose GM said "no armour, you're a monk" satisfies no armour check
+         and must still be able to say they have finished. And the derivation
+         *rots as the character advances*: at level 2 you gain a third
+         Experience and at level 5 your traits no longer match the starting
+         spread, so a level-6 character with nothing stored would open the
+         window and be told their sheet is wrong. It is inferred on first
+         contact for characters made before any of this existed — see
+         `inferFinished` in `apps/creation.ts` — so nobody's year-old
+         character is greeted by a progress bar reading 0 of 6.
+
+         `granted` — the ids of documents the flow itself created. Changing
+         your mind about class has to remove the subclass card that class gave
+         you and the domain cards that are no longer legal, and it must not
+         remove the longsword you looted in session three. Provenance is the
+         only thing that tells those apart, and nothing else on an Item
+         records it. */
+      creation: schema({
+        finished: bool(false),
+        /** Item ids this flow created, so a cascade removes only its own. */
+        granted: arr(str()),
+      }),
+
       gold: schema({
         handfuls: int(1, { min: 0 }),
         bags: int(0, { min: 0 }),
@@ -290,20 +326,38 @@ export class CharacterData extends (TypeDataModel() as any) {
     /* ── equipped armor sets Score, Slots and both thresholds ────────── */
     const armor = items.find?.((i: any) => i.type === "armor" && i.system.equipped);
     if (armor) {
-      this.armorScore.value = armor.system.baseScore + this.armorScore.bonus;
       this.resources.armorSlots.max = armor.system.baseScore;
     }
 
-    /* Equipped gear can carry a flat Evasion modifier — most armor does,
-       and a shield's is the reason Score and Slots had to split. */
-    const gearEvasion = items
-      .filter?.((i: any) => (i.type === "armor" || i.type === "weapon") && i.system.equipped)
-      .reduce((sum: number, i: any) => sum + (i.system.evasionModifier ?? 0), 0) ?? 0;
+    /* Equipped gear carries flat modifiers to both of the numbers a shield
+       touches, and for a long time only one of them arrived.
+
+       Evasion always worked. Armor Score did not — it was read off the equipped
+       *armor* alone, so a Round Shield's "Protective: +1 to Armor Score" went
+       nowhere, and a Tower Shield charged you its −1 Evasion and withheld the
+       +2 it was charging for. They are summed the same way over the same list
+       now, because they are the same kind of fact: a thing you are wearing
+       moving a number on the rail.
+
+       Slots deliberately stay the armor's alone. "Armor Score is how many
+       slots you have" is the usual shorthand and it is not quite the rule —
+       the score is what a shield raises and the slots are what the armour
+       gives you, which is the whole reason these were two fields. */
+    const worn =
+      items.filter?.(
+        (i: any) => (i.type === "armor" || i.type === "weapon") && i.system.equipped,
+      ) ?? [];
+    const gear = (key: string) =>
+      worn.reduce((n: number, i: any) => n + (i.system[key] ?? 0), 0);
+
+    this.armorScore.value =
+      (armor?.system.baseScore ?? 0) + this.armorScore.bonus + gear("armorScoreModifier");
+
     this.evasion.value =
       this.evasion.base +
       this.evasion.bonus +
       (this.advancementTally?.evasion ?? 0) +
-      gearEvasion;
+      gear("evasionModifier");
 
     if (!this.thresholds.override) {
       // Add your level to both of the armor's printed values. With no armor
@@ -332,6 +386,10 @@ export class CharacterData extends (TypeDataModel() as any) {
 
   declare scars: any[];
   declare spellcastTrait: string;
+  declare creation: { finished: boolean; granted: string[] };
+  declare biography: any;
+  declare gold: any;
+  declare loadoutLimit: number;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

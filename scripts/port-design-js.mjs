@@ -34,6 +34,7 @@ const MODULES = [
   "swap.js",
   "menu.js",
   "prep.js",
+  "make.js",
 ];
 
 mkdirSync(OUT, { recursive: true });

@@ -223,6 +223,25 @@ for (const c of pick(classes, "class")) {
       `${text.slice(0, 90)}…`,
       "—",
     );
+  /* And the paragraph the creation window prints has to *open* with that same
+     sentence.
+
+     `flavor` exists because the class row in the creation window is the one
+     screen where the chapter opener belongs — you are choosing between all
+     nine at once and two numbers cannot say what a class is like to play. The
+     risk in a second prose field is obvious and is the reason this check
+     exists: two descriptions of one class, edited months apart, quietly
+     disagreeing. Anchoring the paragraph's first sentence to the card's only
+     sentence makes them one fact stated at two lengths. It also catches the
+     likelier accident, which is a `flavor` pasted against the wrong class. */
+  const flavour = norm(c.system.flavor);
+  if (flavour && !flavour.startsWith(text.replace(/\s+$/, "")))
+    fail(
+      `class/${c.name}`,
+      "flavour paragraph does not open with the card's sentence",
+      `${flavour.slice(0, 90)}…`,
+      text,
+    );
   /* Plural, and every one of them named. Five of the nine classes print more
      than one feature, and they used to arrive joined under the book's section
      heading — so a check for "is there a feature" passed while the sheet drew

@@ -63,6 +63,7 @@ const SHEETS = [
   "menu.css",
   "prep.css",
   "dlg.css",
+  "make.css",
 ];
 
 /**
@@ -239,6 +240,16 @@ function port(name) {
     // rewritten, so `.prep .xr` becomes `.dh.prep .xr` rather than the
     // `.dh .prep .xr` the scoper would have written, which matches nothing.
     .replaceAll(".prep", ".dh.prep")
+    // The rules panel's peek host, fourth and the only one whose reason is
+    // somebody else's stylesheet: Foundry gives every `.window-content` a
+    // `backdrop-filter`, and a filtered element is the containing block for
+    // its own fixed descendants — so a peek layer inside a dialog is framed
+    // by the dialog no matter what `position` it claims. On <body> it is
+    // framed by the screen. Only the host wears `dh`; the `.peeklayer` and
+    // `.pkc` inside it are descendants of it, so `sheet.css`'s rules for
+    // them land unchanged, which is the whole point of hosting rather than
+    // restyling.
+    .replaceAll(".peekhost", ".dh.peekhost")
     /* `../assets/`, not `systems/gluniverse-daggerheart/assets/`.
        A relative `url()` resolves against the stylesheet it is written in,
        and these end up in `styles/` — so the absolute-looking form was
@@ -246,6 +257,27 @@ function port(name) {
        404'd. `../assets/` is correct from `styles/` and stays correct on a
        Foundry served under a route prefix, which a leading `/` would not. */
     .replaceAll("/design/assets/", "../assets/");
+
+  // A comment that never closes, or one closed twice, is the quietest failure
+  // this pipeline has. CSS recovers from it by discarding tokens up to the
+  // next `}` — so the rule *after* the mistake vanishes, everything else keeps
+  // working, and what you see in the game is one control behaving as though
+  // its stylesheet had never been written. It cost an hour here: an
+  // explanatory paragraph was pasted after a block that had already closed,
+  // and the button reset below it stopped existing. Nothing in the port, the
+  // build, `tsc` or `svelte-check` looks at CSS syntax.
+  //
+  // Counting delimiters is not a parser and is not meant to be. It catches the
+  // mistake that actually happens when these files are edited by hand, which
+  // is a paragraph landing on the wrong side of a comment's closing delimiter.
+  const opens = (css.match(/\/\*/g) ?? []).length;
+  const closes = (css.match(/\*\//g) ?? []).length;
+  if (opens !== closes) {
+    throw new Error(
+      `design/${name}: ${opens} comment openers and ${closes} closers. ` +
+        `An unbalanced comment silently deletes the rule that follows it.`,
+    );
+  }
 
   css = scope(css);
 

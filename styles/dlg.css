@@ -28,10 +28,9 @@
    `.cfg`, `.lst` are `sheet.css`'s and apply inside any `.dh` root, which
    is why there is no second copy of them in this file.
 
-   Two of the three also assume the *card* vocabulary: `tile.css` for the
-   landscape card and `plate.css` for the die. Both dialogs draw things the
-   player already knows how to read from somewhere else, and neither one
-   redraws them here. See `.rl .crd` and `.dtm .dt .die`.
+   Two of the three also assume the *card* vocabulary: the rules panel's
+   rows peek `card.css`'s 5:7 card through `sheet.css`'s own `.peeklayer`,
+   unchanged but for the frame it clamps against. See `.rl .peeklayer`.
    ══════════════════════════════════════════════════════════════════ */
 
 .dh .dlg{display:flex;flex-direction:column;gap:14px;padding:2px 0}
@@ -376,147 +375,165 @@
    the difference between telling you where you are and telling you what
    to do. */
 .dh .dtm{display:flex;flex-direction:column;gap:12px}
-.dh .dtm .moves{display:flex;flex-direction:column;gap:8px}
 
-/* ── a move is a card ──────────────────────────────────────────────
-   It used to be a list row: a bold name, a line of prose, and the word
-   "take" on the right. Correct, and it read as a form field — which is the
-   one thing this dialog spent its whole redesign not being. Everything else
-   a player picks up in this system is a card, drawn in one vocabulary and
-   at three densities, and a downtime move is exactly the same kind of
-   object: a thing you choose, spend, and can choose again.
+/* ── a move is a square ────────────────────────────────────────────
+   It was a landscape card — art plate on the left, gold seam, name in
+   display caps, rule, footer, tier bar — because everything else a player
+   picks up in this system is a card and a downtime move is the same kind
+   of object: a thing you choose, spend, and can choose again.
 
-   So it is the landscape card, in `tile.css`'s own grammar — art plate on
-   the left, gold seam, name in display caps, rule, footer, tier bar — but
-   it is *not* `.tile`. It cannot be. A tile is built from an Item with a
-   domain hue, a sigil and a level, and a downtime move has none of the
-   three; handing `TILE()` a graphite gear kind and a glyph would be
-   inventing an object rather than drawing one. It is a sibling in the
-   family, scoped here where it belongs, and it takes the family's
-   proportions rather than restating them.
+   All of that is still true and the card was still wrong, for a reason
+   that is about the dialog rather than about the move. Four cards at
+   104px, stacked, is four hundred and fifty pixels of column *before the
+   first press* — and everything a rest is actually about happens below
+   them. The ledger, the tally and the cards that change the rest were all
+   under the fold of a dialog whose deck had answered nothing yet.
 
-   And the plate is not a picture. It is the tray. */
+   So the deck is a row and each move is a square: the value on top where
+   the card carried its artwork, the name under it, the rule swapped in
+   over the name on hover. It is still the family's grammar — seam, tier
+   bar, display caps — and still not `.tile`, for the reason it never was:
+   a tile is built from a domain, a sigil and a level and a downtime move
+   has none of the three. A square that is a fifth of the width is a fifth
+   of the height, so the whole deck now costs about what one card did.
+
+   One track per move, stated inline, rather than `auto-fit` with a
+   `minmax`: a short rest has four moves and a long rest five, and letting
+   the grid work it out puts the fifth alone on a second row at a quarter
+   of the width. The count is known before the markup is written. */
+.dh .dtm .moves{display:grid;gap:8px;
+  grid-template-columns:repeat(var(--cols,4),minmax(0,1fr))}
 /* `height:auto` said out loud. Foundry's own `elements` layer gives every
-   button a fixed 32px, and a card is not 32px tall — the same line the big
-   damage numeral needed, for the same reason. */
-.dh .dtm .dt{position:relative;display:flex;align-items:stretch;width:100%;
-  height:auto;min-height:104px;
+   button a fixed 32px, and this one is as tall as it is wide. */
+.dh .dtm .dt{position:relative;display:flex;flex-direction:column;width:100%;
+  height:auto;min-height:0;aspect-ratio:1;
   padding:0;border:0;overflow:hidden;isolation:isolate;cursor:pointer;text-align:left;
   background:var(--paper);color:var(--ink);
-  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
-  box-shadow:0 6px 16px -6px rgba(0,0,0,.62),0 2px 6px rgba(0,0,0,.4);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%);
+  box-shadow:0 5px 14px -6px rgba(0,0,0,.62),0 2px 5px rgba(0,0,0,.4);
   transition:transform .26s cubic-bezier(.2,.8,.25,1),box-shadow .26s,filter .2s,opacity .2s}
 .dh .dtm .dt:hover:not(:disabled){transform:translateY(-3px);
-  box-shadow:0 12px 24px -8px rgba(0,0,0,.7)}
+  box-shadow:0 12px 22px -8px rgba(0,0,0,.7)}
 .dh .dtm .dt:disabled{cursor:default}
 /* Every card locks while one of them is rolling, and the one being rolled
    must not look locked — it is the only thing on screen that is doing
    anything. So the dimming is for its neighbours only. */
 .dh .dtm .dt:disabled:not(.rolling){filter:saturate(.55);opacity:.5}
 
-/* ── the tray, one per card ────────────────────────────────────────
-   The die rolls in the card that was pressed, in the panel where that card
-   would carry its artwork. There used to be one tray at the foot of the
-   dialog serving four moves, which is a die thrown somewhere else about
-   something you did up here — and with three or four rolls in a rest, the
-   answer to "what did that one give me" was always in the same box as the
-   answer to the last one.
+/* ── the plate, and it holds one value ─────────────────────────────
+   Where a card carries its artwork this carries the move's worth: the
+   notation before the press, the number after it. A long rest clears
+   everything and Prepare gives one Hope, so those state their value from
+   the first frame — the plate is the value either way, and rolling is
+   only how an unknown one becomes known.
 
-   The 280px bound is the same bound the shared tray had and for the same
-   reason: the die is thrown rather than posed, and a box the full width of
-   the dialog lets it come to rest in a far corner, which reads as a die
-   that got away. Per card it is a cap that never binds — 37% of a 500px
-   dialog is 185px — which is the point. See `dice/inplace.ts`.
+   **No seam, and no box.** `tile.css`'s gold rule divides a picture from a
+   panel, and that is a real division: the plate on a domain card is
+   somebody's painting and the body is somebody else's paragraph. Here
+   there is one object — a number and the thing it is the number *of* —
+   and a gold line across the middle of it makes two, then a hard-edged
+   dark ground makes the top one a box the numeral is stuck inside.
 
-   The gold seam is `tile.css`'s, turned the same way: it is what divides
-   the picture from the panel on every card in this system, and this is the
-   picture. */
-.dh .dtm .dt .tray{position:relative;flex:none;width:37%;max-width:280px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  background:radial-gradient(120% 120% at 56% 38%,var(--tint),var(--sunk));
-  perspective:420px}
-.dh .dtm .dt .tray::after{content:"";position:absolute;z-index:2;top:0;bottom:0;right:0;
-  width:2px;background:var(--hope)}
-.dh .dtm .dt.rolling .tray{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 45%,transparent)}
-.dh .dtm .dt .cast{display:grid;place-items:center;min-height:46px}
-/* The notation before the roll, the total after it. Same cell, because it
-   is the same fact at two stages of being known. */
-.dh .dtm .dt .nt{font:700 8px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ink-3);font-variant-numeric:tabular-nums}
-.dh .dtm .dt .nt b{font:700 15px/1 var(--f-display);letter-spacing:-.02em;color:var(--hope-tx)}
-/* A move with nothing to roll — a long rest clears everything, Prepare
-   gives one Hope — states its value where the die would be. The plate is
-   the value either way; rolling is only how an unknown one becomes known. */
-.dh .dtm .dt .fx{font:700 26px/1 var(--f-display);letter-spacing:-.03em;
-  text-transform:uppercase;color:var(--ink-2)}
-.dh .dtm .dt.done .fx{color:var(--hope-tx)}
-
-/* ── the die ───────────────────────────────────────────────────────
-   `plate.css`'s own `.die`: the silhouette of the die that was rolled with
-   the numeral riding on its front face. That is where this table already
-   reads a rolled number — it is what a damage card draws — and a rest die
-   drawn as a numeral in a chamfered cell was the same idea said in a
-   second dialect, for no reason beyond the rest dialog having been written
-   first.
-
-   The face is the *face*, not the total: a d4 showing 6 is a d4 lying
-   about what it is, which is the rule the chat plate's `data-mx` exists to
-   keep. So the die carries what the die rolled and the caption under it
-   carries the total, exactly as the damage card splits its dice from its
-   number.
-
-   Its material is set here rather than by borrowing `.die.h`, because `h`
-   is the Hope die and this is not one. Gold anyway, once it lands: a rest
-   is the one roll in this game whose result is entirely in your favour,
-   and gold is what this system spends on things that go your way. Before
-   it lands it is unlit — an empty die, waiting. */
-.dh .dtm .dt .die{--tone:var(--hope);--rimc:var(--line-2);--facec:var(--sunk-2);--numc:var(--ink-3)}
-.dh .dtm .dt.done .die{--rimc:#f2d178;--facec:#d4a72c;--numc:#171008;
-  animation:dt-land .34s cubic-bezier(.2,.9,.3,1) both}
+   So the ground fades to the paper it sits on, which is the whole trick:
+   with no edge there is nothing for the number to be inside, and the
+   value and the name read as one tile. Half the height, so the slack
+   around the numeral is proportional rather than padded on — it stays
+   even at the five-track width a long rest asks for, where a fixed pad
+   would have been the difference between breathing and clipping. */
+.dh .dtm .dt .plate{position:relative;flex:none;height:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  padding:0 7px;
+  background:linear-gradient(180deg,var(--sunk-2),
+    color-mix(in srgb,var(--sunk) 60%,var(--paper)) 66%,var(--paper))}
+.dh .dtm .dt.rolling .plate{background:linear-gradient(180deg,
+  color-mix(in srgb,var(--hope) 9%,var(--sunk-2)),
+  color-mix(in srgb,var(--sunk) 60%,var(--paper)) 66%,var(--paper))}
+.dh .dtm .dt .cast{position:relative;display:grid;place-items:center;height:26px}
+.dh .dtm .dt .fx{font:700 22px/26px var(--f-display);letter-spacing:-.03em;
+  text-transform:uppercase;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.dh .dtm .dt.done .fx{color:var(--hope-tx);animation:dt-land .34s cubic-bezier(.2,.9,.3,1) both}
 @keyframes dt-land{
-  0%  {opacity:0;transform:scale(1.55) rotate(-13deg)}
-  60% {opacity:1;transform:scale(.94)  rotate(3deg)}
+  0%  {opacity:0;transform:scale(1.5) rotate(-9deg)}
+  60% {opacity:1;transform:scale(.94) rotate(2deg)}
   100%{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.dh .dtm .dt.done .die{animation:none}}
+@media (prefers-reduced-motion:reduce){.dh .dtm .dt.done .fx{animation:none}}
+/* The notation before the roll, the unit after it. Same cell, because it
+   is the same fact at two stages of being known. */
+.dh .dtm .dt .nt{font:700 7px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);font-variant-numeric:tabular-nums}
 
-/* ── the panel ─────────────────────────────────────────────────────*/
-.dh .dtm .dt .bd{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
-  padding:11px 13px 12px;transition:opacity .16s}
+/* ── the reel ──────────────────────────────────────────────────────
+   The die used to be a die. `plate.css`'s own silhouette carried the
+   face, and with Dice So Nice installed it was a real three-dimensional
+   one, posed and spun in the tray by a second `DiceBox` over a second
+   `DiceFactory` with a generated table of face normals behind it.
+
+   Both are gone, and the square is why. A die drawn small enough to sit
+   in a hundred-pixel tile is a chip with a numeral on it — the geometry
+   that made it a *die* is below the resolution of the box it is in — and
+   a WebGL context is a great deal of machinery to put behind a numeral
+   nobody is watching land. What a rest asks is "what did I get", so the
+   number itself is what moves: a reel of candidates scrolling to a stop,
+   which is how a number looks when it has not settled.
+
+   It also dissolves the face-versus-total argument rather than answering
+   it. A die showing 6 on a d4 is a die lying about what it is, which is
+   why the silhouette had to carry the face and the caption the total. A
+   reel is not a d4 and claims nothing, so it lands on the total — the
+   number the move is actually worth — and the caption says where it came
+   from.
+
+   Same cell and same face as the value it replaces, so the landing is one
+   26px numeral swapped for another rather than a change of object. */
+.dh .dtm .dt .slot{display:block;height:26px;overflow:hidden}
+.dh .dtm .dt .reel{display:block;will-change:transform}
+.dh .dtm .dt .reel i{display:block;height:26px;font:700 22px/26px var(--f-display);
+  letter-spacing:-.03em;font-style:normal;color:var(--ink-2);text-align:center;
+  font-variant-numeric:tabular-nums}
+/* Blur along the one axis the reel moves. It costs nothing and it is what
+   keeps eight discrete numerals from reading as eight numerals. */
+.dh .dtm .dt.rolling .reel{filter:blur(.45px)}
+@media (prefers-reduced-motion:reduce){.dh .dtm .dt.rolling .reel{filter:none}}
+
+/* ── the panel ─────────────────────────────────────────────────────
+   The name, and the rule in its place under the pointer. A square this
+   wide cannot hold both at a size either can be read at, and of the two
+   the name is what you need to *find* the move while the rule is what you
+   need once you have found it.
+
+   So they share the cell. The rule is absolutely positioned over the name
+   in its own paper rather than expanding it, because a deck that grows
+   under the pointer makes you re-aim mid-gesture — the same reason the
+   edit-mode banner takes height rather than overlaying, read the other
+   way round, and the difference is again duration. `title` carries the
+   same sentence for a reader with no pointer at all. */
+.dh .dtm .dt .bd{position:relative;flex:1 1 auto;min-height:0;display:flex;align-items:center;
+  padding:2px 8px 9px;transition:opacity .16s}
 .dh .dtm .dt.rolling .bd{opacity:.5}
-.dh .dtm .dt .hd{display:flex;align-items:baseline;gap:9px;min-width:0}
-.dh .dtm .dt .hd b{flex:1 1 auto;min-width:0;font:700 15px/1.06 var(--f-display);
-  letter-spacing:-.012em;text-transform:uppercase;color:var(--ink)}
-.dh .dtm .dt .hd s{flex:none;text-decoration:none;font:700 8px/1 var(--f-mono);
-  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
-/* Two lines, always — clamped so a long rule cannot make one card taller than
-   its neighbours, and reserved so a short one cannot make it shorter. Four
-   cards at one height is what makes them read as a set of the same thing;
-   Prepare's rule is the only one that wraps and it was pulling its own card
-   4px out of line with the three above it. */
-.dh .dtm .dt .tx{margin:6px 0 0;font:400 11.5px/1.42 var(--f-ui);color:var(--ink-2);
-  min-height:calc(11.5px * 1.42 * 2);
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.dh .dtm .dt .ft{margin-top:auto;padding-top:9px;display:flex;align-items:center;gap:10px;
-  border-top:1px solid var(--line)}
-.dh .dtm .dt .tb{flex:none;font:700 8px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
-  color:var(--ink-3);background:var(--sunk-2);padding:4px 6px 4px 7px}
+.dh .dtm .dt .bd > b{font:700 10.5px/1.14 var(--f-display);letter-spacing:-.01em;
+  text-transform:uppercase;color:var(--ink);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.dh .dtm .dt .tx{position:absolute;inset:0;z-index:3;display:flex;align-items:center;
+  padding:2px 8px 9px;background:var(--paper);pointer-events:none;
+  font:400 8.6px/1.36 var(--f-ui);color:var(--ink-2);
+  opacity:0;transition:opacity .13s ease-out}
+.dh .dtm .dt:hover:not(:disabled) .tx,.dh .dtm .dt:focus-visible .tx{opacity:1}
+
 /* How many times this move has been taken, once it has been taken at all.
-   The rules allow the same move twice and the ledger says so in order; this
-   says so on the object, which is where you are looking when you decide
-   whether to press it again. */
+   The rules allow the same move twice and the ledger says so in order;
+   this says so on the object, which is where you are looking when you
+   decide whether to press it again. A corner chip on the plate rather
+   than a footer cell — the square has no footer, and the count belongs
+   beside the number it produced. */
 /* `.took` and `.done` are two facts and they come apart. `.took` is "this
    move has been made"; `.done` is "this card's plate is showing a result".
    Take a move twice and undo the second and the move still happened, while
    the number on the plate did not. */
-.dh .dtm .dt .ct{display:none;flex:none;font:700 8px/1 var(--f-mono);letter-spacing:.1em;
-  color:var(--hope-tx);font-variant-numeric:tabular-nums}
+.dh .dtm .dt .ct{position:absolute;z-index:4;top:0;right:0;display:none;
+  padding:3px 5px 4px 6px;background:var(--hope);color:#171008;
+  font:700 8px/1 var(--f-mono);letter-spacing:.06em;font-variant-numeric:tabular-nums;
+  clip-path:polygon(0 0,100% 0,100% 100%,4px 100%,0 calc(100% - 4px))}
 .dh .dtm .dt.took .ct{display:block}
-/* The verb, on the right, where the press lands. Quiet until the card is
-   under the pointer — the whole card is the button, and a permanently lit
-   call to action on four cards at once is four things shouting. */
-.dh .dtm .dt .go{margin-left:auto;flex:none;font:700 8px/1 var(--f-mono);letter-spacing:.18em;
-  text-transform:uppercase;color:var(--ink-4);transition:color .12s}
-.dh .dtm .dt:hover:not(:disabled) .go{color:var(--hope-tx)}
 /* The family's tier bar, doing a job the family's does not: it fills as the
    move is taken, so a card that has been used says so from across the
    dialog without a word. */
@@ -554,31 +571,6 @@
   100%{opacity:0;transform:translateX(-62%)}}
 @media (prefers-reduced-motion:reduce){
   .dh .dtm .dt.lands .bd::after,.dh .dtm .dt.undone .bd::after{animation:none}}
-
-/* A tray waiting for a real die should be empty, not holding a placeholder
-   the module is about to roll over. */
-.dh .dtm.dsn .tmb{display:none}
-
-/* Ours, for a table with no 3D dice. It tumbles rather than counting up:
-   the face has to be seen unsettled before it settles or the motion is
-   decoration over an answer that was already decided — which it was, and
-   which is true of every die in this system. Two axes and a scale, because
-   one axis reads as a flip. */
-.dh .tmb{flex:none;width:44px;height:44px;display:flex;align-items:center;
-  justify-content:center;background:var(--sunk-2);
-  box-shadow:inset 0 0 0 1px var(--line-2);
-  clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);
-  font:700 19px/1 var(--f-display);color:var(--ink);
-  font-variant-numeric:tabular-nums;transform-style:preserve-3d}
-.dh .tmb.roll{animation:tmb-tumble .62s cubic-bezier(.2,.86,.28,1) both}
-@keyframes tmb-tumble{
-  0%  {transform:rotateX(-232deg) rotateY(168deg) scale(.74)}
-  62% {transform:rotateX(16deg)   rotateY(-13deg) scale(1.09)}
-  100%{transform:none}}
-/* Reduced motion keeps the *cycling* — that is information, not decoration,
-   and it is the half that says the number is not settled yet. Only the
-   spin goes. */
-@media (prefers-reduced-motion:reduce){.dh .tmb.roll{animation:none}}
 
 /* ── the ledger ────────────────────────────────────────────────────
    What has happened so far, newest at the bottom, in the order it
@@ -633,57 +625,200 @@
    than automation, and one that stays true for a feature the GM wrote
    last night.
 
-   They are drawn as *cards* now, when there is a card behind them. "Takaia
-   Armored Beetles · Loadout" as a bold line over a paragraph is a rule; the
-   tile is the object that rule is printed on, and the object is what the
-   player is holding, hunting for in their loadout, and about to decide
-   whether to spend. The prose block stays for the rules that have no card
-   — a homebrew feature, an adversary's — because those genuinely are only
-   text. */
-.dh .rl{background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);padding:10px 12px 12px;
+   ── two lanes, not one list ───────────────────────────────────────
+   The panel used to draw everything that *mentioned* what you were doing
+   at one weight, and on a real character that is two different questions
+   wearing one answer. A rest is the clearest case: Celestial Trance
+   changes the rest — it hands you a third downtime move and you have to
+   read it to use it — while Deft Maneuvers only says "once per rest",
+   which means the rest gives it back. Both mention resting. One of them
+   is a decision and the other is a receipt, and printing the receipt as a
+   full card is the panel shouting a fact you do not act on.
+
+   The same split, pointed at damage, is what took the passive rules off
+   that dialog entirely: a weapon's Protective is +1 to a threshold the
+   band above it has already drawn, so a card printing it is the dialog
+   asking you to apply arithmetic it did. Only what can be *spent* while
+   the hit is landing survives — see `REDUCE_RX` in `apps/rules.ts`.
+
+   ── one line per rule, in both lanes ──────────────────────────────
+   What the two lanes no longer differ in is *shape*. The bearing lane
+   drew full tiles and the recharge lane drew lines, and a character three
+   sessions in has four or five rules bearing on a rest — five tiles is
+   five hundred pixels of panel under a dialog whose controls are all
+   above it, and the reader is scrolling a deck to find one name.
+
+   So every rule is a line: what it is called, where it came from, and one
+   gesture to open it. The lanes are told apart by weight and by heading
+   rather than by furniture, which is what a heading is for.
+
+   ── what opens is the split that survives ─────────────────────────
+   A line has to be one gesture away from *something*, and which something
+   is the one distinction here worth drawing. Two kinds of rule end up in
+   this panel:
+
+   A **class feature** — Cloaked, Sneak Attack, a knack the GM wrote last
+   night — is not printed on anything. You cannot spend it, move it or
+   lose it; there is no object, the text is the whole of it, and the sheet
+   itself stopped drawing a class card for exactly this reason (see `.abl`
+   in `sheet.css`). So the line opens the rule, and that is everything
+   there is to open.
+
+   A **domain card, ancestry, community or subclass** — and the weapon or
+   armour you are wearing — is a printed object the player is holding,
+   hunting for in their loadout, and about to decide whether to spend. For
+   those the line opens **the card** — the 5:7 playing card, the same
+   `.pkc` the sheet's spines peek, drawn by the same builder and behaving
+   the same way. It is not a copy of that gesture, it is that gesture: a
+   player who learned it on the sheet has learned it here.
+
+   It was the landscape tile for a while and that was wrong twice over. A
+   tile is the *handle* for a card — it is what a row of the loadout is —
+   so putting one where a card would go says "here is the handle" to
+   somebody who already has the handle in front of them. And it was drawn
+   inside the row, which is the only place a tile fits and the reason it
+   was chosen; a card does not have to live in the row, so it does not.
+
+   The two kinds wear no modifier class between them. Which one a row is
+   *is* whether it carries `data-peek`, and a class restating that is a
+   second name for a fact already in the markup. */
+.dh .rl{background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);padding:9px 11px 11px;
   clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
-.dh .rl > .k{display:block;margin-bottom:9px;font:700 8.5px/1 var(--f-mono);
+.dh .rl > .k{display:block;margin-bottom:8px;font:700 8px/1 var(--f-mono);
   letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
-.dh .rl .r + .r,.dh .rl .crd + .r,.dh .rl .r + .crd{margin-top:9px;padding-top:9px;
-  border-top:1px solid var(--line)}
-.dh .rl .r .hd{display:flex;align-items:baseline;gap:9px;min-width:0}
-.dh .rl .r .hd b{font:600 11.5px/1.3 var(--f-ui);color:var(--ink)}
-.dh .rl .r .hd s{margin-left:auto;flex:none;text-decoration:none;font:700 8px/1 var(--f-mono);
-  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4)}
-.dh .rl .r p{margin:4px 0 0;font:400 11px/1.45 var(--f-ui);color:var(--ink-2)}
-.dh .rl .r p b{font-weight:700;color:var(--ink)}
-.dh .rl .r p b.t-hope{color:var(--hope-tx)}
-.dh .rl .r p b.t-fear{color:var(--fear-tx)}
-.dh .rl .r p i{font-style:italic}
 
-/* ── the card, un-clamped ──────────────────────────────────────────
-   `.tile` is 5:2.1 with its body clamped to three lines, and that is right
-   everywhere it is used: on a sheet the tile is a handle and the full card
-   is one click away. Here there is no card to open and the entire reason
-   the rule is on screen is that you are about to apply it by hand, so a
-   rule that stops mid-sentence is the panel failing at its one job.
+/* `tabindex` because what a line holds is behind a hover, and a hover is
+   not something everybody has. The row is not a control — there is nothing
+   to press and nothing happens — so it is a focus stop rather than a
+   button, and `:focus-within` opens it exactly as the pointer does.
 
-   So this one variant lets the panel set the height and prints the rule
-   whole. Scoped under `.rl` and not written into `tile.css`, because that
-   file belongs to the sheet and a global change would follow it there —
-   which is the same reason the move card above is `.dt` rather than a
-   fourth density of `.tile`. */
-.dh .rl .crd + .crd{margin-top:9px}
-.dh .rl .crd .tile{aspect-ratio:auto;min-height:98px}
-.dh .rl .crd .tile .tx{display:block;-webkit-line-clamp:unset;overflow:visible}
+   `grid-template-rows` from `0fr` to `1fr` is what animates a height
+   nobody has measured, which is the whole reason this can hold a
+   paragraph and a card without knowing how tall either is. */
+.dh .rl .ln{display:grid;grid-template-rows:auto 0fr;padding:5px 8px 6px;
+  background:var(--sunk-2);cursor:help;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%);
+  transition:grid-template-rows .2s cubic-bezier(.2,.8,.25,1),background .12s}
+.dh .rl .ln + .ln{margin-top:2px}
+.dh .rl .ln:hover,.dh .rl .ln:focus-visible{background:var(--raise);outline:0}
+.dh .rl .ln:hover,.dh .rl .ln:focus-within{grid-template-rows:auto 1fr}
+.dh .rl .ln > .hd{display:flex;align-items:baseline;gap:8px;min-width:0}
+.dh .rl .ln > .hd b{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;font:600 11px/1.35 var(--f-ui);color:var(--ink)}
+/* Where it came from, so two cards with the same name on two characters
+   are still two cards. Ellipses before the right-hand cell does, because
+   that cell is a count or a reason and both are load-bearing. */
+.dh .rl .ln > .hd em{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;font-style:normal;font:500 7.5px/1 var(--f-mono);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-4)}
+.dh .rl .ln > .hd s{flex:none;margin-left:auto;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.06em;color:var(--hope-tx);font-variant-numeric:tabular-nums}
 /* Why this one is here at all, when the reason is not "it mentions rests"
-   but "it is the card that gave you a third move". Said above the tile
-   rather than on it: the card says what it says, and this is the dialog's
-   note about it. */
-.dh .rl .crd .wh{display:block;margin-bottom:5px;font:700 8px/1 var(--f-mono);
-  letter-spacing:.16em;text-transform:uppercase;color:var(--hope-tx)}
+   but "it is the card that gave you a third move". It sits in the count's
+   cell because it answers the same question — what this row is claiming —
+   and a row never carries both. */
+.dh .rl .ln > .hd s.wh{font-size:7.5px;letter-spacing:.16em;text-transform:uppercase}
+
+/* min-height:0 is what lets the `0fr` track actually be zero — without it
+   the row's automatic minimum size is its content and nothing collapses. */
+.dh .rl .ln > p{margin:0;min-height:0;overflow:hidden;
+  font:400 10.5px/1.45 var(--f-ui);color:var(--ink-2);
+  transition:padding-top .2s cubic-bezier(.2,.8,.25,1)}
+.dh .rl .ln:hover > p,.dh .rl .ln:focus-within > p{padding-top:5px}
+.dh .rl .ln > p b{font-weight:700;color:var(--ink)}
+.dh .rl .ln > p b.t-hope{color:var(--hope-tx)}
+.dh .rl .ln > p b.t-fear{color:var(--fear-tx)}
+.dh .rl .ln > p i{font-style:italic}
+/* A row that peeks has nothing to grow — the card is not in it. It keeps the
+   lift on hover, because that is the row saying it heard you. */
+.dh .rl .ln[data-peek]{cursor:pointer}
+
+/* ── the peek: the sheet's layer, framed by the screen ─────────────
+   `.peeklayer` and `.pkc` are `sheet.css`'s and are left entirely alone;
+   the card, its shadow, its 262px, the scale-in and the pinned state all
+   arrive from there, which is the point — this is the sheet's peek, not a
+   second one that resembles it.
+
+   What differs is the frame. On a sheet the layer is a child of the window,
+   because the window is the one boundary a card must not cross. A dialog is
+   500px of chrome floating over a board: a card clamped inside *that* would
+   have nowhere to go, and the dialog's own scroller would clip it besides —
+   the exact bug that put the sheet's cards in a layer to begin with,
+   arriving from the other direction. So the frame is the screen.
+
+   And the screen is not reachable from inside the dialog. `position:fixed`
+   was the obvious answer and it is wrong here: **Foundry gives every
+   `.window-content` a `backdrop-filter`**, and a filtered element is the
+   containing block for its fixed descendants, so a "fixed" layer inside a
+   dialog is framed by the dialog after all. It fails quietly, too — the
+   layer reports `position:fixed` and a 538px box, and the card flies off the
+   right of the screen to coordinates that were correct for a frame it does
+   not have.
+
+   So the host goes on `<body>`, which is what the drag proxy, the context
+   menu and the roll popover all do and for the same reason: no ancestor, no
+   clip, no containing block anybody else owns. It carries `dh` itself — see
+   the note at the head of CLAUDE.md — so the port rewrites the class below
+   into a compound rather than a descendant, as it does for the other three.
+   The `.peeklayer` inside it is a *descendant* of that `dh`, so every rule
+   `sheet.css` writes for the layer and its cards lands untouched. */
+.dh.peekhost{position:fixed;inset:0;z-index:9000;pointer-events:none}
+
+/* ── the other lane: what merely comes back ────────────────────────
+   A card that says "once per rest" is not asking you to do anything. The
+   rest gives its use back whether or not you read it — `refreshUses` does
+   exactly that, on Done, to every card with a `uses` pool — so the honest
+   report is a line saying so, not a decision asking to be taken.
+
+   It is the same line as the lane above it, one step quieter, and the two
+   things that make it quieter are the two things that differ: the name
+   drops a shade, and the right-hand cell holds a count rather than a
+   reason. Everything else — the hover, the growth, the geometry — is
+   shared, because it is the same object saying a different sentence.
+
+   Growing rather than overlaying, which is the opposite of the move
+   square's choice above, and the difference is what is underneath. A deck
+   is a grid you are aiming at and a reflow under the pointer costs you the
+   press; this is the last thing in the dialog and there is nothing below
+   it to push but its own siblings. */
+.dh .rl .rf{margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.dh .rl .rf > .k{display:block;margin-bottom:6px;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ink-4)}
+.dh .rl .rf .ln > .hd b{font-size:10.5px;color:var(--ink-2)}
+.dh .rl .rf .ln > p{font-size:10px;color:var(--ink-3)}
+.dh .rl .rf .ln > p b{color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){
+  .dh .rl .ln,.dh .rl .ln > p,.dh .rl .ln > .crd{transition:none}}
 
 /* ══ the rest, in the log ═══════════════════════════════════════════
    Not a card. A card is a thing you hold, and a rest is a thing that
    happened — so it takes the plate's width and the panel's furniture
    rather than the 5:7 frame, and it says what changed rather than what a
    rule says. One message for the whole rest, which is the other half of
-   the dice rolling in the dialog: three moves is one record, not four. */
+   the dice rolling in the dialog: three moves is one record, not four.
+
+   ── the number is the point ───────────────────────────────────────
+   Each row used to be a name, a small gold "1d4+Tier = 5", and a
+   sentence: "cleared 5 Hit Points". Three statements of one fact, none
+   of them loud, and the one anybody scrolls back for — *how many* — was
+   the middle number of the sentence, at body size.
+
+   So the row is a plate row, in the grammar a damage card already uses:
+   the die that produced it on the left, the name in the middle, and the
+   amount at display size on the right with its unit under it. The die is
+   `plate.css`'s own — the same silhouette-with-a-numeral the duality
+   pair lands as — and it shows the *face*, because in the log there is
+   room for both and a d4 reading 6 is the lie `data-mx` exists to stop.
+   The dialog's reel could dissolve that distinction; a card with the die
+   drawn on it cannot.
+
+   And each row is drawn in **its own track's material**, which is the
+   one place this system suspends "hue means domain": a wound bleeds, a
+   strain is scored, a plate fractures, and telling those three apart at
+   a glance is worth more here than anywhere. Note the die's colours have
+   to be set through a selector that reaches the die itself — `.die`
+   declares `--rimc` and friends *on itself*, so a value inherited from
+   the row would lose to it. */
 .dh .rest{width:100%;max-width:300px;background:var(--paper);
   box-shadow:inset 0 0 0 1px var(--line),0 8px 20px -12px rgba(0,0,0,.6);
   padding:13px 15px 15px;
@@ -692,9 +827,34 @@
   font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
   color:var(--ink-3)}
 .dh .rest > .k s{margin-left:auto;text-decoration:none;font-size:9px;color:var(--hope-tx)}
-.dh .rest .r + .r{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
-.dh .rest .r .hd{display:flex;align-items:baseline;gap:9px}
-.dh .rest .r .hd b{font:600 12px/1.25 var(--f-ui);color:var(--ink)}
-.dh .rest .r .hd s{margin-left:auto;text-decoration:none;font:700 9px/1 var(--f-mono);
-  color:var(--hope-tx);font-variant-numeric:tabular-nums}
-.dh .rest .r p{margin:3px 0 0;font:400 11px/1.4 var(--f-ui);color:var(--ink-2)}
+.dh .rest .r{display:flex;align-items:center;gap:10px}
+.dh .rest .r + .r{margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.dh .rest .r .dc{flex:none;display:grid;place-items:center;width:28px}
+.dh .rest .r .die{--sz:27px}
+.dh .rest .r .bd{flex:1 1 auto;min-width:0}
+.dh .rest .r .bd b{display:block;font:600 12px/1.25 var(--f-ui);color:var(--ink)}
+.dh .rest .r .bd s{display:block;margin-top:3px;text-decoration:none;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-4)}
+.dh .rest .r .v{flex:none;text-align:right}
+.dh .rest .r .v b{display:block;font:700 25px/1 var(--f-display);letter-spacing:-.04em;
+  color:var(--tk,var(--ink));font-variant-numeric:tabular-nums}
+.dh .rest .r .v em{display:block;margin-top:3px;font-style:normal;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+/* Nothing to clear is a real and common outcome — you took the move
+   because the die is free — so the row stays and the zero recedes. */
+.dh .rest .r.zero .v b,.dh .rest .r.zero .v em{color:var(--ink-4)}
+
+.dh .rest .r[data-t="hitPoints"]{--tk:var(--wound-gl)}
+.dh .rest .r[data-t="hitPoints"] .die{--tone:var(--wound-gl);--rimc:var(--wound-gl);
+  --facec:var(--wound-d);--numc:#fff}
+.dh .rest .r[data-t="stress"]{--tk:var(--strain)}
+.dh .rest .r[data-t="stress"] .die{--tone:var(--strain);--rimc:var(--strain);
+  --facec:var(--strain-d);--numc:#fff}
+/* Armour is the one mark that is not a colour, it is an event — so the
+   steel is the body and the gold is only the glow around it. Dark
+   numerals in both themes: `--plate-d` is a mid grey either way and white
+   on it is under three to one. */
+.dh .rest .r[data-t="armorSlots"]{--tk:var(--plate)}
+.dh .rest .r[data-t="armorSlots"] .die{--tone:var(--plate-fl);--rimc:var(--plate);
+  --facec:var(--plate-d);--numc:#0e1114}
+.dh .rest .r[data-t="hope"]{--tk:var(--hope-tx)}

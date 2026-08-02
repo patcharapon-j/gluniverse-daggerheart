@@ -44,6 +44,8 @@
   import { capture, flip } from "../ui/swap.js";
   import { menu } from "../ui/menu.js";
   import { prep } from "../ui/prep.js";
+  import { openCreation } from "../apps/create.ts";
+  import { stepsOf } from "../apps/creation.ts";
   import {
     cardOf,
     featureCard,
@@ -182,6 +184,37 @@
   const vitSpan = $derived(
     Math.max(sys.resources?.hitPoints?.max ?? 6, sys.resources?.stress?.max ?? 6),
   );
+
+  /* ── character creation, from the outside ──────────────────────────
+     The plate reads the same derivation the window does, so the two can
+     never disagree about how far along this character is — there is one
+     answer and `stepsOf` is it. `snap.rev` is read to make it reactive:
+     everything creation touches is an embedded document, and the snapshot
+     is what knows those changed.
+
+     The hint names what is *outstanding* rather than what is done, because
+     the outstanding half is the actionable one. Two names at most, then a
+     count — "traits, equipment and 2 more" reads; six names is a paragraph
+     in a 252px column. */
+  const made = $derived.by(() => {
+    void snap.rev;
+    const steps = stepsOf(doc);
+    const left = steps.filter((s) => !s.done);
+    const done = steps.length - left.length;
+    const names = left.slice(0, 2).map((s) => s.label.toLowerCase());
+    const rest = left.length - names.length;
+    return {
+      finished: !!sys.creation?.finished,
+      pct: Math.round((done / Math.max(1, steps.length)) * 100),
+      hint: sys.creation?.finished
+        ? "Finished — open it to change anything"
+        : left.length
+          ? `${done} of ${steps.length} · ${[...names, rest ? `${rest} more` : ""]
+              .filter(Boolean)
+              .join(", ")} outstanding`
+          : `${done} of ${steps.length} · ready to finish`,
+    };
+  });
 
   const heritage = $derived(
     [snap.of("ancestry")[0]?.name, snap.of("community")[0]?.name].filter(Boolean).join(" · ") ||
@@ -1934,6 +1967,37 @@
           <span>{heritage}<br />{className}{subclassName ? " · " : ""}<em>{subclassName}</em></span>
         </div>
       </div>
+
+      <!-- Where you go to make this character, and it does two jobs at two
+           different times. On a fresh sheet the most important fact is that
+           nothing has been chosen yet, and that should be loud; once creation
+           is finished the same control has to go quiet and stay reachable,
+           because swapping one domain card three weeks later is the same
+           gesture as choosing it.
+
+           It takes height rather than overlaying — edit mode's rule, and the
+           same reasoning: a hint that lasts a second may float over the sheet,
+           a state that lasts a session may not. And it never disappears, or it
+           becomes a control you have to hunt for exactly when you want it. -->
+      {#if ed}
+        <button
+          type="button"
+          class="mkp"
+          class:done={made.finished}
+          title={made.finished
+            ? "Open character creation — change anything you chose."
+            : "Walk through character creation."}
+          onclick={() => openCreation(doc)}
+        >
+          <span>
+            <b>{made.finished ? "Character creation" : "Make this character"}</b>
+            <em>{made.hint}</em>
+          </span>
+          {#if !made.finished}
+            <div class="fbar"><u style="width:{made.pct}%"></u></div>
+          {/if}
+        </button>
+      {/if}
 
       <div class="scr">
         <!-- defence -->

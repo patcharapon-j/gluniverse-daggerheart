@@ -119,6 +119,7 @@ not know about is never mounted, and nothing says so.
 | `classes` | 9 classes and 54 subclass cards, foldered by class |
 | `heritage` | 18 ancestries and 9 communities |
 | `domains` | 189 domain cards, foldered by domain, in deck order |
+| `equipment` | 358 documents: 204 weapons, 34 armour, 60 consumables, 60 items |
 
 A subclass is three documents, not one — Foundation, Specialization, Mastery —
 because that is how you acquire it. `subclassCards()` does the expansion so
@@ -304,6 +305,355 @@ the text; it does not grant the paintings. `assets/cards/CREDITS.md` says so
 and names all 234 of them. It is committed because the cards are drawn with it
 — unlike `docs/`, which nothing reads — but if this history goes public, that
 folder is the first thing to move into `.gitignore`.
+
+## The equipment tables
+
+`src/packs-src/equipment-tables.mjs` and `loot-tables.mjs` are chapter 2, typed
+in. They are the one body of content here with **no upstream at all** — the
+official Card Creator publishes cards, and a longsword is not a card — so
+`fetch-cards.mjs` cannot reach them and `check-cards.mjs` has nothing to compare
+them against.
+
+`equipment.mjs` is therefore **not generated**, which is a deliberate departure
+from `domain-cards.mjs` rather than an inconsistency. A generated file exists
+because something upstream writes it, and it is then a second copy of the same
+facts that the build has to keep checking. Nothing writes these, so the pack
+derives its documents from the tables at import time: one copy, nothing to
+drift, and the check tool is free to spend its attention on the question that
+actually matters.
+
+That question is **did a line get lost on the way in**, and
+`tools/check-equipment.mjs` answers it by asserting the book's own regularities:
+every tier reprints the same fifteen physical primaries, ten magic primaries,
+seven secondaries and four armours under an Improved / Advanced / Legendary
+prefix; every secondary is One-Handed; both d12 tables run 1–60 with no gaps or
+repeats; every trait, range, burden and die is a value the closed sets contain.
+The staples are **named, not counted** — a count catches a deleted row, and the
+failure that actually happens when you copy a table by hand is transcribing one
+row twice and its neighbour not at all, where the count is right and the table
+is wrong.
+
+It also asserts the handful of facts **character creation depends on**, so a
+change to the tables cannot quietly empty a step of the flow: a tier-1
+two-handed weapon exists, so does a one-handed one and a secondary and an
+armour, and the two starting potions are still at rolls 7 and 8 *and* still
+called what the window goes looking for. `npm run build:packs` runs it first.
+
+Recurring features are constants. *Reliable: +1 to attack rolls* is printed
+identically on eleven weapons across four tiers, and eleven copies of a string
+is eleven chances to typo the eighth one invisibly. What is deduplicated is
+identical printed text and never a meaning — `PAINFUL_W` and `PAINFUL_A` share a
+name on the page and are two different sentences, so they stay two constants.
+
+**A feature's numbers ride on the feature, not in its prose.** *Heavy* is −1
+Evasion and *Barrier* is +N Armor Score; both are carried as `ev` and `as`
+rather than read out of the sentence. This system parses English rules text in
+exactly one place, narrowly and on purpose (`featurePrice`), and a table we are
+typing in ourselves is the last place that would be needed.
+
+Which closed a real gap. `WeaponData` gained **`armorScoreModifier`**, because a
+Round Shield is *Protective: +1 to Armor Score* and there was nowhere for that
+to go — `CharacterData` read Armor Score off the equipped **armor** alone, so a
+Tower Shield charged you its −1 Evasion and silently withheld the +2 it was
+charging for. Score and Slots had already split for exactly this reason, and
+this was the other end of the same argument, missing. Both modifiers are now
+summed over the same list of worn gear. Slots stay the armour's: "Armor Score is
+how many slots you have" is shorthand, not the rule.
+
+**There is no art, and that is a finding rather than a shortcut.** Demiplane
+serves every equipment image from a signed CDN — the URLs carry query strings
+tied to a logged-in subscription session — so nothing a committed tool could
+fetch would still resolve tomorrow, and the build not touching the network is
+the whole point of the snapshot. Every weapon, armour and consumable draws the
+design's own type glyph from `assets/types/`, which `sheets/cards.ts` already
+counts as "not artwork", so they fall through to the builders' fallback plate
+exactly as a card with no domain does. Uniform by construction: a picture on
+nine of them and a glyph on three hundred and fifty reads as broken. `img` is
+per document, so stable art drops in later with nothing else changing.
+
+The arcane-frame wheelchair is the one weapon in the book that names **no
+trait** — it uses whatever your subclass casts with. The schema stores a trait
+as one of the six, so the row carries a plausible one, the weapon's own
+`description` carries the truth, and `takeWeapon` rewrites the field to the
+character's Spellcast trait at the moment of granting, which is the first moment
+the answer exists. Not a seventh trait: "Spellcast" is a pointer to one of the
+six, and adding it to `TRAITS` would reach the roll engine, the sheet's six
+plates and every closed-set check in the system to serve one item.
+
+## Making a character
+
+A button on the sheet's rail opens a window that walks the book's creation
+steps, writes every choice to the sheet as it is made, and can be reopened
+forever to change any of it. `design/make.css` is its look, `design/make.html`
+the study page, `apps/creation.ts` the engine and `apps/CreationWindow.svelte`
+the window. `apps/create.ts` is the application shell.
+
+**It is not a dialog**, and `dlg.css` is why. A dialog is allowed here for
+exactly one shape — *a decision with more than one part, taken once, that
+changes the sheet underneath it* — and creation breaks that on the word **once**.
+You come back to it after session one, when Finesse turns out to be the wrong
+place for the +2, when the party needs a healer. A box that asks is the wrong
+object for something you will reopen in three weeks and change one thing in. So
+it is a place you go, and closing it is leaving rather than cancelling.
+
+**Progress is derived.** A class Item means step 1 happened; an ancestry and a
+community mean step 2; two Experiences mean step 7. Nothing stores a cursor, so
+nothing can be stale — delete your class from the gear tab and the window says
+so on the next open, because it was never holding a second opinion. It is the
+advancement marks' argument transplanted: *the marks are the record, and the two
+can never disagree because there is only one of them.* "Continue where you left
+off" is then not a feature — it is `steps.find(s => !s.done)`, computed on open.
+
+Exactly two things are written, because exactly two cannot be re-derived.
+
+- **`finished`**, because *done is a decision, not a fact*. A player whose GM
+  said "no armour, you're a monk" satisfies no armour check and must still be
+  able to say they have finished. And the derivation *rots as the character
+  advances* — at level 2 you gain a third Experience, at level 5 your traits no
+  longer match the starting spread — so a level-6 character with nothing stored
+  would be told their sheet is wrong. It is **inferred** on first open for
+  characters that predate all of this (`inferFinished`), deliberately
+  generously: the cost of guessing wrong that way is a button press, and the
+  cost of guessing wrong the other way is telling somebody their finished
+  character is unfinished.
+- **`granted`**, the ids of documents this flow created. Changing your mind
+  about class has to remove the subclass card that class gave you and the domain
+  cards that are no longer legal, and it must not touch the longsword you looted
+  in session three. Nothing else on an Item records provenance.
+
+**The rail carries the steps *and* the character**, and that is the whole layout
+argument rather than a space saving. Choose Guardian and Evasion and Hit Points
+land under your cursor — the step you are on and the number it moves are inches
+apart in one column. Put the steps in a tab strip along the top and that
+relationship is gone, and with it the reason any of this is live.
+
+**Steps are not tabs.** A tab is one view of a thing that is already whole; main,
+vault and gear are the same character seen three ways. A step is a stage of
+something being made: it has a state a tab never has, and it can be
+*unsatisfied*, which is not a thing a tab can be. Dressing them alike would
+promise they behave alike.
+
+**The book's step 4 is not a page.** "Record Additional Character Information" is
+Evasion off your class, Hit Points off your class, Stress 6, Hope 2, thresholds
+off your armour, Proficiency 1 — every one a consequence of a step you already
+took. It is the rail, filling in as you choose. A page restating it would be the
+window telling you something it should have been showing you the whole time. The
+step numerals are the **book's**, which is why they read 1, 2, 3, 5, 7, 8: a
+player with the rulebook open should not have to translate, and the gaps are
+honest about what this does not do — 6 and 9 are prose and belong on the bio tab.
+
+**The rail's numbers land, and only the ones that moved.** `setVals` in
+`make.js` is `setMarks`'s job for the same reason: re-rendering the block would
+replace every element, so choosing a community would flash Evasion, Hit Points,
+Stress, Hope, both thresholds and Proficiency, of which none had anything to do
+with it. The animation means "this is what that choice did", and it only means
+that if it fires on the ones that did. The text is written *before* the class is
+added, so a client that never runs the animation is handed the settled number.
+
+**An unset value is an em dash, not a zero.** Zero is a number a rule produced;
+the dash is the absence of the rule. A rail reading "Evasion 0" before a class
+exists is asserting something false about a number you are three seconds from
+setting. Same argument as the adversary's `thresholds.none`.
+
+**Constrain the offer, do not validate the answer** — `pickTwo`'s rule. Illegal
+options stay on screen and say why on themselves, which is `dlg.css`'s
+dead-not-hidden doing more work than it does there: filtering the Blade cards
+out of a Wizard's deck leaves a deck that *looks complete*, and the player never
+learns the rule exists. One **GM-only** `unrestricted` switch lifts every
+constraint at once, gated on `isGM` for the adjust tab's reason — a player who
+can set a number directly is a player who never has to be told no.
+
+**A step offers one of two shapes, and which one is a claim about the thing.**
+
+**The class is a row, full width, one per line.** As a tile in a two-track grid
+it was 268px holding two domains, a name, two numbers and a sentence, all
+competing for the same column — which is a fair description of what a class is
+*not*. It is the largest single decision in this window; it fixes your domains,
+your Evasion, your Hit Points and half your card pool, and you make it once.
+Nine of those deserve a page each. So the row splits by *kind*: the class mark
+on a plate tinted with its **primary** domain on the left — the only picture a
+class has anywhere in this system, since nothing published a painting for a page
+in a book — and everything written on the right. Not a colour of its own for the
+tint: a saturated hue means domain everywhere else here, and the class's first
+domain is the truest thing that hue can mean.
+
+**The flavour on it is the book's opening paragraph, and it is a second field.**
+`system.description` is what a *card* prints and is held to one sentence by
+`tools/check-cards.mjs`, for a reason that has already gone wrong once — the
+chapter opener got pasted in whole and five sentences of lore sat above the
+stats. That rule is untouched. `ClassData.flavor` is the paragraph, drawn in
+exactly one place, and the check now also asserts that it **opens with the
+card's sentence** — so the two are one fact stated at two lengths and cannot
+drift into disagreeing, and a `flavor` pasted against the wrong class fails the
+build. Empty falls back to `description`, so a homebrew class with one sentence
+reads as short rather than broken.
+
+**Subclass, heritage and domain cards draw the printed card.** Those three steps
+choose things that genuinely exist on paper, and a text summary of one lies by
+omission about the two facts a card carries structurally rather than in prose:
+the domain, which is the hue and the two corner sigils, and the level and Recall
+Cost, which are the corner blocks. A domain card's whole identity is "Grace,
+level 1, Recall 0" and the tile printed none of it in a form you could compare
+across twenty of them at a glance. It also printed the rules text **raw** —
+`***Power Push:***` and literal `<br>` — because `rich()` lives inside `CARD()`
+and a bare `<p>` never called it. `.card` is container-query driven, so the
+component that draws a 300px chat plate draws a 176px grid cell unchanged, and
+hover still peeks the full-size one, which is what makes the small one
+affordable. Equipment stays a tile: a longsword is not a card and there is no
+artwork to draw.
+
+**`levelPlates()` straightens the picture line across a grid.** `fit()` sizes
+each card alone and is right to — the plate gives up height first, so a card
+with a long rule keeps its prose readable by cropping its picture. That is what
+you want looking at one card and not what you want looking at eighteen, where
+the pictures ended at eight different heights across a row and read as broken
+rather than as adaptive. Each grid takes its *smallest* plate: smallest and not
+average, because every other value is one some card already proved it did not
+need, so shrinking can never cause an overflow and growing could. Run after
+`fit()`, never instead of it — `fit()` resets every plate to its maximum at the
+top of each pass, which is what stops this ratcheting down over repeated runs.
+
+**Changing class cascades, and names every document first.** "3 items will be
+removed" is a sentence nobody can consent to, which is why `cascadeOf` returns
+documents rather than ids. It takes the class, every subclass card, and domain
+cards whose domain the new class does not have — and **only the ones this flow
+granted**. A card dragged off the compendium by hand stays even when it becomes
+illegal, because removing it would be this window deleting somebody's document
+over a rule it was not asked to police. Multiclassing is respected: the other
+class's domains are added to the keep set, so a second class's cards survive.
+
+**Changing subclass is not a small class change**, and routing it through
+`takeClass` was wrong. That destroyed and rebuilt the class Item to swap the
+card beside it, so its id moved and a chat card posted a minute earlier pointed
+at a document that no longer existed. `takeSubclass` is its own call.
+
+**Mixed ancestry** lands as *one* Item wearing the first ancestry's name and the
+second's bottom feature, with `mixedFrom` recording where it came from — the
+field has been in the schema since the beginning and nothing had ever written
+it. One Item rather than two, because the character has one ancestry: two would
+put two cards on the heritage row and hand the sheet four features to draw where
+the rules give two.
+
+**The trait spread is the one bespoke control**, and the one step where the
+constraint *is* the point. `+2, +1, +1, 0, 0, −1` is a fixed budget rather than
+six independent numbers, and six spinners would let you type +2 six times and
+then be told off — the failure `pickTwo` exists to prevent. So it is six chips
+you spend: overspending is not something the control refuses, it is something it
+cannot express. Chips are keyed **positionally**, because two of them read +1 and
+"the +1 chip" is not a thing that exists. A spent chip keeps its slot as a hole,
+since the budget's *shape* is the information and a row that reflows on every
+placement moves the chip you were about to click. Deliberately **not**
+pre-placed: `prep.js` opens roll-ready and is right to, because you meet it
+twice a minute; this is met once and its answer is permanent, and a default on a
+permanent choice is a default that gets accepted.
+
+**And it can be dragged, which it always claimed it could.** The tray said
+`cursor:grab` and the whole control was designed around a budget you *spend*,
+and dragging a chip did nothing whatever — it was click-to-arm, click-to-place
+and no more. Both gestures commit through `placeChip` now, which is `swap.js`'s
+rule about a surface that is both dragged and pressed: one call, one result,
+nothing to learn twice. What the drag adds that a click cannot express is the
+two moves with no press — pulling a value out of a trait back to the tray, and
+moving one straight from one trait to another. A click can say "put this here"
+and "take this off"; it cannot say "move this there", because the intermediate
+state has nowhere to live. The payload is the chip *index* and not its value,
+for the reason the tray is keyed positionally.
+
+**The step's real bug was that placing a chip cleared the tray.** `readPlacement`
+re-derives the six chips from the six numbers and is deliberately
+all-six-or-nothing, because a trait sitting at 0 is genuinely ambiguous between
+"the 0 chip is here" and "nothing is here" — and it was being run on **every**
+revision of the actor. So placing one chip wrote six numbers, the write bumped
+the revision, the re-read reconstructed three slots, gave up, and emptied the
+control. The number landed on the character and the tray sprang back. It looked
+like the click not registering, and later like the drag not working.
+
+The all-or-nothing rule is right and stays. What was wrong was running it
+against our own writes at all, so the six values are now compared with what
+`placed` *implies* they should be: equal means the change was ours and the
+local state is the better record; unequal means something else moved a trait —
+the adjust tab, a macro — and re-deriving is the only honest answer. A
+`lastRead` signature stops the unequal case retrying forever on a spread that
+cannot be reconstructed at all, which is what a hand-set +2 and five zeros is.
+
+**Hope is set to 2, once.** "You start with 2 Hope" is step 4, the pool's schema
+default is zero, and nothing in this system had ever put the opening two in — a
+character built by hand has been starting empty-handed since the sheet was
+written. Guarded on the current value rather than on a first-time flag, so a
+player who changes class in session four is not handed two Hope for it.
+
+**Creation is a level-1 flow.** Above level 1 the same window opens in
+review-and-edit: the steps say what you have, constraints relax to your actual
+level, and it never tries to hand out advancement — that is the advancement
+tab's job and it already asks the right questions. A table starting at level 5
+does creation at 1 and then spends four levels there.
+
+**Finishing posts a card**, because this system posts what happened and a
+character arriving at the table is at least as much of an event as a short rest.
+The review page is unnumbered — it is not a step, it is the character — and it
+is the one screen that shows the full rules text of everything you took, which
+nothing before it does.
+
+**The window is not a document sheet**, so Foundry does not re-render it when the
+actor changes; that courtesy goes to registered sheets. It is asked, via hooks on
+`updateActor` *and* `createItem`/`updateItem`/`deleteItem` — almost everything
+creation does is an embedded document arriving or leaving, and `updateActor`
+never fires for those. One window per actor, tracked by id: two windows writing
+to one actor is two rails disagreeing about which value just landed.
+
+**The plate on the sheet takes height rather than overlaying**, which is edit
+mode's rule and the same reasoning — a hint that lasts a second may float over
+the sheet, a state that lasts a session may not. It never disappears when
+creation is finished, only goes quiet: a control that vanishes the moment you
+complete something is a control you will hunt for in three weeks when you want
+to swap one domain card.
+
+Every class name in `make.css` is `f`-prefixed (`.fopt`, `.fstep`, `.fval`,
+`.ftrt`) and the block root is `.forge`. That is not decoration — `.pick` and
+`.picks` already belong to `dlg.css`, both load into the same `.dh` root where
+scoping does nothing, and this would have been the fourth instance of the bug
+that renamed `.die.win` and `.dfn .crest`. `tools/verify/` now loads `make.css`
+beside `sheet.css`, `card.css`, `tile.css` and `dlg.css` — the stack a real
+Foundry window has and a study page never does — and asserts the two do not
+reach into each other.
+
+## What a study page cannot see
+
+**Every control in the creation window is a `<button>`, and Foundry sizes every
+button to one centred line 28px tall.** `--button-height` lives in the
+`elements` layer, and nothing in this window is a button in the sense that rule
+means — a class row, a step, a trait slot, a weapon and a domain card are all
+*things you press*, and a thing is as tall as what is printed on it.
+
+Left unreset it clipped the entire window. Every option lost everything below
+its first line, the sheet's own entry plate lost its label, and the two-column
+review cells centred their headings. It read as a broken grid rather than as an
+inherited height: the tiles were the right width, in the right places, with
+their contents sheared off. It is reset once at the root of `make.css` rather
+than re-declared on nine controls, because the claim is about the window; the
+two that genuinely *are* buttons — the tray chip and the footer's back/next —
+state their own metrics and win on source order.
+
+The general lesson is the one this repo keeps relearning from a new direction:
+`design/` is authored as whole documents and a Foundry system owns a subtree of
+somebody else's, so **the environment is part of the component and the study
+page has to carry it**. `design/make.html` and `tools/verify/` now both declare
+`@layer elements { button{height:28px…} }` themselves. Our stylesheets arrive
+unlayered through their `<link>`s and unlayered always beats layered, which is
+exactly the relationship the `system` layer has to `elements` in the real
+application. Delete the reset and both pages go red in the same places the game
+did.
+
+**An unbalanced CSS comment is the quietest failure this pipeline has**, and it
+cost an hour of this. CSS recovers from one by discarding tokens up to the next
+`}`, so the rule *after* the mistake vanishes and everything else keeps
+working. A paragraph was pasted after a block that had already closed, the
+button reset below it stopped existing, and the symptom was the window looking
+exactly as broken as before while the file plainly contained the fix. Nothing
+here looks at CSS syntax — not `tsc`, not `svelte-check`, not the build — so
+`port-design-css.mjs` counts the delimiters and refuses to port an unbalanced
+file. It is not a parser and is not trying to be; it catches the mistake that
+actually happens when these files are edited by hand.
 
 ## Why Svelte
 
@@ -861,22 +1211,84 @@ special case: a checkbox is on or off, a card can be pressed again. There is
 no Cancel — everything has already happened — only Done, which posts one card
 for the whole rest.
 
-**A move is a card**, in the landscape grammar `tile.css` already speaks —
-art panel, gold seam, display-caps name, tier bar. It is `.dt`, a **sibling**
-of `.tile` rather than an instance of it, and that is the whole argument: a
-tile is assembled out of a domain, a sigil and a level, and a downtime move
-has none of the three. Handing `TILE()` a graphite gear kind to get the shape
-would invent an object rather than draw one.
+**A move is a square.** It is `.dt`, a **sibling** of `.tile` rather than an
+instance of it, and that is the whole argument: a tile is assembled out of a
+domain, a sigil and a level, and a downtime move has none of the three.
+Handing `TILE()` a graphite gear kind to get the shape would invent an object
+rather than draw one.
 
-**The die rolls in the card that was pressed**, in the panel where a card
-would carry its artwork, and it lands as the chat plate's own `.die` — the
-same silhouette-with-a-numeral a damage roll draws, so a rolled 3 is the same
-object wherever you meet it. The die shows its *face* and the caption carries
-the total, because a d4 reading 6 is precisely the lie the plate's `data-mx`
-exists to prevent. Resolve and apply are two beats now, three hundred
-milliseconds apart: the die settles, then the effect lands and the ledger line
-writes itself. They used to happen in the same frame, which meant the number
-you were watching for had already been spent by the time you read it.
+It keeps the family's tier bar and drops the family's **gold seam**, which is
+the one piece of the grammar that does not survive the move. That rule divides
+a picture from a panel and on a card that is a real division — somebody's
+painting above somebody else's paragraph. Here there is one object, a number
+and the thing it is the number *of*, and a line across the middle makes two of
+it; a hard-edged dark ground on top then makes the upper one a box the numeral
+is stuck inside. So the plate's ground fades into the paper it sits on, and
+with no edge there is nothing for the number to be inside. Half the tile's
+height rather than a fixed pad, so the slack around the numeral is
+proportional and survives the five-track width a long rest asks for.
+
+It was a full landscape card, and the *shape* is what changed. Four cards at
+104px, stacked, is four hundred and fifty pixels of dialog spent before the
+first press — and everything a rest is actually about happens below them, so
+the ledger, the tally and the cards that change the rest were all under the
+fold behind a deck that had answered nothing yet. The squares sit in one grid
+row, one track per move stated inline rather than left to `auto-fit` (a long
+rest has five moves and `minmax` puts the fifth alone on a second row at a
+quarter width), and the whole deck now costs about what one card did. The rule
+swaps in over the name on hover, because at that width either is readable and
+both are not — absolutely positioned rather than expanding, since a grid you
+are aiming at must not reflow under the pointer.
+
+**The value rolls in the plate**, where a card would carry its artwork, and it
+rolls as a **reel**: candidate totals scrolling to a stop. It used to be a die
+— the chat plate's own `.die`, and with Dice So Nice installed a real
+three-dimensional one posed and spun in the tray by a second `DiceBox` over a
+second `DiceFactory`, with a generated table of face normals behind it. The
+square retired both. A die drawn small enough for a hundred-pixel tile is a
+chip with a numeral on it — the geometry that made it a die is below the
+resolution of the box — and a WebGL context is a great deal of machinery to
+put behind a numeral nobody watches land. `dice/inplace.ts` is gone.
+
+The reel also dissolves the face-versus-total rule rather than answering it. A
+die showing 6 on a d4 is precisely the lie the plate's `data-mx` exists to
+prevent, which is why the silhouette had to carry the *face* and the caption
+the total; a reel is not a d4 and claims nothing, so it lands on the **total**
+and the caption says where the total came from. The candidates are drawn from
+the range the roll could have produced and never include the answer before the
+last cell, or the reel reads as having stopped and then moved again.
+
+It travels on one CSS transition, and the start value is flushed with
+`offsetHeight` rather than a `requestAnimationFrame` — deliberately, and for
+the reason the swap's `.lift` reaches for `setTimeout`: rAF does not fire in a
+tab that is not painting, so a rest opened on a background window would sit on
+a reel that never lands, never applies, and never resolves the promise the
+press is awaiting. A reflow is unconditional and synchronous.
+
+Resolve and apply are two beats, three hundred milliseconds apart: the number
+settles, then the effect lands and the ledger line writes itself. They used to
+happen in the same frame, which meant the number you were watching for had
+already been spent by the time you read it.
+
+**The die survives on the card the rest posts**, and only there. A row used to
+be a name, a small gold "1d4+Tier = 5" and the sentence "cleared 5 Hit Points"
+— three statements of one fact, none of them loud, and the one anybody scrolls
+back for was the middle number of the sentence at body size. It is the plate's
+grammar now: the die on the left, the name in the middle, the amount at
+display size with its unit under it, each row drawn in its own track's
+material. `--wound` bleeds, `--strain` is scored, `--plate` fractures, gold is
+Hope — the one place this system suspends "hue means domain", and the place it
+is worth the most.
+
+Two things about that row. The die shows the **face** while the numeral shows
+what it was worth, which is the distinction the dialog's reel is allowed to
+dissolve and a card with a die drawn on it is not — `Outcome.face` exists for
+this and nothing else. And the die's colours have to be set through a selector
+that *reaches the die*: `.die` declares `--rimc` and friends on itself, so a
+value inherited from the row would lose to it. `DIE` builds `<i>`/`<b>`/`<em>`
+and no `<svg>`, so unlike a posted card this survives storage and needs no
+redraw on render — which is also why its size is a stylesheet rule and not an
+inline `style`.
 
 **Undo is per ledger entry**, and it gives back what was *written* rather than
 what the move is worth. Tend to Wounds clearing four Hit Points when only two
@@ -885,63 +1297,6 @@ result rather than its argument. The roll is not kept — re-taking rolls again,
 because undo means "that did not happen" and not "let me keep the number".
 Nothing has been posted at that point, so there is only actor state and the
 ledger to reverse, and it is not offered after Done.
-
-**The dice are real, and they tumble without going anywhere.** With Dice So
-Nice installed the die in the card is that module's — its geometry, its
-materials, our colorset — but it is **posed and spun rather than thrown**. A
-die that bounces wants somewhere to bounce *to*, and the panel it rolls in is
-a hundred pixels tall; a physics throw there is a die skidding into a corner
-and stopping against a wall you cannot see.
-
-`dice/inplace.ts` follows the approach
-[`aeris-bg3-rolls`](https://gitlab.com/aeris-fvtt/aeris-bg3-rolls) takes: reach
-`DiceBox` and `DiceFactory` off `game.dice3d.box.constructor`, build a
-**second box** over our own container, `factory.create` a mesh into its scene,
-and drive it from our own RAF loop. `boxType` set to anything other than
-`"board"` is what switches off physics, interactivity, persistent dice and the
-post-processing passes — that one string is most of the work. The factory has
-to be ours as well, because `DiceBox.initialize` calls `setScale` on whatever
-it is handed and would resize every die on the board for the length of a rest.
-
-The motion is a slerp from a random start orientation to the target with a
-continuous spin about a random axis multiplied on top — three to five whole
-turns, easing out, snapping exactly at the end. The spin angle is
-`2π·turns·eased`, so it is identity at `t=1` and the die decelerates *onto* its
-face rather than near it.
-
-**The face table is derived from geometry, not written down.** Aeris hardcodes
-`faceQuats` and it covers d20 only, which would not serve a rest rolling a d4
-— and it would not have served us for the d20 either: it resolves onto **+Z**,
-and DSN's camera looks straight down −Y with `up = (0,0,−1)`. So the outward
-normal of the face carrying each value is computed from `DICE_SHAPE` and paired
-with `faceValues`, for all ten shapes the module ships, and the result
-cross-checks against a second independent statement of the same fact:
-`rotationCombinations["a,b"]` is what `swapDiceFace` applies to turn face *a*
-into face *b*, so it must carry normal(a) onto normal(b). All 1,272 entries
-agree to within DSN's own whole-degree Euler rounding.
-
-**The d4's special case is the reading direction, not the table.** Every other
-die is read off the face nearest the overhead camera; a tetrahedron at rest has
-no such face — three of its four tie, and floating point breaks the tie. It has
-a unique face pointing *down*, opposite the apex whose number you read, which
-is what `faceValues` is about and what DSN's own ancestor did with a reference
-vector flipped for `d4` alone.
-
-The renderer is deliberately **not** disposed. `DiceScene` caches its
-`WebGLRenderer` in `game.dice3d.dice3dRenderers[boxType]`, so under our own key
-this system adds at most one WebGL context to the page, ever, and only if a
-rest actually rolls. Tearing it down would force a fresh context and a fresh
-HDR load every rest and leave a dead renderer under our key for the module to
-hand back; DSN's own editor preview makes the same call for the same reason.
-What `disposeInPlace()` does take down is the animation frame, the mesh and the
-canvas — and `rest.ts` calls it *before* its early return, or a rest where
-nothing was taken strands the canvas in a destroyed dialog.
-
-Every step is guarded and any failure at all falls back to our CSS tumble,
-which is also what a table with the module off gets. One trade worth knowing:
-a third-party dice system registered through `game.dice3d.addSystem` is not in
-our fresh factory, so such a die falls back to standard in the tray. Mutating
-the board's factory to avoid that would be worse.
 
 Two moves is the printed number, and `restAllowance` reads it off your own
 cards — a Celestial Trance says three, and the hint names the card so the
@@ -959,15 +1314,117 @@ English rules text into behaviour is how a system starts quietly getting rules
 wrong; this is a smaller promise that stays true for a feature the GM wrote
 last night.
 
-**And where the rule came from a card, both dialogs draw the card.**
+**What it found was too much, and in two different ways.** Mentioning a topic
+is not the same as bearing on the decision, and both panels were drawing
+everything at one weight.
+
+On damage the extra category was *passive maths*. `ARMOUR_RX` matched armour,
+severity, thresholds and "damage you take", which sweeps in a weapon's
+Protective ("+1 to your Armor Score") and Bare Bones ("your damage thresholds
+equal your level"). Both are real rules and both were **already applied**
+before the dialog opened — the Armor Score is the purse and the thresholds are
+the band the hit is being measured against — so a card printing them under a
+heading promising a way out asks the reader to re-check arithmetic the sheet
+did. `REDUCE_RX` matches *offers* rather than topics: spending a slot,
+reducing a severity or a damage number, halving it, resisting it, marking
+something else instead, or anything firing at the moment the damage arrives. A
+positive test and not a veto, because a rule the sheet has already counted has
+nothing to say in the imperative.
+
+On resting the extra category was *receipts*. Celestial Trance changes the
+rest and you have to read it to use it; Deft Maneuvers says "once per rest",
+which only means the rest gives it back. Both mention resting. So the second
+kind drops into the panel's other lane — `.rf` in `dlg.css` — and they are
+told apart by removing the recharge clause and asking again (`rechargeOnly`),
+so a card that says "once per long rest, when you take a short rest…" still
+counts as changing the rest. That lane's rows come from two places, and they
+are two different kinds of knowing: an Item with a `uses` pool is a **fact**,
+and `refreshUses` is about to fill it, so the row prints the count; a rule that
+only says "once per rest" is a **reading**, and gets a row with no count
+because there is no count to be honest about.
+
+**Every rule is a line, and the lanes differ in weight rather than in shape.**
+The bearing lane drew a full tile per rule and the recharge lane drew lines,
+and a character three sessions in has four or five rules bearing on a rest:
+five tiles is five hundred pixels of panel under a dialog whose controls are
+all above it, and the reader is scrolling a deck to find one name. `.rl .ln` is
+now the whole grammar and `.rf` only says its name a shade quieter, which is
+what a heading is for.
+
+**What a line opens is the one distinction left worth drawing.** A rule in this
+panel is either printed on something or it is not. A **class feature** — the
+Rogue's Cloaked, a knack the GM wrote last night — is not: you cannot spend it,
+move it or lose it, the text is the whole of it, and the sheet stopped drawing
+a class card for exactly this reason. So the line grows the rule underneath
+itself. A **domain card, ancestry, community or subclass** — and the weapon or
+armour you are wearing, which the ask did not name and which belong for the
+same reason — is an object sitting in a loadout the player has been looking at
+all session, and the question the damage dialog asks is *is there something in
+my hand that gets me out of this*. So those lines **peek the card**. `HELD` in
+`rule-cards.ts` is that list; a rule whose document cannot be found back at all
+falls to the text side, because inventing a card around one would claim there
+is something to pick up. `feature` Items are on the text side too — that
+subtype has never had a card, which is why the sheet draws it as a pressable
+row of rules text.
+
+**And the peek is the sheet's peek**, not a second thing resembling it: `CARD`,
+`.peeklayer`, `.pkc`, the 262px 5:7 card, right of the row and flipped when
+there is no room, centred on the row and clamped, hover shows and click pins.
+A player who learned that gesture on a spine has learned it here. The card is
+drawn *as printed*, features this rule is not included — the row already says
+which rule matched, and the card's claim is "this is the object it is printed
+on", which an ancestry card with one of its two features quietly removed is no
+longer.
+
+It was the landscape tile for a while, and that was wrong twice over. A tile is
+the **handle** for a card — it is what a loadout row is — so putting one where
+a card would go offers the handle to somebody already holding it. And it was
+drawn *inside* the row, which is the only place a tile fits and the whole
+reason it got chosen; a card does not have to live in the row, so it does not.
+
+**A dialog cannot reach the screen with `position:fixed`, and that is
+Foundry's doing rather than ours.** Every `.window-content` carries a
+`backdrop-filter`, and a filtered element is the containing block for its own
+fixed descendants — so a layer inside a dialog is framed by the dialog no
+matter what it claims, and it fails *quietly*: the layer reports `fixed` and a
+538px box, and the card flies off the right of the screen to coordinates that
+were correct for a frame it does not have. So the host goes on `<body>`,
+wearing `dh`, which is the fourth instance of the pattern the drag proxy, the
+context menu and the roll popover already use, and `.peekhost` joins them in
+the port script's class-rewrite list. Only the *host* wears `dh`; the layer and
+its cards are descendants of it, so every rule `sheet.css` writes for them
+lands untouched — which is the difference between hosting the sheet's peek and
+restyling a copy of it. A `MutationObserver` on `body` takes the host away when
+the dialog goes, since nothing else would: it is not a child of the window
+Foundry removes.
+
+The **text** rows still grow in place, which is the opposite of the move
+square's choice above and for the reason that governs both: a deck is a grid
+you are aiming at and must not reflow under the pointer, while this is the last
+thing in the dialog with nothing below it to push. `grid-template-rows` from
+`0fr` to `1fr` is what animates a height nobody has measured.
+
+**The art plate was also empty, and had been all along.** `art` is
+`--art:url("systems/…/x.webp")`, double quotes and all, and `rule-cards.ts`
+interpolated it straight into `style="…"`: the first `"` inside the url ends
+the attribute, the rest becomes stray attributes, and the card falls back to
+the sample photograph `tokens.css` ships as the default `--art`. It reads as a
+card with the wrong picture rather than as broken markup, which is why it
+survived. `post-card.ts` has had the escaper, and a note saying exactly this,
+since cards were first posted to chat; the later file simply did not use it.
+
+**And where the rule came from a card, the line peeks the card.**
 `apps/rule-cards.ts` is the other half: it resolves a `Rule` back to the Item
-it was read off and builds the tile panel. Finding and drawing lived in one
+it was read off and builds the panel. Finding and drawing lived in one
 file while there was one caller; there are two now, and the second wanted
 different markup out of the same search. `rules.ts` therefore still carries no
 document reference on a `Rule` — the resolver finds the Item back from the
 `source` and `name` that `rulesOf` wrote them from. The panels are built before
 the dialog opens, because sigils load asynchronously, and injected in `wire`,
-because a tile carries `<svg>` and DialogV2 strips that out of `content`.
+because a card carries `<svg>` and DialogV2 strips that out of `content`. The
+cards are rendered into the layer at that moment rather than on demand, because
+`fit()` can only measure a card that is in the document — which is also why
+they are parked with `visibility` and not `display`.
 
 ## Levelling up
 
@@ -1150,9 +1607,9 @@ The one real emission-map API — `addDicePreset` with `emissiveMaps` — was
 investigated and **declined**. Reaching a preset means routing through
 `appearance.system`, and a system is the **die**: its model and its geometry,
 the thing a table paid a dice-model module for. A finish may not take that. It
-would also miss the dice we control best, since presets are per-`DiceFactory`
-instance and `dice/inplace.ts` builds a second factory that has never heard of
-ours, while colorsets and textures are module-level and reach both.
+is also the more fragile half of the API: presets are per-`DiceFactory`
+instance, while colorsets and textures are module-level, so anything that
+builds a factory of its own keeps the finish and silently loses the preset.
 
 Three API notes, all learned the hard way. `term.options.colorset` is what DSN
 checks *first* and it wins over the user's own preferences;
@@ -1175,11 +1632,24 @@ everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
 ## Not done yet
 
 - Compendium content — character creation is covered: classes, subclasses,
-  ancestries, communities and the domain decks. Equipment and the adversary
-  roster are still to come, as is everything from *Hope and Fear*.
-- Character creation. The class's `startingInventory`, `backgroundQuestions`,
-  `connectionQuestions` and `suggestedTraits` are all in the schema and drawn
-  nowhere, and `STARTING_TRAIT_SPREAD` is unused.
+  ancestries, communities, the domain decks and now all four tiers of
+  equipment. The adversary roster is still to come, as is everything from
+  *Hope and Fear*.
+- **Equipment artwork.** None, and it is blocked rather than skipped — see the
+  equipment tables section. If stable asset URLs ever appear, the fetch is one
+  tool and `img` is already per document.
+- Creation leaves three things it could reach. `backgroundQuestions` and
+  `connectionQuestions` are still drawn nowhere, deliberately: they are prose
+  and belong on the bio tab, which is where the flow's own steps 6 and 9 went.
+  `suggestedTraits` is in the schema and **empty for all nine classes**, so a
+  "use the recommended setup" shortcut needs content written first, and it is
+  the one kind of content with no upstream to check it against.
+- The Ranger's Beastbound subclass should create a companion Actor and set the
+  `partner` uuid nothing currently sets. Creation is where that would happen;
+  it does not, because it is the only place the flow would start creating
+  documents that are not Items.
+- A higher-level start is creation at level 1 plus N levels of advancement by
+  hand. The window declines to walk the second half.
 - Death moves. Scars are recordable on the adjust tab and cost a Hope slot;
   Blaze of Glory, Avoid Death and Risk It All are not implemented.
 - The Fear HUD (`design/pool.js`) and the GM screen.

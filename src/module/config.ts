@@ -599,8 +599,107 @@ export function advancementTally(advancement: any): Partial<Record<AdvancementId
 export const DEFAULT_STRESS_MAX = 6;
 export const DEFAULT_HOPE_MAX = 6;
 
+/**
+ * And with **two** Hope in the pool, which is not the same number.
+ *
+ * "You start with 2 Hope; mark these in the Hope field" — step 4. The pool's
+ * schema default is zero, because zero is what you have after spending, and
+ * nothing had ever put the opening two in. A character sheet made by hand has
+ * been starting empty-handed since this system was written.
+ */
+export const STARTING_HOPE = 2;
+
 /** Experiences start at +2 and are bought up from there. */
 export const STARTING_EXPERIENCE_MODIFIER = 2;
+
+/** Two Experiences at creation, two level-1 domain cards, one handful of gold. */
+export const STARTING_EXPERIENCES = 2;
+export const STARTING_DOMAIN_CARDS = 2;
+export const STARTING_GOLD_HANDFULS = 1;
+
+/**
+ * The starting inventory everyone gets, whatever they are.
+ *
+ * A closed set the rules define, so it lives here rather than in the pack
+ * source — these are not loot-table rows, they are a bulleted list in step 5,
+ * and nothing rolls for them. The gold on that same list is a *number* rather
+ * than an item and goes to `system.gold.handfuls`; the potion is a choice
+ * between two rows of the consumable table; and the last line is the class's
+ * own "X or Y", which every class stores on itself.
+ */
+export const STARTING_KIT: { name: string; description: string }[] = [
+  { name: "Torch", description: "Useful for illuminating a dark room." },
+  { name: "50 Feet of Rope", description: "Useful for climbing a wall or rappelling down a cliff." },
+  { name: "Basic Supplies", description: "Tent, bedroll, tinderbox, rations, and the like." },
+];
+
+/** The two the book offers a choice between, by name. */
+export const STARTING_POTIONS = ["Minor Health Potion", "Minor Stamina Potion"] as const;
+
+/* ── character creation ──────────────────────────────────────────────────
+   The book's nine steps, less the four this system does not walk you through.
+
+   Steps 6 and 9 — background and connections — are prose, and prose belongs
+   on the bio tab where you can take as long over it as you like rather than
+   in a flow with a Next button. Step 4 is not a step at all: "Record
+   Additional Character Information" is Evasion off your class, Hit Points off
+   your class, Stress 6, Hope 2 and thresholds off your armour, every one of
+   them a consequence of a step you already took. It is the creation window's
+   rail, filling in as you choose, for the same reason the advancement marks
+   *are* the record: a number and the panel it came from can never disagree if
+   there is only one of them.
+
+   The remaining six are numbered as the book numbers them where they line up,
+   which is why `experiences` is 7 and `domains` is 8. A player holding the
+   book open should not have to translate. */
+
+export interface CreationStep {
+  id: "class" | "heritage" | "traits" | "equipment" | "experiences" | "domains";
+  /** The book's own step number. */
+  printed: number;
+  label: string;
+  /** The one-line statement of what the step asks for. */
+  hint: string;
+}
+
+export const CREATION_STEPS: CreationStep[] = [
+  {
+    id: "class",
+    printed: 1,
+    label: "Class",
+    hint: "Choose a class, then a subclass. Its foundation card comes with it.",
+  },
+  {
+    id: "heritage",
+    printed: 2,
+    label: "Heritage",
+    hint: "An ancestry and a community. Mixed ancestry takes the top feature of one and the bottom of another.",
+  },
+  {
+    id: "traits",
+    printed: 3,
+    label: "Traits",
+    hint: "Place +2, +1, +1, 0, 0 and −1 across the six traits, in any order you like.",
+  },
+  {
+    id: "equipment",
+    printed: 5,
+    label: "Equipment",
+    hint: "A two-handed primary weapon, or a one-handed primary and a secondary. One set of armour, and your pack.",
+  },
+  {
+    id: "experiences",
+    printed: 7,
+    label: "Experiences",
+    hint: "Two words or phrases that say what your character has done. Both start at +2.",
+  },
+  {
+    id: "domains",
+    printed: 8,
+    label: "Domain Cards",
+    hint: "Two level 1 cards from your class's two domains — one from each, or two from one.",
+  },
+];
 
 /* ── item types ──────────────────────────────────────────────────────── */
 

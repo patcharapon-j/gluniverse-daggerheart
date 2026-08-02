@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Making a character</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<!-- The creation window borrows more from the sheet than any other surface
+     here, which is the point of it: the rail is the sheet's rail, the option
+     grid wraps the way the Features panel's does, and the chosen-card
+     brackets are the vault's. So the study page loads what the sheet loads,
+     and a rule of ours that collides with one of theirs shows up on this page
+     rather than in a game. -->
+<link rel="stylesheet" href="/design/mark.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/swap.css">
+<link rel="stylesheet" href="/design/sheet.css">
+<link rel="stylesheet" href="/design/dlg.css">
+<link rel="stylesheet" href="/design/make.css">
+<style>
+  /* The study page's own chrome, trimmed off by the port. */
+  body{margin:0;padding:34px 30px 90px;background:#0b0d10;
+    font-family:var(--f-ui),system-ui,sans-serif}
+  .bar{display:flex;align-items:center;gap:18px;margin-bottom:30px}
+  .bar b{font:600 10px/1 var(--f-mono);letter-spacing:.2em;color:#7d8794;text-transform:uppercase}
+  .tg{display:flex;align-items:center;gap:7px;font:400 12.5px/1 var(--f-ui);color:#9aa3ae;
+    cursor:pointer;user-select:none}
+  h2{font:600 15px/1 var(--f-display);color:#fff;margin:44px 0 6px}
+  h2 span{font:600 10px/1 var(--f-mono);letter-spacing:.22em;color:var(--hope);
+    display:block;margin-bottom:9px}
+  .note{font:400 12.5px/1.6 var(--f-ui);color:#96a0ac;max-width:820px;margin:0 0 22px}
+  .note code{font:600 11.5px/1 var(--f-mono);color:#c3ccd8}
+  /* The window at the width it actually opens at. Every judgement on this
+     page is a judgement at a size, so the study has to be at that size —
+     1040 leaves 752px of stage beside the 288px rail, which is three option
+     columns at 210 and two at 268. */
+  .win2{width:1040px;max-width:100%;background:var(--frame);
+    border:1px solid var(--frame-line);
+    box-shadow:0 24px 60px -20px rgba(0,0,0,.8);
+    display:flex;flex-direction:column;overflow:hidden;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%)}
+  .win2 > .tt{flex:none;display:flex;align-items:center;height:34px;padding:0 12px;
+    background:var(--frame);box-shadow:inset 0 -1px 0 var(--frame-line)}
+  .win2 > .tt b{font:700 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+    color:var(--frame-tx)}
+  .win2 > .bd2{height:620px;display:flex;min-height:0}
+  /* The rail plate, shown in the column it lives in rather than alone. */
+  .railbox{width:288px;background:var(--paper);border:1px solid var(--frame-line)}
+  .railbox .fake{height:96px;background:#20242b;
+    box-shadow:inset 0 -1px 0 var(--line);display:grid;place-items:end start;padding:12px 18px}
+  .railbox .fake b{font:700 17px/1 var(--f-display);color:#fff;letter-spacing:-.02em}
+  .row2{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+
+  /* ── standing in for Foundry ──────────────────────────────────────
+     Every control in this window is a <button>, and Foundry's `elements`
+     layer sizes every button to one centred line 28px tall. Nothing here is
+     a button in that sense, and left unreset the rule sheared the contents
+     off every option in the window — but a study page has no Foundry, so
+     this page showed a perfect layout while the game showed a broken one.
+     That is the worst kind of study page: one that disagrees with the thing
+     it is about and cannot tell you.
+
+     So the page declares the rule itself, in a layer, exactly as Foundry
+     does. `make.css` arrives unlayered through its <link> and unlayered
+     always beats layered, which is the same relationship the `system` layer
+     has to `elements` there. Delete the reset at the top of make.css and
+     this page breaks in the same way and in the same places. */
+  @layer elements {
+    button{height:28px;min-height:28px;display:flex;align-items:center;
+      justify-content:center;text-align:center;padding:0 8px;border:1px solid #444;
+      background:#2a2e35;color:inherit;font-family:inherit}
+  }
+</style>
+</head>
+<body class="dh">
+
+<div class="bar">
+  <b>DH · Making a character</b>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div>
+
+<h2><span>THE WINDOW</span>Six steps, and the character they build, in one column</h2>
+<p class="note">
+  The rail carries both, and that is the entire layout argument. Choose a class and
+  Evasion and Hit Points land <em>under your cursor</em> — the step you are on and the
+  number it moves are inches apart. Put the steps in a tab strip along the top and that
+  relationship is gone, and with it the reason any of this is live.
+  The numerals are the <em>book's</em> step numbers, which is why they read 1, 2, 3, 5, 7, 8:
+  step 4 is the panel beneath them, and 6 and 9 are prose that belongs on the bio tab.
+</p>
+
+<div class="win2">
+  <div class="tt"><b>Make a character · Vess</b></div>
+  <div class="bd2">
+    <div class="forge" style="flex:1 1 auto;min-width:0">
+      <div class="fside">
+        <div class="fsteps" id="steps"></div>
+        <div class="fvals" id="vals"></div>
+      </div>
+      <div class="fstage">
+        <div class="fhead">
+          <h2 id="ttl" style="margin:0;color:var(--ink)">Class</h2>
+          <p id="hint">Choose a class, then a subclass. Its foundation card comes with it.</p>
+        </div>
+        <div class="fbody turn" id="body"></div>
+        <div class="fbot">
+          <s id="say">Guardian · Stalwart</s>
+          <label id="gm"><input type="checkbox"> unrestricted</label>
+          <button type="button" id="back">back</button>
+          <button type="button" class="go" id="next">next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2><span>THE CLASS ROW</span>The largest decision in the window gets a page, not a tile</h2>
+<p class="note">
+  Nine classes, one per row. As a 268px option a class was two domains, a name, two numbers
+  and a sentence all competing for the same column — which is a fair description of what a
+  class is <em>not</em>. It fixes your domains, your Evasion, your Hit Points and half your
+  card pool, and you make it once. So the row splits by kind: the class mark on a plate
+  tinted with its <em>primary</em> domain on the left, everything written on the right.
+  The flavour is the book's opening paragraph, and this is the only surface that prints one —
+  <code>system.description</code> stays at one sentence because that is what a <em>card</em>
+  shows, and <code>check-cards.mjs</code> fails the build if it grows back.
+</p>
+<div class="forge" style="display:block;background:var(--paper);padding:18px;max-width:800px">
+  <div class="fclass" id="classes"></div>
+</div>
+
+<h2><span>THE CARD GRID</span>Three steps choose printed cards, so they draw printed cards</h2>
+<p class="note">
+  A subclass, an ancestry and a domain card are objects that exist on paper, and a text
+  summary of one lies by omission about the two things a card carries structurally rather
+  than in prose: the domain — which is the hue and the corner sigils — and the level and
+  Recall Cost, which are the corner blocks. <code>.card</code> is container-query driven, so
+  the component that draws a 300px chat plate draws a 176px grid cell unchanged.
+  <code>fit()</code> sizes each card alone and is right to; <code>levelPlates()</code> then
+  gives the whole grid the <em>smallest</em> plate any of them needed, because a picture line
+  that wanders across a row reads as broken rather than as adaptive — and shrinking a plate
+  only ever hands prose more room than <code>fit()</code> asked for.
+</p>
+<div class="forge" style="display:block;background:var(--paper);padding:18px;max-width:800px">
+  <div class="fcards" id="cards"></div>
+</div>
+
+<h2><span>DEAD, NOT HIDDEN</span>An option you may not take says why on itself</h2>
+<p class="note">
+  <code>dlg.css</code> established this for the trait picker, where the greyed row is one of
+  six you can see the rest of. It does more work here. Filtering the illegal cards out of a
+  domain deck leaves a deck that <em>looks complete</em> — the player never learns the rule
+  exists, and the first time they wonder why a Wizard cannot take Whirlwind there is nothing
+  on screen that ever mentioned it. Present and captioned is the rule being taught.
+</p>
+<div class="forge" style="display:block;background:var(--paper);padding:18px;max-width:700px">
+  <div class="fgrid" id="deck"></div>
+</div>
+
+<h2><span>THE SPREAD</span>A budget you can see the shape of</h2>
+<p class="note">
+  Six chips, placed by drag or by click, consumed as they land. Overspending is not something
+  this control refuses — it is something it cannot express, which is the difference between a
+  form that validates and a form that cannot be wrong. A spent chip keeps its slot as a hole:
+  the budget is six objects and its shape is the information, and a row that reflows on every
+  placement moves the chip you were about to click.
+  Deliberately <em>not</em> pre-placed. <code>prep.js</code> opens roll-ready and is right to,
+  because you meet it twice a minute; this is met once and its answer is permanent, and a
+  default on a permanent choice is a default that gets accepted.
+</p>
+<div class="forge" style="display:block;background:var(--paper);padding:18px;max-width:700px">
+  <div id="tray"></div>
+  <div class="ftraits" id="traits"></div>
+</div>
+
+<h2><span>THE PLATE</span>Where you press, before and after</h2>
+<p class="note">
+  It takes height rather than overlaying, which is edit mode's rule and the same reasoning:
+  a hint that lasts a second may float over the sheet, a state that lasts a session may not.
+  And it does not vanish when it is finished — a control that disappears the moment you
+  complete something is a control you will hunt for in three weeks when you want to swap one
+  domain card.
+</p>
+<div class="row2">
+  <div class="railbox">
+    <div class="fake"><b>Vess</b></div>
+    <div id="p1"></div>
+  </div>
+  <div class="railbox">
+    <div class="fake"><b>Vess</b></div>
+    <div id="p2"></div>
+  </div>
+</div>
+
+<script type="module">
+import { OPT, PLATE, TRAIT, TRAY, VALS, levelPlates, setVals, sign } from '/design/make.js';
+import { TICK } from '/design/mark.js';
+import { CARD, fit } from '/design/card.js';
+import { byslug, clazz, icon } from '/design/domains.js';
+
+document.getElementById('lt').onchange = e =>
+  document.documentElement.classList.toggle('light', e.target.checked);
+
+/* ── the steps ──────────────────────────────────────────────────── */
+
+const STEPS = [
+  { n: 1, k: 'Class',        state: 'done' },
+  { n: 2, k: 'Heritage',     state: 'done' },
+  { n: 3, k: 'Traits',       state: 'on'   },
+  { n: 5, k: 'Equipment',    state: ''     },
+  { n: 7, k: 'Experiences',  state: ''     },
+  { n: 8, k: 'Domain Cards', state: '', why: 'needs a class' },
+];
+
+document.getElementById('steps').innerHTML = STEPS.map(s => `
+  <button type="button" class="fstep ${s.state}"${s.why ? ' disabled' : ''}>
+    <i>${s.state === 'done' ? TICK : s.n}</i>
+    <span>${s.k}</span>
+    ${s.why ? `<em>${s.why}</em>` : ''}
+  </button>`).join('');
+
+/* ── the rail's numbers ─────────────────────────────────────────── */
+
+const before = [
+  { head: 'the character' },
+  { k: 'Level', v: 1 },
+  { k: 'Evasion', v: null },
+  { k: 'Hit Points', v: null },
+  { k: 'Stress', v: 6 },
+  { k: 'Hope', v: 2, sub: '/ 6' },
+  { head: 'damage' },
+  { k: 'Major', v: null },
+  { k: 'Severe', v: null },
+  { k: 'Armor', v: null },
+  { head: 'rolling' },
+  { k: 'Proficiency', v: 1 },
+];
+
+const vals = document.getElementById('vals');
+vals.innerHTML = VALS(before) + `
+  <div class="fdm" style="margin-top:10px">
+    <i style="--c:#df903c">Valor</i><i style="--c:#8f8578">Bone</i>
+  </div>`;
+
+/* What choosing Guardian does. Only the four it touches light — which is the
+   whole reason `setVals` diffs rather than re-rendering: a rail where seven
+   numbers flash on every choice is a rail that has stopped saying anything
+   about the choice. Press it a few times; nothing that did not move moves. */
+const after = before.map(r =>
+  r.k === 'Evasion' ? { ...r, v: 9 } :
+  r.k === 'Hit Points' ? { ...r, v: 7 } :
+  r.k === 'Major' ? { ...r, v: 8 } :
+  r.k === 'Severe' ? { ...r, v: 16 } : r);
+
+let lit = false;
+document.getElementById('next').onclick = () => {
+  lit = !lit;
+  setVals(vals, lit ? after : before);
+  document.getElementById('say').textContent = lit ? 'Guardian · Stalwart' : '—';
+};
+
+/* ── the class step ─────────────────────────────────────────────── */
+
+const CLASSES = [
+  { name: 'Guardian', meta: 'Valor · Bone', ev: 9, hp: 7, on: true,
+    text: 'Unwavering protectors. Frontline defenders who put themselves between danger and everyone else.' },
+  { name: 'Wizard', meta: 'Codex · Splendor', ev: 11, hp: 5,
+    text: 'Whether through an institution or on their own, those who bear the title of wizard have committed to a lifetime of magical study.' },
+  { name: 'Rogue', meta: 'Midnight · Grace', ev: 12, hp: 6,
+    text: 'Rogues are scoundrels, often in both attitude and practice.' },
+];
+
+/* The mark on the left is the class's own, from `assets/classes/`, drawn in
+   its *primary* domain's hue. Not a colour of its own: a saturated hue means
+   domain everywhere else in this system, and a class's first domain is the
+   truest thing that hue can mean here. */
+const PRIMARY = { Guardian: 'valor', Wizard: 'codex', Rogue: 'midnight' };
+
+const marks = Object.fromEntries(await Promise.all(
+  CLASSES.map(async c => [c.name, await clazz(c.name.toLowerCase())])));
+
+const clsRow = c => `
+  <button type="button" class="fcls${c.on ? ' on' : ''}">
+    <span class="fsig" style="--c:${byslug[PRIMARY[c.name]].light}">${marks[c.name] ?? ''}</span>
+    <span class="fmain">
+      <s>${c.meta}</s>
+      <b>${c.name}</b>
+      <span class="fnum">
+        <i>Evasion <b>${c.ev}</b></i>
+        <i>Hit Points <b>${c.hp}</b></i>
+      </span>
+      <p>${c.text}</p>
+    </span>
+  </button>`;
+
+document.getElementById('classes').innerHTML = CLASSES.map(clsRow).join('');
+
+document.getElementById('body').innerHTML =
+  `<div class="fclass">${CLASSES.map(clsRow).join('')}</div>
+  <div class="fdet">
+    <s>Guardian · Unstoppable</s>
+    <div class="frule">
+      <b>Unstoppable</b>
+      <p>Once per long rest, you can become Unstoppable. You gain an Unstoppable die and
+      place it on your character sheet with the 1 facing up.</p>
+    </div>
+    <div class="frule">
+      <b>Frontline Tank</b>
+      <p>When you mark 1 or more Hit Points from an attack, you can mark a Stress to reduce
+      the severity by one threshold.</p>
+    </div>
+  </div>`;
+
+/* Chosen-tile brackets snap on once, on the press that chose it — `.just` is
+   dropped a beat later, so re-rendering the grid does not replay them. Same
+   `play`/`land` distinction the chat plate spells out. */
+document.getElementById('body').addEventListener('click', e => {
+  const b = e.target.closest('.fopt, .fcls');
+  if (!b || b.disabled) return;
+  for (const o of document.querySelectorAll('#body .fopt, #body .fcls')) o.classList.remove('on', 'just');
+  b.classList.add('on', 'just');
+  setTimeout(() => b.classList.remove('just'), 340);
+});
+
+/* ── the card grid ──────────────────────────────────────────────────
+   Real cards at grid scale. `fit()` first, then `levelPlates()` — the order
+   matters and is the whole point of the second call: `fit()` resets every
+   plate to its maximum at the top of each pass, so levelling can only ever
+   apply to a solved layout and can never ratchet down across runs. */
+
+const DECK = [
+  { d: 'grace', name: 'Inspirational Words', lvl: 1, rc: 1, type: 'ABILITY', foot: 'Grace',
+    text: 'Your speech is imbued with power. After a long rest, place a number of tokens on this card equal to your Presence.' },
+  { d: 'codex', name: 'Book of Ava', lvl: 1, rc: 0, type: 'GRIMOIRE', foot: 'Codex',
+    text: '**Power Push:** Make a *Spellcast Roll* against a target within Melee range. On a success, they are knocked back to Far range.' },
+  { d: 'midnight', name: 'Pick and Pull', lvl: 1, rc: 0, type: 'ABILITY', foot: 'Midnight',
+    text: 'You have advantage on rolls to pick non-magical locks, disarm mechanical traps, or steal items from another creature.' },
+  { d: 'valor', name: 'Bare Bones', lvl: 1, rc: 0, type: 'ABILITY', foot: 'Valor',
+    text: 'When you choose not to equip armor, you have a base Armor Score of 3 plus your Strength, and your damage thresholds equal your level.' },
+];
+
+const cards = document.getElementById('cards');
+const sigs = Object.fromEntries(await Promise.all(
+  [...new Set(DECK.map(c => c.d))].map(async s => [s, await icon(s)])));
+
+cards.innerHTML = DECK.map((c, i) => `
+  <button type="button" class="fcrd${i === 0 ? ' on' : ''}">
+    ${CARD({ ...c, d: byslug[c.d], sig: sigs[c.d] })}
+  </button>`).join('');
+fit(cards);
+levelPlates(cards);
+
+cards.addEventListener('click', e => {
+  const b = e.target.closest('.fcrd');
+  if (!b || b.disabled) return;
+  for (const o of cards.querySelectorAll('.fcrd')) o.classList.remove('on', 'just');
+  b.classList.add('on', 'just');
+  setTimeout(() => b.classList.remove('just'), 340);
+});
+
+/* ── an illegal option ──────────────────────────────────────────── */
+
+const CARDS = [
+  { name: 'Bare Bones', meta: 'Bone · Level 1', text: 'When you choose not to equip armor, you have a base Armor Score of 3 plus your Strength.' },
+  { name: 'Deft Deceiver', meta: 'Grace · Level 1', text: 'Spend a Hope to gain advantage on a roll to deceive or trick someone into believing a lie you tell them.' },
+  { name: 'Whirlwind', meta: 'Blade · Level 1', why: 'Blade · not one of your domains' },
+  { name: 'Rune Ward', meta: 'Arcana · Level 2', why: 'Level 2 · above your level' },
+];
+
+document.getElementById('deck').innerHTML = CARDS.map(c => OPT(c)).join('');
+
+/* ── the spread ─────────────────────────────────────────────────── */
+
+const SPREAD = [2, 1, 1, 0, 0, -1];
+const VERBS = {
+  agility: ['Sprint', 'Leap', 'Maneuver'], strength: ['Lift', 'Smash', 'Grapple'],
+  finesse: ['Control', 'Hide', 'Tinker'], instinct: ['Perceive', 'Sense', 'Navigate'],
+  presence: ['Charm', 'Perform', 'Deceive'], knowledge: ['Recall', 'Analyze', 'Comprehend'],
+};
+
+let chips = SPREAD.map(v => ({ v, spent: false, armed: false }));
+let placed = {};   // trait → chip index
+let armed = null;
+
+function draw() {
+  document.getElementById('tray').innerHTML = TRAY(chips);
+  document.getElementById('traits').innerHTML = Object.entries(VERBS)
+    .map(([key, verbs]) => {
+      const i = placed[key];
+      return TRAIT({
+        key, verbs, label: key[0].toUpperCase() + key.slice(1),
+        v: i === undefined ? null : chips[i].v,
+        open: armed !== null && i === undefined,
+      });
+    }).join('');
+}
+
+document.getElementById('tray').addEventListener('click', e => {
+  const b = e.target.closest('.fchip');
+  if (!b || b.disabled) return;
+  const i = Number(b.dataset.i);
+  armed = armed === i ? null : i;
+  chips = chips.map((c, n) => ({ ...c, armed: n === armed }));
+  draw();
+});
+
+document.getElementById('traits').addEventListener('click', e => {
+  const b = e.target.closest('.ftrt');
+  if (!b) return;
+  const t = b.dataset.t;
+  // Clicking a filled trait takes its chip back — and it goes back to the slot
+  // it came from, which is why the chips are keyed positionally rather than by
+  // value. Two of them read +1 and "the +1 chip" is not a thing that exists.
+  if (placed[t] !== undefined) {
+    chips[placed[t]].spent = false;
+    delete placed[t];
+  } else if (armed !== null) {
+    placed[t] = armed;
+    chips[armed].spent = true;
+    armed = null;
+  }
+  chips = chips.map((c, n) => ({ ...c, armed: n === armed }));
+  draw();
+});
+
+draw();
+
+/* ── the plate ──────────────────────────────────────────────────── */
+
+document.getElementById('p1').innerHTML = PLATE({
+  done: false, at: 3, of: 6,
+  label: 'Make this character',
+  hint: '3 of 6 · traits, equipment and cards outstanding',
+});
+document.getElementById('p2').innerHTML = PLATE({
+  done: true, at: 6, of: 6,
+  label: 'Character creation',
+  hint: 'Finished — open to change anything',
+});
+</script>
+</body>
+</html>

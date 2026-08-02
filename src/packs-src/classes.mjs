@@ -30,11 +30,116 @@
 import { classItem, feat, subclassCards } from "./_helpers.mjs";
 
 /* ══════════════════════════════════════════════════════════════════════
+   THE CHAPTER OPENERS
+
+   Each class's opening paragraph, whole, from chapter 1. It lands in
+   `system.flavor` and is drawn in exactly one place: the class row in the
+   character-creation window, which is the one screen where you are choosing
+   between all nine at once and the numbers alone cannot tell you what it is
+   like to play one.
+
+   It is deliberately **not** `description`. That field is what a card prints,
+   it is held to the chapter's first sentence, and `FLAVOUR_SENTENCES` in
+   `tools/check-cards.mjs` fails the build if it grows back — because it did
+   grow once, and five sentences of lore sat above the Evasion and Hit Points
+   the card exists to state. Two fields, two jobs, and the rule the check
+   protects is untouched.
+
+   The first sentence of each is therefore the same sentence as that class's
+   `description`, by construction. `tools/check-cards.mjs` asserts it, so the
+   two cannot drift into disagreeing about what a class is.
+   ══════════════════════════════════════════════════════════════════════ */
+
+const FLAVOUR = {
+  bard: `
+    Bards are the most charismatic people in all the realms. Members of this class are masters of
+    captivation and specialize in a variety of performance types, including singing, playing musical
+    instruments, weaving tales, or telling jokes. Whether performing for an audience or speaking to
+    an individual, bards thrive in social situations. Members of this profession bond and train at
+    schools or guilds, but a current of egotism runs through those of the bardic persuasion. While
+    they may be the most likely class to bring people together, a bard of ill temper can just as
+    easily tear a party apart.`,
+
+  druid: `
+    Becoming a druid is more than an occupation; it's a calling for those who wish to learn from and
+    protect the magic of the wilderness. While one might underestimate a gentle druid who practices
+    the often-quiet work of cultivating flora, druids who channel the untamed forces of nature are
+    terrifying to behold. Druids cultivate their abilities in small groups, often connected by a
+    specific ethos or locale, but some choose to work alone. Through years of study and dedication,
+    druids can learn to transform into beasts and shape nature itself.`,
+
+  guardian: `
+    The title of guardian represents an array of martial professions, speaking more to their moral
+    compass and unshakeable fortitude than the means by which they fight. While many guardians join
+    groups of militants for either a country or cause, they're more likely to follow those few they
+    truly care for, majority be damned. Guardians are known for fighting with remarkable ferocity
+    even against overwhelming odds, defending their cohort above all else. Woe betide those who harm
+    the ally of a guardian, as the guardian will answer this injury in kind.`,
+
+  ranger: `
+    Rangers are highly skilled hunters who, despite their martial abilities, rarely lend their
+    skills to an army. Through mastery of the body and a deep understanding of the wilderness,
+    rangers become sly tacticians, pursuing their quarry with cunning and patience. Many rangers
+    track and fight alongside an animal companion with whom they've forged a powerful spiritual
+    bond. By honing their skills in the wild, rangers become expert trackers, as likely to ensnare
+    their foes in a trap as they are to assail them head-on.`,
+
+  rogue: `
+    Rogues are scoundrels, often in both attitude and practice. Broadly known as liars and thieves,
+    the best among this class move through the world anonymously. Utilizing their sharp wits and
+    blades, rogues trick their foes through social manipulation as easily as breaking locks,
+    climbing through windows, or dealing underhanded blows. These masters of magical craft
+    manipulate shadow and movement, adding an array of useful and deadly tools to their repertoire.
+    Rogues frequently establish guilds to meet future accomplices, hire out jobs, and hone secret
+    skills, proving that there's honor among thieves for those who know where to look.`,
+
+  seraph: `
+    Seraphs are divine fighters and healers imbued with sacred purpose. A wide array of deities
+    exist within the realms, and thus numerous kinds of seraphs are appointed by these gods. Their
+    ethos traditionally aligns with the domain or goals of their god, such as defending the weak,
+    exacting vengeance, protecting a land or artifact, or upholding a particular faith. Some seraphs
+    ally themselves with an army or locale, much to the satisfaction of their rulers, but other
+    crusaders fight in opposition to the follies of the Mortal Realm. It is better to be a seraph's
+    ally than their enemy, as they are terrifying foes to those who defy their purpose.`,
+
+  sorcerer: `
+    Not all innate magic users choose to hone their craft, but those who do can become powerful
+    sorcerers. The gifts of these wielders are passed down through families, even if the family is
+    unaware of or reluctant to practice them. A sorcerer's abilities can range from the elemental to
+    the illusionary and beyond, and many practitioners band together into collectives based on their
+    talents. The act of becoming a formidable sorcerer is not the practice of acquiring power, but
+    learning to cultivate and control the power one already possesses. The magic of a misguided or
+    undisciplined sorcerer is a dangerous force indeed.`,
+
+  warrior: `
+    Becoming a warrior requires years, often a lifetime, of training and dedication to the mastery
+    of weapons and violence. While many who seek to fight hone only their strength, warriors
+    understand the importance of an agile body and mind, making them some of the most sought-after
+    fighters across the realms. Frequently, warriors find employment within an army, a band of
+    mercenaries, or even a royal guard, but their potential is wasted in any position where they
+    cannot continue to improve and expand their skills. Warriors are known to have a favored weapon;
+    to come between them and their blade would be a grievous mistake.`,
+
+  wizard: `
+    Whether through an institution or individual study, those known as wizards acquire and hone
+    immense magical power over years of learning using a variety of tools, including books, stones,
+    potions, and herbs. Some wizards dedicate their lives to mastering a particular school of magic,
+    while others learn from a wide variety of disciplines. Many wizards become wise and powerful
+    figures in their communities, advising rulers, providing medicines and healing, and even leading
+    war councils. While these mages all work toward the common goal of collecting magical knowledge,
+    wizards often have the most conflict within their own ranks, as the acquisition, keeping, and
+    sharing of powerful secrets is a topic of intense debate that has resulted in innumerable
+    deaths.`,
+};
+
+
+/* ══════════════════════════════════════════════════════════════════════
    BARD — Grace & Codex
    ══════════════════════════════════════════════════════════════════════ */
 
 const bard = classItem({
   name: "Bard",
+  flavor: FLAVOUR.bard,
   domains: ["grace", "codex"],
   evasion: 10,
   hitPoints: 5,
@@ -152,6 +257,7 @@ const wordsmith = subclassCards({
 
 const druid = classItem({
   name: "Druid",
+  flavor: FLAVOUR.druid,
   domains: ["sage", "arcana"],
   evasion: 10,
   hitPoints: 6,
@@ -302,6 +408,7 @@ const wardenOfRenewal = subclassCards({
 
 const guardian = classItem({
   name: "Guardian",
+  flavor: FLAVOUR.guardian,
   domains: ["valor", "blade"],
   evasion: 9,
   hitPoints: 7,
@@ -414,6 +521,7 @@ const vengeance = subclassCards({
 
 const ranger = classItem({
   name: "Ranger",
+  flavor: FLAVOUR.ranger,
   domains: ["bone", "sage"],
   evasion: 12,
   hitPoints: 6,
@@ -535,6 +643,7 @@ const wayfinder = subclassCards({
 
 const rogue = classItem({
   name: "Rogue",
+  flavor: FLAVOUR.rogue,
   domains: ["midnight", "grace"],
   evasion: 12,
   hitPoints: 6,
@@ -675,6 +784,7 @@ const syndicate = subclassCards({
 
 const seraph = classItem({
   name: "Seraph",
+  flavor: FLAVOUR.seraph,
   domains: ["splendor", "valor"],
   evasion: 9,
   hitPoints: 7,
@@ -789,6 +899,7 @@ const wingedSentinel = subclassCards({
 
 const sorcerer = classItem({
   name: "Sorcerer",
+  flavor: FLAVOUR.sorcerer,
   domains: ["arcana", "midnight"],
   evasion: 10,
   hitPoints: 6,
@@ -935,6 +1046,7 @@ const primalOrigin = subclassCards({
 
 const warrior = classItem({
   name: "Warrior",
+  flavor: FLAVOUR.warrior,
   domains: ["blade", "bone"],
   evasion: 11,
   hitPoints: 6,
@@ -1061,6 +1173,7 @@ const callOfTheSlayer = subclassCards({
 
 const wizard = classItem({
   name: "Wizard",
+  flavor: FLAVOUR.wizard,
   domains: ["codex", "splendor"],
   evasion: 11,
   hitPoints: 5,

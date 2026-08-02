@@ -174,6 +174,57 @@ declare module "*/ui/prep.js" {
   export function closePrep(): void;
 }
 
+declare module "*/ui/make.js" {
+  /** A rail row, or a heading when `head` is set instead of `k`. */
+  export interface ValRow {
+    k?: string;
+    /** null draws an em dash — the absence of a rule, not a zero. */
+    v?: number | string | null;
+    /** A qualifier printed small beside the label: "/ 6". */
+    sub?: string;
+    head?: string;
+  }
+  export const DASH: string;
+  export function VAL(row: ValRow): string;
+  export function VALS(rows: ValRow[]): string;
+  /** Write new values in and light only what moved. See the note in make.js. */
+  export function setVals(root: Element, rows: ValRow[]): void;
+
+  /** Give every card in a `.fcards` grid the smallest art plate any of them
+      needed, so the picture line across a row is straight. Run after `fit()`. */
+  export function levelPlates(root?: ParentNode): void;
+
+  export function OPT(opts: {
+    name: string;
+    meta?: string;
+    text?: string;
+    nums?: { k: string; v: string | number }[];
+    /** Why it cannot be taken. Its presence disables the option. */
+    why?: string;
+    on?: boolean;
+  }): string;
+
+  export function TRAY(chips: { v: number; spent?: boolean; armed?: boolean }[]): string;
+  export function TRAIT(opts: {
+    key: string;
+    label: string;
+    verbs?: string[];
+    v?: number | null;
+    open?: boolean;
+  }): string;
+
+  /** `+2`, `0`, `−1` — U+2212, and a bare zero. */
+  export function sign(n: number): string;
+
+  export function PLATE(opts: {
+    done: boolean;
+    of: number;
+    at: number;
+    label: string;
+    hint?: string;
+  }): string;
+}
+
 declare module "*/ui/settle.js" {
   export function settled(el: Element): Promise<void>;
 }

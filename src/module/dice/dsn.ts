@@ -120,11 +120,10 @@
  * the shape a table paid a dice-model module for. Overriding it would mean a
  * player who chose their own d12 gets ours instead, on a roll they did not ask
  * us to redecorate, which is the same overreach as making ourselves the
- * preferred colorset and is refused for the same reason. It also would not
- * work where we most control the dice: presets live on a `DiceFactory`
- * instance, and `dice/inplace.ts` builds a second factory of its own that has
- * never heard of ours — so the rest dialog's tray would silently lose it.
- * Colorsets and textures are module-level state and reach both.
+ * preferred colorset and is refused for the same reason. It is also the more
+ * fragile half of the API: presets live on a `DiceFactory` instance, while
+ * colorsets and textures are module-level state, so anything that builds its
+ * own factory keeps the finish and loses the preset.
  *
  * So the glow map is composited into the module's own emissive canvas instead,
  * on `diceSoNiceOnMaterialReady` — which fires with the finished material and

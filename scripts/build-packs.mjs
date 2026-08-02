@@ -53,6 +53,13 @@ export const PACKS = [
     collection: "items",
     docType: "Item",
   },
+  {
+    name: "equipment",
+    module: "equipment.mjs",
+    label: "Equipment",
+    collection: "items",
+    docType: "Item",
+  },
 ];
 
 /** The Foundry envelope around a normalized entry. */

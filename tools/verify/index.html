@@ -22,6 +22,8 @@
 <link rel="stylesheet" href="/styles/swap.css">
 <link rel="stylesheet" href="/styles/sheet.css">
 <link rel="stylesheet" href="/styles/plate.css">
+<link rel="stylesheet" href="/styles/dlg.css">
+<link rel="stylesheet" href="/styles/make.css">
 <!-- Last, exactly as system.json loads it: the Svelte components' own styles.
      Leaving it out is how the first pass missed that the sheet's stack is not
      the study page's stack. -->
@@ -49,6 +51,24 @@
   #ok{margin:34px 26px 0;font:500 12px/1.7 "Google Sans Code",monospace;color:#9aa3ae;white-space:pre}
   #ok b{color:#7ddc8f;font-weight:700}
   #ok em{color:#ff7a5c;font-style:normal;font-weight:700}
+
+  /* ── Foundry's button, stood in for ───────────────────────────────
+     The `elements` layer sizes every <button> to one centred line 28px tall,
+     and the creation window is made almost entirely of buttons that are not
+     buttons in that sense — a class row, a step, a trait slot, a card. Left
+     unreset it sheared the contents off every control in the window, and
+     nothing in this repo could see it: the study pages have no Foundry, and
+     `tsc`, `svelte-check` and the build do not look at CSS.
+
+     So the page carries the rule. Layered, because `styles/*.css` arrive
+     unlayered through their <link>s and unlayered always wins — which is the
+     same relationship the `system` layer has to `elements` in the real
+     application. Delete the reset at the top of make.css and the two checks
+     at the foot of this page go red. */
+  @layer elements {
+    button{height:28px;min-height:28px;display:flex;align-items:center;
+      justify-content:center;text-align:center;font-family:inherit}
+  }
 </style>
 </head>
 <body>
@@ -70,6 +90,9 @@
 <h2><span>// THE PANE</span>Where the traits strip belongs</h2>
 <div class="stage" id="traits"></div>
 
+<h2><span>// THE FORGE</span>The creation window, from the ported stylesheet</h2>
+<div class="stage" id="forge"></div>
+
 <pre id="ok"></pre>
 
 <script type="module">
@@ -80,6 +103,7 @@ import { A, DMG, FOE, play } from '/design/plate.js';
 import { MARKS, DAMAGE } from '/src/module/ui/mark.js';
 import { GEMS } from '/src/module/ui/gem.js';
 import { CARD, fit } from '/src/module/ui/card.js';
+import { OPT, PLATE, TRAY, VALS, levelPlates } from '/src/module/ui/make.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
    two are genuinely different things — nine slugs against nine documents. */
 import { CLASSES as CLASS_SLUGS, KINDS, byslug, icon, glyph, clazz } from '/src/module/ui/domains.js';
@@ -254,6 +278,118 @@ document.getElementById('traits').innerHTML = `
     <div class="lbl">AFTER · child of .pane</div>${pane(false)}
   </div>`;
 
+/* ── THE FORGE ──────────────────────────────────────────────────────
+   The creation window, built with the *vendored* make.js against the
+   *ported* make.css — so what is under test is the round trip, not the
+   study page.
+
+   The one thing this catches that `design/make.html` structurally cannot:
+   `make.css` is loaded here beside `sheet.css`, `card.css`, `tile.css` and
+   `dlg.css`, all inside one `.dh` root, which is the stack a real Foundry
+   window has and the stack a study page never does. Two of our own
+   stylesheets colliding is invisible on a page that loads one of them —
+   that is exactly how `.die.win` and `.dfn .pl` got shipped. */
+document.getElementById('forge').innerHTML = `
+  <div>
+    <div class="lbl">RAIL · steps and the character so far</div>
+    <div class="dh" style="width:288px;background:var(--paper);
+         box-shadow:inset 0 0 0 1px var(--frame-line)">
+      <div class="forge" style="display:block">
+        <div class="fside" style="width:288px;border-right:0">
+          <div class="fsteps">
+            <button type="button" class="fstep done"><i>1</i><span>Class</span></button>
+            <button type="button" class="fstep on"><i>3</i><span>Traits</span></button>
+            <button type="button" class="fstep" disabled><i>8</i><span>Domain Cards</span><em>needs a class</em></button>
+          </div>
+          <div class="fvals" id="fv">${VALS([
+            { head: 'the character' },
+            { k: 'Evasion', v: null },
+            { k: 'Hit Points', v: 7 },
+            { k: 'Hope', v: 2, sub: '/ 6' },
+          ])}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="lbl">OPTIONS · chosen, and refused</div>
+    <div class="dh" style="width:300px;background:var(--paper);padding:14px;
+         box-shadow:inset 0 0 0 1px var(--frame-line)">
+      <div class="forge" style="display:block">
+        <div class="fgrid" style="grid-template-columns:1fr">
+          ${OPT({ name: 'Guardian', meta: 'Valor · Bone', on: true,
+                  nums: [{ k: 'Evasion', v: 9 }, { k: 'HP', v: 7 }] })}
+          ${OPT({ name: 'Whirlwind', meta: 'Blade · Level 1',
+                  why: 'Blade · not one of your domains' })}
+        </div>
+        <div style="margin-top:12px">${TRAY([
+          { v: 2, spent: true }, { v: 1 }, { v: 1, armed: true },
+          { v: 0 }, { v: 0 }, { v: -1 },
+        ])}</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="lbl">PLATE · on the sheet's rail, before and after</div>
+    <div class="dh" style="width:288px;background:var(--paper);
+         box-shadow:inset 0 0 0 1px var(--frame-line)">
+      ${PLATE({ done: false, at: 3, of: 6, label: 'Make this character',
+                hint: '3 of 6 · traits, equipment outstanding' })}
+      ${PLATE({ done: true, at: 6, of: 6, label: 'Character creation',
+                hint: 'Finished — open it to change anything' })}
+    </div>
+  </div>
+  <div>
+    <div class="lbl">CLASS ROW &amp; CARD GRID · the two shapes a step can offer</div>
+    <div class="dh" id="forge2" style="width:470px;background:var(--paper);padding:14px;
+         box-shadow:inset 0 0 0 1px var(--frame-line)"></div>
+  </div>`;
+
+/* The class row and the card grid, both of which need a sigil off disk, so
+   both are built asynchronously and the checks wait on this. The class row is
+   the one control on the page that is *taller than a paragraph*, which makes
+   it the honest subject for the button-height check below; the card grid is
+   the only place `levelPlates` can be observed doing anything. */
+const forgeReady = (async () => {
+  const box = document.getElementById('forge2');
+  const mark = await clazz('guardian');
+  const valor = byslug.valor;
+  const sigs = { grace: await icon('grace'), codex: await icon('codex') };
+
+  const GRID = [
+    { d: 'grace', name: 'Inspirational Words', lvl: 1, rc: 1, type: 'ABILITY',
+      text: 'Your speech is imbued with power. After a long rest, place a number of tokens on this card equal to your Presence.' },
+    { d: 'codex', name: 'Book of Ava', lvl: 1, rc: 0, type: 'GRIMOIRE',
+      text: '**Power Push:** Make a *Spellcast Roll* against a target within Melee range. On a success, they are knocked back to Far range and take d10+2 magic damage.' },
+  ];
+
+  box.innerHTML = `
+    <div class="forge" style="display:block">
+      <div class="fclass">
+        <button type="button" class="fcls on">
+          <span class="fsig" style="--c:${valor.light}">${mark}</span>
+          <span class="fmain">
+            <s>Valor · Bone</s>
+            <b>Guardian</b>
+            <span class="fnum"><i>Evasion <b>9</b></i> <i>Hit Points <b>7</b></i></span>
+            <p>The title of guardian represents an array of martial professions, speaking more to
+            their moral compass and unshakeable fortitude than the means by which they fight.
+            Guardians are known for fighting with remarkable ferocity even against overwhelming
+            odds, defending their cohort above all else.</p>
+          </span>
+        </button>
+      </div>
+      <div class="fcards" style="margin-top:14px">
+        ${GRID.map((c, i) => `<button type="button" class="fcrd${i === 0 ? ' on' : ''}">
+          ${CARD({ ...c, d: byslug[c.d], sig: sigs[c.d], foot: byslug[c.d].name })}
+        </button>`).join('')}
+      </div>
+    </div>`;
+
+  fit(box);
+  levelPlates(box);
+})();
+
 document.getElementById('lt').addEventListener('change', e =>
   document.documentElement.classList.toggle('dh-light', e.target.checked));
 
@@ -347,6 +483,99 @@ setTimeout(async () => { try {
   const inFl = flavoured.filter(s => document.querySelector(`${s} .cnt .fl`)).length;
   const inTx = flavoured.filter(s => document.querySelector(`${s} .cnt .tx`)).length;
   check('flavour sits in .fl, not .tx', inFl === 4 && inTx === 0, `${inFl} in .fl, ${inTx} in .tx`);
+
+  /* ── the forge ────────────────────────────────────────────────────
+     The rail is the sheet's own 288px measure, and the two windows sitting
+     side by side is the whole reason the live numbers are worth watching.
+     A ported rule that lost its width would be invisible on the study page,
+     which sets the width on its own wrapper. */
+  const side = document.querySelector('#forge .fside');
+  check('creation rail matches the sheet at 288px',
+        Math.round(side?.getBoundingClientRect().width) === 288,
+        `${Math.round(side?.getBoundingClientRect().width ?? 0)}px`);
+
+  /* An unset value is an em dash and not a zero. Zero is a number a rule
+     produced; the dash is the absence of the rule, and a rail claiming
+     "Evasion 0" before a class exists is stating something false. */
+  const unset = document.querySelector('#forge .fval[data-k="Evasion"]');
+  check('an unset rail value is a dash, not a zero',
+        unset?.classList.contains('none') && unset.querySelector('b')?.textContent === '—',
+        unset?.querySelector('b')?.textContent ?? 'missing');
+
+  /* Four bracket gradients on a chosen option — the vault's own recipe. If
+     the port ever mangles the multi-value background shorthand, the tile
+     goes from "chosen" to "slightly different background" in silence. */
+  const chosen = document.querySelector('#forge .fopt.on');
+  const brackets = chosen
+    ? (getComputedStyle(chosen, '::after').backgroundImage.match(/linear-gradient/g) || []).length
+    : 0;
+  check('a chosen option wears the vault brackets', brackets === 4, `${brackets} of 4 corners`);
+
+  /* Dead, not hidden: a refused option is still on screen, still says why. */
+  const refused = document.querySelector('#forge .fopt[disabled]');
+  const why = refused?.querySelector('.fwhy')?.textContent?.trim();
+  check('a refused option stays visible and says why',
+        !!refused && getComputedStyle(refused).display !== 'none' && !!why, why || 'no reason given');
+
+  /* The spent chip keeps its slot as a hole rather than closing the row up —
+     the budget's *shape* is what tells you what is left. Equal widths is the
+     test: a chip that collapsed would measure zero. */
+  const chipW = new Set([...document.querySelectorAll('#forge .fchip')]
+    .map(c => Math.round(c.getBoundingClientRect().width)));
+  check('a spent chip keeps its slot', chipW.size === 1, [...chipW].join(', ') + 'px');
+
+  /* The one collision this page exists to catch. `make.css` and `dlg.css` are
+     both loaded, both inside `.dh`, and `.pick`/`.picks` belong to dlg. If a
+     future rename in make.css ever reached for one of those, the damage would
+     show up here as a dialog row that stopped looking like a dialog row. */
+  await forgeReady;
+
+  /* Every control in this window is a <button>, and Foundry sizes those to
+     one centred line 28px tall. The class row is four lines of paragraph and
+     a 118px mark plate; if it measures 28 the reset at the top of make.css
+     has gone, and with it the contents of every option in the window. This is
+     the check that would have caught the whole thing. */
+  const row = document.querySelector('#forge2 .fcls');
+  const rowH = Math.round(row?.getBoundingClientRect().height ?? 0);
+  check('a control is as tall as what is printed on it, not 28px',
+        rowH > 60, `class row is ${rowH}px`);
+
+  /* The other half of the same element rule: a centred flex box. A class row
+     whose columns centre themselves reads as a caption rather than a panel,
+     and the review page's cells centred their headings for exactly this. */
+  check('a control is not centred by Foundry\'s button rule',
+        getComputedStyle(row).alignItems === 'stretch' &&
+        getComputedStyle(document.querySelector('#forge .fopt')).alignItems === 'flex-start',
+        `${getComputedStyle(row).alignItems} / ${getComputedStyle(document.querySelector('#forge .fopt')).alignItems}`);
+
+  /* The class mark is the only picture a class has, and it takes its primary
+     domain's hue. An empty plate looks like a design choice. */
+  const sig = document.querySelector('#forge2 .fcls .fsig > svg');
+  check('the class row draws its class mark', !!sig,
+        sig ? 'mark present' : 'the plate is empty');
+
+  /* `fit()` sizes each card alone, which is right for one card and ragged for
+     a grid; `levelPlates` takes the smallest. Equal plates is the whole
+     observable effect, so it is the test. */
+  const plates = new Set([...document.querySelectorAll('#forge2 .fcards .card')]
+    .map(c => c.style.getPropertyValue('--plate')));
+  check('a card grid shares one art-plate height', plates.size === 1,
+        [...plates].join(' / ') || 'no cards');
+
+  /* A chosen card wears the brackets *outside* itself — six gradients, not
+     four, because a card has no chamfered corner to skip. */
+  const pickedCard = document.querySelector('#forge2 .fcrd.on');
+  const cardBrackets = pickedCard
+    ? (getComputedStyle(pickedCard, '::after').backgroundImage.match(/linear-gradient/g) || []).length
+    : 0;
+  check('a chosen card wears brackets outside the artwork', cardBrackets === 6,
+        `${cardBrackets} of 6 corners`);
+
+  const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
+                      'fcls', 'fcrd', 'fcards', 'fclass'];
+  const clash = forgeNames.filter(n => document.querySelector(`.dlg .${n}`));
+  check('creation class names do not reach into the dialog', clash.length === 0,
+        clash.length ? clash.join(', ') : 'no overlap');
 
   document.getElementById('ok').innerHTML = lines.join('\n');
 } catch (err) {

@@ -137,6 +137,7 @@ export const feat = (name, text) => ({ name, description: rt(text) });
 export function classItem({
   name,
   description,
+  flavor = "",
   domains,
   evasion,
   hitPoints,
@@ -158,6 +159,9 @@ export function classItem({
     img: classIcon(name),
     system: {
       description: rt(description),
+      // The chapter opener, whole. `description` keeps its one sentence
+      // because that is what the card prints; see `flavor` in `ClassData`.
+      flavor: flavor ? rt(flavor) : "",
       domains: { primary, secondary },
       startingEvasion: evasion,
       startingHitPoints: hitPoints,
@@ -234,6 +238,142 @@ export function communityItem({ name, description, feature }) {
     type: "community",
     img,
     system: { description: rt(description), feature, printing },
+  };
+}
+
+/* ── gear ─────────────────────────────────────────────────────────────
+   The four subtypes with no card of their own.
+
+   They take a **type glyph** as `img` rather than artwork, and that is not a
+   placeholder standing in until art arrives. The official equipment art is
+   served from a signed, session-scoped CDN — every URL carries a query string
+   tied to a logged-in subscription — so there is nothing a committed tool
+   could fetch that would still resolve tomorrow, and the whole point of the
+   snapshot is that the build never touches the network. A glyph on every one
+   of them is uniform by construction; a picture on nine and a glyph on three
+   hundred and fifty reads as broken. `img` is per document, so a table that
+   *does* have stable art can set it without any of this changing.
+
+   `sheets/cards.ts` already counts `assets/types/` as "not artwork", so these
+   fall through to the builders' own fallback plate — the glyph at plate size
+   on a graphite ground, which is what a card with no domain looks like
+   everywhere else in this system. */
+
+/**
+ * `"d10+3"` → the schema's damage shape.
+ *
+ * `count` is 1 on every weapon in the book, and stays a field because the
+ * number actually rolled is Proficiency copies of it — see the note on
+ * `WeaponData.damage`. The bonus is the printed one and the type comes from
+ * which table the row was in, physical or magic.
+ */
+function damageOf(printed, magic) {
+  const m = /^(d\d+)(?:\+(\d+))?$/.exec(String(printed).trim());
+  if (!m) throw new Error(`Unreadable damage "${printed}" — expected "d8" or "d10+3"`);
+  return {
+    count: 1,
+    dice: m[1],
+    bonus: Number(m[2] ?? 0),
+    type: magic ? "magic" : "physical",
+  };
+}
+
+/** A `{name, description}` feature block, or the schema's empty one. */
+const featureOf = (feat) =>
+  feat ? { name: feat.name, description: rt(feat.description) } : { name: "", description: "" };
+
+/**
+ * A weapon. `slot` is primary or secondary, which is which *table* it came
+ * from rather than anything about the weapon — a Shortsword is a secondary
+ * because the secondary table prints it, not because of its damage.
+ */
+export function weaponItem({
+  name,
+  tier,
+  slot,
+  trait,
+  range,
+  damage,
+  burden,
+  feature = null,
+  magic = false,
+  spellcast = false,
+}) {
+  return {
+    name,
+    type: "weapon",
+    folder: slot === "secondary" ? "Secondary Weapons" : "Primary Weapons",
+    img: typeGlyph(slot === "secondary" ? "secondary" : "primary"),
+    system: {
+      /* The arcane-frame wheelchair is the only weapon in the book that names
+         no trait: it uses whatever your subclass casts with. The schema stores
+         a trait as one of the six, so the row carries a plausible one and this
+         line carries the truth — and `apps/creation.ts` rewrites the field to
+         the character's own Spellcast trait when it grants one, which is the
+         only moment the right answer is knowable.
+
+         Not a seventh trait. "Spellcast" is a pointer to one of the six, and
+         adding it to `TRAITS` would reach the roll engine, the sheet's six
+         plates and every closed-set check in the system to serve one item. */
+      description: spellcast
+        ? rt(
+            "This weapon doesn’t specify a trait. Attack with the Spellcast trait your subclass gives you.",
+          )
+        : "",
+      tier,
+      slot,
+      equipped: false,
+      trait,
+      range,
+      burden,
+      damage: damageOf(damage, magic),
+      feature: featureOf(feature),
+      // Straight off the feature rather than parsed out of its sentence. See
+      // the note at the head of equipment-tables.mjs.
+      evasionModifier: feature?.ev ?? 0,
+      armorScoreModifier: feature?.as ?? 0,
+      magical: magic,
+    },
+  };
+}
+
+export function armorItem({ name, tier, major, severe, score, feature = null }) {
+  return {
+    name,
+    type: "armor",
+    folder: "Armor",
+    img: typeGlyph("armor"),
+    system: {
+      description: "",
+      tier,
+      equipped: false,
+      baseThresholds: { major, severe },
+      baseScore: score,
+      feature: featureOf(feature),
+      evasionModifier: feature?.ev ?? 0,
+      magical: false,
+    },
+  };
+}
+
+/**
+ * A consumable or an item off the loot tables.
+ *
+ * `source` carries the printed roll number, because that *is* how the rules
+ * refer to a row — "roll 3d12 and take the item that matches that value" — and
+ * the field exists for exactly this.
+ */
+export function lootItem({ name, description, roll, consumable = false }) {
+  return {
+    name,
+    type: consumable ? "consumable" : "loot",
+    folder: consumable ? "Consumables" : "Items",
+    img: typeGlyph(consumable ? "consumable" : "gear"),
+    system: {
+      description: rt(description),
+      quantity: 1,
+      source: roll ? `${consumable ? "Consumable" : "Item"} ${String(roll).padStart(2, "0")}` : "",
+    },
   };
 }
 

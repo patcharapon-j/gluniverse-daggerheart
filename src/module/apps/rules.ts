@@ -88,11 +88,57 @@ export function rulesOf(actor: any): Rule[] {
 export const rulesAbout = (actor: any, rx: RegExp): Rule[] =>
   rulesOf(actor).filter((r) => rx.test(r.text) || rx.test(r.name));
 
-/** Armour, thresholds, damage reduction — anything bearing on a hit landing. */
-export const ARMOUR_RX = /\barmou?r\b|\bseverit|\bthreshold|\bdamage\s+(?:you|is|taken)/i;
+/**
+ * What can still be *spent* while a hit is landing.
+ *
+ * This used to be `ARMOUR_RX` — armour, severity, thresholds, "damage you
+ * take" — and it was too wide by exactly one category. A weapon's Protective
+ * is "+1 to your Armor Score"; Bare Bones is "your damage thresholds equal
+ * your level". Both mention armour, both are real rules, and both were
+ * *already applied* by the time the dialog opened: the Armor Score is the
+ * slot count in the purse and the thresholds are the band the hit is being
+ * measured against. Printing them as cards asked the reader to check
+ * arithmetic the sheet had done, under a heading promising a way out.
+ *
+ * The question this dialog asks is "is there something I can pay". So the
+ * pattern is a list of *offers* rather than a list of topics — spending a
+ * slot, reducing a severity or a damage number, halving it, resisting it,
+ * marking something else instead, or anything that fires at the moment the
+ * damage arrives. A passive bonus matches none of those phrasings, which is
+ * why this is a positive test and not a veto: a rule the sheet has already
+ * counted has nothing to say in the imperative.
+ *
+ * Loose within that, deliberately, and it errs the way this file always
+ * does: a false positive costs one card in a panel you are reading anyway.
+ */
+export const REDUCE_RX =
+  /\b(?:mark|spend|use|expend)\s+(?:an?|one|two|three|\d+)\s+armou?r\s+slots?|\breduc\w+\s+(?:the\s+)?(?:severity|damage)|\bby\s+(?:one|two|three|\d+)\s+thresholds?|\bhalve\b|\bhalf\s+(?:the\s+|that\s+)?damage|\bresistan\w+|\bimmun\w+|\bwhen\s+you\s+(?:would\s+)?take\s+(?:any\s+|\w+\s+)?damage|\b(?:instead\s+of|before|without)\s+marking|\b(?:ignore|avoid|negate)\s+(?:the\s+|all\s+)?damage/i;
 
 /** Rests and the moves made during them. */
 export const REST_RX = /\brests?\b|\bresting\b|\bdowntime\b/i;
+
+/**
+ * A rule whose only business with a rest is getting its own use back.
+ *
+ * "Once per rest, mark a Stress to sprint anywhere within Far range" has
+ * nothing to say to somebody deciding which downtime moves to take. The rest
+ * refreshes it, that is the whole transaction, and a full card asking to be
+ * considered is the panel spending its loudest object on a receipt.
+ *
+ * Told apart from a rule that genuinely changes the rest by *removing the
+ * recharge clause and asking again*. Celestial Trance — "During a rest, you
+ * can drop into a trance to choose an additional downtime move" — matches no
+ * recharge phrasing at all and stays. A card that said "Once per long rest,
+ * when you take a short rest you may take an extra downtime move" still
+ * mentions resting once the clause is gone, so it stays too, which is the
+ * case a plain "does it say per rest" test would have thrown away.
+ */
+export const RECHARGE_RX =
+  /\b(?:once|twice|\d+\s+times)\s+per\s+(?:short\s+|long\s+)?rest\b|\bper\s+(?:short|long)\s+rest\b|\buntil\s+(?:your|the\s+end\s+of\s+your)\s+next\s+(?:short\s+|long\s+)?rest\b/i;
+
+export const rechargeOnly = (text: string): boolean =>
+  RECHARGE_RX.test(text) &&
+  !REST_RX.test(text.replace(new RegExp(RECHARGE_RX.source, "gi"), " "));
 
 /* This file used to draw the panel as well as find it — `rulesPanel`, a
    heading over one `<div class="r">` per rule. `apps/rule-cards.ts` draws it

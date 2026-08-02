@@ -27,6 +27,7 @@ import { registerDice } from "./dice/dsn.ts";
 import { rollAdversaryAttack, rollAttack, rollTrait, rollWeaponDamage } from "./dice/actions.ts";
 import { rollDamage, rollDuality, rollFoe } from "./dice/rolls.ts";
 import { applyTheme, gainFear, getFear, registerSettings, setFear, spendFear } from "./settings.ts";
+import { openCreation, refreshCreation } from "./apps/create.ts";
 
 /**
  * The design is set in Google Sans, which is not bundled — it is not ours to
@@ -95,6 +96,23 @@ Hooks.once("init", () => {
     if (!foundry.utils.hasProperty(changed, "system.resources.stress")) return;
     void actor.syncVulnerable?.();
   });
+
+  /* The creation window is not a document sheet, so Foundry does not re-render
+     it when the actor changes — that courtesy is extended to registered sheets
+     only. It has to be asked, and it has to be asked for *items* as well as for
+     the actor: almost everything creation does is an embedded document arriving
+     or leaving, and `updateActor` never fires for those.
+
+     Cheap by construction. `refreshCreation` is a Map lookup that does nothing
+     at all unless a creation window happens to be open for that exact actor,
+     which is almost never. */
+  const touched = (actor: any) => refreshCreation(actor);
+  Hooks.on("updateActor", touched);
+  for (const hook of ["createItem", "updateItem", "deleteItem"]) {
+    Hooks.on(hook, (item: any) => {
+      if (item?.parent?.documentName === "Actor") refreshCreation(item.parent);
+    });
+  }
 });
 
 Hooks.once("ready", () => {
@@ -110,6 +128,8 @@ Hooks.once("ready", () => {
     rollDamage,
     rollFoe,
     fear: { get: getFear, set: setFear, gain: gainFear, spend: spendFear },
+    /** `game.daggerheart.create(actor)` — the same call the rail plate makes. */
+    create: openCreation,
   };
 
   console.log(`${SYSTEM_ID} | Ready (v${game.system?.version ?? "unknown"})`);

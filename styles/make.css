@@ -1,0 +1,710 @@
+/* Ported from design/make.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/make.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   MAKING A CHARACTER
+
+   The one surface in this system that is a *process* rather than a record
+   you edit, a result you read, or a sentence you are composing. It has a
+   beginning and an end, it has an order, and the order is the book's.
+
+   It is not a dialog, and it is worth saying why given how hard `dlg.css`
+   argues that a dialog is for "a decision with more than one part, taken
+   once, that changes the sheet underneath it". Creation breaks that on the
+   word *once*: a player comes back to it — after session one, when they
+   realise Finesse was the wrong place for the +2, when the GM says the
+   party needs a healer. A box that asks is the wrong shape for something
+   you will reopen in three weeks and change one thing in.
+
+   So it is a place you go, and closing it is leaving rather than
+   cancelling. Nothing is held: every choice writes as it is made, which is
+   what makes leaving safe and returning honest.
+
+   ── the frame ────────────────────────────────────────────────────
+   The sheet's, deliberately. `.win > .tt` and `.win > .bd`, a rail on the
+   left and a pane beside it that changes. Somebody who has used the
+   character sheet has already learned where things are, and inventing a
+   second window language for the window that makes the character would be
+   teaching them twice.
+
+   The rail carries **two** things here, and that is the whole layout
+   argument. It holds the six steps, and it holds the character those steps
+   are building — so the step you are on and the number it moves are in one
+   column, a few inches apart. Choose Guardian and Evasion and Hit Points
+   land under your cursor without your eye leaving the rail. Put the steps
+   in a tab strip along the top instead and that relationship is gone, and
+   with it the reason any of this is live.
+
+   ── steps are not tabs ───────────────────────────────────────────
+   The obvious move is to reuse `.tabs`, and it is wrong. A tab is one view
+   of a thing that is already whole — main, vault and gear are the same
+   character seen three ways. A step is a stage of something being made: it
+   has a state a tab never has, done or current or outstanding, and it can
+   be *unsatisfied*, which is not a thing a tab can be. Dressing them alike
+   would promise they behave alike.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge{display:flex;height:100%;min-height:0;background:var(--paper);color:var(--ink)}
+
+/* ── every control here is an object, not a button ─────────────────
+   Foundry's `elements` layer sizes every `<button>` to a fixed
+   `--button-height` — 28px — with `min-height` to match, text centred and a
+   single line. That is the right shape for OK and Cancel and the wrong shape
+   for everything in this window: a class row, a step, a trait slot, a weapon
+   and a domain card are all *things you press*, and a thing is as tall as
+   what is printed on it.
+
+   Left unreset, the rule clipped the entire window. Every option lost
+   everything below its first line, the sheet's own entry plate lost its
+   label, and it looked like a layout bug in the grid rather than an
+   inherited height — the tiles were the right width, in the right places,
+   with their contents sheared off.
+
+   It is reset once here rather than re-declared on each control, because the
+   claim is about the whole window and not about nine separate rules. `.mkp`
+   joins it: same element, same inherited metric, and it lives on the sheet
+   where there is no `.forge` to catch it. The two controls that genuinely
+   *are* buttons — the tray chip and the footer's back/next — state their own
+   height further down and win on source order.
+
+   A study page has no Foundry and therefore no rule to lose to, which is
+   exactly why this could not be seen in `make.html`. `tools/verify/` now
+   asserts it, standing in a `button{height:28px}` of its own.
+
+   Foundry also makes every button a centred flex container, which is the
+   other half of the same assumption — a button holds one short word. A
+   column of `<s>`, `<b>`, stats and a paragraph centred itself down the
+   middle and read as a caption instead of a panel, so the alignment is reset
+   here too and the two controls that genuinely do want a centred word say so
+   themselves. */
+.dh .forge button,.dh .mkp{height:auto;min-height:0;max-height:none;line-height:normal;
+  text-align:left;white-space:normal;font-family:inherit;
+  align-items:flex-start;justify-content:flex-start}
+
+/* ── the rail ──────────────────────────────────────────────────────
+   288px, the sheet's own measure, so the two windows agree at a glance
+   when they are open side by side — which they will be, because the point
+   of the live numbers is to watch them land. */
+.dh .forge .fside{width:288px;flex:none;display:flex;flex-direction:column;min-height:0;
+  border-right:1px solid var(--line);background:var(--paper)}
+
+/* ══ the steps ══════════════════════════════════════════════════════ */
+
+.dh .forge .fsteps{flex:none;display:flex;flex-direction:column;padding:14px 0 15px;
+  border-bottom:1px solid var(--line)}
+
+/* One step. A button, because it is one: every step is reachable at any
+   time, and a returning player who wants to swap a single domain card must
+   not have to walk past five they are happy with. */
+.dh .forge .fstep{display:flex;align-items:center;gap:11px;width:100%;
+  padding:8px 18px;border:0;background:transparent;cursor:pointer;text-align:left;
+  transition:background .14s,box-shadow .14s}
+.dh .forge .fstep:hover{background:var(--sunk)}
+
+/* The numeral is the *book's* number, not the position in this list — 5, 7
+   and 8 with nothing between them. A player with the rulebook open should
+   not have to translate, and the gaps are honest about what this window
+   does not do: 4 is the rail beside them and 6 and 9 are prose that lives
+   on the bio tab. */
+.dh .forge .fstep > i{flex:none;width:22px;height:22px;display:grid;place-items:center;
+  font-style:normal;font:700 9.5px/1 var(--f-mono);letter-spacing:.02em;
+  color:var(--ink-3);background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .16s,color .16s,box-shadow .16s}
+
+.dh .forge .fstep > span{flex:1 1 auto;min-width:0;display:block;
+  font:700 9px/1.35 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  transition:color .16s}
+
+/* ── done ──────────────────────────────────────────────────────────
+   The tick is the sheet's own mark, at the size the advancement boxes use
+   it, because "this is crossed off" is a thing this system already draws.
+   It replaces the numeral rather than sitting beside it: a step that is
+   finished has stopped being a number you are working towards. */
+.dh .forge .fstep.done > i{background:var(--sunk-2);color:var(--hope-tx);
+  box-shadow:inset 0 0 0 1px var(--line-2)}
+.dh .forge .fstep.done > i svg{width:13px;height:13px;fill:var(--hope);
+  filter:drop-shadow(0 0 3px rgba(0,0,0,.4))}
+.dh .forge .fstep.done > span{color:var(--ink-2)}
+
+/* ── current ───────────────────────────────────────────────────────
+   A gold ledge down the left, which is the mark this system uses for "the
+   thing being decided" — the damage dialog's landing zone wears the same
+   idea as a sill. The chamfer leaves the ledge room without asking for
+   height, exactly as `.abl .a.paid` does. */
+.dh .forge .fstep.on{background:var(--sunk-2);
+  box-shadow:inset 3px 0 0 0 var(--hope)}
+.dh .forge .fstep.on > i{background:var(--hope);color:#14161a;
+  box-shadow:inset 0 0 0 1px var(--hope)}
+.dh .forge .fstep.on > span{color:var(--ink)}
+
+/* ── outstanding, and *why* ────────────────────────────────────────
+   A step that cannot be done yet says so on itself rather than by being
+   dead: domain cards need a class first, because the class is what decides
+   which cards are legal. Greying it out with no reason is the sheet
+   knowing something and not saying it. */
+.dh .forge .fstep[disabled]{cursor:not-allowed;opacity:.45}
+.dh .forge .fstep[disabled]:hover{background:transparent}
+.dh .forge .fstep em{flex:none;font-style:normal;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-4)}
+
+/* ══ the character, so far ══════════════════════════════════════════
+   Everything the book's step 4 asks you to write down, and it is not a
+   step: Evasion off your class, Hit Points off your class, Stress 6, Hope
+   2, thresholds off your armour, Proficiency 1. Every one is a consequence
+   of a choice made on another row of this same rail.
+
+   Writing them into a page of their own would be the window telling you
+   something it should have been showing you the whole time — and it is the
+   same argument `data/actors.ts` makes about the advancement marks: the
+   number and the panel it came from cannot disagree if there is only one
+   of them.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .fvals{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  padding:15px 18px 18px;scrollbar-width:thin;
+  scrollbar-color:var(--scroll) transparent;scrollbar-gutter:stable}
+.dh .forge .fvals::-webkit-scrollbar{width:8px}
+.dh .forge .fvals::-webkit-scrollbar-thumb{background:var(--scroll)}
+
+.dh .forge .fvals > s{display:block;text-decoration:none;margin:0 0 11px;
+  font:700 8px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-4)}
+.dh .forge .fvals > s + s{margin-top:19px}
+
+.dh .forge .fval{display:flex;align-items:baseline;gap:10px;min-height:25px;
+  padding:2px 0;border-bottom:1px solid var(--line)}
+.dh .forge .fval:last-child{border-bottom:0}
+.dh .forge .fval > k{flex:1 1 auto;min-width:0;font:700 8.5px/1.3 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dh .forge .fval > b{flex:none;font:700 15px/1 var(--f-display);letter-spacing:-.02em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* A value nothing has set yet is an em dash and not a zero. Zero is a
+   number a rule produced; the dash is the absence of the rule. A sheet
+   showing "Evasion 0" before a class is chosen is stating a fact that is
+   not true — Evasion is not zero, it is not yet decided. */
+.dh .forge .fval.none > b{color:var(--ink-4);font-weight:400}
+
+/* ── landing ───────────────────────────────────────────────────────
+   The one animation on this rail, and it is carrying meaning rather than
+   decorating: it fires when a *choice* moves a number, so the connection
+   between the step and the value is drawn rather than asserted.
+
+   Same timing as a mark landing — 160ms, the wound's own arrival — because
+   it is the same event. The value is written into the DOM before the class
+   is added, so a client that never runs the animation is handed the
+   settled number rather than travelling to it, which is the rule every
+   arrival in this system keeps. */
+.dh .forge .fval.land > b{animation:fv-land .16s cubic-bezier(.2,.9,.3,1) both}
+@keyframes fv-land{
+  0%{opacity:0;transform:translateY(-5px) scale(.92);color:var(--hope-tx)}
+  62%{opacity:1;color:var(--hope-tx)}
+  100%{opacity:1;transform:none}}
+
+/* The two domains, as two diamonds — the sheet's own `.abl .dm`, because a
+   saturated hue means domain everywhere in this system and repeating that
+   claim in a different shape here would weaken it in both places. */
+.dh .forge .fdm{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:3px 0 1px}
+.dh .forge .fdm i{display:inline-flex;align-items:center;gap:6px;font-style:normal;
+  font:700 8px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3)}
+.dh .forge .fdm i::before{content:"";width:7px;height:7px;flex:none;background:var(--c);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+/* ══ the stage ══════════════════════════════════════════════════════ */
+
+.dh .forge .fstage{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+  container-type:inline-size}
+
+.dh .forge .fhead{flex:none;padding:17px 22px 14px;border-bottom:1px solid var(--line)}
+.dh .forge .fhead h2{margin:0;font:700 21px/1.1 var(--f-display);letter-spacing:-.02em;
+  color:var(--ink)}
+.dh .forge .fhead p{margin:6px 0 0;max-width:64ch;
+  font:400 12px/1.55 var(--f-ui);color:var(--ink-2)}
+
+/* The count, where a step has one. "1 of 2 chosen" is `pickTwo`'s line and
+   it is here for the same reason: the button is live exactly when the
+   answer is legal, and this is what tells you how far off it is. */
+.dh .forge .fhead em{display:inline-block;margin-left:10px;font-style:normal;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);vertical-align:middle}
+.dh .forge .fhead em.ok{color:var(--hope-tx)}
+
+.dh .forge .fbody{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  padding:18px 22px 22px;scrollbar-width:thin;
+  scrollbar-color:var(--scroll) transparent;scrollbar-gutter:stable}
+.dh .forge .fbody::-webkit-scrollbar{width:8px}
+.dh .forge .fbody::-webkit-scrollbar-thumb{background:var(--scroll)}
+
+/* ── the transition ────────────────────────────────────────────────
+   One short settle, and nothing staggered. A step change is navigation,
+   and navigation that performs is navigation you wait for — six times per
+   character, and then again every time you come back to change one thing.
+   Rises 6px and fades: the same gesture a card's arrival makes, an eighth
+   of the distance, because this is a page turning rather than an object
+   landing. */
+.dh .forge .fbody.turn{animation:fg-turn .19s cubic-bezier(.2,.9,.3,1) both}
+@keyframes fg-turn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ══ picking one of many ════════════════════════════════════════════
+   Nine classes, eighteen ancestries, nine communities, a filtered domain
+   deck, thirty-five tier 1 weapons. The grid is `auto-fill` for the reason
+   `.abl .sub` is: the window is dragged to whatever width the table wants,
+   and a track count nobody wrote down is a track count that is never
+   wrong. `min(210px,100%)` because a grid track's minimum is a hard floor
+   and a window narrower than one tile would push the tile out through the
+   side rather than letting it shrink.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .fgrid{display:grid;gap:9px;align-content:start;
+  grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr))}
+/* Wider cells for the class step: nine options, each carrying two numbers,
+   two domains and a feature run, so the cell is a panel rather than a chip. */
+.dh .forge .fgrid.wide{grid-template-columns:repeat(auto-fill,minmax(min(268px,100%),1fr))}
+
+.dh .forge .fopt{position:relative;display:flex;flex-direction:column;gap:6px;
+  width:100%;padding:10px 12px 12px;border:0;cursor:pointer;text-align:left;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s,transform .14s}
+.dh .forge .fopt:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
+  transform:translateY(-1px)}
+
+.dh .forge .fopt > b{font:600 13.5px/1.25 var(--f-display);letter-spacing:-.01em;
+  color:var(--ink)}
+.dh .forge .fopt > s{text-decoration:none;font:700 8px/1.3 var(--f-mono);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.dh .forge .fopt p{margin:0;font:400 11px/1.5 var(--f-ui);color:var(--ink-2)}
+
+/* The numbers a class hands you, on the option that hands them over. Read
+   before you choose rather than after — which is the whole reason the class
+   step is a panel and not a card: a card would make you hover nine of them. */
+.dh .forge .fopt .fnum{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:1px}
+.dh .forge .fopt .fnum i{display:inline-flex;align-items:baseline;gap:5px;font-style:normal;
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-4)}
+.dh .forge .fopt .fnum i b{font:700 12px/1 var(--f-display);letter-spacing:-.02em;
+  color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* ── chosen ────────────────────────────────────────────────────────
+   Corner brackets, and they are the vault's — the same two-square-corner
+   recipe `.pk .swp::after` draws when a card is recalled, in the same gold.
+   There they mean *this card is in your hand now*; here they mean *this one
+   is mine*, which is near enough the same sentence that drawing it a second
+   way would be a second thing to learn.
+
+   The third corner is chamfered and gets no bracket, for the reason swap.css
+   gives: a bracket drawn into a cut corner reads as a rendering fault. */
+.dh .forge .fopt.on{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--hope)}
+.dh .forge .fopt.on::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(var(--hope),var(--hope)) 0 0/15px 1.5px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 0 0/1.5px 15px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 100% 0/15px 1.5px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 100% 0/1.5px 15px no-repeat}
+.dh .forge .fopt.on > b{color:var(--ink)}
+.dh .forge .fopt.on > s{color:var(--hope-tx)}
+/* The brackets snap on rather than appear, once, on the press that chose it
+   — `.just` is dropped a beat later so re-rendering the grid does not replay
+   it, which is the `play`/`land` distinction the chat plate spells out. */
+.dh .forge .fopt.on.just::after{animation:fg-lock .3s cubic-bezier(.2,.9,.25,1) both}
+@keyframes fg-lock{
+  0%{opacity:0;transform:scale(1.035)}
+  100%{opacity:1;transform:none}}
+
+/* ── illegal, and still there ──────────────────────────────────────
+   Dead, not hidden — `dlg.css`'s rule, and it matters more here than it does
+   there. A Wizard cannot take a Blade card, and a deck with the Blade cards
+   silently absent looks like a deck; a deck with them greyed and captioned
+   "Blade — not one of your domains" is the rule being taught. Every one of
+   these carries its reason on itself. */
+.dh .forge .fopt[disabled]{cursor:not-allowed;opacity:.38;filter:saturate(.4)}
+.dh .forge .fopt[disabled]:hover{background:var(--sunk);transform:none;
+  box-shadow:inset 0 0 0 1px var(--line)}
+.dh .forge .fopt .fwhy{font:700 7.5px/1.3 var(--f-mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fear-tx)}
+
+/* ══ the class row ══════════════════════════════════════════════════
+   Nine classes, one per row, full width — and the shape is an argument
+   rather than a size.
+
+   As a `.fopt` in a two-track grid a class was a 268px panel holding two
+   domains, a name, two numbers and a sentence, and every one of those five
+   things was competing for the same column. Which is a fair description of
+   what a class *is not*: it is the largest single decision in this window,
+   it fixes your two domains, your Evasion, your Hit Points and half your
+   card pool, and you make it exactly once. Nine of those deserve a page each
+   rather than a tile each.
+
+   So the row splits in two, and the split is by *kind*. On the left, the
+   class mark on its own tinted plate — the only picture a class has anywhere
+   in this system, since nothing published a painting for a page in a book
+   (see `fbsig` in `sheets/cards.ts`). On the right, everything that is
+   written: the domain pair, the name, the numbers, the flavour.
+
+   The plate is tinted with the class's *primary* domain hue and the mark is
+   drawn in it. Not a second colour of its own — a saturated hue means domain
+   everywhere else in this system, and the class's first domain is the truest
+   thing that hue could mean here.
+
+   Flavour is the book's own opening paragraph, and it is the one place in
+   the system that prints one. `system.description` is held to a single
+   sentence and policed there by `tools/check-cards.mjs`, because a *card*
+   with five sentences of lore above its stats is a card that has forgotten
+   what it is for. This is not a card. It is the page you choose from, you
+   read it once, and the paragraph is the only thing on screen that answers
+   "what is it like to play one".
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .fclass{display:grid;gap:10px;align-content:start;grid-template-columns:1fr}
+
+.dh .forge .fcls{position:relative;display:flex;align-items:stretch;gap:0;width:100%;
+  padding:0;border:0;cursor:pointer;text-align:left;overflow:hidden;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s,transform .14s}
+.dh .forge .fcls:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
+  transform:translateY(-1px)}
+
+/* The mark's plate. Fixed width rather than a fraction: it holds one glyph
+   at one size, and a plate that grew with the window would make the mark the
+   biggest thing on screen on a wide one. */
+.dh .forge .fcls .fsig{position:relative;flex:none;width:118px;display:grid;place-items:center;
+  overflow:hidden;
+  background:radial-gradient(118% 96% at 50% 38%,
+    color-mix(in srgb,var(--c) 26%,var(--paper)),
+    color-mix(in srgb,var(--c) 9%,var(--paper)) 62%,var(--paper));
+  box-shadow:inset -1px 0 0 var(--line)}
+.dh .forge .fcls .fsig > svg{position:relative;width:54%;height:auto;display:block;
+  color:var(--c);filter:drop-shadow(0 3px 10px color-mix(in srgb,var(--c) 34%,transparent))}
+/* The gold seam is the card family's own rule for "picture above, panel
+   below" turned on its side, because here the division is left/right. */
+.dh .forge .fcls .fsig::after{content:"";position:absolute;top:0;bottom:0;right:0;width:1px;
+  background:linear-gradient(180deg,transparent,var(--seam) 22%,var(--seam) 78%,transparent)}
+
+.dh .forge .fcls .fmain{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:5px;
+  padding:13px 16px 15px}
+.dh .forge .fcls .fmain > s{text-decoration:none;font:700 8px/1.3 var(--f-mono);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.dh .forge .fcls .fmain > b{font:600 19px/1.1 var(--f-display);letter-spacing:-.02em;
+  color:var(--ink)}
+.dh .forge .fcls .fmain p{margin:1px 0 0;font:400 11.5px/1.55 var(--f-ui);color:var(--ink-2);
+  max-width:74ch}
+.dh .forge .fcls .fnum{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:1px}
+.dh .forge .fcls .fnum i{display:inline-flex;align-items:baseline;gap:5px;font-style:normal;
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-4)}
+.dh .forge .fcls .fnum i b{font:700 13px/1 var(--f-display);letter-spacing:-.02em;
+  color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+.dh .forge .fcls.on{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--hope)}
+.dh .forge .fcls.on .fmain > b{color:var(--ink)}
+.dh .forge .fcls.on .fmain > s{color:var(--hope-tx)}
+.dh .forge .fcls.on::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(var(--hope),var(--hope)) 0 0/17px 1.5px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 0 0/1.5px 17px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 100% 0/17px 1.5px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 100% 0/1.5px 17px no-repeat}
+.dh .forge .fcls.on.just::after{animation:fg-lock .3s cubic-bezier(.2,.9,.25,1) both}
+
+/* ══ a real card, chosen ════════════════════════════════════════════
+   Three steps pick things that **are printed cards** — a subclass, an
+   ancestry or community, a domain card — and those three now draw the card
+   rather than a summary of it.
+
+   The summary was the wrong object twice over. It restated at 11px what the
+   card says in its own typesetting, and it *lied by omission* about the two
+   facts a card carries structurally rather than in prose: the domain, which
+   is the hue and the two corner sigils, and the level and Recall Cost, which
+   are the corner blocks. A domain card's whole identity is "Grace, level 1,
+   Recall 0" and a text tile printed none of it in a form you could compare
+   at a glance across twenty of them. It also printed the description raw —
+   `***Power Push:***` and literal `<br>` — because `rich()` lives inside
+   `CARD()` and a bare `<p>` never called it.
+
+   `.card` is `width:100%` with a container query for its type, so the same
+   component that draws a 300px chat plate draws a 196px grid cell with every
+   proportion intact and `fit()` doing the same measuring it always did.
+
+   The grid's floor is 176px rather than the card's natural size: two of
+   these steps offer twenty-odd options and a window at its default width
+   should show more than two of them at once. Hover still peeks the full-size
+   card, which is what makes the small one affordable.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .fcards{display:grid;gap:14px;align-content:start;
+  grid-template-columns:repeat(auto-fill,minmax(min(176px,100%),1fr))}
+/* Wider tracks where the deck is small and the text is long — the two
+   subclasses of a class, which are two options and a full rules paragraph. */
+.dh .forge .fcards.few{grid-template-columns:repeat(auto-fill,minmax(min(216px,100%),1fr))}
+
+.dh .forge .fcrd{position:relative;display:block;width:100%;padding:0;border:0;
+  background:none;cursor:pointer;
+  transition:transform .14s,filter .14s}
+.dh .forge .fcrd:hover{transform:translateY(-2px)}
+/* The card draws its own shadow and its own chamfer; the button adds
+   nothing but the gesture and the state. */
+.dh .forge .fcrd > .card{pointer-events:none}
+
+/* Chosen: the vault's brackets again, hung *outside* the card rather than
+   inside it. A bracket drawn on the artwork would be a mark on somebody's
+   painting, and at this size it would land in the corner blocks the card
+   already uses for level and Recall Cost. */
+.dh .forge .fcrd.on::after{content:"";position:absolute;inset:-7px;pointer-events:none;
+  background:
+    linear-gradient(var(--hope),var(--hope)) 0 0/19px 2px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 0 0/2px 19px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 100% 0/19px 2px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 100% 0/2px 19px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 0 100%/19px 2px no-repeat,
+    linear-gradient(var(--hope),var(--hope)) 0 100%/2px 19px no-repeat}
+.dh .forge .fcrd.on.just::after{animation:fg-lock .3s cubic-bezier(.2,.9,.25,1) both}
+
+.dh .forge .fcrd[disabled]{cursor:not-allowed;transform:none}
+.dh .forge .fcrd[disabled] > .card{opacity:.34;filter:saturate(.3)}
+/* The reason sits *on* the card, not under it: a refused card in a grid of
+   twenty has to say why without being read in order. */
+.dh .forge .fcrd .fwhy{position:absolute;left:0;right:0;bottom:0;padding:5px 7px 6px;
+  font:700 7px/1.25 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fear-tx);background:color-mix(in srgb,var(--paper) 86%,transparent);
+  box-shadow:inset 0 1px 0 var(--line)}
+
+/* ══ the trait spread ═══════════════════════════════════════════════
+   The one bespoke control in this window, and the one step where the
+   constraint *is* the point: +2, +1, +1, 0, 0, −1 is a fixed budget rather
+   than six independent numbers, and six spinners would let you type +2 six
+   times and then be told off — which is the failure `pickTwo` exists to
+   prevent.
+
+   So the budget is a row of objects you spend. Six chips, placed by drag or
+   by click, consumed as they land. Overspending is not something the control
+   refuses; it is something it cannot express.
+
+   Deliberately **not** pre-placed. `prep.js` opens roll-ready and is right
+   to — you meet it twice a minute and an empty state would be a tax. This
+   is met once and its answer is permanent, and a default on a permanent
+   choice is a default that gets accepted. The empty tray says these six
+   numbers are yours to place.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .ftray{display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  min-height:44px;padding:9px 11px;margin:0 0 15px;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line)}
+/* The tray takes a drop as well, and that is what makes the gesture
+   reversible without a second control: a value dragged off a trait goes back
+   into the hole it came out of. Undo shaped like the thing it undoes. */
+.dh .forge .ftray.over{background:color-mix(in srgb,var(--hope) 10%,var(--sunk));
+  box-shadow:inset 0 0 0 2px var(--hope)}
+.dh .forge .ftray > s{flex:none;margin-right:5px;text-decoration:none;
+  font:700 8px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-4)}
+
+.dh .forge .fchip{flex:none;width:42px;height:38px;display:grid;place-items:center;
+  border:0;cursor:grab;font:700 17px/1 var(--f-display);letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--ink);
+  background:var(--paper);box-shadow:inset 0 0 0 1px var(--line-2);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s,transform .14s,opacity .14s}
+.dh .forge .fchip:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--hope);
+  transform:translateY(-1px)}
+.dh .forge .fchip:active{cursor:grabbing}
+/* The chip under the pointer during a drag. It is *not* hidden the way the
+   vault's `.lift` hides a dragged row — a chip is 42px and the row it came
+   from is the budget's shape, so removing it mid-gesture would collapse the
+   thing you are reading to decide where the next one goes. */
+.dh .forge .fchip.lift{opacity:.3;box-shadow:inset 0 0 0 1px var(--hope)}
+/* Armed by a click, waiting for the trait to put it on. The two gestures
+   commit through the same call and produce the same result, which is
+   `swap.js`'s own rule about a surface that can be both dragged and pressed. */
+.dh .forge .fchip.armed{background:var(--hope);color:#14161a;
+  box-shadow:inset 0 0 0 1px var(--hope)}
+/* Spent chips stay in the tray as a hole rather than closing up. A budget you
+   can see the shape of is a budget you can count what is left of. */
+.dh .forge .fchip.spent{opacity:.16;pointer-events:none;background:transparent;
+  box-shadow:inset 0 0 0 1px var(--line)}
+
+/* Three tracks, not four or five. `auto-fill` at a 168px floor put six
+   traits into four columns in a Foundry window and then ellipsed every verb
+   run — "Sprint, Leap, Maneu…" — which is the one thing on the cell that has
+   to be readable, since it is what tells somebody who has never played where
+   the +2 wants to go. The floor is 240px now and the verbs wrap instead of
+   truncating, which is what makes the cell a *slot* you can aim at rather
+   than a row in a list. */
+.dh .forge .ftraits{display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr))}
+
+.dh .forge .ftrt{position:relative;display:flex;align-items:center;gap:14px;
+  min-height:64px;padding:12px 15px;border:0;cursor:pointer;text-align:left;width:100%;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s}
+.dh .forge .ftrt:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+/* A trait the armed chip can land on. Gold edge, no reflow — the same claim
+   `.win.dropping` makes, at the scale of one cell. */
+.dh .forge .ftrt.open{box-shadow:inset 0 0 0 1px var(--hope)}
+/* And the same cell with a chip actually held over it. `.open` is "this can
+   take one"; `.over` is "let go and it lands here", so it is the stronger of
+   the two and says so with the fill rather than a second edge. */
+.dh .forge .ftrt.over{background:color-mix(in srgb,var(--hope) 13%,var(--sunk));
+  box-shadow:inset 0 0 0 2px var(--hope)}
+
+/* The value's own well, so an empty trait reads as a socket with nothing in
+   it rather than as a row whose number happens to be a dash. It is the
+   target you aim a chip at and it is chip-sized on purpose. */
+.dh .forge .ftrt > b{flex:none;width:46px;height:40px;display:grid;place-items:center;
+  font:700 22px/1 var(--f-display);letter-spacing:-.03em;color:var(--ink);
+  font-variant-numeric:tabular-nums;background:var(--paper);
+  box-shadow:inset 0 0 0 1px var(--line-2);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.dh .forge .ftrt.empty > b{color:var(--ink-4);font-weight:400;background:transparent;
+  box-shadow:inset 0 0 0 1px var(--line)}
+.dh .forge .ftrt.over > b{box-shadow:inset 0 0 0 1px var(--hope)}
+.dh .forge .ftrt > span{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+.dh .forge .ftrt > span k{font:700 9.5px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-2)}
+/* The three verbs the printed sheet puts under each trait. They wrap rather
+   than ellipse — see the grid above. */
+.dh .forge .ftrt > span em{font-style:normal;font:400 10px/1.35 var(--f-ui);
+  color:var(--ink-4)}
+
+/* ══ the detail panel ═══════════════════════════════════════════════
+   What the current selection actually says, in full, under the grid.
+
+   Hover gives you the printed card through the peek layer and that is the
+   right gesture for comparing — but a rule you have committed to should not
+   require a gesture at all, and peek closes the moment you look away. So the
+   thing you chose prints itself here and stays printed.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .fdet{margin-top:16px;padding:14px 16px 15px;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%)}
+.dh .forge .fdet > s{display:block;text-decoration:none;margin:0 0 9px;
+  font:700 8px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-4)}
+.dh .forge .fdet .frule{margin:0 0 11px}
+.dh .forge .fdet .frule:last-child{margin-bottom:0}
+.dh .forge .fdet .frule > b{display:block;margin:0 0 3px;
+  font:600 12px/1.3 var(--f-display);letter-spacing:-.01em;color:var(--ink)}
+.dh .forge .fdet .frule p{margin:0;font:400 11.5px/1.55 var(--f-ui);color:var(--ink-2)}
+.dh .forge .fdet .frule p b{font-weight:700;color:var(--ink)}
+.dh .forge .fdet .frule p b.t-hope{color:var(--hope-tx)}
+.dh .forge .fdet .frule p b.t-fear{color:var(--fear-tx)}
+.dh .forge .fdet .frule p i{font-style:italic}
+
+/* ══ the review ═════════════════════════════════════════════════════
+   Unnumbered, because the book does not number it: it is not a step, it is
+   the character. Everything acquired, with its rules text, in one place —
+   which is the one screen in this flow nobody else provides. The rail has
+   the numbers and the steps have the choosing; nothing until here has ever
+   shown you the whole of what you now are.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .frev{display:flex;flex-direction:column;gap:15px}
+.dh .forge .frev section{padding:0}
+.dh .forge .frev h3{margin:0 0 8px;font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-4);
+  padding-bottom:7px;border-bottom:1px solid var(--line)}
+.dh .forge .frev .fmiss{font:400 11.5px/1.5 var(--f-ui);color:var(--ink-3)}
+.dh .forge .frev .fmiss b{color:var(--fear-tx);font-weight:700}
+
+/* ══ the footer ═════════════════════════════════════════════════════
+   Back, Next, and — on the review — Finish. Dark, because it is the
+   application rather than the sheet: `sheet.css`'s rule that window chrome
+   is dark in both themes and everything you read a value off is paper.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .fbot{flex:none;display:flex;align-items:center;gap:9px;
+  padding:0 14px;height:44px;background:var(--frame);
+  box-shadow:inset 0 1px 0 var(--frame-line)}
+.dh .forge .fbot > s{flex:1 1 auto;min-width:0;text-decoration:none;
+  font:700 8.5px/1.35 var(--f-mono);letter-spacing:.12em;
+  color:var(--frame-tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* One of the two controls in here that is a button in Foundry's sense — one
+   word, centred, fixed height — so it states all three rather than leaning on
+   the element rule the block at the top of this file resets. */
+.dh .forge .fbot button{flex:none;height:27px;padding:0 15px;border:0;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--frame-tx);background:var(--frame-2);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%);
+  transition:background .14s,color .14s}
+.dh .forge .fbot button:hover:not(:disabled){background:var(--hope);color:#14161a}
+.dh .forge .fbot button:disabled{opacity:.32;cursor:not-allowed}
+.dh .forge .fbot button.go{background:var(--hope);color:#14161a}
+.dh .forge .fbot button.go:hover:not(:disabled){filter:brightness(1.08)}
+
+/* ── the GM's switch ───────────────────────────────────────────────
+   One control that lifts every constraint at once, and it is the GM's for
+   the reason the adjust tab is: a player who can set a number directly is a
+   player who never has to be told no. It sits in the frame rather than on
+   the paper because it is not part of the character — it is a statement
+   about which rules this table is playing by.
+
+   Strain, not gold. Gold is what you spend in this system; violet is what
+   this system uses for a rule acting on you, and an unbolted constraint is
+   exactly that, seen from the other side. */
+.dh .forge .fbot label{flex:none;display:inline-flex;align-items:center;gap:7px;
+  cursor:pointer;font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--frame-tx-3);transition:color .14s}
+.dh .forge .fbot label:hover{color:var(--frame-tx)}
+.dh .forge .fbot label input{margin:0;accent-color:var(--strain);cursor:pointer}
+.dh .forge .fbot label.on{color:var(--strain)}
+
+/* ══════════════════════════════════════════════════════════════════
+   THE PLATE ON THE SHEET
+
+   Where you press to get here, and it has two jobs at two different times.
+   On a fresh character the sheet is a page of zeroes and the most important
+   fact about it is that it has not been made yet — that should be loud. Once
+   creation is finished the same control has to stop shouting and stay
+   reachable forever, because this is not a thing you do once.
+
+   It **takes height rather than overlaying**, which is edit mode's rule and
+   the same reasoning: a hint that lasts a second may float over the sheet,
+   a state that lasts a session may not. An unfinished character lasts a
+   session.
+
+   It lives under the diorama and above the tracks because that is where
+   identity is, and because the numbers it is about to change are directly
+   beneath it.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .mkp{display:flex;align-items:center;gap:11px;width:100%;padding:11px 18px 12px;
+  border:0;cursor:pointer;text-align:left;background:var(--sunk);
+  box-shadow:inset 0 -1px 0 var(--line),inset 3px 0 0 0 var(--hope);
+  transition:background .16s}
+.dh .mkp:hover{background:var(--sunk-2)}
+.dh .mkp > span{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+.dh .mkp b{font:700 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink)}
+.dh .mkp em{font-style:normal;font:400 10.5px/1.35 var(--f-ui);color:var(--ink-3)}
+
+/* The progress bar is the one number that matters before you press it, and
+   it is drawn rather than written because "3 of 6" is a sentence you read
+   and a bar is a shape you glance at. Both are here — the bar for the
+   glance, the words underneath for the answer. */
+.dh .mkp .fbar{flex:none;width:52px;height:4px;background:var(--line);overflow:hidden}
+.dh .mkp .fbar u{display:block;height:100%;background:var(--hope);
+  transition:width .3s cubic-bezier(.2,.9,.3,1)}
+
+/* ── finished ──────────────────────────────────────────────────────
+   Quiet, and still there. The gold ledge goes, the bar goes, the type drops
+   to the weight of a label — but the row does not disappear, because a
+   control that vanishes when you complete something is a control you will
+   hunt for in three weeks when you want to change one domain card. */
+.dh .mkp.done{padding:8px 18px 9px;box-shadow:inset 0 -1px 0 var(--line)}
+.dh .mkp.done b{color:var(--ink-3)}
+.dh .mkp.done:hover b{color:var(--ink)}
+
+@media (prefers-reduced-motion: reduce){
+  .dh .forge .fval.land > b,
+  .dh .forge .fbody.turn,
+  .dh .forge .fopt.on.just::after{animation:none}
+  .dh .forge .fopt:hover,.dh .forge .fchip:hover{transform:none}
+  .dh .mkp .fbar u{transition:none}
+}

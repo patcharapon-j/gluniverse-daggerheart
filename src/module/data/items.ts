@@ -82,6 +82,26 @@ export class ClassData extends (TypeDataModel() as any) {
     return {
       description: html(),
 
+      /* The book's opening paragraph, and a second field rather than a longer
+       * `description` — because the two are read in different places for
+       * different reasons and only one of them has a rule about its length.
+       *
+       * `description` is what a *card* prints, and it is held to a single
+       * sentence by `tools/check-cards.mjs` for a reason that has already
+       * gone wrong once: the chapter opener got pasted in whole, and five
+       * sentences of lore sat above the Evasion and Hit Points the card
+       * exists to state. That check stays exactly as it is.
+       *
+       * This is what the creation window's class row prints, and there the
+       * paragraph is the point. You are choosing one of nine, once, and the
+       * numbers alone do not tell you what it is like to play one. Nothing
+       * else in the system draws it — not the card, not the Features panel,
+       * not chat — so it cannot leak back into the place the rule protects.
+       *
+       * Empty is fine and falls back to `description`: a homebrew class with
+       * one sentence should read as a short class, not a broken one. */
+      flavor: html(),
+
       domains: schema({
         primary: maybeChoice(DOMAINS),
         secondary: maybeChoice(DOMAINS),
@@ -223,6 +243,21 @@ export class WeaponData extends (TypeDataModel() as any) {
       feature: featureField(),
       /** Some weapons and shields move Evasion; most do not. */
       evasionModifier: int(0),
+
+      /* And some move Armor Score, which had nowhere to go.
+       *
+       * A Round Shield is *Protective: +1 to Armor Score* and a Tower Shield is
+       * *Barrier: +2 to Armor Score; −1 to Evasion* — the second half of the
+       * Tower Shield worked and the first half silently did not, because
+       * `CharacterData` read Armor Score off the equipped **armor** alone. So
+       * a character could equip a shield, watch their Evasion drop by one, and
+       * receive nothing in exchange for it.
+       *
+       * The pair had already split once for this reason: Score and Slots are
+       * two numbers because a shield raises the Score and leaves the Slots
+       * alone. This is the other end of that same argument, and it was missing.
+       */
+      armorScoreModifier: int(0),
       magical: bool(false),
     };
   }
