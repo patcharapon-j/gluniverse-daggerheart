@@ -111,11 +111,10 @@ const CARDS = [
   // card, so there is no artwork to remove and this is simply what the card
   // is. Drawn with the page's sample photograph it would be the one card on
   // the page that does not exist.
-  { t:'Class', w:'noart', n:'The only card with no artwork, because there is no printed class card to take any from — so it is the one whose fallback plate you always see, and the case that <code>fbsig</code> exists for. Every other card here falls back to its domain sigil — throw “remove art” to see it. This one falls back to its class mark, because Grace is already in the corner and saying it a third time under the word “Grace” is not a picture. Flavour is held to one sentence: a class is Evasion, Hit Points and two feature runs, and the prose is the line that sets them up.',
+  { t:'Class', w:'noart', n:'Two absences, and the same reason for both: there is no printed class card. No artwork, so this is the one card whose fallback plate you always see — and it falls back to its <b>class mark</b>, not to its domain sigil, because Grace is already in the corner and saying it a third time under the word “Grace” is not a picture. That is what <code>fbsig</code> is for; every other card here falls back to its sigil, throw “remove art” to see it. And no <b>flavour</b>, because a card with no printing has no printed flavour either — what kept getting written there was the rulebook’s chapter opener, which introduces twelve pages rather than a stat block. So the panel is the stats and the two feature runs, and that is the whole card.',
     c:CARD({ d:by('grace'), d2:by('codex'), sig:grace, sig2:codex, fbsig:CM_BARD, fbname:'Bard',
       type:'CLASS', name:'Bard', foot:'Grace · Codex',
       stats:[{k:'Evasion', v:10}, {k:'Hit Points', v:5}],
-      flavour:'Bards are the most charismatic people in all the realms.',
       feats:[
         {n:'Rally', t:'Once per session, describe how you rally the party and give yourself and each of your allies a Rally Die. At level 1, your Rally Die is a **d6**.'},
         {n:'Make a Scene', t:'Spend 3 Hope to temporarily *Distract* a target within Close range, giving them a **-2** penalty to their Difficulty.'}] }) },

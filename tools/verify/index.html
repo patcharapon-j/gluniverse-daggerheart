@@ -339,14 +339,25 @@ setTimeout(async () => { try {
   const real = codes.filter(c => !/·004$/.test(c));
   check('printed card numbers reach the footer', real.length === 4, codes.join('  '));
 
-  /* Flavour belongs in .fl. A class or subclass description landing in .tx
-     is the bug this section was added for: it renders as rules text, and
-     rules text is what invites a paragraph of lore. */
+  /* Flavour belongs in .fl. A subclass description landing in .tx is the bug
+     this section was added for: it renders as rules text, and rules text is
+     what invites a paragraph of lore. Ancestry, community and subclass — the
+     three whose flavour is printed on a real card. */
   const flavoured = ['#deck > div:nth-child(2)', '#deck > div:nth-child(3)',
-                     '#deck > div:nth-child(4)', '#deck > div:nth-child(5)'];
+                     '#deck > div:nth-child(5)'];
   const inFl = flavoured.filter(s => document.querySelector(`${s} .cnt .fl`)).length;
   const inTx = flavoured.filter(s => document.querySelector(`${s} .cnt .tx`)).length;
-  check('flavour sits in .fl, not .tx', inFl === 4 && inTx === 0, `${inFl} in .fl, ${inTx} in .tx`);
+  check('flavour sits in .fl, not .tx', inFl === 3 && inTx === 0, `${inFl} in .fl, ${inTx} in .tx`);
+
+  /* And the class has none of either. There is no printed class card, so
+     there is no printed flavour to put there — what kept landing in the slot
+     was the rulebook's chapter opener. The panel is the stats and the two
+     feature runs, and nothing above them. */
+  const cnt = document.querySelector('#deck > div:nth-child(4) .cnt');
+  const stray = ['.fl', '.tx'].filter(s => cnt?.querySelector(s));
+  check('the class card carries no flavour at all', !!cnt && !stray.length,
+        stray.length ? `prose in ${stray.join(' and ')}`
+                     : `${cnt.querySelectorAll('.feat').length} feature runs, no prose above them`);
 
   document.getElementById('ok').innerHTML = lines.join('\n');
 } catch (err) {

@@ -177,11 +177,15 @@ the network, so it is offline and deterministic.
 The last thing it checks is not wording. There is no class *card* in the
 printed set, so nothing upstream can validate a class description — and it was
 the rulebook's chapter opener that got pasted into one, five sentences of lore
-on a card whose job is Evasion, Hit Points and two feature runs. A class now
-gets **one sentence**: the chapter's opener, verbatim, and nothing after it.
-The book writes each class in pairs — an opener saying what it is, then a
-sentence elaborating — and two was still a paragraph above the stats. The
-check says so if one grows back.
+on a card whose job is Evasion, Hit Points and two feature runs. So a class
+carries **no flavour at all**. Not a paragraph, not a sentence: none. Every
+candidate came from that same chapter opener, which is written to introduce
+twelve pages rather than to sit above a stat block, and trimming it does not
+turn it into something else. A card with no printing has no printed flavour
+either. The check fails the build if one grows back.
+
+A *subclass* does have a printed card, and its one line comes off it — "Play
+the Troubadour if you want to play music to bolster your allies." That stays.
 
 That class card is also the only one in the system with **no artwork**, for the
 same reason it has no upstream: nothing published a painting for a page in a

@@ -133,10 +133,18 @@ export const feat = (name, text) => ({ name, description: rt(text) });
 /**
  * A class. `domains` is `[primary, secondary]` in the order the book prints
  * them, which is also the order the sheet ramps them.
+ *
+ * `description` is the one constructor argument here with a default, and the
+ * default is *nothing*. The nine core classes pass none: a class has no
+ * printed card and therefore no printed flavour, and every sentence anyone
+ * reached for came out of the rulebook's chapter opener, which is a page
+ * introducing a chapter rather than a line introducing a card. The field
+ * stays because a homebrew class is welcome to one; `tools/check-cards.mjs`
+ * is what keeps ours empty.
  */
 export function classItem({
   name,
-  description,
+  description = "",
   domains,
   evasion,
   hitPoints,

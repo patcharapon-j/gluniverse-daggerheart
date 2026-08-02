@@ -8,14 +8,17 @@
  *
  * There is no class *card* in the printed set — a class is a page in the book,
  * not a thing you hold — so the class entry is the one place here with no
- * upstream to check against. Its `description` is therefore held to the same
- * rule the real cards keep to: **the chapter's first sentence and nothing
- * else**, and every other line on the card is a rule. Evasion, Hit Points, the
- * Hope feature and the class features are what a class actually *is* at the
- * table, and they are what the card should be mostly made of. The book writes
- * each class in pairs — an opener saying what it is, then a sentence
- * elaborating — and the elaboration is the chapter talking, not the card;
- * `FLAVOUR_SENTENCES` in `tools/check-cards.mjs` is what keeps it out.
+ * upstream to check against. **So it carries no flavour at all.** Not a
+ * paragraph, not a sentence: none. Every sentence anyone reached for came out
+ * of the rulebook's chapter opener, which is written to introduce twelve pages
+ * rather than to sit above a stat block, and no amount of trimming turns one
+ * into the other. Evasion, Hit Points, the Hope feature and the class features
+ * are what a class actually *is* at the table, and now they are the whole card.
+ * `CLASS_FLAVOUR` in `tools/check-cards.mjs` is what keeps it that way.
+ *
+ * A *subclass* does have a printed card, and its one line — "Play the
+ * Troubadour if you want to play music to bolster your allies" — comes off it.
+ * That one stays.
  *
  * A subclass expands into three cards — Foundation, Specialization, Mastery —
  * because that is how you actually acquire it: one card now, one several
@@ -39,7 +42,6 @@ const bard = classItem({
   evasion: 10,
   hitPoints: 5,
   items: "A romance novel or a letter never opened",
-  description: "Bards are the most charismatic people in all the realms.",
   hopeFeature: feat(
     "Make a Scene",
     `
@@ -156,9 +158,6 @@ const druid = classItem({
   evasion: 10,
   hitPoints: 6,
   items: "A small bag of rocks and bones or a strange pendant found in the dirt",
-  description: `
-  Becoming a druid is more than an occupation; it’s a calling for those who wish to learn from and
-  protect the magic of the wilderness.`,
   hopeFeature: feat(
     "Evolution",
     `
@@ -301,9 +300,6 @@ const guardian = classItem({
   evasion: 9,
   hitPoints: 7,
   items: "A totem from your mentor or a secret key",
-  description: `
-  The title of guardian represents an array of martial professions, speaking more to their moral
-  compass and unshakeable fortitude than the means by which they fight.`,
   hopeFeature: feat("Frontline Tank", "Spend 3 Hope to clear 2 Armor Slots."),
   features: feat(
     "Unstoppable",
@@ -413,9 +409,6 @@ const ranger = classItem({
   evasion: 12,
   hitPoints: 6,
   items: "A trophy from your first kill or a seemingly broken compass",
-  description: `
-  Rangers are highly skilled hunters who, despite their martial abilities, rarely lend their
-  skills to an army.`,
   hopeFeature: feat(
     "Hold Them Off",
     `
@@ -534,7 +527,6 @@ const rogue = classItem({
   evasion: 12,
   hitPoints: 6,
   items: "A set of forgery tools or a grappling hook",
-  description: "Rogues are scoundrels, often in both attitude and practice.",
   hopeFeature: feat(
     "Rogue’s Dodge",
     `
@@ -669,7 +661,6 @@ const seraph = classItem({
   evasion: 9,
   hitPoints: 7,
   items: "A bundle of offerings or a sigil of your god",
-  description: "Seraphs are divine fighters and healers imbued with sacred purpose.",
   hopeFeature: feat("Life Support", "Spend 3 Hope to clear a Hit Point on an ally within Close range."),
   features: feat(
     "Prayer Dice",
@@ -783,9 +774,6 @@ const sorcerer = classItem({
   evasion: 10,
   hitPoints: 6,
   items: "A whispering orb or a family heirloom",
-  description: `
-  Not all innate magic users choose to hone their craft, but those who do can become powerful
-  sorcerers.`,
   hopeFeature: feat(
     "Volatile Magic",
     `
@@ -921,9 +909,6 @@ const warrior = classItem({
   evasion: 11,
   hitPoints: 6,
   items: "The drawing of a lover or a sharpening stone",
-  description: `
-  Becoming a warrior requires years, often a lifetime, of training and dedication to the mastery
-  of weapons and violence.`,
   hopeFeature: feat("No Mercy", "Spend 3 Hope to gain a +1 bonus to your attack rolls until your next rest."),
   features: feat(
     "Class Features",
@@ -1042,10 +1027,6 @@ const wizard = classItem({
   evasion: 11,
   hitPoints: 5,
   items: "A book you’re trying to translate or a tiny, harmless elemental pet",
-  description: `
-  Whether through an institution or individual study, those known as wizards acquire and hone
-  immense magical power over years of learning using a variety of tools, including books, stones,
-  potions, and herbs.`,
   hopeFeature: feat(
     "Not This Time",
     `

@@ -16,10 +16,9 @@
  * enough that its output is worth reading.
  *
  * The one thing it checks that is *not* wording: class flavour. There is no
- * official class card, so nothing can validate a class description — but the
- * printed cards keep their flavour to a sentence and the rulebook's chapter
- * opener runs to a paragraph, and it was the chapter opener that got pasted in.
- * FLAVOUR_SENTENCES is the rule the cards keep and the classes now keep too.
+ * official class card, so nothing can validate a class description — and what
+ * got pasted into one was the rulebook's chapter opener, which is not a card's
+ * flavour and never was. CLASS_FLAVOUR is the rule: a class has none.
  */
 
 import { readFileSync } from "node:fs";
@@ -31,18 +30,20 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FULL = process.argv.includes("--full");
 
 /**
- * A class card is flavour plus rules, and **one sentence** is the flavour's
- * whole share.
+ * A class card carries **no flavour at all**.
  *
- * Two was the first guess and it was too many. The rulebook writes its classes
- * in pairs — an opener that says what the class *is*, then a second sentence
- * elaborating — and keeping both put a full paragraph above the stats on a card
- * whose job is Evasion, Hit Points and two feature runs. The opener alone is
- * the sentence that does the work; everything after it is the chapter talking,
- * not the card. So the rule is the chapter's first sentence, verbatim, and
- * nothing else.
+ * This started at two sentences, then one, and one was still one too many.
+ * Every candidate sentence came from the same place — the rulebook's chapter
+ * opener — and a chapter opener is written to introduce twelve pages, not to
+ * sit above a stat block. There is no printed class card, so there is no
+ * printed flavour either, and inventing some to fill the slot is the whole
+ * mistake restated smaller.
+ *
+ * What a class *is* at the table is Evasion, Hit Points, a Hope feature and a
+ * class feature. The card is those things now, and the `.fl` slot simply does
+ * not appear.
  */
-const FLAVOUR_SENTENCES = 1;
+const CLASS_FLAVOUR = "";
 
 const load = async (f) =>
   (await import(pathToFileURL(join(ROOT, "src", "packs-src", f)).href)).default;
@@ -215,13 +216,12 @@ const index = (arr) => new Map(arr.map((x) => [key(x.name), x]));
 /* classes — no upstream, so the only rule is the one the cards keep */
 for (const c of pick(classes, "class")) {
   const text = norm(c.system.description);
-  const sentences = (text.match(/[.!?](?:\s|$)/g) ?? []).length;
-  if (sentences > FLAVOUR_SENTENCES)
+  if (text !== CLASS_FLAVOUR)
     fail(
       `class/${c.name}`,
-      `flavour runs to ${sentences} sentences; a card's flavour is ${FLAVOUR_SENTENCES} at most`,
-      `${text.slice(0, 90)}…`,
-      "—",
+      "a class card carries no flavour; this one has some",
+      `${text.slice(0, 90)}${text.length > 90 ? "…" : ""}`,
+      "(nothing)",
     );
   if (!c.system.classFeature?.name && !c.system.classFeature?.length)
     fail(`class/${c.name}`, "no class feature", "—", "—");

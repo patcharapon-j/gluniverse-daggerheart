@@ -338,11 +338,11 @@ export function cardOf(
           { k: "Hit Points", v: s.startingHitPoints ?? 6 },
         ],
         feats: feats([s.classFeature, s.hopeFeature]),
-        // Flavour, not body text. A class card is Evasion, Hit Points and two
-        // feature runs; the prose is the one line that sets them up, and the
-        // `.fl` slot is the one that says so. It is also the slot that stops
-        // the prose growing — see the class flavour rule in
-        // `tools/check-cards.mjs`.
+        // Flavour, not body text — and our nine classes carry none, so this
+        // is `undefined` and the slot does not appear. It stays wired up
+        // because a homebrew class may well want a line, and if it has one it
+        // belongs in `.fl` rather than in `.tx` where it would read as a rule.
+        // See the class flavour rule in `tools/check-cards.mjs`.
         flavour: plain(s.description) || undefined,
       };
     }
