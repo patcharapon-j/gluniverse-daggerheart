@@ -78,6 +78,28 @@ declare module "*/ui/gem.js" {
   ): void;
 }
 
+declare module "*/ui/pool.js" {
+  /** The chrome around GEMS: the label, the tally, the row. */
+  export function POOL(opts: {
+    label?: string;
+    cur?: number;
+    max?: number;
+    scars?: number;
+    /** "hope" | "fear" — the hue, and whether the glow rides the pool. */
+    tone?: string;
+    dark?: boolean;
+    head?: boolean;
+    sz?: number;
+    gap?: number;
+  }): string;
+
+  /**
+   * The GM's strip. `gm:false` is the same strip without the steppers, which
+   * is what every player at the table sees — see `fear-hud.ts`.
+   */
+  export function FEAR_HUD(opts: { cur?: number; max?: number; gm?: boolean }): string;
+}
+
 declare module "*/ui/card.js" {
   export function CARD(opts: any): string;
   /** Fit each card's prose to its plate. Call after the cards are in the DOM. */

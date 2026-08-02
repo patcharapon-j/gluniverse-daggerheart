@@ -29,6 +29,7 @@ import { rollAdversaryAttack, rollAttack, rollTrait, rollWeaponDamage } from "./
 import { rollDamage, rollDuality, rollFoe } from "./dice/rolls.ts";
 import { applyTheme, gainFear, getFear, registerSettings, setFear, spendFear } from "./settings.ts";
 import { openCreation, refreshCreation } from "./apps/create.ts";
+import { registerFearHud } from "./fear-hud.ts";
 
 /**
  * The design is set in Google Sans, which is not bundled — it is not ours to
@@ -119,6 +120,11 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   applyTheme();
+
+  /* Not in `init` with the rest of the registrations: this one writes to
+     Foundry's own chrome, and `#ui-top` does not exist until the game view
+     has been drawn. */
+  registerFearHud();
 
   /** Public API for macros and modules: `game.daggerheart.rollTrait(actor, "agility")`. */
   (game as any).daggerheart = {

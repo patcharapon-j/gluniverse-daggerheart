@@ -546,6 +546,27 @@
   margin: 0;
 }
 
+/* ── the Fear strip, docked ──────────────────────────────────────────
+   `pool.css` draws the strip; this is the two facts about *where it is
+   standing* that a study page cannot know, so they are hand-authored here
+   with the rest of the application's furniture rather than ported.
+
+   `#ui-middle` is `pointer-events:none` — Foundry's own rule, so that the
+   top and bottom bands do not eat clicks meant for the canvas underneath
+   them, with each real control switching them back on for itself. Inherited
+   unchallenged it makes the steppers look enabled and do nothing, which is
+   the worst of the three available failures. So the strip takes them back,
+   and only the strip: everything either side of it stays canvas.
+
+   The second is a gap. `#ui-top` stacks its children from the top edge with
+   nothing above them, and a chamfered dark strip flush against the top of
+   the viewport reads as a browser artefact rather than as an object. */
+
+#ui-top > .dh.hud {
+  pointer-events: auto;
+  margin-top: 8px;
+}
+
 /* ── scrollbars ──────────────────────────────────────────────────────
    Scoped, because a system that restyles every scrollbar in the client is
    a system that has restyled the module sidebar too. */

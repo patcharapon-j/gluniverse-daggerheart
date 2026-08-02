@@ -55,7 +55,6 @@
       "NoTarget": "Target a token first.",
       "NoWeapon": "The weapon this attack was made with is no longer on the sheet.",
       "NotEnoughHope": "An Experience costs a Hope, and you are short {need}.",
-      "NotEnoughFear": "An Experience costs a Fear, and the pool is short {need}.",
       "NoHopeAction": "{name} costs {cost} Hope, and you have {have}.",
       "NoClass": "No class on this character yet — drag one in from the compendium.",
       "NoUnmarkedTraits": "This advancement raises two unmarked traits, and {left} is left unmarked. Marks clear on entering the next tier.",

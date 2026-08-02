@@ -179,9 +179,16 @@ async function payFearFor(list: Common["experiences"]): Promise<boolean> {
   if (!n) return true;
   const pool = getFear();
   if (pool < n) {
-    ui.notifications?.warn(
-      game.i18n.format("DAGGERHEART.Warning.NotEnoughFear", { need: n }),
-    );
+    /* The strip flinches instead of a toast explaining itself over the top of
+       the number that already said no — the Hope pool's answer, on the GM's
+       side of the table. It is a hook rather than a call so that the roll path
+       does not reach into a UI module: `fear-hud.ts` is listening, and on a
+       client with no strip drawn this is silent, which is correct because
+       there is nothing there to have refused.
+
+       Only a GM rolls an adversary, so the flinch always lands on the screen
+       that pressed the button. */
+    Hooks.callAll("daggerheart.fearRefused", n, pool);
     return false;
   }
   await setFear(pool - n);

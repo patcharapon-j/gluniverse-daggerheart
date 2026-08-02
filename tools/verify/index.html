@@ -87,6 +87,18 @@
   .log{list-style:none;margin:0;padding:0 26px}
   .log > li{width:300px;margin:0}
   .chat-message{display:flex;flex-direction:column}
+
+  /* ── Foundry's top band, stood in for ─────────────────────────────
+     The Fear strip is the one thing this system docks in the client's own
+     chrome, and both facts about that dock are Foundry's rather than ours.
+     `#ui-middle` is `pointer-events:none` so the bands do not eat clicks
+     meant for the canvas beneath them, and `#ui-top` stacks its children
+     from the top edge, centred. Copied here at the two declarations that
+     matter, because `frame.css` writes `#ui-top > .dh.hud` against markup
+     this repo does not own — and because a strip whose steppers are dead
+     looks exactly like a strip whose steppers work. */
+  #ui-middle{pointer-events:none}
+  #ui-top{display:flex;flex-direction:column;align-items:flex-start}
 </style>
 </head>
 <body>
@@ -108,6 +120,14 @@
 <h2><span>// THE RAIL</span>Marks and gems, from the vendored components</h2>
 <div class="stage" id="rail"></div>
 
+<h2><span>// THE STRIP</span>The Fear pool, docked in somebody else's chrome</h2>
+<!-- Deliberately not `.stage`. That class carries `.stage .dh{width:300px}`,
+     which is right for a chat card and would silently hand this strip the
+     one measurement the check below exists to take. -->
+<section id="ui-middle" style="padding:0 26px">
+  <header id="ui-top"></header>
+</section>
+
 <h2><span>// THE PANE</span>Where the traits strip belongs</h2>
 <div class="stage" id="traits"></div>
 
@@ -126,6 +146,7 @@ import { A, DMG, FOE, play } from '/design/plate.js';
 /* These come from the vendored copies the system actually ships. */
 import { MARKS, DAMAGE } from '/src/module/ui/mark.js';
 import { GEMS } from '/src/module/ui/gem.js';
+import { FEAR_HUD } from '/src/module/ui/pool.js';
 import { CARD, fit } from '/src/module/ui/card.js';
 import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
@@ -335,6 +356,24 @@ document.getElementById('rail').innerHTML = `
     ${GEMS({cur:4, max:6, scars:0, sz:32, gap:10, ground:'paper'})}
   </div>
 </div>`;
+
+/* ── the strip ─────────────────────────────────────────────────────────
+   Built exactly as `fear-hud.ts` builds it: the markup from the vendored
+   `FEAR_HUD`, and `dh` added to the element itself rather than to a wrapper
+   around it. That is the whole of what the fifth class-rewrite buys, and it
+   is why this stands *outside* every `.dh` root on the page — a wrapper
+   would make `.dh .hud` match too and the check would pass either way.
+
+   Both builds, because they are one component: the GM's, and the players'
+   with the steppers taken off. */
+const strip = (gm) => {
+  const host = document.createElement('div');
+  host.innerHTML = FEAR_HUD({cur:7, max:12, gm});
+  const el = host.firstElementChild;
+  el.classList.add('dh');
+  return el;
+};
+document.getElementById('ui-top').append(strip(true), strip(false));
 
 /* The pane, twice.
    Left: the traits strip inside .scr, where the first version put it — it is
@@ -882,6 +921,67 @@ setTimeout(async () => { try {
   check('the creation window does not resize the sheet\'s card',
         pkS === 262 && pkF === 262,
         `${pkS}px on the sheet, ${pkF}px in the window`);
+
+  /* ── the Fear strip ───────────────────────────────────────────────
+     The fifth thing this system draws outside a sheet, and the first it
+     draws inside somebody else's furniture. Three ways it can fail, and
+     none of them looks like a failure.
+
+     The scoping first. `port-design-css.mjs` rewrites `.hud` to the compound
+     `.dh.hud`, so the element wears both classes and gets its palette from
+     one and its shape from the other. Had the scoper been left to write the
+     descendant `.dh .hud` instead, the strip standing here — outside every
+     `.dh` root on this page, exactly as it stands in `#ui-top` — would take
+     no shape at all: no ground, no blur, no chamfer, just a row of gems on
+     the client's own background. Which is a thing that could plausibly have
+     been designed. So: the ground resolves, and the hue underneath it is
+     Fear's rather than Hope's. */
+  const hud = document.querySelector('#ui-top > .dh.hud');
+  const hudS = hud && getComputedStyle(hud);
+  const tone = hud && getComputedStyle(hud.querySelector('.pool')).getPropertyValue('--tone').trim();
+  check('the docked strip resolves its ground and its hue',
+        !!hudS && hudS.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+        hudS.clipPath.startsWith('polygon') && tone === '#8256cc',
+        hudS ? `${hudS.backgroundColor} · --tone ${tone || 'unset'}` : 'no strip');
+
+  /* Second, `#ui-middle`'s `pointer-events:none`. Foundry sets it so the top
+     and bottom bands do not eat clicks meant for the canvas, and every real
+     control in there switches them back on for itself. Inherited unchallenged
+     it leaves the steppers looking enabled and doing nothing — the one
+     failure on this page with no visual symptom whatsoever. `frame.css`
+     takes them back for the strip and for nothing either side of it. */
+  const stepper = hud?.querySelector('.stp button');
+  check('the strip takes its pointer events back from #ui-middle',
+        hudS?.pointerEvents === 'auto' &&
+        getComputedStyle(document.getElementById('ui-top')).pointerEvents === 'none',
+        `strip ${hudS?.pointerEvents} inside a band that is ${
+          getComputedStyle(document.getElementById('ui-top')).pointerEvents}`);
+
+  /* Third, `make.css`'s lesson again, and this is where it bites hardest.
+     A stepper is 20×15 — genuinely a button, and one of the few controls in
+     this system that states its own metrics precisely because of that. The
+     `elements` layer wants 28px, which is nearly twice its height, and two
+     of them stacked would stand taller than the twelve-pip row beside them.
+     The strip's own declarations are unlayered and win; if this measures 28
+     the port has stopped shipping them. */
+  const stepBox = stepper?.getBoundingClientRect();
+  check('a stepper is the size it declares, not Foundry\'s 28px',
+        Math.round(stepBox?.width ?? 0) === 20 && Math.round(stepBox?.height ?? 0) === 15,
+        `${Math.round(stepBox?.width ?? 0)}×${Math.round(stepBox?.height ?? 0)}px`);
+
+  /* And the number, pinned. Twelve pips at 24px on a 7px gap is 365px before
+     the label, the tally and the steppers are counted, which makes this the
+     widest fixed object in the system by some way — wide enough that its
+     width is a design decision rather than an outcome. A change to `sz` or
+     `gap` in `design/pool.js` is allowed; making it here by accident is not.
+     The players' build is asserted *narrower* by exactly the steppers, which
+     is the only difference the two are supposed to have. */
+  const hudW = Math.round(hud?.getBoundingClientRect().width ?? 0);
+  const pcW = Math.round(
+    document.querySelector('#ui-top > .dh.hud:last-child')?.getBoundingClientRect().width ?? 0);
+  check('the strip measures what the design draws',
+        hudW === 521 && hudW - pcW === 36,
+        `gm ${hudW}px · player ${pcW}px · steppers ${hudW - pcW}px`);
 
   /* ── the roll popover's pair ──────────────────────────────────────
      Three things, and each one fails as a plausible-looking control rather

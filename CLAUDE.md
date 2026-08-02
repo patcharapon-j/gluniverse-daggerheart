@@ -1378,6 +1378,111 @@ never on a reload, and is gated on `game.users.activeGM` so a second GM at
 the table does not gain a second Fear. Anything else that wants to record
 something about a roll belongs there too, not on a timer.
 
+## The Fear HUD
+
+Fear had a complete model and no surface. `settings.ts` has owned the number
+since the beginning — world-scoped so it belongs to the table rather than to a
+token, GM-writable, capped at twelve — and until now the only way a human could
+read it was `game.daggerheart.fear.get()` in a macro. A pool the rules ask the
+GM to keep *visible to the table* was, in practice, a number one person could
+look up. `styles/pool.css` had been shipping the entire `.hud` block, in
+`system.json`'s `styles` array, drawing nothing, for as long as the system has
+existed.
+
+So this is `src/module/fear-hud.ts`, and it is a wiring job rather than a design
+one: `design/pool.js` had already drawn the strip, and `design/hope.html`
+studies it live under "IN THE HUD".
+
+**It docks in the chrome rather than opening in a window**, and the difference
+is not convenience. A surface you have to open is shut almost all of the time,
+and the whole claim this component makes is that the table can see the pool
+without asking anybody for it. Which is also why there is **no setting to hide
+it from players**: `pool.css` argues the point in its own comments, and a switch
+to turn it off would be this system offering to break the rule it drew the
+component around. Players get `FEAR_HUD({gm:false})` — the same strip with the
+steppers taken off, 485px against the GM's 521 — and the **tally is on both**,
+because a GM says "I have four Fear" out loud and neither of them should have
+to count pips to do it.
+
+The dock is `#ui-top`, and the two supported generations put rather different
+things there: on v13 it holds the scene navigation, so the strip lands under
+the scene tabs; on v14 the navigation has moved to `#ui-left-column-2` and
+`#ui-top` is a centred column holding little else, so the strip lands
+top-centre. Both are the same claim — above the canvas, never collapsed,
+competing with nothing — which is why one selector serves both rather than a
+version check choosing between two docks.
+
+**The strip is rendered once and driven afterwards through `setPool`**, the
+contract `Gems.svelte` and `Marks.svelte` already keep on the sheet. Rebuilding
+the markup would cut off a spent pip's afterglow mid-fade and restart the
+pool-wide `--i` ramp, which is the thing that sells twelve as worse than
+eleven. Nothing here holds a copy of the number: `daggerheart.fearChanged`
+fires on every client from the setting's own `onChange`, so the pool is read
+from the setting and the strip is only ever told what it now is.
+
+**The pips are a readout, not a control.** Hope's are clickable on the sheet
+because there they are the only control; here there are dedicated steppers, and
+a readout that is also a control is a misclick swinging the pool six points
+mid-session.
+
+**And it refuses out loud.** `setFear` clamps, and a clamp answers by doing
+nothing — so the bounds are tested before the write and a press that cannot
+move plays `.pool.deny`, the same shake `refusePool` plays on the Hope gems.
+That in turn retired a notification: `payFearFor` used to warn that the pool was
+short, which is a panel explaining itself over the top of the number that
+already said no, and it only existed because until now there was **no number on
+screen to say it**. It fires `daggerheart.fearRefused` instead, a hook rather
+than a call so the roll path does not reach into a UI module. Only a GM rolls an
+adversary, so the flinch always lands on the screen that pressed the button.
+
+**`.hud` is the fifth class-rewrite**, after the drag proxy, the context menu,
+the roll popover and the rules panel's peek host — `port-design-css.mjs` turns
+it into the compound `.dh.hud`, so the element wears both classes and takes its
+palette from one and its shape from the other. Here the compound is not merely
+the pattern but the safer form: `hud` is a name Foundry uses for its own
+furniture, and the descendant `.dh .hud` the scoper would have written would
+match any of it that ever landed inside one of our roots.
+
+**Two facts about the dock are Foundry's, and they live in `frame.css`** with
+the rest of the application's furniture rather than in the ported component.
+`#ui-middle` is `pointer-events:none` — Foundry's own rule, so the top and
+bottom bands do not eat clicks meant for the canvas, with each real control
+switching them back on for itself — and inherited unchallenged it leaves the
+steppers looking enabled and doing nothing, which has no visual symptom
+whatsoever. And `#ui-top` stacks its children flush against the top edge, where
+a chamfered dark strip reads as a browser artefact rather than as an object.
+
+### What the study page could not see, a third time
+
+The stepper is the one control in this component that genuinely *is* a button,
+and `design/pool.css` had never carried the reset `make.css` and `prep.css`
+both had to learn. Foundry's `elements` layer sizes every `<button>` to
+`--button-size` **with a matching `min-height`**. Our sheets arrive unlayered
+and unlayered beats layered, so `height:15px` won on its own — but there was
+nothing of ours for the `min-height` to beat, and **a floor with no competitor
+simply applies**. Two steppers at 28px stand 59px tall beside a 24px pip row:
+the strip was 77px tall instead of 51, half again as large, and nothing about it
+looked broken enough to send anybody to read the CSS. `min-height` and
+`max-height` are stated rather than zeroed, because 15 is a measurement and 0 is
+only the absence of somebody else's.
+
+`border-radius:0` is the same argument one property along. Foundry's rule rounds
+every button to 4px, and nothing in this system has a rounded corner — the
+family mark is a chamfer, a corner *cut off* rather than turned, and the two are
+opposite claims at the same size.
+
+`tools/verify/` carries a stand-in `#ui-middle` and `#ui-top` beside its
+stand-in `elements` layer, for the reason it carries the layer at all: the
+environment is part of the component and a study page has to bring it. It
+asserts four things — that the strip resolves its ground and Fear's hue while
+standing outside every `.dh` root, which is exactly what the compound buys and
+what a wrapper would have hidden; that it takes its pointer events back; that a
+stepper measures 20×15 and not 28; and that the strip is **521px**, since twelve
+pips at 24 on a 7px gap make this the widest fixed object in the system and its
+width is therefore a decision rather than an outcome. The section is
+deliberately not `.stage`, because that class carries `.stage .dh{width:300px}`
+and would have handed the strip the one measurement the check exists to take.
+
 ## The three dialogs
 
 This system went a long way without a modal, on purpose: a sheet you press
@@ -1965,7 +2070,8 @@ everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
   hand. The window declines to walk the second half.
 - Death moves. Scars are recordable on the adjust tab and cost a Hope slot;
   Blaze of Glory, Avoid Death and Risk It All are not implemented.
-- The Fear HUD (`design/pool.js`) and the GM screen.
+- The GM screen. The Fear pool is docked and public — see the Fear HUD above —
+  but nothing else on the GM's side has a surface of its own.
 - Damage rolls and the adversary d20 do not open the roll popover.
 - Help an Ally and tag team rolls. The plate already draws several advantage
   dice with the losers crossed off; nothing lets a second player contribute one.

@@ -61,7 +61,28 @@
 .hud .pool{flex:none}
 
 .hud .stp{display:flex;flex-direction:column;gap:3px;margin-left:2px}
-.hud .stp button{width:20px;height:15px;padding:0;border:0;cursor:pointer;
+/* `min-height:0` and `max-height:none` are not padding on the declaration —
+   they are the reset `make.css` and `prep.css` both had to learn, arriving
+   here third. Foundry's `elements` layer sizes every <button> to
+   `--button-height`, 28px, *with a matching min-height*, and this is the one
+   component in the system that docks straight into that chrome. Our sheets
+   arrive unlayered and unlayered beats layered, so `height:15px` wins on its
+   own — but there is nothing of ours for the `min-height` to beat, and a
+   floor with no competitor simply applies. Two steppers at 28px stand 59px
+   tall beside a 24px pip row: the strip grows by half again, and it does it
+   without anything looking broken enough to go and read the CSS.
+
+   Stated rather than zeroed, because 15 is a measurement and 0 is only the
+   absence of somebody else's. See the HUD block in `tools/verify/`, which
+   measures this standing in a `button{height:28px;min-height:28px}` of its
+   own — a study page has no Foundry and cannot show it.
+
+   `border-radius:0` is the same argument one property along. Foundry's rule
+   rounds every button to 4px, and nothing in this system has a rounded
+   corner: the family mark is a chamfer, which is a corner *cut off* rather
+   than turned, and the two read as opposite claims at the same size. */
+.hud .stp button{width:20px;height:15px;min-height:15px;max-height:15px;
+  padding:0;border:0;border-radius:0;cursor:pointer;
   background:#242931;box-shadow:inset 0 0 0 1px #343b45;color:#c3cbd5;
   font:700 11px/1 var(--f-mono);transition:background .14s,color .14s}
 .hud .stp button:hover{background:var(--fear);color:#fff;box-shadow:none}

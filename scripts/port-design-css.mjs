@@ -250,6 +250,15 @@ function port(name) {
     // them land unchanged, which is the whole point of hosting rather than
     // restyling.
     .replaceAll(".peekhost", ".dh.peekhost")
+    // The Fear strip, fifth, and the only one that is docked rather than
+    // floating: it lives in Foundry's own `#ui-top`, beside the scene
+    // navigation, because the rules ask the GM to keep the pool visible to
+    // the table and a surface you have to open is not visible. Nothing up
+    // there is inside a sheet, so the same trick applies — and here the
+    // compound is not merely convenient but safer, because `hud` is a name
+    // Foundry uses for its own furniture and `.dh .hud` would match any of
+    // it that ever landed inside one of our roots.
+    .replaceAll(".hud", ".dh.hud")
     /* `../assets/`, not `systems/gluniverse-daggerheart/assets/`.
        A relative `url()` resolves against the stylesheet it is written in,
        and these end up in `styles/` — so the absolute-looking form was
