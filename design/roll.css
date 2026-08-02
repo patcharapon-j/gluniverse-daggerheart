@@ -127,6 +127,3 @@
 .rd.crit .dc.win{box-shadow:0 0 0 2px color-mix(in srgb,var(--hope) 55%,transparent)}
 .rd.crit .tag{animation:critPulse 1.1s ease-in-out 3}
 @keyframes critPulse{50%{opacity:.35}}
-
-@media (prefers-reduced-motion:reduce){
-  .rd,.rd *{animation:none !important}}

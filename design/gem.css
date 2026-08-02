@@ -216,8 +216,3 @@
   drop-shadow(0 0 calc(var(--sz,30px) * .16) color-mix(in srgb,var(--tone) 26%,transparent))}
 :root.light .gems.paper .gem.on .rim,:root.light .paper .gems .gem.on .rim{
   background:color-mix(in srgb,var(--tone) 62%,#fff)}
-
-/* The state change still lands; only the flourish goes. */
-@media (prefers-reduced-motion:reduce){
-  .gem,.gem *{animation:none !important;transition:none !important}
-}

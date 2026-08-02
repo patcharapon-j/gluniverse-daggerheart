@@ -247,10 +247,3 @@ html.dh-light .dh .pnl.swap.armed .pk.mute{opacity:.44}
   0%{box-shadow:inset 0 0 0 1.5px var(--line)}
   22%{box-shadow:inset 0 0 0 1.5px var(--fear-tx)}
   100%{box-shadow:inset 0 0 0 1.5px var(--line)}}
-
-@media (prefers-reduced-motion: reduce){
-  .dh .mk.deny .row,.dh .mk.deny .row i:not(.on) > u{animation:none}
-  .dh .pk .swp{display:none}
-  .dh .pk.recalled .spine,.dh .pk.shelved .spine,.dh.dragproxy .in{animation:none}
-  .dh .pk.shelved .spine .thumb::after,.dh .pk.dz::before{animation:none}
-}

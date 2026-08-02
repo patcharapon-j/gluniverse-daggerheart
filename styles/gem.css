@@ -218,8 +218,3 @@ html.dh-light .dh .gems.paper .gem.on .lamp,html.dh-light .dh .paper .gems .gem.
   drop-shadow(0 0 calc(var(--sz,30px) * .16) color-mix(in srgb,var(--tone) 26%,transparent))}
 html.dh-light .dh .gems.paper .gem.on .rim,html.dh-light .dh .paper .gems .gem.on .rim{
   background:color-mix(in srgb,var(--tone) 62%,#fff)}
-
-/* The state change still lands; only the flourish goes. */
-@media (prefers-reduced-motion:reduce){
-  .dh .gem,.dh .gem *{animation:none !important;transition:none !important}
-}

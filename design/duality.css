@@ -405,8 +405,3 @@
   to{opacity:1;clip-path:inset(0 -3px 0 0)}}
 .rc.land .rc-big{animation:rc-big .36s cubic-bezier(.16,1.06,.3,1) both}
 @keyframes rc-big{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-@media (prefers-reduced-motion:reduce){
-  .rc,.rc *,.rc.play::after{animation:none!important;transition:none!important}
-  .rc.play::after{display:none}
-  .rc.rolling .rc-arith,.rc.rolling .rc-act,.rc.rolling .v-word{opacity:1}}

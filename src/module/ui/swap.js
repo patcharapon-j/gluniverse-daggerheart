@@ -36,8 +36,6 @@ const SHIFT = 300;   // everything that reflowed around it
 const FLY   = 200;   // proxy → its landing rect, and proxy → home on a cancel
 const LIFT  = 6;     // px of travel before a press becomes a drag
 
-const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 /* ── FLIP ─────────────────────────────────────────────────────────*/
 
 /* Called immediately before the repaint. `data-fk` is the card's own key
@@ -67,7 +65,7 @@ export const capture = win => {
    the travel is true, but a recall's sweep and brackets say "this card is
    in your hand now" and a breastplate has not joined a loadout. */
 export function flip(win, before, {moved = null, from = null, mode = 'recall'} = {}){
-  if(!REDUCED) win.querySelectorAll('[data-fk]').forEach(el => {
+  win.querySelectorAll('[data-fk]').forEach(el => {
     const k = el.dataset.fk;
     const b = (k === moved && from) ? from : before.get(k);
     if(!b) return;                                  // a card that was not on screen before

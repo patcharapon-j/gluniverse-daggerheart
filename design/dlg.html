@@ -483,7 +483,7 @@ const REEL_MS = 780;
 const RESOLVE_MS = 300;
 
 function reel(cast, lo, hi, final, then){
-  if(hi <= lo || matchMedia('(prefers-reduced-motion: reduce)').matches){
+  if(hi <= lo){
     cast.innerHTML = `<span class="fx">${final}</span>`;
     then();
     return;

@@ -346,7 +346,3 @@
   from{opacity:0;transform:translateX(-140%)}
   16%{opacity:1} 84%{opacity:1}
   to{opacity:0;transform:translateX(320%)}}
-
-@media (prefers-reduced-motion:reduce){
-  .dh .card.arrive{animation:none}
-  .dh .card.arrive .plate::after{display:none}}

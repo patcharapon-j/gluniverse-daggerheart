@@ -180,11 +180,9 @@ export function MSG(r, mode = 'b', {next = null} = {}){
    correct — which is the right way round for something another player is
    reading over your shoulder. */
 const TUMBLE = 420, STEP = 58;
-const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function land(el, r){
   el.classList.add('in');
-  if(REDUCED) return;
   const dice = [...el.querySelectorAll('.dc:not(.mx) b')];
   const tot = el.querySelector('.dhm-tot b');
   if(!dice.length) return;

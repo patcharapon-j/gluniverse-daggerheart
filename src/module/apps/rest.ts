@@ -252,14 +252,6 @@ const RESOLVE_MS = 300;
 
 const beat = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
 
-const reduced = (): boolean => {
-  try {
-    return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-  } catch {
-    return false;
-  }
-};
-
 /**
  * Spin `cast` through candidates in `[lo, hi]` and stop on `final`.
  *
@@ -267,9 +259,8 @@ const reduced = (): boolean => {
  */
 function reel(cast: HTMLElement, lo: number, hi: number, final: number): Promise<void> {
   // Nothing to spin through: a tier so high that every face gives the same
-  // total, or a reader who has asked for less motion. Either way the answer
-  // is the whole of it.
-  if (hi <= lo || reduced()) {
+  // total. The answer is the whole of it.
+  if (hi <= lo) {
     cast.innerHTML = `<span class="fx">${final}</span>`;
     return Promise.resolve();
   }

@@ -153,14 +153,12 @@ export const RENDER = {V1, V2, V3, V4, V5};
    background rather than stopped, so the tumble degrades to a couple of
    steps and the result still lands. */
 const TUMBLE = 430, STEP = 58;
-const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function play(el, r){
   clearTimeout(+el.dataset.tk || 0);
   el.classList.remove('play', 'land', 'rolling');
   void el.offsetWidth;
   el.classList.add('play');
-  if(REDUCED) return;
 
   const nums = [...el.querySelectorAll('.dd:not(.a) em')];
   const bigs = [...el.querySelectorAll('.rc-big, .rc-big b')].filter(n => /^\d+$/.test(n.textContent));

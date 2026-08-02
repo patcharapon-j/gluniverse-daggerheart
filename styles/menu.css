@@ -76,5 +76,3 @@
 .dh.ctxm .mi.warn:hover i{background:#ffb8bd}
 
 .dh.ctxm .sep{display:block;height:1px;margin:5px 0;background:var(--frame-line)}
-
-@media (prefers-reduced-motion:reduce){.dh.ctxm{animation:none}}
