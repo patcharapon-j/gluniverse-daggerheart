@@ -459,7 +459,6 @@
   0%  {transform:scale(1)}
   42% {transform:scale(.82) translateY(3px)}
   100%{transform:scale(1)   translateY(0)}}
-@media (prefers-reduced-motion:reduce){.gld .set i{animation:none !important}}
 
 /* ── generic panel ─────────────────────────────────────────────────*/
 .pnl{padding:14px 16px 16px;border-top:1px solid var(--line)}
@@ -733,11 +732,6 @@
   font:700 8px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
   color:var(--strain)}
 @keyframes tapeRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-/* Still, and still legible — the track parks at its own start, which is the
-   head of the first run. The band is the message; the travel is only what
-   makes it catch a peripheral eye, and that is exactly the part somebody
-   asking for reduced motion is asking not to have. */
-@media (prefers-reduced-motion:reduce){.win > .tape > i{animation:none}}
 
 /* ── a locked definition ───────────────────────────────────────────
    `.def` marks a control that belongs to the character's definition. It is

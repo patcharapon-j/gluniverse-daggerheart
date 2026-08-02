@@ -17,14 +17,6 @@
 const TUMBLE = 430;
 const STEP = 58;
 
-const reduced = (): boolean => {
-  try {
-    return matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
-};
-
 export function play(el: HTMLElement): void {
   clearTimeout(Number(el.dataset.tk) || 0);
   el.classList.remove("play", "land", "rolling", "veil");
@@ -36,15 +28,6 @@ export function play(el: HTMLElement): void {
   el.querySelector(":scope > .swp")?.remove();
   el.insertAdjacentHTML("afterbegin", '<span class="swp"></span>');
   el.classList.add("play");
-  /* Land immediately rather than returning into nothing. The veil is only
-     ever lifted where it is put on, so a path that skips the tumble has to
-     skip the veil too — a reader on reduced motion who got the veil and no
-     landing would be left with a permanently grey card whose result had
-     been painted out. Reduced motion means *no animation*, not less card. */
-  if (reduced()) {
-    el.classList.add("land");
-    return;
-  }
 
   /* Every die tumbles inside its own range, which is why each one carries
      its size in the markup: a d6 that flashes an 11 on its way to landing

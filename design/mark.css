@@ -244,10 +244,6 @@
 /* Clearing carries no transient and no flush: nothing struck the box,
    something left it. The mark retracting is the whole event. */
 
-@media (prefers-reduced-motion:reduce){
-  .mk .row i,.mk .row i > u,.mk .row i > b,.x .ar > g,.x .bk,.x .bk .ck{
-    animation:none !important;transition:none !important}}
-
 /* ══ VULNERABLE ═════════════════════════════════════════════════════
    The one idle animation in the entire system, and the exception proves
    the rule: gem.css bans idle motion because six things breathing all
@@ -308,10 +304,6 @@
 .mk.max:has(.vuln) > .hd .n{color:var(--fear-tx)}
 .mk.max:has(.vuln) .row i{--mk:var(--fear-tx);
   --mk2:color-mix(in srgb,var(--fear) 72%,#000);--gl:var(--fear-tx)}
-
-@media (prefers-reduced-motion:reduce){
-  .mk .vuln .trk{animation:none !important}
-  .mk.max .vuln{animation:none !important}}
 
 /* ══ THE DAMAGE TRACK ═══════════════════════════════════════════════
    Thresholds and Hit Points fused into one object, because they were

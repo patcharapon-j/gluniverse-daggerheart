@@ -213,8 +213,6 @@
   60% {opacity:1;transform:scale(.9)  rotate(4deg)}
   100%{opacity:1;transform:none}}
 @keyframes hit-rule{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@media (prefers-reduced-motion:reduce){
-  .hit .z.was .cx,.hit .z.was .cx::before{animation:none}}
 
 /* ── the walk back ─────────────────────────────────────────────────
    An Armor Slot does not subtract from the number. It moves the damage one
@@ -254,8 +252,6 @@
 @keyframes wb-shaft{from{transform:scaleX(0)}}
 @keyframes wb-head{from{opacity:0;transform:translateX(38px)}}
 @keyframes wb-lb{from{opacity:0}}
-@media (prefers-reduced-motion:reduce){
-  .hit .wb u,.hit .wb i,.hit .wb em{animation:none}}
 
 /* ── existing damage, and incoming ─────────────────────────────────
    The fused Hit Point row carries two different facts, and it used to draw
@@ -273,7 +269,6 @@
 .hit .row > i.on:not(.pv){opacity:.4;filter:saturate(.5)}
 .hit .row i.pv{opacity:1;animation:hit-pv 1.35s ease-in-out infinite}
 @keyframes hit-pv{50%{filter:brightness(1.3) drop-shadow(0 0 7px var(--wound-gl))}}
-@media (prefers-reduced-motion:reduce){.hit .row i.pv{animation:none}}
 
 /* ── what it cost ──────────────────────────────────────────────────
    Two ideas, and deliberately only two.
@@ -454,7 +449,6 @@
   0%  {opacity:0;transform:scale(1.5) rotate(-9deg)}
   60% {opacity:1;transform:scale(.94) rotate(2deg)}
   100%{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.dtm .dt.done .fx{animation:none}}
 /* The notation before the roll, the unit after it. Same cell, because it
    is the same fact at two stages of being known. */
 .dtm .dt .nt{font:700 7px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
@@ -491,7 +485,6 @@
 /* Blur along the one axis the reel moves. It costs nothing and it is what
    keeps eight discrete numerals from reading as eight numerals. */
 .dtm .dt.rolling .reel{filter:blur(.45px)}
-@media (prefers-reduced-motion:reduce){.dtm .dt.rolling .reel{filter:none}}
 
 /* ── the panel ─────────────────────────────────────────────────────
    The name, and the rule in its place under the pointer. A square this
@@ -567,8 +560,6 @@
   100%{opacity:0;transform:translateX(72%)}}
 @keyframes dt-back{0%{opacity:.85;transform:translateX(62%)}
   100%{opacity:0;transform:translateX(-62%)}}
-@media (prefers-reduced-motion:reduce){
-  .dtm .dt.lands .bd::after,.dtm .dt.undone .bd::after{animation:none}}
 
 /* ── the ledger ────────────────────────────────────────────────────
    What has happened so far, newest at the bottom, in the order it
@@ -603,8 +594,6 @@
 .dtm .log .ln.out{animation:log-out .2s ease-in both}
 @keyframes log-in{from{opacity:0;transform:translateY(-4px)}}
 @keyframes log-out{to{opacity:0;transform:translateX(16px)}}
-@media (prefers-reduced-motion:reduce){
-  .dtm .log .ln,.dtm .log .ln.out{animation:none}}
 
 .dtm .tally{margin:0;font:700 9px/1 var(--f-mono);letter-spacing:.16em;
   text-transform:uppercase;color:var(--ink-3)}
@@ -785,8 +774,6 @@
 .rl .rf .ln > .hd b{font-size:10.5px;color:var(--ink-2)}
 .rl .rf .ln > p{font-size:10px;color:var(--ink-3)}
 .rl .rf .ln > p b{color:var(--ink-2)}
-@media (prefers-reduced-motion:reduce){
-  .rl .ln,.rl .ln > p,.rl .ln > .crd{transition:none}}
 
 /* ══ the rest, in the log ═══════════════════════════════════════════
    Not a card. A card is a thing you hold, and a rest is a thing that

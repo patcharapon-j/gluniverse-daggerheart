@@ -848,10 +848,17 @@ time and Hit Points arrive three at a time. Seven boxes bouncing is a row of jel
 flushes, the ring flashes, and the box is still. <b>All the motion belongs to the mark.</b></p></div>
 
 <p>Staggers must <b>stop accumulating</b>. A critical at Proficiency 6 lands twelve dice; past the
-sixth the delay is capped, or the last die arrives most of a second after the number it belongs to.
-And every animation is disabled wholesale under
-<code>@media (prefers-reduced-motion:reduce)</code> — including the ambient ones, with any
-opacity-dimming states restored to full.</p>
+sixth the delay is capped, or the last die arrives most of a second after the number it belongs to.</p>
+
+<div class="law"><s>motion is not optional</s><p><b>Nothing here honours
+<code>prefers-reduced-motion</code>.</b> It used to: every animation was disabled wholesale under
+<code>@media (prefers-reduced-motion:reduce)</code>, ambient ones included, with the opacity-dimming
+states restored to full. That was thirty-odd blocks across sixteen stylesheets and four modules,
+each one a second definition of a component's resting state that nothing on a study page could
+show was wrong — and every one of them had to be remembered again on the next animation added.
+The motion in this system is the system saying what just happened: the wound landing, the card
+travelling, the reel stopping on a total. So it plays, always, on every client. A table that wants
+less of it turns it down in the operating system's own compositor rather than in ours.</p></div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->

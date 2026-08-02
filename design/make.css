@@ -974,11 +974,3 @@
 .mkp.done{padding:8px 18px 9px;box-shadow:inset 0 -1px 0 var(--line)}
 .mkp.done b{color:var(--ink-3)}
 .mkp.done:hover b{color:var(--ink)}
-
-@media (prefers-reduced-motion: reduce){
-  .forge .fval.land > b,
-  .forge .fbody.turn,
-  .forge .fopt.on.just::after{animation:none}
-  .forge .fopt:hover,.forge .fchip:hover{transform:none}
-  .mkp .fbar u{transition:none}
-}

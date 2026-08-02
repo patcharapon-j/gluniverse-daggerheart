@@ -455,7 +455,6 @@ export const FOE = (r, next) => {
    log is very often exactly that. The result is written into the markup
    before any of this runs — the tumble only overwrites the display. */
 const TUMBLE = 430, STEP = 58;
-const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function play(el){
   clearTimeout(+el.dataset.tk || 0);
@@ -467,7 +466,6 @@ export function play(el){
   el.querySelector(':scope > .swp')?.remove();
   el.insertAdjacentHTML('afterbegin', '<span class="swp"></span>');
   el.classList.add('play');
-  if(REDUCED) return;
 
   /* Every die tumbles inside its own range, which is why each one carries
      its size in the markup: a d6 that flashes an 11 on its way to landing

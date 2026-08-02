@@ -1097,11 +1097,6 @@ html.dh-light .dh .pl.mat .shards{background:repeating-linear-gradient(114deg,tr
 .dh .pl.play.land .pl-act{animation:pl-fade .3s ease-out .16s both}
 @keyframes pl-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-@media (prefers-reduced-motion:reduce){
-  .dh .pl,.dh .pl *{animation:none!important;transition:none!important}
-  .dh .pl.play > .swp,.dh .embers,.dh .foil{display:none}
-  .dh .pl.rolling .pl-arith,.dh .pl.rolling .pl-act,.dh .pl.rolling .pl-vb{opacity:1}}
-
 
 /* ══ THE GM SIDE ═══════════════════════════════════════════════════
    The d20's geometry lives up with the other dice; only its materials

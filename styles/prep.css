@@ -389,6 +389,3 @@
    working, not the design failing — and the line says what would be here,
    so the surface is never a mystery about its own purpose. */
 .dh.prep .nil{font:400 10.5px/1.45 var(--f-ui);color:var(--ink-4);margin:0}
-
-@media (prefers-reduced-motion:reduce){
-  .dh.prep,.dh.prep *{animation:none !important;transition:none !important}}

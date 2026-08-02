@@ -976,11 +976,3 @@
 .dh .mkp.done{padding:8px 18px 9px;box-shadow:inset 0 -1px 0 var(--line)}
 .dh .mkp.done b{color:var(--ink-3)}
 .dh .mkp.done:hover b{color:var(--ink)}
-
-@media (prefers-reduced-motion: reduce){
-  .dh .forge .fval.land > b,
-  .dh .forge .fbody.turn,
-  .dh .forge .fopt.on.just::after{animation:none}
-  .dh .forge .fopt:hover,.dh .forge .fchip:hover{transform:none}
-  .dh .mkp .fbar u{transition:none}
-}

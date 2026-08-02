@@ -251,8 +251,3 @@
 .dhm.land.crit .dhm-v > b{animation:dhm-band .34s cubic-bezier(.22,.9,.24,1) .06s both,
   dhm-crit 1.05s ease-in-out .4s 2}
 @keyframes dhm-crit{50%{opacity:.34}}
-
-@media (prefers-reduced-motion:reduce){
-  .dhm,.dhm *,.dhm.in::after{animation:none!important}
-  .dhm.in::after{display:none}
-  .dhm.rolling .dhm-act{opacity:1}}
