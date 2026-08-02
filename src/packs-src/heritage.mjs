@@ -1,5 +1,11 @@
 /**
- * The eighteen ancestries and the nine communities.
+ * The heritage pack: the corebook's eighteen ancestries and nine communities,
+ * plus *Hope and Fear*'s six and six from `hf-heritage.mjs` and its six
+ * transformations from `transformations.mjs`.
+ *
+ * Everything below this header is the corebook's. The other book is separate
+ * modules for a reason that is about provenance rather than tidiness — see
+ * the imports.
  *
  * Text follows the printed cards, as the official Daggerheart Card Creator
  * publishes them — not the rulebook's chapter on heritage. The two differ, and
@@ -23,6 +29,11 @@
  */
 
 import { ancestryItem, communityItem, feat } from "./_helpers.mjs";
+/* Nothing upstream publishes either of these, so `tools/check-cards.mjs` needs
+   to tell them apart from the twenty-seven below. Importing the modules is how
+   it tells: what they export is, by definition, what has no official card. */
+import HOPE_AND_FEAR from "./hf-heritage.mjs";
+import TRANSFORMATIONS from "./transformations.mjs";
 
 /* ══════════════════════════════════════════════════════════════════════
    ANCESTRIES
@@ -420,4 +431,9 @@ const communities = [
   }),
 ];
 
-export default [...ancestries, ...communities];
+/* Order is corebook first, then the later book, then the transformations —
+   which is a grouping rather than a sort. The pack has no folders (one choice
+   at the table, one line on the sheet: see above), so insertion order is the
+   only grouping there is, and "the eighteen you know, then the six that are
+   new" is the one a reader can use. */
+export default [...ancestries, ...communities, ...HOPE_AND_FEAR, ...TRANSFORMATIONS];

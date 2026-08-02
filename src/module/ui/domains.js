@@ -20,6 +20,29 @@ export const DOMAINS = [
     classes:['Ranger','Warrior'],   blurb:'Tactics and the body. Unparalleled understanding of movement.' },
   { slug:'codex',    name:'Codex',    light:'#3262a2', dark:'#203f6a',
     classes:['Bard','Wizard'],      blurb:'Intensive magical study. Commanding, versatile understanding of magic.' },
+  // Dread is Hope and Fear's domain, and the second departure from "official
+  // values" in this table — but for the opposite reason to Bone's. Bone has an
+  // official colour we chose to move; Dread has none to copy. daggerheart.org
+  // publishes the palette for the nine corebook domains only, the Card Creator
+  // API carries no Hope and Fear content, and the tint on the book's own
+  // Warlock page (#361347) belongs to that page's artwork rather than to the
+  // domain — which is how it differs from the Witch page's (#1c2619) even
+  // though both classes carry Dread.
+  // The hue is a transcription, though, and of the one thing that states it:
+  // the banner in the DREAD DOMAIN callout on page 5. Measured across its
+  // field it is 274.8° and holds it — p5 273.3, p95 276.4 — which lands in
+  // the gap the wheel had, between Codex at 256° and Arcana at 304°.
+  // Lightness is not transcribed. That banner is a shaded, textured object and
+  // its L runs 30 to 43, so no single point off it is "the colour". It is
+  // chosen under Bone's constraint instead: a domain has to survive being a
+  // sigil in a card corner, where hue is all a reader gets, and at the family's
+  // usual L≈50 Dread lands 0.038 from Codex in OKLab — under half this table's
+  // own tightest pair (Codex/Midnight, 0.093). So it goes darker, which is the
+  // axis the neighbours leave free and the direction the book itself drew: L 40,
+  // inside the banner's own p75–p95, and 0.102 clear of Codex.
+  // Replace both values if an official palette appears.
+  { slug:'dread',    name:'Dread',    light:'#363e8a', dark:'#202559',
+    classes:['Warlock','Witch'],    blurb:'Terror and the space past death. Power borrowed from what should stay buried.' },
   { slug:'grace',    name:'Grace',    light:'#9f365d', dark:'#7c163c',
     classes:['Bard','Rogue'],       blurb:'Charisma. Raw magnetism and mastery over language.' },
   { slug:'midnight', name:'Midnight', light:'#1b686f', dark:'#0b494f',
@@ -83,7 +106,9 @@ export const glyph = name => load(`systems/gluniverse-daggerheart/assets/types/$
 // a hotbar slot, where the domain pair is not visible and "Ranger" is
 // otherwise a word next to a grey square.
 export const CLASSES = ['bard','druid','guardian','ranger','rogue',
-                        'seraph','sorcerer','warrior','wizard'];
+                        'seraph','sorcerer','warrior','wizard',
+                        // Hope and Fear.
+                        'assassin','brawler','warlock','witch'];
 export const clazz = name => load(`systems/gluniverse-daggerheart/assets/classes/${name}.svg`);
 
 // Non-domain card types. Graphite, because in this system a saturated hue
@@ -92,6 +117,13 @@ export const clazz = name => load(`systems/gluniverse-daggerheart/assets/classes
 export const KINDS = {
   ancestry:  { slug:'ancestry',  name:'Ancestry',  light:'#5c636d', dark:'#31363c', ramp:false },
   community: { slug:'community', name:'Community', light:'#5c636d', dark:'#31363c', ramp:false },
+  // Hope and Fear's third heritage card. Graphite for the same reason the
+  // other two are: a transformation belongs to no domain. It is deliberately
+  // not tinted toward Dread despite arriving in the same book — vampire and
+  // werewolf are not Dread cards, and a hue that said they were would be this
+  // table inventing a rule the book does not print.
+  transformation: { slug:'transformation', name:'Transformation',
+                    light:'#5c636d', dark:'#31363c', ramp:false },
   // Equipment follows the same rule for the same reason: a sword belongs to
   // no domain. Open question whether weapons should earn an accent of their
   // own — tier, or physical vs magic — rather than sharing this graphite.

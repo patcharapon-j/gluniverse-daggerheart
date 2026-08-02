@@ -55,7 +55,7 @@
     },
     {
       "name": "heritage",
-      "label": "Ancestries & Communities",
+      "label": "Ancestries, Communities & Transformations",
       "path": "packs/heritage",
       "type": "Item",
       "system": "gluniverse-daggerheart",
@@ -97,6 +97,7 @@
     "Item": {
       "ancestry": {},
       "community": {},
+      "transformation": {},
       "class": {},
       "subclass": {},
       "domainCard": {},

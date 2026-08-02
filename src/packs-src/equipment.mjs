@@ -31,6 +31,19 @@ import {
   WHEELCHAIRS,
 } from "./equipment-tables.mjs";
 import { CONSUMABLES, ITEMS } from "./loot-tables.mjs";
+/* *Hope and Fear*'s chapter 2. Its own tables rather than rows appended to the
+   corebook's, because it reprints its *own* six staples across four tiers and a
+   merged table would let either book's rows cover for a gap in the other's —
+   see `hf-equipment-tables.mjs`. They land in the same folders, because the
+   foldering is by kind and a Katana is a primary weapon whichever book printed
+   it. */
+import {
+  ARMOR as HF_ARMOR,
+  PRIMARY_MAGIC as HF_PRIMARY_MAGIC,
+  PRIMARY_PHYSICAL as HF_PRIMARY_PHYSICAL,
+  SECONDARY as HF_SECONDARY,
+} from "./hf-equipment-tables.mjs";
+import { CONSUMABLES as HF_CONSUMABLES, ITEMS as HF_ITEMS } from "./hf-loot-tables.mjs";
 
 const TIERS = [1, 2, 3, 4];
 
@@ -55,4 +68,15 @@ export default [
 
   ...CONSUMABLES.map((row) => lootItem({ ...row, consumable: true })),
   ...ITEMS.map((row) => lootItem({ ...row, consumable: false })),
+
+  /* Hope and Fear. Same mappers, same folders — the only difference is which
+     table the row was read off, and `lootItem` records that in `source`
+     because both books number their loot 1–60. */
+  ...tiered(HF_PRIMARY_PHYSICAL, primary(false)),
+  ...tiered(HF_PRIMARY_MAGIC, primary(true)),
+  ...tiered(HF_SECONDARY, (row, tier) => weaponItem({ ...row, tier, slot: "secondary" })),
+  ...tiered(HF_ARMOR, (row, tier) => armorItem({ ...row, tier })),
+
+  ...HF_CONSUMABLES.map((row) => lootItem({ ...row, consumable: true })),
+  ...HF_ITEMS.map((row) => lootItem({ ...row, consumable: false })),
 ];

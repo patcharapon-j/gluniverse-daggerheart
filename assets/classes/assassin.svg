@@ -1,0 +1,15 @@
+<!-- Assassin: a tally struck through. Blade and Midnight, and the class item
+     the book gives it is "a list of names with several marked off" — so the
+     glyph is the list rather than the knife. A blade here would have collided
+     twice over: Warrior is already two crossed swords and primary.svg is
+     already an arrowhead, and a class mark that reads as a weapon slot is
+     worse than no class mark (see ranger.svg for the same call).
+     Three strokes and the one that cancels them. The diagonal runs corner to
+     corner rather than clipping the bars, so at 24px it still reads as a line
+     drawn across a page and not as a fourth stroke. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M48 60 70 60 70 190 48 190Z"/>
+  <path d="M114 60 136 60 136 190 114 190Z"/>
+  <path d="M180 60 202 60 202 190 180 190Z"/>
+  <path d="M26 161 224 67 224 89 26 183Z"/>
+</svg>

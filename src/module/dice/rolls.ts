@@ -8,11 +8,17 @@
  * Three roll shapes, and they are genuinely different mechanics rather than
  * one mechanic with flags:
  *
- *   duality  2d12, one Hope and one Fear, ± a d6. The comparison between
- *            the two d12s is the whole game; the total is secondary.
+ *   duality  two dice, one Hope and one Fear, ± a d6. The comparison between
+ *            the two is the whole game; the total is secondary.
  *   damage   Proficiency copies of one die. No duality, no verdict.
  *   foe      1d20 + the stat block's modifier. Advantage is a second d20,
  *            not an added d6.
+ *
+ * A duality roll is 2d12 unless something says otherwise, and a fair number of
+ * things do: *Signature Move*, *Rise to the Challenge*, *Reliable Backup* and
+ * the Paragon's Chain all hand you a d20 as your Hope Die. So the pair is two
+ * arguments rather than a constant. Nothing here validates them — a Fear Die is
+ * whatever the GM says it is tonight — and both default to the printed d12.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -20,7 +26,7 @@
 import { absolute } from "../assets.ts";
 import { SYSTEM_ID } from "../config.ts";
 import { getFear, setFear } from "../settings.ts";
-import { ADV_SET, DIS_SET, FEAR_SET, HOPE_SET, paint } from "./dsn.ts";
+import { ADV, DIS, FEAR, HOPE, paint } from "./dsn.ts";
 import { damagePlate, dualityPlate, foeCrit, foePlate } from "./plate.ts";
 import type { DamagePlate, DualityPlate, FoePlate, Note, Outcome, Term } from "./types.ts";
 
@@ -42,6 +48,19 @@ export interface DualityOptions {
   kind?: string;
   /** Terms below the dice — the trait, an Experience, a spent Hope. */
   mods?: Term[];
+  /**
+   * The two duality dice, as notation. Both default to the printed `d12`.
+   *
+   * They are separate because the rules move them separately: everything that
+   * touches the pair today upgrades the *Hope* Die and leaves Fear alone. The
+   * value is trusted rather than checked against a list — a table that agreed
+   * on a d10 Fear Die for a scene should not be told by the roll engine that
+   * their ruling does not exist. What it *is* checked against is arithmetic:
+   * anything unparseable falls back to the d12 rather than building a formula
+   * out of it.
+   */
+  hopeDie?: string;
+  fearDie?: string;
   /**
    * Advantage as a count of d6. Positive adds and takes the highest;
    * negative subtracts. Zero is neither. They cancel one-for-one across
@@ -78,13 +97,29 @@ export interface DualityOutcome {
   message: any;
 }
 
+/**
+ * A die, sanitised into notation and its own face count.
+ *
+ * The pair is trusted as a *ruling* and not as a *string*: whatever a card or a
+ * GM calls the Hope Die, what goes into a `Roll` formula has to be something
+ * Foundry can parse, and a bad one there throws before anything is rolled. So
+ * the number is read out and re-rendered, and anything that is not a positive
+ * integer becomes the printed d12.
+ */
+const dieOf = (notation: string | undefined): string => {
+  const n = Math.floor(Number(String(notation ?? "").trim().replace(/^d/i, "")));
+  return Number.isFinite(n) && n > 1 ? `d${n}` : "d12";
+};
+
 export async function rollDuality(opts: DualityOptions): Promise<DualityOutcome> {
   const mods = opts.mods ?? [];
   const adv = opts.advantage ?? 0;
   const n = Math.abs(adv);
+  const hope = dieOf(opts.hopeDie);
+  const fear = dieOf(opts.fearDie);
 
   const advPart = n ? `${adv < 0 ? " - " : " + "}${n}d6kh1` : "";
-  const roll = new Roll(`1d12 + 1d12${advPart}${modFormula(mods)}`);
+  const roll = new Roll(`1${hope} + 1${fear}${advPart}${modFormula(mods)}`);
   await roll.evaluate();
 
   const [hopeTerm, fearTerm, advTerm] = roll.dice;
@@ -101,10 +136,15 @@ export async function rollDuality(opts: DualityOptions): Promise<DualityOutcome>
    * and this is the last moment it is ours.
    *
    * Costs nothing when the module is absent: it is an unread property on a
-   * term that was going to be serialised anyway. */
-  paint(hopeTerm, HOPE_SET);
-  paint(fearTerm, FEAR_SET);
-  paint(advTerm, adv < 0 ? DIS_SET : ADV_SET);
+   * term that was going to be serialised anyway.
+   *
+   * The role is all that is said here. Which of the role's six cuts a die wears
+   * is `paint`'s to work out, off the term's own face count — the shape is on
+   * the term and re-stating it here would be two places that could disagree
+   * about what was just rolled. */
+  paint(hopeTerm, HOPE);
+  paint(fearTerm, FEAR);
+  paint(advTerm, adv < 0 ? DIS : ADV);
 
   const out: Outcome = h === f ? "crit" : h > f ? "hope" : "fear";
   const total = roll.total;
@@ -122,6 +162,8 @@ export async function rollDuality(opts: DualityOptions): Promise<DualityOutcome>
     mods,
     h,
     f,
+    hd: hope,
+    fd: fear,
     out,
     ...(n ? { adv: { dice: faces(advTerm), neg: adv < 0 } } : {}),
     dc: opts.dc ?? null,
@@ -232,8 +274,8 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
   // but violet is what this system means by "the other side of the table" and
   // an adversary's d20 landing in it says whose roll it is before anyone reads
   // the card. Advantage is a second d20 rather than an added d6, so there is
-  // only ever this one term to paint.
-  paint(roll.dice[0], FEAR_SET);
+  // only ever this one term to paint, and it takes the d20's own cut.
+  paint(roll.dice[0], FEAR);
 
   const d20 = faces(roll.dice[0]);
   const base: FoePlate = {

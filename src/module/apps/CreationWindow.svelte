@@ -13,7 +13,9 @@
   /* eslint-disable @typescript-eslint/no-explicit-any */
   import { onMount, tick } from "svelte";
   import {
+    BURDEN_LABELS,
     CREATION_STEPS,
+    RANGE_LABELS,
     STARTING_DOMAIN_CARDS,
     STARTING_EXPERIENCES,
     STARTING_KIT,
@@ -53,7 +55,6 @@
   import { postCard } from "../sheets/post-card.ts";
   import { CARD, fit, rich } from "../ui/card.js";
   import { setVals, sign, VALS, type ValRow } from "../ui/make.js";
-  import { closePeeks, peeks } from "../ui/peek.js";
   import { dhDialog } from "./dialog.ts";
 
   interface Props {
@@ -197,34 +198,34 @@
   );
 
   /* ══════════════════════════════════════════════════════════════════
-     PEEK
+     NO PEEK
 
-     Every option carries `data-pk` and a card is rendered into the window's
-     own peek layer, so hovering an ancestry shows the printed card. That is
-     the sheet's gesture and it costs nothing to keep here — the layer is
-     rendered once and `fit()` measures it with everything else, so a peek
-     never costs a layout on hover.
+     **Nothing in this window hovers a card, and that is now the whole rule
+     rather than an exception with one survivor.**
+
+     Subclass, ancestry, community and the domain deck all draw the printed
+     card in the grid, so hovering one opened a second copy of the picture
+     already under the cursor — the sheet's gesture kept out of habit rather
+     than because it answered anything. The class step gave it up when the
+     subclass drawer landed and the other three followed.
+
+     Equipment was the last one holding it, on the reasoning that a longsword
+     is not a card and the peek was the only place its card existed at all.
+     That reasoning was about the *tile*, which stated five facts in five
+     different places and left you asking what the thing was. The table
+     answers that: name, trait, range, damage, burden and feature, in columns,
+     read down against thirty-four neighbours. A card floating over the row
+     you are reading is then a picture interrupting the comparison the table
+     was built to let you make — and it is a picture of a weapon, which is to
+     say a type glyph and a paragraph you can already see.
+
+     So the layer is gone, not merely empty. It had exactly one subject left,
+     and a `.peeklayer` rendering nothing is machinery that reads as a feature.
+     The character sheet keeps its peek untouched; this window simply is not a
+     place where cards hover.
      ══════════════════════════════════════════════════════════════════ */
 
   let winEl: HTMLElement | undefined = $state();
-
-  /** The documents the current step can show a card for. */
-  const peekable = $derived.by(() => {
-    if (reviewing) return [...doc.items].filter((i: any) => i.type !== "feature");
-    // A class is a permanent character decision, not a printed card. Its row
-    // carries every rule needed to compare it, so it has no hover-card promise.
-    if (at === "class") return subclassesFor(chosenClass);
-    if (at === "heritage") return [...ancestries, ...communities];
-    if (at === "domains") return legalDeck;
-    if (at === "equipment") return [...primaries, ...secondaries, ...armors];
-    return [];
-  });
-
-  const peekRows = $derived(
-    peekable
-      .map((d: any) => ({ pk: d.id as string, card: cardOf(asSnapshot(d), sigils, cardCtx)! }))
-      .filter((r) => !!r.card),
-  );
 
   /** A pack document in the shape `cardOf` reads. */
   const asSnapshot = (d: any) => ({
@@ -248,13 +249,10 @@
       inline card and its peek can never disagree about what they are of. */
   const cardFor = (d: any) => cardOf(asSnapshot(d), sigils, cardCtx);
 
-  /* `fit()` measures every `.card` in the scope, and three steps now draw
-     cards *inline* rather than only in the peek layer — so this has to run
-     when the stage changes as well as when the peek set does. Keyed on the
-     step and the document revision, which together cover every way a card can
-     appear, leave, or change what it says. */
+  /* `fit()` measures every `.card` in the scope, and four steps draw cards
+     inline. Keyed on the step and the document revision, which together cover
+     every way a card can appear, leave, or change what it says. */
   $effect(() => {
-    void peekRows;
     void at;
     void reviewing;
     void snap.rev;
@@ -262,7 +260,6 @@
     requestAnimationFrame(() => {
       if (winEl) {
         fit(winEl);
-        peeks(winEl);
         // `fit()` measures wrapped prose. Repeat the measurement after the
         // real card faces load if Foundry opened the window against fallbacks.
         if (document.fonts?.status === "loading") {
@@ -297,21 +294,18 @@
           )
           .sort(byName);
 
-  /** Which class the grid is *showing subclasses for*, which is not always the
-      one on the sheet: pressing a class shows its two before you commit. */
-  let previewClass = $state<any>(null);
-  const shownClass = $derived(previewClass ?? chosenClass);
+  /* There is no `previewClass` any more. It existed because the subclass grid
+     was a block of its own below the list, so something had to say which class
+     it was a grid *for* before the class was taken. The drawer is inside the
+     panel now, so the only class showing subclasses is the chosen one and the
+     answer is adjacency rather than state. */
 
   async function pickClass(cls: any) {
-    previewClass = cls;
     // Same class, nothing to confirm and nothing to remove.
     if (chosenClass?.name === cls.name) return;
 
     const doomed = cascadeOf(doc, cls);
-    if (doomed.length && !(await confirmCascade(cls, doomed))) {
-      previewClass = chosenClass;
-      return;
-    }
+    if (doomed.length && !(await confirmCascade(cls, doomed))) return;
     // One subclass, or none: taking the class alone and asking next is right.
     // Two is the normal case and the second press is the real choice.
     const only = subclassesFor(cls);
@@ -353,12 +347,16 @@
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     STEP 2 — HERITAGE
+     STEP 2 — ANCESTRY, THEN COMMUNITY
 
-     Mixed ancestry is the one thing on this step that is not just "pick one".
-     It is off by default, because it is an option rather than the norm, and
-     turning it on splits the ancestry choice in two — the top feature of one,
-     the bottom of another. The position *is* the rule.
+     The book's heritage step, drawn as the two choices it actually asks for.
+     One stage with both grids meant the community deck began below eighteen
+     ancestry cards, and the mixed switch sat over a grid it does not govern.
+
+     Mixed ancestry is the one thing on either step that is not just "pick
+     one". It is off by default, because it is an option rather than the norm,
+     and turning it on splits the ancestry choice in two — the top feature of
+     one, the bottom of another. The position *is* the rule.
      ══════════════════════════════════════════════════════════════════ */
 
   let mixing = $state(false);
@@ -632,6 +630,59 @@
 
   const twoHanded = $derived(heldPrimary?.system?.burden === "twoHanded");
 
+  /* ── the table's groups ────────────────────────────────────────────
+     The book's own tables, in the book's own order.
+
+     Chapter 2 prints primaries as *two* tables per tier — Physical and Magic
+     — and that split is a rule rather than a heading: every magic weapon is
+     rolled with your Spellcast trait, which a character without a spellcasting
+     subclass does not have. Secondaries and armour are one table each and get
+     no caption at all, because inventing one would claim a division the book
+     does not make.
+
+     The tier joins the caption only when more than one is on screen, which
+     only ever happens under the GM's `unrestricted` switch. At level 1 there
+     is exactly one tier, and saying "Tier 1" above every group is the window
+     answering a question nobody asked six times over. */
+
+  type GearGroup = { key: string; label: string; rows: any[] };
+
+  const groupsOf = (list: any[], split: boolean): GearGroup[] => {
+    const tiers = [...new Set(list.map((w: any) => w.system?.tier ?? 1))].sort(
+      (a: number, b: number) => a - b,
+    );
+    const many = tiers.length > 1;
+    const out: GearGroup[] = [];
+    for (const t of tiers) {
+      const here = list.filter((w: any) => (w.system?.tier ?? 1) === t);
+      const parts: [string, any[]][] = split
+        ? [
+            ["Physical", here.filter((w: any) => !w.system?.magical)],
+            ["Magic", here.filter((w: any) => !!w.system?.magical)],
+          ]
+        : [["", here]];
+      for (const [kind, rows] of parts) {
+        if (!rows.length) continue;
+        out.push({
+          key: `${t}:${kind}`,
+          label: many ? (kind ? `Tier ${t} · ${kind}` : `Tier ${t}`) : kind,
+          rows,
+        });
+      }
+    }
+    return out;
+  };
+
+  const gearGroups = $derived(
+    gear === "primary"
+      ? groupsOf(primaries, true)
+      : gear === "secondary"
+        ? groupsOf(secondaries, false)
+        : gear === "armor"
+          ? groupsOf(armorList, false)
+          : [],
+  );
+
   async function pickWeapon(w: any, slot: "primary" | "secondary") {
     await takeWeapon(doc, w, slot);
     flash(w.id);
@@ -791,6 +842,20 @@
         add(i.name, s.bottomFeature);
       } else if (i.type === "community") {
         add(i.name, s.feature);
+      } else if (i.type === "transformation") {
+        /* There is no transformation *step* — the book hands these out as a
+           narrative event during play and says the GM may, at their discretion,
+           offer one at creation, so it is not one of the nine numbered stages
+           and inventing a tenth would put a page in this flow that the rulebook
+           does not have. A character who has one got it by dragging the card
+           onto their sheet.
+
+           The review page is a different question. It is not a step either —
+           it is the character — and its whole job is to print the full rules
+           text of everything you are carrying. A transformation you already
+           have is exactly that, and both of its features belong here, drawback
+           included: the book asks you to keep the burden in view. */
+        for (const f of s.features ?? []) add(i.name, f);
       } else if (i.type === "domainCard") {
         add(`${domainDef(s.domain).label} · level ${s.level}`, {
           name: i.name,
@@ -881,7 +946,6 @@
   function go(id: string) {
     const s = steps.find((x) => x.id === id);
     if (!s || s.blocked) return;
-    closePeeks();
     reviewing = false;
     at = id;
     turn();
@@ -890,7 +954,6 @@
   function next() {
     if (reviewing) return;
     const after = steps.slice(index + 1).find((s) => !s.blocked);
-    closePeeks();
     if (after) {
       at = after.id;
       turn();
@@ -901,7 +964,6 @@
   }
 
   function back() {
-    closePeeks();
     if (reviewing) {
       reviewing = false;
       turn();
@@ -965,7 +1027,6 @@
         class:on={reviewing}
         class:done={finished}
         onclick={() => {
-          closePeeks();
           reviewing = true;
           turn();
         }}
@@ -1059,114 +1120,96 @@
             {@const secondary = c.system?.domains?.secondary}
             {@const dom = domainDef(primary)}
             {@const dom2 = domainDef(secondary)}
-            <button
-              type="button"
+            {@const chosen = chosenClass?.name === c.name}
+            {@const subs = chosen ? subclassesFor(c) : []}
+            <!-- `--c`/`--c2` sit on the panel, not on the mark plate: the rule
+                 plates tint and bar themselves with the primary hue, and a
+                 `color-mix` against an unset custom property takes the whole
+                 declaration down with it. See `.fcls` in `design/make.css`. -->
+            <div
               class="fcls"
-              class:on={chosenClass?.name === c.name}
+              class:on={chosen}
               class:just={justId === c.id}
-              onclick={() => pickClass(c)}
+              style="--c:{dom.light};--c2:{dom2.light}"
             >
-              <span class="fsig" style="--c:{dom.light};--c2:{dom2.light}">
-                {#if ck && sigils[ck]}{@html sigils[ck]}{/if}
-              </span>
-              <span class="fmain">
-                <span class="fidentity">
-                  <span class="fdoms">
-                    {#each [primary, secondary].filter(Boolean) as d (d)}
-                      {@const def = domainDef(d)}
-                      <span class="fdom" style="--c:{def.light}">
-                        <i>{@html sigils[d] ?? ""}</i><s>{def.label}</s>
+              <button type="button" class="fclsr" onclick={() => pickClass(c)}>
+                <span class="fsig">
+                  {#if ck && sigils[ck]}{@html sigils[ck]}{/if}
+                </span>
+                <span class="fmain">
+                  <span class="fidentity">
+                    <b>{c.name}</b>
+                    <span class="fdoms">
+                      {#each [primary, secondary].filter(Boolean) as d (d)}
+                        {@const def = domainDef(d)}
+                        <span class="fdom" style="--c:{def.light}">
+                          <i>{@html sigils[d] ?? ""}</i><s>{def.label}</s>
+                        </span>
+                      {/each}
+                    </span>
+                    <span class="fnum">
+                      <i>Evasion <b>{c.system?.startingEvasion ?? 10}</b></i>
+                      <i>Hit Points <b>{c.system?.startingHitPoints ?? 6}</b></i>
+                    </span>
+                  </span>
+                  <span class="fabilities">
+                    {#each c.system?.classFeatures ?? [] as f (f.name)}
+                      <span class="fability">
+                        <b>{f.name}</b><span>{@html rich(plain(f.description))}</span>
                       </span>
                     {/each}
+                    {#if c.system?.hopeFeature?.name}
+                      <span class="fability hope">
+                        <b><i>Hope</i>{c.system.hopeFeature.name}</b>
+                        <span>{@html rich(plain(c.system.hopeFeature.description))}</span>
+                      </span>
+                    {/if}
                   </span>
-                  <b>{c.name}</b>
-                  <span class="fnum">
-                    <i>Evasion <b>{c.system?.startingEvasion ?? 10}</b></i>
-                    <i>Hit Points <b>{c.system?.startingHitPoints ?? 6}</b></i>
-                  </span>
-                  <p>{plain(c.system?.flavor) || plain(c.system?.description)}</p>
                 </span>
-                <span class="fabilities">
-                  {#each c.system?.classFeatures ?? [] as f (f.name)}
-                    <span class="fability">
-                      <b>{f.name}</b><span>{@html rich(plain(f.description))}</span>
-                    </span>
-                  {/each}
-                  {#if c.system?.hopeFeature?.name}
-                    <span class="fability hope">
-                      <b><i>Hope</i>{c.system.hopeFeature.name}</b>
-                      <span>{@html rich(plain(c.system.hopeFeature.description))}</span>
-                    </span>
-                  {/if}
-                </span>
-              </span>
-            </button>
+              </button>
+
+              <!-- The drawer. The printed foundation card, because that is what
+                   a subclass is: three cards acquired one at a time, and which
+                   of the three you are holding is a fact the card states. No
+                   `data-pk` — nothing in this window hovers a card any more,
+                   and here it would have been the same picture twice. -->
+              {#if subs.length}
+                <div class="fsub">
+                  <s
+                    >Subclass{#if chosenSub}
+                      · <em>{chosenSub.system.subclassName}</em>
+                    {/if}</s
+                  >
+                  <div class="fcards">
+                    {#each subs as s (s.id)}
+                      {@const card = cardFor(s)}
+                      <button
+                        type="button"
+                        class="fcrd"
+                        class:on={chosenSub?.system?.subclassName === s.system?.subclassName}
+                        class:just={justId === s.id}
+                        class:noart={card?.noart}
+                        style={card?.art}
+                        onclick={() => pickSubclass(s)}
+                      >
+                        {#if card}{@html CARD(card)}{/if}
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+            </div>
           {/each}
         </div>
 
-        {#if shownClass}
-          {@const subs = subclassesFor(shownClass)}
-          {#if subs.length}
-            <div style="margin-top:22px">
-              <h3
-                style="margin:0 0 11px;font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;
-                       text-transform:uppercase;color:var(--ink-4)"
-              >
-                {shownClass.name} · subclass
-              </h3>
-              <!-- The printed foundation card, because that is what a subclass
-                   is: three cards acquired one at a time, and which of the
-                   three you are holding is a fact the card states. -->
-              <div class="fcards few">
-                {#each subs as s (s.id)}
-                  {@const card = cardFor(s)}
-                  <button
-                    type="button"
-                    class="fcrd"
-                    class:on={chosenSub?.system?.subclassName === s.system?.subclassName}
-                    class:just={justId === s.id}
-                    class:noart={card?.noart}
-                    style={card?.art}
-                    data-pk={s.id}
-                    onclick={() => pickSubclass(s)}
-                  >
-                    {#if card}{@html CARD(card)}{/if}
-                  </button>
-                {/each}
-              </div>
-            </div>
-          {/if}
-        {/if}
-
-        {#if chosenClass}
-          <div class="fdet">
-            <s>{chosenClass.name}{chosenSub ? ` · ${chosenSub.system.subclassName}` : ""}</s>
-            {#each chosenClass.system?.classFeatures ?? [] as f (f.name)}
-              <div class="frule"><b>{f.name}</b><p>{@html rich(plain(f.description))}</p></div>
-            {/each}
-            {#if chosenClass.system?.hopeFeature?.name}
-              <div class="frule">
-                <b>{chosenClass.system.hopeFeature.name}</b>
-                <p>{@html rich(plain(chosenClass.system.hopeFeature.description))}</p>
-              </div>
-            {/if}
-            {#each chosenSub?.system?.features ?? [] as f (f.name)}
-              <div class="frule"><b>{f.name}</b><p>{@html rich(plain(f.description))}</p></div>
-            {/each}
-          </div>
-        {/if}
-
-        <!-- ══════ HERITAGE ══════ -->
-      {:else if at === "heritage"}
+        <!-- ══════ ANCESTRY ══════
+             Its own stage rather than the top half of a heritage one. The
+             mixed switch governs this grid and nothing else, and eighteen
+             cards is a screenful on its own. -->
+      {:else if at === "ancestry"}
         <div style="display:flex;align-items:center;gap:12px;margin:0 0 12px">
-          <h3
-            style="margin:0;font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;
-                   text-transform:uppercase;color:var(--ink-4);flex:1 1 auto"
-          >
-            Ancestry
-          </h3>
           <label
-            style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+            style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;margin-left:auto;
                    font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
                    color:{mixing ? 'var(--hope-tx)' : 'var(--ink-4)'}"
           >
@@ -1200,7 +1243,6 @@
               class:just={justId === a.id}
               class:noart={card?.noart}
               style={card?.art}
-              data-pk={a.id}
               onclick={() => pickAncestry(a)}
             >
               {#if card}{@html CARD(card)}{/if}
@@ -1209,12 +1251,17 @@
           {/each}
         </div>
 
-        <h3
-          style="margin:22px 0 11px;font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;
-                 text-transform:uppercase;color:var(--ink-4)"
-        >
-          Community
-        </h3>
+        {#if chosenAncestry}
+          <div class="fdet">
+            <s>{chosenAncestry.name}</s>
+            {#each [chosenAncestry.system?.topFeature, chosenAncestry.system?.bottomFeature].filter(Boolean) as f, i (i)}
+              <div class="frule"><b>{f.name}</b><p>{@html rich(plain(f.description))}</p></div>
+            {/each}
+          </div>
+        {/if}
+
+        <!-- ══════ COMMUNITY ══════ -->
+      {:else if at === "community"}
         <div class="fcards">
           {#each communities as c (c.id)}
             {@const card = cardFor(c)}
@@ -1225,7 +1272,6 @@
               class:just={justId === c.id}
               class:noart={card?.noart}
               style={card?.art}
-              data-pk={c.id}
               onclick={async () => {
                 await takeCommunity(doc, c);
                 flash(c.id);
@@ -1236,12 +1282,13 @@
           {/each}
         </div>
 
-        {#if chosenAncestry || chosenCommunity}
+        {#if chosenCommunity}
           <div class="fdet">
-            <s>{[chosenCommunity?.name, chosenAncestry?.name].filter(Boolean).join(" · ")}</s>
-            {#each [chosenAncestry?.system?.topFeature, chosenAncestry?.system?.bottomFeature, chosenCommunity?.system?.feature].filter(Boolean) as f, i (i)}
+            <s>{chosenCommunity.name}</s>
+            {#if chosenCommunity.system?.feature}
+              {@const f = chosenCommunity.system.feature}
               <div class="frule"><b>{f.name}</b><p>{@html rich(plain(f.description))}</p></div>
-            {/each}
+            {/if}
           </div>
         {/if}
 
@@ -1375,8 +1422,6 @@
             </div>
           {/if}
         {:else}
-          {@const list =
-            gear === "primary" ? primaries : gear === "secondary" ? secondaries : armorList}
           {@const held =
             gear === "primary" ? heldPrimary : gear === "secondary" ? heldSecondary : heldArmor}
           {#if gear === "secondary" && twoHanded}
@@ -1385,50 +1430,67 @@
               one here will put the two-handed weapon away.
             </p>
           {/if}
-          <div class="fgrid">
-            {#each list as w (w.id)}
-              {@const why = loose
-                ? undefined
-                : gear === "armor"
-                  ? armorRefusal(doc, w)
-                  : weaponRefusal(doc, w, { secondary: gear === "secondary" })}
-              <button
-                type="button"
-                class="fopt"
-                class:on={held?.name === w.name}
-                class:just={justId === w.id}
-                disabled={!!why}
-                data-pk={w.id}
-                onclick={() =>
-                  gear === "armor" ? pickArmor(w) : pickWeapon(w, gear as "primary" | "secondary")}
-              >
-                <s>Tier {w.system?.tier ?? 1}{w.system?.magical ? " · magic" : ""}</s>
-                <b>{w.name}</b>
-                <div class="fnum">
+
+          <!-- The table. Chapter 2's own shape, and the one step where it is
+               right: what you compare across thirty-five weapons is five
+               columns of the same five facts, and a column is read down.
+
+               No `data-pk`, so no hover card — the table states what the tile
+               made you hover to find out, and a picture over the row you are
+               reading interrupts the comparison it exists to let you make. See
+               the equipment table block in `design/make.css`. -->
+          <div class="ftbl" class:farm={gear === "armor"}>
+            <div class="fthd">
+              <s>Name</s>
+              {#if gear === "armor"}
+                <s>Thresholds</s>
+                <s>Score</s>
+              {:else}
+                <s>Trait</s>
+                <s>Range</s>
+                <s>Damage</s>
+                <s>Burden</s>
+              {/if}
+              <s>Feature</s>
+            </div>
+            {#each gearGroups as g (g.key)}
+              {#if g.label}<div class="fgrp">{g.label}</div>{/if}
+              {#each g.rows as w (w.id)}
+                {@const why = loose
+                  ? undefined
+                  : gear === "armor"
+                    ? armorRefusal(doc, w)
+                    : weaponRefusal(doc, w, { secondary: gear === "secondary" })}
+                <button
+                  type="button"
+                  class="ftr"
+                  class:on={held?.name === w.name}
+                  class:just={justId === w.id}
+                  disabled={!!why}
+                  onclick={() =>
+                    gear === "armor" ? pickArmor(w) : pickWeapon(w, gear as "primary" | "secondary")}
+                >
+                  <b>{w.name}</b>
                   {#if gear === "armor"}
-                    <i>Score <b>{w.system?.baseScore ?? 0}</b></i>
-                    <i
-                      >Thresh <b
-                        >{w.system?.baseThresholds?.major}/{w.system?.baseThresholds?.severe}</b
-                      ></i
-                    >
+                    <u>{w.system?.baseThresholds?.major}/{w.system?.baseThresholds?.severe}</u>
+                    <u>{w.system?.baseScore ?? 0}</u>
                   {:else}
                     <i>{TRAIT_LABELS[w.system?.trait] ?? "—"}</i>
-                    <i
-                      >Dmg <b
-                        >{w.system?.damage?.dice}{w.system?.damage?.bonus
-                          ? `+${w.system.damage.bonus}`
-                          : ""}</b
-                      ></i
+                    <i>{RANGE_LABELS[w.system?.range] ?? "—"}</i>
+                    <u
+                      >{w.system?.damage?.dice}{w.system?.damage?.bonus
+                        ? `+${w.system.damage.bonus}`
+                        : ""}</u
                     >
-                    <i>{w.system?.burden === "twoHanded" ? "Two-handed" : "One-handed"}</i>
+                    <i>{BURDEN_LABELS[w.system?.burden] ?? "—"}</i>
                   {/if}
-                </div>
-                {#if w.system?.feature?.name}
-                  <p><b>{w.system.feature.name}:</b> {plain(w.system.feature.description)}</p>
-                {/if}
-                {#if why}<div class="fwhy">{why}</div>{/if}
-              </button>
+                  <p class:none={!w.system?.feature?.name && !why}>
+                    {#if w.system?.feature?.name}<b>{w.system.feature.name}:</b>
+                      {plain(w.system.feature.description)}{:else}—{/if}
+                    {#if why}<span class="fwhy">{why}</span>{/if}
+                  </p>
+                </button>
+              {/each}
             {/each}
           </div>
         {/if}
@@ -1490,7 +1552,6 @@
               class:noart={card?.noart}
               style={card?.art}
               disabled={!!why || full}
-              data-pk={c.id}
               onclick={() => toggleCard(c)}
             >
               {#if card}{@html CARD(card)}{/if}
@@ -1526,14 +1587,6 @@
     </div>
   </div>
 
-  <!-- The peek layer, outside every scroller and inside the window's own clip.
-       See the head of `design/peek.js` — this is a clipping problem, not a
-       stacking one, and no z-index solves it. -->
-  <div class="peeklayer">
-    {#each peekRows as r (r.pk)}
-      <div class="pkc" class:noart={r.card.noart} data-peek={r.pk} style={r.card.art}>
-        {@html CARD(r.card)}
-      </div>
-    {/each}
-  </div>
+  <!-- No peek layer. Nothing in this window hovers a card — see the NO PEEK
+       block at the head of the script. -->
 </div>

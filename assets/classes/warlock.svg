@@ -1,0 +1,13 @@
+<!-- Warlock: a chevron bearing down on a mote. Dread and Grace, and the class
+     is defined by the thing above it rather than by anything it holds — the
+     patron is the whole bargain, and the book's own last line on the class is
+     that somebody else may be pulling the strings. So the glyph is the weight
+     and the one under it.
+     Deliberately *not* a bolt: Sorcerer is already power arriving from nowhere,
+     and a second downward strike in the set would make the two classes one
+     picture. This one is pressure rather than a strike — flat-topped, filling
+     the full width, and it does not touch what it is over. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M30 20 125 115 220 20 220 66 125 161 30 66Z"/>
+  <path d="M125 169 161 205 125 241 89 205Z"/>
+</svg>

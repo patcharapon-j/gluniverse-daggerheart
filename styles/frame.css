@@ -253,73 +253,284 @@
   margin: 0;
 }
 
-/* Foundry's own message chrome is not deleted, because the three things in
-   it are all things you want: who posted it, when, and how to take it back.
-   It is restated in our own type instead — one 8px mono line at the ink the
-   sheet uses for captions.
+/* ── the header ──────────────────────────────────────────────────────
+   Foundry's own message chrome is not deleted, because everything in it is
+   something you want: who, when, and how to take it back. It is dressed
+   instead — `src/module/message-header.ts` adds `.dh .dhk` to the header
+   Foundry already rendered, puts the player's name beside the character's,
+   and hands the whole strip the player's colour as `--who`.
 
-   Below the object rather than above it. Above, the caption is the first
-   thing in the message and the eye reads it before the thing it captions;
-   `flexcol` on `.chat-message` means one `order` moves it without touching
-   Foundry's markup. */
-.chat-message:has(.dh-plate) .message-header,
-.chat-message:has(.dh-card, .dh-rest) .message-header {
-  order: 2;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin: 0;
-  padding: 5px 2px 0;
+   It reads left to right as the message narrowing to a point: the mark, the
+   character it happened to, the person who pressed it, and then — pushed to
+   the far end, where nothing competes with a name — when, and the way back.
+
+   Above the object, which is a reversal. It was a caption below, on the
+   argument that a caption read before the thing it captions is in the wrong
+   place. In a log that is scrolled back through it is worse than that: the
+   line sits nearer the *next* message than the one it names. And it named
+   the character only, so a card posted by a GM speaking for three NPCs said
+   nothing about who was at the keyboard.
+
+   One line, ~26px, and everything on it is the size of what it is worth. The
+   character is the subject and is set in the sheet's own UI face at reading
+   weight; the player is a caption and takes the mono face at 7.5px, which is
+   the type this system uses everywhere for "who" and "when".
+
+   **It is made of paper**, and it had to be. Naked on Foundry's own chat log
+   it was type floating on somebody else's substrate — the sidebar is dark, our
+   ink is calibrated for `--paper`, and the strip had neither an edge nor a
+   ground, so it read as something that had failed to load rather than as a
+   caption. The card below it has been solving this since it was drawn: a
+   paper ground, a hairline, a shadow to lift it off the log. The header takes
+   the same three and is thereby the same object.
+
+   Which is also what keeps the contrast figures below true — every one of
+   them is measured against `--paper`, and they were being spent on whatever
+   the log happened to be. The chamfer is 5px, the family's smallest step: a
+   domain card is 15, the chat card 9, a button 5, and a one-line strip is not
+   larger than a button. */
+
+/* A grid of three, and that is the correction rather than the first idea.
+   As a wrapping flex row it read the same at every ordinary width and came
+   apart at the long end: a wrapping flex container breaks a line *before* it
+   shrinks anything on it, so a long character name did not ellipse — it took
+   the whole metadata block down to a second row and turned a 26px strip into
+   a 35px one. Three columns cannot do that. The middle one is
+   `minmax(0,1fr)`, which is what gives the names somewhere to shrink to, and
+   the two spans that genuinely want a row of their own ask for one. */
+.dhk {
+  order: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 7px;
+  width: 100%;
+  max-width: 300px;
+  /* Flush, and the minus one is the seam rather than a nudge. Butted at
+     zero the header's own hairline and the object's sit side by side and
+     read as a 2px rule; overlapped by exactly their own width they are one,
+     and where the object carries no border of its own — a posted card is
+     shadow and paper, nothing else — the two simply become one sheet.
+
+     There is no chamfer here for the same reason. The family mark belongs to
+     the bottom-right of the *message*, which is the card's own 9px cut; a
+     second one in the middle of the object would notch a hole through to the
+     chat log, which is precisely the transparency this was arranged to end. */
+  margin: 0 0 -1px;
+  padding: 5px 9px 5px 8px;
   border: 0;
-  background: none;
-  font: 700 8px/1 var(--f-mono), ui-monospace, monospace;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-3);
+  background: var(--paper);
+  box-shadow:
+    0 2px 8px -4px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px var(--line);
 }
 
-.chat-message:has(.dh-plate) .message-sender,
-.chat-message:has(.dh-card, .dh-rest) .message-sender {
-  margin: 0;
-  font: inherit;
-  color: inherit;
+/* The mark, in the player's own colour, at full strength — because it is the
+   one thing here that is not text and therefore cannot be made illegible by
+   somebody choosing #000000 in the player configuration. The rhombus is the
+   family shape: the pip you mark, the domain corner, the claim's diamond. */
+.dhk::before {
+  content: "";
+  grid-column: 1;
+  width: 7px;
+  height: 7px;
+  margin-right: 1px;
+  background: var(--who, var(--line-2));
+  transform: rotate(45deg);
+}
+
+/* The two names share the middle column, and `.dhk-by` gives way first: the
+   character is the answer to "whose card is this" and is not the part that
+   goes. Same argument as `.pl-eye` on the plate itself. */
+.dhk-nm {
+  grid-column: 2;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0 7px;
+  overflow: hidden;
+}
+
+.dhk .message-sender {
   flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 11px/1.4 var(--f-ui), "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+/* No actor on the speaker, so the one name *is* the player and takes their
+   colour rather than being repeated in a second slot.
+
+   Not the colour they chose, though — its *hue*. See below. */
+.dhk.byplayer .message-sender {
+  color: color-mix(in srgb, var(--who, var(--ink)) 66%, var(--ink));
+}
+
+/* `flex: 1 1 0`, and the zero is the whole of it. A shrink factor cannot make
+   the handle give way *first* — flex divides an overflow by factor times base
+   size, so even at twelve a five-letter name beside a long handle still gave
+   up a pixel, and a pixel is a whole ellipsis: "Tabby" rendered "Tabb…".
+   Taking the handle's base to zero takes it out of the overflow entirely, so
+   the name is never asked to contribute. It then grows into whatever is left,
+   which is why it is still the one that ellipses when there is nothing left
+   to grow into. */
+.dhk .dhk-by {
+  flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font: 700 7.5px/1 var(--f-mono), ui-monospace, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--who, var(--ink-3)) 66%, var(--ink));
 }
 
-.chat-message:has(.dh-plate) .message-metadata,
-.chat-message:has(.dh-card, .dh-rest) .message-metadata {
-  margin-left: auto;
+/* ── the player's colour, as type ────────────────────────────────────
+   A colour picker will hand you `#000000` sooner or later, and a name is
+   not a swatch: the mark above can be any colour at all because it is a
+   shape, and this cannot.
+
+   So the hue and the chroma are theirs and the *lightness is the sheet's* —
+   one fixed step per substrate, which is what makes the floor a guarantee
+   rather than an average. Mixing toward `--ink` was the first answer and it
+   is only the fallback now: it lifts a black to about 2.2:1 on the dark
+   paper, which is a name you can see and cannot read.
+
+   Measured across black, white and a saturated green, the caption lands
+   between 4.6 and 8.7:1 on both substrates — against `--ink-3`'s own 4.4
+   and 3.6. Above the floor rather than on it, deliberately: this is the one
+   line on the message that has to be legible before it is read, and 7.5px
+   of tracked-out mono reads quiet at any contrast.
+
+   Two steps rather than one, because these are two weights of presence: a
+   caption beside a name, and a name standing in for the character. Both are
+   stated for both substrates, since a lightness is a claim about what it is
+   sitting on. */
+@supports (color: oklch(from red l c h)) {
+  .dhk .dhk-by {
+    color: oklch(from var(--who, var(--ink-3)) 0.74 c h);
+  }
+  .dhk.byplayer .message-sender {
+    color: oklch(from var(--who, var(--ink)) 0.86 c h);
+  }
+  html.dh-light .dhk .dhk-by {
+    color: oklch(from var(--who, var(--ink-3)) 0.5 c h);
+  }
+  html.dh-light .dhk.byplayer .message-sender {
+    color: oklch(from var(--who, var(--ink)) 0.3 c h);
+  }
+}
+
+/* A hairline rather than a glyph, and it belongs to the player's name so it
+   cannot survive the name being absent. */
+.dhk .dhk-by::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 8px;
+  margin-right: 7px;
+  vertical-align: -1px;
+  background: var(--line-2);
+}
+
+.dhk .message-metadata {
+  grid-column: 3;
+  justify-self: end;
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font: 700 7.5px/1 var(--f-mono), ui-monospace, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.dhk .message-timestamp {
   font: inherit;
   color: inherit;
 }
 
-/* The delete control is the one thing here that does something, and it is
-   irreversible — so it stays quiet until you are actually on the message,
-   and it never occupies a slot that could reflow the line when it appears. */
-.chat-message:has(.dh-plate) .message-delete,
-.chat-message:has(.dh-card, .dh-rest) .message-delete {
-  opacity: 0;
-  transition: opacity 0.12s;
-  color: var(--ink-3);
-}
-.chat-message:has(.dh-plate):hover .message-delete,
-.chat-message:has(.dh-card, .dh-rest):hover .message-delete {
-  opacity: 1;
-}
-.chat-message:has(.dh-plate) .message-delete:hover,
-.chat-message:has(.dh-card, .dh-rest) .message-delete:hover {
-  color: var(--wound-tx);
+/* Ours, drawn for anyone the server would let delete — Foundry's own is GM
+   only. Hidden rather than restyled so there is one control on the line and
+   one code path behind it. */
+.dhk .message-delete {
+  display: none;
 }
 
+/* The one thing on this line that does something, and it is irreversible —
+   so it stays quiet until you are on the message, and it holds its slot
+   whether it is showing or not, or arriving would reflow the line under a
+   pointer that is already reaching for it.
+
+   `height:auto` and the rest are not tidying: Foundry sizes every `<button>`
+   in the `elements` layer to one centred 28px line, and our stylesheets land
+   in `system`, which is declared after it. Left alone this would be a 28px
+   control on a 26px strip. */
+.dhk .dhk-x,
+.dhk .message-dismiss {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--ink-3);
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    color 0.12s;
+}
+
+.chat-message:hover .dhk .dhk-x,
+.chat-message:hover .dhk .message-dismiss,
+.dhk .dhk-x:focus-visible,
+.dhk .message-dismiss:focus-visible {
+  opacity: 1;
+}
+
+.dhk .dhk-x:hover,
+.dhk .message-dismiss:hover {
+  color: var(--wound-gl);
+  background: none;
+}
+
+/* The two spans Foundry may put in the header that are neither a name nor a
+   control. Neither is used by anything this system posts today; they are
+   given a row of their own rather than left to wrap into the middle of one. */
+.dhk .whisper-to,
+.dhk .flavor-text {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  font: 500 9px/1.35 var(--f-ui), "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
+/* The one object of the three that had no ceiling. A card is capped at 300
+   below, a rest caps itself in `dlg.css`, and the plate simply took the log's
+   width — which nothing noticed while it was 300px anyway, and which the
+   header makes visible the moment anyone pops the chat out into a wide
+   window: a 300px caption over a 480px plate. "A chat card is a fixed 300px
+   in Foundry and does not scale" is the rule `design/chat.css` opens with and
+   `tools/verify/` asserts; this is it, stated where it binds. */
 .chat-message .dh-plate {
   margin: 0;
+  max-width: 300px;
 }
 
 /* ── a posted card ───────────────────────────────────────────────────

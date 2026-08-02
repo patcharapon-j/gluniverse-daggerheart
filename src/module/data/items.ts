@@ -73,6 +73,47 @@ export class CommunityData extends (TypeDataModel() as any) {
   }
 }
 
+/**
+ * A transformation — *Hope and Fear*'s third heritage card.
+ *
+ * It is filed here, beside ancestry and community, because that is what the
+ * book says it is: "add the card to your loadout as if it were part of your
+ * character's heritage", and like those two it does not count against the
+ * domain card limit. So it is heritage in every way that reaches this system —
+ * one card, drawn on the heritage row, arriving by drag like the other two.
+ *
+ * Two things make it its own subtype rather than a second ancestry.
+ *
+ * **A transformation is a bargain, and the schema says so.** Every one of the
+ * six prints a benefit and a cost, and taking the card means taking both — the
+ * book's own framing is "taking on the burden to reap the benefit". `features`
+ * is a flat run in printed order because that is how the card reads it out and
+ * because splitting them into `benefit`/`drawback` would need this file to
+ * adjudicate which is which: the Vampire's Feed is a benefit that becomes a
+ * drawback the moment the tokens run out, and Reanimated's Won't Stay Dead is a
+ * drawback that is also the only reason you survive the roll.
+ *
+ * **And you may have exactly one.** See {@link TRANSFORMATION_LIMIT}. An
+ * ancestry has no such rule — mixed ancestry is two of them by design — so
+ * putting transformations in `AncestryData` would have meant one subtype with
+ * two contradictory arity rules and a flag to tell them apart.
+ *
+ * `questions` is the card's own prompt list. It is the same kind of thing as a
+ * class's `backgroundQuestions` and is stored the same way: prose the sheet
+ * offers rather than a rule the sheet applies.
+ */
+export class TransformationData extends (TypeDataModel() as any) {
+  static defineSchema() {
+    return {
+      description: html(),
+      features: arr(featureField()),
+      /** The card's "Transformation Questions" — prompts, not rules. */
+      questions: arr(str()),
+      printing: printingField(),
+    };
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════════
    CLASS AND SUBCLASS
    ══════════════════════════════════════════════════════════════════════ */

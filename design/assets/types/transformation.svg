@@ -1,0 +1,11 @@
+<!-- Transformation: one lozenge caught turning into another. Ancestry is two
+     lozenges side by side, because two lineages sit beside each other; this is
+     the same charge rotated through itself, because a transformation is one
+     thing that became a different one rather than two things held at once.
+     Evenodd, so the overlap knocks through instead of blobbing solid at the
+     ~14px the corner plate renders at — the same reason ancestry.svg is one
+     path. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M125 14 195 125 125 236 55 125Z M125 62 84 125 125 188 166 125Z"/>
+  <path fill-rule="evenodd" d="M14 125 125 55 236 125 125 195Z M62 125 125 166 188 125 125 84Z"/>
+</svg>

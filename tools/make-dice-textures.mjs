@@ -1,5 +1,5 @@
 /**
- * The four dice, given a surface.
+ * The duality dice, given a surface — one cut per hue, per shape.
  *
  * Dice So Nice takes a *texture* and a *bump* per theme: the first multiplies
  * into the die's colour, the second is a height field it derives a normal map
@@ -14,75 +14,90 @@
  * eight percent, and everything that makes the surface *feel* like a material
  * is in the bump, where it costs the hue nothing.
  *
- * ── what it draws ─────────────────────────────────────────────────────
- * A **chamfered bevel**: three concentric octagonal rules, cut from a heavy
- * line down to a hairline as they step inward, with **four small diamonds** —
- * the mark — set among them.
+ * ── the figure follows the face ───────────────────────────────────────
+ * This file used to draw one octagon and hand it to every die, because Dice So
+ * Nice lays a single texture over every face of every shape and an octagon was
+ * the best compromise between a d6's square and a d12's pentagon. The
+ * compromise had a price, stated at length in the version of this header that
+ * is now history: on a d20 a third of the figure fell outside the face and was
+ * never sampled, and the d4, d8 and d10 were never considered at all because
+ * nothing in this system rolled one of ours.
  *
- * The octagon is a square with all four corners cut, which is the one edge
- * treatment this system already owns — every panel and every card in `design/`
- * is chamfered at the corner, and `--chamfer` is a token. On a d6 the four
- * straight runs sit parallel to the four edges of the face and the four short
- * ones cut the corners, so the groove genuinely runs *along* the edge; the
- * three of them stepping inward at falling weight is a bevel, which is what a
- * cut edge looks like. Four corners cut rather than the design's one, because
- * a die turns and an asymmetry that means "bottom right" on a card means
- * nothing on a face that arrives at any rotation.
+ * The Hope Die is no longer always a d12 — *Signature Move*, *Rise to the
+ * Challenge* and *Reliable Backup* all hand you a d20, and the roll popover now
+ * lets you say so — which retires the compromise rather than complicating it.
+ * A colorset is per *term*, so a shape that is known at the moment the die is
+ * painted can have a texture of its own. There are six of them per hue and the
+ * figure is derived from **the face's own polygon** in each.
  *
- * The four diamonds are the mark: `polygon(50% 0,100% 50%,50% 100%,0 50%)` in
- * `design/chat.css` is the wound, the domain pip and the claim diamond, and it
- * is the one closed shape this system owns.
+ * The polygons are not guessed. Dice So Nice draws the texture once per face,
+ * scaled to fill a 256px square tile (`createTextMaterial`), and the face's
+ * baked UVs map its polygon onto that square — so reading the UVs out of the
+ * module's own `DiceModels.js` and binning the triangles by atlas tile gives
+ * the polygon exactly. `FACES` below is that measurement, averaged across every
+ * face of each die (they agree to about half a pixel at 256):
  *
- * The **colour map is where the line is, and the line is the die's own hue**.
- * The field sits at 244 — a four percent muting, invisible as a pattern — and
- * the groove floor is 255, which is no multiplication at all: the base colour
- * comes through the cut at full strength while everything around it is very
- * slightly held back. A narrow halo just outside each groove drops to 236,
- * which is the deepest this file goes, and the whole of the "gold line" or
- * "violet line" is that difference. Nothing here paints a second hue; there is
- * nothing in these files but grey.
+ *     d6    the square, corner to corner — the face *is* the tile
+ *     d12   a regular pentagon, apex up, inradius 0.418
+ *     d20   a triangle, apex up, inradius 0.287 about its own incentre
+ *     d4    a triangle, inradius 0.284      d8   0.269
+ *     d10   a kite — tangential, like every kite, so it has an incircle too
  *
- * The **bump is where the depth is**: flat at 228, cut to 124 in the groove
- * floor with a raised lip at the shoulder, because a cut groove throws one up
- * and it is what makes the normal map read as an edge rather than a stain.
+ * Everything below is built out of one function: `insetOf(p)`, the distance
+ * from `p` **inward** from the nearest edge of the face. For a convex polygon
+ * that is exactly `-max_i dot(p - a_i, n_i)` over the outward edge normals, so
+ * a rule at a given inset is a level set of it and needs no centre, no radius
+ * and no per-shape arithmetic. The kite gets the same treatment as the square.
  *
- * ── Hope and Fear are two cuts, not one ───────────────────────────────
- * They used to share a texture, and the only thing on the table telling them
- * apart was the hue. That is one axis for a question — *which of these two
- * came up higher* — that the whole roll turns on, and a hue is the axis that
- * fails first: in shadow, at an angle, behind another die, on a colour-blind
- * reader's screen. So the cut is the second axis, and the two cuts are halves
- * of the one figure rather than two ideas.
+ * Rule *positions* are fractions of each face's own inradius and rule *widths*
+ * are absolute. A bevel is proportional to the face it runs around — that is
+ * what makes a d20's read as the same object as a d6's — but a cut is a cut,
+ * and these dice are all about the same size in the hand.
  *
- *   **hope** — *the open cut.* The three rules are kept only where the
- *              **square** dominates: four straight runs, one lying along each
- *              edge of the face, tapering out before the corners, which are
- *              left bare. The four marks stand free inside them, on the axes.
- *              The figure never closes. Hope is the one thing on this sheet
- *              you hold in order to *spend* — the rail's whole gesture for it
- *              is letting it go — and a frame with a way out on every side is
- *              the surface saying so.
+ * ── Hope and Fear are two cuts, and now two figures ───────────────────
+ * They shared a texture once, and the only thing on the table telling them
+ * apart was the hue. That is one axis for a question — *which of these two came
+ * up higher* — that the whole roll turns on, and a hue is the axis that fails
+ * first: in shadow, at an angle, behind another die, on a colour-blind reader's
+ * screen. So the cut is the second axis.
  *
- *   **fear**  — *the closed cut.* The same three rules taken all the way
- *              round, corners and all, which is the one thing Hope's are not.
- *              And the mark moves into the corner it just closed: four
- *              diamonds on the diagonals, cut **into** the innermost rule at
- *              exactly the point Hope's runs have run out, so Fear's mark is
- *              set in the frame rather than standing loose inside it. Fear is
- *              not yours and does not leave.
+ * The first answer to that was Hope keeping the octagon's straight runs and
+ * Fear keeping the whole ring, which is a real difference and too fine a one:
+ * both were three concentric rules and a bare corner is not something you can
+ * see across a table. The two figures are now **orthogonal in direction**,
+ * which is the largest difference two line cuts can have and survives any
+ * rotation, any distance and any light:
  *
- * One figure, two readings: Hope keeps the square's four sides and puts the
- * mark on the axes; Fear keeps the whole octagon and puts the mark on the
- * diagonals. Neither invents a shape the other does not have.
+ *   **fear** — *the closed cut.* Three rules following the face all the way
+ *              round, insets 0.10 / 0.20 / 0.30 of the inradius, the weight
+ *              falling as they step inward, which is how this design draws a
+ *              border everywhere else. A diamond — the mark — is cut **into**
+ *              the innermost rule at every corner, so mark and rule fuse into
+ *              one figure. Concentric, layered, closed. Fear is not yours and
+ *              does not leave.
  *
- * The gate is exact rather than drawn. An octagon is the intersection of a
- * square and a diamond and `octagon()` below is `max` of the two standoffs, so
- * *which term is larger already names the run the point is nearest* — larger
- * square term, straight run; larger diamond term, chamfer. Hope multiplies its
- * grooves by that difference, softened over a twelve-thousandth of a tile, and
- * the softening is not only anti-aliasing: a cut that runs out is what a real
- * chamfer does at the end of a run, and one that stopped dead would read as a
- * dash rather than as a bevel that ended.
+ *   **hope** — *the open cut.* One rule, on the innermost of Fear's three, and
+ *              **broken at every corner**; the mark stands free in the break
+ *              rather than set into the line. And at the middle of every side a
+ *              **fan of three rays leaves that rule and runs outward**, across
+ *              the band Fear fills with rings, splaying as it goes and stopping
+ *              just short of the face edge. Radial where Fear is concentric.
+ *              Hope is the one thing on this sheet you hold in order to spend —
+ *              the rail's whole gesture for it is letting it go — and a figure
+ *              whose every line is leaving is the surface saying so.
+ *
+ * Neither invents a shape the other does not have: the same rule, the same
+ * inset, the same diamond, the same groove profile. What differs is whether the
+ * line goes round or goes out.
+ *
+ * Both are derived from **the same discriminator**, and it is the one piece of
+ * the octagon that was worth keeping. Take the two largest of the half-plane
+ * distances, `m1` and `m2`. Near the middle of a side one edge dominates and
+ * `m1 - m2` is large; at a corner two edges tie and it falls to zero. So the
+ * difference *names the run a point stands on* — Fear ignores it, Hope opens
+ * its rule where it is small and puts a ray where it is largest. One number,
+ * two readings, and it works on a triangle, a square, a pentagon and a kite
+ * without being told which it is.
  *
  * ── the glow ──────────────────────────────────────────────────────────
  * A third map, and only Hope and Fear have one. Dice So Nice has no emissive
@@ -101,94 +116,42 @@
  * `usesTransmissionMask` in `DiceFactory.js`. White is fully transmissive and
  * the default with no texture is a white fill, so the flat level is not free:
  * it decides how much of the die you can see through. That is why the field is
- * 228 and not the 176 this file used to write — 176 was quietly making the
+ * 228 rather than the 176 an earlier draft wrote — 176 was quietly making the
  * frosted dice a third less transmissive than a frosted die with no texture at
  * all, which is a change to the *material* smuggled in under a change to its
  * finish.
  *
- * It also means the groove gets the effect for free and in the right
- * direction: less transmission is more scattering, so the cut reads as a
- * solid line of the die's own colour through a body you can otherwise see
- * into. The gold line is lit from the front and the gold around it from
- * behind. Only the gradient of this map reaches the normal map, so the flat
- * level costs the relief nothing.
+ * It also means the groove gets the effect for free and in the right direction:
+ * less transmission is more scattering, so the cut reads as a solid line of the
+ * die's own colour through a body you can otherwise see into. The gold line is
+ * lit from the front and the gold around it from behind. Only the gradient of
+ * this map reaches the normal map, so the flat level costs the relief nothing.
  *
- * It is also why Hope and Fear keep the **same** flat level, the same groove
- * floor and the same profile, and differ only in where the cut goes. Two dice
- * you are asked to compare must be equally see-through, or the comparison is
- * being made for you before you make it. Fear cuts more of its face away than
- * Hope does — a closed ring is longer than four dashes — so the two are not
- * identical: the mean of Hope's bump is 226.32 and Fear's 224.82, six tenths
- * of one percent apart, against a flat of 228 on both and a floor of 124 on
- * both. The flat is what the eye integrates over a face, and it is the same
- * number. This script prints those two means every run, which is the only
- * reason it prints a mean at all.
+ * **Parity is on the flat level and not on the mean, and that matters more now
+ * than it did.** Every texture here writes the same flat 228 and the same
+ * groove floor 124, so two duality dice are equally see-through through the
+ * body, which is what a fair comparison needs. Their *means* no longer agree
+ * closely, and cannot: three closed rules cut away more of a face than one
+ * broken rule and a few rays do, and that difference is the whole point of
+ * having two figures. The script prints every mean so the divergence stays a
+ * number somebody decided rather than a number nobody looked at.
  *
- * ── why an octagon, and why it is cropped on a d20 ────────────────────
- * This was the whole problem. Dice So Nice builds one atlas per die and draws
- * the texture **once per face, scaled to fill a 256px square tile**
- * (`createTextMaterial`, `drawImage(... x, y, ts, ts)`); the face's baked UVs
- * then map its polygon onto that square. Reading the UVs straight out of
- * `DiceModels.js` and binning the triangles by atlas tile gives the polygons,
- * in tile coordinates:
+ * ── what still gets cropped, and why that is fine ─────────────────────
+ * Nothing, now, on the faces we paint. The figure is derived from the polygon,
+ * so every rule, ray and mark lands inside it by construction on all six.
  *
- *     d6    the square, corner to corner — the face *is* the tile
- *     d12   a pentagon, apex up, inscribed, inradius 0.42
- *     d20   a triangle, apex up, inradius 0.29 about its own centroid
- *     d4    a triangle, inradius 0.28      d8  0.27      d10  a kite
+ * What *is* still overdrawn is the numeral: Dice So Nice writes the label into
+ * all three canvases after the texture, at the tile's centre, so a rule passing
+ * under a "20" is covered by it rather than competing with it. That is why the
+ * innermost rule is allowed as far in as 0.30 of the inradius on a d20, where
+ * it would otherwise be crowding the number.
  *
- * So a rectangular border — the obvious way to draw "a line along the edge" —
- * follows the face on a d6 and on nothing else: on a d12 three quarters of it
- * falls outside the pentagon and is never sampled. Anything aligned to the
- * tile's four sides has the same fate. What survives is a shape centred on the
- * face, and the only question left is how big.
- *
- * Three shapes can wear one of our colorsets, and only three: `rolls.ts`
- * paints the duality **d12**s, the advantage **d6**, and the adversary
- * **d20**. Damage dice are never painted and keep whatever the player chose.
- * Measured against those three faces — the fraction of each feature's ink,
- * weighted by how deeply it is cut, that lands inside the polygon:
- *
- *                            d6      d12          d20
- *     rule 1  r=0.352       100%    100%    45.7% Hope  38.8% Fear
- *     rule 2  r=0.312       100%    100%    59.7% Hope  60.0% Fear
- *     rule 3  r=0.272       100%    100%     100%        100%
- *     the four marks        100%    100%     100%        100%
- *     ─────────────────────────────────────────────────────────
- *     everything cut        100%    100%    63.8% Hope  56.1% Fear
- *
- * There is no size that fixes the d20 without giving up the first two columns:
- * a closed rule stays whole on a d20 only below inradius 0.233, and at 0.233
- * it is a collar around the numeral on a d6 rather than a line near its edge.
- * That is the trade, taken deliberately in favour of the two dice the
- * colorsets exist for.
- *
- * What makes the crop survivable is that there are **three** rules and not
- * one. A lone arc cut out of a closed emblem reads as debris; three nested
- * arcs running parallel near each corner read as a bevel passing under the
- * edge, which is what a bevel does. And **the marks are whole on all three
- * faces in both cuts** — which is why Fear's sit at 0.272 on the diagonals
- * rather than out on the outer rule where the argument would have preferred
- * them: on the outer rule they land only half on a d20, and a mark is the one
- * element here that must never arrive as a fragment.
- *
- * A circle would have cropped even more gracefully. It is not here because a
- * circle is not a shape this system draws, and a die is not the place to start.
- *
- * ── three families ────────────────────────────────────────────────────
- *
- *   hope        The open cut, and
- *   fear        the closed one. Both read under `frosted` — a real
- *               transmissive material, so the cut carries through the body of
- *               the die and not merely across its face. Deep groove, bright
- *               line, identical levels, and a glow map apiece.
- *   mark-faint  The advantage pair, read under `velvet` — opaque, matte, with
- *               a sheen along the edge. The closed cut at half the depth and
- *               with almost no line, because these two are read as a *number*
- *               and should sit back behind the two carrying the question.
- *               Velvet takes no transmission mask, so its flat level is free,
- *               and it has no `emissiveLabels`, so a glow map would be dropped
- *               on the floor — see the material branch in `DiceFactory.js`.
+ * The d4 is the one shape whose labels are not at the centre: the module draws
+ * three of them and rotates the canvas 120° about the *tile* centre between
+ * each, so they land near the three corners. A figure derived from an
+ * equilateral face is three-fold symmetric about its own incentre, which is not
+ * quite the tile centre — the offset is under a pixel and a half at 256, and
+ * the alternative is drawing the d4's bevel off its own face to chase it.
  *
  * Deterministic — there is no randomness in here at all — so re-running this
  * produces byte-identical files and the repo does not churn.
@@ -197,7 +160,7 @@
  */
 
 import { deflateSync } from "node:zlib";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -207,8 +170,8 @@ const N = 512;
 
 /* ── a PNG, by hand ────────────────────────────────────────────────────
    Eight-bit greyscale, one filter byte per row, one IDAT. There is no image
-   library in this repo and adding one to write six flat greyscales would be
-   the dependency outweighing the artefact. */
+   library in this repo and adding one to write thirty-eight flat greyscales
+   would be the dependency outweighing the artefact. */
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -257,39 +220,176 @@ function greyPng(pixels, size) {
   ]);
 }
 
+/* ── the faces ─────────────────────────────────────────────────────────
+
+   In *tile* units: 0..1 across one face, y down, wound clockwise on screen.
+   Measured off `DICE_MODELS` in Dice So Nice 6.2.4 and averaged over every
+   face of each die. See the header. */
+
+const FACES = {
+  d4: [
+    [0.5002, 0.0],
+    [0.9916, 0.851],
+    [0.0089, 0.851],
+  ],
+  d6: [
+    [0.0128, 0.0128],
+    [0.9897, 0.0128],
+    [0.9897, 0.9897],
+    [0.0128, 0.9897],
+  ],
+  d8: [
+    [0.5031, 0.0025],
+    [0.9682, 0.8082],
+    [0.038, 0.8082],
+  ],
+  d10: [
+    [0.5031, 0.003],
+    [0.8671, 0.774],
+    [0.5031, 0.955],
+    [0.1391, 0.774],
+  ],
+  d12: [
+    [0.5005, 0.0036],
+    [0.9918, 0.3606],
+    [0.8041, 0.9383],
+    [0.1968, 0.9383],
+    [0.0091, 0.3606],
+  ],
+  d20: [
+    [0.5006, 0.001],
+    [0.9985, 0.8635],
+    [0.0026, 0.8635],
+  ],
+};
+
+export const SHAPES = Object.keys(FACES);
+
+/**
+ * A face, pre-chewed: outward unit normals, edge midpoints and tangents, the
+ * miter direction at every corner, and the inradius.
+ *
+ * `inset(p)` is the whole geometry engine. For a convex polygon the signed
+ * distance to the boundary is `max_i dot(p - a_i, n_i)` over the outward edge
+ * normals — exact inside, and inside is the only place we draw — so negating it
+ * gives the distance *inward* from the nearest edge. Every rule below is a
+ * level set of that one number, which is why a kite needs no special case.
+ *
+ * `m1 - m2`, the gap between the largest and second-largest half-plane, is the
+ * run discriminator: large in the middle of a side, zero at a corner. Both cuts
+ * are built from it.
+ */
+function prepare(poly) {
+  const n = poly.length;
+  // Wind consistently, so every normal points out rather than half of them in.
+  let area = 0;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % n];
+    area += a[0] * b[1] - b[0] * a[1];
+  }
+  const pts = area > 0 ? poly : poly.slice().reverse();
+
+  const edges = [];
+  for (let i = 0; i < n; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % n];
+    const ex = b[0] - a[0];
+    const ey = b[1] - a[1];
+    const len = Math.hypot(ex, ey);
+    const tx = ex / len;
+    const ty = ey / len;
+    // Clockwise on screen (y down) with positive shoelace: the outward normal
+    // is the tangent turned a quarter the other way.
+    edges.push({ a, mid: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], nx: ty, ny: -tx, tx, ty, half: len / 2 });
+  }
+
+  const inset = (x, y) => {
+    let m1 = -Infinity;
+    let m2 = -Infinity;
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      const e = edges[i];
+      const d = (x - e.a[0]) * e.nx + (y - e.a[1]) * e.ny;
+      if (d > m1) {
+        m2 = m1;
+        m1 = d;
+        k = i;
+      } else if (d > m2) m2 = d;
+    }
+    return { t: -m1, run: m1 - m2, edge: k };
+  };
+
+  // The incentre, by the same function: the deepest point of the face. A
+  // handful of Newton-free descent steps on a convex field is enough at this
+  // resolution, and it is exact for every shape here but the kite, where it
+  // converges in about a dozen.
+  let cx = pts.reduce((s, p) => s + p[0], 0) / n;
+  let cy = pts.reduce((s, p) => s + p[1], 0) / n;
+  let step = 0.05;
+  for (let iter = 0; iter < 400; iter++) {
+    const here = inset(cx, cy).t;
+    let best = null;
+    for (const [dx, dy] of [
+      [step, 0],
+      [-step, 0],
+      [0, step],
+      [0, -step],
+    ]) {
+      const t = inset(cx + dx, cy + dy).t;
+      if (t > here && (!best || t > best.t)) best = { t, dx, dy };
+    }
+    if (best) {
+      cx += best.dx;
+      cy += best.dy;
+    } else step *= 0.5;
+  }
+  const inradius = inset(cx, cy).t;
+
+  // Where the inset rule turns each corner: the miter, so a mark placed here
+  // sits exactly on the rule rather than near it.
+  const corners = pts.map((v, i) => {
+    const a = edges[(i - 1 + n) % n];
+    const b = edges[i];
+    const dot = a.nx * b.nx + a.ny * b.ny;
+    const s = 1 + dot;
+    return { v, mx: (a.nx + b.nx) / s, my: (a.ny + b.ny) / s };
+  });
+
+  return { pts, edges, corners, inset, inradius, centre: [cx, cy] };
+}
+
 /* ── the cut ───────────────────────────────────────────────────────────
 
-   Everything below is in *tile* units: 0..1 across one face. The atlas tile is
-   256px and this file is 512px, so one unit here is 512 pixels and every width
-   quoted in the constants is doubled relative to what lands on the die. */
+   Widths are in tile units and the file is 512px, so every one quoted here is
+   doubled relative to what lands on the die's 256px atlas tile. */
 
-/** Where the face is. Halfway between the d6 square's centre and the d12
-    pentagon's, which is the compromise that clears both by the most. */
-const CX = 0.5;
-const CY = 0.508;
-
-/**
- * The bevel: three chamfered rules stepping inward, the weight falling as they
- * go, which is how this design draws a border everywhere else — a rule, then a
- * hairline under it. Shared by both cuts; what differs is how much of each one
- * is kept.
- */
+/** The three rules, as fractions of the face's own inradius, and their weight.
+    Fear draws all three; Hope draws the innermost and nothing else. */
 const BEVEL = [
-  { r: 0.352, w: 0.0065 },
-  { r: 0.312, w: 0.0045 },
-  { r: 0.272, w: 0.003 },
+  { f: 0.1, w: 0.0065 },
+  { f: 0.2, w: 0.0045 },
+  { f: 0.3, w: 0.003 },
 ];
 
-/** Hope's marks: free of every rule, on the axes. `s` is their L1 radius. */
-const HOPE_BEAD = { r: 0.233, s: 0.022 };
+/** The mark's half-diagonal. Absolute: the diamond is the system's mark and it
+    is the same mark on every die, and both cuts put it in the same place. */
+const BEAD = 0.021;
 
 /**
- * Fear's marks: on the diagonals, at the radius of the innermost rule — which
- * is where that rule's chamfer *is*, since a regular octagon stands off its
- * centre by the same `r` on all eight sides. So the diamond does not sit near
- * the rule, it is cut into it, and `max()` fuses the two into one figure.
+ * Hope's burst: what leaves each mark. Three grooves — one straight out along
+ * the corner's own bisector and two set off from it — because one line is a
+ * spur and three is light. `a` is the angle off the bisector in degrees, `r`
+ * how much of the available run it takes, and `in`/`out` how much of that it
+ * spends fading in at the mark and running out at the tip. A cut that runs out
+ * is what a real chamfer does at the end of a run; one that stopped dead would
+ * read as a dash.
  */
-const FEAR_BEAD = { r: 0.272, s: 0.02 };
+const BURST = [
+  { a: 0, w: 0.005, r: 1, in: 0.08, out: 0.34 },
+  { a: 21, w: 0.0034, r: 0.58, in: 0.12, out: 0.42 },
+  { a: -21, w: 0.0034, r: 0.58, in: 0.12, out: 0.42 },
+];
 
 /** Shoulder width. A groove with a vertical wall aliases; this is the fillet. */
 const FILLET = 0.0035;
@@ -297,28 +397,11 @@ const FILLET = 0.0035;
 /** How far outside a groove its halo reaches. */
 const HALO = 0.01;
 
-/** How long Hope's runs take to fade out, measured in the same distance the
-    octagon's two terms are measured in. See the header. */
-const RUNOUT = 0.012;
-
-/**
- * Distance to a regular octagon of inradius `a`, signed, negative inside, and
- * which of the two figures it came from.
- *
- * An octagon is the intersection of a square and a diamond, and for a *regular*
- * one both stand off the centre by the same `a`: `max(|u|,|v|)` is the exact
- * distance to the square's sides and `(|u|+|v|)/√2` the exact distance to the
- * diamond's, so the larger of the two is the exact distance to whichever side
- * is nearest — and saying which of them was larger says which side that was.
- * Circumradius is `a / cos(22.5°)`, about `1.082 a`.
- */
-function octagon(du, dv, a) {
-  const u = Math.abs(du);
-  const v = Math.abs(dv);
-  const square = Math.max(u, v);
-  const diamond = (u + v) / Math.SQRT2;
-  return { e: Math.max(square, diamond) - a, run: square - diamond };
-}
+/** How wide the break at a corner is, measured in the discriminator's own
+    units. Also how far a ray takes to reach full depth from its outer tip —
+    a cut that runs out is what a real chamfer does at the end of a run, and one
+    that stopped dead would read as a dash rather than as a bevel that ended. */
+const RUNOUT = 0.014;
 
 /**
  * A groove, across the centreline: flat at the floor, cosine up the shoulder,
@@ -353,12 +436,11 @@ function rim(e) {
   return Math.sin(Math.PI * (e / HALO));
 }
 
-/** How much of a rule survives at a point whose run-discriminant is `run`.
-    One on the straight runs, nothing on the chamfers, cosine between. */
-function runout(run) {
-  if (run <= 0) return 0;
-  if (run >= RUNOUT) return 1;
-  return 0.5 - 0.5 * Math.cos((Math.PI * run) / RUNOUT);
+/** Nothing below `lo`, everything above `hi`, cosine between. */
+function ramp(x, lo, hi) {
+  if (x <= lo) return 0;
+  if (x >= hi) return 1;
+  return 0.5 - 0.5 * Math.cos((Math.PI * (x - lo)) / (hi - lo));
 }
 
 /**
@@ -366,44 +448,90 @@ function runout(run) {
  * it (`h`), and how much of the cut is the mark rather than a rule (`b`) —
  * which only the glow map cares about, because only the glow map draws the two
  * at different strengths.
- *
- * `open` keeps the rules on the straight runs alone. The halo is held out of
- * any groove it happens to reach into, so a mark sitting on a rule does not
- * raise a lip in its floor.
  */
-function fieldFor(open, bead, diagonal) {
-  return (u, v) => {
-    const du = u - CX;
-    const dv = v - CY;
+function fieldFor(face, open) {
+  const { edges, corners, inset, inradius } = face;
+  const rules = BEVEL.map((b) => ({ t: b.f * inradius, w: b.w }));
+  const inner = rules[rules.length - 1];
+  // Hope's beams stop short of the face edge — a groove that ran into it would
+  // break the silhouette rather than lie inside it.
+  const BEAM_OUT = Math.min(0.024, inradius * 0.1);
+
+  /* Every corner, pre-solved. `o` is where the innermost rule turns that
+     corner, which is where the mark goes on both cuts; `u` is the outward
+     bisector as a unit vector, and `depth` is how far along it the mark sits.
+     Along the miter the inset falls by exactly one per unit of the *unmitred*
+     vector, which is what makes a beam's parameter and the rule's inset the
+     same number without any solving. */
+  const spurs = corners.map((c) => {
+    const ml = Math.hypot(c.mx, c.my);
+    const ux = c.mx / ml;
+    const uy = c.my / ml;
+    const run = (inner.t - BEAM_OUT) * ml;
+    return {
+      o: [c.v[0] - inner.t * c.mx, c.v[1] - inner.t * c.my],
+      /* The flanks are rotated off the bisector, and their run is shortened by
+         the cosine as well as by their own `r`: a ray leaving at an angle meets
+         the face edge sooner than one going straight out, and a burst whose
+         arms all stopped at the same length would put the outer two through it. */
+      rays: BURST.map((b) => {
+        const th = (b.a * Math.PI) / 180;
+        const cos = Math.cos(th);
+        const sin = Math.sin(th);
+        return {
+          ...b,
+          ux: ux * cos - uy * sin,
+          uy: ux * sin + uy * cos,
+          run: run * b.r * cos,
+        };
+      }),
+    };
+  });
+
+  return (x, y) => {
+    const { t, run } = inset(x, y);
 
     let g = 0;
     let h = 0;
-    for (const { r, w } of BEVEL) {
-      const { e, run } = octagon(du, dv, r);
-      const keep = open ? runout(run) : 1;
-      if (keep <= 0) continue;
-      g = Math.max(g, keep * groove(e, w));
-      h = Math.max(h, keep * halo(e, w));
+
+    if (open) {
+      // One rule, and it is let go of where two edges compete for it — which
+      // is exactly where a corner is.
+      const keep = ramp(run, 0, RUNOUT);
+      if (keep > 0) {
+        g = Math.max(g, keep * groove(t - inner.t, inner.w));
+        h = Math.max(h, keep * halo(t - inner.t, inner.w));
+      }
+
+      // And out of every break, a burst: from the mark, through the two rules
+      // Fear would have closed, and away.
+      for (const s of spurs) {
+        const dx = x - s.o[0];
+        const dy = y - s.o[1];
+        for (const r of s.rays) {
+          const along = dx * r.ux + dy * r.uy;
+          if (along < 0 || along > r.run) continue;
+          const across = Math.abs(dx * r.uy - dy * r.ux);
+          const f = along / r.run;
+          const lit = ramp(f, 0, r.in) * (1 - ramp(f, 1 - r.out, 1));
+          g = Math.max(g, lit * groove(across, r.w));
+          h = Math.max(h, lit * halo(across, r.w));
+        }
+      }
+    } else {
+      for (const rule of rules) {
+        g = Math.max(g, groove(t - rule.t, rule.w));
+        h = Math.max(h, halo(t - rule.t, rule.w));
+      }
     }
 
-    // The four marks. A diamond is |du| + |dv| = s about its own centre.
-    const d = bead.r / Math.SQRT2;
-    const offsets = diagonal
-      ? [
-          [d, d],
-          [-d, d],
-          [d, -d],
-          [-d, -d],
-        ]
-      : [
-          [bead.r, 0],
-          [-bead.r, 0],
-          [0, bead.r],
-          [0, -bead.r],
-        ];
+    // The mark, once at every corner and in the same place on both cuts. Fear
+    // closes the rule through it, so `max()` fuses the two into one figure;
+    // Hope has let the rule go there, so the same diamond stands alone in the
+    // gap with the beam leaving it.
     let b = 0;
-    for (const [ox, oy] of offsets) {
-      const e = Math.abs(du - ox) + Math.abs(dv - oy) - bead.s;
+    for (const s of spurs) {
+      const e = Math.abs(x - s.o[0]) + Math.abs(y - s.o[1]) - BEAD;
       b = Math.max(b, fill(e));
       h = Math.max(h, rim(e));
     }
@@ -413,13 +541,10 @@ function fieldFor(open, bead, diagonal) {
   };
 }
 
-const HOPE_FIELD = fieldFor(true, HOPE_BEAD, false);
-const FEAR_FIELD = fieldFor(false, FEAR_BEAD, true);
-
 /**
- * Two-by-two per pixel. The profiles above are already smooth, but the
- * chamfers and the diamonds run at forty-five degrees and a diagonal edge is
- * where an analytic profile still shows its stairs.
+ * Two-by-two per pixel. The profiles above are already smooth, but a chamfer
+ * and a diamond both run at an angle to the grid, and a diagonal edge is where
+ * an analytic profile still shows its stairs.
  */
 const build = (size, fn) => {
   const px = new Uint8Array(size * size);
@@ -458,24 +583,63 @@ const duality = (field) => ({
   },
 });
 
-const FAMILIES = {
-  hope: duality(HOPE_FIELD),
-  fear: duality(FEAR_FIELD),
-  /* The advantage pair. Fear's closed cut at half the depth, and barely a line
-     at all — 246..255, under three and a half percent. It takes the closed one
-     because these two are not in the comparison the other pair is in: nothing
-     is being asked of the advantage d6 except its number, so it gets the plain
-     figure and Hope's open one stays Hope's. Velvet has its own sheen and does
-     not need help finding an edge, and takes no transmission mask. */
-  "mark-faint": {
-    source: (u, v) => {
-      const { g, h } = FEAR_FIELD(u, v);
-      return 250 + 5 * g - 4 * h;
-    },
-    bump: (u, v) => {
-      const { g, h } = FEAR_FIELD(u, v);
-      return 172 - 52 * g + 7 * h;
-    },
+/* The advantage pair, and the only texture left that is not per shape: these
+   two are always a d6 and always will be, because advantage in this game is a
+   d6 and nothing else. Fear's closed cut on the square face at half the depth,
+   and barely a line at all — 246..255, under three and a half percent. It takes
+   the closed one because these two are not in the comparison the other pair is
+   in: nothing is being asked of the advantage die except its number, so it gets
+   the plain figure and Hope's open one stays Hope's. Velvet has its own sheen
+   and does not need help finding an edge, and takes no transmission mask. */
+const FAINT_FIELD = fieldFor(prepare(FACES.d6), false);
+
+/**
+ * Nothing may be cut outside the face.
+ *
+ * This is the check the octagon could never have passed and the whole reason
+ * the figure is derived from the polygon now. It is cheap — one evaluation of a
+ * field we are about to evaluate anyway — and it is the only assertion here
+ * that catches the failure that actually happens when these constants are
+ * tuned: a ray lengthened by a tenth on the shape with the most room, landing
+ * off the edge of the shape with the least.
+ */
+function assertInside(name, face, field) {
+  const S = 512;
+  let worst = Infinity;
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const u = (x + 0.5) / S;
+      const v = (y + 0.5) / S;
+      if (field(u, v).g < 0.02) continue;
+      const { t } = face.inset(u, v);
+      if (t < worst) worst = t;
+    }
+  }
+  if (worst <= 0) throw new Error(`${name}: the cut leaves the face by ${(-worst).toFixed(4)}`);
+  return worst;
+}
+
+const CLEARANCE = [];
+const FAMILIES = {};
+for (const shape of SHAPES) {
+  const face = prepare(FACES[shape]);
+  for (const [hue, open] of [
+    ["hope", true],
+    ["fear", false],
+  ]) {
+    const field = fieldFor(face, open);
+    CLEARANCE.push(`${hue}-${shape} ${assertInside(`${hue}-${shape}`, face, field).toFixed(4)}`);
+    FAMILIES[`${hue}-${shape}`] = duality(field);
+  }
+}
+FAMILIES["mark-faint"] = {
+  source: (u, v) => {
+    const { g, h } = FAINT_FIELD(u, v);
+    return 250 + 5 * g - 4 * h;
+  },
+  bump: (u, v) => {
+    const { g, h } = FAINT_FIELD(u, v);
+    return 172 - 52 * g + 7 * h;
   },
 };
 
@@ -483,11 +647,16 @@ const SUFFIX = { source: "", bump: "-bump", glow: "-glow" };
 
 mkdirSync(OUT, { recursive: true });
 
+/* The set is derived from `FACES` now, so a shape leaving the list has to take
+   its files with it — a stale `hope.png` from the one-octagon era is a texture
+   nothing names and everything still ships. */
+const written = new Set();
 for (const [name, family] of Object.entries(FAMILIES)) {
   for (const [part, fn] of Object.entries(family)) {
+    const file = `${name}${SUFFIX[part]}.png`;
     const px = build(N, fn);
-    const file = join(OUT, `${name}${SUFFIX[part]}.png`);
-    writeFileSync(file, greyPng(px, N));
+    writeFileSync(join(OUT, file), greyPng(px, N));
+    written.add(file);
     let lo = 255;
     let hi = 0;
     let sum = 0;
@@ -500,11 +669,22 @@ for (const [name, family] of Object.entries(FAMILIES)) {
     const note =
       part === "source"
         ? `  (darkens by at most ${(100 * (1 - lo / 255)).toFixed(1)}%)`
-        : // The bump doubles as the transmission mask on `frosted`, so its mean
-          // is the number that has to agree between Hope and Fear.
+        : // The bump doubles as the transmission mask on `frosted`, so its flat
+          // level is what has to agree between Hope and Fear. The mean is
+          // printed because the two figures cut different amounts away and
+          // somebody should be looking at by how much.
           part === "bump"
-          ? `  (mean ${mean.toFixed(2)})`
-          : "";
-    console.log(`wrote ${file}  min ${lo}  max ${hi}${note}`);
+            ? `  (mean ${mean.toFixed(2)})`
+            : "";
+    console.log(`wrote ${file.padEnd(22)} min ${String(lo).padStart(3)}  max ${hi}${note}`);
+  }
+}
+
+console.log(`\nclearance, closest cut to the face edge in tile units:\n  ${CLEARANCE.join("\n  ")}`);
+
+for (const file of readdirSync(OUT)) {
+  if (file.endsWith(".png") && !written.has(file)) {
+    unlinkSync(join(OUT, file));
+    console.log(`removed ${file}  (no longer named by any colorset)`);
   }
 }

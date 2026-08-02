@@ -23,6 +23,7 @@ import { DaggerheartActor } from "./documents/actor.ts";
 import { DaggerheartItem } from "./documents/item.ts";
 import { registerSheets } from "./sheets/register.ts";
 import { registerChat } from "./dice/chat.ts";
+import { registerMessageHeaders } from "./message-header.ts";
 import { registerDice } from "./dice/dsn.ts";
 import { rollAdversaryAttack, rollAttack, rollTrait, rollWeaponDamage } from "./dice/actions.ts";
 import { rollDamage, rollDuality, rollFoe } from "./dice/rolls.ts";
@@ -82,6 +83,7 @@ Hooks.once("init", () => {
   registerDataModels();
   registerSheets();
   registerChat();
+  registerMessageHeaders();
   registerDice();
   requestFonts();
 

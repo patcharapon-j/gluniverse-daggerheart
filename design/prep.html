@@ -9,8 +9,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/design/tokens.css">
 <link rel="stylesheet" href="/design/gem.css">
+<!-- The die silhouettes are `.die`'s own `--face`, so the stylesheet that
+     declares the shapes has to be here or the chips come out square. One
+     shape table, in the file that owns it. -->
+<link rel="stylesheet" href="/design/plate.css">
 <link rel="stylesheet" href="/design/prep.css">
 <link rel="stylesheet" href="/design/prep-study.css">
+<!-- The environment is part of the component. Foundry declares this in its
+     `elements` layer and our stylesheets arrive unlayered, which is exactly
+     the relationship reproduced here: delete it and this page stops being
+     able to show the bug prep.css's button reset exists to fix. -->
+<style>@layer elements{button{height:28px;min-height:28px;display:inline-flex;
+  align-items:center;justify-content:center;white-space:nowrap;line-height:1}}</style>
 <style>
 .cols{display:grid;grid-template-columns:repeat(3,minmax(300px,1fr));gap:22px;align-items:start;
   grid-template-rows:auto auto auto auto auto auto}
@@ -105,6 +115,7 @@ work the advantage row and the digits tick Experiences. The result is printed un
   <button class="btn" data-open="bare">a level-1 character</button>
   <button class="btn" data-open="broke">no hope left</button>
   <button class="btn" data-open="shelled">a rule already acting on you</button>
+  <button class="btn" data-open="upgraded">a d20 hope die</button>
   <button class="btn fear" data-open="foe">the gm's side</button>
 </div>
 <p id="out"><span>nothing rolled yet.</span></p>
@@ -178,6 +189,15 @@ const CASES = {
   shelled: { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 3,
             forced: [{ k: 'retract', v: -1,
                        why: 'You are inside your shell — action rolls are at disadvantage.' }] },
+  /* The pair, already moved. `Signature Move`, `Rise to the Challenge` and
+     `Reliable Backup` all read "you can roll a d20 as your Hope Die", and the
+     Paragon's Chain buys it with a Hope — so the caller can open the popover
+     with it already set, and the row is then a readout of a decision made on
+     a card rather than a control anybody has to find. Press either chip to
+     see the six; the Fear Die moves the same way, because a GM ruling is the
+     only thing that ever will move it and there is nowhere else to say so. */
+  upgraded: { kind: 'instinct roll', label: 'Instinct', base: 1, experiences: XP, purse: 4,
+              hope: 'd20' },
   foe:    { kind: 'adversary attack', label: 'Sword', base: 3, experiences: XP, purse: 5,
             currency: 'fear', reaction: false },
 };

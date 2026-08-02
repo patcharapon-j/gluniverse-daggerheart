@@ -1,5 +1,10 @@
 /**
- * The nine core classes and their eighteen subclasses.
+ * The classes pack: the corebook's nine classes and eighteen subclasses, plus
+ * *Hope and Fear*'s four and eight from `hf-classes.mjs`.
+ *
+ * Everything below this header is the corebook's. The other book's content is
+ * a separate module for a reason that is about provenance rather than tidiness
+ * — see the import.
  *
  * Class data — Evasion, Hit Points, the Hope feature, the questions — follows
  * *Daggerheart Core Rulebook*, chapter 1. Subclass feature text follows the
@@ -28,6 +33,14 @@
  */
 
 import { classItem, feat, subclassCards } from "./_helpers.mjs";
+/* *Hope and Fear*'s four classes, in their own module because they are a
+   different book with a different provenance — nothing upstream publishes them,
+   so `tools/check-cards.mjs` has to be able to tell them apart from these nine.
+   Importing the module is how it tells: what that file exports is, by
+   definition, what has no official card. They land at the end of this pack's
+   list rather than merged alphabetically, so the compendium's folder order says
+   which nine arrived together. */
+import HOPE_AND_FEAR from "./hf-classes.mjs";
 
 /* ══════════════════════════════════════════════════════════════════════
    THE CHAPTER OPENERS
@@ -1346,4 +1359,6 @@ export default [
   wizard,
   ...schoolOfKnowledge,
   ...schoolOfWar,
+
+  ...HOPE_AND_FEAR,
 ];
