@@ -124,7 +124,8 @@
   and a sentence all competing for the same column — which is a fair description of what a
   class is <em>not</em>. It fixes your domains, your Evasion, your Hit Points and half your
   card pool, and you make it once. So the row splits by kind: the class mark on a plate
-  tinted with its <em>primary</em> domain on the left, everything written on the right.
+  tinted by its domain pair on the left, everything written on the right. Domain sigils,
+  class abilities and the Hope ability are all present in the row; classes have no hover card.
   The flavour is the book's opening paragraph, and this is the only surface that prints one —
   <code>system.description</code> stays at one sentence because that is what a <em>card</em>
   shows, and <code>check-cards.mjs</code> fails the build if it grows back.
@@ -140,10 +141,8 @@
   than in prose: the domain — which is the hue and the corner sigils — and the level and
   Recall Cost, which are the corner blocks. <code>.card</code> is container-query driven, so
   the component that draws a 300px chat plate draws a 176px grid cell unchanged.
-  <code>fit()</code> sizes each card alone and is right to; <code>levelPlates()</code> then
-  gives the whole grid the <em>smallest</em> plate any of them needed, because a picture line
-  that wanders across a row reads as broken rather than as adaptive — and shrinking a plate
-  only ever hands prose more room than <code>fit()</code> asked for.
+  <code>fit()</code> sizes every card independently at both widths, exactly as it does on the
+  character sheet and in chat. The builder does not add a grid-wide image or type scale.
 </p>
 <div class="forge" style="display:block;background:var(--paper);padding:18px;max-width:800px">
   <div class="fcards" id="cards"></div>
@@ -197,7 +196,7 @@
 </div>
 
 <script type="module">
-import { OPT, PLATE, TRAIT, TRAY, VALS, levelPlates, setVals, sign } from '/design/make.js';
+import { OPT, PLATE, TRAIT, TRAY, VALS, setVals, sign } from '/design/make.js';
 import { TICK } from '/design/mark.js';
 import { CARD, fit } from '/design/card.js';
 import { byslug, clazz, icon } from '/design/domains.js';
@@ -274,26 +273,31 @@ const CLASSES = [
     text: 'Rogues are scoundrels, often in both attitude and practice.' },
 ];
 
-/* The mark on the left is the class's own, from `assets/classes/`, drawn in
-   its *primary* domain's hue. Not a colour of its own: a saturated hue means
-   domain everywhere else in this system, and a class's first domain is the
-   truest thing that hue can mean here. */
-const PRIMARY = { Guardian: 'valor', Wizard: 'codex', Rogue: 'midnight' };
+/* The mark is the class's own. The pair beside it carries the two domain
+   sigils and hues, so the relationship is visible rather than text-only. */
+const PAIRS = {
+  Guardian: ['valor','bone'], Wizard: ['codex','splendor'], Rogue: ['midnight','grace']
+};
 
 const marks = Object.fromEntries(await Promise.all(
   CLASSES.map(async c => [c.name, await clazz(c.name.toLowerCase())])));
+const domainMarks = Object.fromEntries(await Promise.all(
+  [...new Set(Object.values(PAIRS).flat())].map(async d => [d, await icon(d)])));
 
 const clsRow = c => `
   <button type="button" class="fcls${c.on ? ' on' : ''}">
-    <span class="fsig" style="--c:${byslug[PRIMARY[c.name]].light}">${marks[c.name] ?? ''}</span>
+    <span class="fsig" style="--c:${byslug[PAIRS[c.name][0]].light};--c2:${byslug[PAIRS[c.name][1]].light}">${marks[c.name] ?? ''}</span>
     <span class="fmain">
-      <s>${c.meta}</s>
-      <b>${c.name}</b>
-      <span class="fnum">
-        <i>Evasion <b>${c.ev}</b></i>
-        <i>Hit Points <b>${c.hp}</b></i>
+      <span class="fidentity">
+        <span class="fdoms">${PAIRS[c.name].map(d => `<span class="fdom" style="--c:${byslug[d].light}"><i>${domainMarks[d]}</i><s>${byslug[d].name}</s></span>`).join('')}</span>
+        <b>${c.name}</b>
+        <span class="fnum"><i>Evasion <b>${c.ev}</b></i><i>Hit Points <b>${c.hp}</b></i></span>
+        <p>${c.text}</p>
       </span>
-      <p>${c.text}</p>
+      <span class="fabilities">
+        <span class="fability"><b>Class ability</b><span>The defining class rule is printed directly in this row.</span></span>
+        <span class="fability hope"><b><i>Hope</i> Hope ability</b><span>Spend Hope to use the class's signature action.</span></span>
+      </span>
     </span>
   </button>`;
 
@@ -327,10 +331,8 @@ document.getElementById('body').addEventListener('click', e => {
 });
 
 /* ── the card grid ──────────────────────────────────────────────────
-   Real cards at grid scale. `fit()` first, then `levelPlates()` — the order
-   matters and is the whole point of the second call: `fit()` resets every
-   plate to its maximum at the top of each pass, so levelling can only ever
-   apply to a solved layout and can never ratchet down across runs. */
+   Real cards at grid scale. The same independent `fit()` pass is used by the
+   sheet, chat and full-size hover cards. */
 
 const DECK = [
   { d: 'grace', name: 'Inspirational Words', lvl: 1, rc: 1, type: 'ABILITY', foot: 'Grace',
@@ -352,7 +354,6 @@ cards.innerHTML = DECK.map((c, i) => `
     ${CARD({ ...c, d: byslug[c.d], sig: sigs[c.d] })}
   </button>`).join('');
 fit(cards);
-levelPlates(cards);
 
 cards.addEventListener('click', e => {
   const b = e.target.closest('.fcrd');

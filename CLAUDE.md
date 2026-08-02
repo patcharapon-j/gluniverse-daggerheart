@@ -471,11 +471,11 @@ competing for the same column — which is a fair description of what a class is
 *not*. It is the largest single decision in this window; it fixes your domains,
 your Evasion, your Hit Points and half your card pool, and you make it once.
 Nine of those deserve a page each. So the row splits by *kind*: the class mark
-on a plate tinted with its **primary** domain on the left — the only picture a
-class has anywhere in this system, since nothing published a painting for a page
-in a book — and everything written on the right. Not a colour of its own for the
-tint: a saturated hue means domain everywhere else here, and the class's first
-domain is the truest thing that hue can mean.
+on a plate tinted by its domain pair on the left — the only picture a class has
+anywhere in this system — and everything written on the right. Both domains are
+shown as coloured sigils rather than a text-only label, and every class and Hope
+ability is printed directly in the row. A class has no hover card: the row is
+the decision surface and already carries the complete answer.
 
 **The flavour on it is the book's opening paragraph, and it is a second field.**
 `system.description` is what a *card* prints and is held to one sentence by
@@ -499,19 +499,10 @@ across twenty of them at a glance. It also printed the rules text **raw** —
 and a bare `<p>` never called it. `.card` is container-query driven, so the
 component that draws a 300px chat plate draws a 176px grid cell unchanged, and
 hover still peeks the full-size one, which is what makes the small one
-affordable. Equipment stays a tile: a longsword is not a card and there is no
-artwork to draw.
-
-**`levelPlates()` straightens the picture line across a grid.** `fit()` sizes
-each card alone and is right to — the plate gives up height first, so a card
-with a long rule keeps its prose readable by cropping its picture. That is what
-you want looking at one card and not what you want looking at eighteen, where
-the pictures ended at eight different heights across a row and read as broken
-rather than as adaptive. Each grid takes its *smallest* plate: smallest and not
-average, because every other value is one some card already proved it did not
-need, so shrinking can never cause an overflow and growing could. Run after
-`fit()`, never instead of it — `fit()` resets every plate to its maximum at the
-top of each pass, which is what stops this ratcheting down over repeated runs.
+affordable. Both sizes use the shared card's independent `fit()` pass; the
+builder does not normalize image plates or type across the grid, so its cards
+follow the same scaling rules as sheet peeks and chat. Equipment stays a tile:
+a longsword is not a card and there is no artwork to draw.
 
 **Changing class cascades, and names every document first.** "3 items will be
 removed" is a sentence nobody can consent to, which is why `cascadeOf` returns

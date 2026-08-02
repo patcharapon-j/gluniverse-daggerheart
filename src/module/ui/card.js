@@ -152,7 +152,7 @@ export const CARD = (opts) => {
 
    Call after fonts resolve — metrics measured against a fallback face are
    wrong by enough to cost a line. */
-const PLATE_MAX = 50, PLATE_MIN = 30, U_MIN = .76;
+const PLATE_MAX = 50, PLATE_MIN = 30, U_MAX = .94, U_MIN = .72;
 
 export function fit(scope = document){
   for(const card of scope.querySelectorAll('.card')){
@@ -160,9 +160,9 @@ export function fit(scope = document){
     if(!cnt) continue;
     const over = () => cnt.scrollHeight - cnt.clientHeight;
 
-    let plate = PLATE_MAX, u = 1;
+    let plate = PLATE_MAX, u = U_MAX;
     card.style.setProperty('--plate', PLATE_MAX + '%');
-    card.style.setProperty('--u', '1cqw');
+    card.style.setProperty('--u', U_MAX + 'cqw');
 
     const short = over();
     if(short > 0){

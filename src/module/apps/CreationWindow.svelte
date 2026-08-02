@@ -52,7 +52,7 @@
   import { cardOf, classKey, loadSigils, plain, type Sigils } from "../sheets/cards.ts";
   import { postCard } from "../sheets/post-card.ts";
   import { CARD, fit, rich } from "../ui/card.js";
-  import { levelPlates, setVals, sign, VALS, type ValRow } from "../ui/make.js";
+  import { setVals, sign, VALS, type ValRow } from "../ui/make.js";
   import { closePeeks, peeks } from "../ui/peek.js";
   import { dhDialog } from "./dialog.ts";
 
@@ -211,7 +211,9 @@
   /** The documents the current step can show a card for. */
   const peekable = $derived.by(() => {
     if (reviewing) return [...doc.items].filter((i: any) => i.type !== "feature");
-    if (at === "class") return [...classes, ...subclassesFor(chosenClass)];
+    // A class is a permanent character decision, not a printed card. Its row
+    // carries every rule needed to compare it, so it has no hover-card promise.
+    if (at === "class") return subclassesFor(chosenClass);
     if (at === "heritage") return [...ancestries, ...communities];
     if (at === "domains") return legalDeck;
     if (at === "equipment") return [...primaries, ...secondaries, ...armors];
@@ -260,8 +262,12 @@
     requestAnimationFrame(() => {
       if (winEl) {
         fit(winEl);
-        levelPlates(winEl);
         peeks(winEl);
+        // `fit()` measures wrapped prose. Repeat the measurement after the
+        // real card faces load if Foundry opened the window against fallbacks.
+        if (document.fonts?.status === "loading") {
+          void document.fonts.ready.then(() => winEl && fit(winEl));
+        }
       }
     });
   });
@@ -1049,31 +1055,50 @@
         <div class="fclass">
           {#each classes as c (c.id)}
             {@const ck = classKey(c.name)}
-            {@const dom = domainDef(c.system?.domains?.primary)}
+            {@const primary = c.system?.domains?.primary}
+            {@const secondary = c.system?.domains?.secondary}
+            {@const dom = domainDef(primary)}
+            {@const dom2 = domainDef(secondary)}
             <button
               type="button"
               class="fcls"
               class:on={chosenClass?.name === c.name}
               class:just={justId === c.id}
-              data-pk={c.id}
               onclick={() => pickClass(c)}
             >
-              <span class="fsig" style="--c:{dom.light}">
+              <span class="fsig" style="--c:{dom.light};--c2:{dom2.light}">
                 {#if ck && sigils[ck]}{@html sigils[ck]}{/if}
               </span>
               <span class="fmain">
-                <s
-                  >{[c.system?.domains?.primary, c.system?.domains?.secondary]
-                    .filter(Boolean)
-                    .map((d: string) => domainDef(d).label)
-                    .join(" · ")}</s
-                >
-                <b>{c.name}</b>
-                <span class="fnum">
-                  <i>Evasion <b>{c.system?.startingEvasion ?? 10}</b></i>
-                  <i>Hit Points <b>{c.system?.startingHitPoints ?? 6}</b></i>
+                <span class="fidentity">
+                  <span class="fdoms">
+                    {#each [primary, secondary].filter(Boolean) as d (d)}
+                      {@const def = domainDef(d)}
+                      <span class="fdom" style="--c:{def.light}">
+                        <i>{@html sigils[d] ?? ""}</i><s>{def.label}</s>
+                      </span>
+                    {/each}
+                  </span>
+                  <b>{c.name}</b>
+                  <span class="fnum">
+                    <i>Evasion <b>{c.system?.startingEvasion ?? 10}</b></i>
+                    <i>Hit Points <b>{c.system?.startingHitPoints ?? 6}</b></i>
+                  </span>
+                  <p>{plain(c.system?.flavor) || plain(c.system?.description)}</p>
                 </span>
-                <p>{plain(c.system?.flavor) || plain(c.system?.description)}</p>
+                <span class="fabilities">
+                  {#each c.system?.classFeatures ?? [] as f (f.name)}
+                    <span class="fability">
+                      <b>{f.name}</b><span>{@html rich(plain(f.description))}</span>
+                    </span>
+                  {/each}
+                  {#if c.system?.hopeFeature?.name}
+                    <span class="fability hope">
+                      <b><i>Hope</i>{c.system.hopeFeature.name}</b>
+                      <span>{@html rich(plain(c.system.hopeFeature.description))}</span>
+                    </span>
+                  {/if}
+                </span>
               </span>
             </button>
           {/each}

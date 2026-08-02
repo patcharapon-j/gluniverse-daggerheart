@@ -103,7 +103,7 @@ import { A, DMG, FOE, play } from '/design/plate.js';
 import { MARKS, DAMAGE } from '/src/module/ui/mark.js';
 import { GEMS } from '/src/module/ui/gem.js';
 import { CARD, fit } from '/src/module/ui/card.js';
-import { OPT, PLATE, TRAY, VALS, levelPlates } from '/src/module/ui/make.js';
+import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
    two are genuinely different things — nine slugs against nine documents. */
 import { CLASSES as CLASS_SLUGS, KINDS, byslug, icon, glyph, clazz } from '/src/module/ui/domains.js';
@@ -345,16 +345,16 @@ document.getElementById('forge').innerHTML = `
          box-shadow:inset 0 0 0 1px var(--frame-line)"></div>
   </div>`;
 
-/* The class row and the card grid, both of which need a sigil off disk, so
-   both are built asynchronously and the checks wait on this. The class row is
-   the one control on the page that is *taller than a paragraph*, which makes
-   it the honest subject for the button-height check below; the card grid is
-   the only place `levelPlates` can be observed doing anything. */
+/* The class row and the card grid both need sigils off disk, so both are built
+   asynchronously and the checks wait on this. */
 const forgeReady = (async () => {
   const box = document.getElementById('forge2');
   const mark = await clazz('guardian');
   const valor = byslug.valor;
-  const sigs = { grace: await icon('grace'), codex: await icon('codex') };
+  const sigs = {
+    valor: await icon('valor'), bone: await icon('bone'),
+    grace: await icon('grace'), codex: await icon('codex')
+  };
 
   const GRID = [
     { d: 'grace', name: 'Inspirational Words', lvl: 1, rc: 1, type: 'ABILITY',
@@ -367,15 +367,20 @@ const forgeReady = (async () => {
     <div class="forge" style="display:block">
       <div class="fclass">
         <button type="button" class="fcls on">
-          <span class="fsig" style="--c:${valor.light}">${mark}</span>
+          <span class="fsig" style="--c:${valor.light};--c2:${byslug.bone.light}">${mark}</span>
           <span class="fmain">
-            <s>Valor · Bone</s>
-            <b>Guardian</b>
-            <span class="fnum"><i>Evasion <b>9</b></i> <i>Hit Points <b>7</b></i></span>
-            <p>The title of guardian represents an array of martial professions, speaking more to
-            their moral compass and unshakeable fortitude than the means by which they fight.
-            Guardians are known for fighting with remarkable ferocity even against overwhelming
-            odds, defending their cohort above all else.</p>
+            <span class="fidentity">
+              <span class="fdoms">
+                ${['valor','bone'].map(d => `<span class="fdom" style="--c:${byslug[d].light}"><i>${sigs[d]}</i><s>${byslug[d].name}</s></span>`).join('')}
+              </span>
+              <b>Guardian</b>
+              <span class="fnum"><i>Evasion <b>9</b></i> <i>Hit Points <b>7</b></i></span>
+              <p>Unwavering protectors who put themselves between danger and everyone else.</p>
+            </span>
+            <span class="fabilities">
+              <span class="fability"><b>Unstoppable</b><span>Once per long rest, gain an Unstoppable die.</span></span>
+              <span class="fability hope"><b><i>Hope</i> Frontline Tank</b><span>Spend Hope to protect an ally in range.</span></span>
+            </span>
           </span>
         </button>
       </div>
@@ -387,7 +392,6 @@ const forgeReady = (async () => {
     </div>`;
 
   fit(box);
-  levelPlates(box);
 })();
 
 document.getElementById('lt').addEventListener('change', e =>
@@ -554,13 +558,10 @@ setTimeout(async () => { try {
   check('the class row draws its class mark', !!sig,
         sig ? 'mark present' : 'the plate is empty');
 
-  /* `fit()` sizes each card alone, which is right for one card and ragged for
-     a grid; `levelPlates` takes the smallest. Equal plates is the whole
-     observable effect, so it is the test. */
-  const plates = new Set([...document.querySelectorAll('#forge2 .fcards .card')]
-    .map(c => c.style.getPropertyValue('--plate')));
-  check('a card grid shares one art-plate height', plates.size === 1,
-        [...plates].join(' / ') || 'no cards');
+  const fitted = [...document.querySelectorAll('#forge2 .fcards .card')];
+  check('builder cards use the shared independent fit scale',
+        fitted.length === 2 && fitted.every(c => Number(c.dataset.u) <= .94),
+        fitted.map(c => `${c.dataset.u}/${c.dataset.plate}`).join(' · ') || 'no cards');
 
   /* A chosen card wears the brackets *outside* itself — six gradients, not
      four, because a card has no chamfered corner to skip. */
