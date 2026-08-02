@@ -81,11 +81,39 @@
    The scrim is two stops, not one: a short hard fade under the text so
    the name always has ink beneath it, and a long soft one above so the
    image does not appear to end. */
-.dh .dio{position:relative;flex:none;height:var(--dio,180px);overflow:hidden;background:#20242b}
+.dh .dio{position:relative;flex:none;height:var(--dio,180px);overflow:hidden;background:#20242b;
+  /* the frame the framing is measured in — see `.dio .img` below */
+  container-type:size}
 /* The framing lives in three variables so it can be set from one inline
    style and read the same way in both places the picture is shown.
    Percentages, because the frame is the thing that changes size — a pixel
    offset that was right at 288px is wrong the moment the window is dragged.
+
+   ── the pan is a background-position, and it has to be ────────────
+   It used to translate this layer, and that framed the *crop* rather than
+   the picture. `cover` paints the image into this box and throws away
+   everything that does not fit; moving the box takes the surviving third
+   with it and pulls the panel's own colour in behind. So a portrait was
+   framed against a band whose top and bottom the gesture could never
+   reach — the one thing the control exists to do.
+
+   Moving the background instead slides the whole image under a window that
+   stays put, which is what a crop tool does. Nothing is lost to begin with,
+   so there is nothing the pan cannot reach, and pushing the subject off an
+   edge still shows the panel — the freeform behaviour, arrived at honestly.
+
+   The offsets are numbers rather than lengths because a percentage means
+   something else here: `background-position` measures a percentage against
+   the *slack* between image and box, which is zero along whichever axis
+   `cover` fitted, so a percentage would pan one way and not the other. One
+   `cqw`/`cqh` is one percent of the frame, which is the unit the gesture
+   was always written in. Dividing by the zoom keeps a stored offset worth
+   the same number of screen pixels at any scale, which is what the drag
+   already assumes — it measures against the frame, not against this layer.
+
+   `no-repeat` is load-bearing now. It never mattered while the image
+   covered the box exactly; the moment it can be panned off, the alternative
+   to the panel's colour is a second copy of the picture.
 
    The Ken Burns is now *only* on hover. It used to sit at 1.02 at rest and
    go to 1.07, which was fine while nobody could frame anything and wrong
@@ -93,14 +121,17 @@
    tighter than you set it, on the one surface where you were looking
    straight at it. Rest is exactly the framing; the drift is a flourish
    added on top of it. */
-.dh .dio .img{position:absolute;inset:0;background:var(--art) center 22%/cover;
-  transform:translate(var(--fx,0%),var(--fy,0%)) scale(var(--fz,1));
+.dh .dio .img{position:absolute;inset:0;
+  background:var(--art) no-repeat
+    calc(50% + var(--fdx,0) * 1cqw / var(--fz,1))
+    calc(22% + var(--fdy,0) * 1cqh / var(--fz,1)) / cover;
+  transform:scale(var(--fz,1));
   transition:transform 6s cubic-bezier(.2,.6,.3,1)}
-.dh .dio:hover .img{transform:translate(var(--fx,0%),var(--fy,0%)) scale(calc(var(--fz,1)*1.05))}
+.dh .dio:hover .img{transform:scale(calc(var(--fz,1)*1.05))}
 /* …and not at all while you are framing. A six-second drift under the
    hand that is trying to place a face is the interface arguing with you. */
 .dh .dio.framing .img,.dh .dio.framing:hover .img{
-  transition:none;transform:translate(var(--fx,0%),var(--fy,0%)) scale(var(--fz,1))}
+  transition:none;transform:scale(var(--fz,1))}
 .dh .dio .scrim{position:absolute;inset:0;
   background:linear-gradient(180deg,rgba(12,14,18,.55) 0%,rgba(12,14,18,0) 26%),
              linear-gradient(0deg,rgba(10,12,15,.94) 0%,rgba(10,12,15,.74) 26%,

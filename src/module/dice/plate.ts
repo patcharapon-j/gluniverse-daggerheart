@@ -193,11 +193,20 @@ const META = (r: { kind?: string; dc: number | null }): string =>
 
    The framing travels with it. It is three numbers the player set while
    looking at this exact panel's proportions, and re-deriving anything from
-   them here would be a second opinion about a crop that already has one. */
+   them here would be a second opinion about a crop that already has one.
+
+   The offsets are written unitless, because `plate.css` spends them as
+   `cqw`/`cqh` — one percent of the panel — rather than as a translation.
+   They are `--fdx`/`--fdy` and not the old `--fx`/`--fy` for the sake of
+   the log: a message posted before this carries `--fx:12%` inside its
+   stored content forever, and a percentage where a number is expected does
+   not merely mis-pan, it invalidates the whole `background` and takes the
+   portrait with it. Under a name nothing reads, an old card draws exactly
+   as it did minus a pan that never worked. */
 const POR = (r: { img?: string; frame?: { x: number; y: number; scale: number } }): string => {
   if (!r.img) return "";
   const f = r.frame;
-  const vars = f ? `;--fx:${f.x}%;--fy:${f.y}%;--fz:${f.scale}` : "";
+  const vars = f ? `;--fdx:${f.x};--fdy:${f.y};--fz:${f.scale}` : "";
   return `<span class="por" style="--pic:url('${esc(r.img)}')${vars}"><i><u></u><b></b></i></span>`;
 };
 

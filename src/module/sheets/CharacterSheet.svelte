@@ -270,8 +270,11 @@
      editing it, which was the best available answer when the alternative
      was showing you nothing — and is the wrong one now that both surfaces
      can be on screen at once, each wearing its own crop. */
+  /* Unitless, because the offsets are spent as `cqw`/`cqh` in `sheet.css`
+     — one percent of the frame, which is the unit the drag below writes —
+     rather than as a translation of the picture layer. See `.dio .img`. */
   const frameVars = $derived(
-    (({ x, y, scale }) => `--fx:${x}%;--fy:${y}%;--fz:${scale}`)(stored("sheet")),
+    (({ x, y, scale }) => `--fdx:${x};--fdy:${y};--fz:${scale}`)(stored("sheet")),
   );
   /** The frame the controls are addressing — the readout, Reset, the drag. */
   const live = $derived(stored(target));
@@ -395,8 +398,8 @@
       // Written to the DOM directly during the drag and to the document only
       // at the end: a document update per pointermove is a re-render per
       // pointermove, and the sheet would spend the gesture rebuilding itself.
-      img?.style.setProperty("--fx", `${f.x}%`);
-      img?.style.setProperty("--fy", `${f.y}%`);
+      img?.style.setProperty("--fdx", `${f.x}`);
+      img?.style.setProperty("--fdy", `${f.y}`);
     };
     const up = () => {
       box.removeEventListener("pointermove", move);

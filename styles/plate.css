@@ -765,6 +765,8 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
    instead of both going the grey a plain screen gives you. */
 .dh .a1 .por{position:absolute;left:0;top:0;bottom:0;width:70%;pointer-events:none;
   isolation:isolate;background:var(--pA);
+  /* the frame the framing is measured in — see `.a1 .por u` below */
+  container-type:size;
   -webkit-mask-image:linear-gradient(90deg,#000 0 34%,rgba(0,0,0,.55) 68%,transparent 96%),
     linear-gradient(#000 0 62%,transparent 100%);
   mask-image:linear-gradient(90deg,#000 0 34%,rgba(0,0,0,.55) 68%,transparent 96%),
@@ -780,9 +782,21 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
    shape from the diorama and always was — a crop that centres a face in a
    180px band puts a chin here — so it gets its own framing rather than
    inheriting one that was judged against another box. Defaults hold the old
-   fixed 50%/10% behaviour for anything that has never been framed. */
-.dh .a1 .por u{position:absolute;inset:0;background:var(--pic) 50% 10%/cover;
-  transform:translate(var(--fx,0%),var(--fy,0%)) scale(var(--fz,1));
+   fixed 50%/10% behaviour for anything that has never been framed.
+
+   The pan is a `background-position` and not a translate, for the reason
+   given at length on `.dio .img`: `cover` throws away everything outside
+   this panel, so moving the layer framed the crop rather than the picture
+   and half of every portrait was unreachable. Moving the background slides
+   the whole image under a window that stays put. `--fdx`/`--fdy` are
+   numbers of percent-of-panel, spent as `cqw`/`cqh` — this panel is the
+   container — because a `background-position` percentage measures against
+   the slack `cover` leaves, which is zero along the axis it fitted. */
+.dh .a1 .por u{position:absolute;inset:0;
+  background:var(--pic) no-repeat
+    calc(50% + var(--fdx,0) * 1cqw / var(--fz,1))
+    calc(10% + var(--fdy,0) * 1cqh / var(--fz,1)) / cover;
+  transform:scale(var(--fz,1));
   filter:grayscale(1) contrast(1.32) brightness(var(--pk))}
 .dh .a1 .por b{position:absolute;inset:0;background:var(--pT);mix-blend-mode:multiply}
 .dh .a1.hope .por{--pA:#a8831f;--pT:#ffdf9a;--pk:.78}

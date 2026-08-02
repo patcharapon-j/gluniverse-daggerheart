@@ -659,6 +659,30 @@ setTimeout(async () => { try {
   const widths = new Set(cards.map(c => Math.round(c.getBoundingClientRect().width)));
   check('every plate is 300px', widths.size === 1 && widths.has(300), [...widths].join(', ') + 'px');
 
+  /* The framing, which is one `calc()` away from drawing no portrait at all.
+     The pan is spent in `cqw`/`cqh` against the panel's own container, and
+     both halves of that fail silently in the other direction: lose the
+     `container-type` and a `cqh` falls back to the *viewport*, so a portrait
+     pans off the card on a tall screen; hand it the old percentage instead of
+     a number and the calc is invalid at computed-value time, which does not
+     mis-place the picture — it takes `background` down to nothing, and a card
+     with no portrait reads as an actor who never had one. So: one percent of
+     the panel, measured, and the image still there afterwards. */
+  const por = document.querySelector('#plates .por');
+  const pu = por?.querySelector('u');
+  const panBase = pu && getComputedStyle(pu).backgroundPosition;
+  por?.style.setProperty('--fdx', '-25');
+  const pan = pu ? getComputedStyle(pu).backgroundPosition : '';
+  const art = pu && getComputedStyle(pu).backgroundImage;
+  por?.style.removeProperty('--fdx');
+  // `calc(50% - 52.5px)` — the sign is a separate token from the number.
+  const m = pan.match(/calc\(\s*50%\s*([+-])\s*([\d.]+)px\s*\)/);
+  const px = m ? (m[1] === '-' ? -1 : 1) * parseFloat(m[2]) : NaN;
+  const want = por ? -0.25 * por.getBoundingClientRect().width : NaN;
+  check('a framed portrait pans by a percent of its own panel',
+        Math.abs(px - want) < 0.5 && art !== 'none',
+        `${panBase} → ${pan} (want ${want.toFixed(1)}px)`);
+
   /* The envelope. Both of these are things a stylesheet written against
      somebody else's markup can lose without looking broken — a header that
      drifts below its object still reads as a caption, and a 28px trash on a
