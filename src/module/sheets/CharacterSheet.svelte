@@ -216,8 +216,17 @@
     };
   });
 
+  /* The sub-heading under "Heritage", and the transformation belongs in it —
+     "reborne human vampire" is how a player says who they are, in one line, the
+     same way "wildborne faun" is. */
   const heritage = $derived(
-    [snap.of("ancestry")[0]?.name, snap.of("community")[0]?.name].filter(Boolean).join(" · ") ||
+    [
+      snap.of("ancestry")[0]?.name,
+      snap.of("community")[0]?.name,
+      snap.of("transformation")[0]?.name,
+    ]
+      .filter(Boolean)
+      .join(" · ") ||
       sys.biography?.heritage ||
       "—",
   );
@@ -460,7 +469,16 @@
       .map((i) => ({ pk: i.id, card: opt(i) }))
       .filter((r): r is Row => r.card !== null);
 
-  const heritageCards = $derived(rows([...snap.of("ancestry"), ...snap.of("community")]));
+  /* Three kinds on one row, and that is the book's own arrangement rather
+     than a saving of space: a transformation is added "as if it were part of
+     your character's heritage", does not count against the loadout limit, and
+     is chosen the way the other two are. A fourth panel for a card that is
+     present on maybe one character in five would be a permanently empty
+     heading; the row simply has three spines instead of two when there is one.
+     Last, because it is the one you acquire mid-campaign. */
+  const heritageCards = $derived(
+    rows([...snap.of("ancestry"), ...snap.of("community"), ...snap.of("transformation")]),
+  );
   const loadoutCards = $derived(rows(loadout));
   const vaultCards = $derived(rows(vault));
 
@@ -1097,6 +1115,8 @@
       experiences: o.experiences,
       extra: o.extra,
       reaction: o.reaction,
+      hopeDie: o.hope,
+      fearDie: o.fear,
     });
   }
 
@@ -1119,6 +1139,8 @@
       advantage: o.advantage,
       experiences: o.experiences,
       extra: o.extra,
+      hopeDie: o.hope,
+      fearDie: o.fear,
     });
   }
 

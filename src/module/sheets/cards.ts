@@ -47,6 +47,7 @@ import { clazz, glyph, icon } from "../ui/domains.js";
 export const GLYPHS = [
   "ancestry",
   "community",
+  "transformation",
   "primary",
   "secondary",
   "armor",
@@ -439,6 +440,28 @@ export function cardOf(
         foot: "Heritage",
         flavour: plain(s.description) || undefined,
         feats: feats([s.feature]),
+      };
+
+    /* A transformation draws as heritage because the book says it *is* one:
+       "add the card to your loadout as if it were part of your character's
+       heritage". So it takes the same graphite, the same `foot`, and its
+       features run flat — the card does not label which of the two is the
+       benefit and which is the cost, and neither does this.
+
+       The questions are not on the card. They are six prompts for building the
+       character, read once and answered in prose, and printing them here would
+       put a page of interview questions under two rules on a 300px plate. They
+       live in `system.questions` for whatever wants to offer them. */
+    case "transformation":
+      return {
+        ...base,
+        d: KINDS.transformation,
+        sig: sig["@transformation"] ?? "", sigKey: "@transformation",
+        type: "TRANSFORMATION",
+        name: it.name,
+        foot: "Heritage",
+        flavour: plain(s.description) || undefined,
+        feats: feats(s.features ?? []),
       };
 
     /* Gear. The numeral cell carries the tier, prefixed with a T — it is the

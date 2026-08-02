@@ -326,6 +326,107 @@
 .dh .forge .fopt .fwhy{font:700 7.5px/1.3 var(--f-mono);letter-spacing:.12em;
   text-transform:uppercase;color:var(--fear-tx)}
 
+/* ══ the equipment table ════════════════════════════════════════════
+   The one step whose options are not objects but *rows of a table*, and the
+   only one where that is the book's own shape rather than a compromise.
+
+   Every other step in this window offers something you can hold a picture of
+   — a class, a card, an ancestry — and the grid is right for those because
+   the thing you are comparing is the whole object. Equipment is not that. A
+   longsword is one line of chapter 2, and what you are comparing across
+   thirty-five of them is five columns of the *same five facts*: trait, range,
+   damage, burden, feature. A grid of tiles states each fact in a different
+   place on every tile, so comparing two weapons' damage means finding the
+   damage twice; a column means reading down. That is what a table is for, and
+   it is why the printed book uses one.
+
+   It is also the only list here that runs long enough for it to matter. Nine
+   classes fit on a page and eighteen ancestries are pictures. `unrestricted`
+   turns this step into two hundred and four primaries across four tiers, and
+   two hundred and four tiles is a scroll rather than a choice.
+
+   **The groups are the book's own tables.** Chapter 2 prints primaries as two
+   tables per tier — Physical and Magic — and that split is a rule and not a
+   caption: a magic weapon rolls with your Spellcast trait, which you may not
+   have. Secondaries and armour are one table each and get no heading, because
+   inventing one would claim a division the book does not make. The tier joins
+   the caption only when more than one is on screen, which is only ever the
+   GM's switch: at level 1 there is one tier and saying so six times is noise.
+
+   The row keeps `data-pk`, so **hovering still opens the printed card**. That
+   is the whole reason the step could give up the tile without giving anything
+   up: the tile was a text summary of a card that already exists in the peek
+   layer, and the table is a better summary of the same card.
+
+   `subgrid` is what makes the columns line up across groups. The alternative
+   is one grid per group, and then Physical and Magic each solve their own
+   column widths — two tables of the same five facts, aligned differently,
+   which is precisely the thing a table exists to prevent.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .forge .ftbl{display:grid;align-content:start;margin:0 0 4px;
+  grid-template-columns:minmax(0,1.5fr) 62px 66px 62px 68px minmax(0,2.1fr)}
+/* Armour states four facts rather than six, and the two numbers are narrow,
+   so the feature takes what the trait and range columns give up.
+
+   `.farm` and not `.arm`, which is `swap.css`'s armed vault card and loads into
+   the same `.dh` root where scoping does nothing. The qualifier would have kept
+   the two apart on their own — neither selector can reach the other's element —
+   but the `f`-prefix in this file exists so that stops being something anybody
+   has to check. */
+.dh .forge .ftbl.farm{grid-template-columns:minmax(0,1.4fr) 76px 52px minmax(0,2.6fr)}
+
+.dh .forge .fthd,.dh .forge .ftr{grid-column:1/-1;display:grid;
+  grid-template-columns:subgrid;align-items:start;gap:0 12px}
+
+/* The head is a caption for the columns and not a row of the table, so it
+   carries the rule rather than sitting on one. */
+.dh .forge .fthd{padding:0 10px 6px;border-bottom:1px solid var(--line-2)}
+.dh .forge .fthd s{text-decoration:none;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-4)}
+
+/* One of the book's tables. A bar down the left rather than a box around it:
+   the caption belongs *to* the rows beneath it, and a box would make it a
+   fourth object between two lists. */
+.dh .forge .fgrp{grid-column:1/-1;margin:15px 0 0;padding:6px 10px 5px;
+  background:var(--sunk);box-shadow:inset 2px 0 0 var(--ink-4);
+  font:700 8px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3)}
+
+.dh .forge .ftr{position:relative;width:100%;padding:7px 10px 8px;border:0;
+  border-top:1px solid var(--line);cursor:pointer;text-align:left;
+  background:transparent;transition:background .12s}
+/* No lift on hover, which every other option in this window has. A row is
+   read against its neighbours and a row that rises breaks the alignment that
+   is the only reason it is a row. */
+.dh .forge .ftr:hover{background:var(--sunk)}
+.dh .forge .ftr > b{font:600 12px/1.35 var(--f-display);letter-spacing:-.01em;
+  color:var(--ink)}
+.dh .forge .ftr > i{font-style:normal;font:400 10px/1.45 var(--f-ui);color:var(--ink-3)}
+/* The numbers — damage, thresholds, Armor Score. Tabular, so a column of them
+   is a column and not a ragged edge. */
+.dh .forge .ftr > u{text-decoration:none;font:700 11.5px/1.45 var(--f-display);
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.dh .forge .ftr > p{margin:0;font:400 10px/1.45 var(--f-ui);color:var(--ink-2)}
+.dh .forge .ftr > p > b{font-weight:700;color:var(--ink-3)}
+.dh .forge .ftr > p.none{color:var(--ink-4)}
+
+/* Chosen. The brackets an option wears are a corner treatment and a row has
+   no corners worth speaking of, so this is the gold edge instead — the same
+   claim at the shape the object actually has. */
+.dh .forge .ftr.on{background:var(--sunk-2)}
+.dh .forge .ftr.on > b{color:var(--hope-tx)}
+.dh .forge .ftr.on::after{content:"";position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 0 1.5px var(--hope)}
+.dh .forge .ftr.on.just::after{animation:fg-lock .3s cubic-bezier(.2,.9,.25,1) both}
+
+.dh .forge .ftr[disabled]{cursor:not-allowed;opacity:.4;filter:saturate(.4)}
+.dh .forge .ftr[disabled]:hover{background:transparent}
+/* Dead, not hidden, exactly as the grid does it — the reason rides in the
+   feature column, which is the one cell with room for a sentence. */
+.dh .forge .ftr .fwhy{display:block;margin-top:3px;font:700 7.5px/1.3 var(--f-mono);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--fear-tx)}
+
 /* ══ the class row ══════════════════════════════════════════════════
    Nine classes, one per row, full width — and the shape is an argument
    rather than a size.
@@ -340,33 +441,77 @@
 
    So the row splits by *kind*. On the left, the class mark on its own tinted
    plate — the only picture a class has anywhere in this system, since nothing
-   published a painting for a page in a book. On the right, identity and rules:
-   domain sigils, name, numbers and flavour lead; class and Hope abilities sit
-   beside them in compact rule plates. Nothing here needs a hover card.
+   published a painting for a page in a book. On the right, identity and rules.
 
    The plate is tinted by the class's domain pair and the mark is drawn in the
    primary hue. Not a colour of its own — a saturated hue means domain
    everywhere else in this system, so both hues remain factual rather than
    decorative.
 
-   Flavour is the book's own opening paragraph, and it is the one place in
-   the system that prints one. `system.description` is held to a single
-   sentence and policed there by `tools/check-cards.mjs`, because a *card*
-   with five sentences of lore above its stats is a card that has forgotten
-   what it is for. This is not a card. It is the page you choose from, you
-   read it once, and the paragraph is the only thing on screen that answers
-   "what is it like to play one".
+   No flavour. The row carried the book's opening paragraph for a while and it
+   was the wrong thing to give the widest column on the page: this is a choice
+   between nine sets of *rules*, and a paragraph of lore sitting above two
+   numbers and four abilities is the row answering a question nobody is asking
+   at this moment. Every word in the row is now something the class does.
+
+   **Identity is a header, not a column, and that is what a long rule taught
+   us.** Identity and rules were two side-by-side columns of one row, which is
+   the shape you draw when the two halves are about the same size. They are
+   not, and they are not by an order of magnitude: identity is five short
+   facts and never grows, while a class feature runs from three lines to
+   fifteen — the Druid's Beastform is a paragraph. So the row was as tall as
+   Beastform, and beside it sat a 226px column holding a name and two numbers
+   above six hundred pixels of nothing. The rules were reading at 10.35px in a
+   350px column while the widest thing on screen stood empty.
+
+   Identity is one line across the top now — name, domains, and the two
+   numbers pushed to the right so they stand in the same place on all nine
+   rows, which is what makes them comparable — with the rules taking the full
+   width underneath. The same Beastform is half as tall at twice the measure,
+   and nothing is beside it to be empty.
+
+   **The rules are a multi-column block rather than a grid, because they
+   balance.** A two-track grid puts one plate per cell and stretches the short
+   one to the tall one's height: Make a Scene, four lines, drawn as a box the
+   height of Rally's ten. Worse when a class has three — the third wrapped to
+   a second grid row and left a hole the size of a plate. `columns` fills to
+   an even height and never stretches anything, so a class with one long rule
+   and two short ones reads as one column and two rather than as a diagram
+   with a corner missing. `break-inside:avoid` is what keeps a plate whole.
+
+   **`--c` belongs on the row.** It was set inline on the mark plate alone,
+   and every other rule reaching for it — the rule plates' tint and their
+   domain-hued left bar — was resolving `color-mix(in srgb,var(--c) 5%,…)`
+   against nothing. An invalid `color-mix` invalidates the whole declaration,
+   so those plates had no tint, no bar and *no border either*, since the
+   border rode in the same `box-shadow`. Class features were bare paragraphs
+   floating beside Hope abilities that drew correctly — the Hope variant
+   states `--hope`, which exists. It read as a deliberate contrast rather than
+   as two failed declarations, which is exactly how it survived.
    ══════════════════════════════════════════════════════════════════ */
 
 .dh .forge .fclass{display:grid;gap:10px;align-content:start;grid-template-columns:1fr}
 
-.dh .forge .fcls{position:relative;display:flex;align-items:stretch;gap:0;width:100%;
-  padding:0;border:0;cursor:pointer;text-align:left;overflow:hidden;
-  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+/* The panel, and the pressable row inside it. Two elements rather than one
+   because the chosen class **opens downward into its own subclass picker**,
+   and a subclass card is a button: a button inside a button is not markup a
+   browser will keep. So the frame, the chamfer and the chosen state belong to
+   `.fcls`, which is a container, and the press belongs to `.fclsr`.
+
+   The lift is on the panel and only while it is closed. A panel you are
+   reaching *into* must not move under the pointer — same rule as the rest
+   dialog's deck of squares, which swaps its rule in over the name rather than
+   growing, and for the same reason. */
+.dh .forge .fcls{position:relative;display:flex;flex-direction:column;align-items:stretch;
+  width:100%;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
   transition:background .14s,box-shadow .14s,transform .14s}
-.dh .forge .fcls:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
+.dh .forge .fcls:not(.on):hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
   transform:translateY(-1px)}
+
+.dh .forge .fclsr{position:relative;display:flex;align-items:stretch;gap:0;width:100%;
+  min-height:118px;padding:0;border:0;background:none;box-shadow:none;color:inherit;
+  cursor:pointer;text-align:left;overflow:hidden}
 
 /* The mark's plate. Fixed width rather than a fraction: it holds one glyph
    at one size, and a plate that grew with the window would make the mark the
@@ -391,14 +536,14 @@
 .dh .forge .fcls .fsig::after{content:"";position:absolute;top:0;bottom:0;right:0;width:1px;
   background:linear-gradient(180deg,transparent,var(--seam) 22%,var(--seam) 78%,transparent)}
 
-.dh .forge .fcls .fmain{flex:1 1 auto;min-width:0;display:grid;
-  grid-template-columns:minmax(190px,.78fr) minmax(300px,1.22fr);gap:18px;
-  padding:14px 17px 16px}
-.dh .forge .fcls .fidentity{min-width:0;display:flex;flex-direction:column;gap:6px}
-.dh .forge .fcls .fidentity > b{font:600 20px/1.08 var(--f-display);letter-spacing:-.025em;
+.dh .forge .fcls .fmain{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+
+/* The header strip. One line, wrapping only when it has to, with a hairline
+   under it — the same division the mark plate's gold seam makes vertically. */
+.dh .forge .fcls .fidentity{min-width:0;display:flex;align-items:center;flex-wrap:wrap;
+  gap:6px 13px;padding:10px 16px 9px;box-shadow:inset 0 -1px 0 var(--line)}
+.dh .forge .fcls .fidentity > b{font:600 19px/1.05 var(--f-display);letter-spacing:-.025em;
   color:var(--ink)}
-.dh .forge .fcls .fidentity p{margin:1px 0 0;font:400 11.25px/1.52 var(--f-ui);color:var(--ink-2);
-  max-width:74ch}
 .dh .forge .fcls .fdoms{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .dh .forge .fcls .fdom{display:inline-flex;align-items:center;gap:5px;padding:3px 7px 3px 4px;
   color:var(--c);background:color-mix(in srgb,var(--c) 11%,var(--paper));
@@ -408,16 +553,19 @@
 .dh .forge .fcls .fdom > i svg{width:100%;height:100%;display:block}
 .dh .forge .fcls .fdom > s{text-decoration:none;font:700 7.5px/1 var(--f-mono);
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
-.dh .forge .fcls .fnum{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:1px}
+/* Pushed to the far right, so Evasion and Hit Points stand in the same place
+   on all nine rows. Two numbers you compare down a column, not across one. */
+.dh .forge .fcls .fnum{display:flex;flex-wrap:wrap;gap:4px 16px;margin-left:auto}
 .dh .forge .fcls .fnum i{display:inline-flex;align-items:baseline;gap:5px;font-style:normal;
   font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
   color:var(--ink-4)}
 .dh .forge .fcls .fnum i b{font:700 13px/1 var(--f-display);letter-spacing:-.02em;
   color:var(--ink-2);font-variant-numeric:tabular-nums}
 
-.dh .forge .fcls .fabilities{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:7px;align-content:start}
-.dh .forge .fcls .fability{position:relative;display:block;min-width:0;padding:9px 10px 10px;
+.dh .forge .fcls .fabilities{min-width:0;flex:1 1 auto;padding:11px 16px 4px;
+  columns:265px 2;column-gap:9px}
+.dh .forge .fcls .fability{position:relative;display:block;min-width:0;
+  break-inside:avoid;margin:0 0 7px;padding:9px 11px 10px;
   background:color-mix(in srgb,var(--c) 5%,var(--paper));
   box-shadow:inset 2px 0 0 var(--c),inset 0 0 0 1px var(--line)}
 .dh .forge .fcls .fability > b{display:flex;align-items:center;gap:6px;margin:0 0 4px;
@@ -432,6 +580,27 @@
 .dh .forge .fcls .fability.hope{background:color-mix(in srgb,var(--hope) 7%,var(--paper));
   box-shadow:inset 2px 0 0 var(--hope),inset 0 0 0 1px var(--line)}
 
+/* ── the subclass drawer ────────────────────────────────────────────
+   The chosen class opens downward and its two subclasses are *inside* it.
+   They were a grid of their own below the list, under a heading naming the
+   class it belonged to — which is a caption doing a job that adjacency does
+   better, and it put the answer to "which class is this for" three inches
+   and one heading away from the class. Nine rows collapsed to one open one
+   is also the shape of the decision: you have chosen, and this is what that
+   choice now asks.
+
+   A hairline and a hue-tinted ground, so the drawer reads as part of the
+   panel rather than as a second panel that happens to be touching. The gold
+   brackets are on `.fcls`, so they wrap the panel *and* the drawer — one
+   object, extended, which is exactly the claim.
+   ══════════════════════════════════════════════════════════════════ */
+.dh .forge .fsub{padding:12px 16px 15px;box-shadow:inset 0 1px 0 var(--line);
+  background:color-mix(in srgb,var(--c) 4%,var(--sunk-2))}
+.dh .forge .fsub > s{display:block;text-decoration:none;margin:0 0 10px;
+  font:700 8px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-4)}
+.dh .forge .fsub > s em{font-style:normal;color:var(--hope-tx)}
+
 .dh .forge .fcls.on{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--hope)}
 .dh .forge .fcls.on .fidentity > b{color:var(--ink)}
 .dh .forge .fcls.on .fdom{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 48%,var(--line))}
@@ -445,8 +614,9 @@
 
 @container (max-width:620px){
   .dh .forge .fcls .fsig{width:104px}
-  .dh .forge .fcls .fmain{grid-template-columns:1fr}
-  .dh .forge .fcls .fabilities{grid-template-columns:1fr}
+  /* `columns` already drops to one track under ~540px of content box; this
+     is the narrow case where two would technically fit and should not. */
+  .dh .forge .fcls .fabilities{columns:1}
 }
 
 /* ══ a real card, chosen ════════════════════════════════════════════
@@ -470,16 +640,31 @@
 
    The grid's floor is 176px rather than the card's natural size: two of
    these steps offer twenty-odd options and a window at its default width
-   should show more than two of them at once. Hover still peeks the full-size
-   card. Both sizes keep the shared card's own independent art/type fit; the
-   builder does not impose a second grid-wide scale on either one.
+   should show more than two of them at once. The grid card keeps the shared
+   card's own independent art/type fit; the builder does not impose a second
+   grid-wide scale on it.
+
+   Hover peeks nothing here — see the peek block below.
    ══════════════════════════════════════════════════════════════════ */
 
 .dh .forge .fcards{display:grid;gap:14px;align-content:start;
   grid-template-columns:repeat(auto-fill,minmax(min(176px,100%),1fr))}
-/* Wider tracks where the deck is small and the text is long — the two
-   subclasses of a class, which are two options and a full rules paragraph. */
-.dh .forge .fcards.few{grid-template-columns:repeat(auto-fill,minmax(min(216px,100%),1fr))}
+/* In the subclass drawer the *card* is capped rather than the track. A grid of
+   `1fr` tracks stretches its cards to fill the row, which is right for a deck
+   you are choosing from — twenty domain cards should use the width — and wrong
+   for two cards inside a panel: at one track each card became the width of the
+   panel, a 410px playing card in a 470px window.
+
+   The cap is on `.fcrd` and not on the track, because `auto-fill` counts its
+   tracks off whichever sizing function is a definite length: a
+   `minmax(176px,216px)` track fits one column in 410px where a fractional one
+   fits two, and the same arithmetic is what retired `.few` — a 216px minimum
+   put both subclasses in one column inside a panel that had room for two. Cap
+   the card, keep the track fluid, and the drawer gains columns as it widens
+   instead of growing its cards. */
+.dh .forge .fsub .fcards{grid-template-columns:repeat(auto-fill,minmax(min(192px,100%),1fr));
+  gap:12px}
+.dh .forge .fsub .fcrd{max-width:216px}
 
 .dh .forge .fcrd{position:relative;display:block;width:100%;padding:0;border:0;
   background:none;cursor:pointer;
@@ -512,6 +697,30 @@
   color:var(--fear-tx);background:color-mix(in srgb,var(--paper) 86%,transparent);
   box-shadow:inset 0 1px 0 var(--line)}
 
+/* ══ the peek, where it survives at all ═════════════════════════════
+   Four steps used to peek and none of them do now. Subclass, ancestry,
+   community and the domain deck all *draw the printed card* in the grid, so
+   hovering one opened a second copy of the picture already under the cursor
+   — the sheet's gesture kept out of habit rather than because it answered
+   anything. The class step gave this up when the subclass drawer landed; the
+   other three follow it for the same reason.
+
+   A setting was tried and retired. The case for one was *size* — a 176px
+   card is a card you can identify and not always one you can read — but a
+   peek is a way of asking *what is this*, and on these four steps the grid
+   has already answered. A bigger copy of a picture you are looking at is a
+   reading control wearing a discovery gesture, and the right answer to a
+   card too small to read is a wider window.
+
+   The equipment step is untouched by any of it and keeps its peek: a
+   longsword is not a card, its grid row is a text summary, and the peek is
+   the only place the card exists at all.
+
+   Only the width is stated. `.card` is container-query driven and `fit()`
+   measures whatever box it is given, so every proportion, the type ramp and
+   the art plate follow the number on their own. */
+.dh .forge .peeklayer .pkc{width:393px}
+
 /* ══ the trait spread ═══════════════════════════════════════════════
    The one bespoke control in this window, and the one step where the
    constraint *is* the point: +2, +1, +1, 0, 0, −1 is a fixed budget rather
@@ -542,7 +751,24 @@
   font:700 8px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-4)}
 
-.dh .forge .fchip{flex:none;width:42px;height:38px;display:grid;place-items:center;
+/* `place-content` as well as `place-items`, and it is the button reset above
+   reaching one step further than it looks like it can. A chip is a grid with
+   no declared columns, so its single implicit track is `auto` — and an `auto`
+   track only stretches to fill the container while `justify-content` is
+   `normal`. The reset sets it to `flex-start` for the column controls, and
+   `place-items` says nothing whatever about content, so the track collapsed to
+   the width of the numeral, sat against the left edge of the padding box, and
+   `justify-items:center` then centred the numeral inside a track it exactly
+   filled. Measured: 8px of clearance on the left against 14.3 on the right, in
+   a 42px chip — about a quarter of the numeral's own width off centre, which
+   is small enough to read as a rendering artefact and large enough to see. It
+   is the one control in this window whose entire job is to be a number you aim
+   at, and Foundry's `padding:0 8px` was hiding most of the error.
+
+   The study page could show this one, unusually, because it stands in the
+   `elements` layer itself — see the head of `make.html`. */
+.dh .forge .fchip{flex:none;width:42px;height:38px;display:grid;
+  place-items:center;place-content:center;text-align:center;
   border:0;cursor:grab;font:700 17px/1 var(--f-display);letter-spacing:-.02em;
   font-variant-numeric:tabular-nums;color:var(--ink);
   background:var(--paper);box-shadow:inset 0 0 0 1px var(--line-2);

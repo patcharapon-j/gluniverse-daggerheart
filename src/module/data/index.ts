@@ -24,6 +24,7 @@ import {
   FeatureData,
   LootData,
   SubclassData,
+  TransformationData,
   WeaponData,
 } from "./items.ts";
 
@@ -38,6 +39,7 @@ export function registerDataModels(): void {
   Object.assign(CONFIG.Item.dataModels, {
     ancestry: AncestryData,
     community: CommunityData,
+    transformation: TransformationData,
     class: ClassData,
     subclass: SubclassData,
     domainCard: DomainCardData,
@@ -63,5 +65,6 @@ export {
   FeatureData,
   LootData,
   SubclassData,
+  TransformationData,
   WeaponData,
 };

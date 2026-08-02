@@ -23,6 +23,24 @@ export const domainIcon = (domain) => `${SYSTEM_PATH}/assets/domains/${domain}.s
 export const typeGlyph = (kind) => `${SYSTEM_PATH}/assets/types/${kind}.svg`;
 
 /**
+ * Where a card's painting lives, derived from its name.
+ *
+ * The corebook's paths cannot be derived — upstream files Halfling under
+ * `halflings.webp` — so `card-printings.mjs` lists them. *Hope and Fear*'s can,
+ * because `tools/import-hf-art.mjs` is what named them and it used this rule.
+ * So they are derived rather than listed: one copy of the fact, and a rename
+ * moves the card and its painting together instead of leaving a map behind
+ * pointing at the old name.
+ *
+ * `tools/check-cards.mjs` asserts every path this produces resolves on disk,
+ * which is what makes deriving safe — a miss is a broken image rather than the
+ * quiet fall-back-to-the-glyph that a missing map entry gives you.
+ */
+export const cardArt = (kind, name) =>
+  `${SYSTEM_PATH}/assets/cards/${kind}/` +
+  `${String(name).toLowerCase().replace(/['’ʼ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.webp`;
+
+/**
  * The class marks.
  *
  * A class card's corner plates carry its two *domains*, because that is what a
@@ -51,6 +69,12 @@ export const classIcon = (name) =>
  * A miss is not fatal. `img` falls back to the mark and `sheets/cards.ts`
  * draws the sigil plate, which is what every card looked like before there
  * was any art at all; `tools/check-cards.mjs` is what complains about it.
+ *
+ * *Hope and Fear*'s cards miss it by construction and always will — the API
+ * carries no expansion content — so they pass their own painting as the
+ * fallback rather than the type glyph. Written that way round on purpose: the
+ * lookup still runs first, so the day the Card Creator publishes these, one
+ * fetch takes over and the local copy stops being used with no edit here.
  */
 const printed = (kind, name, fallbackImg) => {
   const p = PRINTINGS[kind]?.[name];
@@ -187,12 +211,12 @@ export function classItem({
  * `spellcastTrait` rides on every card because the sheet reads it off
  * whichever one you are holding, and Foundation is not guaranteed to be it.
  */
-export function subclassCards({ name, className, description, spellcastTrait = "", ranks }) {
+export function subclassCards({ name, className, description, spellcastTrait = "", ranks, art = "" }) {
   const RANKS = ["foundation", "specialization", "mastery"];
   // One painting per subclass, shared by its three cards — that is how the
   // printed set does it too, and it is what makes three Beastbound cards read
   // as a set rather than as three unrelated things a Ranger happens to own.
-  const { img, printing } = printed("subclass", name, classIcon(className));
+  const { img, printing } = printed("subclass", name, art || classIcon(className));
   return RANKS.filter((r) => ranks[r]?.length).map((rank) => ({
     name: `${name}: ${rank[0].toUpperCase()}${rank.slice(1)}`,
     type: "subclass",
@@ -215,8 +239,8 @@ export function subclassCards({ name, className, description, spellcastTrait = "
  * mixed ancestry takes the *top* feature of one and the *bottom* of another,
  * so a character can hold Surefooted or Sturdy but never both.
  */
-export function ancestryItem({ name, description, top, bottom }) {
-  const { img, printing } = printed("ancestry", name, typeGlyph("ancestry"));
+export function ancestryItem({ name, description, top, bottom, art = "" }) {
+  const { img, printing } = printed("ancestry", name, art || typeGlyph("ancestry"));
   return {
     name,
     type: "ancestry",
@@ -231,13 +255,82 @@ export function ancestryItem({ name, description, top, bottom }) {
   };
 }
 
-export function communityItem({ name, description, feature }) {
-  const { img, printing } = printed("community", name, typeGlyph("community"));
+export function communityItem({ name, description, feature, art = "" }) {
+  const { img, printing } = printed("community", name, art || typeGlyph("community"));
   return {
     name,
     type: "community",
     img,
     system: { description: rt(description), feature, printing },
+  };
+}
+
+/**
+ * A transformation — *Hope and Fear*'s third heritage card.
+ *
+ * `features` is a flat run in printed order rather than a benefit/drawback
+ * pair, for the reason `TransformationData` gives: which of the two a feature
+ * *is* depends on the state of the game, and the card does not label them.
+ *
+ * It reaches for `printed()` like the other two even though nothing upstream
+ * publishes a transformation, so the lookup always misses and the `art` passed
+ * in always wins. That is deliberate rather than dead code: the moment the Card
+ * Creator carries these, one fetch fills the map and takes precedence with no
+ * edit here — which is exactly the promise the equipment tables make about
+ * `img` being per document. The type glyph is now the third rung and only
+ * shows for a transformation somebody adds without a painting.
+ */
+export function transformationItem({ name, description, features, questions = [], art = "" }) {
+  const { img, printing } = printed("transformation", name, art || typeGlyph("transformation"));
+  return {
+    name,
+    type: "transformation",
+    img,
+    system: {
+      description: rt(description),
+      features: [].concat(features ?? []),
+      questions,
+      printing,
+    },
+  };
+}
+
+/**
+ * A standalone `feature` Item.
+ *
+ * The subtype with no card, drawn by the sheet's Features panel as a pressable
+ * row with its rule printed on it. `origin` is where it came from — the field
+ * exists so a row can say "Martial Stance · Tier 2" without that being smuggled
+ * into the name.
+ *
+ * `folder` is passed rather than derived because a feature has no property that
+ * implies one: a stance belongs in the Brawler's folder because a Brawler is
+ * the only thing that can take it, and nothing on the document says so.
+ */
+export function featureItem({
+  name,
+  text,
+  kind = "passive",
+  origin = "",
+  folder = "",
+  stressCost = 0,
+  fearCost = 0,
+  uses = 0,
+  img = "",
+}) {
+  return {
+    name,
+    type: "feature",
+    ...(folder ? { folder } : {}),
+    img: img || typeGlyph("gear"),
+    system: {
+      kind,
+      description: rt(text),
+      fearCost,
+      stressCost,
+      uses: { value: uses, max: uses },
+      origin,
+    },
   };
 }
 
@@ -362,8 +455,18 @@ export function armorItem({ name, tier, major, severe, score, feature = null }) 
  * `source` carries the printed roll number, because that *is* how the rules
  * refer to a row — "roll 3d12 and take the item that matches that value" — and
  * the field exists for exactly this.
+ *
+ * `book` qualifies it, and is only set for tables that are not the corebook's.
+ * Both books number their loot 1–60, so "Item 34" names two different objects
+ * once the second book is in the pack, and a GM reading the field needs to know
+ * which table they rolled on. The corebook's rows stay unqualified rather than
+ * gaining a "· Core" — relabelling two hundred documents would change what
+ * every character already holding one is carrying, to disambiguate rows that
+ * were never ambiguous until now.
  */
-export function lootItem({ name, description, roll, consumable = false }) {
+export function lootItem({ name, description, roll, consumable = false, book = "" }) {
+  const kind = consumable ? "Consumable" : "Item";
+  const number = roll ? `${kind} ${String(roll).padStart(2, "0")}` : "";
   return {
     name,
     type: consumable ? "consumable" : "loot",
@@ -372,7 +475,7 @@ export function lootItem({ name, description, roll, consumable = false }) {
     system: {
       description: rt(description),
       quantity: 1,
-      source: roll ? `${consumable ? "Consumable" : "Item"} ${String(roll).padStart(2, "0")}` : "",
+      source: number && book ? `${number} · ${book}` : number,
     },
   };
 }

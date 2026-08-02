@@ -1,18 +1,26 @@
 /**
- * The corebook domain card set — nine decks, 189 cards.
+ * The domain card set — ten decks, 210 cards.
  *
- * The card text is fetched rather than transcribed: see
- * `tools/fetch-cards.mjs`, which reads the official Daggerheart Card Creator
- * and writes `domain-cards.mjs` next to this file, art and all. This module
- * is the thin part — it decides what a card *is* as a document, and nothing
- * about what it says.
+ * Nine of the decks are the corebook's and their text is **fetched** rather
+ * than transcribed: see `tools/fetch-cards.mjs`, which reads the official
+ * Daggerheart Card Creator and writes `domain-cards.mjs` next to this file,
+ * art and all. The tenth is Dread, from *Hope and Fear*, and it is
+ * **transcribed** — the Card Creator publishes no Hope and Fear content, so
+ * there is nothing to fetch and `dread-cards.mjs` is the appendix typed in.
+ * That module's own header has the argument.
  *
- * `domain-cards.mjs` already comes out in deck order — by domain as the book
- * introduces them, then by level — so this maps it and stops. It used to sort,
- * from the days when the source was an appendix scrape arriving in page order.
+ * This module is the thin part either way: it decides what a card *is* as a
+ * document, and nothing about what it says.
+ *
+ * Both sources already arrive in deck order — by level, then alphabetical
+ * within a level — so this concatenates and stops. Dread goes last because it
+ * is a later book rather than a tenth entry in the corebook's own sequence,
+ * and a compendium folder list that reads "…Splendor, Valor, Dread" says which
+ * nine came together in a way an alphabetical merge would hide.
  */
 
 import CARDS from "./domain-cards.mjs";
+import DREAD from "./dread-cards.mjs";
 import { domainCardItem } from "./_helpers.mjs";
 
-export default CARDS.map(domainCardItem);
+export default [...CARDS, ...DREAD].map(domainCardItem);

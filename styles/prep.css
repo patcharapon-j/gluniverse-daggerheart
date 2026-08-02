@@ -14,6 +14,14 @@
    three that lost, and `prep.html` states what each of them was for. This
    is the console, adjusted.
 
+   A fifth has since joined them and it is a different kind of thing: the
+   duality pair itself. The other four were decisions with nowhere to be
+   *made*; this one was a fact with nowhere to be *said*. A roll is 2d12 and
+   this surface asserted it by drawing nothing, which held until a card moved
+   one — several read "you can roll a d20 as your Hope Die". So the row is a
+   readout first and a control second, and it is drawn on every roll rather
+   than only on the strange ones. See `.sec.dice` below.
+
    ── it opens on the click that used to roll ────────────────────────
    Which makes it load-bearing on the most frequent gesture in the game,
    including every roll that needs nothing from it. So the empty case is
@@ -62,6 +70,26 @@
 .dh.prep:focus{outline:none}
 @keyframes prep-in{from{opacity:0;transform:translateY(-6px) scale(.985)}
   to{opacity:1;transform:none}}
+
+/* ── every control here is an object, not a button ─────────────────
+   `make.css` states the whole argument and this is the same one: Foundry's
+   `elements` layer sizes every `<button>` to a fixed `--button-height` of
+   28px, with `min-height` to match, and nothing in this popover is a button
+   in the sense that rule means. A source chip, an Experience row, a die and
+   its rack are all *things you press*, and a thing is as tall as what is
+   printed on it.
+
+   It was survivable while every control here was one short line — 28px on an
+   18px chip is loose rather than broken, which is why it went unnoticed. The
+   die rack is the first control here with two lines in it, and two lines in a
+   28px box with `min-height` is the make window's failure exactly: the
+   notation sheared off under the silhouette.
+
+   Reset once, because the claim is about the popover. The stepper's two
+   buttons genuinely do want a fixed square and say so further down, where
+   they win on source order. */
+.dh.prep button{height:auto;min-height:0;max-height:none;line-height:normal;
+  white-space:normal;font-family:inherit}
 
 /* ── the head ──────────────────────────────────────────────────────
    What you are rolling, and it is the same two-line identity the weapon
@@ -121,6 +149,66 @@
    pressed often enough to be worth memorising. */
 .dh.prep kbd{font:700 7px/1 var(--f-mono);letter-spacing:.1em;color:var(--ink-4);
   background:var(--sunk);padding:3px 4px}
+
+/* ── the duality pair ──────────────────────────────────────────────
+   The one row here that is not a modifier. Everything else on this surface
+   adds to a number; this says what the number is going to be rolled *on*,
+   and until a card moved it the answer was assumed rather than stated.
+
+   Two chips, always, because the row is as much a readout as a control:
+   ninety-nine rolls in a hundred never touch it and all of them are better
+   for its being there. Pressing one opens the six under both — a rack under
+   the chip it belongs to would be six across half the popover's width — and
+   the chip that is open stays lit, which is how the vault says which card is
+   armed and means the same thing here.
+
+   The silhouettes are `plate.css`'s. A `.die` with no children draws nothing
+   at all, so `--face` is filled directly and the lamp, the facet ring and
+   the numeral never come into it; what is left is exactly the outline the
+   chat plate is about to draw the result on, at 13px. One shape table rather
+   than two that can disagree — the whole promise of this row is that the die
+   you press is the die that lands. */
+.dh.prep .sec.dice > s em{font-style:normal;font:700 7px/1 var(--f-mono);letter-spacing:.13em;
+  color:var(--hope-tx)}
+.dh.prep .dpair{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.dh.prep .dch{display:flex;align-items:center;gap:7px;border:0;cursor:pointer;width:100%;
+  padding:5px 8px;background:var(--sunk);text-align:left;
+  transition:background .13s,box-shadow .13s}
+.dh.prep .dch:hover{background:var(--sunk-2)}
+.dh.prep .dch b{flex:1 1 auto;min-width:0;font:700 11.5px/1 var(--f-display);color:var(--ink);
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+/* Which of the two this is, in the same mono caption every other section
+   heading here uses — the hue says it as well, and the hue alone is exactly
+   the axis this whole change exists because it cannot carry on its own. */
+.dh.prep .dch s{flex:none;text-decoration:none;font:700 6.5px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-4)}
+.dh.prep .dch.open{background:var(--sunk-2);box-shadow:inset 0 -2px 0 var(--hope)}
+.dh.prep .dch.f.open{box-shadow:inset 0 -2px 0 var(--fear)}
+
+/* The silhouette itself: `--face` filled, nothing else. `flex:none` and an
+   explicit box because `.die` sizes itself to `--sz`, which is a chat plate's
+   38px and would be three times this row. */
+.dh.prep .dsil{flex:none;width:13px;height:13px;clip-path:var(--face);
+  background:var(--ink-3);transition:background .13s}
+.dh.prep .dsil.h{background:var(--hope)}
+.dh.prep .dsil.f{background:var(--fear)}
+
+/* The rack. Six across, one press each, and the one you already have is lit
+   rather than removed — a list whose length changes with your state has to be
+   re-read every time, which is `menu.css`'s argument and `dlg.css`'s. */
+.dh.prep .drack{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:1px}
+.dh.prep .dopt{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;
+  cursor:pointer;padding:5px 2px 4px;background:var(--sunk);
+  transition:background .13s,transform .13s}
+.dh.prep .dopt:hover{background:var(--sunk-2);transform:translateY(-1px)}
+.dh.prep .dopt b{font:700 7px/1 var(--f-mono);letter-spacing:.04em;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;transition:color .13s}
+.dh.prep .dopt:hover b{color:var(--ink)}
+.dh.prep .dopt .dsil{background:var(--line-2)}
+.dh.prep .dopt.on{background:var(--sunk-2)}
+.dh.prep .dopt.on b{color:var(--ink)}
+.dh.prep .dopt.on .dsil.h,.dh.prep .dopt:hover .dsil.h{background:var(--hope)}
+.dh.prep .dopt.on .dsil.f,.dh.prep .dopt:hover .dsil.f{background:var(--fear)}
 
 /* ── advantage, as named sources ───────────────────────────────────
    The engine takes one signed count of d6, because that is what the dice

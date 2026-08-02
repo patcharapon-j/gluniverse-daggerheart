@@ -150,7 +150,16 @@ const contextOf = (actor: any): CardContext => {
  * had a card at all and is drawn on the sheet as a pressable row of rules text
  * for exactly that reason.
  */
-const HELD = new Set(["domainCard", "ancestry", "community", "subclass", "weapon", "armor"]);
+const HELD = new Set([
+  "domainCard",
+  "ancestry",
+  "community",
+  /* Heritage, and a printed card, so it peeks like the other two. */
+  "transformation",
+  "subclass",
+  "weapon",
+  "armor",
+]);
 
 /**
  * One row, in either lane and of either kind.

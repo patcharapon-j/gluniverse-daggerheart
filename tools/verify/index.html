@@ -7,6 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Foundry ships Font Awesome and the message header uses it for the one
+     glyph in this system that is an icon rather than a shape — the trash.
+     A study page has no Foundry, so it borrows a copy, exactly as it borrows
+     the faces above. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
 <!-- The *ported* sheets, exactly as system.json loads them. If the
      :root → .dh rewrite broke anything, it breaks here. -->
@@ -22,6 +27,7 @@
 <link rel="stylesheet" href="/styles/swap.css">
 <link rel="stylesheet" href="/styles/sheet.css">
 <link rel="stylesheet" href="/styles/plate.css">
+<link rel="stylesheet" href="/styles/prep.css">
 <link rel="stylesheet" href="/styles/dlg.css">
 <link rel="stylesheet" href="/styles/make.css">
 <!-- Last, exactly as system.json loads it: the Svelte components' own styles.
@@ -69,6 +75,18 @@
     button{height:28px;min-height:28px;display:flex;align-items:center;
       justify-content:center;text-align:center;font-family:inherit}
   }
+
+  /* ── Foundry's chat message, stood in for ─────────────────────────
+     `frame.css` styles the message *around* our objects — the frame comes
+     off, the header goes on — and every one of those rules is written
+     against markup this repo does not own. Two facts about it are
+     load-bearing and both are Foundry's: the `<li>` is a column, which is
+     what lets `order` decide whether the header is above the object or
+     below it, and the header holds a `<button>`, which the block above
+     would otherwise size to 28px on a 26px strip. */
+  .log{list-style:none;margin:0;padding:0 26px}
+  .log > li{width:300px;margin:0}
+  .chat-message{display:flex;flex-direction:column}
 </style>
 </head>
 <body>
@@ -81,6 +99,9 @@
 <h2><span>// THE PLATE</span>Chat cards, from the ported sheets</h2>
 <div class="stage" id="plates"></div>
 
+<h2><span>// THE ENVELOPE</span>The message a card arrives in</h2>
+<ul class="stage log" id="log"></ul>
+
 <h2><span>// THE DECK</span>Compendium entries, drawn by the vendored builder</h2>
 <div class="stage" id="deck"></div>
 
@@ -89,6 +110,9 @@
 
 <h2><span>// THE PANE</span>Where the traits strip belongs</h2>
 <div class="stage" id="traits"></div>
+
+<h2><span>// THE PREP</span>The roll popover, and the pair it now names</h2>
+<div class="stage" id="prep"></div>
 
 <h2><span>// THE FORGE</span>The creation window, from the ported stylesheet</h2>
 <div class="stage" id="forge"></div>
@@ -122,6 +146,12 @@ const duality = {
 };
 const crit = {...duality, h:7, f:7, out:'crit', total:16};
 const fear = {...duality, h:3, f:10, out:'fear', total:14, hit:true};
+/* The pair, moved. Several cards read "you can roll a d20 as your Hope Die",
+   and a 17 drawn on a twelve-sided chip is the card contradicting itself about
+   the one thing it exists to report. The silhouette follows the notation, and
+   so does the arithmetic strip's first term. */
+const upgraded = {...duality, kind:'instinct roll', label:'Instinct',
+  hd:'d20', h:17, f:4, total:23};
 
 const damage = {
   who:'Tabby', label:'Broadsword', img:'/design/assets/art-sample-01.png',
@@ -135,7 +165,50 @@ const foe = {
 const foeMiss = {...foe, d20:[7], total:9, hit:false};
 
 document.getElementById('plates').innerHTML =
-  [A(duality), A(crit), A(fear), DMG(damage), FOE(foe), FOE(foeMiss)].map(wrap).join('');
+  [A(duality), A(crit), A(fear), A(upgraded), DMG(damage), FOE(foe), FOE(foeMiss)]
+    .map(wrap).join('');
+
+/* ── the envelope ──────────────────────────────────────────────────────
+   The message our objects arrive in, which is Foundry's markup with our
+   header dressed onto it — see `src/module/message-header.ts`. The dressing
+   is TypeScript and reaches a live ChatMessage, so what is written out here
+   is its *output shape* rather than a second copy of it: the header wearing
+   `.dh .dhk`, the player's colour as `--who`, the player's name in a slot
+   Foundry's template does not have, and a trash that is ours because
+   Foundry draws one for GMs only.
+
+   What that shape is under test *for* is the cascade. `frame.css` is the
+   one stylesheet in this repo written against markup we do not own, and the
+   two things it has to survive are both above: a `<button>` the `elements`
+   layer wants to make 28px tall, and an `order` that decides whether the
+   header reads before the object or after it.
+
+   Three messages, because the header has three states — a character with a
+   player behind it, a GM speaking for something that is not a character, and
+   a message with no actor at all, where the one name *is* the player and
+   takes their colour rather than being printed twice. */
+const MSG = ({ id, who, alias, by, when = '3 minutes ago' }, body) => `
+<li class="chat-message message flexcol" data-message-id="${id}">
+  <header class="message-header flexrow dh dhk${by ? '' : ' byplayer'}" style="--who:${who}">
+    <span class="dhk-nm">
+      <h4 class="message-sender">${alias}</h4>
+      ${by ? `<span class="dhk-by">${by}</span>` : ''}
+    </span>
+    <span class="message-metadata">
+      <time class="message-timestamp">${when}</time>
+      <a class="message-delete" data-action="deleteMessage"><i class="fa-solid fa-trash" inert></i></a>
+      <button type="button" class="dhk-x" aria-label="Delete"><i class="fa-solid fa-trash" inert></i></button>
+    </span>
+  </header>
+  <div class="message-content">${body}</div>
+</li>`;
+
+document.getElementById('log').innerHTML = [
+  MSG({ id: 'm1', who: '#4f9dd9', alias: 'Tabby', by: 'patcharapon' }, wrap(A(duality))),
+  MSG({ id: 'm2', who: '#c8484f', alias: 'Ribbet Bandit', by: 'gamemaster',
+        when: '1 minute ago' }, wrap(FOE(foe))),
+  MSG({ id: 'm3', who: '#7ddc8f', alias: 'gamemaster', when: 'just now' }, wrap(DMG(damage))),
+].join('');
 
 /* ── the deck ──────────────────────────────────────────────────────────
    One of each card subtype, straight out of `src/packs-src/`. This mirrors
@@ -147,13 +220,31 @@ document.getElementById('plates').innerHTML =
    at the foot of the page say which. */
 const DECK = (() => {
   const one = (arr, type) => arr.find(d => d.type === type);
+  const named = (arr, name) => arr.find(d => d.name === name);
   return [
     one(DOMAIN_CARDS, 'domainCard'),
     one(HERITAGE, 'ancestry'),
     one(HERITAGE, 'community'),
     one(CLASSES, 'class'),
     one(CLASSES, 'subclass'),
-  ];
+    /* And one of everything *Hope and Fear* added, because the first of each
+       type above is always a corebook card and would go on being drawable
+       whatever happened to the new content. These are the ones with no fetched
+       snapshot behind them and — for Dread — a colour and a sigil that exist
+       nowhere else, so they are exactly the cards where a missing file shows up
+       as "looks a bit dark" rather than as an error.
+
+       Their paintings are also the only ones in the system whose paths are
+       *derived* from the card's name rather than listed in a generated map, so
+       a rename breaks them silently. `tools/check-cards.mjs` asserts all 299
+       resolve on disk; what this section adds is that they resolve **as drawn**
+       — through `getRoute`, from a page mounted where Foundry mounts us. */
+    DOMAIN_CARDS.find(d => d.system.domain === 'dread'),
+    one(HERITAGE, 'transformation'),
+    named(HERITAGE, 'Aetheris'),
+    named(CLASSES, 'Warlock'),
+    named(CLASSES, 'Moon: Foundation'),
+  ].filter(Boolean);
 })();
 
 const STOCK = /\/assets\/(domains|types|classes)\//;
@@ -167,7 +258,7 @@ const feats = list => list.filter(f => f?.name)
 async function deck() {
   const sig = {};
   for (const d of Object.keys(byslug)) sig[d] = await icon(d);
-  for (const g of ['ancestry', 'community']) sig['@' + g] = await glyph(g);
+  for (const g of ['ancestry', 'community', 'transformation']) sig['@' + g] = await glyph(g);
   for (const c of CLASS_SLUGS) sig['#' + c] = await clazz(c);
 
   const opts = (it) => {
@@ -189,6 +280,9 @@ async function deck() {
       case 'community': return { ...base, d: KINDS.community, sig: sig['@community'],
         type: 'COMMUNITY', foot: 'Heritage', flavour: plainText(s.description),
         feats: feats([s.feature]) };
+      case 'transformation': return { ...base, d: KINDS.transformation, sig: sig['@transformation'],
+        type: 'TRANSFORMATION', foot: 'Heritage', flavour: plainText(s.description),
+        feats: feats(s.features) };
       // fbsig: a class card has no artwork, so the fallback plate is the only
       // picture it ever shows — and its two domains are already in the corners.
       case 'class': return { ...base, d: byslug[s.domains.primary], d2: byslug[s.domains.secondary],
@@ -196,7 +290,10 @@ async function deck() {
         fbsig: sig['#' + it.name.toLowerCase()], fbname: it.name,
         foot: `${byslug[s.domains.primary].name} · ${byslug[s.domains.secondary].name}`,
         stats: [{ k: 'Evasion', v: s.startingEvasion }, { k: 'Hit Points', v: s.startingHitPoints }],
-        flavour: plainText(s.description), feats: feats([s.classFeature, s.hopeFeature]) };
+        // `classFeatures`, plural. This read the old singular key, which has not
+        // existed since the field split, so every class card on this page has
+        // been drawing its Hope feature and nothing else.
+        flavour: plainText(s.description), feats: feats([...(s.classFeatures ?? []), s.hopeFeature]) };
       case 'subclass': {
         const cls = CLASSES.find(c => c.type === 'class' && c.name === s.className).system.domains;
         return { ...base, d: byslug[cls.primary], d2: byslug[cls.secondary],
@@ -278,6 +375,47 @@ document.getElementById('traits').innerHTML = `
     <div class="lbl">AFTER · child of .pane</div>${pane(false)}
   </div>`;
 
+/* ── THE PREP ───────────────────────────────────────────────────────
+   The roll popover's duality row, which is the one component in this system
+   that deliberately reaches into *another* of our stylesheets: the die chips
+   are `.die`s from `plate.css` with nothing inside them, filling that class's
+   own `--face` so the popover and the chat card cannot disagree about what a
+   d20 looks like.
+
+   That reach is invisible on `design/prep.html` unless somebody remembers to
+   link `plate.css` there, and it is invisible in the game until a player opens
+   the popover — where a lost `--face` is not an error but six identical
+   squares, which reads as a deliberately plain control rather than as a
+   missing stylesheet. It is exactly the shape of failure this page is for, and
+   it is checked here because here is the only place the whole ported stack is
+   loaded at once.
+
+   Built as markup rather than by calling `prep()`, because the popover puts
+   itself on `<body>` and closes on the first click anywhere else — a live one
+   could not survive being on a page with anything else on it. */
+document.getElementById('prep').innerHTML = `
+  <div>
+    <div class="lbl">DUALITY ROW · the pair, and the rack under it</div>
+    <div class="dh prep" id="prep2" style="position:static;animation:none">
+      <div class="bd">
+        <div class="sec dice">
+          <s>duality dice<em>changed</em></s>
+          <div class="dpair">
+            <button class="dch h open" type="button" data-die="h">
+              <i class="dsil die d20 h"></i><b>d20</b><s>hope</s></button>
+            <button class="dch f" type="button" data-die="f">
+              <i class="dsil die d12 f"></i><b>d12</b><s>fear</s></button>
+          </div>
+          <div class="drack">
+            ${['d4','d6','d8','d10','d12','d20'].map((d) => `
+              <button class="dopt h${d === 'd20' ? ' on' : ''}" type="button" data-set="${d}">
+                <i class="dsil die ${d === 'd6' ? 'sq' : d} h"></i><b>${d}</b></button>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
 /* ── THE FORGE ──────────────────────────────────────────────────────
    The creation window, built with the *vendored* make.js against the
    *ported* make.css — so what is under test is the round trip, not the
@@ -330,6 +468,38 @@ document.getElementById('forge').innerHTML = `
     </div>
   </div>
   <div>
+    <div class="lbl">EQUIPMENT TABLE · the book's own shape, and the book's own groups</div>
+    <!-- The one step that is a table rather than a grid of objects. What is
+         under test is the subgrid: the head and both groups have to solve one
+         set of column widths, or Physical and Magic are two tables of the same
+         five facts aligned differently. -->
+    <div class="dh" style="width:560px;background:var(--paper);padding:14px;
+         box-shadow:inset 0 0 0 1px var(--frame-line)">
+      <div class="forge" style="display:block">
+        <div class="ftbl" id="eqtbl">
+          <div class="fthd">
+            <s>Name</s><s>Trait</s><s>Range</s><s>Damage</s><s>Burden</s><s>Feature</s>
+          </div>
+          <div class="fgrp">Physical</div>
+          <button type="button" class="ftr on">
+            <b>Broadsword</b><i>Agility</i><i>Melee</i><u>d8+3</u><i>One-Handed</i>
+            <p><b>Reliable:</b> +1 to attack rolls</p>
+          </button>
+          <button type="button" class="ftr">
+            <b>Battleaxe</b><i>Strength</i><i>Melee</i><u>d10+3</u><i>Two-Handed</i>
+            <p class="none">—</p>
+          </button>
+          <div class="fgrp">Magic</div>
+          <button type="button" class="ftr" disabled>
+            <b>Glowing Rings</b><i>Instinct</i><i>Very Close</i><u>d10+1</u><i>Two-Handed</i>
+            <p>Returns to your hand after the attack.
+              <span class="fwhy">Tier 2 · above your tier</span></p>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
     <div class="lbl">PLATE · on the sheet's rail, before and after</div>
     <div class="dh" style="width:288px;background:var(--paper);
          box-shadow:inset 0 0 0 1px var(--frame-line)">
@@ -343,6 +513,24 @@ document.getElementById('forge').innerHTML = `
     <div class="lbl">CLASS ROW &amp; CARD GRID · the two shapes a step can offer</div>
     <div class="dh" id="forge2" style="width:470px;background:var(--paper);padding:14px;
          box-shadow:inset 0 0 0 1px var(--frame-line)"></div>
+  </div>
+  <div>
+    <div class="lbl">PEEK · the sheet's card, and the creation window's</div>
+    <!-- Two peek layers, one inside a .forge and one not, because the size is
+         the whole argument for the creation window keeping the gesture at
+         all: the grid already draws the card, so a peek is worth opening only
+         if it is bigger than what is under the cursor. Both cards are parked
+         — visibility:hidden is a .pkc's resting state — so the check measures
+         rather than looks. (No backticks in here: this markup is a template
+         literal, and one would end it mid-comment. The whole page then draws
+         nothing at all, which is a blank study page rather than a red one.) -->
+    <div class="dh" style="position:relative;width:300px;height:40px;background:var(--paper);
+         box-shadow:inset 0 0 0 1px var(--frame-line)">
+      <div class="peeklayer"><div class="pkc" id="pk-sheet"></div></div>
+      <div class="forge" style="display:block">
+        <div class="peeklayer"><div class="pkc" id="pk-forge"></div></div>
+      </div>
+    </div>
   </div>`;
 
 /* The class row and the card grid both need sigils off disk, so both are built
@@ -366,23 +554,43 @@ const forgeReady = (async () => {
   box.innerHTML = `
     <div class="forge" style="display:block">
       <div class="fclass">
-        <button type="button" class="fcls on">
-          <span class="fsig" style="--c:${valor.light};--c2:${byslug.bone.light}">${mark}</span>
-          <span class="fmain">
-            <span class="fidentity">
-              <span class="fdoms">
-                ${['valor','bone'].map(d => `<span class="fdom" style="--c:${byslug[d].light}"><i>${sigs[d]}</i><s>${byslug[d].name}</s></span>`).join('')}
+        <!-- The panel, open, with its subclass drawer inside it. fcls is the
+             container and fclsr is the press — a subclass card is a button,
+             and a button inside a button is not markup a browser will keep.
+             (No backticks in here: this is inside a template literal.) -->
+        <div class="fcls on" style="--c:${valor.light};--c2:${byslug.bone.light}">
+          <button type="button" class="fclsr">
+            <span class="fsig">${mark}</span>
+            <span class="fmain">
+              <span class="fidentity">
+                <b>Guardian</b>
+                <span class="fdoms">
+                  ${['valor','bone'].map(d => `<span class="fdom" style="--c:${byslug[d].light}"><i>${sigs[d]}</i><s>${byslug[d].name}</s></span>`).join('')}
+                </span>
+                <span class="fnum"><i>Evasion <b>9</b></i> <i>Hit Points <b>7</b></i></span>
               </span>
-              <b>Guardian</b>
-              <span class="fnum"><i>Evasion <b>9</b></i> <i>Hit Points <b>7</b></i></span>
-              <p>Unwavering protectors who put themselves between danger and everyone else.</p>
+              <span class="fabilities">
+                <span class="fability"><b>Unstoppable</b><span>Once per long rest, gain an Unstoppable die and place it on your sheet with the 1 facing up. Spend it to raise the die or clear a Hit Point.</span></span>
+                <span class="fability hope"><b><i>Hope</i> Frontline Tank</b><span>Spend Hope to protect an ally in range.</span></span>
+              </span>
             </span>
-            <span class="fabilities">
-              <span class="fability"><b>Unstoppable</b><span>Once per long rest, gain an Unstoppable die.</span></span>
-              <span class="fability hope"><b><i>Hope</i> Frontline Tank</b><span>Spend Hope to protect an ally in range.</span></span>
-            </span>
-          </span>
-        </button>
+          </button>
+          <div class="fsub">
+            <s>Subclass · <em>Stalwart</em></s>
+            <div class="fcards">
+              <button type="button" class="fcrd on">
+                ${CARD({ d: valor, sig: sigs.valor, name: 'Stalwart', type: 'FOUNDATION',
+                         foot: 'Guardian', text: '',
+                         feats: [{ n: 'Unwavering', t: 'Reduce any damage you take by 1.' }] })}
+              </button>
+              <button type="button" class="fcrd">
+                ${CARD({ d: valor, sig: sigs.valor, name: 'Vengeance', type: 'FOUNDATION',
+                         foot: 'Guardian', text: '',
+                         feats: [{ n: 'At Ease', t: 'Gain an additional Stress slot.' }] })}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="fcards" style="margin-top:14px">
         ${GRID.map((c, i) => `<button type="button" class="fcrd${i === 0 ? ' on' : ''}">
@@ -424,9 +632,64 @@ setTimeout(async () => { try {
   const cores = document.querySelectorAll('.pl .die .core').length;
   check('dice built with all three layers', dice > 0 && dice === cores, `${dice} dice / ${cores} cores`);
 
+  /* The upgraded pair. A d20 Hope Die has to arrive as a *hexagon* carrying a
+     17, and the failure this catches is the quiet one: drop `hd` anywhere
+     along the chain and the plate still draws, still says 17, and says it on a
+     decagon that cannot roll one. `data-mx` is the same claim to the tumble —
+     a die that spins through 1..12 on its way to 17 has told the table it is
+     a d12 before the number lands. */
+  const upH = document.querySelectorAll('#plates > .dh')[3]?.querySelector('.die.h');
+  check('an upgraded Hope Die arrives as the die it is',
+        upH?.classList.contains('d20') && upH.dataset.mx === '20',
+        `${upH ? [...upH.classList].join('.') : 'no die'} · mx ${upH?.dataset.mx}`);
+
+  /* And the strip says so in words, because that is what gets read back in a
+     log three hours later. It stays "dice" on the printed pair — a card that
+     spelled out 2d12 on every roll would be explaining the game to the table
+     on the ninety-nine rolls where nothing happened. */
+  const term = (i) => document.querySelectorAll('#plates > .dh')[i]
+    ?.querySelector('.pl-arith i')?.textContent.trim();
+  check('the arithmetic names the pair only when it moved',
+        term(0)?.endsWith('dice') && term(3)?.endsWith('d20 + d12'),
+        `${term(0)} / ${term(3)}`);
+
   const cards = [...document.querySelectorAll('#plates > .dh')];
   const widths = new Set(cards.map(c => Math.round(c.getBoundingClientRect().width)));
   check('every plate is 300px', widths.size === 1 && widths.has(300), [...widths].join(', ') + 'px');
+
+  /* The envelope. Both of these are things a stylesheet written against
+     somebody else's markup can lose without looking broken — a header that
+     drifts below its object still reads as a caption, and a 28px trash on a
+     26px strip still reads as a button. */
+  const head = document.querySelector('#log .dhk');
+  const body = document.querySelector('#log .message-content');
+  const above = head && body &&
+    head.getBoundingClientRect().bottom <= body.getBoundingClientRect().top + 1;
+  check('the header sits above the object', !!above,
+        above ? 'header, then card' : 'the header is under the card it names');
+
+  /* And that they touch. The header is the object's own top band rather than
+     a caption floating above it, so anything between the two is the chat log
+     showing through — which is what a transparent strip looked like the first
+     time, and a 5px gap looked like the second. Measured on the *wrapper*,
+     not the plate: the plate is mid-arrival at this point and carries the
+     lift as a transform. */
+  const seams = [...document.getElementById('log').children].map(el => {
+    const k = el.querySelector('.dhk'), o = el.querySelector('.dh-plate, .dh-card, .dh-rest');
+    return +(o.getBoundingClientRect().top - k.getBoundingClientRect().bottom).toFixed(1);
+  });
+  check('the header and the object share an edge', seams.every(s => s <= 0 && s >= -1.5),
+        seams.join(', ') + 'px');
+
+  const x = document.querySelector('#log .dhk-x');
+  const xh = x ? Math.round(x.getBoundingClientRect().height) : 0;
+  check('the trash escaped the elements layer', xh > 0 && xh <= 16, `${xh}px tall, not 28`);
+
+  /* The player's colour has to reach the mark at full strength — it is the
+     one thing on the line that is not text, which is exactly why it is the
+     one thing allowed to be whatever colour was chosen. */
+  const mark = head && getComputedStyle(head, '::before').backgroundColor;
+  check('the player colour reaches the mark', mark === 'rgb(79, 157, 217)', mark || 'unset');
 
   // 7 Hit Points + 6 Stress + 4 Armor Slots; 2 + 6 + 1 of them marked.
   const boxes = document.querySelectorAll('#rail .mk .row > i').length;
@@ -441,7 +704,12 @@ setTimeout(async () => { try {
      404s leaves a card looking merely dark, and a footer with no card
      number looks like a design choice. Neither is visible by eyeballing. */
   const deckCards = [...document.querySelectorAll('#deck .card')];
-  check('one card of each subtype drawn', deckCards.length === 5, `${deckCards.length} cards`);
+  /* Against DECK.length rather than a literal. The claim is "everything the
+     deck was asked for got drawn", and a number typed in here is a second copy
+     of that list which goes stale the moment a card is added to it — which is
+     exactly what happened when Hope and Fear's four were added to a 5. */
+  check('one card of each subtype drawn', deckCards.length === DECK.length,
+        `${deckCards.length} of ${DECK.length} cards`);
 
   const arts = [...document.querySelectorAll('#deck > div > .dh')]
     .map(el => (getComputedStyle(el).getPropertyValue('--art').match(/url\(\s*['"]?(.+?)['"]?\s*\)/) || [])[1])
@@ -453,7 +721,7 @@ setTimeout(async () => { try {
     i.src = src;
   })));
   const missing = arts.filter((_, i) => !loaded[i]);
-  check('every card\'s img resolves', arts.length === 5 && !missing.length,
+  check('every card\'s img resolves', arts.length === DECK.length && !missing.length,
         missing.length ? missing.join(', ') : `${arts.length} images`);
 
   /* The class card is the one with no artwork — there is no printed class
@@ -528,6 +796,105 @@ setTimeout(async () => { try {
     .map(c => Math.round(c.getBoundingClientRect().width)));
   check('a spent chip keeps its slot', chipW.size === 1, [...chipW].join(', ') + 'px');
 
+  /* And the numeral on it is centred, which `place-items` alone does not do.
+     A chip is a grid with no declared columns, so its one implicit track is
+     `auto` and an `auto` track only stretches while `justify-content` is
+     `normal` — the button reset sets it to `flex-start`, the track collapses
+     to the numeral and sits against the left edge. Only a page standing in
+     the `elements` layer, which is this one and `make.html`, can see it. */
+  const chip = document.querySelector('#forge .fchip:not(.spent)');
+  const chipR = document.createRange();
+  chipR.selectNodeContents(chip);
+  const ink = chipR.getBoundingClientRect(), cb = chip.getBoundingClientRect();
+  const skew = Math.abs((ink.left - cb.left) - (cb.right - ink.right));
+  check('the chip you drag centres its numeral', skew < 1,
+        `${(ink.left - cb.left).toFixed(1)} left / ${(cb.right - ink.right).toFixed(1)} right`);
+
+  /* The equipment table is one set of columns for every group, which is the
+     whole of why it is a subgrid. Lose that and each group solves its own
+     widths: Physical and Magic become two tables of the same five facts,
+     aligned differently, which is precisely what a table exists to prevent. */
+  const tbl = document.getElementById('eqtbl');
+  const cols = el => [...el.children]
+    .map(c => Math.round(c.getBoundingClientRect().left) + '/' + Math.round(c.getBoundingClientRect().width))
+    .join(' ');
+  const tracks = new Set([tbl.querySelector('.fthd'), ...tbl.querySelectorAll('.ftr')].map(cols));
+  check('the equipment table solves one set of columns for every group',
+        tracks.size === 1 && [...tracks][0].split(' ').length === 6,
+        `${tracks.size} distinct layouts across ${tbl.querySelectorAll('.ftr').length + 1} rows`);
+
+  /* Dead, not hidden, in the table too — and the reason rides in the feature
+     column, the one cell with room for a sentence. */
+  const deadRow = tbl.querySelector('.ftr[disabled]');
+  const deadWhy = deadRow?.querySelector('.fwhy');
+  check('a refused equipment row stays visible and says why',
+        !!deadWhy && getComputedStyle(deadRow).display !== 'none' &&
+        getComputedStyle(deadWhy).display === 'block',
+        deadWhy?.textContent?.trim() || 'no reason given');
+
+  /* A chosen row wears the gold edge rather than the option's corner
+     brackets — a row has no corners worth bracketing. */
+  const onRow = tbl.querySelector('.ftr.on');
+  const ring = getComputedStyle(onRow, '::after').boxShadow;
+  check('a chosen equipment row wears the gold edge',
+        ring !== 'none' && ring.includes('inset'), ring === 'none' ? 'no ring' : ring);
+
+  /* The peek is the one rule in `make.css` that deliberately reaches into a
+     `sheet.css` component, and it reaches by *qualifier* — `.forge` — which
+     is the only way one of ours may. Two ways for it to fail silently, and
+     both leave a window that still works: lose the qualifier and every spine
+     on the character sheet peeks a 393px card, lose the rule and the setting
+     restores a peek the same size as the card already on screen, which is the
+     duplicate it was switched on to avoid. 262 × 1.5 is the claim.
+
+     `offsetWidth` and not `getBoundingClientRect()`, because a peeked card
+     carries `fit()`'s scale — .97 here — and the rect is the *painted* box,
+     which is the CSS width times that. Measured that way both cards came back
+     3% short, which reads as the widths being wrong when the widths are exact
+     and it is the ruler that includes the transform. `offsetWidth` is the
+     layout box and is what a claim about a stated width wants. */
+  const pkS = document.getElementById('pk-sheet').offsetWidth;
+  const pkF = document.getElementById('pk-forge').offsetWidth;
+  check('the creation peek is half again the sheet\'s card',
+        pkS === 262 && pkF === Math.round(262 * 1.5),
+        `${pkS}px on the sheet, ${pkF}px in the window`);
+
+  /* ── the roll popover's pair ──────────────────────────────────────
+     Three things, and each one fails as a plausible-looking control rather
+     than as an error.
+
+     First the reach: `.dsil` is a `.die` from plate.css with no children, so
+     the only thing it takes from that stylesheet is `--face`. Lose it and the
+     `clip-path` is invalid, the chip is a square, and the six shapes in the
+     rack become six identical squares with captions — which reads as a
+     deliberately plain control. The d20's hexagon and the d12's decagon are
+     asserted to be *different*, because an unset `--face` would make them
+     agree at any check that only asked whether one resolved. */
+  const silH = getComputedStyle(document.querySelector('#prep2 .dch.h .dsil')).clipPath;
+  const silF = getComputedStyle(document.querySelector('#prep2 .dch.f .dsil')).clipPath;
+  check('the popover\'s dice take plate.css\'s own silhouettes',
+        silH.startsWith('polygon') && silF.startsWith('polygon') && silH !== silF,
+        silH === silF ? 'both dice drew the same shape' : 'd20 ≠ d12');
+
+  /* Second, the hue. The whole reason the shape had to be added is that a hue
+     cannot carry the Hope/Fear distinction on its own — but it is still half
+     of it, and a chip whose background fell back to `--ink-3` would look like
+     a disabled control rather than like a die. */
+  const hueH = getComputedStyle(document.querySelector('#prep2 .dch.h .dsil')).backgroundColor;
+  const hueF = getComputedStyle(document.querySelector('#prep2 .dch.f .dsil')).backgroundColor;
+  check('the pair keeps its two hues', hueH !== hueF, `${hueH} / ${hueF}`);
+
+  /* Third, `make.css`'s lesson arriving somewhere else. Every control in the
+     popover is a <button>, and Foundry sizes those to one centred line 28px
+     tall with `min-height` to match. A rack option is a silhouette above its
+     notation — two lines, 33px — and at 28 the notation is sheared off. This
+     went unnoticed in prep.css for as long as every control here was one short
+     line: 28px on an 18px chip is loose rather than broken. */
+  const opt = document.querySelector('#prep2 .dopt');
+  const optH = Math.round(opt.getBoundingClientRect().height);
+  check('a rack option is as tall as what is printed on it, not 28px',
+        optH > 28, `${optH}px`);
+
   /* The one collision this page exists to catch. `make.css` and `dlg.css` are
      both loaded, both inside `.dh`, and `.pick`/`.picks` belong to dlg. If a
      future rename in make.css ever reached for one of those, the damage would
@@ -535,11 +902,11 @@ setTimeout(async () => { try {
   await forgeReady;
 
   /* Every control in this window is a <button>, and Foundry sizes those to
-     one centred line 28px tall. The class row is four lines of paragraph and
-     a 118px mark plate; if it measures 28 the reset at the top of make.css
-     has gone, and with it the contents of every option in the window. This is
-     the check that would have caught the whole thing. */
-  const row = document.querySelector('#forge2 .fcls');
+     one centred line 28px tall. The class row is two stacked rule plates
+     beside a full-height mark plate; if it measures 28 the reset at the top
+     of make.css has gone, and with it the contents of every option in the
+     window. This is the check that would have caught the whole thing. */
+  const row = document.querySelector('#forge2 .fclsr');
   const rowH = Math.round(row?.getBoundingClientRect().height ?? 0);
   check('a control is as tall as what is printed on it, not 28px',
         rowH > 60, `class row is ${rowH}px`);
@@ -558,7 +925,42 @@ setTimeout(async () => { try {
   check('the class row draws its class mark', !!sig,
         sig ? 'mark present' : 'the plate is empty');
 
-  const fitted = [...document.querySelectorAll('#forge2 .fcards .card')];
+  /* `--c` lives on the row, and this is the check that a `color-mix` against
+     an unset custom property would fail. It takes the *whole* declaration
+     down, so a rule plate loses its tint, its domain bar and its border at
+     once — and the Hope variant beside it still draws, because it states
+     `--hope`. Two dead declarations that read as a deliberate contrast. */
+  const rulePlate = document.querySelector('#forge2 .fcls .fability:not(.hope)');
+  const ps = rulePlate ? getComputedStyle(rulePlate) : null;
+  check('a class rule plate resolves its domain hue',
+        !!ps && ps.backgroundColor !== 'rgba(0, 0, 0, 0)' && ps.boxShadow !== 'none',
+        ps ? `${ps.backgroundColor} / ${ps.boxShadow === 'none' ? 'no box-shadow' : 'bar + border'}`
+           : 'no plate');
+
+  /* The rules balance rather than stretch. A two-track grid gave the short
+     plate the tall one's height; `columns` fills to an even height and leaves
+     every plate the size of what is printed on it. */
+  const abl = document.querySelector('#forge2 .fcls .fabilities');
+  const plates = [...document.querySelectorAll('#forge2 .fcls .fability')];
+  const heights = plates.map(p => Math.round(p.getBoundingClientRect().height));
+  check('class rules are a balanced multi-column block, not a stretched grid',
+        getComputedStyle(abl).columnCount !== 'auto' &&
+        new Set(heights).size === heights.length,
+        `${getComputedStyle(abl).columnCount} columns · ${heights.join('/')}px`);
+
+  /* The chosen class opens downward and its subclasses are *inside* it, so the
+     panel is taller than its own row and the gold brackets — which sit on the
+     panel — wrap both. A drawer that stopped reading as part of the panel
+     would be a second panel that happens to be touching. */
+  const panel = document.querySelector('#forge2 .fcls.on');
+  const drawer = panel?.querySelector(':scope > .fsub');
+  const panelH = Math.round(panel?.getBoundingClientRect().height ?? 0);
+  check('the chosen class opens into its own subclass drawer',
+        !!drawer && panelH > rowH + 40 &&
+        getComputedStyle(panel, '::after').inset === '0px',
+        drawer ? `panel ${panelH}px over a ${rowH}px row` : 'no drawer');
+
+  const fitted = [...document.querySelectorAll('#forge2 .forge > .fcards .card')];
   check('builder cards use the shared independent fit scale',
         fitted.length === 2 && fitted.every(c => Number(c.dataset.u) <= .94),
         fitted.map(c => `${c.dataset.u}/${c.dataset.plate}`).join(' · ') || 'no cards');
@@ -573,14 +975,23 @@ setTimeout(async () => { try {
         `${cardBrackets} of 6 corners`);
 
   const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
-                      'fcls', 'fcrd', 'fcards', 'fclass'];
+                      'fcls', 'fclsr', 'fsub', 'fcrd', 'fcards', 'fclass',
+                      'ftbl', 'fthd', 'ftr', 'fgrp'];
   const clash = forgeNames.filter(n => document.querySelector(`.dlg .${n}`));
   check('creation class names do not reach into the dialog', clash.length === 0,
         clash.length ? clash.join(', ') : 'no overlap');
 
   document.getElementById('ok').innerHTML = lines.join('\n');
 } catch (err) {
-  document.getElementById('ok').innerHTML = `<em>THREW</em>  ${err.message}`;
+  /* Escaped, and it took a while to notice why it has to be. Half of what is
+     built on this page is markup, so an error quoting it goes into `innerHTML`
+     as *markup* — the message opened an HTML comment that never closed, the
+     browser swallowed the rest of the failure into it, and what was left on
+     screen was three blank lines. The console gets the stack; the page gets
+     the text. */
+  console.error(err);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  document.getElementById('ok').innerHTML = `<em>THREW</em>  ${esc(err.message)}`;
 } }, 700);
 </script>
 </body>

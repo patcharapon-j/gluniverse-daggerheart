@@ -126,9 +126,17 @@
   card pool, and you make it once. So the row splits by kind: the class mark on a plate
   tinted by its domain pair on the left, everything written on the right. Domain sigils,
   class abilities and the Hope ability are all present in the row; classes have no hover card.
-  The flavour is the book's opening paragraph, and this is the only surface that prints one —
-  <code>system.description</code> stays at one sentence because that is what a <em>card</em>
-  shows, and <code>check-cards.mjs</code> fails the build if it grows back.
+  There is no flavour paragraph: this is a choice between nine sets of <em>rules</em>, and
+  every word in the row is something the class does. Identity is a header rather than a
+  column — it is five short facts that never grow, and the rules run from three lines to
+  fifteen, so a column beside them stood empty for the height of a Beastform. The rules
+  take the full width in a <code>columns</code> block, which balances and never stretches a
+  short plate to a tall one's height the way a two-track grid does. Press a class and it
+  <em>opens downward</em> into its own subclass drawer: the cards were a grid of their own
+  below the list under a heading naming the class they belonged to, and adjacency says that
+  better than a caption does. The panel is a container and the press is the row inside it,
+  because a subclass card is a button and a button inside a button is not markup a browser
+  will keep.
 </p>
 <div class="forge" style="display:block;background:var(--paper);padding:18px;max-width:800px">
   <div class="fclass" id="classes"></div>
@@ -146,6 +154,58 @@
 </p>
 <div class="forge" style="display:block;background:var(--paper);padding:18px;max-width:800px">
   <div class="fcards" id="cards"></div>
+</div>
+
+<h2><span>THE EQUIPMENT TABLE</span>Chapter 2 is a table, and this is the one step that is too</h2>
+<p class="note">
+  Every other step offers something you can hold a picture of, and a grid is right for those
+  because the thing you compare is the whole object. Equipment is not that. A longsword is one
+  line of chapter 2, and what you compare across thirty-five of them is five columns of the
+  <em>same five facts</em> — trait, range, damage, burden, feature. A tile states each fact in
+  a different place on every tile, so comparing two weapons' damage means finding the damage
+  twice; a column is read down. It is also the only list here that runs long enough for it to
+  matter: <code>unrestricted</code> turns this step into two hundred and four primaries.
+  The groups are the book's own tables — primaries print as <em>Physical</em> and <em>Magic</em>
+  per tier, because a magic weapon rolls with a Spellcast trait you may not have. Secondaries
+  and armour are one table each and get no caption, since inventing one would claim a division
+  the book does not make. Every row keeps <code>data-pk</code>, so hovering still opens the
+  printed card — the tile was a summary of a card that already exists in the peek layer, and
+  the table is a better summary of the same card. <code>subgrid</code> is what lines the
+  columns up <em>across</em> groups: one grid per group and Physical and Magic each solve their
+  own widths, which is two tables of the same five facts aligned differently.
+</p>
+<div class="forge" style="display:block;background:var(--paper);padding:18px;max-width:800px">
+  <div class="ftbl">
+    <div class="fthd">
+      <s>Name</s><s>Trait</s><s>Range</s><s>Damage</s><s>Burden</s><s>Feature</s>
+    </div>
+    <div class="fgrp">Physical</div>
+    <button type="button" class="ftr on">
+      <b>Broadsword</b><i>Agility</i><i>Melee</i><u>d8+3</u><i>One-Handed</i>
+      <p><b>Reliable:</b> +1 to attack rolls</p>
+    </button>
+    <button type="button" class="ftr">
+      <b>Longsword</b><i>Agility</i><i>Melee</i><u>d8+3</u><i>Two-Handed</i>
+      <p class="none">—</p>
+    </button>
+    <button type="button" class="ftr">
+      <b>Battleaxe</b><i>Strength</i><i>Melee</i><u>d10+3</u><i>Two-Handed</i>
+      <p class="none">—</p>
+    </button>
+    <div class="fgrp">Magic</div>
+    <button type="button" class="ftr">
+      <b>Hallowed Axe</b><i>Strength</i><i>Melee</i><u>d10+3</u><i>One-Handed</i>
+      <p class="none">—</p>
+    </button>
+    <button type="button" class="ftr" disabled>
+      <b>Glowing Rings</b><i>Instinct</i><i>Very Close</i><u>d10+1</u><i>Two-Handed</i>
+      <p>
+        <b>Returning:</b> When this weapon is thrown within its range, it appears back in your hand
+        immediately after the attack.
+        <span class="fwhy">Tier 2 · above your tier</span>
+      </p>
+    </button>
+  </div>
 </div>
 
 <h2><span>DEAD, NOT HIDDEN</span>An option you may not take says why on itself</h2>
@@ -208,7 +268,10 @@ document.getElementById('lt').onchange = e =>
 
 const STEPS = [
   { n: 1, k: 'Class',        state: 'done' },
-  { n: 2, k: 'Heritage',     state: 'done' },
+  /* Two rows wearing one numeral. The book's step 2 asks for both, and a
+     numeral here points at the page rather than counting our stages. */
+  { n: 2, k: 'Ancestry',     state: 'done' },
+  { n: 2, k: 'Community',    state: 'done' },
   { n: 3, k: 'Traits',       state: 'on'   },
   { n: 5, k: 'Equipment',    state: ''     },
   { n: 7, k: 'Experiences',  state: ''     },
@@ -264,19 +327,37 @@ document.getElementById('next').onclick = () => {
 
 /* ── the class step ─────────────────────────────────────────────── */
 
+/* The Druid is on this page on purpose. Beastform is the longest class feature
+   in the book, and the layout it broke — identity as a column beside the rules
+   — only looks wrong when something is long enough to make the column tall. A
+   study page of three short classes said the old grid was fine. */
 const CLASSES = [
-  { name: 'Guardian', meta: 'Valor · Bone', ev: 9, hp: 7, on: true,
-    text: 'Unwavering protectors. Frontline defenders who put themselves between danger and everyone else.' },
-  { name: 'Wizard', meta: 'Codex · Splendor', ev: 11, hp: 5,
-    text: 'Whether through an institution or on their own, those who bear the title of wizard have committed to a lifetime of magical study.' },
-  { name: 'Rogue', meta: 'Midnight · Grace', ev: 12, hp: 6,
-    text: 'Rogues are scoundrels, often in both attitude and practice.' },
+  { name: 'Guardian', ev: 9, hp: 7, on: true,
+    feats: [['Unstoppable',
+      'Once per long rest, you can become Unstoppable. You gain an Unstoppable die and place it on your character sheet with the 1 facing up.']],
+    hope: ['Frontline Tank', 'Spend 3 Hope to clear 2 Armor Slots.'] },
+  { name: 'Druid', ev: 10, hp: 6,
+    feats: [
+      ['Beastform',
+       'Mark a <b>Stress</b> to magically transform into a creature of your tier or lower from the Beastform list. You can drop out of this form at any time. While transformed, you can’t use weapons or cast spells from domain cards, but you can still use other features or abilities you have access to. Additionally, you gain the Beastform’s features, add their <b>Evasion</b> bonus to your <b>Evasion</b>, and use the trait specified in their statistics for your attack.'],
+      ['Wildtouch',
+       'You can perform harmless, subtle effects that involve nature—such as causing a flower to rapidly grow, summoning a slight gust of wind, or starting a campfire—at will.']],
+    hope: ['Evolution',
+      'Spend 3 <b>Hope</b> to transform into a Beastform without marking a <b>Stress</b>. When you do, choose one trait to raise by +1 until you drop out of that Beastform.'] },
+  { name: 'Rogue', ev: 12, hp: 6,
+    feats: [
+      ['Cloaked',
+       'Any time you would be <b>Hidden</b>, you are instead <b>Cloaked</b>. In addition to the benefits of the <b>Hidden</b> condition, you remain <b>Cloaked</b> when you move.'],
+      ['Sneak Attack',
+       'When you succeed on an attack while <b>Cloaked</b> or while an ally is within Melee range of your target, add a number of d6s equal to your tier to your damage roll.']],
+    hope: ['Rogue’s Dodge',
+      'Spend 3 <b>Hope</b> to gain a +2 bonus to your <b>Evasion</b> until the next time an attack succeeds against you.'] },
 ];
 
 /* The mark is the class's own. The pair beside it carries the two domain
    sigils and hues, so the relationship is visible rather than text-only. */
 const PAIRS = {
-  Guardian: ['valor','bone'], Wizard: ['codex','splendor'], Rogue: ['midnight','grace']
+  Guardian: ['valor','bone'], Druid: ['sage','arcana'], Rogue: ['midnight','grace']
 };
 
 const marks = Object.fromEntries(await Promise.all(
@@ -284,50 +365,94 @@ const marks = Object.fromEntries(await Promise.all(
 const domainMarks = Object.fromEntries(await Promise.all(
   [...new Set(Object.values(PAIRS).flat())].map(async d => [d, await icon(d)])));
 
+/* The two subclasses of the class that is open. Drawn as the printed
+   foundation card, at card size, inside the panel — which is why the class
+   step peeks nothing: a hover card over a card is the same picture twice. */
+const SUBS = {
+  Guardian: [
+    { name: 'Stalwart', on: true, d: 'valor', type: 'FOUNDATION', foot: 'Guardian',
+      feats: [{ n: 'Unwavering', t: 'Reduce any damage you take by 1.' },
+              { n: 'Iron Will', t: 'When you take physical damage, you can mark an additional Armor Slot to reduce the severity.' }] },
+    { name: 'Vengeance', d: 'valor', type: 'FOUNDATION', foot: 'Guardian',
+      feats: [{ n: 'At Ease', t: 'Gain an additional Stress slot.' },
+              { n: 'Revenge', t: 'When an adversary succeeds on an attack against you, you can mark 2 Stress to force them to mark a Hit Point.' }] },
+  ],
+  Druid: [
+    { name: 'Warden of the Elements', d: 'sage', type: 'FOUNDATION', foot: 'Druid',
+      feats: [{ n: 'Elemental Incarnation', t: 'Mark a Stress to Channel one of the following elements until you take Severe damage or Channel a different element.' }] },
+    { name: 'Warden of Renewal', d: 'sage', type: 'FOUNDATION', foot: 'Druid',
+      feats: [{ n: 'Clarity of Nature', t: 'Once per long rest, create a space of natural serenity within Close range.' },
+              { n: 'Regeneration', t: 'Touch a creature and spend 3 Hope to clear 1d4 Hit Points.' }] },
+  ],
+  Rogue: [
+    { name: 'Nightwalker', d: 'midnight', type: 'FOUNDATION', foot: 'Rogue',
+      feats: [{ n: 'Shadow Stepper', t: 'You can move from shadow to shadow. When you move into an area of darkness or a creature’s shadow, you can spend a Hope to disappear.' }] },
+    { name: 'Syndicate', d: 'midnight', type: 'FOUNDATION', foot: 'Rogue',
+      feats: [{ n: 'Well-Connected', t: 'When you arrive in a prominent town or city, you know somebody who calls this place home.' }] },
+  ],
+};
+
+/* `--c` is on the panel and not on the mark plate. The rule plates tint and
+   bar themselves with the primary hue, and a `color-mix` against an unset
+   custom property invalidates the whole declaration — border included.
+
+   `.fcls` is a container and `.fclsr` is the press, because the open panel
+   holds subclass *buttons* and a button inside a button is not markup a
+   browser will keep. */
 const clsRow = c => `
-  <button type="button" class="fcls${c.on ? ' on' : ''}">
-    <span class="fsig" style="--c:${byslug[PAIRS[c.name][0]].light};--c2:${byslug[PAIRS[c.name][1]].light}">${marks[c.name] ?? ''}</span>
-    <span class="fmain">
-      <span class="fidentity">
-        <span class="fdoms">${PAIRS[c.name].map(d => `<span class="fdom" style="--c:${byslug[d].light}"><i>${domainMarks[d]}</i><s>${byslug[d].name}</s></span>`).join('')}</span>
-        <b>${c.name}</b>
-        <span class="fnum"><i>Evasion <b>${c.ev}</b></i><i>Hit Points <b>${c.hp}</b></i></span>
-        <p>${c.text}</p>
+  <div class="fcls${c.on ? ' on' : ''}"
+       style="--c:${byslug[PAIRS[c.name][0]].light};--c2:${byslug[PAIRS[c.name][1]].light}">
+    <button type="button" class="fclsr">
+      <span class="fsig">${marks[c.name] ?? ''}</span>
+      <span class="fmain">
+        <span class="fidentity">
+          <b>${c.name}</b>
+          <span class="fdoms">${PAIRS[c.name].map(d => `<span class="fdom" style="--c:${byslug[d].light}"><i>${domainMarks[d]}</i><s>${byslug[d].name}</s></span>`).join('')}</span>
+          <span class="fnum"><i>Evasion <b>${c.ev}</b></i><i>Hit Points <b>${c.hp}</b></i></span>
+        </span>
+        <span class="fabilities">
+          ${(c.feats ?? []).map(f => `<span class="fability"><b>${f[0]}</b><span>${f[1]}</span></span>`).join('')}
+          <span class="fability hope"><b><i>Hope</i> ${c.hope[0]}</b><span>${c.hope[1]}</span></span>
+        </span>
       </span>
-      <span class="fabilities">
-        <span class="fability"><b>Class ability</b><span>The defining class rule is printed directly in this row.</span></span>
-        <span class="fability hope"><b><i>Hope</i> Hope ability</b><span>Spend Hope to use the class's signature action.</span></span>
-      </span>
-    </span>
-  </button>`;
-
-document.getElementById('classes').innerHTML = CLASSES.map(clsRow).join('');
-
-document.getElementById('body').innerHTML =
-  `<div class="fclass">${CLASSES.map(clsRow).join('')}</div>
-  <div class="fdet">
-    <s>Guardian · Unstoppable</s>
-    <div class="frule">
-      <b>Unstoppable</b>
-      <p>Once per long rest, you can become Unstoppable. You gain an Unstoppable die and
-      place it on your character sheet with the 1 facing up.</p>
-    </div>
-    <div class="frule">
-      <b>Frontline Tank</b>
-      <p>When you mark 1 or more Hit Points from an attack, you can mark a Stress to reduce
-      the severity by one threshold.</p>
-    </div>
+    </button>
+    ${c.on && SUBS[c.name] ? `
+    <div class="fsub">
+      <s>Subclass${SUBS[c.name].some(s => s.on) ? ` · <em>${SUBS[c.name].find(s => s.on).name}</em>` : ''}</s>
+      <div class="fcards">
+        ${SUBS[c.name].map(s => `<button type="button" class="fcrd${s.on ? ' on' : ''}">
+          ${CARD({ ...s, d: byslug[s.d], sig: domainMarks[s.d], text: '' })}
+        </button>`).join('')}
+      </div>
+    </div>` : ''}
   </div>`;
 
-/* Chosen-tile brackets snap on once, on the press that chose it — `.just` is
-   dropped a beat later, so re-rendering the grid does not replay them. Same
-   `play`/`land` distinction the chat plate spells out. */
-document.getElementById('body').addEventListener('click', e => {
-  const b = e.target.closest('.fopt, .fcls');
-  if (!b || b.disabled) return;
-  for (const o of document.querySelectorAll('#body .fopt, #body .fcls')) o.classList.remove('on', 'just');
-  b.classList.add('on', 'just');
-  setTimeout(() => b.classList.remove('just'), 340);
+/* Re-rendered on every press rather than toggled, because opening one panel
+   closes another and the drawer is markup that has to arrive and leave. */
+function drawClasses() {
+  for (const [sel, wrap] of [['#classes', h => h], ['#body', h => `<div class="fclass">${h}</div>`]]) {
+    const el = document.querySelector(sel);
+    el.innerHTML = wrap(CLASSES.map(clsRow).join(''));
+    fit(el);
+  }
+}
+drawClasses();
+
+/* Chosen-panel brackets snap on once, on the press that chose it — `.just` is
+   dropped a beat later, so a later re-render does not replay them. Same
+   `play`/`land` distinction the chat plate spells out. The press is `.fclsr`
+   and the state lives on its `.fcls`. */
+document.addEventListener('click', e => {
+  const b = e.target.closest('#classes .fclsr, #body .fclsr');
+  if (!b) return;
+  const name = b.querySelector('.fidentity > b').textContent;
+  if (CLASSES.find(c => c.on)?.name === name) return;
+  for (const c of CLASSES) c.on = c.name === name;
+  drawClasses();
+  for (const p of document.querySelectorAll('#classes .fcls.on, #body .fcls.on')) {
+    p.classList.add('just');
+    setTimeout(() => p.classList.remove('just'), 340);
+  }
 });
 
 /* ── the card grid ──────────────────────────────────────────────────

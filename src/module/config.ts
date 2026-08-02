@@ -59,6 +59,7 @@ export const DOMAINS = [
   "blade",
   "bone",
   "codex",
+  "dread",
   "grace",
   "midnight",
   "sage",
@@ -106,6 +107,40 @@ export const DOMAIN_CONFIG: Record<string, DomainDef> = {
     dark: "#203f6a",
     icon: `${SYSTEM_PATH}/assets/domains/codex.svg`,
     blurb: "Intensive magical study. Commanding, versatile understanding of magic.",
+  },
+  /* Dread is *Hope and Fear*'s domain, and the only one in this table not
+     taken from a published palette. daggerheart.org lists hexes for the nine
+     corebook domains and none for this one, and the page tints are no help:
+     the Warlock's (#361347) tracks that page's *artwork*, which is how it
+     differs from the Witch's (#1c2619) despite both classes carrying Dread.
+
+     What the book does state is the **banner** in the DREAD DOMAIN callout on
+     page 5. Measured over its field — opaque pixels, six deep off the gold
+     trim so no edge is in the sample — it is hue **274.8°** and holds it: the
+     5th and 95th percentiles are 273.3 and 276.4. That is the hue, and it is
+     the one fact here that is a transcription. It also sits almost exactly
+     between Codex at 256° and Arcana at 304°, which is the gap the wheel had.
+
+     Lightness is *not* transcribed, because the banner is a shaded, textured
+     object rather than a UI token — L runs 30.4 to 42.5 across it, so any
+     single point off that gradient would be arbitrary. It is chosen instead
+     against the constraint Bone's note above describes: a domain has to
+     survive being a sigil in a card corner, where hue is all a reader gets.
+     At the family's usual weight (L≈50, which is what both hue-neighbours
+     take) Dread lands 0.038 from Codex in OKLab — less than half the corebook's
+     own tightest pair, Codex/Midnight at 0.093. Three violets at one weight,
+     18° and 29° apart, is not a set anybody can read.
+
+     So it goes darker, which is the axis the neighbours leave free and the
+     direction the book itself drew: L 40, inside the banner's own p75–p95, and
+     0.102 from Codex — wider than arcana/codex already are. Replace both if an
+     official palette appears; nothing else in the system hard-codes them. */
+  dread: {
+    label: "Dread",
+    light: "#363e8a",
+    dark: "#202559",
+    icon: `${SYSTEM_PATH}/assets/domains/dread.svg`,
+    blurb: "Terror and the space past death. Power borrowed from what should stay buried.",
   },
   grace: {
     label: "Grace",
@@ -649,12 +684,26 @@ export const STARTING_POTIONS = ["Minor Health Potion", "Minor Stamina Potion"] 
    *are* the record: a number and the panel it came from can never disagree if
    there is only one of them.
 
-   The remaining six are numbered as the book numbers them where they line up,
-   which is why `experiences` is 7 and `domains` is 8. A player holding the
-   book open should not have to translate. */
+   The remaining steps are numbered as the book numbers them where they line
+   up, which is why `experiences` is 7 and `domains` is 8. A player holding the
+   book open should not have to translate.
+
+   **Ancestry and community are two steps wearing one numeral.** The book calls
+   step 2 "Choose Your Heritage" and asks for both, and for a while this window
+   did the same — one stage with two card grids stacked, an ancestry heading, a
+   mixed-ancestry switch and a community heading below the fold. That is two
+   decisions sharing a scroller, and the second one was the one nobody saw: an
+   eighteen-card grid ends well below the window and the community grid begins
+   under it. They are also unlike each other in a way the shared stage hid —
+   ancestry has the mixed option and its own two-press flow, community is a
+   flat pick-one — so the switch sat above a grid it does not govern.
+
+   They both keep `printed: 2`, because they are both genuinely the book's step
+   2 and a numeral is a pointer at the page rather than a count of our stages.
+   Two rows reading 2 is what the book says. */
 
 export interface CreationStep {
-  id: "class" | "heritage" | "traits" | "equipment" | "experiences" | "domains";
+  id: "class" | "ancestry" | "community" | "traits" | "equipment" | "experiences" | "domains";
   /** The book's own step number. */
   printed: number;
   label: string;
@@ -670,10 +719,16 @@ export const CREATION_STEPS: CreationStep[] = [
     hint: "Choose a class, then a subclass. Its foundation card comes with it.",
   },
   {
-    id: "heritage",
+    id: "ancestry",
     printed: 2,
-    label: "Heritage",
-    hint: "An ancestry and a community. Mixed ancestry takes the top feature of one and the bottom of another.",
+    label: "Ancestry",
+    hint: "The people you were born to. Mixed ancestry takes the top feature of one and the bottom of another.",
+  },
+  {
+    id: "community",
+    printed: 2,
+    label: "Community",
+    hint: "Where you come from, and the way of living it gave you.",
   },
   {
     id: "traits",
@@ -706,6 +761,7 @@ export const CREATION_STEPS: CreationStep[] = [
 export const ITEM_TYPES = [
   "ancestry",
   "community",
+  "transformation",
   "class",
   "subclass",
   "domainCard",
@@ -718,7 +774,22 @@ export const ITEM_TYPES = [
 export type ItemType = (typeof ITEM_TYPES)[number];
 
 /** The Item subtypes that are drawn as cards rather than as list rows. */
-export const CARD_ITEM_TYPES = ["ancestry", "community", "class", "subclass", "domainCard"] as const;
+export const CARD_ITEM_TYPES = [
+  "ancestry",
+  "community",
+  "transformation",
+  "class",
+  "subclass",
+  "domainCard",
+] as const;
+
+/**
+ * A character may hold **one** transformation. That is the printed rule, in
+ * its own one-line paragraph, and it is the whole of what makes the subtype
+ * different from an ancestry — you can be one thing, and taking a second is
+ * not a stacking question but a replacement.
+ */
+export const TRANSFORMATION_LIMIT = 1;
 
 /** The Item subtypes a character carries in their inventory. */
 export const GEAR_ITEM_TYPES = ["weapon", "armor", "consumable", "loot"] as const;

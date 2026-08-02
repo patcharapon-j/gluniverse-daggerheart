@@ -144,6 +144,20 @@ declare module "*/ui/prep.js" {
     /** Offer the advantage row. Damage has no advantage. */
     advantage?: boolean;
     /**
+     * Offer the duality pair. True unless the caller is not rolling two dice
+     * against each other, in which case the row would be describing a
+     * comparison that is not happening.
+     */
+    dice?: boolean;
+    /**
+     * The two duality dice, as notation, both "d12" unless a card moved one.
+     * Passed in rather than only chosen here so a caller that already knows —
+     * a feature that hands you a d20 Hope Die — opens the popover with the
+     * answer in it.
+     */
+    hope?: string;
+    fear?: string;
+    /**
      * Advantage the roller did not choose and cannot decline — a rule already
      * acting on them, like Galapa's Retract putting action rolls at
      * disadvantage until they leave the shell. Listed as a named chip rather
@@ -168,7 +182,12 @@ declare module "*/ui/prep.js" {
     experiences: { name: string; modifier: number }[];
     extra: { k: string; v: number }[];
     reaction: boolean;
+    /** The pair, always stated — "d12" when nothing moved it. */
+    hope: string;
+    fear: string;
   }
+  /** Every die a duality roll can be made with, in printed order. */
+  export const DUALITY_DICE: string[];
   /** Open against an element. Resolves null when cancelled. */
   export function prep(anchor: Element, opts: PrepOptions): Promise<PrepResult | null>;
   export function closePrep(): void;

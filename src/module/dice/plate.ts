@@ -30,6 +30,43 @@ export const DIE = (v: number | string, cls: string, sz?: number, mx?: number): 
 
 const esc = (s: unknown): string => foundry.utils.escapeHTML(String(s ?? ""));
 
+/**
+ * A die's own silhouette, by notation.
+ *
+ * Every damage die used to be drawn `sq`, and `sq` is the *d6's* shape — flat,
+ * coreless, because a d6 seen face-on is one square with nothing folded back to
+ * shade. So a 2d8 arrived as two d6s on a card whose entire job is saying what
+ * was rolled, with the notation underneath quietly disagreeing with the
+ * picture. `sq` keeps its name rather than becoming `d6`, because it is also
+ * what the advantage chip and the critical's maximum dice are: those genuinely
+ * are square chips, and renaming the class would make them claim to be a kind
+ * of die.
+ *
+ * It is above the duality dice rather than beside the damage ones because both
+ * need it now. A Hope Die is not always a d12 — several cards upgrade it to a
+ * d20 — and a card that drew a 17 on a twelve-sided silhouette would be lying
+ * about the one thing it exists to report.
+ *
+ * Anything unrecognised falls back to the square. A homebrew d3 has no
+ * silhouette here and a plain chip is the honest thing to draw for it.
+ */
+const SHAPE: Record<string, string> = {
+  d4: "d4",
+  d6: "sq",
+  d8: "d8",
+  d10: "d10",
+  d12: "d12",
+  d20: "d20",
+};
+
+const shapeOf = (die: string): string => SHAPE[String(die).toLowerCase()] ?? "sq";
+
+/** How many faces a notation claims, for the tumble's own range. */
+const facesOf = (die: string): number => {
+  const n = Math.floor(Number(String(die).replace(/^d/i, "")));
+  return Number.isFinite(n) && n > 1 ? n : 12;
+};
+
 /* ── advantage ───────────────────────────────────────────────────────
    Always a d6, never anything else. Advantage adds it, disadvantage
    subtracts it, and the two cancel one-for-one across every source, so a
@@ -55,11 +92,26 @@ const ADV = (r: DualityPlate, sz: number): string => {
 };
 
 /* A d6 is smaller than a d12 and is drawn smaller, because that is true and
-   because it keeps the duality pair the subject of the strip. */
-const DICE = (r: DualityPlate, sz: number): string =>
-  DIE(r.h, "h" + (r.out === "fear" ? "" : " lit"), sz, 12) +
-  DIE(r.f, "f" + (r.out === "hope" ? "" : " lit"), sz, 12) +
-  ADV(r, Math.round(sz * 0.76));
+   because it keeps the duality pair the subject of the strip.
+
+   The pair's own silhouettes come off `hd`/`fd` rather than being the decagon
+   twice. A card upgraded to a d20 Hope Die shows a 17 next to a 9, and on two
+   identical twelve-sided chips that reads as a d12 having rolled a number it
+   cannot. `data-mx` moves with it, so the tumble stays inside the die's real
+   range — which is the rule that made the damage dice take their own shape in
+   the first place. */
+export const dualityDie = (r: DualityPlate, side: "h" | "f"): string =>
+  (side === "h" ? r.hd : r.fd) ?? "d12";
+
+const DICE = (r: DualityPlate, sz: number): string => {
+  const hd = dualityDie(r, "h");
+  const fd = dualityDie(r, "f");
+  return (
+    DIE(r.h, `h ${shapeOf(hd)}` + (r.out === "fear" ? "" : " lit"), sz, facesOf(hd)) +
+    DIE(r.f, `f ${shapeOf(fd)}` + (r.out === "hope" ? "" : " lit"), sz, facesOf(fd)) +
+    ADV(r, Math.round(sz * 0.76))
+  );
+};
 
 const ADV_TERM = (r: DualityPlate): Term[] =>
   !r.adv
@@ -86,8 +138,19 @@ const TERMS = (t: Term[], cls?: string): string =>
     )
     .join("")}</div>`;
 
+/* The pair's own term, and it says which dice only when there is something to
+   say. "dice" is right for the printed 2d12 and would be a shrug on a roll
+   somebody spent a card to change; "d20 + d12" is the whole point of having
+   spent it. The silhouettes above carry it too, but the arithmetic strip is
+   what gets read back three hours later in a log. */
+const DICE_TERM = (r: DualityPlate): string => {
+  const hd = dualityDie(r, "h");
+  const fd = dualityDie(r, "f");
+  return hd === "d12" && fd === "d12" ? "dice" : `${hd} + ${fd}`;
+};
+
 export const ARITH = (r: DualityPlate): string =>
-  TERMS([{ k: "dice", v: r.h + r.f }, ...ADV_TERM(r), ...r.mods]);
+  TERMS([{ k: DICE_TERM(r), v: r.h + r.f }, ...ADV_TERM(r), ...r.mods]);
 
 /* Most duality rolls are made with no Difficulty at all. That is not a
    degraded state — it is the common one — so it gets its own sentence
@@ -290,32 +353,6 @@ export const platePortrait = (r: DualityPlate): string =>
    it hurt more", which is the wound's sentence at the top rung. */
 
 const sum = (a: number[]): number => a.reduce((x, y) => x + y, 0);
-
-/**
- * A die's own silhouette, by notation.
- *
- * Every damage die used to be drawn `sq`, and `sq` is the *d6's* shape —
- * flat, coreless, because a d6 seen face-on is one square with nothing folded
- * back to shade. So a 2d8 arrived as two d6s on a card whose entire job is
- * saying what was rolled, with the notation underneath quietly disagreeing
- * with the picture. `sq` keeps its name rather than becoming `d6`, because it
- * is also what the advantage chip and the critical's maximum dice are: those
- * genuinely are square chips, and renaming the class would make them claim to
- * be a kind of die.
- *
- * Anything unrecognised falls back to the square. A homebrew d3 has no
- * silhouette here and a plain chip is the honest thing to draw for it.
- */
-const SHAPE: Record<string, string> = {
-  d4: "d4",
-  d6: "sq",
-  d8: "d8",
-  d10: "d10",
-  d12: "d12",
-  d20: "d20",
-};
-
-const shapeOf = (die: string): string => SHAPE[String(die).toLowerCase()] ?? "sq";
 
 export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): string => {
   const crit = !!r.max?.length;

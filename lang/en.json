@@ -9,6 +9,7 @@
     "Item": {
       "ancestry": "Ancestry",
       "community": "Community",
+      "transformation": "Transformation",
       "class": "Class",
       "subclass": "Subclass",
       "domainCard": "Domain Card",
@@ -62,7 +63,8 @@
       "NoSelection": "Select the token or tokens this lands on first.",
       "NoCharacter": "No character is assigned to you — select a token you own, or ask your GM to assign one.",
       "NoFeatureCost": "{name} costs {cost}, and you cannot pay it.",
-      "OtherSubclass": "Still holding {names}. That card was not added by character creation, so it has been left alone — remove it by hand if you meant to change subclass."
+      "OtherSubclass": "Still holding {names}. That card was not added by character creation, so it has been left alone — remove it by hand if you meant to change subclass.",
+      "OneTransformation": "{name} is already {held}, and a character can have only one transformation. Remove that card first if you meant to change it."
     },
     "Info": {
       "DamageApplied": "{name} took {severity} damage — {marked} Hit Points marked.",

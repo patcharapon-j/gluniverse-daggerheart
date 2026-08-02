@@ -23,6 +23,14 @@ interface Common {
   experiences?: { name: string; modifier: number }[];
   /** Any other flat modifier, already labelled. */
   extra?: Term[];
+  /**
+   * The duality pair, as notation, when something moved it off the printed
+   * 2d12 — several cards upgrade the Hope Die to a d20. Passed straight
+   * through: which dice were rolled is the engine's business and none of
+   * these wrappers', whose whole job is the two sums players get wrong.
+   */
+  hopeDie?: string;
+  fearDie?: string;
 }
 
 /** Experiences cost a Hope, so they are drawn in the currency that paid. */
@@ -72,6 +80,8 @@ export async function rollTrait(actor: any, trait: Trait, opts: Common & { react
     kind: opts.reaction ? "reaction roll" : `${traitLabel(trait).toLowerCase()} roll`,
     mods,
     advantage: opts.advantage,
+    hopeDie: opts.hopeDie,
+    fearDie: opts.fearDie,
     dc: opts.dc ?? null,
     reaction: opts.reaction,
   });
@@ -123,6 +133,8 @@ export async function rollAttack(actor: any, weapon: any, opts: Common & { react
     kind: "attack roll",
     mods,
     advantage: opts.advantage,
+    hopeDie: opts.hopeDie,
+    fearDie: opts.fearDie,
     dc: opts.dc ?? null,
     next: "Roll damage",
     nextAct: "roll-damage",

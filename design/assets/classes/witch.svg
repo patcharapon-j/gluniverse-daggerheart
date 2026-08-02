@@ -1,0 +1,15 @@
+<!-- Witch: a crescent. Sage and Dread, and the class treads the boundary
+     between light and shadow — which is what a crescent *is* rather than what
+     it decorates. The Moon subclass makes it literal; the Hedge does not need
+     it to be.
+     Cut as one octagon knocking out of another rather than drawn as an arc,
+     because nothing else in this set uses a curve and a lone arc at 24px reads
+     as an antialiasing artefact next to eight chamfered polygons. The inner
+     octagon is offset up and right, so the horns point down-left and the
+     silhouette is asymmetric — the one thing that stops a crescent reading as
+     a bitten disc. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd"
+        d="M222 165 165 222 85 222 28 165 28 85 85 28 165 28 222 85Z
+           M240 141 193 188 127 188 81 141 81 75 127 28 193 28 240 75Z"/>
+</svg>

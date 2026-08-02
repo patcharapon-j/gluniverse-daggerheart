@@ -43,19 +43,28 @@
  * short version is that every texture the module ships is a picture of
  * something, this system draws no pictures of anything, and all the character
  * is put in the bump where it costs the hue nothing. What they draw is a
- * chamfered bevel: three octagonal rules stepping inward at falling weight,
- * with the system's own diamond four times among them. An octagon because the
- * module lays *one* texture over every face of every shape, and a chamfered
- * square is the only closed figure that follows the edge of a d6 and still
- * fits inside the pentagon of a d12.
+ * chamfered bevel — a rule following the edge of the face, with the system's own
+ * diamond at every corner.
  *
- * **Hope and Fear no longer share it.** They did, and the consequence was that
- * the hue was the only thing on the table distinguishing them — one axis, for
- * the one question the whole roll is. So the cut is a second axis and the two
- * cuts are halves of one figure: Hope keeps the octagon's four straight runs
- * and leaves the corners open, with the marks standing free on the axes; Fear
- * closes the corners and sets its marks into them. The argument is in the
- * generator's header, where the shape is.
+ * **Hope and Fear do not share it.** They did, and the consequence was that the
+ * hue was the only thing on the table distinguishing them — one axis, for the
+ * one question the whole roll is. So the cut is a second axis, and the two cuts
+ * are now orthogonal in *direction*, which is the largest difference two line
+ * cuts can have: Fear is three rules going round, closed at every corner with
+ * the mark set into them; Hope is one rule that lets go at every corner, with
+ * the mark standing free in the gap and a burst of light leaving it outward.
+ * The argument is in the generator's header, where the shape is.
+ *
+ * **And there is one of each per shape.** A colorset is chosen per *term*, so
+ * the die's face count is known at the moment it is painted — which means the
+ * figure can be derived from that face's own polygon rather than from a
+ * compromise between a d6's square and a d12's pentagon. It had to be a
+ * compromise while Hope was always a d12; *Signature Move*, *Rise to the
+ * Challenge* and *Reliable Backup* all hand you a d20 instead, the roll popover
+ * now lets you say so, and a d20's face is a triangle with barely half the
+ * inradius. Six shapes, two hues, twelve textures, and the colours, the
+ * material, the font and the glow are identical across all of them: a d20 Hope
+ * Die is the same die, cut for the face it has.
  *
  * One thing there is worth knowing here rather than only there: on `frosted`
  * the bump canvas is handed to the material a second time as its
@@ -160,6 +169,12 @@
  *   `addTexture` must resolve before the colorset naming it is added, or the
  *   theme is built against a texture that is not there yet.
  *
+ *   `visibility: "hidden"` on a colorset is read in exactly one place —
+ *   `prepareColorsetList`, which builds the settings dialog's dropdown — and
+ *   nowhere in the render path. A hidden set is fully functional and still
+ *   wins outright when a term names it. That is what lets one finish be twelve
+ *   registrations without becoming twelve entries in somebody's menu.
+ *
  *   `diceSoNiceMessagePreProcess(id, ctx)` is the one hook whose `ctx` is
  *   still mutable; `diceSoNiceMessageProcessed` fires afterwards and logs a
  *   deprecation if anyone writes to it. This is how a message opts out.
@@ -170,15 +185,45 @@
 import { SYSTEM_ID } from "../config.ts";
 import { absolute } from "../assets.ts";
 
-/** Our four, named so they cannot collide with a user's own presets. */
-export const HOPE_SET = "dh-hope";
-export const FEAR_SET = "dh-fear";
-export const ADV_SET = "dh-advantage";
-export const DIS_SET = "dh-disadvantage";
+/**
+ * The four roles a die can have here, and the only thing the roll engine names.
+ *
+ * A *role* is not a colorset any more. Hope and Fear each register six — one
+ * per shape — and `paint()` picks between them off the term's own face count,
+ * because the whole reason the cut can follow the face is that the shape is
+ * known by then. The engine says "this die is the Hope Die" and stops there,
+ * which is the only thing it knows and the only thing it should have to.
+ */
+export const HOPE = "hope";
+export const FEAR = "fear";
+export const ADV = "advantage";
+export const DIS = "disadvantage";
 
-/** And our three surfaces, under the same prefix and for the same reason. */
-const MARK_HOPE = "dh-mark-hope";
-const MARK_FEAR = "dh-mark-fear";
+/**
+ * The shapes we cut a face for: every die Daggerheart rolls.
+ *
+ * A term outside this list keeps its role and takes the role's default shape —
+ * the figure is then a decoration sized for the wrong polygon, which is
+ * survivable and is exactly what every die got before there were six. The
+ * colours, material and font are per role and are never the thing that falls
+ * back.
+ */
+const SHAPES = ["d4", "d6", "d8", "d10", "d12", "d20"] as const;
+type Shape = (typeof SHAPES)[number];
+
+/** Hope and Fear are a d12 unless a card says otherwise; the pair is a d6. */
+const DEFAULT_SHAPE: Record<string, Shape> = {
+  [HOPE]: "d12",
+  [FEAR]: "d12",
+  [ADV]: "d6",
+  [DIS]: "d6",
+};
+
+/** `dh-hope-d20`. Named so they cannot collide with a user's own presets. */
+const setName = (role: string, shape: Shape): string => `dh-${role}-${shape}`;
+
+/** And the surfaces, under the same prefix and for the same reason. */
+const cutName = (hue: "hope" | "fear", shape: Shape): string => `dh-cut-${hue}-${shape}`;
 const MARK_FAINT = "dh-mark-faint";
 
 /**
@@ -202,28 +247,32 @@ const FONT = "Google Sans";
 const asset = (file: string): string => absolute(`systems/${SYSTEM_ID}/assets/dice/${file}`);
 
 const TEXTURES = [
-  {
-    id: MARK_HOPE,
-    data: {
-      name: "Daggerheart — Chamfer, open",
-      // `multiply`, not `destination-in`: this is a finish over the hue, not
-      // a mask cut out of it. At 236..255 it darkens by at most 7.5 percent,
-      // and the groove floor — the line — is 255, which darkens by nothing.
-      composite: "multiply",
-      source: asset("hope.png"),
-      bump: asset("hope-bump.png"),
+  ...SHAPES.flatMap((shape) => [
+    {
+      id: cutName("hope", shape),
+      data: {
+        name: `Daggerheart — Open cut, ${shape}`,
+        // `multiply`, not `destination-in`: this is a finish over the hue, not
+        // a mask cut out of it. At 236..255 it darkens by at most 7.5 percent,
+        // and the groove floor — the line — is 255, which darkens by nothing.
+        composite: "multiply",
+        source: asset(`hope-${shape}.png`),
+        bump: asset(`hope-${shape}-bump.png`),
+      },
     },
-  },
-  {
-    id: MARK_FEAR,
-    data: {
-      name: "Daggerheart — Chamfer, closed",
-      composite: "multiply",
-      source: asset("fear.png"),
-      bump: asset("fear-bump.png"),
+    {
+      id: cutName("fear", shape),
+      data: {
+        name: `Daggerheart — Closed cut, ${shape}`,
+        composite: "multiply",
+        source: asset(`fear-${shape}.png`),
+        bump: asset(`fear-${shape}-bump.png`),
+      },
     },
-  },
+  ]),
   {
+    // The advantage pair is a d6 and always will be, so it is the one surface
+    // with no shape in its name.
     id: MARK_FAINT,
     data: {
       name: "Daggerheart — Chamfer, faint",
@@ -243,10 +292,12 @@ const TEXTURES = [
  * ends up with a black emissive colour and a glow map would be multiplied by
  * nothing (`DiceFactory.js:1237`).
  */
-const GLOW: Record<string, string> = {
-  [MARK_HOPE]: asset("hope-glow.png"),
-  [MARK_FEAR]: asset("fear-glow.png"),
-};
+const GLOW: Record<string, string> = Object.fromEntries(
+  SHAPES.flatMap((shape) => [
+    [cutName("hope", shape), asset(`hope-${shape}-glow.png`)],
+    [cutName("fear", shape), asset(`fear-${shape}-glow.png`)],
+  ]),
+);
 
 /** Loaded once, on registration. Absent means the glow is simply not applied. */
 const glowImages = new Map<string, HTMLImageElement>();
@@ -257,11 +308,20 @@ const GLOW_INTENSITY = 1;
 /** One atlas tile, which is the unit the module draws a texture in. */
 const TILE = 256;
 
-const COLORSETS = [
+/**
+ * What a role looks like, and it is the same on every shape it can wear.
+ *
+ * Only `texture` varies with the die, because only the *cut* has anything to do
+ * with the polygon it is cut into. Hue, numeral, outline, edge, material, face
+ * and glow are the role's, so a d20 Hope Die and a d12 Hope Die are two sizes
+ * of the same object rather than two objects — which is the whole claim the
+ * duality roll makes and the one a table has to be able to read across the
+ * board.
+ */
+const ROLES = [
   {
-    name: HOPE_SET,
+    role: HOPE,
     description: "Daggerheart — Hope",
-    category: "Daggerheart",
     // `--hope`, the same gold the gems in the rail are made of and the only
     // place in this system gold is a solid.
     background: "#d4a72c",
@@ -270,52 +330,97 @@ const COLORSETS = [
     // becoming a second colour in its own right.
     outline: "#5f4405",
     edge: "#eccb63",
-    texture: MARK_HOPE,
     material: "frosted",
-    font: FONT,
     emissiveLabels: true,
+    cut: "hope" as const,
   },
   {
-    name: FEAR_SET,
+    role: FEAR,
     description: "Daggerheart — Fear",
-    category: "Daggerheart",
     background: "#7b4fc0",
     foreground: "#ffffff",
     outline: "#241043",
     edge: "#b498f0",
-    texture: MARK_FEAR,
     material: "frosted",
-    font: FONT,
     emissiveLabels: true,
+    cut: "fear" as const,
   },
   /* The advantage d6 and its negative, straight off `.die.a` and `.die.a.neg`
      in plate.css. No glow on either: these are opaque, they are read in the
      light, and a lit numeral on a pale die is a smudge rather than a signal. */
   {
-    name: ADV_SET,
+    role: ADV,
     description: "Daggerheart — Advantage",
-    category: "Daggerheart",
     background: "#dfe6ee",
     foreground: "#14161a",
     outline: "#8c98a8",
     edge: "#f7fafd",
-    texture: MARK_FAINT,
     material: "velvet",
-    font: FONT,
+    cut: null,
   },
   {
-    name: DIS_SET,
+    role: DIS,
     description: "Daggerheart — Disadvantage",
-    category: "Daggerheart",
     background: "#101318",
     foreground: "#eef2f7",
     outline: "#000000",
     edge: "#3a424c",
-    texture: MARK_FAINT,
     material: "velvet",
-    font: FONT,
+    cut: null,
   },
 ];
+
+/**
+ * One theme per role per shape it can be rolled on.
+ *
+ * The two `frosted` roles get all six, because a card can make either of them
+ * any die in the game. The `velvet` pair gets the d6 alone: advantage in this
+ * game is a d6 and always will be.
+ *
+ * **Only the role's default shape is `visible`, and the other five are
+ * `hidden`.** That flag decides one thing and one thing only — whether a
+ * colorset appears in the user's own theme picker (`prepareColorsetList`
+ * filters on it); a hidden set still works, and still wins outright, when it is
+ * named directly the way `paint` names it. Which is the whole distinction: the
+ * six are an *implementation* of one finish across six polyhedra, not six
+ * finishes, and a picker that grew from four Daggerheart entries to fourteen
+ * would be this system spending a table's settings screen on its own
+ * bookkeeping. What is left in the list is exactly what was there before —
+ * Hope, Fear, Advantage, Disadvantage — and a user who picks one for their own
+ * d20 gets the d12's cut on it, which is the compromise every die in this
+ * system had until now and is a finish rather than an error.
+ */
+const COLORSETS = ROLES.flatMap((r) =>
+  (r.cut ? SHAPES : (["d6"] as const)).map((shape) => ({
+    name: setName(r.role, shape),
+    description: r.description,
+    category: "Daggerheart",
+    background: r.background,
+    foreground: r.foreground,
+    outline: r.outline,
+    edge: r.edge,
+    texture: r.cut ? cutName(r.cut, shape) : MARK_FAINT,
+    material: r.material,
+    font: FONT,
+    visibility: shape === DEFAULT_SHAPE[r.role] ? "visible" : "hidden",
+    ...(r.emissiveLabels ? { emissiveLabels: true } : {}),
+  })),
+);
+
+/**
+ * Which of a role's six a term wants, off the die it actually is.
+ *
+ * `faces` is the one thing a `Die` term always carries and the one thing the
+ * cut depends on. A term that is not one of the six — a homebrew d3, a module's
+ * d100 — keeps the role's colours and takes the role's default cut, because the
+ * cut is a finish and the hue is the answer to the question being asked.
+ */
+function shapeOf(term: any, role: string): Shape {
+  const name = `d${term?.faces}`;
+  return (SHAPES as readonly string[]).includes(name)
+    ? (name as Shape)
+    : (DEFAULT_SHAPE[role] ?? "d12");
+}
 
 /**
  * Stamp a term with one of ours.
@@ -337,8 +442,9 @@ const COLORSETS = [
  * `mergeObject`-free on purpose: `options.appearance` may already carry a
  * caller's own keys and only this one is ours to set.
  */
-export function paint(term: any, set: string): void {
+export function paint(term: any, role: string): void {
   if (!term) return;
+  const set = setName(role, shapeOf(term, role));
   term.options.colorset = set;
   term.options.appearance = { ...(term.options.appearance ?? {}), colorset: set };
 }

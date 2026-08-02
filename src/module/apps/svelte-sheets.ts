@@ -15,7 +15,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mount, unmount, type Component } from "svelte";
-import { LOADOUT_LIMIT } from "../config.ts";
+import { LOADOUT_LIMIT, TRANSFORMATION_LIMIT } from "../config.ts";
 import { SheetState } from "./sheet-state.svelte.ts";
 
 interface SvelteSheetOptions {
@@ -157,6 +157,32 @@ export async function handleActorDrop(actor: any, event: DragEvent): Promise<any
   if (!item) return [];
   // Already ours. Foundry's own default would hand back a duplicate.
   if (item.parent?.id === actor.id) return [];
+
+  /* "A PC can have only one transformation" is printed in its own one-line
+     paragraph, and it is the only arity rule in this system a drop can break.
+     Everything else a character holds is either genuinely repeatable — two
+     classes is multiclassing, twenty domain cards is a vault — or is repeatable
+     in a way the rules allow, so `handleActorDrop` has always been deliberately
+     type-agnostic and this is the one exception.
+
+     It **refuses** rather than replacing. Replacing would delete a document
+     nobody asked it to delete, and a transformation is not a card you shuffle:
+     it is the thing that happened to your character, granted by the GM, and
+     swapping it is a decision rather than a correction. So the notice names
+     what you are already carrying, which is also the instruction — remove that
+     one and this one will land. */
+  if (item.type === "transformation") {
+    const held = actor.items.filter((i: any) => i.type === "transformation");
+    if (held.length >= TRANSFORMATION_LIMIT) {
+      ui.notifications?.warn(
+        game.i18n.format("DAGGERHEART.Warn.OneTransformation", {
+          name: actor.name,
+          held: held.map((i: any) => i.name).join(", "),
+        }),
+      );
+      return [];
+    }
+  }
 
   const source = item.toObject();
   if (source.type === "domainCard") placeDomainCard(actor, source);

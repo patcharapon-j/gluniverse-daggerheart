@@ -438,9 +438,17 @@ Evasion off your class, Hit Points off your class, Stress 6, Hope 2, thresholds
 off your armour, Proficiency 1 — every one a consequence of a step you already
 took. It is the rail, filling in as you choose. A page restating it would be the
 window telling you something it should have been showing you the whole time. The
-step numerals are the **book's**, which is why they read 1, 2, 3, 5, 7, 8: a
+step numerals are the **book's**, which is why they read 1, 2, 2, 3, 5, 7, 8: a
 player with the rulebook open should not have to translate, and the gaps are
 honest about what this does not do — 6 and 9 are prose and belong on the bio tab.
+
+**Two of them read 2, and that is the numeral being a pointer rather than a
+count.** The book's step 2 is "Choose Your Heritage" and asks for an ancestry
+*and* a community; this window asks for them on two stages, because one stage
+meant the community deck began below eighteen ancestry cards and nobody
+scrolled to it, and because the mixed-ancestry switch sat above a grid it does
+not govern — ancestry has that option and a two-press flow, community is a flat
+pick-one. Both stages are genuinely the book's step 2, so both say 2.
 
 **The rail's numbers land, and only the ones that moved.** `setVals` in
 `make.js` is `setMarks`'s job for the same reason: re-rendering the block would
@@ -477,19 +485,75 @@ shown as coloured sigils rather than a text-only label, and every class and Hope
 ability is printed directly in the row. A class has no hover card: the row is
 the decision surface and already carries the complete answer.
 
-**The flavour on it is the book's opening paragraph, and it is a second field.**
-`system.description` is what a *card* prints and is held to one sentence by
-`tools/check-cards.mjs`, for a reason that has already gone wrong once — the
-chapter opener got pasted in whole and five sentences of lore sat above the
-stats. That rule is untouched. `ClassData.flavor` is the paragraph, drawn in
-exactly one place, and the check now also asserts that it **opens with the
-card's sentence** — so the two are one fact stated at two lengths and cannot
-drift into disagreeing, and a `flavor` pasted against the wrong class fails the
-build. Empty falls back to `description`, so a homebrew class with one sentence
-reads as short rather than broken.
+**Identity is a header, not a column, and a long rule is what taught us that.**
+The right-hand side was two side-by-side columns, identity and rules, which is
+the shape you draw when the halves are about the same size. They are not, by an
+order of magnitude: identity is five short facts that never grow, and a class
+feature runs from three lines to fifteen — the Druid's Beastform is a
+paragraph. So the row stood as tall as Beastform and a 226px column beside it
+held a name and two numbers above six hundred pixels of nothing, while the
+rules read at 10.35px in a 350px column. Identity is one line across the top
+now — name, domains, and the two numbers pushed right so they land in the same
+place on all nine rows, which is what makes them comparable — and the rules
+take the full width underneath. The Druid row went from about 700px to 191px at
+the width the window actually has.
 
-**Subclass, heritage and domain cards draw the printed card.** Those three steps
-choose things that genuinely exist on paper, and a text summary of one lies by
+**The rules balance rather than tile.** They are a `columns` block, not a
+two-track grid. A grid puts one plate per cell and stretches the short one to
+the tall one's height — Make a Scene, four lines, drawn as a box the height of
+Rally's ten — and a class with three features wrapped the third to a second row
+and left a hole the size of a plate. `columns` fills to an even height and
+stretches nothing; `break-inside:avoid` keeps each plate whole.
+
+**And `--c` belongs on the row.** It was set inline on the mark plate alone, so
+every rule plate's `color-mix(in srgb,var(--c) 5%,…)` resolved against nothing.
+An invalid `color-mix` invalidates the whole declaration, so those plates had no
+tint, no domain bar and **no border**, since the border rode in the same
+`box-shadow`. Class features were bare paragraphs beside Hope abilities that
+drew correctly — the Hope variant states `--hope`, which exists — so it read as
+a deliberate contrast rather than as two dead declarations. `tools/verify/` now
+asserts a rule plate resolves its hue, which is the shape of failure that page
+is for.
+
+**There is no flavour on it.** The row carried the book's opening paragraph for
+a while, in the widest column on the page, and that was the wrong thing to give
+it: this is a choice between nine sets of *rules*, and a paragraph of lore above
+two numbers and four abilities is the row answering a question nobody is asking
+at this moment. Every word in the row is now something the class does.
+
+`ClassData.flavor` still exists and `tools/check-cards.mjs` still polices it —
+it must open with the card's own sentence, so the two are one fact stated at two
+lengths and a `flavor` pasted against the wrong class fails the build. Nothing
+draws it today. The field is content rather than markup and the check is what
+keeps it true, so it survives the surface that used to print it.
+
+**The chosen class opens downward into its own subclass drawer.** The two
+subclasses were a grid of their own below the list, under a heading naming the
+class they belonged to — a caption doing a job adjacency does better, with the
+answer to "which class is this for" three inches and one heading away from the
+class. Nine rows collapsed to one open one is also the shape of the decision:
+you have chosen, and this is what that choice now asks. The gold brackets sit on
+the panel, so they wrap the row *and* the drawer: one object, extended.
+
+Two consequences. **`.fcls` is a container and `.fclsr` is the press**, because
+a subclass card is a `<button>` and a button inside a button is not markup a
+browser will keep — and the panel no longer lifts on hover while it is open, for
+the reason the rest dialog's squares do not reflow: a surface you are reaching
+into must not move under the pointer. And **`previewClass` is gone.** It existed
+only to say which class the separate grid was a grid *for* before that class was
+taken; the drawer is inside the panel, so the answer is adjacency rather than
+state.
+
+**The class step peeks nothing now.** A subclass card used to carry `data-pk`
+and hover-peek at full size, which was right when the thing you hovered was a
+176px grid cell. It is drawn at card size inside the panel, so the peek would be
+the same picture twice. The `.fdet` panel under the step went with it for the
+same reason: it reprinted every class feature and every subclass feature as
+text, and both are already on screen — the features in the row's own rule
+plates, the subclass on the card.
+
+**Subclass, ancestry, community and domain cards draw the printed card.** Those
+steps choose things that genuinely exist on paper, and a text summary of one lies by
 omission about the two facts a card carries structurally rather than in prose:
 the domain, which is the hue and the two corner sigils, and the level and Recall
 Cost, which are the corner blocks. A domain card's whole identity is "Grace,
@@ -498,11 +562,53 @@ across twenty of them at a glance. It also printed the rules text **raw** —
 `***Power Push:***` and literal `<br>` — because `rich()` lives inside `CARD()`
 and a bare `<p>` never called it. `.card` is container-query driven, so the
 component that draws a 300px chat plate draws a 176px grid cell unchanged, and
-hover still peeks the full-size one, which is what makes the small one
-affordable. Both sizes use the shared card's independent `fit()` pass; the
-builder does not normalize image plates or type across the grid, so its cards
-follow the same scaling rules as sheet peeks and chat. Equipment stays a tile:
-a longsword is not a card and there is no artwork to draw.
+the grid card uses the shared card's independent `fit()` pass; the builder does
+not normalize image plates or type across the grid, so its cards follow the same
+scaling rules as sheet peeks and chat. Equipment draws neither: a longsword is
+not a card, there is no artwork to draw, and it is a **table** — see below.
+
+**The equipment step is a table, and it is the only one.** Every other step
+offers something you can hold a picture of, and a grid is right for those
+because the thing you are comparing is the whole object. Equipment is not that.
+A longsword is one line of chapter 2, and what you compare across thirty-five of
+them is five columns of the *same five facts* — trait, range, damage, burden,
+feature. A tile states each fact in a different place on every tile, so
+comparing two weapons' damage means finding the damage twice; a column is read
+down. It is also the only list here that runs long enough for it to matter: nine
+classes fit on a page and eighteen ancestries are pictures, while `unrestricted`
+turns this step into two hundred and four primaries.
+
+**The groups are the book's own tables.** Chapter 2 prints primaries as two
+tables per tier — Physical and Magic — and that split is a rule rather than a
+caption: a magic weapon rolls with your Spellcast trait, which a character
+without a spellcasting subclass does not have. Secondaries and armour are one
+table each and get no caption, because inventing one would claim a division the
+book does not make. The tier joins the caption only when more than one tier is
+on screen, which only ever happens under the GM's switch — at level 1 there is
+one tier and saying so above every group is the window answering a question
+nobody asked.
+
+The row keeps `data-pk`, so **hovering still opens the printed card**, and that
+is why the step could give the tile up without giving anything up: the tile was
+a text summary of a card that already exists in the peek layer, and the table is
+a better summary of the same card. `subgrid` is what lines the columns up
+*across* groups — one grid per group and Physical and Magic each solve their own
+widths, which is two tables of the same facts aligned differently, precisely
+what a table exists to prevent. See the equipment table block in
+`design/make.css`.
+
+**And none of those four steps peeks.** They carry no `data-pk` at all, which
+is the class step's argument reaching the rest of the window: the printed card
+is on screen, and a hover card over a card is the same picture twice. A
+`creationPeek` setting restored them for a while, on the reasoning that the
+argument turns on *size* — a 176px card is one you can identify and not always
+one you can read — and it is gone, because a peek is a way of asking *what is
+this* and these grids have already answered. The right answer to a card too
+small to read is a wider window. **Equipment is the one step that still peeks**,
+unconditionally: its rows are a table of five facts, not cards, so the peek
+layer is the only place the card exists at all. The review page draws no cards
+either and had been rendering one per owned item into a layer nothing could
+open; that is gone with it.
 
 **Changing class cascades, and names every document first.** "3 items will be
 removed" is a sentence nobody can consent to, which is why `cascadeOf` returns
@@ -624,6 +730,21 @@ their contents sheared off. It is reset once at the root of `make.css` rather
 than re-declared on nine controls, because the claim is about the window; the
 two that genuinely *are* buttons — the tray chip and the footer's back/next —
 state their own metrics and win on source order.
+
+**And the reset reaches one step further than it looks like it can.** It sets
+`justify-content:flex-start` for the column controls, and the tray chip is a
+`display:grid` with no declared columns — so its single implicit track is `auto`,
+and an `auto` track only stretches to fill its container while `justify-content`
+is `normal`. `place-items:center` says nothing whatever about *content*, so the
+track collapsed to the width of the numeral, sat against the left edge, and
+`justify-items` then centred the numeral inside a track it exactly filled. The
+chip was the right size, in the right place, with its number 8px from the left
+edge and 14.3 from the right — about a quarter of the numeral's own width off
+centre, which is small enough to read as a rendering artefact and large enough
+to see, on the one control in this window whose entire job is to be a number you
+aim at. Foundry's own `padding:0 8px` was hiding most of it. `place-content` is
+the other half of `place-items` and both are now stated; `tools/verify/` measures
+the ink's clearance on each side rather than trusting the declaration.
 
 The general lesson is the one this repo keeps relearning from a new direction:
 `design/` is authored as whole documents and a Foundry system owns a subtree of
@@ -951,7 +1072,7 @@ out — and every way out is free.
 **The empty state is the common state.** A level-1 character has no
 Experiences and nothing granting advantage, and they meet this twice a minute
 for an hour. So it is roll-ready the frame it opens, Enter works before you
-have touched anything, and it is four lines tall. A popover slower than the
+have touched anything, and it is a handful of lines tall. A popover slower than the
 click it replaced would be a regression no capability pays for.
 
 **Experiences now cost Hope, and they always claimed to.** `actions.ts`
@@ -967,7 +1088,122 @@ Difficulty stays out. The engine takes it and the card draws it, but the
 player usually does not know it, so it remains the GM's to set and the card
 goes on honestly saying there was no target number.
 
+**The pair is named now, and it is the one thing here that was never said at
+all rather than said and ignored.** A duality roll is 2d12, the popover
+asserted it by drawing nothing, and that held until a card moved one:
+*Signature Move*, *Rise to the Challenge*, *Reliable Backup* and the Paragon's
+Chain all read "you can roll a **d20** as your Hope Die". So the two dice are
+drawn at the top of the popover, always, in the silhouettes the chat plate is
+about to draw them in — press one and the six open under it.
+
+Always, for two reasons. A control that appears only once something is unusual
+is a control nobody knows exists at the moment they need it. And on the
+ninety-nine rolls in a hundred that never touch it the row is a *readout*: what
+am I about to roll, stated by the surface whose whole job is composing that
+sentence. It costs one line, and it is the line everything else in the popover
+is modifying.
+
+`DUALITY_DICE` is the one closed set on this surface, and it is closed because
+a die is a *shape* rather than a number — there is no seventh polyhedron for
+somebody to want. Everything else here is deliberately unbounded. The engine
+takes `hopeDie`/`fearDie` as notation and re-renders the number rather than
+trusting the string, because a ruling belongs to the table and a `Roll` formula
+belongs to Foundry, and only one of those two will throw.
+
+Both dice move, though nothing printed moves Fear. A GM ruling is the only
+thing that ever will, and there is nowhere else in the system to say it.
+
+The plate follows: `hd`/`fd` ride on the message, the silhouette and `data-mx`
+come off them, and the arithmetic strip's first term reads `d20 + d12` instead
+of `dice` when — and only when — something moved it. Both are optional on
+`DualityPlate`, because a log is a record and every card posted before the pair
+could move was stored without them; absent reads as the printed d12, which is
+what it was.
+
 ## Chat
+
+**A message is not the object in it**, and the header is where that shows.
+Who pressed the button, which character it was pressed for, when, and how to
+take it back are facts about the *message* — so `src/module/message-header.ts`
+dresses the header Foundry already rendered rather than drawing a second one,
+and `.dhk` in `styles/frame.css` is its look. That file and not `design/`,
+because a message header is the application's furniture, which is the same
+reason the window and dialog chrome are hand-authored there too.
+
+It was a quiet 8px caption *below* the object, and both halves of that were
+wrong. Below, in a log that is scrolled back through, puts the line nearer
+the **next** message than the one it names. And `.message-sender` is the
+speaker alias, which is the character — so a card posted by a GM speaking for
+three NPCs said nothing whatever about who was at the keyboard. It names both
+now: the character in the sheet's own UI face, the player as a mono caption
+beside it.
+
+**Nothing on it is redrawn.** The alias, the timestamp and the whisper line
+are Foundry's own elements, moved nowhere and restyled — the timestamp
+especially, since `ChatLog#updateTimestamps` rewrites every
+`.message-timestamp` on a fifteen-second interval and a copy would be the one
+line on the card that is quietly wrong an hour later. Two elements are added,
+and only because Foundry does not have them: the **player's name**, which is
+nowhere in the template, and the **trash**, which Foundry renders for GMs only
+(`canDelete ??= game.user.isGM`) although the permission is `OWNER` and the
+author owns their own message. Ours is drawn for anyone `canUserModify` allows,
+which is the test Foundry's own context menu uses, and Foundry's anchor is
+hidden so there is one control rather than two that can drift.
+
+**The strip is made of paper**, and a transparent one was the first mistake:
+naked on Foundry's chat log it was type floating on somebody else's substrate,
+with neither an edge nor a ground, and it read as something that had failed to
+load rather than as a caption. The card below it has solved that since it was
+drawn — a paper ground, a hairline, a shadow to lift it off the log — and the
+header takes the same three and is thereby the same object. It is also what
+keeps the contrast figures below true: every one is measured against
+`--paper`, and they were being spent on whatever the log happened to be.
+
+**It is flush**, at `margin-bottom:-1px`, and the minus one is the seam rather
+than a nudge — butted at zero the two hairlines sit side by side and read as a
+2px rule, overlapped by exactly their own width they are one, and where the
+object carries no border at all (a posted card is shadow and paper, nothing
+else) the two become one sheet. It carries **no chamfer** for the same reason:
+the family mark belongs to the bottom-right of the *message*, which is the
+card's own cut, and a second one in the middle of the object would notch a
+hole straight through to the chat log. Both gaps were reported before they
+were noticed here, so `tools/verify/` now asserts the shared edge.
+
+That in turn capped the plate. A card was already 300px and a rest caps itself,
+but `.dh-plate` simply took the log's width — invisible while the sidebar *is*
+300px, and obvious the moment a 300px caption sits over a 480px plate in a
+popped-out chat. "A chat card is a fixed 300px in Foundry and does not scale"
+is `design/chat.css`'s own opening rule; it is now stated where it binds.
+
+**The player's colour is a hue, not a colour.** It lands at full strength on
+the mark — a rhombus, the family shape — because that is the one thing on the
+line that is not text and therefore cannot be made illegible by somebody
+picking `#000000`. On the names it is `oklch(from var(--who) L c h)`: their
+hue and chroma, the sheet's lightness, one step per substrate. Measured across
+black, white and a saturated green it lands between 4.6 and 8.7:1 on both
+themes, against `--ink-3`'s own 4.4 and 3.6. Mixing toward `--ink` was the
+first answer and is the `@supports` fallback; it lifts a black to 2.2:1, which
+is a name you can see and cannot read.
+
+**The strip is a grid of three and was a wrapping flex row**, which is the
+kind of bug that reads correctly at every ordinary width. A wrapping flex
+container breaks a line *before* it shrinks anything on it, so a long
+character name did not ellipse — it took the whole metadata block onto a
+second row and turned a 26px strip into 35px. Three columns cannot do that,
+the middle one is `minmax(0,1fr)`, and the two names inside it use
+`flex:1 1 0` on the handle so that the **character never gives way first**:
+a shrink *factor* cannot manage that, because flex divides an overflow by
+factor times base size, and even at twelve a five-letter name beside a long
+handle still lost the pixel that renders an ellipsis. Taking the handle's
+base to zero takes it out of the overflow entirely.
+
+The character is named twice on a duality roll — here and inside the plate,
+which says who it belongs to on its own so a card stays readable when a module
+suppresses this header. That is the plate keeping a promise rather than the
+header repeating itself, and it is worth the line: a **posted card** names
+nobody at all, which is the gap this closes. `tools/verify/` draws the whole
+envelope under a stand-in `elements` layer, because the trash is a `<button>`
+and would otherwise be a 28px control on a 26px strip.
 
 **Foundry draws every message twice** — once into the log and once as the
 notification that floats over the board — from two separate calls about three
@@ -1029,12 +1265,12 @@ numeral's fraction of `--sz`, and both the font size and the offset
 place. The old arrangement stored the *product* of the two, so every change of
 size silently invalidated six offsets — which is exactly how this went wrong.
 
-One thing this does *not* reach: `design/plate.js` still hardcodes `sq` for
-every damage die, while `src/module/dice/plate.ts` has `shapeOf`. So
-`tools/verify/` draws a 2d8 as two d6 chips, because it builds its plates with
-the design builder. The look is right in the game and wrong on the study page,
-which is the opposite of the usual direction and worth fixing when the two
-builders are next reconciled.
+The two builders are reconciled on this now. `design/plate.js` hardcoded `sq`
+for every damage die while `src/module/dice/plate.ts` had `shapeOf`, so
+`tools/verify/` drew a 2d8 as two d6 chips — right in the game and wrong on the
+study page, which is the opposite of the usual direction. Both carry the same
+`SHAPE` table, and both use it for the duality pair as well now that a card can
+make the Hope Die a d20.
 
 The plate is **veiled** until it lands: field, ghost word, verdict, claim row
 and the critical's whole material are held back while the dice tumble, so the
@@ -1480,7 +1716,7 @@ turned it on got two identical house-default d12s tumbling next to a card that
 had just gone to some trouble to say which was which. The whole duality roll
 is "did gold beat violet".
 
-Four colorsets, taken from the values the plate already uses, and split the
+Four *roles*, taken from the values the plate already uses, and split the
 way the plate splits them. **Hope and Fear are read as a colour** — you are
 asking which of two hues came up higher, not adding two numbers — so they are
 `frosted`, a real transmissive material in that module, which carries the hue
@@ -1504,53 +1740,98 @@ is in the bump, where it costs the hue nothing. The bump and the label glow
 both need the module's own "realistic lighting" on; without it the colour maps
 still apply and the rest is quietly dropped.
 
-**What they draw is a chamfer**: three octagonal grooves stepping inward at
-falling weight, plus four small diamonds — the mark, the domain pip, the same
-rhombus everything else in this system is cut from. Four corners cut rather
-than the design's one bottom-right, because a die arrives at any rotation. The
-first attempt was seeded value noise, which was a picture of nothing in
-particular and read as dirt.
+**What they draw is a chamfer**: grooves following the edge of the face, plus
+small diamonds — the mark, the domain pip, the same rhombus everything else in
+this system is cut from. One at every corner rather than the design's single
+bottom-right, because a die arrives at any rotation. The first attempt was
+seeded value noise, which was a picture of nothing in particular and read as
+dirt.
 
-**Hope and Fear no longer share it, and the split falls out of the geometry.**
-One texture for both meant hue was the only thing telling apart the two dice
-the whole roll turns on, on a surface that had gone to some trouble to have a
-character of its own. An octagon is the intersection of a square and a diamond,
-so `octagon()` returns `max(square, diamond) - a` — and **which of the two
-terms wins already names the run a point stands on**. That discriminator is the
-whole mechanism; the two motifs are halves of one figure rather than two
-drawings.
+**Hope and Fear do not share it, and the first split was too fine.** One
+texture for both meant hue was the only thing telling apart the two dice the
+whole roll turns on. The first answer was Hope keeping an octagon's four
+straight runs while Fear kept the whole ring — a real difference, and one you
+cannot see across a table: both were three concentric rules and a bare corner
+is not a signal at that size. The two figures are **orthogonal in direction**
+now, which is the largest difference two line cuts can have and survives any
+rotation, any distance and any light.
 
-Hope keeps only where the *square* term dominates: four straight runs, one
-along each edge of the face, tapering out before the corners, with the marks
-standing free on the axes inside. It is **the open cut**, and Hope is the one
-thing on this sheet you hold in order to spend — the rail's only gesture for it
-is letting it go — so a frame with a way out on every side is the right frame.
-A chamfer that runs out is also what a real cut does at the end of a run; one
-stopping dead would read as a dash. Fear takes the rules the whole way round,
-corners included, and moves its marks *into* the corners it just closed, onto
-the diagonals at r=0.272 where a regular octagon's innermost chamfer already
-is — so `max()` fuses mark and rule into one figure. **The closed cut**: Fear
-is not yours and does not leave. The advantage pair takes Fear's figure at half
-depth, because nothing is being asked of a d6 except its number.
+**Fear is the closed cut**: three rules following the face all the way round,
+insets 0.10 / 0.20 / 0.30 of the inradius, the weight falling as they step
+inward, which is how this design draws a border everywhere else. The mark is
+cut **into** the innermost rule at every corner, so `max()` fuses the two into
+one figure. Concentric, layered, closed. Fear is not yours and does not leave.
 
-Parity between the two is enforced on the bump's **flat level and not its
+**Hope is the open cut**: one rule, on the innermost of Fear's three, and let
+go of at every corner — the same diamond stands free in the gap rather than set
+into the line, and out of each gap comes a **burst**, three grooves along the
+corner's own bisector running outward through the band Fear fills with rings.
+Radial where Fear is concentric. Hope is the one thing on this sheet you hold
+in order to spend — the rail's whole gesture for it is letting it go — and a
+figure whose every line is leaving is the surface saying so. One line is a spur
+and three is light; the outer two are shortened by their own cosine, because a
+ray leaving at an angle meets the face edge sooner than one going straight out.
+
+Both come off **the same discriminator**, which is the one piece of the octagon
+worth keeping. Take the two largest half-plane distances to the face's edges:
+in the middle of a side one dominates, at a corner two tie. So the difference
+*names the run a point stands on*. Fear ignores it, Hope opens its rule where
+it is small and puts the burst where it is largest. One number, two readings,
+and it works on a triangle, a square, a pentagon and a kite without being told
+which it is. The advantage pair takes Fear's figure at half depth, because
+nothing is being asked of a d6 except its number.
+
+**And there is one of each per shape, which retired a compromise rather than
+complicating one.** `createTextMaterial` draws the texture into one 256px atlas
+tile **per face**, so a single motif had to survive being clipped to a square
+(d6), a pentagon (d12) and a triangle (d20) — and an octagon was the best
+compromise available. It had a price: on a d20 a third of the figure fell
+outside the face and was never sampled, and the d4, d8 and d10 were never
+considered because nothing of ours rolled one.
+
+A colorset is chosen **per term**, so the die's face count is known at the
+moment it is painted. Now that a card can make the Hope Die a d20, that is the
+answer: `paint(term, HOPE)` names the role and reads the shape off `term.faces`
+itself, and there are six cuts per hue, each derived from **that face's own
+polygon**. The polygons are measured rather than guessed — the UVs come
+straight out of the module's `DiceModels.js`, binned by atlas tile and averaged
+over every face:
+
+| | face | inradius |
+| --- | --- | --- |
+| d6 | the square, corner to corner — the face *is* the tile | 0.489 |
+| d12 | a regular pentagon, apex up | 0.418 |
+| d20 | a triangle, apex up | 0.287 |
+| d4 | a triangle | 0.284 |
+| d8 | a triangle | 0.269 |
+| d10 | a kite — tangential, so it has an incircle too | 0.275 |
+
+Everything is built from one function, `insetOf(p)`: for a convex polygon the
+distance inward from the nearest edge is `-max_i dot(p - a_i, n_i)` over the
+outward normals, so a rule is a level set of it and needs no centre, no radius
+and no per-shape arithmetic. The kite gets the same treatment as the square.
+Rule *positions* are fractions of each face's own inradius and rule *widths*
+are absolute: a bevel is proportional to the face it runs around, and a cut is
+a cut. The generator asserts every cut lands inside the face — the check the
+octagon could never have passed, and the one that catches a ray lengthened by a
+tenth on the shape with the most room landing off the shape with the least.
+
+Colours, numeral, outline, edge, material, font and glow are **the role's** and
+identical across all six. A d20 Hope Die is the same die, cut for the face it
+has. Only the role's default shape is registered `visible`; the other five are
+`hidden`, which is read in exactly one place — `prepareColorsetList`, the
+settings dropdown — and nowhere in the render path. So the user's theme picker
+still shows the four it always showed rather than fourteen.
+
+Parity between the two hues is enforced on the bump's **flat level and not its
 mean**, for the reason the next paragraph gives: that map is also the
 transmission mask, so the flat is how see-through the die is, and two duality
-dice that are not equally transmissive are not a fair comparison. The generator
-prints both means every run to keep that honest — currently 226.32 and 224.82.
-
-The octagon is chosen off the real UV layout rather than by eye.
-`createTextMaterial` draws the whole texture into one 256px atlas tile **per
-face**, so the motif has to survive being clipped to a square (d6), a pentagon
-(d12) and a triangle (d20) — and those three are exactly the shapes we paint,
-since `rolls.ts` colours the duality d12s, the advantage d6 and `rollFoe`'s
-adversary d20 and nothing else. An octagon's straight runs parallel a square's
-four edges and a pentagon's five far better than a diamond's two diagonals do.
-No closed rule can hug the edge on a d6 and stay whole on a d20 — measured, a
-closed rule survives the d20 only inside inradius 0.233, which on a d6 is a
-collar round the numeral — so the grooves are sized for d12 and d6 and 34/56/72
-percent of the three of them land on the d20, which reads as a bevel passing
-under the face edge rather than as debris.
+dice that are not equally transmissive are not a fair comparison. The means no
+longer agree closely and cannot — three closed rules cut away more of a face
+than one broken rule and a few bursts do, and that difference is the whole
+point of having two figures. The generator prints every mean each run so the
+divergence stays a number somebody decided: currently 227.0–227.4 against
+223.3–224.8, on a flat of 228 and a floor of 124 on both.
 
 **One finding is about the material, not the finish.** On `frosted`, DSN hands
 the bump canvas to the material a *second* time as its `transmissionMap`; the
@@ -1580,8 +1861,8 @@ in every respect except the one that was never running.
 replaced appearance immediately afterwards, so putting the name there as well
 is all the later lookup needs. Confirmed in a live game rather than by reading:
 the same d12 through `getAppearanceForDice` → `generateMaterialData` gives
-`emissiveLabels: false` with the old wiring and `true` with the new, and
-`texture.name` is `dh-mark-hope` under both — the shape of a bug that hides.
+`emissiveLabels: false` with the old wiring and `true` with the new, and the
+texture's name is unchanged under both — the shape of a bug that hides.
 
 **The glow beyond the numeral is composited, not configured.** There is no
 emissive slot on a texture: `addTexture` loads exactly `source` and `bump`, and

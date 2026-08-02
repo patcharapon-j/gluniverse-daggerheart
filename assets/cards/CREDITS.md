@@ -324,3 +324,41 @@ Regenerate this file with `node tools/fetch-cards.mjs`.
 | Wayfinder | subclass | Simon Pape | DH507 |
 | Winged Sentinel | subclass | Stephanie Cost | DH076 |
 | Wordsmith | subclass | Nikki Dawes | DH064 |
+
+## Hope and Fear
+
+The 47 paintings under `domains/dread/`, `transformation/` and the *Hope and Fear* entries in the other folders were taken from the expansion PDF
+by hand and converted by `tools/import-hf-art.mjs`. They are the property of
+Darrington Press on the same terms as everything else in this folder.
+
+The expansion credits its artists **collectively**, on page 2, and attributes no
+painting to anybody. So there is no per-card artist here and `printing.artist`
+is empty on every one of these cards — a collective credit is the credit that
+exists, and a guess would be this repository inventing an attribution.
+
+- Juan Salvador Almencion
+- Eliot Baum
+- Cybercatbug
+- Luisa Costa
+- Daarken
+- Bear Frymire
+- Letícia Freitas
+- Laura Galli
+- Kristina Gehrmann
+- Arturo Gutiérrez González
+- Wesley Griffith
+- Katerina Ladon
+- Richard Luong
+- Morgane Magloire
+- Dominik Mayer
+- Reiko Murakami
+- Tamara Osborn
+- Ilya Royz
+- Chris Seaman
+- Crystal Sully
+- Jenny Tan
+- Brian Valeza
+- Richard Whitters
+- Mat Wilma
+- Maciej Wojtala
+- Zuzanna Wuzyk

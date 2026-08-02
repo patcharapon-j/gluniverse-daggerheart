@@ -55,6 +55,16 @@ export interface Note {
 export interface DualityPlate extends PlateBase {
   h: number;
   f: number;
+  /**
+   * Which dice those two numbers came off — "d12" unless a card moved one.
+   *
+   * Optional because every card posted before the pair could move was stored
+   * without them, and a log is a record: re-reading an old message must not
+   * silently redraw it as something it was not. Absent reads as the printed
+   * d12, which is what it was.
+   */
+  hd?: string;
+  fd?: string;
   out: Outcome;
   adv?: { dice: number[]; neg: boolean };
   /** Difficulty, or null when none was set — which is the common case and

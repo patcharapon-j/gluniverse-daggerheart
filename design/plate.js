@@ -30,13 +30,35 @@ const ADV = (r, sz) => {
     DIE(v, `sq a${r.adv.neg ? ' neg' : ''}${i === keep ? '' : ' dim'}`, sz, 6)).join('');
 };
 
-const DICE = (r, sz) =>
-  DIE(r.h, 'h' + (r.out === 'fear' ? '' : ' lit'), sz, 12) +
-  DIE(r.f, 'f' + (r.out === 'hope' ? '' : ' lit'), sz, 12) +
-  ADV(r, Math.round(sz * .76));
+/* ── the pair's own silhouettes ─────────────────────────────────────
+   A duality roll is 2d12 and was drawn as two decagons on that assumption,
+   which held until a card moved one: `Signature Move`, `Rise to the
+   Challenge`, `Reliable Backup` and the Paragon's Chain all read "you can
+   roll a d20 as your Hope Die". A 17 on a twelve-sided chip is the card
+   contradicting itself about the one thing it exists to report, so `hd`
+   and `fd` name the dice and the silhouette follows them. Absent is the
+   printed d12 — every card posted before the pair could move was stored
+   without them, and a log is a record.
+
+   `sq` for the d6 rather than `d6`, because a square chip is also what the
+   advantage die and the critical's maximum dice are, and those are not
+   claiming to be a kind of die when they wear it. */
+const SHAPE = {d4:'d4', d6:'sq', d8:'d8', d10:'d10', d12:'d12', d20:'d20'};
+const shapeOf = die => SHAPE[String(die).toLowerCase()] ?? 'sq';
+const facesOf = die => {
+  const n = Math.floor(Number(String(die).replace(/^d/i, '')));
+  return Number.isFinite(n) && n > 1 ? n : 12;
+};
 
 /* A d6 is smaller than a d12 and is drawn smaller, because that is true
    and because it keeps the duality pair the subject of the strip. */
+const DICE = (r, sz) => {
+  const hd = r.hd ?? 'd12';
+  const fd = r.fd ?? 'd12';
+  return DIE(r.h, `h ${shapeOf(hd)}` + (r.out === 'fear' ? '' : ' lit'), sz, facesOf(hd)) +
+    DIE(r.f, `f ${shapeOf(fd)}` + (r.out === 'hope' ? '' : ' lit'), sz, facesOf(fd)) +
+    ADV(r, Math.round(sz * .76));
+};
 
 const ADV_TERM = r => !r.adv ? [] : [{
   k: (r.adv.neg ? 'disadvantage' : 'advantage') +
@@ -51,7 +73,18 @@ const TERMS = (t, cls) => `<div class="pl-arith${cls ? ' ' + cls : ''}">${t.map(
     x.fear ? 'fe' : x.spent ? 'sp' : ''}"><b>${
     Math.abs(x.v)}</b> ${x.k}</i>`).join('')}</div>`;
 
-export const ARITH = r => TERMS([{k:'dice', v:r.h + r.f}, ...ADV_TERM(r), ...r.mods]);
+/* The pair's own term says which dice only when there is something to say.
+   "dice" is right for the printed 2d12 and would be a shrug on a roll
+   somebody spent a card to change; "d20 + d12" is the whole point of having
+   spent it. The silhouettes carry it too, but the arithmetic strip is what
+   gets read back three hours later in a log. */
+const DICE_TERM = r => {
+  const hd = r.hd ?? 'd12';
+  const fd = r.fd ?? 'd12';
+  return hd === 'd12' && fd === 'd12' ? 'dice' : `${hd} + ${fd}`;
+};
+
+export const ARITH = r => TERMS([{k:DICE_TERM(r), v:r.h + r.f}, ...ADV_TERM(r), ...r.mods]);
 
 /* Most duality rolls are made with no Difficulty at all. That is not a
    degraded state — it is the common one — so it gets its own sentence
@@ -257,6 +290,12 @@ const sum = a => a.reduce((x, y) => x + y, 0);
 
 export const DMG = (r, next) => {
   const crit = !!r.max, flat = sum(r.mods.map(m => m.v));
+  /* The damage dice take their own silhouette too, and this closes a
+     divergence rather than opening one: `plate.ts` has had `shapeOf` since a
+     2d8 was noticed arriving as two d6 chips, and this builder went on drawing
+     `sq` for everything — so the look was right in the game and wrong on the
+     study page, which is the opposite of the usual direction. */
+  const shape = shapeOf(r.die);
   const notation = `${r.n}${r.die}${flat ? '+' + flat : ''}`;
   const terms = [
     ...(crit ? [{k:`${r.n}${r.die} maximum`, v:sum(r.max)}] : []),
@@ -276,8 +315,8 @@ export const DMG = (r, next) => {
   </div>
   <div class="dmg-st">
     ${crit ? `<span class="grp"><s>max</s>${
-      r.max.map(v => DIE(v, 'sq w max', 26)).join('')}</span><span class="op">+</span>` : ''}
-    <span class="grp">${r.rolls.map(v => DIE(v, 'sq w', 26, +r.die.slice(1))).join('')}</span>
+      r.max.map(v => DIE(v, `${shape} w max`, 26)).join('')}</span><span class="op">+</span>` : ''}
+    <span class="grp">${r.rolls.map(v => DIE(v, `${shape} w`, 26, facesOf(r.die))).join('')}</span>
     ${r.bonus ? `<span class="op">+</span><span class="grp">${
       DIE(r.bonus.v, 'sq a', 26, r.bonus.mx ?? 6)}</span>` : ''}
   </div>

@@ -67,6 +67,15 @@ export function rulesOf(actor: any): Rule[] {
       case "community":
         push(out, it.name, s.feature);
         break;
+      /* A transformation is heritage, and both of its features are live rules
+         at all times — including the drawback, which is the half the book asks
+         you to remind your GM about. Ephemeral doubles the magic damage you are
+         about to take and Corpse decides whether a rest clears anything, so a
+         damage or rest dialog that did not list them would be quietly wrong in
+         exactly the way these panels exist to prevent. */
+      case "transformation":
+        for (const f of s.features ?? []) push(out, it.name, f);
+        break;
       case "domainCard":
         if (s.inLoadout) push(out, "Loadout", { name: it.name, description: s.description });
         break;

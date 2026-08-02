@@ -19,6 +19,12 @@
  *   - every trait, range, burden and damage die is a value the system's own
  *     closed sets contain.
  *
+ * Both books get the same treatment and are checked **separately**. *Hope and
+ * Fear* reprints its own six staples across its own four tiers, and they are
+ * different weapons rather than a continuation of the corebook's — so running
+ * one staple check over the union would let a Katana cover for a missing
+ * Broadsword. Same functions, called twice, with two staple lists.
+ *
  * Naming the staples rather than counting them is the load-bearing choice.
  * A count catches a deleted line; it does not catch the failure that actually
  * happens when you copy a table by hand, which is transcribing one row twice
@@ -54,6 +60,16 @@ const {
   WHEELCHAIRS,
 } = await import(src("equipment-tables.mjs"));
 const { CONSUMABLES, ITEMS, STARTING_POTIONS } = await import(src("loot-tables.mjs"));
+
+/* *Hope and Fear*'s chapter 2, checked as its own set of tables rather than
+   merged into the corebook's. The regularities are the same in kind — a staple
+   list reprinted under a tier prefix, one-handed secondaries, two d12 tables of
+   sixty — but they are *different* staples, and running one check over both
+   books' rows would let either one's Katana satisfy a gap in the other's. Same
+   functions, called twice. */
+const HF = await import(src("hf-equipment-tables.mjs"));
+const { CONSUMABLES: HF_CONSUMABLES, ITEMS: HF_ITEMS } = await import(src("hf-loot-tables.mjs"));
+
 const equipment = (await import(src("equipment.mjs"))).default;
 
 /* The closed sets, restated. Importing them from `config.ts` would mean
@@ -98,6 +114,11 @@ staples("primary magic", PRIMARY_MAGIC, STAPLES.primaryMagic);
 staples("secondary", SECONDARY, STAPLES.secondary);
 staples("armor", ARMOR, STAPLES.armor);
 
+staples("H&F primary physical", HF.PRIMARY_PHYSICAL, HF.STAPLES.primaryPhysical);
+staples("H&F primary magic", HF.PRIMARY_MAGIC, HF.STAPLES.primaryMagic);
+staples("H&F secondary", HF.SECONDARY, HF.STAPLES.secondary);
+staples("H&F armor", HF.ARMOR, HF.STAPLES.armor);
+
 /* ── the values ───────────────────────────────────────────────────────
    Every one of these lands in a `choice()` field, which throws on an unknown
    value — at *load* time, inside Foundry, on a pack that has already shipped.
@@ -135,6 +156,20 @@ for (const tier of TIERS) {
   }
 }
 
+for (const tier of TIERS) {
+  weapons(`H&F primary physical tier ${tier}`, HF.PRIMARY_PHYSICAL[tier] ?? []);
+  weapons(`H&F primary magic tier ${tier}`, HF.PRIMARY_MAGIC[tier] ?? []);
+  weapons(`H&F secondary tier ${tier}`, HF.SECONDARY[tier] ?? [], { secondary: true });
+
+  for (const r of HF.ARMOR[tier] ?? []) {
+    const at = `H&F armor tier ${tier}: ${r.name}`;
+    if (!(r.major > 0) || !(r.severe > r.major)) {
+      bad(`${at} — thresholds ${r.major}/${r.severe} (severe must exceed major)`);
+    }
+    if (!(r.score > 0)) bad(`${at} — base score ${r.score}`);
+  }
+}
+
 weapons("wheelchairs", WHEELCHAIRS);
 for (const r of WHEELCHAIRS) {
   if (!TIERS.includes(r.tier)) bad(`wheelchairs: ${r.name} — tier ${r.tier}`);
@@ -157,6 +192,8 @@ function table(label, rows) {
 
 table("items", ITEMS);
 table("consumables", CONSUMABLES);
+table("H&F items", HF_ITEMS);
+table("H&F consumables", HF_CONSUMABLES);
 
 /* ── what character creation needs ────────────────────────────────────
    Every one of these is a step of `apps/creation.ts` that would silently

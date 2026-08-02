@@ -166,11 +166,18 @@ export function stepsOf(actor: any): StepState[] {
           detail: say([cls?.name, sub?.system?.subclassName]),
         };
 
-      case "heritage":
+      case "ancestry":
         return {
           ...step,
-          done: anc.length > 0 && com.length > 0,
-          detail: say([com[0]?.name, anc[0]?.name]),
+          done: anc.length > 0,
+          detail: say([anc[0]?.name]),
+        };
+
+      case "community":
+        return {
+          ...step,
+          done: com.length > 0,
+          detail: say([com[0]?.name]),
         };
 
       case "traits":
