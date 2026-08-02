@@ -1,0 +1,121 @@
+name: Release
+
+# Manual only. A system release is a decision — it moves a version number that
+# every installed copy is watching — so it is never a consequence of a push.
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Which part of the version to raise"
+        type: choice
+        required: true
+        default: hotfix
+        options:
+          - hotfix
+          - minor
+          - major
+      prerelease:
+        description: "Publish as a pre-release (Foundry's `latest` will not pick it up)"
+        type: boolean
+        required: false
+        default: false
+
+# The job writes the version bump back to the branch and creates the release.
+permissions:
+  contents: write
+
+concurrency:
+  # Two releases in flight would race on the version in system.json.
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Failed rather than skipped: a release run off a side branch would tag a
+      # history main does not have, and a green skip says nothing about why.
+      - name: Refuse anything but main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Releases are cut from main; this run is on ${{ github.ref }}."
+          exit 1
+
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          # Push the version bump back with the token Actions already has.
+          persist-credentials: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Before the bump, so a failure costs nothing and leaves no version
+      # number spent. `npm run build:packs` runs the two content checks first,
+      # both of which read the committed snapshot rather than the network.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Bump the version
+        id: bump
+        run: node scripts/bump-version.mjs "${{ inputs.bump }}"
+
+      # Must follow the bump: `vite build` copies system.json into dist/, and
+      # the copy inside the zip is the manifest an installed Foundry reads.
+      - name: Build
+        run: |
+          npx vite build
+          npm run build:packs
+
+      - name: Verify the built manifest
+        run: |
+          test -f dist/system.json
+          test -f dist/module/daggerheart.js
+          test -d dist/packs
+          node --input-type=commonjs -e '
+            const m = require("./dist/system.json");
+            const v = process.env.VERSION;
+            if (m.version !== v) throw new Error(`dist/system.json is ${m.version}, expected ${v}`);
+            if (!m.download.endsWith(`/v${v}/system.zip`)) throw new Error(`download URL is ${m.download}`);
+            for (const s of m.styles) require("node:fs").accessSync(`dist/${s}`);
+            for (const p of m.packs) require("node:fs").accessSync(`dist/${p.path}`);
+          '
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+
+      # Zipped from inside dist/ so system.json sits at the root of the
+      # archive, which is where Foundry looks for it.
+      - name: Package
+        run: cd dist && zip -r -q ../system.zip .
+
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add system.json package.json package-lock.json styles/daggerheart-components.css
+          git commit -m "Release ${{ steps.bump.outputs.tag }}"
+          git tag -a "${{ steps.bump.outputs.tag }}" -m "${{ steps.bump.outputs.tag }}"
+          git push origin HEAD:main
+          git push origin "${{ steps.bump.outputs.tag }}"
+
+      # Both assets are required: `system.json` is what the manifest URL
+      # resolves to, and it must be the loose file rather than the one inside
+      # the zip. Release notes are generated from the commits since the last
+      # tag, which is the only summary this repo can honestly produce.
+      - name: Publish the release
+        run: |
+          gh release create "${{ steps.bump.outputs.tag }}" \
+            --title "${{ steps.bump.outputs.tag }}" \
+            --generate-notes \
+            ${{ inputs.prerelease && '--prerelease' || '' }} \
+            dist/system.json \
+            system.zip
+        env:
+          GH_TOKEN: ${{ github.token }}

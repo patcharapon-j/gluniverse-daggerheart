@@ -795,6 +795,37 @@ root of the packaged `system.zip`.
 
 `npm run typecheck` runs `tsc --noEmit` and `svelte-check`.
 
+## Releasing
+
+`.github/workflows/release.yml` is **manual only** — a release moves a number
+every installed copy is watching, so it is a decision rather than a consequence
+of a push. Run it from the Actions tab, pick `hotfix`, `minor` or `major`, and
+it typechecks, bumps, builds, tags and publishes.
+
+Two URLs in `system.json` do the installing, and they are not the same kind of
+thing. **`manifest` points at `releases/latest/download/system.json` and never
+changes** — that is what somebody pastes into Foundry's *Install System* box,
+and what an installed copy re-fetches to ask whether there is a newer version.
+`download` names a **specific tag** and is rewritten on every release. So the
+loose `system.json` has to be a release asset in its own right: the one inside
+the zip is what a user has after installing, and the one beside it is what the
+world reads to decide whether to install at all.
+
+    https://github.com/patcharapon-j/gluniverse-daggerheart/releases/latest/download/system.json
+
+The bump therefore happens **before** the build, not after: `vite build` copies
+`system.json` into `dist/`, and that copy is the manifest inside the zip. A
+version written afterwards would ship a system claiming to be the version it
+replaced. `scripts/bump-version.mjs` writes the three files that carry the
+number — `system.json` first, since it is the one Foundry reads and the other
+two are brought into line — and prints it for the workflow to tag with.
+
+The typecheck runs **before** the bump so a failure spends no version number,
+and `npm run build:packs` brings the two content checks with it, both of which
+read the committed snapshot rather than the network. The zip is made from
+inside `dist/` so `system.json` sits at the archive root, which is where
+Foundry looks.
+
 ## `data-pk` is the sheet's one handle
 
 Four things are delegated off the character sheet's root, and all four find
