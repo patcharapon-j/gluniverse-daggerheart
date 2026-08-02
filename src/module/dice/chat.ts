@@ -14,6 +14,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID } from "../config.ts";
+import { takeDamage } from "../apps/damage.ts";
+import { damageRecipients, noRecipientKey } from "../apps/targets.ts";
 import { getFear, setFear } from "../settings.ts";
 import { fit } from "../ui/card.js";
 import { loadSigils } from "../sheets/cards.ts";
@@ -114,8 +116,11 @@ export function registerChat(): void {
  * not about anyone having looked at it, and `createChatMessage` fires once
  * per client for a genuinely new message and never on a reload — which is
  * the whole of what the `fearApplied` flag was for. That flag is gone with
- * it: nothing was ever drawn from it, `.pl-b.done` has no rule in
- * `plate.css`, so it cost an animation to record something invisible.
+ * it, and it stays gone now that `.pl-b.done` does have a rule: the Fear
+ * claim is drawn spent from the first frame by {@link bindActions}, off the
+ * card's own outcome rather than off a write. Recording it would mean
+ * writing to a message that is mid-arrival, which is the one thing this
+ * whole arrangement exists to avoid.
  *
  * Gating on the active GM makes this one client rather than every GM at the
  * table. The old code only checked `isGM`, so two GMs meant two Fear.
@@ -144,35 +149,52 @@ function applyFear(message: any): void {
  * because the first is before the chat log has given the message its width
  * and the card's container query has nothing to resolve against yet.
  *
- * The arrival goes on last, after the fit, for the same reason: `fit` steps
- * the plate's height, and a card that started animating before it was
- * measured would be animating one shape into another mid-flight.
+ * And after the fonts, which the sheet gets for free and this does not. A
+ * sheet is opened by hand, long after the client finished loading; a chat
+ * card is very often drawn during it, and `fit` measured against a fallback
+ * face is measuring the wrong text. It runs exactly once — nothing re-fits a
+ * message — so a card that measured early stays wrong for the session, which
+ * is the difference the peek layer never shows.
+ *
+ * The redraw is guarded for the same reason. `fit` is what makes a long card
+ * readable and the sigils are decoration; a fetch that fails should not be
+ * able to take the layout with it, and `void drawCard(…)` at the call site
+ * would swallow the rejection without a word.
+ *
+ * The arrival goes on last, after the fit: `fit` steps the plate's height,
+ * and a card that started animating before it was measured would be
+ * animating one shape into another mid-flight.
  */
 async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promise<void> {
   const card = message.getFlag(SYSTEM_ID, "card");
   if (card) {
-    const sigils = await loadSigils();
-    const drawn = cardWrapper({
-      ...card,
-      sig: sigils[card.sigKey] ?? "",
-      sig2: card.sig2Key ? (sigils[card.sig2Key] ?? "") : undefined,
-      fbsig: card.fbsigKey ? (sigils[card.fbsigKey] ?? "") : undefined,
-    });
-    const next = document.createRange().createContextualFragment(drawn)
-      .firstElementChild as HTMLElement | null;
-    if (next) {
-      // The wrapper is the element we are standing in, so take the redrawn
-      // one's children rather than nesting a second wrapper inside the first
-      // — and take its class and `--art` too. Those are the wrapper's own two
-      // facts and they do not survive storage either: Foundry's sanitiser
-      // drops a `style` carrying a `url()`, so a card with real artwork
-      // arrived wearing whatever `--art` it inherited, which is the sample
-      // photograph in `tokens.css`. Every framed card, one stock image.
-      host.className = next.className;
-      host.style.cssText = next.style.cssText;
-      host.replaceChildren(...next.childNodes);
+    try {
+      const sigils = await loadSigils();
+      const drawn = cardWrapper({
+        ...card,
+        sig: sigils[card.sigKey] ?? "",
+        sig2: card.sig2Key ? (sigils[card.sig2Key] ?? "") : undefined,
+        fbsig: card.fbsigKey ? (sigils[card.fbsigKey] ?? "") : undefined,
+      });
+      const next = document.createRange().createContextualFragment(drawn)
+        .firstElementChild as HTMLElement | null;
+      if (next) {
+        // The wrapper is the element we are standing in, so take the redrawn
+        // one's children rather than nesting a second wrapper inside the first
+        // — and take its class and `--art` too. Those are the wrapper's own two
+        // facts and they do not survive storage either: Foundry's sanitiser
+        // drops a `style` carrying a `url()`, so a card with real artwork
+        // arrived wearing whatever `--art` it inherited, which is the sample
+        // photograph in `tokens.css`. Every framed card, one stock image.
+        host.className = next.className;
+        host.style.cssText = next.style.cssText;
+        host.replaceChildren(...next.childNodes);
+      }
+    } catch (err) {
+      console.error(`${SYSTEM_ID} | could not redraw a posted card`, err);
     }
   }
+  await document.fonts?.ready?.catch(() => {});
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       fit(host);
@@ -181,14 +203,52 @@ async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promis
   );
 }
 
+/**
+ * Which claim flag each action spends.
+ *
+ * The flag is the truth and the class is only its picture. A claim taken on
+ * one client has to look taken on every other one, and it has to still look
+ * taken after a reload — the log is a record of what changed hands, and a row
+ * of live buttons three hours later is an invitation to collect the same Hope
+ * again. `runAction` writes these; `bindActions` reads them back.
+ */
+const CLAIM_OF: Record<string, string> = {
+  "gain-hope": "hope",
+  "clear-stress": "stress",
+  "roll-damage": "damage",
+  "apply-damage": "applied",
+};
+
 function bindActions(message: any, plate: HTMLElement): void {
+  const taken = message.getFlag(SYSTEM_ID, "claimed") ?? {};
+
   for (const el of plate.querySelectorAll<HTMLElement>("[data-dh-act]")) {
     const act = el.dataset.dhAct;
     if (!act) continue;
 
-    // The GM's claim is a <span>, not a <button>: it is not the player's to
-    // press. The GM's own client picks it up below.
+    /* The GM's Fear is a <span>, not a <button>: it is not the player's to
+       press, and since it moved to `createChatMessage` it is nobody's — it
+       applies itself the instant the card exists. So it is already taken by
+       the time anyone can look at it, and it wears the spent state from the
+       first frame. That is a statement of fact rather than a disabled
+       control, which is exactly what the row has always been.
+
+       Unconditional, and deliberately so. It could be gated on there being
+       an active GM to have gained it, but then the same card would look
+       different on two screens depending on who happened to be logged in,
+       and a record that disagrees with itself across the table is worse than
+       one that is uniformly slightly optimistic. */
+    if (act === "gain-fear") {
+      el.classList.add("done");
+      continue;
+    }
     if (el.tagName !== "BUTTON") continue;
+
+    const key = CLAIM_OF[act];
+    if (key && taken[key]) {
+      el.classList.add("done");
+      continue;
+    }
 
     el.addEventListener("click", async (event) => {
       event.preventDefault();
@@ -253,10 +313,19 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
       el.classList.add("done");
       return;
     }
+    /* The one claim with no owner: damage lands on whoever is *targeted*,
+       which is a choice made after the card was posted and by someone who
+       may not be the roller.
+
+       It used to mark itself done unconditionally, including on the press
+       that found no target and warned about it — so the commonest mistake
+       with this button (press first, target second) burned the button and
+       left the damage unapplied with no way back. Now nothing is claimed
+       unless something was actually hit. */
     case "apply-damage": {
       const plate = message.getFlag(SYSTEM_ID, "plate");
-      await applyDamageToTargets(plate?.total ?? 0);
-      el.classList.add("done");
+      if (!(await applyDamageToTargets(plate?.total ?? 0, plate?.dtype))) return;
+      if (await claimOnce(message, "applied")) el.classList.add("done");
       return;
     }
     default:
@@ -280,18 +349,43 @@ async function claimOnce(message: any, key: string): Promise<boolean> {
 }
 
 /**
- * Damage lands on whoever is targeted, and the card said nothing about who
- * that is on purpose — how many Hit Points a number becomes depends on
- * thresholds and armour the roller does not own.
+ * Damage lands on whoever is on the receiving end, and the card said nothing
+ * about who that is on purpose — how many Hit Points a number becomes depends
+ * on thresholds and armour the roller does not own.
+ *
+ * *Who* that is comes from `damageRecipients`, and it is not the target
+ * reticle any more: a GM means the tokens they have selected, a player means
+ * their own character. The reticle is what both of them point at the person
+ * they are about to *attack*, so reading damage off it hit the wrong side of
+ * the exchange for everybody. See `apps/targets.ts`.
+ *
+ * Each is asked separately, because the answer is theirs. What to spend is the
+ * real decision in taking damage and it is made after seeing the number; two
+ * targets of one blast have different armour, different thresholds and
+ * different opinions about whether this is the hit worth paying for.
+ * Sequentially, therefore, and not in parallel — three dialogs stacked on top
+ * of each other would be three answers given in an order nobody chose.
+ *
+ * @returns whether anything was actually damaged. Nobody to hit, nothing
+ * owned and every dialog dismissed all mean the press did not land, and the
+ * caller uses that to decide whether to spend the claim — so backing out of
+ * the dialog leaves the button live rather than burning it.
  */
-async function applyDamageToTargets(amount: number): Promise<void> {
-  const targets = [...(game.user?.targets ?? [])];
-  if (!targets.length) return warn("NoTarget");
+async function applyDamageToTargets(amount: number, damageType?: string): Promise<boolean> {
+  const recipients = damageRecipients();
+  if (!recipients.length) {
+    warn(noRecipientKey());
+    return false;
+  }
 
-  for (const token of targets) {
-    const actor = token.actor;
+  let owned = 0;
+  let hit = 0;
+  for (const actor of recipients) {
     if (!actor?.isOwner) continue;
-    const result = await actor.applyDamage(amount);
+    owned++;
+    const result = await takeDamage(actor, amount, { damageType });
+    if (!result) continue;
+    hit++;
     ui.notifications?.info(
       game.i18n.format("DAGGERHEART.Info.DamageApplied", {
         name: actor.name,
@@ -300,6 +394,8 @@ async function applyDamageToTargets(amount: number): Promise<void> {
       }),
     );
   }
+  if (!owned) warn("NotYours");
+  return hit > 0;
 }
 
 const warn = (key: string): void => {

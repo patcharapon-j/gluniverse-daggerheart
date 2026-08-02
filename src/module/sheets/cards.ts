@@ -23,6 +23,7 @@ import {
   BURDEN_LABELS,
   CARD_TYPE_LABELS,
   DOMAINS,
+  FEATURE_KIND_LABELS,
   rangeLabel,
   traitLabel,
 } from "../config.ts";
@@ -95,6 +96,18 @@ export function loadSigils(): Promise<Sigils> {
 export interface CardContext {
   /** The class's two domains, for the class and subclass cards. */
   domains?: { primary?: string; secondary?: string };
+  /**
+   * Every class's *own* pair, keyed by lowercase class name.
+   *
+   * A subclass card has no domains and inherits its class's — which was read
+   * off the character, and the character has one `domains` field. That is
+   * correct until somebody multiclasses, at which point the second class's
+   * subclass cards wear the first class's colours and say its domains in
+   * their footer. The card is then wrong about the only two facts it
+   * borrowed. So a subclass looks up the class it names and falls back to
+   * the character's only when it cannot find one.
+   */
+  classDomains?: Record<string, { primary?: string; secondary?: string }>;
   /** Armor slots marked, so an armor tile can print "3 / 4". */
   armorMarked?: number;
   armorSlots?: number;
@@ -337,19 +350,37 @@ export function cardOf(
           { k: "Evasion", v: s.startingEvasion ?? 10 },
           { k: "Hit Points", v: s.startingHitPoints ?? 6 },
         ],
-        feats: feats([s.classFeature, s.hopeFeature]),
-        // Flavour, not body text. A class card is Evasion, Hit Points and two
-        // feature runs; the prose is the one line that sets them up, and the
-        // `.fl` slot is the one that says so. It is also the slot that stops
-        // the prose growing — see the class flavour rule in
-        // `tools/check-cards.mjs`.
-        flavour: plain(s.description) || undefined,
+        /* The class feature, and *not* the Hope feature.
+
+           They are two different kinds of thing wearing one shape. The class
+           feature is a passive fact about what you are — it is true whether
+           or not you look at it. The Hope feature is a move you make, it
+           costs three Hope, and the only moment it matters is the moment you
+           are deciding whether to spend them. That decision is taken against
+           a number that lives in the rail, eighteen inches from here, and it
+           was being read off a card you had to hover to see.
+
+           So it moved to the rail, under the gems it spends — which is where
+           the printed sheet puts it, for the same reason. See `hopeCard`
+           below for the card it posts when pressed: it is still a card, it
+           is just not one that has to be found first.
+
+           No flavour either. A class card is Evasion, Hit Points and its
+           feature run, and the one-sentence opener the book gives it is the
+           only line on the card that is not a rule — which is exactly the
+           line the card can spare. `system.description` still holds it, and
+           `tools/check-cards.mjs` still keeps it to one sentence; the card is
+           simply not where it gets read. */
+        feats: feats(s.classFeatures ?? []),
       };
     }
 
     case "subclass": {
-      const p = ctx.domains?.primary;
-      const q = ctx.domains?.secondary;
+      // Its own class's pair when we can find one, the character's otherwise.
+      // See `classDomains` above for why the difference matters.
+      const own = ctx.classDomains?.[String(s.className ?? "").toLowerCase()];
+      const p = own?.primary ?? ctx.domains?.primary;
+      const q = own?.secondary ?? ctx.domains?.secondary;
       // Same rule as the class, and it fires far less often — a subclass has
       // real artwork, so this is only what a card whose fetch never landed
       // falls back to. It falls back to its class rather than to half its
@@ -371,10 +402,11 @@ export function cardOf(
           ? [{ k: "Spellcast", v: traitLabel(s.spellcastTrait) }]
           : undefined,
         feats: feats(s.features ?? []),
-        // "Play the Troubadour if you want to play music to bolster your
-        // allies" is advice about the subclass, not a rule of it — the same
-        // slot an ancestry's one line of flavour takes, for the same reason.
-        flavour: plain(s.description) || undefined,
+        /* No flavour, for the reason the class has none. "Play the Troubadour
+           if you want to play music to bolster your allies" is advice about
+           picking the subclass, and it is read once, at character creation,
+           from the book — not from a card you are holding three levels later
+           to check what your Specialization does. */
       };
     }
 
@@ -482,10 +514,252 @@ export function cardOf(
         text: plain(s.description) || undefined,
       };
 
+    /* The catch-all subtype, and it used to return null — which meant a
+       `feature` Item was invisible. Not "drawn plainly": *absent*. It had no
+       card, so no peek, no chat post, no `data-pk`, and therefore no
+       right-click and no way to delete it. The gear tab's "+ new" menu
+       offered Feature as one of five things you could make, and making one
+       put a document on the character that nothing on the character would
+       ever draw again.
+
+       The old comment said a feature is a stat-block entry and drawing one as
+       a card would claim it is something you hold. That is true of the
+       adversary's — an adversary sheet lists its own and does not use this —
+       and it was never true of the other half: a class feature granted by a
+       campaign frame, a boon from a session, a homebrew knack. Those are
+       exactly what this subtype is for, and they belong on the feature list
+       with the class's own. `kind` is the word the stat block prints, so it
+       is the type line. */
+    case "feature":
+      return {
+        ...base,
+        d: KINDS.gear,
+        sig: sig["@gear"] ?? "", sigKey: "@gear",
+        type: (FEATURE_KIND_LABELS[s.kind] ?? "Feature").toUpperCase(),
+        name: it.name,
+        foot: s.origin || "Feature",
+        stats: featureCosts(s),
+        text: plain(s.description) || undefined,
+      };
+
     default:
       return null;
   }
 }
+
+/**
+ * What a feature costs to use, as footer stats — and nothing at all when it
+ * costs nothing, which is most of them. An empty stat row is a line of
+ * furniture claiming there is something to read.
+ */
+function featureCosts(s: any): { k: string; v: string | number }[] | undefined {
+  const out: { k: string; v: string | number }[] = [];
+  if (s.stressCost) out.push({ k: "Stress", v: s.stressCost });
+  if (s.fearCost) out.push({ k: "Fear", v: s.fearCost });
+  if (s.uses?.max) out.push({ k: "Uses", v: `${s.uses.value ?? 0} / ${s.uses.max}` });
+  return out.length ? out : undefined;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ONE FEATURE, SAID OUT LOUD
+
+   A class is not a card on this sheet any more — it is a list of its
+   features, drawn as rows, with the rule printed on each one. See the
+   `.abl` block in `design/sheet.css` for that argument.
+
+   But "what does this do" is still a table question as often as a private
+   one, and the answer still wants to be a card. So each row posts *itself*:
+   one feature, its rule, and the two domains and class mark of whatever it
+   arrived on. Not the class card — that would answer "what does Ranger's
+   Focus do" by making four other people read past Evasion, Hit Points and a
+   second feature to find the sentence.
+
+   None of these have artwork. There is no printed card for a page in a book,
+   which is why the class card was `noart` too, and why the plate they all
+   fall back to is the class mark rather than the first of two domain sigils.
+   ══════════════════════════════════════════════════════════════════════ */
+
+export interface FeatureCardOptions {
+  /** The Item the feature arrived on. Gives the card its id and its `k`. */
+  item: ItemSnapshot;
+  /** A `{name, description}` block — a `featureField`, or an Item's system. */
+  feature: any;
+  /** The type line: "CLASS FEATURE", "FOUNDATION", "HOPE FEATURE". */
+  type: string;
+  /** The footer: which class or subclass said it. */
+  foot?: string;
+  /** The class pair to wear in the corners, when there is one. */
+  domains?: { primary?: string; secondary?: string };
+  /** The class whose mark fills the plate in place of artwork. */
+  className?: string;
+  stats?: { k: string; v: string | number }[];
+  /**
+   * Which feature of its Item this is. A class carries two and a subclass
+   * carries several, so the id alone is not a key — and `k` is what the
+   * swap's FLIP and the peek layer look each other up by.
+   */
+  slot?: string;
+}
+
+export function featureCard(sig: Sigils, o: FeatureCardOptions): CardOptions | null {
+  const f = o.feature;
+  if (!f?.name && !f?.description) return null;
+
+  const p = o.domains?.primary;
+  const q = o.domains?.secondary;
+  const ck = classKey(o.className);
+
+  return {
+    id: o.item.id,
+    k: `${o.item.id}:${o.slot ?? "feature"}`,
+    art: "--art:none",
+    noart: true,
+    d: dom(p),
+    d2: q ? dom(q) : undefined,
+    sig: (p && sig[p]) || "", sigKey: p,
+    sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
+    fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? o.className : undefined,
+    type: o.type,
+    name: f.name || "Feature",
+    foot: o.foot,
+    stats: o.stats,
+    text: plain(f.description),
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE HOPE ACTION
+
+   The one thing on a character sheet that is a move rather than a record.
+   Every class has exactly one, it is bought with Hope, and it has no Item of
+   its own — it is a `{name, description}` block on the class, like the class
+   feature beside it.
+
+   It gets a card for the reason above, and it keeps its own function because
+   it is the one feature with a *price* the sheet has to read.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/** What a Hope feature costs when its own text does not say. */
+export const HOPE_ACTION_COST = 3;
+
+/* ── what a feature costs to use ───────────────────────────────────────
+   Every price in this game is written into the rule rather than stored
+   beside it — "Spend 3 Hope to…", "Mark a Stress to…" — so a sheet that
+   wants to charge for a feature has to read the feature.
+
+   That is a parse of English rules text, which is the thing this system
+   refuses to do everywhere else, so it is worth being exact about why it is
+   allowed here and how it is kept honest.
+
+   It is allowed because the alternative is worse in a specific way: the
+   player presses the feature, then goes and marks the Stress by hand, and
+   the commonest failure at a real table is the second half not happening.
+   The sheet is *already* doing this for the Hope action and has been since
+   that moved to the rail.
+
+   It is kept honest by only ever reading the **opening clause**. Daggerheart
+   states a price the way an invoice does — first thing, imperative — and
+   anything later in the paragraph is describing what the feature does, not
+   what it costs. That distinction is not cosmetic:
+
+       Ranger's Focus — "Spend a Hope and make an attack against a target.
+       … When you deal damage to them, they must mark a Stress."
+
+   The first is your price. The second is the *target's*, and a regex over
+   the whole paragraph charges you for it. Anchoring at the start of the text
+   and stopping at the first sentence is what tells those two apart, and it
+   is why the pattern is written the way it is rather than more permissively.
+
+   An authored `stressCost`/`fearCost` on a `feature` Item always wins over
+   the text, because somebody typed it deliberately. */
+
+const AMOUNTS: Record<string, number> = {
+  a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+};
+
+const amount = (w: string): number => AMOUNTS[w.toLowerCase()] ?? (Number(w) || 0);
+
+/**
+ * `^` and a sentence-bounded run: the price is the first thing the rule says.
+ * The run allows a short lead-in — "Once per long rest, spend 3 Hope to…" —
+ * and `[^.!?]` stops it dead at the end of the opening sentence.
+ */
+const priceOf = (text: string, unit: string): number => {
+  const rx = new RegExp(
+    `^[^.!?]{0,64}?\\b(?:spend|mark|pay)\\s+(a|an|one|two|three|four|five|six|\\d+)\\s+${unit}\\b`,
+    "i",
+  );
+  const m = rx.exec(text);
+  return m ? amount(m[1] as string) : 0;
+};
+
+export interface Price {
+  hope: number;
+  stress: number;
+  fear: number;
+}
+
+export const isFree = (p: Price): boolean => !p.hope && !p.stress && !p.fear;
+
+/**
+ * @param system the Item's own `system`, when the feature *is* an Item — its
+ * authored cost fields outrank anything read out of the prose.
+ */
+export function featurePrice(feature: any, system?: any): Price {
+  const text = plain(feature?.description).replace(/<br>/g, " ");
+  return {
+    hope: priceOf(text, "hope"),
+    stress: Number(system?.stressCost) || priceOf(text, "stress"),
+    fear: Number(system?.fearCost) || priceOf(text, "fear"),
+  };
+}
+
+/** "3 Hope · 1 Stress", or nothing at all — which is most of them. */
+export const priceLabel = (p: Price): string | undefined =>
+  [p.hope && `${p.hope} Hope`, p.stress && `${p.stress} Stress`, p.fear && `${p.fear} Fear`]
+    .filter(Boolean)
+    .join(" · ") || undefined;
+
+/**
+ * The Hope action's own price, read off the rule rather than assumed.
+ *
+ * Almost every Hope feature in the book opens "Spend 3 Hope to …", and the
+ * few that do not say a different number in the same sentence. Parsing it
+ * means the sheet charges what the card says instead of what the common case
+ * says — which matters exactly once per campaign, on the one class that is
+ * different, and that is the case a hardcoded 3 gets wrong silently.
+ *
+ * This one keeps a *default* where {@link featurePrice} returns zero, because
+ * a Hope feature is a Hope feature: it is definitionally bought, so a price
+ * that could not be read is a price that could not be read rather than a
+ * feature that is free.
+ */
+export function hopeCost(feature: any): number {
+  const n = featurePrice(feature).hope;
+  return n > 0 ? n : HOPE_ACTION_COST;
+}
+
+/**
+ * The Hope action as a card, for the chat log.
+ *
+ * Built from the *class* Item, so it wears the class's two domains in its
+ * corners and the class mark on its plate — the same treatment every other
+ * feature off that class gets, because it is the same class saying it.
+ *
+ * `id` is the class's, which means the posted card is still traceable back to
+ * the Item it came from even though the action is not an Item.
+ */
+export const hopeCard = (cls: ItemSnapshot, sig: Sigils): CardOptions | null =>
+  featureCard(sig, {
+    item: cls,
+    feature: cls.system?.hopeFeature,
+    slot: "hope",
+    type: "HOPE FEATURE",
+    foot: cls.name,
+    domains: cls.system?.domains,
+    className: cls.name,
+    stats: [{ k: "Cost", v: `${hopeCost(cls.system?.hopeFeature)} Hope` }],
+  });
 
 /** `cardOf` over a list, dropping the subtypes that have no card. */
 export const cardsOf = (

@@ -80,7 +80,25 @@
 
   function click(event: MouseEvent) {
     if (!editable || !onset) return;
-    const box = (event.target as HTMLElement).closest(".row > i");
+    const target = event.target as HTMLElement;
+
+    /* The band takes a *hit*, so it adds rather than sets. "That's a Major"
+       is what gets said at the table, and it means two more Hit Points on
+       top of whatever is already marked — the zone's cost is a price, not a
+       position. The boxes below say the other thing, and both gestures are
+       on the same object because both are things a player does to it.
+
+       Clamped rather than refused: a Severe on a character with one box left
+       marks the one box. Whether that is death is the death move's question,
+       and it is not one a click on the band should be answering. */
+    const zone = target.closest<HTMLElement>(".band .z");
+    if (zone) {
+      const cost = Number(zone.dataset.hp);
+      if (cost > 0) onset(Math.min(total, applied + cost));
+      return;
+    }
+
+    const box = target.closest(".row > i");
     if (!box) return;
     const boxes = [...(root.querySelectorAll(".row > i") ?? [])];
     const i = boxes.indexOf(box as HTMLElement);

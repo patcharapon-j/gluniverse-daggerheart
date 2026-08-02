@@ -18,25 +18,46 @@
   import {
     ADVANCEMENT,
     BURDEN_LABELS,
+    FEATURE_KIND_LABELS,
     LOADOUT_LIMIT,
     TRAITS,
     TRAIT_VERBS,
+    choicesDue,
+    choicesSpent,
+    domainDef,
     rangeLabel,
     traitLabel,
     type Trait,
   } from "../config.ts";
   import type { ItemSnapshot, SheetState } from "../apps/sheet-state.svelte.ts";
   import { handleActorDrop } from "../apps/svelte-sheets.ts";
+  import { applyTierEntry, setAdvancement } from "../apps/advance.ts";
+  import { takeDamage } from "../apps/damage.ts";
+  import { rest } from "../apps/rest.ts";
   import { absolute, cssUrl } from "../assets.ts";
   import { rollAttack, rollTrait, rollWeaponDamage } from "../dice/actions.ts";
   import { platePortrait } from "../dice/plate.ts";
   import { SPINE, TILE } from "../ui/tile.js";
   import { XBOX, XMARK } from "../ui/mark.js";
-  import { CARD, fit } from "../ui/card.js";
+  import { CARD, fit, rich } from "../ui/card.js";
   import { closePeeks, peeks } from "../ui/peek.js";
+  import { capture, flip } from "../ui/swap.js";
   import { menu } from "../ui/menu.js";
   import { prep } from "../ui/prep.js";
-  import { cardOf, loadSigils, type CardOptions, type Sigils } from "./cards.ts";
+  import {
+    cardOf,
+    featureCard,
+    featurePrice,
+    hopeCard,
+    hopeCost,
+    isFree,
+    loadSigils,
+    plain,
+    priceLabel,
+    type CardOptions,
+    type Price,
+    type Sigils,
+  } from "./cards.ts";
   import { postCard } from "./post-card.ts";
   import Marks from "./parts/Marks.svelte";
   import Gems from "./parts/Gems.svelte";
@@ -59,10 +80,80 @@
   }
   let { doc, snap, app }: Props = $props();
 
-  let tab = $state<"main" | "vault" | "gear" | "advancement" | "bio">("main");
+  let tab = $state<"main" | "vault" | "gear" | "advancement" | "bio" | "adjust">("main");
 
   const sys = $derived(snap.system);
   const ed = $derived(snap.editable);
+  /* Not reactive, and does not need to be — nobody is promoted to GM with a
+     character sheet open. It gates the adjust tab; see the tab strip. */
+  const isGM = game.user?.isGM ?? false;
+
+  /* ── edit mode ─────────────────────────────────────────────────────
+     Definition against use, and the whole sheet turns on which one you are
+     doing.
+
+     Everything derived here hangs off something set once. Level drives the
+     tier, Proficiency, both damage thresholds and what each advancement
+     panel owes; the class hands over base Evasion, Hit Points and Stress; a
+     trait score is chosen at creation and moved twice in a campaign. During
+     play you are doing the other thing entirely — marking, spending,
+     clearing, equipping, taking — dozens of times an hour, under a clock,
+     with a GM waiting. A stray click on Level or a trait in the middle of
+     that moves a number nobody notices moved until a sum is wrong three
+     sessions later.
+
+     `$state(false)` local to the component, deliberately. It dies with the
+     sheet, so nobody reopens a character next week and finds it unlocked,
+     and it is per-user rather than per-document: two people with the same
+     sheet open are not both editing because one of them pressed a button.
+     Nothing about it is worth a document write or a setting.
+
+     `edit` and not `editMode` is what every gate reads. A sheet you cannot
+     change at all must not offer the mode, and the alternative — testing
+     both conditions at nineteen call sites — is nineteen chances to test
+     one of them.
+
+     Not the same question as the adjust tab, and not folded into it. That
+     tab overrides numbers the *rules* derive, which is adjudication and is
+     therefore the GM's; this unlocks the character's own definition, which
+     is authorship and is therefore the owner's. A player levelling up needs
+     this and has no business on the dials. So: `isGM` there, `editable`
+     here. */
+  let editMode = $state(false);
+  const edit = $derived(editMode && ed);
+
+  /* The banner's text, repeated so a run is wider than any window it will be
+     dragged to. Two identical runs in one track translated by half its width
+     is what makes the loop seamless — see `.tape` in sheet.css. */
+  const TAPE = Array.from(
+    { length: 6 },
+    () => "Edit mode · level, traits, portrait and the numbers the class hands you are unlocked · ",
+  ).join("");
+
+  /** Said under every panel the mode locks, in the panel's own quiet ink. */
+  const LOCKED = "Locked while the sheet is in play mode — switch on edit at the end of the tab strip.";
+
+  /* Leaving the mode puts the framing gesture down with it. The framing bar
+     lives inside the mode, so a sheet locked mid-drag would otherwise sit in
+     `.framing` forever: the diorama grabbing the pointer, the plate preview
+     over the picture, and no visible control to turn any of it off. */
+  function toggleEdit() {
+    editMode = !editMode;
+    if (!editMode) framing = false;
+  }
+
+  /* The write path for anything that is definition. `set` further down is
+     the one for anything that is use, and the only difference between them
+     is which gate they read — which is exactly the distinction this whole
+     mode is about, so it is worth two functions rather than one with a
+     boolean. A call site that picks the wrong one is a bug you can see by
+     reading the name. */
+  const setDef = (path: string, value: unknown) => edit && doc.update({ [path]: value });
+
+  /* Five, unless the table says otherwise. It was a constant, and a constant
+     is the wrong shape for it: subclasses and campaign frames move this
+     number, and a table that cannot move it moves something else instead. */
+  const loadoutLimit = $derived(sys.loadoutLimit ?? LOADOUT_LIMIT);
 
   /* Straight from the printed sheet, where Evasion and Armor are told apart
      by outline rather than by label: Evasion is an arch, Armor is a shield.
@@ -171,18 +262,44 @@
   );
 
   const writeFrame = (f: Frame) =>
-    ed && doc.update({ [`system.portrait.${target}`]: f });
+    edit && doc.update({ [`system.portrait.${target}`]: f });
 
   const resetFrame = () => writeFrame(NEUTRAL);
-  const setLevel = (n: number) =>
-    ed && doc.update({ "system.level": Math.min(MAX_LEVEL, Math.max(1, Math.round(n || 1))) });
 
-  async function pickImage() {
-    if (!ed) return;
+  /* Setting the level is the level-up.
+   *
+   * Reaching a tier hands over an Experience, and the two upper ones clear
+   * every trait mark — which is what reopens all six traits for that tier's
+   * own advancements. Those are the achievements printed at the head of each
+   * panel, and until now they were printed and nothing else: the panel said
+   * "gain an additional Experience" and you went and typed one in.
+   *
+   * Applied after the write, so `applyTierEntry` reads the level it is
+   * reacting to. It records which tiers it has already paid out — see
+   * `tiersEntered` — so a level typed down and back up does not collect twice.
+   */
+  async function setLevel(n: number) {
+    if (!edit) return;
+    const level = Math.min(MAX_LEVEL, Math.max(1, Math.round(n || 1)));
+    await doc.update({ "system.level": level });
+    for (const line of await applyTierEntry(doc, level)) {
+      ui.notifications?.info(line);
+    }
+  }
+
+  /* Two pictures, and they are genuinely two. The portrait fills the diorama
+     and the roll plate; the token art is what sits on the board, where a
+     head-and-shoulders crop is the wrong picture at 100px seen from above.
+     Foundry keeps them apart and so does this — one browser, two targets. */
+  async function pickImage(which: "portrait" | "token") {
+    if (!edit) return;
+    const path =
+      which === "token" ? doc.prototypeToken?.texture?.src : doc.img;
     const picker = new foundry.applications.apps.FilePicker.implementation({
       type: "image",
-      current: doc.img,
-      callback: (path: string) => doc.update({ img: path }),
+      current: path,
+      callback: (p: string) =>
+        doc.update(which === "token" ? { "prototypeToken.texture.src": p } : { img: p }),
     });
     await picker.browse();
   }
@@ -215,7 +332,7 @@
      the way in, so a framing set in a 288px rail survives the window being
      dragged wider — and so the two surfaces can share one unit. */
   function onFrameDown(event: PointerEvent) {
-    if (!framing || !ed) return;
+    if (!framing || !edit) return;
     const box = event.currentTarget as HTMLElement;
     if ((event.target as HTMLElement).closest("button, input")) return;
     event.preventDefault();
@@ -255,7 +372,7 @@
      glacial at 4. The floor is the schema's, so dragging it to nothing you
      could grab again is the one thing the gesture will not do. */
   function onFrameWheel(event: WheelEvent) {
-    if (!framing || !ed) return;
+    if (!framing || !edit) return;
     event.preventDefault();
     const f = stored(target);
     const scale = Math.min(8, Math.max(0.1, f.scale * (event.deltaY < 0 ? 1.08 : 1 / 1.08)));
@@ -276,8 +393,20 @@
   let sigils = $state<Sigils>({});
   loadSigils().then((s) => (sigils = s));
 
+  /* Each class's own pair, so a subclass card can wear the colours of the
+     class it names rather than of whichever class is first on the sheet.
+     One class is the common case and the map has one entry; two is what a
+     multiclass advancement produces, and it is the case the old code got
+     silently wrong. */
+  const classDomains = $derived(
+    Object.fromEntries(
+      snap.of("class").map((c) => [c.name.toLowerCase(), c.system?.domains ?? {}]),
+    ),
+  );
+
   const ctx = $derived({
     domains: sys.domains,
+    classDomains,
     armorSlots: sys.resources?.armorSlots?.max ?? 0,
     armorMarked: sys.resources?.armorSlots?.marked ?? 0,
   });
@@ -298,10 +427,30 @@
       .map((i) => ({ pk: i.id, card: opt(i) }))
       .filter((r): r is Row => r.card !== null);
 
-  const classCards = $derived(rows([...snap.of("class"), ...snap.of("subclass")]));
   const heritageCards = $derived(rows([...snap.of("ancestry"), ...snap.of("community")]));
   const loadoutCards = $derived(rows(loadout));
   const vaultCards = $derived(rows(vault));
+
+  /* ── the subclass, which really is a card ──────────────────────────
+     The class stopped being one and the subclass did too, and only the
+     first of those was right.
+
+     The argument for taking the class off the card was that a class is not
+     an object: you cannot spend it, move it or lose it, so a spine promising
+     a card behind it was promising the wrong shape. None of that is true of
+     a subclass. It *is* printed as a card, three of them per subclass, and
+     you acquire them one at a time by spending an advancement — Foundation
+     at creation, Specialization at 5, Mastery at 8. Which of the three you
+     are holding is a fact about your character that the printed card states
+     and a list of features does not, and "take the Mastery card" is a thing
+     a player says out loud at the table.
+
+     So it is a card again, on the sheet and in chat. The feature rows stay,
+     because what a feature *says* is still the question asked most often and
+     a row answers it without a gesture — but a subclass row posts the
+     subclass card rather than a card synthesised around one of its features,
+     because the object exists and there is no reason to invent a worse one. */
+  const subclassCards = $derived(rows(snap.of("subclass")));
 
   /* ── gear ─────────────────────────────────────────────────────────
      Three slots, and everything else you own listed underneath. The armor
@@ -398,7 +547,7 @@
      clipped by any ancestor that scrolls, and no z-index fixes a clip. */
   const peekRows = $derived(
     tab === "main"
-      ? [...loadoutCards, ...classCards, ...heritageCards]
+      ? [...loadoutCards, ...subclassCards, ...heritageCards]
       : tab === "vault"
         ? [...loadoutCards, ...vaultCards]
         : tab === "gear"
@@ -514,6 +663,66 @@
     requestAnimationFrame(() => requestAnimationFrame(() => refit()));
   });
 
+  /* ── a card that changes hands travels ─────────────────────────────
+     Recalling a card from the vault, shelving one back, and equipping a
+     weapon all moved the thing instantly: it was in one list on one frame
+     and in another on the next. Every animation for it has existed in
+     `swap.css` since the vault was designed — the wipe with its lit
+     leading edge, the brackets snapping onto the two square corners, the
+     saturation coming back up as the card comes to hand, the folder tab
+     arriving on the one going away — and none of it had ever run in
+     Foundry, because nothing on this sheet had ever called `flip()`.
+
+     It is a FLIP and it has to be. Committing a swap writes to the
+     documents, which re-renders the sheet, which destroys the row and
+     builds a new one somewhere else — there is nothing left to transition.
+     So the rects are measured before the write, measured again after the
+     new markup lands, and the difference is played backwards: the card
+     appears to travel from where it was to where it now is, while never
+     actually having moved. Every other row in both lists reflows around it
+     and is flipped too, at a shorter duration, so the list closes over the
+     gap rather than snapping shut.
+
+     The measure-after is the part Svelte decides, not us. A write to a
+     Foundry document comes back on its own schedule, so there is no
+     `await` here that lands on the frame the DOM changed. `$effect` is
+     exactly that frame: it reads the derived lists, so it runs when they
+     actually changed — after the DOM is patched and before the browser
+     paints, which is the whole window a FLIP needs.
+
+     `pending` is a plain `let` rather than `$state`, so writing it cannot
+     re-enter the effect, and it carries a timestamp: a swap the rules
+     refused, or a write that produced no visible move, must not leave a
+     stale set of rects for the next unrelated item change to fly against. */
+  const STALE = 1200;
+  let pending: {
+    before: Map<string, DOMRect>;
+    moved: string;
+    mode: "recall" | "shelve" | null;
+    at: number;
+  } | null = null;
+
+  /** Measure now; the effect below plays it when the new markup lands. */
+  function travels(moved: string, mode: "recall" | "shelve" | null) {
+    if (!winEl) return;
+    pending = { before: capture(winEl), moved, mode, at: performance.now() };
+  }
+
+  $effect(() => {
+    // Read them, so this runs on the paint that moved something rather than
+    // on the frame that asked for it. All four lists, because equipping is
+    // the same journey across a different tab.
+    void loadoutCards;
+    void vaultCards;
+    void slots;
+    void carried;
+    const p = pending;
+    if (!p) return;
+    pending = null;
+    if (!winEl || performance.now() - p.at > STALE) return;
+    flip(winEl, p.before, { moved: p.moved, mode: p.mode });
+  });
+
   /* ── a card, said out loud ─────────────────────────────────────────
      Clicking a card row posts the whole card to chat. It is the same option
      object the row and the peek were built from, so the three cannot
@@ -554,33 +763,291 @@
     (sys.experiences ?? []).map((x: any) => ({ name: x.name, modifier: x.modifier })),
   );
 
-  /* ── the one automation ─────────────────────────────────────────────
-     A character with every Stress box marked rolls at disadvantage, and
-     the sheet already knows — the track is eighteen inches away and has
-     been drawing the Vulnerable strip since it filled.
+  /* ── the Hope action ───────────────────────────────────────────────
+     Every class has one, it costs Hope, and it used to be the second
+     feature run on the class card — which put the only *move* on this
+     sheet inside the one object you have to hover to read, four panels
+     down, while the pool it spends sits in the rail.
 
-     It is applied *here*, on the way into the popover, rather than in
-     `actions.ts` on the way out. Both would produce the same dice; only
-     this one produces the same dice with the reason next to them. An
-     automation that fires inside the roll is a number the player cannot
-     account for, and the first time they were counting on a clean d12
-     they will believe the system is broken rather than that they are
-     Stressed. So it arrives as a chip in the advantage row, and the sum
-     at the top of the popover already says −1d6 before anyone presses
-     anything.
+     It is a row under the gems now, which is where the printed sheet
+     draws it and for the same reason: the question "can I afford this?"
+     is answered by a number that has to be on screen at the same time.
+     Pressing it does both halves — the Hope leaves and the card is
+     posted — because those are one act, and a sheet that did the first
+     and left you to describe the second is a sheet that made you do the
+     bookkeeping and then the talking.
 
-     Not decline-able, and cancellable exactly the way the rules allow:
-     by having advantage from somewhere else. The popover nets the two
-     because that is what the dice do. */
-  const stressed = $derived(
-    (sys.resources?.stress?.max ?? 0) > 0 &&
-      (sys.resources?.stress?.marked ?? 0) >= (sys.resources?.stress?.max ?? 0),
+     The class Item rather than a derived copy, so the card the press
+     posts is built from the same document the row was read off. */
+  const classItem = $derived(snap.of("class")[0] ?? null);
+
+  /* The rule is on the row rather than behind a hover. Every other card on
+     this sheet is a spine you go and look up, which is right for a thing you
+     own — this is a thing you *do*, mid-turn, while somebody is waiting, and
+     "can I afford it" and "what does it actually say" are one question asked
+     once. `rich` is the cards' own renderer, so the sentence reads here
+     exactly as it reads on the card the press posts. */
+  const hopeAction = $derived.by(() => {
+    const f = classItem?.system?.hopeFeature;
+    if (!f?.name && !f?.description) return null;
+    const text = plain(f.description);
+    return { name: f.name || "Hope Feature", cost: hopeCost(f), text: text ? rich(text) : "" };
+  });
+
+  /* ── the feature list ──────────────────────────────────────────────
+     What a class *is*, and it stopped being a card to say it.
+
+     Class and subclass were two spines in a "Class" panel — objects you
+     hovered to read. That is right for a domain card, which really is a
+     card: you hold five, you swap them, the object is the unit. A class is
+     not that. You do not spend it or move it; you have it, permanently, and
+     the only question anyone asks of it is what its feature says. That was
+     two gestures away and the answer arrived wrapped in 300px of frame,
+     artwork and a stat block you already know.
+
+     So the run comes out of the card and onto the sheet: one row per
+     feature, the rule printed on it. Same argument that moved the Hope
+     action to the rail, applied to the other half of the same card — and
+     the same shape, because a rule you have to reveal is a rule you will
+     not read.
+
+     Two sources, one list: the class's own features, and standalone
+     `feature` Items, which had no card at all and were therefore invisible —
+     a subtype the "+ new" menu offered and nothing ever drew again.
+
+     **Subclass features are not in it, and that is the point of the second
+     column.** They were, briefly, and it read as the sheet saying the same
+     thing twice: the Beastbound tile sat six inches to the right of a row
+     headed "Foundation · Beastbound" carrying the rule that tile is *for*.
+     The argument that took the class out of a card does not reach a
+     subclass — a subclass genuinely is a printed object you acquire one
+     card at a time — so the object stays, and the object is where its rules
+     are read. Hover peeks it, click posts it, exactly as a domain card in
+     the loadout behaves, and for the same reason.
+
+     Pressing a row posts *that feature*, not its class. See `featureCard`. */
+
+  interface Ability {
+    /** The Item it arrived on. The menu, the drag and the delete key on it. */
+    pk: string;
+    /** Unique per row — an Item can carry several features. */
+    key: string;
+    /** The type line: which card it came on, and whose. */
+    origin: string;
+    name: string;
+    /** Marked up by the cards' own renderer, so it reads as it will in chat. */
+    text: string;
+    /** What using it costs, read off the rule. Most cost nothing. */
+    price: Price;
+    /** That price as a phrase, or nothing when it is free. */
+    cost?: string;
+    card: CardOptions | null;
+  }
+
+  const abilities = $derived.by(() => {
+    const out: Ability[] = [];
+
+    const add = (
+      it: ItemSnapshot,
+      f: any,
+      o: {
+        slot: string;
+        origin: string;
+        type: string;
+        foot?: string;
+        domains?: any;
+        className?: string;
+        system?: any;
+        card?: CardOptions | null;
+      },
+    ) => {
+      if (!f?.name && !f?.description) return;
+      const text = plain(f.description);
+      const price = featurePrice(f, o.system);
+      out.push({
+        pk: it.id,
+        key: `${it.id}:${o.slot}`,
+        origin: o.origin,
+        name: f.name || "Feature",
+        text: text ? rich(text) : "",
+        price,
+        cost: priceLabel(price),
+        card:
+          o.card !== undefined
+            ? o.card
+            : featureCard(sigils, {
+                item: it,
+                feature: f,
+                slot: o.slot,
+                type: o.type,
+                foot: o.foot,
+                domains: o.domains,
+                className: o.className,
+              }),
+      });
+    };
+
+    /* Several, on five of the nine classes. They used to arrive joined into
+       one block under the book's section heading, which was fine on a card
+       and wrong the moment the card became a list — see `classFeatures` in
+       data/items.ts for the whole argument. */
+    for (const c of snap.of("class")) {
+      (c.system?.classFeatures ?? []).forEach((f: any, i: number) =>
+        add(c, f, {
+          slot: `class${i}`,
+          origin: `Class · ${c.name}`,
+          type: "CLASS FEATURE",
+          foot: c.name,
+          domains: c.system?.domains,
+          className: c.name,
+        }),
+      );
+    }
+
+    /* A whole Item rather than a block on one, so it has its own card with
+       its own costs and uses — `opt` builds it, exactly as for a weapon. */
+    for (const f of snap.of("feature")) {
+      add(
+        f,
+        { name: f.name, description: f.system?.description },
+        {
+          slot: "self",
+          origin: f.system?.origin || (FEATURE_KIND_LABELS[f.system?.kind] ?? "Feature"),
+          type: (FEATURE_KIND_LABELS[f.system?.kind] ?? "Feature").toUpperCase(),
+          system: f.system,
+          card: opt(f),
+        },
+      );
+    }
+
+    return out;
+  });
+
+  /* The one fact the class card carried that has nowhere else on this sheet
+     to live. Every class, not just the first — multiclassing hands you a
+     third domain and the sheet should say which. */
+  const domainChips = $derived(
+    ((sys.domainList ?? []) as string[]).map((d) => ({ d, def: domainDef(d) })),
   );
-  const forced = $derived(
-    stressed
-      ? [{ k: "stress", v: -1, why: "Every Stress box is marked — this roll is at disadvantage." }]
-      : [],
-  );
+
+  /* The pool is what cannot pay, so the pool is what flinches — the same
+     refusal the Stress track gives a recall it cannot afford, and no
+     dialog, because the number saying no is already on screen. */
+  function refusePool() {
+    const el = winEl?.querySelector(".rail .pool");
+    if (!el) return;
+    el.classList.remove("deny");
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add("deny");
+    setTimeout(() => el.classList.remove("deny"), 600);
+  }
+
+  async function useHopeAction() {
+    if (!ed || !classItem || !hopeAction) return;
+    if (purse < hopeAction.cost) {
+      refusePool();
+      ui.notifications?.warn(
+        game.i18n.format("DAGGERHEART.Warning.NoHopeAction", {
+          name: hopeAction.name,
+          cost: hopeAction.cost,
+          have: purse,
+        }),
+      );
+      return;
+    }
+    // Charged before the card is posted, for the reason `payFor` charges
+    // before the dice: a payment that lands after the announcement lets
+    // the table hear the move and then find out it was not affordable.
+    if (!(await (doc as any).spendHope(hopeAction.cost))) return;
+    const card = hopeCard(classItem, sigils);
+    if (card) await postCard(card, doc);
+  }
+
+  /* ── using a feature that costs something ─────────────────────────
+     The Hope action has charged for itself since it moved to the rail, and
+     it was the only one. Every other feature on this sheet that opens
+     "Spend a Hope" or "Mark a Stress" printed the price, posted the card,
+     and left the paying to you — which is the half that gets forgotten,
+     three hours later, when somebody notices the Stress track has not moved
+     all session.
+
+     So a priced row does both, exactly as the Hope action does: the
+     resource leaves and the card lands, because those are one act. Charged
+     *before* the card is posted, for the reason `payFor` charges before the
+     dice — a payment that lands after the announcement lets the table hear
+     the move and then find out it could not be afforded.
+
+     The refusal is the track that cannot pay, flinching. No dialog: the
+     number saying no is already on screen, eighteen inches away, and this
+     system answers "you cannot afford that" by making the thing that cannot
+     afford it move. Both are checked before either is spent, so a feature
+     costing a Hope and a Stress can never take the Hope and then fail. */
+  async function useAbility(a: Ability) {
+    if (!ed) return;
+    if (isFree(a.price)) return toChat(a.card);
+
+    const shortHope = a.price.hope > purse;
+    const shortStress = a.price.stress > stressLeft;
+    if (shortHope) refusePool();
+    if (shortStress) refuse();
+    if (shortHope || shortStress) {
+      ui.notifications?.warn(
+        game.i18n.format("DAGGERHEART.Warning.NoFeatureCost", {
+          name: a.name,
+          cost: a.cost ?? "",
+        }),
+      );
+      return;
+    }
+
+    if (a.price.hope) await (doc as any).spendHope(a.price.hope);
+    if (a.price.stress) await (doc as any).markTrack("stress", a.price.stress);
+    /* Fear is the GM's pool and a world setting rather than an actor field,
+       so it is stated on the row and not taken here. A player pressing a
+       feature that costs Fear is describing an adversary's move, and the
+       sheet spending the table's Fear on their behalf would be the one
+       automation nobody asked for. */
+    toChat(a.card);
+  }
+
+  /* ── the trait cell, in two states ─────────────────────────────────
+     Six numbers this game is played with, and until now there was nowhere
+     on this sheet to set any of them: the cell rolled and did nothing else,
+     so a character's traits were written by editing the actor somewhere
+     else entirely. They are the definition case in its purest form — chosen
+     at creation, moved perhaps twice in a campaign, and consulted forty
+     times a session — so they are exactly what the mode is for.
+
+     One element, two behaviours, because a trait cell that changed from a
+     button into something else would be the row rebuilding under the
+     pointer. In play the press rolls, as it always has. In edit the numeral
+     is a field and the press toggles the *mark* — the level-up bookkeeping
+     half, which says this trait was raised this tier and is closed until
+     the next one, and which had no control of any kind before.
+
+     The mark cannot have a button of its own: the cell already is one, and
+     a button inside a button is not markup. So the press the cell already
+     had is repointed rather than a second one invented, and the cost is
+     that a trait does not roll while you are defining it. That is the right
+     side of the trade — nobody rolls Agility in the ten seconds they are
+     typing its score, and the roll comes back on the next press of the
+     toggle. */
+  function onTrait(event: MouseEvent, t: Trait) {
+    if (!edit) return void askTrait(event, t);
+    // The numeral is its own control; everything else in the cell is the mark.
+    if ((event.target as HTMLElement).closest?.("input")) return;
+    void setDef(`system.traits.${t}.marked`, !sys.traits?.[t]?.marked);
+  }
+
+  /* Unbounded on purpose. The printed spread runs −1 to +2 and every table
+     leaves it: a blessing, a homebrew ancestry, a GM saying yes. A sheet
+     that refused to hold the number the table agreed on would be a sheet
+     the table stopped using for traits. */
+  const setTrait = (t: Trait, e: Event) =>
+    setDef(
+      `system.traits.${t}.value`,
+      Math.round(Number((e.currentTarget as HTMLInputElement).value) || 0),
+    );
 
   async function askTrait(event: MouseEvent, trait: Trait, reaction: boolean | "only" = true) {
     const o = await prep(event.currentTarget as Element, {
@@ -589,7 +1056,6 @@
       base: (doc as any).traitMod(trait),
       experiences: xpList,
       purse,
-      forced,
       reaction,
     });
     if (!o) return;
@@ -613,7 +1079,6 @@
       base: (doc as any).traitMod(trait),
       experiences: xpList,
       purse,
-      forced,
       reaction: false,
     });
     if (!o) return;
@@ -678,7 +1143,7 @@
               k: recallCost(it) ? `Recall · ${recallCost(it)} Stress` : "Recall to loadout",
               off:
                 locked ??
-                (loadout.length >= LOADOUT_LIMIT
+                (loadout.length >= loadoutLimit
                   ? RECALL_FULL
                   : !canPay(it)
                     ? `Not enough Stress — this costs ${recallCost(it)}.`
@@ -698,7 +1163,7 @@
           ? "Unequip"
           : `Equip · ${SLOT_CAP[it.type === "armor" ? "armor" : it.system.slot] ?? ""}`,
         off: locked ?? (blocked ? `${primary?.name} is Two-Handed — no free hand.` : undefined),
-        run: () => live?.toggleEquipped(),
+        run: () => toggleGear(it.id),
       });
     }
     if (it.type === "consumable") {
@@ -762,9 +1227,12 @@
 
      Stamped after each render rather than written onto eight `{#each}`
      bodies, for the same reason the click and the menu are delegated. The
-     vault's own rows are excluded: those already drag, on pointer events,
-     to swap a card into the loadout — and a native drag starting under a
-     pointer drag makes the browser take the gesture away mid-swap. */
+     swap tab's rows are excluded, and they are the exception that proves
+     the rule: they set `draggable` in their own markup, because they carry
+     four handlers of their own for the reorder. `onDragStart` above is
+     delegated on the window root, so it still runs for them and still
+     writes the Foundry payload — a vault card can leave for another
+     character exactly like any other row. */
   $effect(() => {
     void peekRows;
     void tab;
@@ -865,22 +1333,187 @@
 
   /**
    * Move a card out of the vault, optionally trading a loadout card for it.
+   * Putting one back is the same act with no price and no second pick.
    *
-   * The Stress is marked here rather than left to the player: that is the
-   * entire argument for a digital sheet — the rail moves, so the price is
-   * not a number you then have to go and pay somewhere else.
+   * Both are one line, because both commit through `place()` — the same call
+   * the drag lands on. That is the design system's own rule about this
+   * gesture and it had never been kept here: a swap made by pressing and a
+   * swap made by dragging must produce the same write, the same order and
+   * the same animation, or there are two of everything to keep in step.
+   * Pressing used to leave the card wherever its `sort` already put it,
+   * which is how a recall arrived at the *top* of a loadout it had never
+   * been in.
    */
-  async function recall(vaultId: string, loadoutId: string | null) {
-    if (!ed) return;
-    const card = vault.find((c) => c.id === vaultId) ?? null;
-    if (!card) return;
-    if (!canPay(card)) return refuse();
-    const trade = !!loadoutId;
-    if (!trade && loadout.length >= LOADOUT_LIMIT) return;
+  const recall = (vaultId: string, loadoutId: string | null) =>
+    place(vaultId, "loadout", loadoutId, false);
 
-    const cost = recallCost(card);
-    const updates: any[] = [{ _id: vaultId, "system.inLoadout": true }];
-    if (loadoutId) updates.push({ _id: loadoutId, "system.inLoadout": false });
+  const shelve = (id: string) => place(id, "vault", null, false);
+
+  const loadoutFull = $derived(loadout.length >= loadoutLimit);
+
+  /* Pressing recall used to arm the card and then wait to be told which
+     loadout row it replaced. That is exactly right at 5/5, where something
+     genuinely has to leave and choosing it *is* the decision — and it is
+     pure ceremony below the limit, where there is a hole and the answer is
+     obvious. So the second question is only asked when there is a second
+     question: under the limit the card goes in, and the button says so by
+     reading "recall" rather than "swap". */
+  function quickRecall(id: string) {
+    if (armed === id) return void (armed = null);
+    if (!loadoutFull) return void recall(id, null);
+    armed = id;
+  }
+
+  /* ── dragging a card around ────────────────────────────────────────
+     Three gestures, one handler, because they are three readings of one
+     act — *put this card there*. Vault into loadout is a recall and costs
+     Stress; loadout into vault is a shelve and costs nothing; either list
+     onto itself is a reorder and is free by definition. Three handlers
+     would be three places for the payment, the sort and the FLIP to drift
+     apart, and the FLIP is the one that would drift silently.
+
+     Order was a fact this sheet had and never wrote. `snap.of()` sorts on
+     the document's own `sort` field, and nothing here had ever set it, so
+     every list stood in creation order forever — the order a compendium
+     happened to be dragged from, months ago. A loadout is five cards you
+     reach for under time pressure. The order you keep them in is yours.
+
+     It is written as **one sequence across every domain card**, loadout
+     first, rather than one per panel. The two lists are a single collection
+     split by `inLoadout`, so numbering them separately would interleave
+     their values, and a card crossing between them would land wherever the
+     arithmetic put it rather than where you let go of it. */
+  type Zone = "loadout" | "vault";
+
+  let dragId = $state<string | null>(null);
+  /** The row the pointer is over, and which of its two gutters is the mark. */
+  let overId = $state<string | null>(null);
+  let overAfter = $state(false);
+  /** Set while the pointer is inside a panel, for a drop that names no row. */
+  let overZone = $state<Zone | null>(null);
+
+  function dragCard(event: DragEvent, id: string) {
+    if (!ed) return event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    /* One tick late, and that tick is the whole reason. `.lift` hides the
+       row and leaves a hatch in its place, and the browser snapshots the
+       drag image at the end of *this* dispatch — set the flag now and the
+       picture it takes is of the row we have just hidden, so you drag
+       nothing across the screen.
+       A timeout rather than `requestAnimationFrame`, which is the obvious
+       reach and is wrong: rAF does not fire in a tab that is not painting,
+       and it is throttled in one that is painting slowly. The state this
+       schedules is not about a frame, it is about being after the snapshot,
+       and a macrotask is after the snapshot unconditionally. */
+    setTimeout(() => (dragId = id), 0);
+    /* The root's own `dragstart` still runs after this one and writes the
+       Foundry payload, so a card dragged off the sheet entirely still goes
+       to another character or the hotbar. These rows had been excluded from
+       that on the grounds that they "already drag on pointer events" — see
+       the note on `bindDrag`, which was describing the study page. */
+  }
+
+  /* `dragId` is the guard on every one of these, and it is doing real work:
+     a drag from another sheet has no id of ours, so we decline the event
+     entirely — no `preventDefault`, no drop target — and it bubbles to the
+     window root, where `handleActorDrop` has always taken it. */
+  function dragOver(event: DragEvent, zone: Zone, id: string | null) {
+    if (!dragId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    overZone = zone;
+    if (!id || id === dragId) return void (overId = null);
+    const r = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    overId = id;
+    // Which half of the row, not which half of the list: the grid runs two
+    // up, so left/right is the direction the order actually goes in.
+    overAfter = event.clientX > r.left + r.width / 2;
+  }
+
+  function endDrag() {
+    dragId = null;
+    overId = null;
+    overZone = null;
+  }
+
+  function dropCard(event: DragEvent, to: Zone, onId: string | null) {
+    if (!dragId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const id = dragId;
+    const target = onId && onId !== id ? onId : null;
+    const after = target ? overAfter : false;
+    endDrag();
+    return place(id, to, target, after);
+  }
+
+  /**
+   * Commit a drop: the whole order of every domain card, plus whatever
+   * `inLoadout` and Stress the crossing costs, in one write.
+   */
+  async function place(id: string, to: Zone, target: string | null, after: boolean) {
+    if (!ed) return;
+    const card = cards.find((c) => c.id === id);
+    if (!card) return;
+    const from: Zone = card.system.inLoadout ? "loadout" : "vault";
+
+    /* Coming into a full loadout, something has to leave, and the only card
+       that can name itself is the one you dropped on top of. Landing in the
+       gutter at 5/5 therefore does nothing at all, rather than evicting
+       whichever card the arithmetic reached first — that is the swap's
+       decision and it is not a drop's to make. */
+    let traded: string | null = null;
+    if (from === "vault" && to === "loadout") {
+      if (!canPay(card)) return refuse();
+      if (loadoutFull) {
+        if (!target || !loadout.some((c) => c.id === target)) return;
+        traded = target;
+      }
+    }
+
+    const l = loadout.map((c) => c.id).filter((x) => x !== id && x !== traded);
+    const v = vault.map((c) => c.id).filter((x) => x !== id);
+    /* The traded card goes to the head of the vault, not its tail. It is the
+       thing you just made a decision about; burying it under twenty cards
+       you did not touch is the sheet hiding its own answer. */
+    if (traded) v.unshift(traded);
+
+    const dest = to === "loadout" ? l : v;
+    let at = dest.length;
+    if (traded) at = loadout.findIndex((c) => c.id === traded);
+    else if (target) {
+      const i = dest.indexOf(target);
+      if (i >= 0) at = after ? i + 1 : i;
+    } else if (from !== to && to === "vault") {
+      /* Anything leaving the loadout surfaces at the top of the vault. It is
+         the card you have just made a decision about, and the commonest next
+         thought is that you would like it back; twentieth of twenty-two is
+         the sheet filing its own answer where you have to go looking for it.
+         A card being reordered *within* the vault still goes where you put
+         it — end of the list if you aimed at no gap, because there you did
+         mean the end. */
+      at = 0;
+    }
+    dest.splice(Math.max(0, at), 0, id);
+
+    /* Only what moved. A card dropped back where it started writes nothing,
+       which is what makes it a true no-op — no update, no re-render, and so
+       no travel either. */
+    const order = [...l, ...v];
+    const updates = order.flatMap((x, i) => {
+      const cur = cards.find((c) => c.id === x);
+      const wants = i < l.length;
+      const u: any = {};
+      if (cur?.sort !== (i + 1) * 100) u.sort = (i + 1) * 100;
+      if (!!cur?.system.inLoadout !== wants) u["system.inLoadout"] = wants;
+      return Object.keys(u).length ? [{ _id: x, ...u }] : [];
+    });
+    if (!updates.length) return;
+
+    const cost = from === "vault" && to === "loadout" ? recallCost(card) : 0;
+    // A reorder travels and says nothing: it is a move, and the recall's
+    // sweep and brackets mean "this card is in your hand now".
+    travels(id, from === to ? null : to === "loadout" ? "recall" : "shelve");
     await doc.updateEmbeddedDocuments("Item", updates);
     if (cost) {
       await doc.update({
@@ -890,14 +1523,25 @@
     armed = null;
   }
 
-  const shelve = (id: string) =>
-    ed && doc.updateEmbeddedDocuments("Item", [{ _id: id, "system.inLoadout": false }]);
+  /* Equipping is the same journey on a different tab — the item genuinely
+     leaves the Carried grid and arrives in its slot — so it travels the
+     same way. It does *not* wear a recall's arrival: the sweep and the
+     brackets are the sheet saying "this card is in your hand now", and a
+     breastplate has not joined a loadout. Hence `mode: null`, which
+     `flip()` reads as travel and nothing more. */
+  function toggleGear(id: string) {
+    if (!ed) return;
+    travels(id, null);
+    return item(id)?.toggleEquipped();
+  }
 
-  /* A padlock would say "you cannot have this", which is wrong — a vaulted
-     card is available, it is just not in hand. An archive box says stored. */
-  const LOCK = `<svg viewBox="0 0 14 14" aria-hidden="true" fill="currentColor">
-    <path d="M1 2h12v3H1z"/><path d="M2.2 6h9.6l-.7 6H2.9z" opacity=".62"/>
-    <path d="M5.2 7.6h3.6v1.3H5.2z" fill="#000" opacity=".38"/></svg>`;
+  /* There was an archive-box mark here, on a tab down each vault row's right
+     edge — never a padlock, because a vaulted card is available and simply
+     not in hand. What killed it was where the tab landed: `.spine .rc` is
+     top-right, so it sat exactly on the recall chip, and the recall cost is
+     the one number this panel exists to help you weigh. A vault row is
+     desaturated and its artwork takes a hatch instead; see
+     `.pk.vl .spine .thumb::after` in `design/sheet.css`. */
 
   /* ── advancement ──────────────────────────────────────────────────
      Stored as `advancement[tier][option] = count`, so the rules table in
@@ -914,6 +1558,38 @@
   const taken = (tier: number, option: number): number =>
     Number(sys.advancement?.[tier]?.[option] ?? 0);
 
+  /* ── the budget ────────────────────────────────────────────────────
+     What this level owes you, against what is marked. The boxes have
+     always said what was *taken*; nothing said what was *due*, so the one
+     question anyone opens this tab to ask — am I caught up? — was the one
+     it could not answer, and the arithmetic (two per level since the
+     second, spent within the tier that level falls in) is exactly the kind
+     nobody does at the table.
+
+     Counted in choices rather than in boxes, and those are different
+     numbers: the two options in the heavy frame cost both of the level's
+     picks for one mark. See `choicesSpent` in config.ts. */
+  const budgets = $derived(
+    ADVANCEMENT.map((t) => ({
+      tier: t,
+      due: choicesDue(sys.level, t),
+      spent: choicesSpent(sys.advancement?.[t.tier] ?? {}, t),
+    })),
+  );
+
+  const choiceTotal = $derived({
+    due: budgets.reduce((n, b) => n + b.due, 0),
+    spent: budgets.reduce((n, b) => n + b.spent, 0),
+  });
+
+  /** The budget line's sentence. Level is the quiet case; it says nothing. */
+  const budgetNote = (due: number, spent: number): string =>
+    spent < due
+      ? `${due - spent} still to choose`
+      : spent > due
+        ? `${spent - due} more than this level grants`
+        : "up to date";
+
   /* The whole row of boxes as one string, rather than an `{#each}` of
      `{@html}`. Svelte plants a comment anchor before every block it can
      update independently, and a flex container full of those anchors sizes
@@ -923,15 +1599,34 @@
   const boxes = (n: number, on: number): string =>
     Array.from({ length: n }, (_, i) => XBOX(i < on)).join("");
 
-  const setAdvancement = (tier: number, option: number, n: number) =>
-    ed && doc.update({ [`system.advancement.${tier}.${option}`]: Math.max(0, n) });
-
-  function onAdvance(e: MouseEvent, tier: number, option: number, on: number) {
+  /* Marking a box *does* the advancement.
+   *
+   * It used to write the box and stop, so the panel was an honest ledger of
+   * things that had not happened: "permanently gain one Stress slot" marked,
+   * and the Stress track eighteen inches away still six boxes long. Every one
+   * of those had to be carried across by hand, which is the arithmetic this
+   * whole sheet exists to stop doing.
+   *
+   * Four of the nine are pure numbers and are not written at all — the model
+   * derives them from the marks, so the box *is* the record. The two that
+   * need a decision ask for it. The three that are documents you drag in
+   * still just mark, because a dialog is not a better compendium.
+   *
+   * `setAdvancement` writes the count itself, which is why cancelling the
+   * picker leaves the box exactly where it was rather than marked and inert.
+   */
+  function onAdvance(e: MouseEvent, tier: any, option: number, on: number) {
+    /* `edit`, not `ed`. Marking a box *is* the advancement — it moves the
+       Stress track, the Evasion arch or the Proficiency dots the moment it
+       lands — so a stray click here is the most expensive one on the sheet,
+       and it is a click on the tab you scroll through looking at what level
+       5 offers. */
+    if (!edit) return;
     const row = e.currentTarget as HTMLElement;
     const box = (e.target as Element | null)?.closest("i");
     if (!box || box.parentElement !== row) return;
     const n = [...row.children].indexOf(box) + 1;
-    setAdvancement(tier, option, n === on ? n - 1 : n);
+    void setAdvancement(doc, tier, option, on, n === on ? n - 1 : n);
   }
 
   /* ── writes ───────────────────────────────────────────────────────── */
@@ -946,23 +1641,192 @@
 
   const item = (id: string) => doc.items.get(id);
 
+  /* ── taking a thing *into* the sheet ───────────────────────────────
+     One handler on the root, and it always was — every subtype this
+     character can hold lands the same way, and inventing four sub-targets
+     to look precise would be the interface promising a distinction it does
+     not make. What was missing is that it said nothing while you were
+     holding something: the sheet lit up no differently for a card it would
+     accept than for one it would not, and the only way to find out was to
+     let go and go looking.
+
+     Counted rather than flagged, because `dragenter` and `dragleave` fire
+     for every element crossed — a single boolean is switched off the moment
+     the pointer passes from the rail onto a panel inside it, and the sheet
+     strobes all the way across. The counter goes up on enter and down on
+     leave, so it is only zero when the pointer has genuinely left.
+
+     Our own rows are excluded. They are draggable so a card can leave for
+     another character, and a drop back onto the sheet it came from is a
+     no-op — lighting up for it would advertise a move that does nothing. */
+  let dropDepth = $state(0);
+  let selfDrag = $state(false);
+  const dropping = $derived(ed && dropDepth > 0 && !selfDrag);
+
   async function onDrop(event: DragEvent) {
     event.preventDefault();
+    dropDepth = 0;
     if (!ed) return;
     await handleActorDrop(doc, event);
   }
+
+  /* ── making something from nothing, in the inventory ───────────────
+     The two subtypes that land in the plain list, offered from the list's
+     own heading. The Equipped panel above already offers all five, and
+     that is the right menu *there* — but the rope was unreachable from the
+     panel the rope lives in, and the panel only existed once something was
+     already in it. */
+  function onNewInventory(event: MouseEvent) {
+    if (!ed) return;
+    const KINDS: [string, string][] = [
+      ["loot", "Item"],
+      ["consumable", "Consumable"],
+    ];
+    menu(
+      event,
+      KINDS.map(([type, label]) => ({
+        k: label,
+        run: async () => {
+          const [made] = await doc.createEmbeddedDocuments("Item", [
+            { type, name: game.i18n.format("DAGGERHEART.NewItem", { kind: label }) },
+          ]);
+          made?.sheet.render(true);
+        },
+      })),
+      "Add",
+    );
+  }
+
+  /* ── the dials ─────────────────────────────────────────────────────
+     Everything on the adjust tab is a number some rule normally derives,
+     and the tab exists because a table invents exceptions faster than a
+     schema can name them. A GM who cannot set a number directly sets it
+     indirectly — by lying to the sheet about the armour — and then the
+     sheet is wrong about two things instead of one.
+
+     `num` is the whole write path: read the field, clamp to an integer,
+     write. Every field on the tab is an integer and there is no reason for
+     eleven copies of `+(e.currentTarget as HTMLInputElement).value`.
+
+     Every one of them is definition, so every one of them goes through
+     `setDef` and the whole tab is inert outside edit mode. That is two
+     gates on one surface and they are asking two different things: `isGM`
+     is who may adjudicate, `edit` is whether this sheet is being authored
+     right now. A GM who is playing their own character is exactly the case
+     where one is true and the other should not be. */
+  const num = (path: string, e: Event, min = -99) => {
+    const v = Math.round(Number((e.currentTarget as HTMLInputElement).value) || 0);
+    setDef(path, Math.max(min, v));
+  };
+
+  /* A derived field is one the sheet is about to overwrite, and saying so
+     is the difference between a control that does nothing and a control
+     that explains why. Armor Slots and both thresholds come off equipped
+     armour; the spellcast trait comes off a casting subclass. */
+  const derivedNote = $derived({
+    slots: armor ? `Set by ${armor.name} — unequip it to hold this.` : "",
+    thresholds: sys.thresholds?.override
+      ? ""
+      : "Derived from armour plus your level. Switch on Override to set them.",
+    cast: sys.spellcastTrait && snap.of("subclass").some((s) => s.system.spellcastTrait)
+      ? "Set by your subclass."
+      : "",
+  });
+
+  /* ── experiences and scars ─────────────────────────────────────────
+     The two lists on a character that are free text plus a number, and
+     both were unreachable: an Experience could be brought into a roll and
+     never written down, and a scar cost a Hope slot with no way to record
+     what left it.
+
+     Written whole rather than by path. `system.experiences` is an
+     ArrayField, and Foundry treats a dotted index in an update key as a
+     path into an *object* — so `"system.experiences.0.name"` writes a
+     shape the reader does not expect. The array is small and rewriting it
+     is one update either way.
+
+     `edit` and not `ed`, and the removal is gated with the rest of it —
+     which is the one place this mode disagrees with "deleting anything is
+     always allowed". That rule is about *items*: a weapon you loot mid-
+     session is a deliberate two-step gesture on a document, and making a
+     player unlock the sheet to record it would be the mode getting in the
+     way of play. An Experience is not a document. It is a field of the
+     character, next to five other fields, removed by a 24px × in a list you
+     are scrolling — the exact shape of the accident this mode exists to
+     prevent. */
+  const writeList = (key: "experiences" | "scars", rows: any[]) =>
+    edit && doc.update({ [`system.${key}`]: rows });
+
+  const listRows = (key: "experiences" | "scars"): any[] =>
+    foundry.utils.deepClone(sys[key] ?? []);
+
+  const addExperience = () =>
+    writeList("experiences", [...listRows("experiences"), { name: "", modifier: 2, marked: false }]);
+  const addScar = () => writeList("scars", [...listRows("scars"), { name: "", description: "" }]);
+
+  const dropRow = (key: "experiences" | "scars", i: number) => {
+    const rows = listRows(key);
+    rows.splice(i, 1);
+    writeList(key, rows);
+  };
+
+  const editRow = (key: "experiences" | "scars", i: number, field: string, value: unknown) => {
+    const rows = listRows(key);
+    if (!rows[i]) return;
+    rows[i] = { ...rows[i], [field]: value };
+    writeList(key, rows);
+  };
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="win"
+  class:dropping
+  class:editing={edit}
+  class:dragging={!!dragId}
   style="--w:100%"
   bind:this={winEl}
   ondrop={onDrop}
   ondragover={(e) => e.preventDefault()}
-  ondragstart={onDragStart}
+  ondragenter={() => dropDepth++}
+  ondragleave={() => (dropDepth = Math.max(0, dropDepth - 1))}
+  ondragstart={(e) => {
+    selfDrag = true;
+    onDragStart(e);
+  }}
+  ondragend={() => {
+    selfDrag = false;
+    dropDepth = 0;
+    /* Belt and braces on the row's own handler. A drag that ends outside
+       the window — dropped on another sheet, or cancelled with Escape —
+       still fires `dragend` on its source, but a row destroyed by a
+       re-render mid-drag would never see it, and the caret would be left
+       lit on a list nothing is being dragged over. */
+    endDrag();
+  }}
   oncontextmenu={onCardMenu}
 >
+  <!-- The banner. Top and bottom, running until the mode is switched off,
+       because the risk this mode carries is forgetting you left it on — a
+       locked sheet refuses you and says so, an unlocked one says nothing.
+       Motion is what a peripheral eye picks up unaimed.
+
+       It takes height rather than overlaying, and that is the trade. The
+       drop edge overlays because a drag lasts a second and a reflow under a
+       held pointer makes you re-aim mid-gesture; this lasts as long as you
+       are editing. An overlay that persists sits permanently on top of the
+       diorama and the gold rows — covering the controls the mode exists to
+       unlock, and `pointer-events:none` does not give the pixels back. The
+       band costs one reflow, on the frame you pressed the toggle, which is
+       a deliberate gesture whose answer is the sheet changing shape; and
+       `.bd` is `flex:1 1 auto`, so the 36px comes off the body and the two
+       scrollers take it up. Nothing moves sideways.
+
+       `aria-hidden` because the run is repeated a dozen times to fill the
+       width; the toggle carries `aria-pressed` and the sentence. -->
+  {#if edit}
+    <div class="tape" aria-hidden="true"><i><span>{TAPE}</span><span>{TAPE}</span></i></div>
+  {/if}
   <div class="bd" style="--h:100%">
     <!-- ══ the rail ══════════════════════════════════════════════════ -->
     <div class="rail">
@@ -985,11 +1849,20 @@
         {/if}
         <div class="lv">
           <i>Lv</i>
-          {#if ed}
+          {#if edit}
             <!-- The plate *is* the field. A level is one of two numbers on
                  this sheet you set by typing rather than by pressing
                  something, and giving it its own labelled box would put a
-                 form control in the middle of a picture. -->
+                 form control in the middle of a picture.
+
+                 Edit mode, not ownership. Level is the single most derived-
+                 from number on the sheet — tier, Proficiency, both damage
+                 thresholds and what every advancement panel owes you all
+                 hang off it — and it sits in the top-right corner of a
+                 picture people drag and hover all session. The locked state
+                 is the `<b>` below, which the design draws identically on
+                 purpose: nothing vanishes, the number simply stops taking a
+                 caret. -->
             <input
               class="b"
               type="number"
@@ -1002,9 +1875,13 @@
             <b>{sys.level}</b>
           {/if}
         </div>
-        {#if ed}
+        {#if edit}
           <div class="fr">
-            <button type="button" class="ctl" onclick={pickImage}>Image</button>
+            <button type="button" class="ctl" onclick={() => pickImage("portrait")}>Image</button>
+            <!-- The other picture. A head-and-shoulders crop is the wrong
+                 image at 100px seen from above, so Foundry keeps the token's
+                 art apart from the actor's and so does this. -->
+            <button type="button" class="ctl" onclick={() => pickImage("token")}>Token</button>
             <button type="button" class="ctl {framing ? 'on' : ''}" onclick={() => (framing = !framing)}>
               Frame
             </button>
@@ -1022,8 +1899,38 @@
             <span class="z">{live.scale.toFixed(2)}×</span>
           </div>
         {/if}
+        <!-- The name is the level plate's trick again, and for the same
+             reason: the art is the field. A name that grew a bordered box
+             and a focus ring when the sheet unlocked would put a form
+             control across the middle of the one surface here that is not a
+             form — so `b` and `input.b` are drawn as one thing, and the only
+             difference between the two states is the caret.
+
+             Pronouns were in the schema and drawn nowhere. They sit under
+             the name, and in play mode only when there is something to
+             read: an empty line under a name is a field reporting that it
+             is empty, which is what a placeholder is for and what edit mode
+             is the moment for. -->
         <div class="nm">
-          <b>{snap.name}</b>
+          {#if edit}
+            <input
+              class="b"
+              type="text"
+              value={snap.name}
+              onchange={(e) => edit && doc.update({ name: (e.currentTarget as HTMLInputElement).value })}
+            />
+            <input
+              class="pn"
+              type="text"
+              placeholder="pronouns"
+              value={sys.biography?.pronouns ?? ""}
+              onchange={(e) =>
+                setDef("system.biography.pronouns", (e.currentTarget as HTMLInputElement).value)}
+            />
+          {:else}
+            <b>{snap.name}</b>
+            {#if sys.biography?.pronouns}<span class="pn">{sys.biography.pronouns}</span>{/if}
+          {/if}
           <span>{heritage}<br />{className}{subclassName ? " · " : ""}<em>{subclassName}</em></span>
         </div>
       </div>
@@ -1106,6 +2013,29 @@
               onset={(n) => set("system.resources.stress.marked", n)}
             />
           {/key}
+          <!-- The three things that happen *to* you, under the two tracks
+               they all write to. Everything else in this rail is a record
+               you edit; these are events with more than one part, so they
+               are the only places in this system that open a dialog. -->
+          {#if ed}
+            <div class="acts">
+              <button
+                type="button"
+                title="Take damage — the ladder, and whether to mark an Armor Slot"
+                onclick={() => takeDamage(doc, 0, { ask: true })}
+              >damage</button>
+              <button
+                type="button"
+                title="Short rest — downtime moves, each clearing 1d4 + your Tier"
+                onclick={() => rest(doc, "short")}
+              >short rest</button>
+              <button
+                type="button"
+                title="Long rest — downtime moves that clear a track outright"
+                onclick={() => rest(doc, "long")}
+              >long rest</button>
+            </div>
+          {/if}
         </div>
 
         <!-- hope -->
@@ -1129,6 +2059,36 @@
                 onset={(n) => set("system.resources.hope.value", n)}
               />
             {/key}
+            <!-- The class's Hope feature, under the gems it spends. It is
+                 the only *move* on this sheet — everything else here is a
+                 record you edit or a roll you make — and it used to be the
+                 second feature run on the class card, which meant deciding
+                 whether to spend three Hope needed a card you had to hover
+                 to see and a number four panels away. Pressing it does both
+                 halves: the Hope leaves and the card lands in chat. -->
+            {#if hopeAction}
+              <button
+                type="button"
+                class="hact"
+                class:no={purse < hopeAction.cost}
+                title={purse < hopeAction.cost
+                  ? `${hopeAction.name} costs ${hopeAction.cost} Hope — you have ${purse}.`
+                  : `Spend ${hopeAction.cost} Hope and show ${hopeAction.name} to the table.`}
+                onclick={useHopeAction}
+              >
+                <span class="hd">
+                  <span class="c">
+                    {#each Array(hopeAction.cost) as _, i (i)}<i></i>{/each}
+                  </span>
+                  <b>{hopeAction.name}</b>
+                  <s>{hopeAction.cost} Hope</s>
+                </span>
+                <!-- The rule, on the row. Not a caption under a control —
+                     the whole block is the move, which is why it is inside
+                     the button and not beside it. -->
+                {#if hopeAction.text}<p>{@html hopeAction.text}</p>{/if}
+              </button>
+            {/if}
           </div>
         </div>
 
@@ -1199,13 +2159,29 @@
           <button
             type="button"
             class="tr {sys.traits?.[t]?.marked ? 'on' : ''} {sys.spellcastTrait === t ? 'cast' : ''}"
-            title={sys.spellcastTrait === t
-              ? "Spellcast — your subclass casts with this trait"
-              : undefined}
-            onclick={(e) => askTrait(e, t as Trait)}
+            title={edit
+              ? `Set ${traitLabel(t)}, or press the cell to ${sys.traits?.[t]?.marked ? "clear" : "set"} its tier mark.`
+              : sys.spellcastTrait === t
+                ? "Spellcast — your subclass casts with this trait"
+                : undefined}
+            onclick={(e) => onTrait(e, t as Trait)}
           >
             <span class="k">{traitLabel(t)}</span>
-            <span class="v">{sign(sys.traits?.[t]?.value ?? 0)}</span>
+            <!-- Same face, same size, same place — the cell does not change
+                 shape when the mode comes on, so the row does not jump and
+                 the number does not move under the eye reading it. `sign`
+                 is display only: a trait is stored as a signed integer and
+                 "+2" is not a number a field can be handed back. -->
+            {#if edit}
+              <input
+                class="v"
+                type="number"
+                value={sys.traits?.[t]?.value ?? 0}
+                onchange={(e) => setTrait(t as Trait, e)}
+              />
+            {:else}
+              <span class="v">{sign(sys.traits?.[t]?.value ?? 0)}</span>
+            {/if}
             <i class="mk"></i>
             <!-- No badge element: the spellcast trait is marked by the cell
                  itself — gold top edge, gold name, and a spark in the corner
@@ -1219,7 +2195,23 @@
       </div>
 
       <div class="tabs">
-        {#each [["main", "loadout"], ["vault", "vault"], ["gear", "gear"], ["advancement", "advancement"], ["bio", "bio"]] as [key, label]}
+        <!-- `adjust` last, and only for a GM.
+             It used to be shown to anyone who could edit the sheet, on the
+             reasoning that ownership is the right to change your own
+             character and half of what is on the tab — Experiences most of
+             all — is the player's to write. That reasoning was about the
+             *fields* and missed what the tab is: every one of them overrides
+             a number a rule derives. Evasion off the class, thresholds off
+             the armour, Hope max off your scars. A player who can set those
+             directly is a player who never has to be told no, and the first
+             time it is used to fix something rather than to record a ruling,
+             the sheet is quietly wrong in a way nothing on it will ever
+             surface. Adjudicating exceptions is the GM's job, so the dials
+             are the GM's tab.
+
+             `isGM` and not `ed`: a GM owns every sheet at the table, so this
+             is strictly narrower and needs no second condition. -->
+        {#each [["main", "loadout"], ["vault", "vault"], ["gear", "gear"], ["advancement", "advancement"], ["bio", "bio"], ...(isGM ? [["adjust", "adjust"]] : [])] as [key, label]}
           <button type="button" class={tab === key ? "on" : ""} onclick={() => (tab = key as any)}>
             {label}
           </button>
@@ -1228,9 +2220,36 @@
           {tab === "vault"
             ? `${vault.length} in vault`
             : tab === "advancement"
-              ? `tier ${sys.tier}`
+              ? `${choiceTotal.spent} / ${choiceTotal.due} chosen`
               : `prof ${sys.proficiency}`}
         </span>
+        <!-- At the end of the strip, and not in Foundry's title bar: that bar
+             is the *application* — its close button, its drag handle — and
+             this is a state of the sheet, one of the two the sheet can be
+             in. It belongs where the sheet's other states are chosen.
+
+             After the counter rather than beside the tabs, so it is not read
+             as a seventh one. It takes none of a tab's vocabulary — no gold
+             top rule, no paper fill — and takes a box instead: the same
+             chamfered pip an advancement slot is made of, which is this
+             sheet's shape for a state that is either set or not.
+
+             `ed` and not `isGM`. A player levelling their own character is
+             the case this exists for. -->
+        {#if ed}
+          <button
+            type="button"
+            class="edt"
+            class:on={editMode}
+            aria-pressed={editMode}
+            title={editMode
+              ? "Editing — level, traits, the portrait and the numbers the class hands you are unlocked. Press to go back to play."
+              : "Play mode — everything you mark, spend and equip is live; the things you set once are locked. Press to edit them."}
+            onclick={toggleEdit}
+          >
+            <i></i>edit
+          </button>
+        {/if}
       </div>
 
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -1305,14 +2324,14 @@
                where you would notice — the fix is one tab away and the slot
                is what says to go there. -->
           <div class="pnl">
-            <div class="k">Domain loadout<s>{loadout.length} / {LOADOUT_LIMIT}</s></div>
+            <div class="k">Domain loadout<s>{loadout.length} / {loadoutLimit}</s></div>
             <div class="grid2">
               {#each loadoutCards as r (r.pk)}
                 <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
                   {@html SPINE(r.card)}
                 </div>
               {/each}
-              {#each Array(Math.max(0, LOADOUT_LIMIT - loadoutCards.length)) as _, i (i)}
+              {#each Array(Math.max(0, loadoutLimit - loadoutCards.length)) as _, i (i)}
                 <div class="pk">
                   <div class="mtslot"><b>Empty</b><span>room for one more</span></div>
                 </div>
@@ -1320,24 +2339,81 @@
             </div>
           </div>
 
-          <!-- Read carefully once and then almost never, so they go last,
-               where their height costs nothing — and they are spines with the
-               card on hover rather than four cards at full size, which is
-               how every other card on this sheet is reached. -->
+          <!-- Not cards. A class is the one thing on this sheet you can
+               neither hold nor spend nor move, and drawing it as a spine
+               promised a card behind it for the only question anybody asks:
+               what does my feature say. The rules are on the rows now.
+
+               Still `data-pk`, and still the class Item's — the row acts on
+               the feature, the right-click acts on the document that carries
+               it, and those are honestly two different objects. -->
           <div class="pnl">
             <div class="k">
-              Class<s>
+              Features<s>
                 {sys.level >= 5 ? "specialization available" : "specialization at 5 · mastery at 8"}
               </s>
             </div>
-            <div class="grid2">
-              {#each classCards as r (r.pk)}
-                <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
-                  {@html SPINE(r.card)}
+            <div class="abl">
+              {#if domainChips.length}
+                <div class="dm">
+                  {#each domainChips as c (c.d)}
+                    <i style="--c:{c.def.light}">{c.def.label}</i>
+                  {/each}
                 </div>
-              {:else}
-                <p class="ach">No class yet. Drag one in from the compendium.</p>
-              {/each}
+              {/if}
+              <!-- Two columns, and they hold two different *kinds* of thing:
+                   loose rules on the left, printed objects on the right.
+                   Nothing appears in both. The subclass cards used to sit
+                   above the list and their features used to be *in* it, and
+                   that second half was the sheet answering one question
+                   twice — a row headed "Foundation · Beastbound" carrying
+                   the rule the Beastbound tile is for. The tile is the
+                   printed thing; it keeps its own rules. -->
+              <div class="cols">
+                <div class="runs">
+                  {#each abilities as a (a.key)}
+                    <button
+                      type="button"
+                      class="a"
+                      class:paid={!!a.cost}
+                      data-pk={a.pk}
+                      title={a.cost
+                        ? `Pay ${a.cost} and show ${a.name} to the table`
+                        : `Show ${a.name} to the table`}
+                      onclick={() => useAbility(a)}
+                    >
+                      <span class="hd">
+                        <s>{a.origin}</s>
+                        {#if a.cost}<em>{a.cost}</em>{/if}
+                      </span>
+                      <b>{a.name}</b>
+                      {#if a.text}<p>{@html a.text}</p>{/if}
+                    </button>
+                  {:else}
+                    <p class="ach">No class yet. Drag one in from the compendium.</p>
+                  {/each}
+                </div>
+                <!-- Tiles, not spines. A subclass has no level and no recall
+                     cost, so two of a spine's five cells are empty — and it
+                     carries a Spellcast trait, which is a fact no other row
+                     on this sheet shows and which a spine has nowhere to
+                     put. `text: ""` because TILE otherwise leads with the
+                     card's first feature, and this tile is a 68px strip:
+                     what fits is a clause and a half, which reads as the
+                     whole rule and is not one. Truncating a rule is worse
+                     than not showing it, and the full text is one hover
+                     away in the peek — the same bargain every card in the
+                     loadout makes. -->
+                {#if subclassCards.length}
+                  <div class="sub">
+                    {#each subclassCards as r (r.pk)}
+                      <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
+                        {@html TILE({ ...r.card, text: "" })}
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
             </div>
           </div>
 
@@ -1357,10 +2433,17 @@
           <!-- The loadout, above the vault it is being compared against.
                With a card armed, every row here is a card you could replace,
                and the heading says so. -->
-          <div class="pnl swap" class:armed={!!armedCard}>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class="pnl swap"
+            class:armed={!!armedCard}
+            class:over={overZone === "loadout" && !overId}
+            ondragover={(e) => dragOver(e, "loadout", null)}
+            ondrop={(e) => dropCard(e, "loadout", null)}
+          >
             <div class="k">
               Loadout<s>
-                {loadout.length} / {LOADOUT_LIMIT}{armedCard ? " · choose one to replace" : ""}
+                {loadout.length} / {loadoutLimit}{armedCard ? " · choose one to replace" : ""}
               </s>
             </div>
             <div class="grid2">
@@ -1369,9 +2452,21 @@
                 <div
                   class="pk"
                   class:noart={r.card.noart}
+                  class:lift={dragId === r.pk}
+                  class:dz={overId === r.pk}
+                  class:dz-a={overId === r.pk && overAfter}
+                  class:dz-b={overId === r.pk && !overAfter}
                   data-pk={r.pk}
+                  data-fk={r.pk}
+                  data-ld={r.pk}
                   data-swap
+                  data-drag
+                  draggable="true"
                   style={r.card.art}
+                  ondragstart={(e) => dragCard(e, r.pk)}
+                  ondragend={endDrag}
+                  ondragover={(e) => dragOver(e, "loadout", r.pk)}
+                  ondrop={(e) => dropCard(e, "loadout", r.pk)}
                   onclick={(e) => {
                     // Only when a swap is in flight. With nothing armed this
                     // row means what it means everywhere else on the sheet,
@@ -1394,15 +2489,20 @@
                   >
                 </div>
               {/each}
-              {#each Array(Math.max(0, LOADOUT_LIMIT - loadoutCards.length)) as _, i (i)}
+              {#each Array(Math.max(0, loadoutLimit - loadoutCards.length)) as _, i (i)}
                 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
                 <div
                   class="pk"
+                  data-ld=""
+                  ondragover={(e) => dragOver(e, "loadout", null)}
+                  ondrop={(e) => dropCard(e, "loadout", null)}
                   onclick={() => armedCard && recall(armedCard.id, null)}
                 >
                   <div class="mtslot">
                     <b>Empty</b>
-                    <span>{armedCard ? "drop a card here" : "room for one more"}</span>
+                    <span
+                      >{armedCard || dragId ? "drop a card here" : "room for one more"}</span
+                    >
                   </div>
                 </div>
               {/each}
@@ -1413,7 +2513,14 @@
                drawing it as a mini would say "different kind of thing" when
                the truth is "same thing, not in hand". So: identical row,
                desaturated, with a vault tab down its edge. -->
-          <div class="pnl swap vaultp" class:armed={!!armedCard}>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class="pnl swap vaultp"
+            class:armed={!!armedCard}
+            class:over={overZone === "vault" && !overId}
+            ondragover={(e) => dragOver(e, "vault", null)}
+            ondrop={(e) => dropCard(e, "vault", null)}
+          >
             <div class="k">Vault<s>{vault.length} stored</s></div>
 
             <div class="swcost" class:on={resting}>
@@ -1454,24 +2561,42 @@
                   class:arm={armed === r.pk}
                   class:mute={!!armedCard && armed !== r.pk}
                   class:noart={r.card.noart}
+                  class:lift={dragId === r.pk}
+                  class:dz={overId === r.pk}
+                  class:dz-a={overId === r.pk && overAfter}
+                  class:dz-b={overId === r.pk && !overAfter}
                   data-pk={r.pk}
+                  data-fk={r.pk}
                   data-swap
+                  data-drag
+                  draggable="true"
                   style={r.card.art}
+                  ondragstart={(e) => dragCard(e, r.pk)}
+                  ondragend={endDrag}
+                  ondragover={(e) => dragOver(e, "vault", r.pk)}
+                  ondrop={(e) => dropCard(e, "vault", r.pk)}
                 >
                   {@html SPINE(r.card)}
                   <span class="swp"></span>
-                  <span class="stamp" title="In vault">{@html LOCK}<em>Vault</em></span>
                   <!-- Arming is a control now, not the row. Every other card
                        row on this sheet posts its card to chat when you click
                        it, and a vault row is not a different kind of card —
                        so it takes the loadout's own hover-revealed button in
-                       the same corner, saying the opposite word. -->
+                       the same corner, saying the opposite word.
+
+                       Two words, though, because it is two gestures. Below
+                       the limit it recalls outright; at the limit it arms,
+                       and the second pick is the whole decision. -->
                   <button
                     type="button"
                     class="shv"
-                    title="Bring this card back into the loadout"
-                    onclick={() => (armed = armed === r.pk ? null : r.pk)}
-                  >{armed === r.pk ? "cancel" : "recall"}</button>
+                    title={armed === r.pk
+                      ? "Put it back down"
+                      : loadoutFull
+                        ? "The loadout is full — pick the card this replaces"
+                        : "Bring this card back into the loadout"}
+                    onclick={() => quickRecall(r.pk)}
+                  >{armed === r.pk ? "cancel" : loadoutFull ? "swap" : "recall"}</button>
                 </div>
               {:else}
                 <p class="ach">The vault is empty.</p>
@@ -1498,11 +2623,17 @@
                   <div class="slot" data-slot={s.key} data-pk={s.it.id}>
                     <div class="sh">
                       <span>{s.label}</span>
-                      <button type="button" onclick={() => item(s.it!.id)?.toggleEquipped()}>
+                      <button type="button" onclick={() => toggleGear(s.it!.id)}>
                         unequip
                       </button>
                     </div>
-                    <div class:noart={card.noart} style={card.art}>{@html TILE(card)}</div>
+                    <!-- `data-fk` on the tile's own wrapper rather than on
+                         the slot, because the slot carries a header the
+                         tile does not: the rect that flies has to be the
+                         rect of the thing you watched leave. -->
+                    <div class:noart={card.noart} data-fk={s.it.id} style={card.art}>
+                      {@html TILE(card)}
+                    </div>
                   </div>
                 {:else}
                   {@const blocked = s.key === "secondary" && twoHanded}
@@ -1539,6 +2670,7 @@
                       class:noart={card.noart}
                       style={card.art}
                       data-pk={g.id}
+                      data-fk={g.id}
                       title={no ? `${primary?.name} is Two-Handed — no free hand` : ""}
                     >
                       {@html TILE(card)}
@@ -1551,7 +2683,7 @@
                         type="button"
                         class="act"
                         disabled={no}
-                        onclick={() => !no && item(g.id)?.toggleEquipped()}
+                        onclick={() => !no && toggleGear(g.id)}
                       >
                         {no ? "needs a free hand" : `equip · ${SLOT_CAP[g.type === "armor" ? "armor" : g.system.slot]}`}
                       </button>
@@ -1587,10 +2719,34 @@
 
           <!-- Below the loot, and it is the right way round: these are the
                things that do nothing. The heading says so rather than leaving
-               anyone to wonder why the rope is not a card. -->
-          {#if inventory.length}
+               anyone to wonder why the rope is not a card.
+
+               It renders when the sheet is yours even with nothing in it,
+               which it did not before — and that was the whole of "there is
+               no way to add an inventory item". The panel only existed once
+               something was already in it, so the one place a rope belongs
+               was invisible until you had already put a rope there by some
+               other route. An empty panel with a way to fill it is a state;
+               an absent one is a dead end. -->
+          {#if inventory.length || ed}
             <div class="pnl">
-              <div class="k">Inventory<s>no rules, no card</s></div>
+              <div class="k">
+                Inventory<s>no rules, no card</s>
+                {#if ed}
+                  <button type="button" class="nw" onclick={onNewInventory}>+ add</button>
+                {/if}
+              </div>
+              {#if !inventory.length}
+                <!-- The way in, in the sentence that describes the way out.
+                     This is the tab's only empty-state now: the panel above
+                     draws three labelled slots whether or not they hold
+                     anything, so a second paragraph under it saying "nothing
+                     carried" was reporting a state the slots already showed. -->
+                <p class="ach">
+                  The rope, the rations, the lantern. Drag them in from a compendium{#if ed}, or
+                    <button type="button" class="nw" onclick={onNewInventory}>make one</button>{/if}.
+                </p>
+              {/if}
               <div class="xp">
                 {#each inventory as g (g.id)}
                   <!-- `data-pk` even though these rows have no card. It is the
@@ -1614,14 +2770,12 @@
             </div>
           {/if}
 
-          {#if !carried.length && !lootCards.length && !inventory.length && !primary && !secondary && !armor}
-            <!-- The empty state names both ways in, because until now it
-                 named the one that needs a compendium and a table's worth of
-                 gear does not come out of a book. -->
-            <p class="ach">
-              Nothing carried. Drag equipment in from a compendium{#if ed}, or
-                <button type="button" class="nw" onclick={onNewItem}>make one</button>{/if}.
-            </p>
+          <!-- Only when the sheet is not yours. Both panels above now carry
+               their own way in — "+ new" on Equipped, "+ add" on Inventory —
+               so on an editable sheet this was a third paragraph saying
+               "empty" under two that had already said it and offered a fix. -->
+          {#if !ed && !carried.length && !lootCards.length && !inventory.length && !primary && !secondary && !armor}
+            <p class="ach">Nothing carried.</p>
           {/if}
         {:else if tab === "advancement"}
           <!-- Circles, from the printed sheet, and the only circles here
@@ -1637,10 +2791,21 @@
               </span>
               <span class="n">{sys.proficiency}</span>
             </div>
+            <!-- Said, not implied. A row of boxes that quietly stopped
+                 answering the pointer would read as a bug in the tab; the
+                 sentence is what makes it a state. -->
+            {#if ed && !edit}
+              <p class="ach">{LOCKED}</p>
+            {/if}
             <p class="ach">
-              Each level, choose two options with unmarked slots and mark them, then raise both
-              damage thresholds by +1. An option with a heavier frame costs both choices.
-              Proficiency is how many damage dice you roll — your
+              <b>Marking a slot takes the advancement.</b> A Hit Point, a Stress slot, Evasion and
+              Proficiency move the moment you mark them and move back when you unmark them; two
+              traits and two Experiences ask which; a card or a class you drag in yourself. Both
+              damage thresholds rise with your level on their own.
+            </p>
+            <p class="ach">
+              Each level, choose two options with unmarked slots. An option with a heavier frame
+              costs both choices. Proficiency is how many damage dice you roll — your
               {#if primary}
                 {primary.name} rolls {sys.proficiency}{primary.system.damage.dice}{primary.system
                   .damage.bonus
@@ -1652,14 +2817,23 @@
             </p>
           </div>
 
-          {#each ADVANCEMENT as t (t.tier)}
+          {#each budgets as b (b.tier.tier)}
+            {@const t = b.tier}
             {@const open = sys.level >= t.at}
-            {@const used = t.options.reduce((n, _, oi) => n + taken(t.tier, oi), 0)}
             <div class="pnl adv" class:shut={!open}>
               <div class="k">
-                Tier {t.tier}<s>{open ? `${used} marked` : `from level ${t.at}`}</s>
+                Tier {t.tier}<s>{open ? `levels ${t.levels}` : `from level ${t.at}`}</s>
               </div>
               <p class="ach">{t.achievement}</p>
+              <!-- Only once the tier has opened. A tier you have not reached
+                   owes you nothing, and "0 of 0" is a sum about a thing that
+                   has not started. -->
+              {#if open}
+                <div class="bal" class:owed={b.spent < b.due} class:over={b.spent > b.due}>
+                  <span class="n">{b.spent} / {b.due}</span>
+                  <span class="t">choices spent · {budgetNote(b.due, b.spent)}</span>
+                </div>
+              {/if}
               {#each t.options as o, oi (oi)}
                 {@const on = taken(t.tier, oi)}
                 <div class="row" class:done={on >= o.slots}>
@@ -1669,16 +2843,218 @@
                        grandchild, and they collapse to nothing. So the click
                        is delegated from the row, exactly as the design does. -->
                   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+                  <!-- `def`: a mark here *is* the advancement, so the boxes
+                       are definition and go inert with the rest of it. They
+                       keep their marks and their place — this tab is read
+                       far more often than it is written, and half of why
+                       anyone opens it is to see what level 5 offers. -->
                   <span
-                    class="slots"
+                    class="slots def"
                     class:pair={o.pair}
-                    onclick={(e) => open && onAdvance(e, t.tier, oi, on)}
+                    onclick={(e) => open && onAdvance(e, t, oi, on)}
                   >{@html boxes(o.slots, on)}</span>
                   <span class="lb">{o.label}</span>
                 </div>
               {/each}
             </div>
           {/each}
+        {:else if tab === "adjust" && isGM}
+          <!-- ══ the dials ══════════════════════════════════════════════
+               Every number here is one some rule normally derives, and the
+               tab exists because a table invents exceptions faster than a
+               schema can name them: a blessing that raises Evasion for a
+               session, a homebrew armour, a subclass that carries six cards
+               instead of five. A GM who cannot set a number directly sets
+               it *indirectly* — by lying to the sheet about the armour — and
+               then the sheet is wrong about two things instead of one.
+
+               Two gates, and they ask two different questions. `isGM` is who
+               may adjudicate: every field here overrides a number a rule
+               works out, and a player who can set those directly is a player
+               who never has to be told no. `edit` is whether this sheet is
+               being *authored* right now — the same gate the level, the
+               traits and the portrait are behind, because the accident this
+               tab is exposed to is the same one they are: a click that lands
+               on a number while you meant to reach the panel below it.
+
+               A GM playing their own character at the table is exactly the
+               case where the first is true and the second should not be,
+               which is why they are not one condition. -->
+          <div class="pnl">
+            <div class="k">Adjustments<s>ad hoc, and they stick</s></div>
+            <p class="ach">
+              These override what the rules would otherwise work out. Nothing here is
+              undone by a rest or a level — a value set here stays set until it is set back.
+            </p>
+            <!-- The whole tab is definition, so one sentence covers it rather
+                 than five copies under five panels. -->
+            {#if !edit}
+              <p class="ach" style="margin-top:9px">{LOCKED}</p>
+            {/if}
+          </div>
+
+          <div class="pnl">
+            <div class="k">Defence</div>
+            <div class="cfg def" inert={!edit}>
+              <label class="f">
+                <span>Evasion base</span>
+                <input type="number" value={sys.evasion?.base ?? 10}
+                  onchange={(e) => num("system.evasion.base", e, 0)} />
+              </label>
+              <label class="f">
+                <span>Evasion bonus</span>
+                <input type="number" value={sys.evasion?.bonus ?? 0}
+                  onchange={(e) => num("system.evasion.bonus", e)} />
+              </label>
+              <label class="f">
+                <span>Armor Score bonus</span>
+                <input type="number" value={sys.armorScore?.bonus ?? 0}
+                  onchange={(e) => num("system.armorScore.bonus", e)} />
+              </label>
+              <label class="f" class:off={!!derivedNote.slots} title={derivedNote.slots}>
+                <span>Armor Slots</span>
+                <input type="number" value={sys.resources?.armorSlots?.max ?? 0}
+                  onchange={(e) => num("system.resources.armorSlots.max", e, 0)} />
+              </label>
+            </div>
+            {#if derivedNote.slots}
+              <p class="ach" style="margin-top:9px">{derivedNote.slots}</p>
+            {/if}
+          </div>
+
+          <div class="pnl">
+            <div class="k">Tracks<s>the boxes, not the marks</s></div>
+            <div class="cfg def" inert={!edit}>
+              <!-- The *base*, now that advancement adds to it. These write the
+                   stored number and the model puts the marked slots on top, so
+                   a character who bought two Stress slots reads 6 here and
+                   eight in the rail — which is the only arrangement where
+                   unmarking the advancement can take them away again. -->
+              <label class="f" title="Before advancement. Slots bought on the advancement tab are added on top.">
+                <span>Hit Points base</span>
+                <input type="number" value={sys.resources?.hitPoints?.max ?? 6}
+                  onchange={(e) => num("system.resources.hitPoints.max", e, 1)} />
+              </label>
+              <label class="f" title="Before advancement. Slots bought on the advancement tab are added on top.">
+                <span>Stress base</span>
+                <input type="number" value={sys.resources?.stress?.max ?? 6}
+                  onchange={(e) => num("system.resources.stress.max", e, 1)} />
+              </label>
+              <label class="f">
+                <span>Proficiency bonus</span>
+                <input type="number" value={sys.proficiencyBonus ?? 0}
+                  onchange={(e) => num("system.proficiencyBonus", e)} />
+              </label>
+              <label class="f">
+                <span>Loadout slots</span>
+                <input type="number" value={loadoutLimit}
+                  onchange={(e) => num("system.loadoutLimit", e, 0)} />
+              </label>
+            </div>
+            <!-- Hope's maximum is deliberately absent. It is six less your
+                 scars and nothing else, and the scars are three panels down
+                 — a second control for one number is a second thing to
+                 disagree with the first. -->
+            <p class="ach" style="margin-top:9px">
+              Hope holds {sys.resources?.hope?.max ?? 6} — six, less one for each scar.
+            </p>
+          </div>
+
+          <div class="pnl">
+            <div class="k">Damage thresholds<s>major {sys.thresholds?.major} · severe {sys.thresholds?.severe}</s></div>
+            <div class="cfg def" inert={!edit}>
+              <label class="f">
+                <span>Override</span>
+                <span class="sw">
+                  <input type="checkbox" checked={!!sys.thresholds?.override}
+                    onchange={(e) => setDef("system.thresholds.override", e.currentTarget.checked)} />
+                </span>
+              </label>
+              <label class="f" class:off={!sys.thresholds?.override}>
+                <span>Major</span>
+                <input type="number" value={sys.thresholds?.major ?? 0}
+                  onchange={(e) => num("system.thresholds.major", e, 0)} />
+              </label>
+              <label class="f" class:off={!sys.thresholds?.override}>
+                <span>Severe</span>
+                <input type="number" value={sys.thresholds?.severe ?? 0}
+                  onchange={(e) => num("system.thresholds.severe", e, 0)} />
+              </label>
+              <label class="f" class:off={!!sys.thresholds?.override}>
+                <span>Major bonus</span>
+                <input type="number" value={sys.thresholds?.bonusMajor ?? 0}
+                  onchange={(e) => num("system.thresholds.bonusMajor", e)} />
+              </label>
+              <label class="f" class:off={!!sys.thresholds?.override}>
+                <span>Severe bonus</span>
+                <input type="number" value={sys.thresholds?.bonusSevere ?? 0}
+                  onchange={(e) => num("system.thresholds.bonusSevere", e)} />
+              </label>
+            </div>
+            <!-- Two ways to move a threshold, and the switch decides which
+                 one is live. A bonus is added to what the armour and your
+                 level work out; an override replaces the sum outright. Both
+                 keep their values while the other is in charge, because a
+                 field that empties itself when you flip a switch makes the
+                 switch feel destructive. -->
+            <p class="ach" style="margin-top:9px">
+              {sys.thresholds?.override
+                ? "Overridden — the armour and your level are being ignored."
+                : derivedNote.thresholds}
+            </p>
+          </div>
+
+          <div class="pnl">
+            <div class="k">Experiences<s>brought into a roll from the popover</s></div>
+            <div class="lst def" inert={!edit}>
+              {#each sys.experiences ?? [] as x, i (i)}
+                <div class="r">
+                  <input
+                    class="t"
+                    type="text"
+                    placeholder="A phrase — “Grew up on the docks”"
+                    value={x.name ?? ""}
+                    onchange={(e) => editRow("experiences", i, "name", e.currentTarget.value)}
+                  />
+                  <input
+                    class="n"
+                    type="number"
+                    value={x.modifier ?? 2}
+                    onchange={(e) =>
+                      editRow("experiences", i, "modifier", Math.round(Number(e.currentTarget.value) || 0))}
+                  />
+                  <button type="button" class="x" title="Remove" onclick={() => dropRow("experiences", i)}>×</button>
+                </div>
+              {/each}
+              <button type="button" class="add" onclick={addExperience}>+ experience</button>
+            </div>
+          </div>
+
+          <div class="pnl">
+            <div class="k">Scars<s>{(sys.scars ?? []).length} · one Hope slot each</s></div>
+            <div class="lst def" inert={!edit}>
+              {#each sys.scars ?? [] as s, i (i)}
+                <div class="r">
+                  <input
+                    class="t"
+                    type="text"
+                    placeholder="What the death move left behind"
+                    value={s.name ?? ""}
+                    onchange={(e) => editRow("scars", i, "name", e.currentTarget.value)}
+                  />
+                  <button type="button" class="x" title="Remove" onclick={() => dropRow("scars", i)}>×</button>
+                </div>
+              {/each}
+              <button type="button" class="add" onclick={addScar}>+ scar</button>
+            </div>
+            <!-- The count is the mechanical half and the rail already draws
+                 it: a scarred socket is a gem you cannot fill. The name is
+                 here so the socket means something. -->
+            <p class="ach" style="margin-top:9px">
+              Each scar permanently costs a Hope slot, and the rail draws it as a socket
+              you cannot fill.
+            </p>
+          </div>
         {:else}
           <!-- All three are written, not derived, so all three are editors.
                They were read-only panels, which meant the only way to fill in
@@ -1718,6 +3094,9 @@
       {/each}
     </div>
   </div>
+  {#if edit}
+    <div class="tape bot" aria-hidden="true"><i><span>{TAPE}</span><span>{TAPE}</span></i></div>
+  {/if}
 </div>
 
 <style>
@@ -1819,8 +3198,74 @@
     border-radius: 0;
     background: transparent;
   }
+  /* The three fields edit mode adds, and the same discipline as `.eqp .act`:
+     `design/sheet.css` draws all three — face, ground, focus ring — so the
+     only thing to take away here is what Foundry gives an `<input>` and the
+     design does not name. For the two on the diorama that is the fixed
+     height and the 28px floor, since neither states one; a 19px name in a
+     28px box is a name with a box round it, on the one surface here that is
+     a picture rather than a form.
+
+     The trait numeral is deliberately *not* in that group. It states a
+     height of its own — `height:1em`, which is the whole reason the six
+     cells do not grow seven pixels the moment the mode comes on — so
+     handing it `height:auto` here would undo the fix from a more specific
+     rule. Only the floor and the corner are Foundry's to give back. */
+  .dio .nm .b,
+  .dio .nm .pn {
+    height: auto;
+    min-height: 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  .trs .tr input.v {
+    min-height: 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  /* `height:auto` is load-bearing rather than defensive: the toggle is
+     `align-self:stretch` so its sticky ground covers the full strip and tabs
+     pass behind it rather than under the word, and stretch does nothing to an
+     element Foundry has already given a fixed 28px. `box-shadow` is not named
+     — the design uses it for the hairline that puts this on the far side of
+     the counter. */
+  .tabs .edt {
+    height: auto;
+    min-height: 0;
+    border-radius: 0;
+  }
   .eqp .act:disabled {
     cursor: default;
+  }
+  /* Same discipline as `.eqp .act`, and the same reason it is short: every
+     one of these is *drawn* in `design/sheet.css` — padding, hairline,
+     background, font, clip — and those rules land in Foundry's `system`
+     layer, which is declared after its own, so they already win. What they
+     do not name is what a `button` and an `input` bring with them, and
+     Foundry's fixed 28px is the one that breaks things: the Hope action is a
+     ~31px flex row that would have its diamonds clipped, and the adjust
+     tab's fields are 26px and would be stretched into form controls in a
+     grid built for label-sized rows.
+
+     `border-radius` because Foundry rounds both and nothing in this system
+     is rounded — every surface here is chamfered. */
+  .hact,
+  .abl .a,
+  .acts button,
+  .cfg .f input,
+  .lst .r input,
+  .lst .add {
+    height: auto;
+    min-height: 0;
+    line-height: normal;
+    border-radius: 0;
+  }
+  /* The remove button is the one the design *does* size, to a 24px square,
+     so `height:auto` would collapse it to its own glyph. Only the floor and
+     the corner rounding are Foundry's to give back. */
+  .lst .r .x {
+    min-height: 0;
+    border-radius: 0;
   }
   /* ...except the three the design gives an explicit padding of its own. */
   .trs .tr {

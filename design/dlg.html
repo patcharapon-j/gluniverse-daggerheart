@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Dialogs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<!-- The take-damage dialog draws the *sheet's* damage band rather than a
+     ladder of its own, so this page needs the band's stylesheet. That is the
+     whole point of the change: one picture of thresholds, in both places. -->
+<link rel="stylesheet" href="/design/mark.css">
+<!-- And both dialogs now draw things from further afield. `tile.css` is the
+     landscape card — the rules panels draw the actual card a rule is printed
+     on, and the downtime move is a sibling of that component. `plate.css` is
+     the die: a rest's d4 lands as the same object a damage card draws, because
+     that is where this table already reads a rolled number. -->
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/plate.css">
+<link rel="stylesheet" href="/design/sheet.css">
+<link rel="stylesheet" href="/design/dlg.css">
+<style>
+  /* The study page's own chrome, trimmed off by the port. */
+  body{margin:0;padding:34px 30px 90px;background:#0b0d10;
+    font-family:var(--f-ui),system-ui,sans-serif}
+  .bar{display:flex;align-items:center;gap:18px;margin-bottom:30px}
+  .bar b{font:600 10px/1 var(--f-mono);letter-spacing:.2em;color:#7d8794;text-transform:uppercase}
+  .tg{display:flex;align-items:center;gap:7px;font:400 12.5px/1 var(--f-ui);color:#9aa3ae;
+    cursor:pointer;user-select:none}
+  h2{font:600 15px/1 var(--f-display);color:#fff;margin:44px 0 6px}
+  h2 span{font:600 10px/1 var(--f-mono);letter-spacing:.22em;color:var(--hope);
+    display:block;margin-bottom:9px}
+  .note{font:400 12.5px/1.6 var(--f-ui);color:#96a0ac;max-width:760px;margin:0 0 22px}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:26px;
+    align-items:start}
+  /* The window, at the width the dialog actually opens at. Everything about
+     these is a judgement at a size, so the study has to be at that size. */
+  .win2{width:460px;background:var(--frame);border:1px solid var(--frame-line);
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+  .win2.wide{width:540px}
+  .win2.dmgw{width:500px}
+  .win2 > .hd{background:var(--frame-2);border-bottom:1px solid var(--frame-line);
+    padding:8px 12px;font:600 11px/1 var(--f-mono);letter-spacing:.14em;
+    text-transform:uppercase;color:var(--frame-tx-2)}
+  .win2 > .ct{background:var(--paper);color:var(--ink);padding:15px 17px 14px;
+    display:flex;flex-direction:column;gap:14px}
+  .ft2{display:flex;gap:8px}
+  .ft2 button{flex:0 1 auto;min-width:108px;padding:8px 14px;border:0;cursor:pointer;
+    background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink-2);
+    font:700 9px/1.4 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+  .ft2 button.ok{margin-left:auto;background:var(--hope);box-shadow:none;color:#14161a}
+  .ft2 button:disabled{opacity:.38;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <b>DH · Dialogs</b>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+  <label class="tg"><input type="checkbox" id="rm"> reduced motion</label>
+</div>
+
+<h2><span>when a dialog is allowed</span>Three, and no more</h2>
+<p class="note">
+  This system answers a refusal by making the thing that cannot pay flinch — the Stress track, the
+  Hope pool — rather than by opening a box to explain it over the top of the number that already
+  said no. A dialog is only allowed for <b>a decision with more than one part, taken once, that
+  changes the sheet underneath it</b>. There are exactly three: how much armour to spend against a
+  number you have just been shown, which two traits a level-up raises, and which downtime moves you
+  are making. Each is a sentence you are still composing rather than a record you are editing, which
+  is what the roll popover is — at a size a popover cannot hold.
+</p>
+<p class="note">
+  Both of the two below draw <b>cards</b> now, and neither draws one of its own. The rules a
+  character carries are printed on objects they are holding, so the panel shows the object; a
+  downtime move is the same kind of thing you pick up, so it takes the card's shape; and a rest's
+  die lands as the same <code>.die</code> a damage card draws. Nothing here is a second dialect for
+  something the table already reads elsewhere.
+</p>
+
+<div class="cols">
+
+  <div>
+    <div class="win2 dmgw">
+      <div class="hd">Vess takes damage</div>
+      <div class="ct">
+        <div class="dlg" id="dmg"></div>
+        <div class="ft2"><button>Cancel</button><button class="ok">Take it</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="win2">
+      <div class="hd">Raise two traits</div>
+      <div class="ct">
+        <div class="dlg" id="pick"></div>
+        <div class="ft2"><button>Cancel</button><button class="ok" id="pickok" disabled>Take it</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="win2 wide">
+      <div class="hd">Short Rest</div>
+      <div class="ct">
+        <div class="dlg" id="rest"></div>
+        <!-- One button. Every move here has already happened by the time you
+             could press Cancel, and a Cancel next to a track you just cleared
+             is a promise the dialog cannot keep. Taking one *back* is a
+             different offer and it lives on the ledger row that knows what
+             that press actually did. -->
+        <div class="ft2"><button class="ok">Done</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h2 style="margin-top:0"><span>afterwards</span>The rest, in the log</h2>
+    <p class="note">
+      Not a card — a card is a thing you hold and a rest is a thing that happened. One message for
+      the whole rest, which is the other half of the dice rolling inside the dialog: three moves is
+      one record, not four.
+    </p>
+    <div id="restcard"></div>
+  </div>
+
+</div>
+
+<script type="module">
+import { DAMAGE, XMARK } from '/design/mark.js';
+import { TILE } from '/design/tile.js';
+import { DIE } from '/design/plate.js';
+import { byslug, icon } from '/design/domains.js';
+
+/* The sigils the tiles wear. Fetched and recentred against their own ink
+   bounds, exactly as the sheet does it — see domains.js. */
+const SIG = Object.fromEntries(await Promise.all(
+  ['sage','bone','splendor'].map(async s => [s, await icon(s)])));
+
+/* A card as the rules panel draws it: the landscape tile, un-clamped, with the
+   matched rule printed in it whole. `noart` because this page ships no
+   artwork, so every one falls back to the sigil plate — which is also what a
+   card whose art never fetched looks like in the system. */
+const CRD = (o, note) => `<div class="crd noart">${
+  note ? `<span class="wh">${note}</span>` : ''}${TILE(o)}</div>`;
+
+/* ══ the damage dialog ═══════════════════════════════════════════════
+   The band is `mark.css`'s — the same object the rail draws — with three
+   states only a dialog needs: `.on` for the zone the hit lands in, `.was`
+   for the zone it escaped, and `.wb` for the walk between them.
+
+   That walk is the change. An Armor Slot does not subtract from the number;
+   it moves the damage one rung *down the ladder*, and the dialog used to
+   draw that as two still frames with the journey left to the reader. Now a
+   gold arrow runs from the struck zone back to the lit one, in its own lane
+   above the band, replayed on every press.
+
+   The other two: everything that is not the landing zone steps back, so the
+   one that matters is the first thing seen rather than the fourth; and the
+   Hit Point forecast outweighs the boxes already marked, because what is
+   marked cannot change here and what is incoming is the whole question. */
+const THR = { major: 7, severe: 15 };
+const HP = { max: 7, marked: 2 };
+const PURSE = { armor: 3, stress: 4, hope: 2 };
+
+const COST = { none:0, minor:1, major:2, severe:3, massive:4 };
+const ORDER = ['none','minor','major','severe','massive'];
+const sevOf = (n) => n <= 0 ? 'none'
+  : n >= THR.severe * 2 ? 'massive' : n >= THR.severe ? 'severe'
+  : n >= THR.major ? 'major' : 'minor';
+/* Minor reduces to *nothing*, which is the printed parenthesis and is what
+   this floored at Minor instead — so the one hit armour completely negates
+   was the one hit the dialog refused to let you spend on. */
+const reduce = (s, r) => { const i = ORDER.indexOf(s); return i <= 0 ? s : ORDER[Math.max(0, i - r)]; };
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
+const stepper = (name) => `<span class="sp" data-sp="${name}">
+  <button type="button" data-step="-1">−</button><span class="n">0</span>
+  <button type="button" data-step="1">+</button></span>`;
+
+document.getElementById('dmg').innerHTML = `
+<div class="hit">
+  <div class="amt">
+    <input type="number" value="16" class="amtin"><s>physical</s>
+    <span class="vd"></span>
+  </div>
+  ${DAMAGE({ ...THR, hp: HP.max, marked: HP.marked, massive: true, label: 'Damage' })
+    .replace(/<span class="cost"/g, `<i class="cx">${XMARK}</i><span class="cost"`)}
+  <div class="spend">
+    <div class="st rung"><span class="k">Reduce by</span>${stepper('rungs')}<em></em></div>
+    <div class="st pay"><span class="k">Paid with</span><span class="purse">
+      ${Object.keys(PURSE).map(k =>
+        `<span class="p" data-purse="${k}"><span class="k">${cap(k)}</span>${stepper(k)}</span>`).join('')}
+    </span></div>
+  </div>
+  <p class="out"></p>
+  <div class="rl">
+    <div class="k">Your own cards on armour</div>
+    ${CRD({ d: byslug.sage, sig: SIG.sage, lvl: 3, rc: 1, type: 'SPELL',
+      name: 'Takaia Armored Beetles', foot: 'Sage',
+      text: 'Mark a **Stress** to conjure armored beetles that encircle you. When you next take damage, reduce the **severity** by one threshold. You can spend a **Hope** to keep the beetles for the rest of the scene.' })}
+    ${CRD({ d: byslug.bone, sig: SIG.bone, lvl: 1, rc: 0, type: 'ABILITY',
+      name: 'Bare Bones', foot: 'Bone',
+      text: 'When you have no armor equipped, your **damage thresholds** equal your level.' })}
+  </div>
+</div>`;
+
+{
+  const root = document.getElementById('dmg');
+  const field = root.querySelector('.amtin');
+  const vd = root.querySelector('.vd');
+  const out = root.querySelector('.out');
+  const note = root.querySelector('.st.rung em');
+  const boxes = [...root.querySelectorAll('.row > i')];
+  const zones = [...root.querySelectorAll('.z')];
+  const bandEl = root.querySelector('.band');
+
+  /* The arrow is built here rather than by DAMAGE(), because it is the
+     dialog's furniture and the rail has no use for it — and its geometry
+     cannot be written in CSS at all: the zones size themselves to their own
+     contents, so where their centres landed is only knowable from the rects. */
+  const wb = document.createElement('div');
+  wb.className = 'wb';
+  wb.innerHTML = '<u></u><i></i><em></em>';
+  bandEl.append(wb);
+  let walked = '';
+
+  let n = 16;
+  const spend = { rungs: 0, armor: 0, stress: 0, hope: 0 };
+
+  const maxRungs = () => ORDER.indexOf(sevOf(n));
+
+  const draw = () => {
+    spend.rungs = Math.min(Math.max(0, spend.rungs), maxRungs());
+    for (const k of Object.keys(PURSE)) spend[k] = Math.min(Math.max(0, spend[k]), PURSE[k]);
+
+    const base = sevOf(n);
+    const sev = reduce(base, spend.rungs);
+    const marked = COST[sev];
+
+    let landed = null, escaped = null;
+    for (const z of zones) {
+      const c = +z.dataset.hp;
+      const on = c === COST[sev] && sev !== 'none';
+      const was = c === COST[base] && base !== sev;
+      z.classList.toggle('on', on);
+      z.classList.toggle('was', was);
+      if (on) landed = z;
+      if (was) escaped = z;
+    }
+    /* The band is told whether anything landed, rather than the stylesheet
+       re-deriving it with `:has(.z.on)`. It is decided here already. */
+    bandEl.classList.toggle('aim', !!landed);
+    boxes.forEach((b, i) => {
+      const pv = i >= HP.marked && i < HP.marked + marked;
+      b.classList.toggle('pv', pv);
+      b.classList.toggle('on', i < HP.marked || pv);
+    });
+
+    vd.classList.toggle('safe', sev === 'none');
+    vd.innerHTML = sev === 'none'
+      ? '<b>Nothing</b>no Hit Points'
+      : `<b>${cap(sev)}</b>mark ${marked} Hit Point${marked === 1 ? '' : 's'}`;
+
+    /* The walk back. Replayed only when the journey itself changed — `draw`
+       runs on every keystroke in the amount field, and an arrow that re-flies
+       on each one is an animation reporting that nothing happened. */
+    if (!escaped) { wb.classList.remove('go'); walked = ''; }
+    else {
+      const b = bandEl.getBoundingClientRect();
+      const f = escaped.getBoundingClientRect();
+      const right = f.left + f.width / 2 - b.left;
+      // No landing zone means it came off the bottom of the ladder entirely,
+      // so the arrow runs to the band's own left edge — "Minor to Nothing".
+      const l = landed
+        ? landed.getBoundingClientRect().left + landed.getBoundingClientRect().width / 2 - b.left
+        : 2;
+      wb.style.left = `${l}px`;
+      wb.style.width = `${Math.max(24, right - l)}px`;
+      wb.querySelector('em').textContent =
+        `${cap(base)} → ${sev === 'none' ? 'Nothing' : cap(sev)}`;
+      const trip = `${base}>${sev}`;
+      if (trip !== walked) {
+        wb.classList.remove('go'); void wb.offsetWidth; wb.classList.add('go');
+        walked = trip;
+      }
+    }
+
+    /* The stepper's note says only what the arrow cannot: that nothing landed.
+       The from→to sentence rides on the arrow itself. */
+    note.textContent = maxRungs() === 0 ? 'Nothing lands — there is nothing to soften.' : '';
+
+    out.textContent = (spend.rungs > 1 || spend.armor > 1 || spend.stress || spend.hope)
+      ? 'Past the one Armor Slot the rules give you — whatever is buying this should be printed on one of your own cards.'
+      : 'The rules give you one Armor Slot per hit, and one slot is one threshold.';
+
+    root.querySelector('.st.rung').classList.toggle('live', spend.rungs > 0);
+    root.querySelector('.st.pay').classList.toggle('live',
+      Object.keys(PURSE).some(k => spend[k] > 0));
+    for (const k of Object.keys(PURSE))
+      root.querySelector(`[data-purse="${k}"]`).classList.toggle('live', spend[k] > 0);
+    for (const sp of root.querySelectorAll('.sp')) {
+      const k = sp.dataset.sp;
+      const lim = k === 'rungs' ? maxRungs() : PURSE[k];
+      sp.querySelector('.n').textContent = spend[k];
+      for (const b of sp.querySelectorAll('button'))
+        b.disabled = +b.dataset.step < 0 ? spend[k] <= 0 : spend[k] >= lim;
+    }
+  };
+
+  root.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-step]');
+    if (!b) return;
+    const k = b.closest('[data-sp]').dataset.sp;
+    const d = +b.dataset.step;
+    spend[k] += d;
+    // The one rule that ties a rung to a price, so the printed case is one press.
+    if (k === 'rungs') {
+      if (d > 0 && spend.armor < PURSE.armor && spend.armor < spend.rungs) spend.armor++;
+      else if (d < 0 && spend.armor > spend.rungs) spend.armor--;
+    }
+    draw();
+  });
+  field.oninput = () => { n = Math.max(0, Math.round(+field.value || 0)); draw(); };
+  draw();
+}
+
+/* ── the picker ────────────────────────────────────────────────────── */
+const TRAITS = [['Agility','+1'],['Strength','+0'],['Finesse','+2'],
+                ['Instinct','+1'],['Presence','+0'],['Knowledge','−1']];
+document.getElementById('pick').innerHTML = `
+<p class="ach">Choose two unmarked traits. Each gains +1 and is marked until the next tier.</p>
+<div class="picks">${TRAITS.map(([n,v]) =>
+  `<label class="pick"><input type="checkbox" name="pick"><b>${n}</b><s>now ${v}</s></label>`).join('')}</div>`;
+
+{
+  const root = document.getElementById('pick');
+  const ok = document.getElementById('pickok');
+  const hint = root.querySelector('.ach');
+  const base = hint.textContent;
+  const boxes = [...root.querySelectorAll('input')];
+  const sync = () => {
+    const on = boxes.filter(b => b.checked);
+    for (const b of boxes) b.disabled = !b.checked && on.length >= 2;
+    hint.textContent = `${base} — ${on.length} of 2 chosen`;
+    ok.disabled = on.length !== 2;
+  };
+  boxes.forEach(b => b.onchange = sync);
+  sync();
+}
+
+/* ── downtime ──────────────────────────────────────────────────────── */
+const TIER = 2;
+const DIE_PX = 46;
+const NOTATION = `1d4 + ${TIER}`;
+const MOVES = [
+  { id:'wounds',  n:'Tend to Wounds', t:'Clear 1d4 + Tier Hit Points.',  roll:true,  did:'Hit Points' },
+  { id:'stress',  n:'Clear Stress',   t:'Clear 1d4 + Tier Stress.',      roll:true,  did:'Stress' },
+  { id:'armor',   n:'Repair Armor',   t:'Clear 1d4 + Tier Armor Slots.', roll:true,  did:'Armor Slots' },
+  { id:'prepare', n:'Prepare',        t:'Gain a Hope. With one or more party members, gain 2 Hope each.',
+    fx:'+1', cap:'hope' },
+];
+/* Three, not two, because Celestial Trance says so — `restAllowance` reads
+   that off the cards this character is holding, and the card itself is drawn
+   in the panel below rather than only named in the hint. Nothing enforces the
+   number either way. */
+const ALLOW = 3;
+
+const plate = (m) => m.roll
+  ? `<span class="cast">${DIE('', 'd4', DIE_PX)}</span><span class="nt">${NOTATION}</span>`
+  : `<span class="cast"><span class="fx">${m.fx}</span></span><span class="nt">${m.cap}</span>`;
+
+document.getElementById('rest').innerHTML = `
+<div class="dtm">
+  <p class="ach">${ALLOW} downtime moves — Celestial Trance gives you more than the printed
+    two. Nothing here insists on the number.</p>
+  <div class="moves">${MOVES.map(m =>
+    `<button type="button" class="dt" data-move="${m.id}">
+      <span class="tray">${plate(m)}</span>
+      <span class="bd">
+        <span class="hd"><b>${m.n}</b>${m.roll ? `<s>${NOTATION}</s>` : ''}</span>
+        <span class="tx">${m.t}</span>
+        <span class="ft"><span class="tb">Downtime</span><span class="ct"></span>
+          <span class="go">take</span></span>
+      </span>
+      <span class="tbar"></span>
+    </button>`).join('')}</div>
+  <div class="log"></div>
+  <p class="tally"></p>
+  <div class="rl">
+    <div class="k">Your own cards on resting</div>
+    ${CRD({ d: byslug.splendor, sig: SIG.splendor, lvl: 2, rc: 1, type: 'ABILITY',
+      name: 'Celestial Trance', foot: 'Splendor',
+      text: 'During a rest, you can drop into a trance to choose an additional downtime move.' },
+      'grants a downtime move')}
+  </div>
+</div>`;
+
+const TUMBLE_MS = 620;
+const RESOLVE_MS = 300;
+function tumble(cell, faces, final, then){
+  cell.classList.remove('roll'); void cell.offsetWidth; cell.classList.add('roll');
+  const t0 = performance.now();
+  const tick = () => {
+    const t = performance.now() - t0;
+    if(t >= TUMBLE_MS){ cell.textContent = final; cell.classList.remove('roll'); then(); return; }
+    cell.textContent = 1 + Math.floor(Math.random() * faces);
+    setTimeout(tick, 34 + (t / TUMBLE_MS) * 90);
+  };
+  tick();
+}
+
+/* A move is *taken*, not ticked. Tend to Wounds rolls a die, and what you do
+   with your second move depends on what the first one gave you — a form that
+   resolves everything on OK makes that decision blind. So each press rolls,
+   applies, and writes a line into the ledger, and taking the same move twice
+   stops being a special case.
+
+   Three things this study is showing that the row it replaced could not:
+
+   THE MOVE IS A CARD, in `tile.css`'s vocabulary but not `.tile` — a tile is
+   built from a domain, a sigil and a level and a downtime move has none of
+   the three, so it is a sibling rather than an instance.
+
+   THE DIE ROLLS IN IT, in the panel where the card would carry its artwork,
+   and lands as `plate.css`'s own `.die`: the silhouette carrying the face,
+   with the total in the caption. In the system the tumble is Dice So Nice's,
+   thrown into that same box — see `dice/inplace.ts`. Here it is ours, which is
+   also what a table with the module switched off gets.
+
+   AND IT CAN BE TAKEN BACK. Applying on the press is what makes the second
+   move informed; it is also what makes a misclick a fact about your character.
+   Each ledger row knows what its press actually did and can give back exactly
+   that. */
+{
+  const root = document.getElementById('rest');
+  const tally = root.querySelector('.tally');
+  const log = root.querySelector('.log');
+  const cards = [...root.querySelectorAll('.dt')];
+  const done = [];
+  let busy = false, seq = 0;
+
+  const lock = (on) => {
+    busy = on;
+    for (const c of cards) c.disabled = on;
+    for (const u of root.querySelectorAll('.log .un')) u.disabled = on;
+  };
+
+  const idle = (card) => {
+    const m = MOVES.find(x => x.id === card.dataset.move);
+    card.querySelector('.cast').innerHTML =
+      m.roll ? DIE('', 'd4', DIE_PX) : `<span class="fx">${m.fx}</span>`;
+    card.querySelector('.nt').textContent = m.roll ? NOTATION : m.cap;
+    delete card.dataset.shown;
+  };
+
+  const sync = () => {
+    tally.textContent = `${done.length} of ${ALLOW} taken`;
+    tally.classList.toggle('over', done.length > ALLOW);
+    for (const card of cards) {
+      const n = done.filter(o => o.id === card.dataset.move).length;
+      card.querySelector('.ct').textContent = n > 1 ? `×${n}` : '';
+      // `.took` is "this move has been made"; `.done` is "this card is showing
+      // a result". They come apart the moment a move is taken twice and the
+      // second one is undone.
+      card.classList.toggle('took', n > 0);
+      if (card.dataset.shown && !done.some(o => o.k === card.dataset.shown)) idle(card);
+      card.classList.toggle('done', !!card.dataset.shown);
+    }
+  };
+
+  const note = (o) => {
+    const ln = document.createElement('div');
+    ln.className = 'ln';
+    ln.dataset.entry = o.k;
+    ln.innerHTML = `<b>${o.name}</b>${o.n == null ? '' : `<s>${o.n}</s>`}<em>${o.did}</em>` +
+      `<button type="button" class="un" data-undo="${o.k}">undo</button>`;
+    log.append(ln);
+    ln.scrollIntoView({ block: 'nearest' });
+  };
+
+  const flash = (card, cls) => {
+    card.classList.remove('lands', 'undone');
+    void card.offsetWidth;
+    card.classList.add(cls);
+  };
+
+  const settle = (card, m) => {
+    const finish = (face, total) => {
+      if (m.roll) {
+        card.querySelector('.cast').innerHTML = DIE(face, 'd4 lit', DIE_PX);
+        card.querySelector('.nt').innerHTML = `= <b>${total}</b>`;
+      }
+      card.classList.remove('rolling');
+      card.classList.add('done');
+      // Let the die be read before the track moves under it.
+      setTimeout(() => {
+        const o = { k: `o${++seq}`, id: m.id, name: m.n, n: m.roll ? total : null,
+          did: m.roll ? `cleared ${total} ${m.did}` : 'gained 1 Hope' };
+        done.push(o);
+        card.dataset.shown = o.k;
+        flash(card, 'lands');
+        note(o);
+        sync();
+        lock(false);
+      }, m.roll ? RESOLVE_MS : 0);
+    };
+
+    if (!m.roll) { finish(0, 0); return; }
+    const face = 1 + Math.floor(Math.random() * 4);
+    card.querySelector('.cast').innerHTML = '<span class="tmb">—</span>';
+    tumble(card.querySelector('.tmb'), 4, face, () => finish(face, face + TIER));
+  };
+
+  for (const card of cards) {
+    card.onclick = () => {
+      if (busy) return;
+      const m = MOVES.find(x => x.id === card.dataset.move);
+      lock(true);
+      card.classList.remove('done', 'lands', 'undone');
+      card.classList.add('rolling');
+      settle(card, m);
+    };
+  }
+
+  log.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-undo]');
+    if (!btn || busy) return;
+    const i = done.findIndex(o => o.k === btn.dataset.undo);
+    if (i < 0) return;
+    const [o] = done.splice(i, 1);
+    const ln = log.querySelector(`[data-entry="${o.k}"]`);
+    if (ln) { ln.classList.add('out'); setTimeout(() => ln.remove(), 200); }
+    const card = cards.find(c => c.dataset.move === o.id);
+    if (card) flash(card, 'undone');
+    sync();
+  });
+
+  sync();
+}
+
+/* ── the card the rest posts ───────────────────────────────────────── */
+document.getElementById('restcard').innerHTML = `
+<div class="rest">
+  <div class="k">Short Rest<s>Vess</s></div>
+  <div class="r"><span class="hd"><b>Tend to Wounds</b><s>1d4+Tier = 5</s></span>
+    <p>cleared 5 Hit Points</p></div>
+  <div class="r"><span class="hd"><b>Clear Stress</b><s>1d4+Tier = 4</s></span>
+    <p>cleared 4 Stress</p></div>
+  <div class="r"><span class="hd"><b>Prepare</b></span><p>gained 1 Hope</p></div>
+  <p class="ach">2 cards regained their uses.</p>
+</div>`;
+
+document.getElementById('lt').onchange = e =>
+  document.documentElement.classList.toggle('light', e.target.checked);
+document.getElementById('rm').onchange = e => {
+  document.getElementById('rmstyle')?.remove();
+  if(!e.target.checked) return;
+  const s = document.createElement('style');
+  s.id = 'rmstyle';
+  s.textContent = '.tmb.roll,.dt.done .die,.dt.lands .bd::after{animation:none !important}';
+  document.head.append(s);
+};
+</script>
+</body>
+</html>

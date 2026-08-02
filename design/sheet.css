@@ -114,18 +114,57 @@
 .dio .nm span{display:block;font:700 8.5px/1.5 var(--f-mono);letter-spacing:.16em;
   text-transform:uppercase;color:#b6bec8;margin-top:7px}
 .dio .nm span em{font-style:normal;color:var(--hope)}
+/* The name is the same trick the level plate plays, for the same reason:
+   the art *is* the field. A name that grew a bordered box and a focus ring
+   when the sheet unlocked would put a form control across the middle of a
+   picture, and this is the one surface on the sheet that is not a form.
+   `b` and `input.b` are one declaration so the two can never drift apart —
+   in play mode the name is set type on artwork, and in edit mode it is set
+   type on artwork that takes a caret.
+
+   Pronouns sit under the name in the meta line's own face, and only when
+   there is something to say or somewhere to say it: nothing is drawn for a
+   character whose pronouns are blank and whose sheet is locked, because an
+   empty line under a name is a field reporting that it is empty. */
+.dio .nm .b{display:block;width:100%;border:0;background:transparent;padding:0;
+  font:700 19px/1.02 var(--f-display);color:#fff;letter-spacing:-.02em;
+  text-transform:uppercase;text-shadow:0 1px 12px rgba(0,0,0,.6)}
+.dio .nm .b:focus,.dio .nm .pn:focus{outline:1px solid rgba(255,255,255,.4);
+  outline-offset:3px}
+.dio .nm .pn{display:block;width:100%;margin-top:6px;border:0;background:transparent;
+  padding:0;font:700 8.5px/1.5 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:#b6bec8}
+.dio .nm .pn::placeholder{color:#6d7682}
 /* the level plate is the sheet's other gold fill and it sits in the frame,
-   never on paper, so it and Hope never share a surface */
+   never on paper, so it and Hope never share a surface
+
+   Tightened, and the numeral given the room the tightening freed. The plate
+   is two things — a word saying which number this is, and the number — and
+   it was setting them at nearly the same presence with 10px of gold on
+   either side. On a plate this small the padding is not breathing room, it
+   is dilution: 24px of the 58px it occupied was empty gold.
+
+   So the word steps back to 7.5px at .58 opacity and the numeral comes up
+   to 19px. "Lv" is read once, ever; the number is read every time anyone
+   glances at the sheet, and now it is unambiguously the subject. The
+   trailing letter-space after the "v" is cancelled with a negative margin —
+   mono tracking adds it to the *last* letter too, which was a fifth of the
+   gap between word and number and belonged to neither. */
 .dio .lv{position:absolute;top:0;right:0;z-index:2;display:flex;align-items:baseline;gap:4px;
-  background:var(--hope);color:#14161a;padding:7px 10px 6px;
+  background:var(--hope);color:#14161a;padding:5px 8px 5px 9px;
   clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 calc(100% - 7px))}
-.dio .lv i{font:700 8px/1 var(--f-mono);letter-spacing:.16em;font-style:normal;text-transform:uppercase}
+.dio .lv i{font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;font-style:normal;
+  text-transform:uppercase;opacity:.58;margin-right:-.14em}
 /* `b` when you are reading it and an `input.b` when you may change it. The
    two are styled as one thing on purpose: the plate *is* the field, and a
    level that grows a box and a spinner when the sheet becomes editable
-   would put a form control in the middle of a picture. */
-.dio .lv b,.dio .lv .b{font:700 16px/1 var(--f-display);letter-spacing:-.03em;
-  width:2.2ch;border:0;background:transparent;color:inherit;padding:0;
+   would put a form control in the middle of a picture.
+
+   2ch, not 2.2ch. `ch` is the width of a "0" and these are tabular figures,
+   so two digits measure exactly 2ch and the extra fifth was a fifth of a
+   digit of dead gold on the right of every single-digit level. */
+.dio .lv b,.dio .lv .b{font:700 19px/1 var(--f-display);letter-spacing:-.03em;
+  width:2ch;border:0;background:transparent;color:inherit;padding:0;
   font-variant-numeric:tabular-nums;text-align:center;appearance:textfield}
 .dio .lv .b::-webkit-outer-spin-button,.dio .lv .b::-webkit-inner-spin-button{
   -webkit-appearance:none;margin:0}
@@ -238,6 +277,114 @@
   color:var(--ink-3);text-align:center}
 .dfn .crest + .k,.dfn .cap{margin-top:7px}
 
+/* ── things that happen to you ─────────────────────────────────────
+   Three verbs, under the two tracks they all write to.
+
+   Everything else in this rail is a *record* — a number you set, a box you
+   cross. These three are events with more than one part: taking damage is
+   a threshold and a decision about armour, and a rest is a handful of
+   moves and the dice that pay for them. Each opens a dialog, which this
+   system otherwise refuses to do; see the head of `dlg.css` for when that
+   is allowed.
+
+   Here rather than on a tab, because the numbers they change are eighteen
+   pixels above them. A rest tab would put "clear all my Stress" two clicks
+   from the Stress track and next to nothing else it affects.
+
+   Quiet by default. They are read past forty times a session and pressed
+   three times, so they carry no fill until the pointer is on them — the
+   rail's loudest object should go on being the Hope you are deciding
+   whether to spend. */
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:11px;
+  background:var(--line)}
+.acts button{border:0;cursor:pointer;padding:8px 4px 9px;background:var(--sunk);
+  color:var(--ink-3);font:700 8px/1.35 var(--f-mono);letter-spacing:.13em;
+  text-transform:uppercase;transition:background .12s,color .12s}
+.acts button:hover{background:var(--sunk-2);color:var(--hope-tx)}
+/* The chamfer is on the strip, not on each cell — three cut corners in a row
+   would read as three objects, and this is one control with three verbs. */
+.acts button:last-child{clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),
+  calc(100% - 6px) 100%,0 100%)}
+
+/* ── the Hope action ───────────────────────────────────────────────
+   Every class has exactly one, it costs Hope, and it is the only thing on
+   the sheet that spends the pool it sits under. That is the whole argument
+   for it being here rather than on the class card: a card is a thing you
+   read, and this is a thing you *do* — the official sheet prints it beside
+   the Hope track for the same reason, and the price is only checkable
+   against a number that is already on screen.
+
+   The price is drawn, not just written. Three gold diamonds is the same
+   pip the gems above are made of, so "what this costs" and "what I have"
+   are stated in one shape and can be compared without reading either
+   number. They lose the gold when the purse is short — the row says *why*
+   it is refusing before you press it.
+
+   Not `disabled`. A control that cannot be pressed and does not say so is
+   the failure this whole sheet is built against; `.no` keeps the pointer
+   and the title, and the press is refused by the handler with the pool
+   flinching, exactly as a recall the Stress cannot pay is.
+
+   The rule is *on* the row, not behind it. Every other card-shaped thing on
+   this sheet is a spine you hover to read, and that is right for a thing you
+   own — you go and look it up. This is a thing you do, mid-turn, while
+   someone is waiting: "can I afford it" and "what does it actually say" are
+   one question asked once, and a hover that answers the second half would
+   make you take your hand off the answer to the first. Four lines of the
+   rail is what that costs, and the rail scrolls.
+
+   Still one button. The header and the paragraph are not a control with a
+   caption under it — the whole block is the move, and splitting the press
+   off from the text would invent a second object where the sheet has one. */
+.hact{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:100%;
+  margin-top:12px;padding:8px 10px 9px;border:0;cursor:pointer;text-align:left;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s,transform .14s}
+.hact:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
+  transform:translateX(2px)}
+.hact .hd{display:flex;align-items:center;gap:9px;min-width:0}
+.hact b{flex:1 1 auto;min-width:0;font:600 12px/1.25 var(--f-ui);color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hact s{flex:none;text-decoration:none;font:700 8px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--hope-tx)}
+.hact .c{flex:none;display:flex;gap:3px}
+.hact .c i{width:9px;height:9px;background:var(--hope);
+  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+/* The rule itself, set as prose — it is the only running sentence in the
+   rail, and everything around it is a label or a figure. Left of the pips
+   rather than indented under the name: the block is one object. */
+.hact p{margin:0;font:400 11px/1.45 var(--f-ui);color:var(--ink-2);white-space:normal}
+.hact p b{font-weight:700;color:var(--ink)}
+/* Game terms keep the colours they wear on a card. `mark()` emits these two
+   classes wherever it runs and card.css scopes its own rules to `.card`, so
+   without this the Hope in "Spend 3 Hope" would be the one Hope on this
+   sheet that was not gold — nine pixels under six gold diamonds. */
+.hact p b.t-hope{color:var(--hope-tx)}
+.hact p b.t-fear{color:var(--fear-tx)}
+.hact p i{font-style:italic}
+/* Short of the price. The diamonds lose their gold and the name drops to
+   label ink — the row is still legible and still says what it is, which is
+   the point: you are meant to read it and decide to save up.
+
+   `--line-2`, not the gem's own socket. A socket is a hole in *paper* and
+   this row's ground is `--sunk`, which those two tokens share to within a
+   hex digit — the first pass drew three unlit pips in #0e1115 on #0f1216
+   and they vanished outright, so the price simply stopped being stated at
+   the one moment it matters. The hairline's asserted weight is the quietest
+   thing on this sheet that still reads against a recess. */
+.hact.no{cursor:not-allowed}
+.hact.no:hover{background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);transform:none}
+/* Both step down one, rather than the name alone. Dimming only the header
+   left the rule *brighter* than the thing it belongs to, which is the wrong
+   way round for a row that is refusing — and the rule stays legible on
+   purpose, because reading it is how you decide the three Hope are worth
+   saving for. The grey pips and the grey price carry the refusal. */
+.hact.no b{color:var(--ink-2)}
+.hact.no s{color:var(--ink-3)}
+.hact.no p{color:var(--ink-3)}
+.hact.no .c i{background:var(--line-2)}
+
 /* ── experience ────────────────────────────────────────────────────
    In the rail rather than behind a tab, because an Experience is consulted
    at exactly the moment you are deciding whether to spend a Hope, and Hope
@@ -346,6 +493,354 @@
   color:var(--hope-tx);text-decoration:underline;text-underline-offset:2px}
 .ach .nw:hover{color:var(--hope)}
 
+/* ── the feature list ──────────────────────────────────────────────
+   What a class *is*, drawn as itself instead of as a card.
+
+   Class and subclass used to be spines here, and a spine is a promise: it
+   says "there is a card behind this, hover to read it". That promise is
+   right for a domain card — it really is a card, it sits in a loadout of
+   five, it moves to a vault and comes back, and the object is the unit you
+   manipulate. A class is none of those things. You do not hold it, swap it
+   or spend it; you *have* it, permanently, and the only question you ever
+   ask of it is "what does my class feature actually say". That question was
+   two gestures away — hover the right spine, read the run — and the answer
+   was drawn at card scale, which is 300px of frame and artwork wrapped
+   around one paragraph you own forever.
+
+   So the run comes out of the card and onto the sheet. One row per feature,
+   the rule printed on it, no hover. It is the same argument that moved the
+   Hope action to the rail, applied to the other half of the same card, and
+   it is the same shape — the rule is *on* the control, because a rule you
+   have to reveal is a rule you will not read.
+
+   Pressable, and what it posts is the feature rather than the class. Saying
+   "look at my class card" to answer "what does Ranger's Focus do" makes
+   four other people read past Evasion, Hit Points and a second feature to
+   find the sentence. The card the press posts holds exactly the row you
+   pressed — see `featureCard` in sheets/cards.ts.
+
+   The origin line is a type line, not a heading: it says which of the three
+   subclass cards this arrived on, and which class or subclass it belongs
+   to, because at a multiclass table those are two different answers.
+
+   ── two columns: the rules on the left, the objects on the right ──
+   The subclass cards came back and were stacked *above* the list, which
+   made the panel a card, then a card, then eleven paragraphs — and put
+   the two things you compare furthest apart. What a Specialization card
+   says and which of the three cards you are holding are read together, in
+   one glance, and a vertical stack forces you to scroll one out of view to
+   reach the other.
+
+   So the panel splits along the seam that was already there: the left
+   column is sentences and the right column is objects. That is the same
+   division the sheet makes everywhere else — the rail is records, the
+   panels are things you own — and it is the only split that stays true as
+   the list grows, because features are added by levelling and subclass
+   cards are not: there are one, two or at most three of them, forever.
+   A column that can never hold more than three entries is a column that
+   can be narrow, which is what pays for the other one being wide.
+
+   It wraps rather than squeezes. A Foundry window is dragged to whatever
+   width the table has, and two columns that hold their basis until they
+   cannot and then stack is the one behaviour that never overlaps: the
+   cards fall under the rules and take the panel's full width, where they
+   sit two-up instead of one-up because the tiles carry a basis of their
+   own. Nothing here is a breakpoint, so there is no width at which it is
+   wrong. */
+.abl{display:flex;flex-direction:column;gap:8px}
+.abl .cols{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-start}
+.abl .runs{flex:1 1 268px;min-width:0;display:flex;flex-direction:column;gap:7px}
+/* A grid inside the column, not a second flex row, and `auto-fill` is the
+   whole reason. Beside the rules the column is ~257px and holds one tile
+   per line; wrapped underneath them it is the panel's full width and holds
+   two — neither case written down anywhere, which is the same trick
+   `.win .grid2` plays four rules down. Flex could reach the two-up but not
+   survive it: three tiles in two flex rows leaves the third alone on the
+   second row, where `flex-grow` stretches it to twice its neighbours'
+   width. A grid cell does not grow to fill a row nobody else is in. */
+/* `min(204px,100%)` and not a bare 204px: a grid track's minimum is a hard
+   floor, so a window dragged narrower than one tile would push the tile
+   out through the side of the panel rather than letting it shrink. */
+.abl .sub{flex:1 1 204px;min-width:0;display:grid;gap:8px;align-content:start;
+  grid-template-columns:repeat(auto-fill,minmax(min(204px,100%),1fr))}
+
+/* The domains, as the only thing on this panel a card said better. A
+   saturated hue means domain everywhere else in this system, so two dots in
+   two hues is the whole statement — and it is the one fact the class card
+   carried that has nowhere else on the sheet to be. */
+.abl .dm{display:flex;align-items:center;gap:12px;margin:0 0 3px;flex-wrap:wrap}
+.abl .dm i{display:inline-flex;align-items:center;gap:6px;font-style:normal;
+  font:700 8px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3)}
+.abl .dm i::before{content:"";width:7px;height:7px;flex:none;background:var(--c);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+.abl .a{display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;
+  padding:9px 12px 11px;border:0;cursor:pointer;text-align:left;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s,transform .14s}
+.abl .a:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
+  transform:translateX(2px)}
+.abl .hd{display:flex;align-items:baseline;gap:10px;min-width:0}
+.abl .hd s{flex:1 1 auto;min-width:0;text-decoration:none;font:700 8px/1.3 var(--f-mono);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A price, when the feature has one. Strain rather than gold: a class
+   feature that costs anything costs Stress, and gold is the Hope action's
+   colour three panels up — one hue, one currency. */
+.abl .hd em{flex:none;font-style:normal;font:700 8px/1.3 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--strain)}
+.abl .a > b{font:600 13px/1.3 var(--f-display);letter-spacing:-.01em;color:var(--ink)}
+.abl p{margin:0;font:400 11.5px/1.5 var(--f-ui);color:var(--ink-2);white-space:normal}
+.abl p b{font-weight:700;color:var(--ink)}
+.abl p b.t-hope{color:var(--hope-tx)}
+.abl p b.t-fear{color:var(--fear-tx)}
+.abl p i{font-style:italic}
+
+/* ── a row that charges ────────────────────────────────────────────
+   Most features are passive facts about what you are — pressing one shows
+   it to the table and nothing leaves your sheet. A few are *moves* that
+   open "Spend a Hope" or "Mark a Stress", and pressing one of those pays
+   for it, exactly as the Hope action in the rail has always done.
+
+   Those two have to be told apart *before* the press, not after, so a
+   priced row carries the left edge the Hope action's row carries: one
+   strain-coloured rule down the side, growing to full weight on hover. It
+   is the smallest mark that can mean "this costs something", and it uses
+   the ledge the chamfer already leaves rather than asking for height. */
+.abl .a.paid{box-shadow:inset 0 0 0 1px var(--line),inset 2px 0 0 0 var(--strain)}
+.abl .a.paid:hover{box-shadow:inset 0 0 0 1px var(--line-2),
+  inset 3px 0 0 0 var(--strain)}
+
+/* ── the subclass cards ────────────────────────────────────────────
+   Three at most — Foundation, Specialization, Mastery — in the right-hand
+   column, and drawn as *tiles* rather than as the spines they were.
+
+   A spine is identity and nothing else: level, sigil, name, domain, tier.
+   That is exactly right for a domain card in a loadout of five, where the
+   question is which of five this is and the answer has to fit in 19% of a
+   card's height. It is the wrong shape here for two reasons. A subclass
+   has no level and no recall cost, so two of the spine's five cells are
+   empty; and it does carry a fact nothing else on this sheet shows — the
+   Spellcast trait, which is the trait half the classes roll their spells
+   with — and a spine has nowhere to put it. The tile's data strip does,
+   because that strip was built generic on purpose.
+
+   The rank is the other reason. Which of Foundation / Specialization /
+   Mastery you are holding is the whole fact a subclass card states, and a
+   spine spends it at 2.3cqw in the meta line next to the domain name. A
+   tile prints it in the footer badge, in the cell a domain card puts its
+   own type in, at a size you read rather than decode.
+
+   Not a mini, which was the other candidate: a mini is still 5:7, so three
+   of them in a 240px column is 1000px of panel to say three words each.
+   The column is narrow and the entries are few, which is a landscape
+   problem, and the tile is the landscape member of the family. */
+.abl .sub .pk{cursor:pointer}
+/* No paragraph on these. TILE leads with the first feature when a card has
+   no body text of its own, and every feature these cards carry is printed
+   in full in the column six inches to the left — the same two lines twice,
+   once truncated. The builder is handed an empty `text` at the call site
+   and the tile closes up around it; see `.abl .sub .tile` below. */
+
+/* ── the drop target ───────────────────────────────────────────────
+   A sheet you can drag a card onto should say so while you are holding
+   one. It said nothing, which made "does this even accept drops?" a
+   question you could only answer by letting go and looking.
+
+   The whole window, not a zone inside it. There is exactly one drop
+   handler and it is on the root — where the card lands has never mattered
+   and inventing four sub-targets to *look* precise would be the interface
+   promising a distinction it does not make. So: a gold edge and a wash
+   from the top, both of them the plate's own arrival colour, and nothing
+   moves. A layout that reflows under a held pointer is a layout that
+   makes you re-aim mid-gesture.
+
+   `pointer-events:none` is load-bearing rather than tidy — an overlay that
+   takes the pointer swallows `dragleave` and `drop` on the element
+   underneath it, so the sheet would light up and then refuse the card. */
+.win.dropping::after{content:"";position:absolute;inset:0;z-index:60;pointer-events:none;
+  box-shadow:inset 0 0 0 2px var(--hope);
+  background:radial-gradient(130% 92% at 50% 0,rgba(212,167,44,.11),transparent 62%)}
+
+/* ══ EDIT MODE ═════════════════════════════════════════════════════
+   Definition against use.
+
+   Every derived number on this sheet hangs off something you set once and
+   then never touch again. Level drives the tier, Proficiency, both damage
+   thresholds and what every advancement panel owes you; the class hands
+   over base Evasion, Hit Points and Stress; a trait score is picked at
+   creation and moved twice in a campaign. During play you are doing the
+   other thing entirely — marking, spending, clearing, equipping, taking —
+   dozens of times an hour, under a clock, with a GM waiting. A stray click
+   on Level or a trait in the middle of that moves a number nobody will
+   notice moved until the sum is wrong three sessions later.
+
+   So the sheet has two states, and the split is definition against use.
+   Everything you *do* stays live in both; everything that says what this
+   character *is* is unlocked by the mode.
+
+   It is not the adjust tab and must not be folded into it. That tab is
+   overrides of numbers the rules derive — adjudication, which is the GM's
+   job, and gated on `isGM`. This is a character's own definition —
+   authorship, which is the owner's, and gated on being able to edit the
+   sheet at all. A player levelling up needs this and has no business on
+   the dials; a GM ruling that this armour grants 4 Evasion this session is
+   not a fact about the character. Two questions, two gates.
+
+   ── the banner ────────────────────────────────────────────────────
+   A repeating strip top and bottom, running until the mode is switched
+   off, because the whole risk this mode carries is *forgetting you left it
+   on*: a locked sheet that you thought was unlocked refuses you and says
+   so, and an unlocked sheet you thought was locked says nothing at all.
+   Motion is what a peripheral eye picks up without being aimed at it.
+
+   **It takes height rather than overlaying**, and that is the one real
+   trade here. `.win.dropping` overlays — a gold edge, `pointer-events:none`,
+   nothing moves — and that is right for a drag, which lasts a second and
+   during which a reflow under the held pointer would make you re-aim
+   mid-gesture. This lasts as long as you are editing, which is minutes,
+   and the two failures are not symmetrical. An overlay that persists is a
+   strip sitting permanently on top of the diorama and the gold rows —
+   covering, in edit mode, the very controls the mode exists to unlock, and
+   `pointer-events:none` does not give the pixels back. A band that takes
+   height costs one reflow, on the frame you pressed the toggle, which is a
+   deliberate gesture whose answer is the sheet changing shape. And it
+   costs nothing below: `.bd` is `flex:1 1 auto` inside a fixed window, so
+   the 36px comes off the body and the two scrollers absorb it. Nothing
+   moves sideways and no panel changes width.
+
+   Strain, not gold. Gold is Hope's currency everywhere in this system —
+   the level plate, the gems, the coins, the spellcast spark — and a second
+   meaning for it is a second thing to decode on a sheet that has spent a
+   lot of care making one hue mean one thing. Strain is the cold end of the
+   palette and belongs to nothing you spend.
+
+   Two identical runs inside one track, translated by exactly half the
+   track's width, so the loop has no seam. Pure CSS: a ticker driven from
+   JS would be a `requestAnimationFrame` running for as long as somebody
+   leaves a sheet open, to move some text. */
+.win > .tape{flex:none;overflow:hidden;position:relative;
+  background:color-mix(in srgb,var(--strain) 11%,var(--sunk));
+  box-shadow:inset 0 -1px 0 color-mix(in srgb,var(--strain) 42%,transparent)}
+.win > .tape.bot{box-shadow:inset 0 1px 0 color-mix(in srgb,var(--strain) 42%,transparent)}
+.win > .tape > i{display:flex;width:max-content;animation:tapeRun 34s linear infinite}
+/* The bottom run travels the other way, so the two read as one band going
+   round the sheet rather than as two copies of the same strip. */
+.win > .tape.bot > i{animation-direction:reverse}
+.win > .tape span{flex:none;padding:5px 0;white-space:nowrap;
+  font:700 8px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--strain)}
+@keyframes tapeRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* Still, and still legible — the track parks at its own start, which is the
+   head of the first run. The band is the message; the travel is only what
+   makes it catch a peripheral eye, and that is exactly the part somebody
+   asking for reduced motion is asking not to have. */
+@media (prefers-reduced-motion:reduce){.win > .tape > i{animation:none}}
+
+/* ── a locked definition ───────────────────────────────────────────
+   `.def` marks a control that belongs to the character's definition. It is
+   inert unless the sheet is in edit mode, and it stays exactly where it
+   is while it is — the adjust tab learned this the hard way with `.off`:
+   a control that disappears when you flip a switch makes the switch feel
+   destructive, and a value you can no longer *read* because it is locked
+   is a worse answer than one you can read and cannot type into.
+
+   So the value keeps its ink and the field gives up its recess. The recess
+   is the part that said "type here"; without it the number is a printed
+   figure on the panel, which is what it is. Nothing is hidden and nothing
+   is dimmed to the point of being unreadable.
+
+   `pointer-events` on the children with `cursor` on the wrapper, so the
+   refusal is stated by the pointer over the whole control rather than by
+   each field guessing. The controls carry `disabled` as well — CSS is the
+   look and the attribute is the behaviour, and a keyboard tab reaches a
+   field that is only pointer-blocked. */
+.win:not(.editing) .def{cursor:not-allowed}
+.win:not(.editing) .def > *{pointer-events:none}
+.win:not(.editing) .def input,.win:not(.editing) .def .sw{
+  background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+.win:not(.editing) .def .add,.win:not(.editing) .def .x{color:var(--ink-4)}
+/* An advancement slot is a box you cross, so its refusal is the box not
+   answering the pointer — the same silence `.adv.shut` gives a tier you
+   have not reached. */
+.win:not(.editing) .adv .slots > i{cursor:not-allowed}
+.win:not(.editing) .adv .slots > i:hover > u{box-shadow:inset 0 0 0 1.25px var(--line)}
+
+/* ── adjustments ───────────────────────────────────────────────────
+   The dials. Everything on this tab is a number some rule normally
+   derives — Evasion off the class, thresholds off the armour, Hope max
+   off your scars — and the tab exists because a table invents exceptions
+   faster than a schema can name them. A GM who cannot set a number
+   directly sets it indirectly, by lying to the sheet about the armour.
+
+   Deliberately plain. This is the one surface in the system that is a
+   form, and dressing it up would be pretending it is something you use
+   often. The grid is as many columns as the pane will hold: these are
+   pairs of short label and short number, and a single column would run
+   the sheet's whole height for thirteen fields.
+
+   The column gap is nearly three times the gap inside a cell, and that
+   ratio is the only thing telling you which label owns which box. At 12px
+   against 8px the row read as eight independent objects — label, number,
+   label, number — and you had to work out the pairing from the words. */
+.cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px 24px}
+.cfg .f{display:flex;align-items:center;gap:9px;min-width:0}
+.cfg .f > span{flex:1 1 auto;min-width:0;font:400 11.5px/1.3 var(--f-ui);color:var(--ink-2)}
+.cfg .f input{flex:none;width:62px;padding:5px 7px;border:0;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);
+  font:700 12px/1 var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;
+  appearance:textfield;transition:box-shadow .14s}
+.cfg .f input::-webkit-outer-spin-button,.cfg .f input::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
+.cfg .f input:focus{outline:0;box-shadow:inset 0 0 0 1px var(--hope)}
+/* A field the sheet is currently *not* deriving, because something above it
+   was overridden. It keeps its value and says it is inert, rather than
+   disappearing — a control that vanishes when you flip a switch makes the
+   switch feel destructive. */
+.cfg .f.off{opacity:.42}
+/* A checkbox in this grid is still a row of the grid, so it takes the same
+   shape as the fields beside it rather than a browser's own. */
+.cfg .f .sw{flex:none;width:34px;height:20px;position:relative;cursor:pointer;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);transition:background .14s}
+.cfg .f .sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;
+  background:var(--ink-3);transition:transform .16s cubic-bezier(.2,.85,.3,1),background .14s}
+.cfg .f .sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.cfg .f .sw:has(input:checked){background:color-mix(in srgb,var(--hope) 26%,var(--sunk))}
+.cfg .f .sw:has(input:checked)::after{transform:translateX(14px);background:var(--hope)}
+
+/* ── the list editors ──────────────────────────────────────────────
+   Experiences and scars are the two things on a character that are free
+   text plus one number, and both were unreachable — an Experience could be
+   brought into a roll and never written down, a scar cost a Hope slot with
+   no way to record what left it.
+
+   One row shape for both, because they are the same object: a phrase, an
+   optional figure, and a way to take it back off. The remove is at the far
+   end and quiet until hovered — these are permanent facts about a
+   character and the button that deletes one should not be the loudest
+   thing in its row. */
+.lst{display:flex;flex-direction:column;gap:4px}
+.lst .r{display:flex;align-items:center;gap:6px}
+.lst .r input{min-width:0;padding:6px 8px;border:0;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);
+  font:400 12px/1.2 var(--f-ui);transition:box-shadow .14s}
+.lst .r input.t{flex:1 1 auto}
+.lst .r input.n{flex:none;width:54px;text-align:right;font:700 12px/1.2 var(--f-mono);
+  font-variant-numeric:tabular-nums;color:var(--hope-tx);appearance:textfield}
+.lst .r input.n::-webkit-outer-spin-button,.lst .r input.n::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
+.lst .r input:focus{outline:0;box-shadow:inset 0 0 0 1px var(--hope)}
+.lst .r .x{flex:none;width:24px;height:24px;padding:0;border:0;cursor:pointer;
+  background:transparent;color:var(--ink-4);font:700 13px/1 var(--f-mono);
+  transition:color .14s,background .14s}
+.lst .r .x:hover{color:var(--wound);background:var(--sunk)}
+.lst .add{align-self:flex-start;margin-top:3px;border:0;background:none;padding:0;cursor:pointer;
+  font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3);transition:color .12s}
+.lst .add:hover{color:var(--hope-tx)}
+
 /* ── traits ────────────────────────────────────────────────────────*/
 .trs{display:flex;gap:1px;background:var(--line);flex:none}
 .trs .tr{position:relative;flex:1 1 0;min-width:0;background:var(--paper);padding:9px 4px 10px;
@@ -365,6 +860,44 @@
   font-variant-numeric:tabular-nums;-webkit-text-stroke:.4px currentColor}
 .trs .tr .mk{width:5px;height:5px;background:var(--line);transform:rotate(45deg)}
 .trs .tr.on .mk{background:var(--ink)}
+
+/* ── the trait, while you are defining it ──────────────────────────
+   A trait score is picked at creation and moved perhaps twice in a whole
+   campaign, and until now there was nowhere on this sheet to pick it: the
+   cell rolled and did nothing else, so the six numbers this game is played
+   with were set by editing the actor somewhere else. That is what edit mode
+   is for, and the cell is where it belongs.
+
+   The numeral is the field, exactly as the level plate is. Same face, same
+   size, same optical position — the cell does not change shape when the mode
+   comes on, so the row does not jump and the number does not move under the
+   eye that was reading it. Only the caret is new.
+
+   The mark is the cell's own press while editing. It is the level-up
+   bookkeeping half — a trait raised this tier is marked until the next one
+   — and it had no control at all. It cannot have its own button because
+   the cell already is one and a button inside a button is not markup, so
+   the press the cell already had is repointed: in edit mode this row
+   defines rather than rolls. Rolling is one press of the toggle away, and
+   nobody rolls Agility in the ten seconds they are typing its score. */
+/* `height:1em` is the load-bearing declaration and it is not tidiness. An
+   `<input>` sizes its own editor box off the *font's* metrics rather than off
+   the `line-height` it was given — measured at 34px against the span's 27px
+   with identical type and zero padding on both — so without it the six cells
+   grow seven pixels the instant the mode comes on, the trait row pushes the
+   tab strip down, and the number moves under the eye that was reading it.
+   That is precisely the jump this whole rule exists to avoid. `1em` rather
+   than `27px` so it tracks the font size it is stated beside. */
+.trs .tr input.v{width:100%;min-width:0;height:1em;border:0;background:transparent;padding:0;
+  text-align:center;appearance:textfield;
+  font:700 27px/1 var(--f-display);letter-spacing:-.045em;color:var(--ink);
+  font-variant-numeric:tabular-nums;-webkit-text-stroke:.4px currentColor}
+.trs .tr input.v::-webkit-outer-spin-button,
+.trs .tr input.v::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.trs .tr input.v:focus{outline:1px solid var(--strain);outline-offset:2px}
+/* The mark answers the pointer while it is a control, and not before. */
+.win.editing .trs .tr:hover .mk{background:var(--strain)}
+.win.editing .trs .tr.on:hover .mk{background:var(--ink)}
 
 /* ── the spellcast trait ───────────────────────────────────────────
    Your subclass names one of the six as the trait you cast with, and until
@@ -433,7 +966,41 @@
   background:var(--hope)}
 .tabs .ct{margin-left:auto;align-self:center;padding:0 10px 0 14px;flex:none;
   font:700 9px/1 var(--f-mono);letter-spacing:.14em;color:var(--frame-tx-3);white-space:nowrap}
-@container (max-width:560px){.tabs .ct{display:none}}
+@container (max-width:560px){.tabs .ct{display:none}.tabs .edt{margin-left:auto}}
+
+/* ── the edit toggle ───────────────────────────────────────────────
+   At the end of the strip, and not in the window's title bar. The title bar
+   is the *application* — Foundry's close button, Foundry's drag handle,
+   Foundry's configure — and edit mode is a state of this sheet, one of two
+   the sheet can be in. It belongs where the sheet's other states are chosen.
+
+   It must not read as a tab. A tab switches what you are looking at and
+   there are six of them; this changes what the whole sheet will let you do,
+   and it is on or off. So it takes none of the tab's vocabulary: no gold top
+   rule, no paper fill when active, and a hairline down its left edge putting
+   it on the far side of the counter. What it does take is a *box* — the same
+   chamfered pip an advancement slot is made of, filling with strain when the
+   mode is on, which is the sheet's own shape for a state that is set.
+
+   Sticky at the right edge, because the strip scrolls horizontally at six
+   tabs in a narrow window and a control you cannot reach without scrolling
+   the thing you were not looking for is a control that is not there. It
+   carries the strip's own ground so tabs pass behind it rather than under
+   the word. */
+.tabs .edt{position:sticky;right:0;z-index:3;flex:none;align-self:stretch;
+  display:flex;align-items:center;gap:7px;border:0;cursor:pointer;
+  padding:0 12px 0 13px;background:var(--frame-2);color:var(--frame-tx-3);
+  box-shadow:inset 1px 0 0 var(--frame-line);
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  transition:color .14s}
+.tabs .edt i{flex:none;width:9px;height:9px;background:var(--frame);
+  box-shadow:inset 0 0 0 1.25px var(--frame-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s}
+.tabs .edt:hover{color:var(--frame-tx)}
+.tabs .edt:hover i{box-shadow:inset 0 0 0 1.25px var(--frame-tx-3)}
+.tabs .edt.on{color:var(--strain)}
+.tabs .edt.on i{background:var(--strain);box-shadow:none}
 
 /* ── advancement ───────────────────────────────────────────────────
    The printed character guide, slot counts and all. The slot boxes are the
@@ -445,6 +1012,34 @@
    level 5 offers is most of why anyone opens this tab. */
 .adv .ach{font:400 11.5px/1.5 var(--f-ui);color:var(--ink-3);margin:0 0 11px;
   padding-left:9px;border-left:2px solid var(--line)}
+
+/* ── the budget ────────────────────────────────────────────────────
+   How many choices this level owes you, against how many are marked. The
+   boxes below have always said what has been *taken*; nothing said what
+   was *due*, so the one thing this tab could not answer was the only
+   question anyone brings to it — "am I caught up?".
+
+   It counts choices, not boxes, and those are different numbers: the two
+   options in the heavy frame cost both of the level's picks for one mark.
+   A panel that counted marks would tell a player who took Proficiency that
+   they were a choice behind when they were exactly level.
+
+   Three states, and the neutral one is quiet on purpose. Being level is
+   the state you are in for most of a campaign and it should not be
+   congratulating you; gold means there is something to spend, and the
+   wound's red means the sheet has more marked than the rules grant, which
+   is either a GM's deliberate gift or a miscount and is not this panel's
+   business to decide. */
+.adv .bal{display:flex;align-items:center;gap:10px;margin:0 0 11px;padding:6px 10px;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.adv .bal .n{flex:none;font:700 12px/1 var(--f-mono);letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.adv .bal .t{min-width:0;font:400 11px/1.4 var(--f-ui);color:var(--ink-3)}
+.adv .bal.owed{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 45%,var(--line))}
+.adv .bal.owed .n{color:var(--hope-tx)}
+.adv .bal.over{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--wound) 52%,var(--line))}
+.adv .bal.over .n{color:var(--wound)}
 .adv .row{display:flex;align-items:flex-start;gap:11px;padding:4px 0}
 .adv .row .lb{font:400 11.5px/1.36 var(--f-ui);color:var(--ink-2);min-width:0}
 /* exhausted: every slot marked, so the option is spent for this tier */
@@ -506,12 +1101,117 @@
 /* ── borrowed components, re-scaled ────────────────────────────────
    card.css and tile.css are cqw-driven so one definition serves a 210px
    card panel and a 440px sheet column. Inside a window they are handed a
-   fixed pixel width by the grid instead; nothing needs overriding, which
-   is the payoff for having built them that way. Only the pool needs a
-   nudge, because its header was sized for a card. */
+   fixed pixel width by the grid instead, and mostly nothing needs
+   overriding, which is the payoff for having built them that way. The
+   pool needs a nudge, because its header was sized for a card — and the
+   tile needs more than a nudge, for the reason below. */
 .win .pool .hd{margin-bottom:10px}
 .win .pool .hd .k{font-size:8.5px}
 .win .pool .hd .n{font-size:14px}
+
+/* ── the tile at sheet width ───────────────────────────────────────
+   Container-query type is proportional, and proportion is the wrong model
+   for legibility. That is the finding, and it is the one place the cq
+   architecture does not simply pay for itself.
+
+   The tile was measured in the loadout study's 368px panel and holds up
+   to 520px. A Foundry pane hands it a 262px grid column — 289px at a
+   default window — and everything in it shrinks by the same 0.79. A name
+   going from 18px to 14px is still a name. The stat labels go from 6.3px
+   to **4.9px** and their values from 9.1px to **7.2px**, and those two
+   rows are the only part of a weapon anybody reads twice: trait, range,
+   damage, burden. So the tab ended up a column of large pictures with the
+   information set as a caption underneath — which is precisely the
+   complaint, and it is not a bug in any one number. It is what happens
+   when you scale a caption and a headline by the same factor.
+
+   The fix is not px type, which would break the one property that makes
+   this component work at all. It is to re-weight the tile for the width a
+   sheet actually gives it: the art gives up nine points, the numbers take
+   them, the name comes down a step because it is no longer the only
+   legible thing on the tile, and the box loses a tenth of its height.
+   Same vocabulary end to end — chamfer, gold seam, domain cap, tier bar —
+   so a breastplate still reads as the same family as a domain card.
+
+   Here rather than in tile.css, and by selector rather than by a class on
+   the tile. The variant is not a different tile; it is *this sheet's*
+   column being narrow, which is a fact about the sheet. It also keeps the
+   base component untouched for everything else that draws one — the rest
+   and damage dialogs among them, whose column is wide enough to need none
+   of it. */
+.slot .tile,.eqp .tile,.abl .sub .tile{aspect-ratio:5/1.9}
+/* 25%, not 36%. At a 289px column that is 72px of artwork instead of
+   104px, and the 32px it hands over is what buys the strip back the room
+   the bigger type costs it — with four cells and a 1px rule between each,
+   TWO-HANDED fits at 8.8px in 203px and does not at 195px. A weapon's
+   painting is a crop at either width; the strip is not. */
+.slot .tile .plate,.eqp .tile .plate,.abl .sub .tile .plate{width:25%}
+.slot .tile .body,.eqp .tile .body,.abl .sub .tile .body{padding:2.2cqw 2.8cqw 2.4cqw}
+.slot .tile .hd,.eqp .tile .hd,.abl .sub .tile .hd{margin-bottom:1.2cqw}
+.slot .tile .nm,.eqp .tile .nm,.abl .sub .tile .nm{font-size:4.4cqw}
+.slot .tile .rc,.eqp .tile .rc,.abl .sub .tile .rc{height:5cqw;padding:0 1.5cqw 0 1.7cqw}
+.slot .tile .rc .n,.eqp .tile .rc .n,.abl .sub .tile .rc .n{font-size:3cqw}
+
+/* The whole point of the block: the label goes 4.9px → 6.1px and the
+   value 7.2px → 8.8px, at a 289px column. Bigger than this is available
+   and does not survive contact — at 3.4cqw the value is 9.8px and three
+   of four cells ellipse on a weapon this character actually carries.
+   The cells are tightened and the plate narrowed to pay for even this
+   much; measured, not calculated.
+
+   The longest row the game can print — KNOWLEDGE, VERY CLOSE, d12+9,
+   TWO-HANDED — still ellipses its last cell, and it ellipsed at the base
+   size too: 196px of content in 169px of panel, against 226 in 203 now.
+   That is why `.stats .v` has carried `text-overflow:ellipsis` since it
+   was written. This block does not introduce the truncation and does not
+   pretend to have removed it; it moves every row that was merely small
+   up to a size you read, and leaves the one row that was always too wide
+   exactly as truncated as it was. */
+.slot .tile .stats,.eqp .tile .stats,.abl .sub .tile .stats{margin-bottom:1.4cqw}
+.slot .tile .stats > div,.eqp .tile .stats > div,.abl .sub .tile .stats > div{
+  gap:.6cqw;padding:.9cqw 1cqw 0 0}
+.slot .tile .stats > div + div,.eqp .tile .stats > div + div,
+.abl .sub .tile .stats > div + div{padding-left:1.2cqw}
+.slot .tile .stats .k,.eqp .tile .stats .k,.abl .sub .tile .stats .k{font-size:2.1cqw}
+.slot .tile .stats .v,.eqp .tile .stats .v,.abl .sub .tile .stats .v{font-size:3.05cqw}
+
+/* Two lines, larger, instead of three at 7.8px. Three lines of prose that
+   small is texture — you can see that there is a rule without being able
+   to read it, which is the worse of the two failures. Two legible lines
+   say as much and admit the rest is on the card, which is one click away
+   on a row that posts it and one hover away on a row that peeks. */
+.slot .tile .tx,.eqp .tile .tx{font-size:3.05cqw;line-height:1.36;-webkit-line-clamp:2}
+
+.slot .tile .ft,.eqp .tile .ft,.abl .sub .tile .ft{padding-top:1.3cqw;gap:1.2cqw}
+.slot .tile .mi,.eqp .tile .mi,.abl .sub .tile .mi{font-size:2.3cqw}
+.slot .tile .tb,.eqp .tile .tb,.abl .sub .tile .tb{font-size:2.3cqw;
+  padding:.7cqw 1.1cqw .7cqw 1.3cqw}
+
+/* ── and the subclass tile is a different tile again ───────────────
+   It has no body paragraph, and its strip holds two cells rather than
+   four. Both of those buy something back, and the second is the reason
+   this is not simply the gear tile at another width: four cells is what
+   held the values down to 8.8px, and Spellcast over Companion has half
+   the row to itself. So the numbers go up again — and so does the name,
+   and so does the meta line, which on a subclass card is the *rank*.
+   Foundation / Specialization / Mastery is the single fact this card
+   exists to state, and it was being set at 5.9px in the footer.
+
+   Slack is *centred* rather than pushed to the footer. A subclass with a
+   Spellcast trait and one without differ by a whole strip, and letting
+   that difference fall as a gap above the footer would make one of three
+   cards in a column look broken. Centred, both read as the same object
+   holding different amounts of it. The ratio is set by a name long enough
+   to wrap — no printed subclass has one, and the cost of being wrong is
+   a clipped footer, which is the one failure this whole block is about. */
+.abl .sub .tile{aspect-ratio:5/1.66}
+.abl .sub .tile .body{justify-content:center}
+.abl .sub .tile .ft{margin-top:1.6cqw}
+.abl .sub .tile .nm{font-size:5cqw}
+.abl .sub .tile .stats .k{font-size:2.6cqw}
+.abl .sub .tile .stats .v{font-size:4cqw}
+.abl .sub .tile .tb{font-size:2.5cqw}
+.abl .sub .tile .mi{font-size:2.9cqw}
 
 /* The pane is ~610px at a default window and a spine is cqw-scaled — one per
    row it renders at nearly twice the size it was measured at in the loadout
@@ -553,7 +1253,17 @@
    of the bottom edge on hover — visible only while you are pointing at the
    thing it applies to. Except when it cannot be equipped: then the bar is
    always up, because the reason is the whole message. */
-.eqp{position:relative;cursor:pointer}
+.eqp{position:relative;cursor:pointer;
+  transition:transform .26s cubic-bezier(.2,.8,.25,1)}
+/* The lift belongs to the cell, not to the tile inside it. Left where
+   tile.css puts it, the tile rose three pixels on hover and the verb bar —
+   which is positioned against `.eqp` and has to be, or it would be clipped
+   by the tile's own overflow — stayed exactly where it was. Two halves of
+   one object pulling apart under the pointer, at the one moment you are
+   pointing at it. The shadow stays on the tile, because a shadow is the
+   card's and the movement is the row's. */
+.eqp:hover .tile{transform:none}
+.eqp:hover{transform:translateY(-3px)}
 .eqp .act{position:absolute;left:0;right:0;bottom:0;z-index:6;text-align:center;
   padding:6px 0 7px;font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;
   text-transform:uppercase;color:#14161a;background:var(--hope);
@@ -601,22 +1311,29 @@
    thing that should go quiet. */
 .pk.vl .spine{filter:saturate(.22)}
 .pk.vl:hover .spine{filter:saturate(1)}
-/* A tab down the right edge, like the label on a filed folder — not a badge
-   dropped on the artwork. The first version was a chip in the bottom-right
-   corner and it sat on both the thumbnail and the tier bar, which is two
-   things it had no business covering. `bottom:7px` is exactly the spine's
-   chamfer, so the tab stops where the row's corner is cut and the tier bar
-   stays visible underneath it. */
-.pk.vl .stamp{position:absolute;z-index:6;right:0;top:0;bottom:7px;width:22px;
-  pointer-events:none;display:grid;place-items:center;
-  background:color-mix(in srgb,var(--frame) 86%,transparent);
-  box-shadow:inset 1px 0 0 color-mix(in srgb,var(--hope) 40%,transparent);
-  clip-path:polygon(0 6px,100% 0,100% 100%,0 100%);
-  transition:opacity .2s cubic-bezier(.2,.8,.25,1),transform .2s cubic-bezier(.2,.8,.25,1)}
-.pk.vl .stamp svg{width:12px;height:12px;display:block;color:var(--hope)}
-.pk.vl .stamp em{display:none}
-/* it has said its thing; out of the way once you are looking at the card */
-.pk.vl:hover .stamp{opacity:0;transform:translateX(8px)}
+/* There is no badge, and getting to none of one took three tries.
+
+   First a chip in the bottom-right corner, which sat on the thumbnail and
+   the tier bar. Then a tab down the right edge, like the label on a filed
+   folder, stopping at the spine's chamfer so the tier bar stayed visible
+   underneath — better, and still wrong for a reason the loadout study could
+   not show, because the loadout does not draw a recall chip and the vault
+   is the one place it matters. `.spine .rc` is top-right. The tab was
+   exactly on top of it. So the vault covered the price of leaving the vault:
+   a label obscuring the fact it is labelling, on the one number this panel
+   exists to help you weigh.
+
+   What says it instead is the picture. The row is already desaturated, and
+   its artwork now takes a fine diagonal hatch — the same hatch the drag
+   leaves behind in a slot whose card is in your hand, and the same claim:
+   this is filed, not held. It falls on the only region of a spine carrying
+   neither a word nor a number, and it lifts on hover, because by then you
+   have stopped scanning and started reading. */
+.pk.vl .spine .thumb::after{content:"";position:absolute;inset:0;z-index:2;
+  pointer-events:none;transition:opacity .2s cubic-bezier(.2,.8,.25,1);
+  background:repeating-linear-gradient(45deg,transparent 0 4px,
+    color-mix(in srgb,var(--frame) 62%,transparent) 4px 5.4px)}
+.pk.vl:hover .spine .thumb::after{opacity:0}
 
 /* ── study page chrome ─────────────────────────────────────────────*/
 .lay{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}

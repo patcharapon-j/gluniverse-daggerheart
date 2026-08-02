@@ -658,7 +658,6 @@ const SWAP_TAB = (D) => {
         <div class="pk vl${SWAP.armed === i ? ' arm' : armed ? ' mute' : ''}"
              data-pk="v${i}" data-fk="${c.k}" data-vt="${i}" data-drag data-swap>
           ${SPINE(c)}<span class="swp"></span>
-          <span class="stamp" title="In vault">${LOCK}<em>Vault</em></span>
         </div>`).join('')}
     </div>
   </div>`;
@@ -725,11 +724,12 @@ const BODY = (tab, D) => ({
       <div class="xp"><div class="r"><b>What favor have I asked that you cannot fulfill?</b></div></div></div>`,
 }[tab]);
 
-/* A padlock would say "you cannot have this", which is wrong — a vaulted
-   card is available, it is just not in hand. An archive box says stored. */
-const LOCK = `<svg viewBox="0 0 14 14" aria-hidden="true" fill="currentColor">
-  <path d="M1 2h12v3H1z"/><path d="M2.2 6h9.6l-.7 6H2.9z" opacity=".62"/>
-  <path d="M5.2 7.6h3.6v1.3H5.2z" fill="#000" opacity=".38"/></svg>`;
+/* There was an archive-box mark here, on a tab down the row's right edge —
+   never a padlock, because a vaulted card is available and simply not in
+   hand. It is gone, and not because the mark was wrong. `.spine .rc` is
+   top-right, so the tab sat on the recall chip: the vault covering the
+   price of leaving the vault. The hatch over the artwork says it now; see
+   `.pk.vl .spine .thumb::after` in sheet.css. */
 
 /* The cards for the peek layer. Rendered once per pane, outside every
    scroller — see peek.js for why they cannot live in the rows. */

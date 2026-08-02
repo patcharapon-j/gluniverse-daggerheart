@@ -17,9 +17,20 @@
      first, and only when it has nothing left does the prose compact. */
   --plate:50%; --u:1cqw;
   box-shadow:0 18px 34px -12px rgba(0,0,0,.72),0 3px 10px rgba(0,0,0,.42);
-  clip-path:polygon(0 0,100% 0,100% calc(100% - 15px),calc(100% - 15px) 100%,0 100%);
-  transition:transform .3s cubic-bezier(.2,.8,.25,1),box-shadow .3s}
-.card:hover{transform:translateY(-5px);box-shadow:0 28px 48px -12px rgba(0,0,0,.82)}
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 15px),calc(100% - 15px) 100%,0 100%)}
+/* ── no hover ──
+   This used to lift 5px and deepen its shadow under the pointer. Deleted
+   rather than scoped away from chat, because there is nowhere left that a
+   lift would be telling the truth. A lift means "this is a control, press
+   it" — and every surface that draws a whole `.card` is the opposite of
+   that. In the chat log it is a record: written once, scrolled past a
+   hundred times, and nothing you can do to it. In the peek layer it never
+   fired at all, because `.peeklayer` is `pointer-events:none` and the card
+   is a thing you are being *shown* rather than one you reach for; the
+   layer does its own moving, on `.pkc`, which is the element that actually
+   knows whether it is opening, pinned or closing. What is left is the
+   study pages, where a lift is decoration on a specimen.
+   The `transition` goes with it — it existed only to carry this. */
 
 /* ── art plate ──
    Rigid: grow 0 *and* shrink 0, so nothing about the text can move it. Half
@@ -270,23 +281,67 @@ body.noart .card .fb,.noart .card .fb{display:grid}
    voice and one without.
 
    So the card gets the plate's entry, verbatim — the same distance, the
-   same curve, the same duration — and then its two corner tabs seat a
-   beat behind it. That is the whole of it. A card is a static object
-   being handed over, not an event resolving, and anything more here
-   would be the card claiming to be the second thing.
+   same curve, the same duration. One motion, and only one: the whole
+   card rises a little and settles, and nothing inside it moves on its
+   own.
 
-   `backwards`, not `both`. The card's rest state carries a hover lift on
-   a transform transition, and an animation filling forwards would pin
-   `transform:none` permanently and take the lift with it — the card
-   would arrive beautifully and then never respond to a pointer again.
-   Backwards fill covers the delay and hands the element back afterwards. */
-.card.arrive{animation:card-in .32s cubic-bezier(.2,.85,.3,1) backwards}
-@keyframes card-in{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
-/* Out from under the card's own top edge, which is why they are clipped
-   rather than faded: these two are physically tabs on the card, and a tab
-   that dissolves into place was never attached to anything. */
-.card.arrive .lvl,.card.arrive .rc{animation:card-tab .3s cubic-bezier(.2,.9,.3,1) .1s backwards}
-@keyframes card-tab{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:none}}
+   The two corner tabs used to seat a beat behind, clipped out from under
+   the card's own top edge. It read well in isolation and it was saying
+   the wrong thing — a card is a static object being handed over, a thing
+   that already existed before you were shown it, and an object that
+   arrives in pieces is an object being *assembled*, which is an event,
+   which is the plate's job and not this one.
+
+   `both`, not `backwards`. Backwards was there because the card's rest
+   state carried a hover lift on a transform transition, and a forwards
+   fill would have pinned `transform:none` permanently and taken the lift
+   with it. The lift is gone — see the top of this file — nothing else
+   transforms a card, and both keyframes end on the element's own natural
+   values, so a re-render is simply handed the end state rather than
+   travelling to it. */
+.card.arrive{animation:card-in .34s cubic-bezier(.2,.8,.28,1) both}
+@keyframes card-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+/* ── the sheen ─────────────────────────────────────────────────────
+   One band of warm light across the artwork, once, the first time the
+   card lands in front of you. It is the only thing a posted card does
+   beyond arriving, and it crosses the art and stops there for the reason
+   the plate's own sweep stays on the plate: the panel below is prose you
+   are about to read, and light moving over a paragraph is light asking
+   you to stop reading it.
+
+   **`.arrive` is the plate's `play` claim under another name**, and the
+   gate is the same one. `dice/chat.ts` adds the class only when
+   `arriving(message)` says this drawing is the message's first on this
+   client; Foundry re-renders a message whenever anything is written to
+   it — a claim taken, a flag set — and replaces the element outright, so
+   a card scrolled back to, or written to, is drawn without the class and
+   stays quiet. That is the plate's `.land`-without-`.play` case exactly.
+   There is no second class here because a card has nothing to reveal: it
+   arrives already saying everything it will ever say, and the sheen is a
+   greeting rather than an answer.
+
+   Warm white over --hope's own gold rather than a spectrum, and .36 at
+   its brightest, so it reads as light *on* the art instead of a wash
+   over it. Two things it deliberately does not do: it claims no z-index,
+   and it introduces no `overflow`. `.plate` already clips — it has to,
+   for the ramp and the fallback — and it is `position:relative` with no
+   z-index of its own, so an ::after at auto paints above the image, the
+   top gradient, the ramp and the fallback while still sitting under
+   `.lower` at 6 and the corner tabs at 8. A sheen that claimed a layer
+   would climb over the panel and out through the chamfer. */
+.card.arrive .plate::after{content:"";position:absolute;top:0;bottom:0;left:0;width:46%;
+  pointer-events:none;
+  background:linear-gradient(102deg,transparent 0,
+    color-mix(in srgb,var(--hope) 20%,transparent) 38%,
+    rgba(255,247,232,.36) 52%,
+    color-mix(in srgb,var(--hope) 18%,transparent) 66%,transparent 100%);
+  animation:card-sheen .82s cubic-bezier(.36,.06,.3,1) .14s both}
+@keyframes card-sheen{
+  from{opacity:0;transform:translateX(-140%)}
+  16%{opacity:1} 84%{opacity:1}
+  to{opacity:0;transform:translateX(320%)}}
 
 @media (prefers-reduced-motion:reduce){
-  .card.arrive,.card.arrive .lvl,.card.arrive .rc{animation:none}}
+  .card.arrive{animation:none}
+  .card.arrive .plate::after{display:none}}

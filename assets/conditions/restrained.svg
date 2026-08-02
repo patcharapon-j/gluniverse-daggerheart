@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#ffffff" stroke-width="7">
+  <!-- Two links of a chain. Restrained stops you moving and nothing else,
+       which is what a chain says and a cage does not.
+
+       Stadium links rather than rings, and angled. Two circles at this size
+       read as an infinity sign — it is the elongation and the tilt that make
+       the pair read as chain rather than as a symbol. -->
+  <rect x="3.5" y="17.5" width="35" height="20" rx="10" transform="rotate(-34 21 27.5)"/>
+  <rect x="25.5" y="26.5" width="35" height="20" rx="10" transform="rotate(-34 43 36.5)"/>
+</svg>

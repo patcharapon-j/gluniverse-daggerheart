@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- The Armor shield, cracked. Vulnerable is the defence failing, and the
+       sheet already draws a shield for Armor — so this is that shape with a
+       bolt through it rather than a new idea. -->
+  <path d="M32 3 7 11.4V34c0 15.5 10.9 24.4 25 28.9C46.1 58.4 57 49.5 57 34V11.4L32 3Zm0 6.4 19 6.4V34c0 11.8-7.7 18.9-19 22.7C20.7 52.9 13 45.8 13 34V15.8l19-6.4Z"/>
+  <path d="M36.6 12.5 19.4 36.2h10.3l-3.5 16.5 19.6-24.5H35.1l1.5-15.7Z"/>
+</svg>

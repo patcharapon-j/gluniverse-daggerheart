@@ -326,8 +326,28 @@
    the same thing by adjacency instead of by position. Gold, everywhere,
    because gold is already what a join is drawn in.  */
 .dmg .band{display:flex;align-items:stretch;height:26px}
-.dmg .z{position:relative;flex:1 1 0;min-width:0;display:flex;align-items:center;gap:5px;
-  padding:0 6px}
+/* Pressable, for the same reason the boxes below it are: the zone states a
+   cost in Hit Points and pressing it takes that cost. The tell is a lift in
+   the zone's own weight rather than a hue — hue means domain, and the whole
+   band is deliberately built out of weight instead. Unconditional, like the
+   boxes' own cursor: a read-only sheet ignores the click rather than
+   dressing every zone differently to say so. */
+/* `flex-basis:auto`, not 0 — the zones size to their contents *first* and
+   split only what is left over in proportion. With a zero basis the split
+   is the whole of the width, which is wrong at both ends of the same row:
+   Minor holds one short word and one tick and was handed a share sized for
+   a zone twice its content, so it opened a gap you could park a word in;
+   Major and Severe hold a numeral, a longer word and up to three ticks, and
+   the moment a threshold reached two digits they paid for Minor's gap by
+   eliding their own labels — MAJO…, at the exact tier where the numbers
+   start to matter. Content first, proportion with the remainder: nothing
+   elides while there is any slack anywhere in the row, and the 7-against-8
+   comparison still reads, because it is the surplus that carries it. */
+.dmg .z{position:relative;flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:5px;
+  padding:0 6px;cursor:pointer;transition:filter .16s ease-out}
+.dmg .z:hover{filter:brightness(1.14)}
+:root.light .dmg .z:hover{filter:brightness(.94)}
+.dmg .z:active{filter:none}
 /* Severe is unbounded, so it cannot be drawn to scale — and every fixed
    share tried for it (34%, 32%) elided its own label at some rail width,
    because the share was chosen against one width and the rail has several.

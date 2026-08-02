@@ -32,6 +32,24 @@
   font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .dh .pool .hd .n s{text-decoration:none;color:var(--key);font-weight:700}
 
+/* ── refused ───────────────────────────────────────────────────────
+   The same answer the Stress track gives a recall it cannot pay for, and
+   for the same reason: the thing that cannot pay is the thing that should
+   flinch. A Hope action priced above the purse is refused here rather than
+   in a dialog, because the number that refuses it is already on screen and
+   a modal would cover it up to explain it.
+
+   Shake only, no flash. Stress flashes its *unmarked* boxes violet because
+   those are the ones a recall would have filled — the flash names the boxes
+   that were being asked for. A Hope action asks for filled gems, and there
+   is no equivalent "these ones" to point at: it wants three of a thing you
+   do not have three of. So the pool says no and stops there. */
+.dh .pool.deny{animation:pool-deny .3s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes pool-deny{
+  0%,100%{transform:none} 18%{transform:translateX(-4px)}
+  46%{transform:translateX(3px)} 74%{transform:translateX(-2px)}}
+@media (prefers-reduced-motion:reduce){.dh .pool.deny{animation:none}}
+
 /* ══ GM HUD ═════════════════════════════════════════════════════════
    Not a sheet, not a window — a strip docked in Foundry's own chrome,
    visible to everyone all the time. Dark, one saturated hue, chamfered

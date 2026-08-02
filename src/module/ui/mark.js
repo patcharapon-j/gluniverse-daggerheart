@@ -198,7 +198,12 @@ export const MARKS = ({label, total, marked = 0, kind = 'hp', head = true,
    Thresholds and Hit Points as one object. The breakpoint numeral opens
    the zone it begins rather than floating above the join — same statement,
    no vertical cost. `massive` is the optional 2×severe rule, which bounds
-   the Severe zone and so makes it proportional too. */
+   the Severe zone and so makes it proportional too.
+
+   Every zone carries its own cost in `data-hp`, because the band is the
+   fastest way there is to take a hit: what gets said at the table is "that's
+   a Major", not "mark two". The zone already draws the cost — one tick per
+   Hit Point — so pressing it is pressing the thing you just read. */
 export const DAMAGE = ({major, severe, hp, marked = 0, massive = false,
                         label = 'Damage', span}) => {
   const z = [
@@ -217,7 +222,7 @@ export const DAMAGE = ({major, severe, hp, marked = 0, massive = false,
   <div class="hd"><span class="k">${label}</span>
     <span class="n">${hp - marked}<s> / ${hp}</s></span></div>
   <div class="band">
-    ${z.map(s => `<div class="z ${s.cls}${s.open ? ' open' : ''}"${
+    ${z.map(s => `<div class="z ${s.cls}${s.open ? ' open' : ''}" data-hp="${s.n}"${
       s.open ? '' : ` style="flex-grow:${Math.max(s.span, 1)}"`}>
       ${s.bp == null ? '' : `<i class="bp">${s.bp}</i>`}
       <span class="lb">${s.k}</span>

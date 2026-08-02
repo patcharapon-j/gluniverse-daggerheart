@@ -161,10 +161,11 @@ export function classItem({
       domains: { primary, secondary },
       startingEvasion: evasion,
       startingHitPoints: hitPoints,
-      // The book gives a class one feature block or several under one
-      // heading; the schema holds one, so several are joined under the
-      // heading the book itself uses.
-      classFeature: features,
+      // The book gives a class one feature or several, each with its own
+      // name, and the schema holds all of them. `concat` so the single case
+      // still reads as `features: feat(…)` at the call site rather than
+      // making four classes wrap one feature in brackets to look like five.
+      classFeatures: [].concat(features ?? []),
       hopeFeature,
       startingInventory: rt(items),
       backgroundQuestions: background,

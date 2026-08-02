@@ -20,8 +20,9 @@
 import { absolute } from "../assets.ts";
 import { SYSTEM_ID } from "../config.ts";
 import { getFear, setFear } from "../settings.ts";
+import { ADV_SET, DIS_SET, FEAR_SET, HOPE_SET, paint } from "./dsn.ts";
 import { damagePlate, dualityPlate, foeCrit, foePlate } from "./plate.ts";
-import type { DamagePlate, DualityPlate, FoePlate, Outcome, Term } from "./types.ts";
+import type { DamagePlate, DualityPlate, FoePlate, Note, Outcome, Term } from "./types.ts";
 
 /** Pull every rolled face off a term, kept and discarded alike. */
 const faces = (term: any): number[] => (term?.results ?? []).map((r: any) => r.result);
@@ -62,6 +63,13 @@ export interface DualityOptions {
    * owed is the damage of the thing that hit.
    */
   weaponId?: string;
+  /**
+   * A rule the roll carries — the weapon's feature. It is passed in rather
+   * than read off `weaponId` here for the same reason the id is recorded at
+   * all: the caller knows which weapon swung, and this file's job is to roll
+   * dice, not to go looking for documents.
+   */
+  note?: Note;
 }
 
 export interface DualityOutcome {
@@ -82,6 +90,21 @@ export async function rollDuality(opts: DualityOptions): Promise<DualityOutcome>
   const [hopeTerm, fearTerm, advTerm] = roll.dice;
   const h = faces(hopeTerm)[0] ?? 0;
   const f = faces(fearTerm)[0] ?? 0;
+
+  /* Which d12 is which, said on the die itself.
+   *
+   * The whole duality roll is "did gold beat violet", and to a 3D-dice module
+   * these are two anonymous d12s in one formula — so a table with the toy on
+   * watched two identical dice land and then read the answer off the card,
+   * which is the card doing the die's job. Stamped after evaluation and
+   * before the message, because `options` travels with the roll into storage
+   * and this is the last moment it is ours.
+   *
+   * Costs nothing when the module is absent: it is an unread property on a
+   * term that was going to be serialised anyway. */
+  paint(hopeTerm, HOPE_SET);
+  paint(fearTerm, FEAR_SET);
+  paint(advTerm, adv < 0 ? DIS_SET : ADV_SET);
 
   const out: Outcome = h === f ? "crit" : h > f ? "hope" : "fear";
   const total = roll.total;
@@ -104,6 +127,7 @@ export async function rollDuality(opts: DualityOptions): Promise<DualityOutcome>
     dc: opts.dc ?? null,
     hit,
     ...(opts.reaction ? { rxn: true } : {}),
+    ...(opts.note?.t ? { note: opts.note } : {}),
   };
 
   const message = await postPlate({
@@ -204,6 +228,13 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
   const roll = new Roll(`${dice}d20${dice > 1 ? keep : ""}${modFormula(mods)}`);
   await roll.evaluate();
 
+  // The GM's die, in the GM's colour. There is no duality here to tell apart,
+  // but violet is what this system means by "the other side of the table" and
+  // an adversary's d20 landing in it says whose roll it is before anyone reads
+  // the card. Advantage is a second d20 rather than an added d6, so there is
+  // only ever this one term to paint.
+  paint(roll.dice[0], FEAR_SET);
+
   const d20 = faces(roll.dice[0]);
   const base: FoePlate = {
     who: opts.actor?.name ?? "—",
@@ -282,9 +313,9 @@ async function postPlate({ roll, content, actor, type, plate, extra }: PostOptio
     style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     speaker: ChatMessage.getSpeaker({ actor }),
     rolls: [roll],
-    // The 3D-dice module reads this; it is off by default because the plate
-    // already draws its own dice and two answers to one question is worse
-    // than either.
+    // The dice themselves are suppressed in `dsn.ts`, on the one hook whose
+    // context is still writable. This kills the sound that would otherwise
+    // play for dice nobody is being shown — the two halves of one setting.
     sound: game.settings.get(SYSTEM_ID, "diceSoNice") ? undefined : null,
     content: `<div class="dh dh-plate">${content}</div>`,
     flags: { [SYSTEM_ID]: { plate, kind: type, actorUuid: actor?.uuid ?? null, ...extra } },

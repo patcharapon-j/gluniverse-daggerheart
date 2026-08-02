@@ -179,11 +179,32 @@ again after, and the difference is played backwards: the row appears to travel f
 it now is, having never moved. Every other row flips too, at a shorter duration, so the list closes over
 the gap instead of snapping. On a <i>drop</i> the card is already under the pointer, so its live rect
 overrides its captured one — it flies from the hand while everything else flies from where it was.</p>
+<p class="note"><b>And the sheet runs it now, which it had not.</b> Everything on this page has existed in
+<code>swap.js</code> and <code>swap.css</code> since the vault was designed, and in the shipping Foundry
+sheet a swap was a teleport: the card was in one list on one frame and in the other on the next, with no
+travel, no wipe, no brackets and no folder tab. Nothing had ever called <code>flip()</code>. The reason is
+that a Svelte sheet does not repaint on a line you can put <code>capture()</code> in front of and
+<code>flip()</code> behind — a write goes to the document and the DOM changes back whenever Foundry says
+so. The rects are taken at the press and played by an effect that reads the lists themselves, so it runs on
+the paint that actually moved the card rather than on the frame that asked for it, and a swap the Stress
+track refused leaves no measurement behind for the next one to fly against.</p>
+<p class="note"><b>A second swap during the first cancels it rather than compounding it.</b>
+<code>getBoundingClientRect()</code> reports the box an animation is currently drawing, not the one the
+layout says — so measuring while a row is mid-travel would fly the next card from a place it has never
+been. <code>capture()</code> cancels every travel still running on its way past. Nothing can be stranded
+by that, because no travel is <i>filled</i>: every one of them ends on the element's own
+<code>transform:none</code>, so a cancelled or superseded one leaves the row exactly where the layout
+already put it. The interrupted card snaps, which is the honest report of two things asked for at once.</p>
+<p class="note"><b>The travel is separable from the arrival</b>, and the gear tab is why. Equipping a
+weapon really does move it across the screen, out of the carried grid and into its slot, so it flips — but
+a recall's wipe and brackets are the sheet saying <i>this card is in your hand now</i>, and a breastplate
+has not joined a loadout. So <code>flip()</code> takes a null <code>mode</code>: travel, and nothing said
+about it.</p>
 <p class="note"><b>Two arrivals, same construction, opposite readings.</b> A <b>recall</b> is the sheet
 committing: a lit band wipes left to right with a hard gold leading edge, corner brackets snap onto the two
 square corners, and the card's colour comes back up as it comes to hand. A <b>shelve</b> is that wipe run
-backwards and dark, with no accent and no brackets, and the folder tab slides in — filing something away
-should not be celebrated. Both are clipped to the row's own chamfer, so the light stops where the corner is
+backwards and dark, with no accent and no brackets, and the hatch settles over the artwork behind it —
+filing something away should not be celebrated. Both are clipped to the row's own chamfer, so the light stops where the corner is
 cut; that one detail is most of why it reads as a machined panel rather than a glow.</p>
 <p class="note"><b>Three bugs worth keeping.</b> The drag was bound to <code>.win</code>, and picking a card
 up <i>arms</i> it, and arming repaints — so the drag spent the rest of its life talking to a detached tree:
@@ -277,9 +298,13 @@ const VAULT0 = [
   mk('splendor',2,2,'SPELL','Healing Hands'),
 ];
 
-const STAMP = `<span class="stamp"><svg viewBox="0 0 14 14" fill="currentColor">
-  <path d="M1 2h12v3H1z"/><path d="M2.2 6h9.6l-.7 6H2.9z" opacity=".62"/>
-  <path d="M5.2 7.6h3.6v1.3H5.2z" fill="#000" opacity=".38"/></svg></span>`;
+/* There was an archive-box mark here, drawn on a tab down each vault row's
+   right edge. It is gone: `.spine .rc` is top-right, so the tab covered the
+   recall chip — the vault obscuring the price of leaving the vault, which is
+   the one number this whole page is about weighing. What a vault row wears
+   now is the hatch over its artwork, and that comes from the row's own
+   class; nothing here has to pass it in. See `.pk.vl .spine .thumb::after`
+   in sheet.css. */
 
 const row = (c, cls = '', extra = '') =>
   `<div class="pk ${cls}">${SPINE(c)}${extra}</div>`;
@@ -297,7 +322,7 @@ const OPTS = [
       <div class="tbs"><i>main</i><i class="on">vault</i><i>gear</i></div>
       <div class="pn"><div class="k">Vault<s>5 stored</s></div>
         <div class="rows">${[VAULT0[4], VAULT0[2]].map((c,i) =>
-          row(c, i ? 'vl dim' : 'vl arm', STAMP)).join('')}</div></div>
+          row(c, i ? 'vl dim' : 'vl arm')).join('')}</div></div>
     </div>
     <div class="thru"><b>tab change</b></div>
     <div class="fr">
@@ -319,7 +344,7 @@ const OPTS = [
       <div class="pn"><div class="k">Vault<s>5 stored</s></div>
         <div class="cost"><em>Recall</em><b class="free">Free — resting</b></div>
         <div class="rows">${[VAULT0[4], VAULT0[2], VAULT0[3]].map((c,i) =>
-          row(c, i ? 'vl dim' : 'vl arm', STAMP)).join('')}</div></div>
+          row(c, i ? 'vl dim' : 'vl arm')).join('')}</div></div>
     </div>`},
 
   {t:'C · one list, five of them lit', tag:'purest',
@@ -387,7 +412,7 @@ function paint(){
     <div class="pn"><div class="k">Vault<s>${S.vault.length} stored</s></div>
       ${strip}
       <div class="rows">${S.vault.map((c, i) =>
-        row(c, `vl ${S.armed === i ? 'arm' : armed ? 'dim' : ''}`, STAMP)
+        row(c, `vl ${S.armed === i ? 'arm' : armed ? 'dim' : ''}`)
           .replace('class="pk ', `data-vt="${i}" class="pk `)).join('')}</div></div>
   </div>`;
 

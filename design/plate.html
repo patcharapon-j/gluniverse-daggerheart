@@ -117,14 +117,49 @@ the face colour it was measured against, so every contrast figure on this sheet 
 values are cos of the angle to a light at the upper left, mapped to 6–26% black: the floor is 6 so the front
 face's outline never vanishes into the facet beside it on the lit side, and the ceiling is 26 because that
 is where the gold d12's dark numeral still measures 4.8:1 on its deepest facet.</p>
-<p class="note">The numeral is <b>bigger</b> (.44 of the die rather than .37) and <b>thickened with a
-stroke</b>, because Google Sans stops at 700 and 700 on a lit gold face is thinner than the face deserves.
-And it is genuinely centred. Every shape here is now a regular polygon concentric with its box, so its area
-centroid is simply 50% — the 6.5% correction the old <i>stretched</i> pentagon needed went away with the
-stretch. What is left is the font's own offset, derived rather than tuned: Google Sans has ascent .965 and
+<p class="note">The numeral is <b>bigger</b> — .66 of the die, up from .52, with every shape's step-down
+rising in the same proportion so the set still reads as one set — and <b>thickened with a stroke</b>,
+because Google Sans stops at 700 and 700 on a lit gold face is thinner than the face deserves. The damage
+plate draws its dice at 26px and there the dice <i>are</i> the subject: at .52 the digits stood 9.9px of cap
+height inside a 26px chip, which is a picture of a die with a caption on it; at .66 they stand 12.6px, half
+the chip, and the number is the thing you read first. They overhang the front face onto the facets on every
+shape, the way <code>20</code> always has on the d20: the numeral is painted on the solid, not fitted inside
+one plane of it, and that survives because the ring may only ever darken.</p>
+<p class="note">The old rule was <i>nothing overflows the die's own box</i>, and it was buying a ceiling
+nobody had asked for. None of the three candidates is really the limit. <b>The clip</b> is <code>.pl</code>,
+the only <code>overflow:hidden</code> ancestor, and the strip sits 12px inside it. <b>The neighbour</b> is a
+5px gap, and two digits at .66 measure 20.2px inside a 26px box, so on a square the ink never reaches the
+box edge at all — it would take .85 of the die to get there. <b>The silhouette</b> is the limit, and it binds
+on the d10: <code>10</code> at .61 fills the kite out to its shoulders, and one step further puts the 1 and
+the 0 outside the outline, at which point it stops reading as a number painted on a solid and starts reading
+as a number in front of one.</p>
+<p class="note">Every numeral is centred on the <b>silhouette</b> — one rule, six shapes, no exceptions.
+It used to ride the <i>front face</i>'s area centroid instead, on the reasoning that the numeral is painted
+on the one plane square to you: 66.67% down on the d4, where a real d4 prints it, 36.67% on the d8,
+<code>(891·33 + 864·54.67)/1755 = 43.67%</code> on the d10's kite. True of the object, and unreadable as a
+picture — the front face is a slightly lighter region on a 26px chip, so the outline is the only geometry a
+reader actually has, and against the outline those three had a number sitting off-centre for a reason
+nothing on screen could show. The d8 broke first and loudest, its ink standing 45% tall on a 40% face; the
+d10 states the principle best, a pixel and a half off centre, too small to read as projection and big enough
+to read as a mistake.</p>
+<p class="note">What is left is a real correction rather than a placement: Google Sans has ascent .965 and
 descent .285, so the baseline sits .840em down the line box and the digits' ink is centred .3675em above it
-— putting the ink's centre at 48.79% of the die. <code>50 − 48.79 = 1.21%</code>, and it is scale-invariant
-because the font size is a fraction of <code>--sz</code>.</p>
+— .0275em above the line box's own centre. So a shape declares <code>--nf</code>, the numeral's fraction of
+<code>--sz</code>, and the offset is <code>--nf × .0275</code>, computed where the font size is. There is no
+stored <code>--nudge</code> any more, and that is the point: the old arrangement stored the <i>product</i>,
+so every change of size silently invalidated six offsets — which is exactly how this went wrong.</p>
+<p class="note">Across, it was <b>not</b> centred, and the cause is a rule everyone knows and nobody
+pictures: <code>letter-spacing</code> is applied after <i>every</i> character, the last one included. The
+em's layout box is <code>n·A + n·L</code> wide around a run of ink <code>n·A + (n−1)·L</code> long — one
+whole tracking narrower than its own contents — so centring the box overhangs the ink to the right by the
+full <code>|L|</code> and lands the numeral <code>|L|/2 = .0225em</code> off. Measured at damage size:
+.3042px at the old size, .3861px at this one, the same on every value.
+<code>margin-inline-end:.045em</code> gives the box back exactly that column, and the two must always move
+together. What is left is the <i>value's</i> own asymmetry — tabular figures centre each glyph in one shared
+advance, so a number whose first digit is narrow and whose last is wide leans right by
+<code>(w<sub>last</sub> − w<sub>first</sub>)/4</code>, about .8px on <code>10</code>, nothing at all on
+<code>11</code>. That is a property of what was rolled rather than of the box, and no rule in a stylesheet
+reaches it.</p>
 
 <h2><span>// THE PORTRAIT</span>Who rolled it, answered before you read anything</h2>
 <p class="note">Endfield never drops a portrait into a panel as a picture — it drops it in as <b>tone</b>:

@@ -11,9 +11,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { traitLabel, type Trait } from "../config.ts";
+import { plain } from "../sheets/cards.ts";
 import { getFear, setFear } from "../settings.ts";
 import { rollDamage, rollDuality, rollFoe } from "./rolls.ts";
-import type { Term } from "./types.ts";
+import type { Note, Term } from "./types.ts";
 
 interface Common {
   advantage?: number;
@@ -79,6 +80,30 @@ export async function rollTrait(actor: any, trait: Trait, opts: Common & { react
 /* ── an attack ───────────────────────────────────────────────────────── */
 
 /**
+ * The weapon's own rule, in the shape the plate draws notes in.
+ *
+ * Most weapons have none and get nothing. The ones that do carry the thing
+ * that makes them worth wielding — Whirlwind hits every adjacent target,
+ * Brutal upgrades a maximum die — and the card announcing the swing was
+ * naming the weapon and stopping there. The roller has the weapon on their
+ * sheet; everyone else at the table has this card, so for four people out of
+ * five the rule was simply not in the room.
+ *
+ * The description goes through `plain`, which is what turns Foundry's stored
+ * HTML into the dialect the card builders read. That is the same conversion
+ * the weapon's own card does, so the two cannot say it differently.
+ *
+ * `name || "Feature"`: a description with no name is a real state — the item
+ * sheet lets you write one without the other — and an unlabelled band would
+ * read as a stray paragraph.
+ */
+const weaponNote = (weapon: any): Note | undefined => {
+  const f = weapon?.system?.feature;
+  const t = plain(f?.description);
+  return t ? { n: f.name || "Feature", t } : undefined;
+};
+
+/**
  * The attack half. Damage is a separate message on purpose: the target's
  * thresholds decide what the number means, and the attack card should not
  * pretend to know them.
@@ -102,6 +127,7 @@ export async function rollAttack(actor: any, weapon: any, opts: Common & { react
     next: "Roll damage",
     nextAct: "roll-damage",
     weaponId: weapon?.id,
+    note: weaponNote(weapon),
   });
 
   return result;

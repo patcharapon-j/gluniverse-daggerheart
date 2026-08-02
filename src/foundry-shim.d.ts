@@ -18,6 +18,8 @@ declare global {
   const foundry: any;
   const game: any;
   const ui: any;
+  /** Null until a scene is active, which `apps/targets.ts` has to survive. */
+  const canvas: any;
   const CONFIG: any;
   const Hooks: any;
   const Actor: any;

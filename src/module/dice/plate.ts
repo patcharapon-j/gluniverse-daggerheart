@@ -10,6 +10,7 @@
  * and every number is already decided by the time it arrives.
  */
 
+import { rich } from "../ui/card.js";
 import type { DamagePlate, DualityPlate, FoePlate, Term } from "./types.ts";
 
 /**
@@ -198,6 +199,24 @@ const CRIT = (on: boolean): string =>
 const GHOST = (r: DualityPlate): string =>
   r.out === "crit" ? "CRITICAL" : r.rxn ? "REACTION" : r.out === "hope" ? "HOPE" : "FEAR";
 
+/**
+ * The rule this roll brought with it — a weapon's feature, in practice.
+ *
+ * Drawn with `rich`, the cards' own renderer, rather than with `esc`. That
+ * is deliberate and it is the reason this takes text in the builders'
+ * dialect instead of HTML: a feature that reads one way on the weapon's card
+ * and another way on the card announcing the swing is two descriptions of one
+ * rule, and the second one to be edited is the one that goes stale. The name
+ * is escaped, because a name is a name and has no dialect.
+ *
+ * Nothing at all when there is no feature, which is most weapons. A card that
+ * reserves a band for a rule that does not exist is a card with a hole in it.
+ */
+const NOTE = (r: DualityPlate): string =>
+  r.note?.t
+    ? `<div class="pl-note"><b>${esc(r.note.n)}</b><p>${rich(r.note.t)}</p></div>`
+    : "";
+
 /* ══ A · the player's plate ═══════════════════════════════════════════ */
 
 /** The class list the whole card wears — the outcome, in one place. */
@@ -226,7 +245,7 @@ export const dualityPlate = (r: DualityPlate, next?: string, nextAct?: string): 
   ${CRIT(r.out === "crit")}
   ${FIELD(r)}
   <div class="pl-st">${DICE(r, 38)}${ARITH(r)}</div>
-  ${META(r)}${ACT(claims(r), next, nextAct)}
+  ${NOTE(r)}${META(r)}${ACT(claims(r), next, nextAct)}
 </div>`;
 
 /**
@@ -272,6 +291,32 @@ export const platePortrait = (r: DualityPlate): string =>
 
 const sum = (a: number[]): number => a.reduce((x, y) => x + y, 0);
 
+/**
+ * A die's own silhouette, by notation.
+ *
+ * Every damage die used to be drawn `sq`, and `sq` is the *d6's* shape —
+ * flat, coreless, because a d6 seen face-on is one square with nothing folded
+ * back to shade. So a 2d8 arrived as two d6s on a card whose entire job is
+ * saying what was rolled, with the notation underneath quietly disagreeing
+ * with the picture. `sq` keeps its name rather than becoming `d6`, because it
+ * is also what the advantage chip and the critical's maximum dice are: those
+ * genuinely are square chips, and renaming the class would make them claim to
+ * be a kind of die.
+ *
+ * Anything unrecognised falls back to the square. A homebrew d3 has no
+ * silhouette here and a plain chip is the honest thing to draw for it.
+ */
+const SHAPE: Record<string, string> = {
+  d4: "d4",
+  d6: "sq",
+  d8: "d8",
+  d10: "d10",
+  d12: "d12",
+  d20: "d20",
+};
+
+const shapeOf = (die: string): string => SHAPE[String(die).toLowerCase()] ?? "sq";
+
 export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): string => {
   const crit = !!r.max?.length;
   const flat = sum(r.mods.map((m) => m.v));
@@ -282,6 +327,7 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
     ...(r.bonus ? [{ k: r.bonus.k, v: r.bonus.v }] : []),
     ...r.mods,
   ];
+  const shape = shapeOf(r.die);
   return `
 <div class="pl a1 wound blk${crit ? " mat" : ""}">
   ${CRIT(crit)}
@@ -295,10 +341,10 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
   <div class="dmg-st">
     ${
       crit
-        ? `<span class="grp"><s>max</s>${r.max!.map((v) => DIE(v, "sq w max", 26)).join("")}</span><span class="op">+</span>`
+        ? `<span class="grp"><s>max</s>${r.max!.map((v) => DIE(v, `${shape} w max`, 26)).join("")}</span><span class="op">+</span>`
         : ""
     }
-    <span class="grp">${r.rolls.map((v) => DIE(v, "sq w", 26, +r.die.slice(1))).join("")}</span>
+    <span class="grp">${r.rolls.map((v) => DIE(v, `${shape} w`, 26, +r.die.slice(1))).join("")}</span>
     ${
       r.bonus
         ? `<span class="op">+</span><span class="grp">${DIE(r.bonus.v, "sq a", 26, r.bonus.mx ?? 6)}</span>`

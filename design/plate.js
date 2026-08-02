@@ -136,6 +136,15 @@ const CRIT = on => on
 const GHOST = r => r.out === 'crit' ? 'CRITICAL'
   : r.rxn ? 'REACTION' : r.out === 'hope' ? 'HOPE' : 'FEAR';
 
+/* A rule the roll brought with it — a weapon's feature, most often. The
+   card used to name the weapon and stop, which meant the one moment the
+   feature is relevant was the one moment only the roller could read it:
+   they have the card on their sheet, everyone else has this. Closes the
+   body, above the footer, because it is part of what was rolled rather
+   than part of what the roll was called. */
+const NOTE = r => r.note
+  ? `<div class="pl-note"><b>${r.note.n}</b><p>${r.note.t}</p></div>` : '';
+
 /* ── A · plate ────────────────────────────────────────────────────*/
 export const A = (r, next) => `
 <div class="pl a1 ${r.rxn && r.out !== 'crit' ? 'flat' : r.out}${r.out === 'crit' ? ' mat' : ''}">
@@ -149,7 +158,7 @@ export const A = (r, next) => `
       class="pl-num">${r.total}</u></span>
   </div>
   <div class="pl-st">${DICE(r, 38)}${ARITH(r)}</div>
-  ${META(r)}${ACT(claims(r), next)}
+  ${NOTE(r)}${META(r)}${ACT(claims(r), next)}
 </div>`;
 
 /* ── B · split ────────────────────────────────────────────────────*/

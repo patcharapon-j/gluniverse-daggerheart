@@ -24,6 +24,7 @@ import {
   MAX_LEVEL,
   RANGES,
   TRAITS,
+  advancementTally,
   baseProficiency,
   tierOf,
 } from "../config.ts";
@@ -48,8 +49,18 @@ import {
 
 const TypeDataModel = () => foundry.abstract.TypeDataModel;
 
-/** `max - marked`, floored at zero, written back onto the track. */
+/**
+ * `max - marked`, floored at zero, written back onto the track.
+ *
+ * The marks are clamped to the maximum on the way, because the maximum can
+ * *shrink* — unmarking a "permanently gain one Stress slot" takes a box away,
+ * and a track drawing six marks in five boxes is a track lying about both
+ * numbers. Clamping here rather than writing back keeps it a display fact:
+ * put the box back and the mark is still there, which is what someone who
+ * unmarked an advancement by mistake would expect.
+ */
 function deriveTrack(track: { marked: number; max: number; value?: number }): void {
+  track.marked = Math.min(track.marked, track.max);
   track.value = Math.max(0, track.max - track.marked);
 }
 
@@ -98,12 +109,38 @@ export class CharacterData extends (TypeDataModel() as any) {
       /** Proficiency bought through advancement, on top of the tier grant. */
       proficiencyBonus: int(0),
 
+      /* Five, until a GM says otherwise. This was a constant in `config.ts`
+         and it is a rules default rather than a rule: subclasses, campaign
+         frames and one-shot house rules all move it, and a number the table
+         can change has to live on the character rather than in the code.
+         `LOADOUT_LIMIT` stays as the default so nothing has to be migrated. */
+      loadoutLimit: int(LOADOUT_LIMIT, { min: 0 }),
+
       /* Which advancement slots are filled, keyed `"<tier>.<option>"` against
          the count taken — so `{"2.0": 2}` is "the trait option, twice, in
          tier 2". Keyed rather than a field per option because the option
          list is a rules table in `config.ts`: adding a row to it must not
          require a migration to keep what a player already chose. */
       advancement: obj(),
+
+      /* What the choice-bearing advancements actually chose, so unmarking one
+         can put it back. Keyed `"<tier>:<option>:<n>"` — colons rather than
+         dots because a dot in a Foundry update key is a *path*, and the whole
+         reason this is a flat map is that it is written whole.
+
+         An advancement you can take, you must be able to give back. "Gain a
+         +1 to two unmarked traits" raises two of six numbers and marks them,
+         and a box that could not say which two would leave the player to
+         work out by hand what the sheet had done to them. */
+      advancementChoices: obj(),
+
+      /* Which tier achievements have been handed out. Not derived from level,
+         because the grants are *events*: entering tier 3 gives you an
+         Experience and clears your trait marks, and a character who dropped
+         to level 4 and came back should not collect a second Experience or
+         have their marks cleared twice. Reaching a tier is a thing that
+         happened once. */
+      tiersEntered: obj(),
 
       experiences: arr(experienceField()),
 
@@ -171,25 +208,82 @@ export class CharacterData extends (TypeDataModel() as any) {
   /* Derived, not stored. */
   declare tier: number;
   declare proficiency: number;
+  /** Every domain this character has access to, across every class. */
+  declare domainList: string[];
+  /** How many of each advancement option has been taken, across every tier. */
+  declare advancementTally: Record<string, number>;
+  declare advancement: any;
+  declare experiences: any[];
 
   prepareBaseData(): void {
     this.tier = tierOf(this.level);
-    this.proficiency = baseProficiency(this.level) + this.proficiencyBonus;
+
+    /* ── what the advancement boxes are worth ────────────────────────────
+       Four of the nine printed options are pure arithmetic — a Hit Point
+       slot, a Stress slot, +1 Evasion, +1 Proficiency — and those are
+       *derived from the marks* rather than written when a box is pressed.
+
+       That is the difference between a sheet that automates level-up and one
+       that merely reacts to it. A write-on-press design cannot be undone: a
+       box unmarked by mistake leaves the Stress slot behind, the two numbers
+       drift, and the only way back is for someone to work out by hand what
+       the sheet did. Derived, the marks *are* the record — mark and the box
+       appears, unmark and it goes, and the number can never disagree with
+       the panel it came from because there is only one of them.
+
+       The other five need a choice the sheet cannot make (which two traits,
+       which two Experiences, which card, which class). Those are asked for
+       and stored as the answer; see `apps/advance.ts`. The split is not
+       arbitrary — it is exactly the line between an option that is a number
+       and an option that is a decision. */
+    this.advancementTally = advancementTally(this.advancement);
+    const adv = this.advancementTally;
+
+    this.proficiency =
+      baseProficiency(this.level) + this.proficiencyBonus + (adv.proficiency ?? 0);
+
     // Seeded before Active Effects run so `system.evasion.value | ADD | 2`
     // has a number to add to rather than producing NaN.
-    this.evasion.value = this.evasion.base + this.evasion.bonus;
+    this.evasion.value = this.evasion.base + this.evasion.bonus + (adv.evasion ?? 0);
     this.armorScore.value = this.armorScore.bonus;
+
+    /* The stored maximum is the *base* — what the class hands you and what
+       the adjust tab sets. Advancement is added on top here, the same way an
+       equipped armour overwrites `armorSlots.max` below: the schema holds
+       what was chosen and the model holds what is true. */
+    this.resources.hitPoints.max += adv.hitPoints ?? 0;
+    this.resources.stress.max += adv.stress ?? 0;
   }
 
   prepareDerivedData(): void {
     const items = this.parent?.items ?? [];
 
-    /* ── class and subclass tell us the domains and the casting trait ── */
-    const cls = items.find?.((i: any) => i.type === "class");
+    /* ── class and subclass tell us the domains and the casting trait ──
+       Classes, plural. Multiclassing is a printed advancement option in two
+       of the three tiers, and it hands you a second class with domains of
+       its own — so a character can legitimately have access to three or four
+       rather than two, and `find` was quietly answering for the first one.
+
+       `domains.primary`/`secondary` stay the *first* class's, because that
+       is the pair the corner plates and the footer of a card are built from
+       and a card has two corners. The full set is `domainList`, which is
+       what the sheet draws and what anything asking "may I take this card?"
+       should ask. A subclass card resolves its own class by name rather than
+       reading either — see `classDomains` in sheets/cards.ts. */
+    const classes = items.filter?.((i: any) => i.type === "class") ?? [];
+    const [cls] = classes;
     if (cls) {
       this.domains.primary = cls.system.domains?.primary || this.domains.primary;
       this.domains.secondary = cls.system.domains?.secondary || this.domains.secondary;
     }
+    this.domainList = [
+      ...new Set(
+        classes
+          .flatMap((c: any) => [c.system.domains?.primary, c.system.domains?.secondary])
+          .filter(Boolean),
+      ),
+    ] as string[];
+
     const caster = items.find?.((i: any) => i.type === "subclass" && i.system.spellcastTrait);
     if (caster) this.spellcastTrait = caster.system.spellcastTrait;
 
@@ -205,7 +299,11 @@ export class CharacterData extends (TypeDataModel() as any) {
     const gearEvasion = items
       .filter?.((i: any) => (i.type === "armor" || i.type === "weapon") && i.system.equipped)
       .reduce((sum: number, i: any) => sum + (i.system.evasionModifier ?? 0), 0) ?? 0;
-    this.evasion.value = this.evasion.base + this.evasion.bonus + gearEvasion;
+    this.evasion.value =
+      this.evasion.base +
+      this.evasion.bonus +
+      (this.advancementTally?.evasion ?? 0) +
+      gearEvasion;
 
     if (!this.thresholds.override) {
       // Add your level to both of the armor's printed values. With no armor

@@ -62,6 +62,7 @@ const SHEETS = [
   "plate.css",
   "menu.css",
   "prep.css",
+  "dlg.css",
 ];
 
 /**

@@ -40,13 +40,30 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* Called immediately before the repaint. `data-fk` is the card's own key
    rather than its index, because an index is exactly the thing a swap
-   changes — flipping by index would animate every row into its neighbour. */
+   changes — flipping by index would animate every row into its neighbour.
+
+   Every travel still in flight is cancelled on the way past, and that is
+   not tidiness. `getBoundingClientRect()` reports the *animated* box, so a
+   second swap begun while the first is still moving would measure a row
+   halfway through its journey and fly the next card from a place it has
+   never been. Cancelling first puts every row back where the layout says
+   it is; the interrupted travel snaps, which is the honest report of two
+   things asked for at once. Nothing sticks, because no travel is filled —
+   see flip(). */
 export const capture = win => {
   const m = new Map();
-  win.querySelectorAll('[data-fk]').forEach(el => m.set(el.dataset.fk, el.getBoundingClientRect()));
+  win.querySelectorAll('[data-fk]').forEach(el => {
+    el.getAnimations().forEach(a => a.cancel());
+    m.set(el.dataset.fk, el.getBoundingClientRect());
+  });
   return m;
 };
 
+/* `mode` names the arrival the moved row wears — or is null for a move
+   that should travel and nothing more. Equipping a weapon is one: the item
+   really does cross the gear tab from the carried list into its slot, so
+   the travel is true, but a recall's sweep and brackets say "this card is
+   in your hand now" and a breastplate has not joined a loadout. */
 export function flip(win, before, {moved = null, from = null, mode = 'recall'} = {}){
   if(!REDUCED) win.querySelectorAll('[data-fk]').forEach(el => {
     const k = el.dataset.fk;
@@ -55,11 +72,15 @@ export function flip(win, before, {moved = null, from = null, mode = 'recall'} =
     const a = el.getBoundingClientRect();
     const dx = b.left - a.left, dy = b.top - a.top;
     if(k !== moved && Math.abs(dx) < .5 && Math.abs(dy) < .5) return;
+    /* No `fill`. Every travel ends on the element's own `transform:none`,
+       so a superseded or cancelled one leaves nothing behind — which is
+       the whole guarantee that a row cannot be stranded mid-flight by a
+       second swap landing on top of the first. */
     el.animate([{transform:`translate(${dx}px,${dy}px)`}, {transform:'none'}],
                {duration: k === moved ? MOVE : SHIFT, easing: EASE});
   });
 
-  if(!moved) return;
+  if(!moved || !mode) return;
   const el = win.querySelector(`[data-fk="${CSS.escape(moved)}"]`);
   if(!el) return;
   /* The arrival, which is a *class* rather than more script: it is the sweep,

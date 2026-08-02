@@ -151,6 +151,59 @@ without producing any. So <code>settle.js</code> races the event count against a
 <code>getComputedTiming().endTime</code>: not a magic number, and still correct when a duration changes in
 the CSS.</p>
 
+<h2><span>// EDIT MODE</span>Definition against use</h2>
+<p class="note"><b>Every derived number on this sheet hangs off something you set once.</b> Level drives the
+tier, Proficiency, both damage thresholds and what every advancement panel owes you; the class hands over
+base Evasion, Hit Points and Stress; a trait score is chosen at creation and moved perhaps twice in a whole
+campaign. During play you are doing the other thing entirely — marking, spending, clearing, equipping,
+taking — dozens of times an hour, under a clock, with a GM waiting. A stray click on Level or a trait in the
+middle of that moves a number nobody notices moved until a sum is wrong three sessions later. So the sheet
+has two states, and the split is <i>definition against use</i>: everything you <b>do</b> stays live in both,
+and everything that says what this character <b>is</b> is unlocked by the mode.</p>
+<p class="note"><b>It is not the adjust tab, and the two must not be folded together.</b> That tab overrides
+numbers the rules derive, which is adjudication and therefore the GM's — it is gated on <code>isGM</code>.
+This unlocks a character's own definition, which is authorship and therefore the owner's — it is gated on
+being able to edit the sheet at all, because a player levelling up needs it and has no business on the
+dials. A GM playing their own character is exactly the case where one is true and the other should not be.
+The adjust tab now answers <i>both</i> questions, which is why its fields go inert with everything else.</p>
+<p class="note"><b>The toggle sits at the end of the tab strip, not in the window's title bar.</b> That bar is
+the <i>application</i> — its close button, its drag handle — and this is a state of the sheet, one of the two
+it can be in. It goes after the counter rather than beside the tabs so it is not read as a seventh one, and
+it takes none of a tab's vocabulary: no gold top rule, no paper fill. What it takes instead is a <b>box</b> —
+the same chamfered pip an advancement slot is made of, filling with strain when the mode is on, which is
+this sheet's own shape for a state that is either set or not. It is <code>position:sticky</code> at the right
+edge, because the strip scrolls horizontally at six tabs in a narrow window and a control you have to go
+looking for is a control that is not there.</p>
+<p class="note"><b>The banner takes height rather than overlaying, and that is the one real trade.</b>
+<code>.win.dropping</code> overlays — a gold edge, <code>pointer-events:none</code>, nothing moves — and that
+is right for a <i>drag</i>, which lasts a second and during which a reflow under a held pointer would make
+you re-aim mid-gesture. This lasts as long as you are editing, and the two failures are not symmetrical: an
+overlay that persists is a strip sitting permanently on top of the diorama and the gold rows, covering the
+very controls the mode exists to unlock, and <code>pointer-events:none</code> does not give the pixels back.
+The band costs one reflow, on the frame you pressed the toggle — a deliberate gesture whose answer is the
+sheet changing shape — and it costs nothing after: <code>.bd</code> is <code>flex:1 1 auto</code> inside a
+fixed window, so the 36px comes off the body and the two scrollers absorb it. Nothing moves sideways and no
+panel changes width. <b>Strain, not gold:</b> gold is Hope's currency everywhere in this system — the level
+plate, the gems, the coins, the spellcast spark — and a second meaning for it is a second thing to decode.
+It is two identical runs inside one track translated by exactly half the track's width, so the loop has no
+seam, and it is pure CSS; a JS ticker would be a <code>requestAnimationFrame</code> running for as long as
+somebody leaves a sheet open, to move some text. Under <code>prefers-reduced-motion</code> the track parks at
+its own start and the band simply sits there, still legible.</p>
+<p class="note"><b>Locked is a state, not an absence.</b> A field that vanishes when you flip a switch makes
+the switch feel destructive — the adjust tab learned that already with <code>.off</code> — and a value you
+can no longer <i>read</i> because it is locked is worse than one you can read and cannot type into. So
+<code>.def</code> keeps its ink and gives up its <b>recess</b>: the recess is the part that said "type here",
+and without it the number is a printed figure on the panel, which is what it is. The level plate and the
+trait numeral do not even do that much — <code>b</code> and <code>input.b</code> have been drawn as one
+declaration since the plate was written, so those two swap between a caret and no caret and nothing else
+moves. Every panel the mode locks says so in a sentence underneath.</p>
+
+<!-- The toggle in this study is the demo's own `.edt`, in the strip where it
+     lives on the sheet — there is no separate control under it, because a
+     study page with a button labelled "toggle edit mode" outside the thing
+     would be demonstrating a control the sheet does not have. -->
+<div class="lay" id="edm"></div>
+
 <div class="lay" id="lay"></div>
 
 <div class="btns">
@@ -446,6 +499,86 @@ function measure(){
    that arming a card causes. */
 swaps(lay, swapApi);
 paint();
+</script>
+
+<!-- ── edit mode ─────────────────────────────────────────────────────
+     Its own block, and its own markup rather than a flag threaded through
+     `SHEET()`. The mode is three pieces — a banner, a toggle, and what a
+     locked control looks like — and what is being studied is those three,
+     not a whole sheet with two of its numbers unlocked. A full sheet here
+     would put the two states forty inches apart and make the one question
+     this section asks ("what actually changed?") the hard one to answer. -->
+<script type="module">
+const RUN = 'Edit mode · level, traits, portrait and the numbers the class hands you are unlocked · '
+  .repeat(6);
+const TAPE = on => on
+  ? `<div class="tape"><i><span>${RUN}</span><span>${RUN}</span></i></div>`
+  : '';
+const BOT = on => on
+  ? `<div class="tape bot"><i><span>${RUN}</span><span>${RUN}</span></i></div>`
+  : '';
+
+const TRAITS = [['Agility', 2, false], ['Strength', 0, false], ['Finesse', 1, true],
+                ['Instinct', 1, false], ['Presence', -1, false], ['Knowledge', 0, false]];
+
+/* The numeral is the field, in exactly the place the numeral was. The cell
+   does not change shape when the mode comes on — that is the whole reason
+   `.trs .tr input.v` restates the span's own type rather than inventing a
+   field look — so the row does not jump under the eye that was reading it. */
+const trait = (on, [k, v, marked]) => `
+  <button type="button" class="tr ${marked ? 'on' : ''}">
+    <span class="k">${k}</span>
+    ${on ? `<input class="v" type="number" value="${v}">`
+         : `<span class="v">${v < 0 ? '−' + -v : '+' + v}</span>`}
+    <i class="mk"></i>
+  </button>`;
+
+const field = (label, value) => `
+  <label class="f"><span>${label}</span><input type="number" value="${value}"></label>`;
+
+/* The window is pinned and `.bd` is told to shrink, which is what `frame.css`
+   does to a real one — `.win{height:100%;max-height:100%;min-height:0}` inside
+   Foundry's `.window-content`, and `min-height:0` on the flex children. Left
+   auto, as a study page's window normally is, this would demonstrate the
+   opposite of the truth: the whole sheet growing 36px instead of the body
+   giving it up. */
+const demo = on => `
+<div class="win ${on ? 'editing' : ''}" style="--w:100%;height:246px">
+  ${TAPE(on)}
+  <div class="bd" style="--h:100%;min-height:0">
+    <div class="pane" style="min-height:0">
+      <div class="trs">${TRAITS.map(t => trait(on, t)).join('')}</div>
+      <div class="tabs">
+        <button type="button">loadout</button>
+        <button type="button" class="on">adjust</button>
+        <span class="ct">prof 3</span>
+        <button type="button" class="edt ${on ? 'on' : ''}" data-edm><i></i>edit</button>
+      </div>
+      <div class="scr">
+        <div class="pnl">
+          <div class="k">Tracks<s>the boxes, not the marks</s></div>
+          <div class="cfg def" ${on ? '' : 'inert'}>
+            ${field('Hit Points base', 6)}${field('Stress base', 6)}
+            ${field('Proficiency bonus', 0)}${field('Loadout slots', 5)}
+          </div>
+          ${on ? '' : `<p class="ach" style="margin-top:9px">Locked while the sheet is in play
+            mode — switch on edit at the end of the tab strip.</p>`}
+        </div>
+      </div>
+    </div>
+  </div>
+  ${BOT(on)}
+</div>`;
+
+const edm = document.getElementById('edm');
+let editing = true;
+const drawEdm = () => { edm.innerHTML = demo(editing); };
+edm.addEventListener('click', e => {
+  if (!e.target.closest('[data-edm]')) return;
+  editing = !editing;
+  drawEdm();
+});
+drawEdm();
 </script>
 </body>
 </html>

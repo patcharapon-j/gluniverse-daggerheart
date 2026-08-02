@@ -131,7 +131,10 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
   --face:polygon(50% 0,79.39% 9.55%,97.55% 34.55%,97.55% 65.45%,79.39% 90.45%,
     50% 100%,20.61% 90.45%,2.45% 65.45%,2.45% 34.55%,20.61% 9.55%);
   --core:polygon(50% 19.1%,79.39% 40.45%,68.16% 75%,31.84% 75%,20.61% 40.45%);
-  --nudge:.0121;--rim:2.5px;
+  /* `--nf` is the numeral's fraction of --sz, and it is the *only* thing a
+     shape declares about its numeral — the offset is derived from it. See
+     the derivation above `.die em`. */
+  --nf:.66;--rim:2.5px;
   --tone:var(--line-2);--rimc:var(--line-2);--facec:var(--sunk);--numc:var(--ink-2)}
 /* `lit`, not `win`. A study page loads one stylesheet at a time and can
    afford a short word twice; a game system loads all of them into one
@@ -196,7 +199,9 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
 /* ── the square: d6 and damage ─────────────────────────────────────
    Flat, and no core — a d6 seen face-on *is* one square and there is
    nothing folded back to shade. */
-.dh .die.sq{--face:polygon(0 0,100% 0,100% 100%,0 100%);--nudge:0;--rim:2px;
+/* No `--nf` of its own either: the square reads at the base size, and the
+   offset follows from that automatically. */
+.dh .die.sq{--face:polygon(0 0,100% 0,100% 100%,0 100%);--rim:2px;
   --ring:var(--facec)}
 .dh .die.sq .core{display:none}
 
@@ -205,9 +210,8 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
    rather than five, so the light gets its own six-step ramp. */
 .dh .die.d20{--face:polygon(50% 0,93.3% 25%,93.3% 75%,50% 100%,6.7% 75%,6.7% 25%);
   --core:polygon(50% 19.1%,76.76% 65.45%,23.24% 65.45%);
-  /* regular and concentric, so the centroid is the centre and the only
-     offset left is the font's own 1.21% */
-  --nudge:.0121;
+  /* A step down because "20" is two digits on a triangle. */
+  --nf:.58;
   --ring:conic-gradient(from 0deg,
     var(--facec) 0 2.5deg,
     color-mix(in srgb,#000 13%,var(--facec)) 2.5deg 57.5deg,
@@ -222,11 +226,99 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
     var(--facec) 297.5deg 302.5deg,
     color-mix(in srgb,#000 6%,var(--facec)) 302.5deg 357.5deg,
     var(--facec) 357.5deg 360deg)}
-/* "20" is two digits on a triangle, so it comes down a step. It still
-   overhangs the front face onto the upper facets, and that is correct:
+/* It overhangs the front face onto the upper facets, and that is correct:
    the numeral is painted on the die, not fitted inside one plane of it.
    Which is exactly why the ring may only darken. */
-.dh .die.d20 em{font-size:calc(var(--sz,38px)*.40)}
+
+/* ══ THE REST OF THE SET ═════════════════════════════════════════════
+   A weapon deals `proficiency × d8`, or d10, or d12, and the damage plate
+   drew every one of them as a square. That is the d6's silhouette and only
+   the d6's — it is flat *because* a d6 seen face-on is one square with
+   nothing folded back to shade — so a Wyrmwood Longbow's 2d8 arrived as two
+   objects claiming to be d6s, on a card whose whole business is saying what
+   was rolled. The notation underneath said d8 and the picture said d6, and
+   the picture is what anybody reads first.
+
+   Every shape here is built the same way as the two above it: `--face` is
+   the silhouette, `--core` the one plane square to you, `--ring` shades the
+   facets folded away from the light, and `--nf` is the one number it
+   declares about its numeral. The light is in the same place on all of
+   them, which is what makes six different solids read as one set.
+
+   **None of them moves its numeral off the silhouette's centre.** That is
+   new; see the derivation above `.die em` for what was there before and
+   why it went.
+
+   d12 needs no rule at all — the decagon at the head of this block *is* the
+   d12, and always was. It gets the class anyway so the builder can name
+   every die the same way rather than special-casing the one that happens to
+   be the default. */
+
+/* ── the d4 ────────────────────────────────────────────────────────
+   A triangle split by its own midlines, with the plane square to you the
+   inverted one in the centre. On a real d4 the number you read is printed
+   two thirds of the way down, and this used to put it there — it was the
+   strongest case for the front-face anchor and it is the one the anchor
+   cost the most. See `.die em`: a numeral that low is at the point of a
+   triangle, in the narrowest part of a shape that has no width to spare.
+
+   A step down in size all the same, because the silhouette still tapers.
+   A d4 never shows two digits, so the step is smaller than the shape
+   suggests: what has to fit is the widest single glyph, not "10". */
+.dh .die.d4{--face:polygon(50% 0,100% 100%,0 100%);
+  --core:polygon(25% 50%,75% 50%,50% 100%);
+  --nf:.56;--rim:2px;
+  --ring:conic-gradient(from 0deg,
+    color-mix(in srgb,#000 22%,var(--facec)) 0 118deg,
+    var(--facec) 118deg 122deg,
+    color-mix(in srgb,#000 8%,var(--facec)) 122deg 238deg,
+    var(--facec) 238deg 242deg,
+    color-mix(in srgb,#000 16%,var(--facec)) 242deg 360deg)}
+
+/* ── the d8 ────────────────────────────────────────────────────────
+   Two square pyramids base to base: a diamond, with the front face the
+   upper triangle at y 10/50/50. It is the shallowest front plane in the
+   set — 40% of the box — which made it the first shape where anchoring to
+   that plane visibly failed, and the reason the whole anchor was dropped.
+   The numeral is on the diamond's own centre now, like everything else. */
+.dh .die.d8{--face:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  --core:polygon(50% 10%,85% 50%,15% 50%);
+  --nf:.61;--rim:2px;
+  --ring:conic-gradient(from 0deg,
+    var(--facec) 0 2.5deg,
+    color-mix(in srgb,#000 15%,var(--facec)) 2.5deg 87.5deg,
+    var(--facec) 87.5deg 92.5deg,
+    color-mix(in srgb,#000 25%,var(--facec)) 92.5deg 177.5deg,
+    var(--facec) 177.5deg 182.5deg,
+    color-mix(in srgb,#000 20%,var(--facec)) 182.5deg 267.5deg,
+    var(--facec) 267.5deg 272.5deg,
+    color-mix(in srgb,#000 7%,var(--facec)) 272.5deg 357.5deg,
+    var(--facec) 357.5deg 360deg)}
+
+/* ── the d10 ───────────────────────────────────────────────────────
+   A pentagonal trapezohedron, which is the one silhouette in the set that
+   is not symmetric top to bottom: a point at the top, shoulders, a longer
+   taper to a point at the bottom. That asymmetry is the whole of how a d10
+   is told from a d12 at a glance, so it is kept rather than regularised —
+   in the *outline*. The numeral does not follow it. Its front face is a
+   kite whose area centroid works out at 43.67%, which is the offset this
+   used to carry, and it is now the clearest illustration of why none of
+   them do: the difference between 43.67% and 50% is a pixel and a half at
+   damage size, and a pixel and a half of asymmetry on a shape that is
+   *already* asymmetric reads as a mistake rather than as a projection. */
+.dh .die.d10{--face:polygon(50% 0,90% 31%,79% 81%,50% 100%,21% 81%,10% 31%);
+  --core:polygon(50% 11%,77% 44%,50% 76%,23% 44%);
+  --nf:.61;--rim:2.2px;
+  --ring:conic-gradient(from 0deg,
+    var(--facec) 0 2.5deg,
+    color-mix(in srgb,#000 14%,var(--facec)) 2.5deg 87.5deg,
+    var(--facec) 87.5deg 92.5deg,
+    color-mix(in srgb,#000 24%,var(--facec)) 92.5deg 177.5deg,
+    var(--facec) 177.5deg 182.5deg,
+    color-mix(in srgb,#000 20%,var(--facec)) 182.5deg 267.5deg,
+    var(--facec) 267.5deg 272.5deg,
+    color-mix(in srgb,#000 8%,var(--facec)) 272.5deg 357.5deg,
+    var(--facec) 357.5deg 360deg)}
 
 /* Advantage is a lit steel chip. Disadvantage is the *same chip as a
    negative* — dark face, lit rim — because it is the same die doing the
@@ -286,28 +378,134 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
    and took white down to 4.67:1 on the dark theme */
 .dh .die.w{--tone:#bd3f47;--rimc:#e2727a;--facec:#bd3f47;--numc:#fff}
 .dh .die.w.max{--tone:#e2727a;--rimc:#ffe9ea;--facec:#5e1116;--numc:#fff}
-/* The numeral goes on the front face, and every shape here is a regular
-   polygon concentric with its box — so its area centroid is simply the
-   centre, 50%. The 6.5% nudge the old stretched pentagon needed is
-   gone with the stretch.
+/* ── where the numeral sits, and how big ───────────────────────────
+   **Every numeral is centred on the silhouette.** One rule, six shapes,
+   no exceptions — and the offset below is not a positioning choice at
+   all, it is a correction for the font's own metrics.
 
-   What is left is the font's own offset, unchanged and still derived:
-   Google Sans has ascent .965 and descent .285, so at line-height 1 the
-   baseline sits .840em down the line box; the digits' ink runs from the
-   baseline to .735em above it, centred .3675em above it — putting the
-   ink's centre at 48.79% of the die. 50 − 48.79 = 1.21%. Scale-
-   invariant, because the font size is a fraction of --sz.
+   It used to be two corrections summed, and the other one is worth
+   recording because it was well argued and still wrong. It said: the
+   numeral is painted on the **front face** — the one plane square to you
+   — so it should ride that polygon's area centroid rather than the
+   bounding box's centre. That is true of a real die, and it produced the
+   d4's number two thirds of the way down, which is exactly where it is
+   printed on the object in your hand.
 
-   Bigger too — .44 of the die rather than .37 — and thickened with a
-   stroke, because Google Sans stops at 700 and 700 at 17px on a lit gold
-   face is thinner than the face deserves. */
+   What it missed is that a reader has no access to the front face. It is
+   a slightly lighter region inside a silhouette, on a chip 26px wide, and
+   at that size it is a shading detail rather than a plane. The outline is
+   the only geometry that survives, so the outline is what a numeral is
+   read against — and against the outline, three of the six shapes had a
+   number sitting off-centre for a reason the picture could not show. The
+   d8 was where it broke first and loudest (its front face is 40% of the
+   box and by then the ink was 45%, so the anchor was to a plane the
+   numeral was visibly larger than) but the d8 was the symptom. The d10 is
+   the clearest statement of the principle: its face centroid is 43.67%,
+   which is a pixel and a half off centre at damage size — small enough to
+   be invisible as a projection and large enough to be visible as an
+   error.
+
+   So the anchor is gone rather than made conditional. A conditional rule
+   would have been "ride the face while the face can hold the ink", which
+   is defensible, derivable, and still leaves the set positioning its
+   numerals by two different rules for a distinction nobody can see.
+
+   What remains is the font, and it is genuinely a correction: Google Sans
+   has ascent .965 and descent .285, so at line-height 1 the baseline sits
+   .840em down the line box; the digits' ink runs .735em above it and is
+   centred .3675em up, which is .0275em above the line box's own centre.
+   Every numeral on this sheet therefore sits 2.75% of its own font size
+   high before anything is done about it, and the fix is that same .0275
+   scaled by the numeral's size.
+
+   Which is why there is no `--nudge` any more. A shape declares `--nf` —
+   the numeral's fraction of --sz — and the offset is `--nf × .0275`,
+   computed in the one place the font size is also computed. They cannot
+   disagree, which is the whole point: the previous arrangement stored the
+   product of the two, so every size change silently invalidated six
+   offsets, and that is precisely how this went wrong.
+
+     d12, sq  .66      d8, d10  .61      d20  .58      d4  .56
+
+   The steps down are about *width* and not about position — "20" on a
+   triangle, a d4's silhouette tapering to a point — and each shape's own
+   rule says which.
+
+   ── the size ──────────────────────────────────────────────────────
+   .66 of the die, up from .52, and every shape's step-down goes up in
+   the same proportion so that the set still reads as one set. A damage
+   roll draws at 26px, and on that card the dice *are* the subject: at
+   .52 the digits stood 9.9px of cap height inside a 26px chip, which is
+   a picture of a die with a caption on it. At .66 the cap height is
+   12.6px — half the chip — and the number is the thing you read first.
+
+   Which means the numeral now leaves the die, and that is deliberate:
+   the rule here used to be "nothing overflows the die's own box", and
+   it was buying a size ceiling nobody had asked for. Three things could
+   have been the limit and it is worth saying which one is:
+
+     the clip     `.pl` is the only `overflow:hidden` ancestor, 300px
+                  wide, and `.dmg-st` sits 12px inside it. A numeral has
+                  12px of lateral slack before anything is actually cut.
+     the neighbour  `.dmg-st .grp` is a 5px gap. Two digits at .66
+                  measure 1.155 × 17.16 + .42 = 20.2px inside a 26px
+                  box, so on a square the ink does not reach the box
+                  edge at all and the gap is never touched. A numeral
+                  would have to reach .85 of the die before it did.
+     the silhouette  which is therefore the real limit, and it binds on
+                  the d10: "10" at .61 fills the kite out to its
+                  shoulders, and one step further puts the 1 and the 0
+                  outside the outline — at which point it stops reading
+                  as a number painted on a solid and starts reading as a
+                  number in front of one.
+
+   So what is being accepted is overhang onto the *facets*, on every
+   shape, the way "20" always has on the d20 — the numeral is painted on
+   the solid, not fitted inside one plane of it. All of it stays legible
+   because the ring may only ever *darken*, which is the guarantee every
+   contrast figure above was measured under.
+
+   Centring on the silhouette bought some of this back, and on the two
+   shapes that were worst off. A numeral at a triangle's point has no
+   width available to it; at the centre of the same triangle it has the
+   most the shape can offer. The d4 and the d8 both stopped straddling
+   their own outline when the anchor went, which is why neither needed a
+   step down in size to pay for it.
+
+   ── and where it sits across ──────────────────────────────────────
+   `letter-spacing` is applied after *every* character, the last one
+   included. So the em's layout box is n·A + n·L wide while the run of
+   ink inside it is n·A + (n−1)·L long: the box is one whole tracking
+   narrower than its own contents. `place-items:center` centres the box,
+   the ink overhangs its right edge by the full |L|, and the numeral's
+   centre is pushed |L|/2 = .0225em to the right of the die's — .3042px at
+   the old damage size, .3861px at this one. It is the same on every
+   value, it is not a rounding artefact, and it is not small: it is the
+   entire tracking of a character that is not there.
+
+   `margin-inline-end` gives the box back exactly that column, so what
+   gets centred is the run and not the run minus its own last gap. It is
+   the same .045em written positive, and the two must move together. With
+   it, a single digit measures to within .006px of the die's own centre.
+
+   What is left after that is the *value's* own asymmetry, and it is left
+   on purpose. `tabular-nums` gives every digit one shared advance and
+   centres each glyph in it, so a number whose first digit is narrow and
+   whose last is wide is inset further on the left than on the right and
+   leans right by (w_last − w_first)/4 — about .8px on "10" at this size,
+   .3px on "12", nothing at all on "11". That is a property of what was
+   rolled, not of the box, so no rule in a stylesheet reaches it: the
+   cure is measuring text in JS per value, which is a great deal of
+   machinery to buy back the smaller half of the problem.
+
+   Thickened with a stroke, because Google Sans stops at 700 and 700 on
+   a lit gold face is thinner than the face deserves. */
 .dh .die em{position:relative;z-index:2;
-  transform:translateY(calc(var(--sz,38px) * var(--nudge,.065)));
-  font:700 calc(var(--sz,38px)*.44)/1 var(--f-display);font-style:normal;
-  letter-spacing:-.045em;color:var(--numc);font-variant-numeric:tabular-nums;
+  transform:translateY(calc(var(--sz,38px) * var(--nf,.66) * .0275));
+  font:700 calc(var(--sz,38px)*var(--nf,.66))/1 var(--f-display);font-style:normal;
+  letter-spacing:-.045em;margin-inline-end:.045em;
+  color:var(--numc);font-variant-numeric:tabular-nums;
   -webkit-text-stroke:calc(var(--sz,38px)*.016) currentColor}
-/* A square's centroid *is* its centre, so --nudge is 0 and the numeral
-   sits where the grid already put it. */
 
 /* ── shell ─────────────────────────────────────────────────────────*/
 .dh .pl{position:relative;overflow:hidden;background:var(--paper);color:var(--ink);
@@ -394,6 +592,47 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
 .dh .pl-meta{display:flex;gap:8px;padding:9px 12px 0;font:700 8px/1 var(--f-mono);
   letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2)}
 .dh .pl-meta s{text-decoration:none;margin-left:auto;color:var(--o-tx)}
+/* The claim row is what normally closes the card, and it carries the bottom
+   padding for both of them. A plain reaction roll has nothing to claim — no
+   Hope, no Fear, no GM move — so the row is omitted entirely and the meta
+   line becomes the last thing on the plate, sitting hard against the edge.
+   It takes the row's own 11px when it is the one closing the card. */
+.dh .pl-meta:last-child{padding-bottom:11px}
+
+/* ── the note ──────────────────────────────────────────────────────
+   A rule the roll carried with it. Weapons have features — Whirlwind hits
+   everything adjacent, Brutal upgrades a maximum die — and until now the
+   attack card said the weapon's name and stopped, so the one moment the
+   feature matters is the one moment nobody could see it. The player has
+   the card on their sheet; the four other people at the table have the
+   chat log, and the log was withholding half the weapon.
+
+   Above the meta line rather than below it, because the meta line and the
+   claim row are the card's footer — kind of roll, target number, what
+   changes hands — and this is not footer material, it is part of what was
+   rolled. So it closes the body.
+
+   Set as prose, not as another mono strip. Every other line on this card
+   is a label, a figure or a verdict and they are all mono for that reason;
+   this is the only thing on a plate anyone actually *reads a sentence of*,
+   and 8px tracked caps is the wrong face for a sentence. The name stays
+   mono and takes the outcome's own text hue, so the block is legibly part
+   of this card and not a quotation pasted into it. */
+.dh .pl-note{margin:11px 12px 0;padding:8px 10px;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.dh .pl-note b{display:block;font:700 8px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--o-tx);margin-bottom:6px}
+.dh .pl-note p{margin:0;font:400 11px/1.46 var(--f-ui);color:var(--ink-2)}
+.dh .pl-note p b{display:inline;font:inherit;font-weight:700;letter-spacing:inherit;
+  text-transform:none;color:var(--ink);margin:0}
+.dh .pl-note p i{font-style:italic}
+/* Game terms keep the colours they wear on a card. `mark()` emits these
+   two classes everywhere it runs and card.css scopes its rules to `.card`,
+   so without this the one place Hope and Fear appear in running prose *on a
+   card about Hope and Fear* would be the place they were monochrome. */
+.dh .pl-note p b.t-hope{color:var(--hope-tx)}
+.dh .pl-note p b.t-fear{color:var(--fear-tx)}
 
 .dh .pl-act{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 11px}
 .dh .pl-b{flex:1 1 auto;border:0;cursor:pointer;display:flex;align-items:center;
@@ -411,6 +650,30 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--o) 42%,transparent)}
 .dh .pl-b.theirs:hover{background:transparent;color:var(--o-tx);
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--o) 42%,transparent)}
+
+/* ── taken ─────────────────────────────────────────────────────────
+   A claim is offered once. Once it has been collected the button stops
+   being one, because the log is a record of what actually changed hands
+   and not of what was theoretically due — scroll back through a session
+   and a row of live buttons would be an invitation to collect the same
+   Hope four more times.
+
+   The diamond goes with it, and that is the load-bearing half. On this
+   card the diamond means *unclaimed*: it is the same shape as the pip you
+   are about to mark, sitting on the thing that would mark it. Leaving it
+   on a spent button would make it the one mark in this system that means
+   two opposite things. So it is removed rather than recoloured, and what
+   is left is the sentence — the card still says what was gained, in the
+   past tense that dimming supplies.
+
+   Last, after `.theirs`, because the GM's Fear is stated rather than
+   pressed and is applied the instant the card is created. It is taken from
+   the first frame, so it wears this from the first frame too, and equal
+   specificity means source order is what decides. */
+.dh .pl-b.done,.dh .pl-b.done:hover{cursor:default;background:transparent;color:var(--ink-3);
+  box-shadow:inset 0 0 0 1px var(--line);opacity:.62}
+.dh .pl-b.done:active{transform:none}
+.dh .pl-b.done i{display:none}
 
 .dh .shards{position:absolute;inset:0;pointer-events:none;
   background:repeating-linear-gradient(114deg,transparent 0 9px,rgba(255,255,255,.06) 9px 10px,

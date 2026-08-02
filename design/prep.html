@@ -104,7 +104,7 @@ work the advantage row and the digits tick Experiences. The result is printed un
   <button class="btn" data-open="loaded">a loaded character</button>
   <button class="btn" data-open="bare">a level-1 character</button>
   <button class="btn" data-open="broke">no hope left</button>
-  <button class="btn" data-open="stressed">stress track full</button>
+  <button class="btn" data-open="shelled">a rule already acting on you</button>
   <button class="btn fear" data-open="foe">the gm's side</button>
 </div>
 <p id="out"><span>nothing rolled yet.</span></p>
@@ -133,7 +133,7 @@ they were judged in, which changes nothing about what each was arguing.</p>
   <tr><th>on screen</th><th>becomes</th><th>where it lands</th></tr>
   <tr><td>advantage sources, netted</td><td><code>advantage: 2</code></td>
       <td>the <code>2d6kh1</code> term, and the chip on the card</td></tr>
-  <tr><td>a forced source — a full Stress track</td><td>netted into the same <code>advantage</code></td>
+  <tr><td>a forced source — a card's own disadvantage</td><td>netted into the same <code>advantage</code></td>
       <td>the same term, because it is the same d6</td></tr>
   <tr><td>an Experience ticked</td><td><code>experiences: [{name, modifier}]</code></td>
       <td>a gold term on the strip — and now a real <code>spendHope(1)</code></td></tr>
@@ -164,13 +164,20 @@ const CASES = {
   loaded: { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 4 },
   bare:   { kind: 'agility roll', label: 'Agility', base: 2, experiences: [], purse: 2 },
   broke:  { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 0 },
-  /* The one automation the sheet performs, and the only forced source there
-     is so far. It is a chip rather than a hidden term for the reason the
-     whole popover exists: the roll should say what is in it. Press A and
-     watch it cancel — that is the rule, not a special case. */
-  stressed: { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 3,
-            forced: [{ k: 'stress', v: -1,
-                       why: 'Every Stress box is marked — this roll is at disadvantage.' }] },
+  /* A rule already acting on you when you press the trait. Galapa's Retract
+     is the printed case — you spent a Stress to pull into your shell, and
+     action rolls stay at disadvantage until you come out. A chip rather than
+     a hidden term for the reason the whole popover exists: the roll should
+     say what is in it. Press A and watch it cancel — that is the rule, not a
+     special case.
+
+     Nothing on a *character sheet* fills this in yet. It briefly held "every
+     Stress box is marked", which was a misreading: a full Stress track makes
+     you Vulnerable, and Vulnerable gives advantage to rolls against you
+     rather than disadvantage to your own. */
+  shelled: { kind: 'agility roll', label: 'Agility', base: 2, experiences: XP, purse: 3,
+            forced: [{ k: 'retract', v: -1,
+                       why: 'You are inside your shell — action rolls are at disadvantage.' }] },
   foe:    { kind: 'adversary attack', label: 'Sword', base: 3, experiences: XP, purse: 5,
             currency: 'fear', reaction: false },
 };

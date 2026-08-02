@@ -137,13 +137,22 @@ export const CARD = (opts) => {
       *square* of --u — a smaller size gives both shorter lines and fewer of
       them — so a 12% cut buys ~23% of height.
 
-   The floor is .8. Below it the prose would be smaller than the footer
-   micro-text, which is the point where the answer is to cut words, not
-   points; the card clips instead of lying about it.
+   Both floors were set against the cards that existed when this was written,
+   and the class card — nine of which are pure rules text with no artwork at
+   all — walked straight through them: at 40% and .8 it still overflowed by a
+   fifth of its panel and clipped a feature mid-sentence.
+
+   The plate floor moved first and moved further, because it is the cheap
+   one. 30% is still a plate — a letterbox rather than a half-card, and only
+   ever reached by a card that asked for it — and it buys back height at no
+   cost to a single word. The type floor moved from .8 to .76, which is the
+   least that closes the remainder; below that the prose starts losing to the
+   footer micro-text and the honest answer becomes cutting words, not points.
+   A card that still does not fit clips, rather than lying about it.
 
    Call after fonts resolve — metrics measured against a fallback face are
    wrong by enough to cost a line. */
-const PLATE_MAX = 50, PLATE_MIN = 40, U_MIN = .8;
+const PLATE_MAX = 50, PLATE_MIN = 30, U_MIN = .76;
 
 export function fit(scope = document){
   for(const card of scope.querySelectorAll('.card')){

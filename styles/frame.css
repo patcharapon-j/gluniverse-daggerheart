@@ -100,6 +100,133 @@
   min-height: 0;
 }
 
+/* ── the dialogs ─────────────────────────────────────────────────────
+   Three of them — take damage, pick two, rest — and they wear the sheet's
+   frame at a smaller chamfer, because they are the same application in a
+   smaller window rather than a different kind of object.
+
+   9px, not the sheet's 14. The family mark steps with size in this system:
+   a domain card is 15, the chat card 9, a button 5. A 14px cut on a 460px
+   dialog reads as a bite taken out of it.
+
+   The content region keeps its padding, unlike the sheet's — a sheet is a
+   rail and a pane that account for their own edges, and a dialog is a
+   column of things that do not. */
+
+.application.dh-dlg {
+  --dh-chamfer: 9px;
+  background: var(--frame);
+  border: 1px solid var(--frame-line);
+  color: var(--frame-tx);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--dh-chamfer)),
+    calc(100% - var(--dh-chamfer)) 100%,
+    0 100%
+  );
+}
+
+.application.dh-dlg .window-header {
+  background: var(--frame-2);
+  border-bottom: 1px solid var(--frame-line);
+  color: var(--frame-tx);
+}
+
+.application.dh-dlg .window-title {
+  font: 600 11px/1 var(--f-mono), ui-monospace, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--frame-tx-2);
+}
+
+/* The paper, not the frame. Everything inside is the design's own
+   vocabulary — `.ach`, `.sunk` recesses, the panel headings — and all of it
+   is drawn to sit on `--paper`. */
+.application.dh-dlg .window-content {
+  padding: 15px 17px 14px;
+  background: var(--paper);
+  color: var(--ink);
+  gap: 14px;
+}
+
+/* DialogV2 wraps the content in `form.dialog-form.standard-form` and then in
+   `div.dialog-content.standard-form`, and `standard-form` is Foundry's own
+   form layout — its padding, its gap, its label grid. Two of those stack
+   inside a window that already has padding, so the body sat inset from its
+   own footer by an amount nothing in this system chose.
+
+   `.dlg` is the column and owns its own rhythm; these two are pass-throughs. */
+.application.dh-dlg .dialog-form,
+.application.dh-dlg .dialog-content {
+  padding: 0;
+  margin: 0;
+  background: none;
+  gap: 14px;
+}
+
+/* Foundry's dialog buttons are pill-shaped and full-bleed. Nothing in this
+   system is rounded — every surface is chamfered — and the affirmative one
+   is the only control here that should carry any weight. */
+.application.dh-dlg .form-footer {
+  padding: 0;
+  border: 0;
+  gap: 8px;
+}
+
+.application.dh-dlg .form-footer button {
+  flex: 0 1 auto;
+  min-width: 108px;
+  height: auto;
+  min-height: 0;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  background: var(--sunk);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-2);
+  font: 700 9px/1.4 var(--f-mono), ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 5px),
+    calc(100% - 5px) 100%,
+    0 100%
+  );
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.application.dh-dlg .form-footer button:hover:not(:disabled) {
+  background: var(--sunk-2);
+  color: var(--ink);
+}
+
+.application.dh-dlg .form-footer button[data-action="ok"] {
+  margin-left: auto;
+  background: var(--hope);
+  box-shadow: none;
+  color: #14161a;
+}
+
+.application.dh-dlg .form-footer button[data-action="ok"]:hover:not(:disabled) {
+  background: var(--hope-tx);
+  color: #14161a;
+}
+
+/* Disabled and saying so. The picker leaves OK dead until exactly two are
+   chosen, which is the whole reason nothing has to tell you off afterwards
+   — so the dead state has to be legible enough to be read as "not yet"
+   rather than as "broken". */
+.application.dh-dlg .form-footer button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
 /* ── our objects in the chat log ─────────────────────────────────────
    A plate and a card are finished objects. They have their own edge, their
    own corner cut and their own shadow, and Foundry's message box has all
@@ -112,7 +239,7 @@
    combinator matched nothing, which is why the frame was still there. */
 
 .chat-message:has(.dh-plate),
-.chat-message:has(.dh-card) {
+.chat-message:has(.dh-card, .dh-rest) {
   padding: 0;
   border: 0;
   background: none;
@@ -121,7 +248,7 @@
 }
 
 .chat-message:has(.dh-plate) .message-content,
-.chat-message:has(.dh-card) .message-content {
+.chat-message:has(.dh-card, .dh-rest) .message-content {
   padding: 0;
   margin: 0;
 }
@@ -136,7 +263,7 @@
    `flexcol` on `.chat-message` means one `order` moves it without touching
    Foundry's markup. */
 .chat-message:has(.dh-plate) .message-header,
-.chat-message:has(.dh-card) .message-header {
+.chat-message:has(.dh-card, .dh-rest) .message-header {
   order: 2;
   display: flex;
   align-items: baseline;
@@ -152,7 +279,7 @@
 }
 
 .chat-message:has(.dh-plate) .message-sender,
-.chat-message:has(.dh-card) .message-sender {
+.chat-message:has(.dh-card, .dh-rest) .message-sender {
   margin: 0;
   font: inherit;
   color: inherit;
@@ -164,7 +291,7 @@
 }
 
 .chat-message:has(.dh-plate) .message-metadata,
-.chat-message:has(.dh-card) .message-metadata {
+.chat-message:has(.dh-card, .dh-rest) .message-metadata {
   margin-left: auto;
   display: flex;
   align-items: baseline;
@@ -177,17 +304,17 @@
    irreversible — so it stays quiet until you are actually on the message,
    and it never occupies a slot that could reflow the line when it appears. */
 .chat-message:has(.dh-plate) .message-delete,
-.chat-message:has(.dh-card) .message-delete {
+.chat-message:has(.dh-card, .dh-rest) .message-delete {
   opacity: 0;
   transition: opacity 0.12s;
   color: var(--ink-3);
 }
 .chat-message:has(.dh-plate):hover .message-delete,
-.chat-message:has(.dh-card):hover .message-delete {
+.chat-message:has(.dh-card, .dh-rest):hover .message-delete {
   opacity: 1;
 }
 .chat-message:has(.dh-plate) .message-delete:hover,
-.chat-message:has(.dh-card) .message-delete:hover {
+.chat-message:has(.dh-card, .dh-rest) .message-delete:hover {
   color: var(--wound-tx);
 }
 

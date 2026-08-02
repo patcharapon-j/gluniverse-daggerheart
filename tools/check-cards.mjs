@@ -223,8 +223,23 @@ for (const c of pick(classes, "class")) {
       `${text.slice(0, 90)}…`,
       "—",
     );
-  if (!c.system.classFeature?.name && !c.system.classFeature?.length)
-    fail(`class/${c.name}`, "no class feature", "—", "—");
+  /* Plural, and every one of them named. Five of the nine classes print more
+     than one feature, and they used to arrive joined under the book's section
+     heading — so a check for "is there a feature" passed while the sheet drew
+     a row called "Class Features" carrying three unrelated rules. Naming each
+     one is the thing that was actually missing, so that is what is checked. */
+  const feats = c.system.classFeatures ?? [];
+  if (!feats.length) fail(`class/${c.name}`, "no class feature", "—", "—");
+  for (const [i, f] of feats.entries()) {
+    if (!f?.name || /^class features$/i.test(f.name)) {
+      fail(
+        `class/${c.name}`,
+        `class feature ${i + 1} has no name of its own`,
+        f?.name || "—",
+        "the feature's printed name",
+      );
+    }
+  }
   if (!c.system.hopeFeature?.name) fail(`class/${c.name}`, "no Hope feature", "—", "—");
 }
 

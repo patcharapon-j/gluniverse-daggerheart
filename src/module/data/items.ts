@@ -90,7 +90,28 @@ export class ClassData extends (TypeDataModel() as any) {
       startingEvasion: int(10),
       startingHitPoints: int(6),
 
-      classFeature: featureField(),
+      /* Plural, and it had to become plural.
+       *
+       * This held one `featureField`, and five of the nine classes print more
+       * than one: the Rogue is Cloaked *and* Sneak Attack, the Sorcerer has
+       * three. The compendium had been joining them into a single block named
+       * "Class Features" — the book's own section heading — which was an
+       * honest compromise while the class was drawn as a card, because a card
+       * shows one feature run and the heading is what the book puts above it.
+       *
+       * It stopped being honest when the class stopped being a card. The
+       * Features panel lists one row per rule and names each one, so those
+       * five classes had a row called "Class Features" carrying two or three
+       * unrelated rules concatenated — which is exactly the thing the panel
+       * was built to stop. It also broke the price parser downstream: a
+       * feature's cost is read from its *opening clause*, and the opening
+       * clause of a joined block belongs to whichever feature happened to be
+       * first.
+       *
+       * The stats were never wrong. Every class's Evasion, Hit Points, domain
+       * pair and Hope feature checks out against the SRD; this was the one
+       * defect, and it was a shape rather than a misreading. */
+      classFeatures: arr(featureField()),
       hopeFeature: featureField(),
 
       startingInventory: html(),
@@ -100,6 +121,27 @@ export class ClassData extends (TypeDataModel() as any) {
       /** The book's recommended spread, for the creation flow to offer. */
       suggestedTraits: html(),
     };
+  }
+
+  /**
+   * `classFeature` became `classFeatures`, and a character already holding a
+   * class Item has the old key.
+   *
+   * `migrateData` rather than a world migration script, because the problem is
+   * not confined to the compendium: the class on a character sheet is an
+   * *embedded copy* made when it was dragged in, so rebuilding the packs fixes
+   * every future drag and none of the ones already on a sheet. This runs on
+   * every load of every source object, embedded or not, so a character created
+   * last week keeps their class feature without anyone being told to re-drag
+   * anything — which is the kind of instruction nobody reads and everybody
+   * discovers by finding a blank panel.
+   */
+  static migrateData(source: any) {
+    if (source?.classFeature && !source.classFeatures?.length) {
+      source.classFeatures = [source.classFeature];
+      delete source.classFeature;
+    }
+    return (super.migrateData as any)(source);
   }
 }
 

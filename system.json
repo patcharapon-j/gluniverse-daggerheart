@@ -30,6 +30,7 @@
     "styles/plate.css",
     "styles/menu.css",
     "styles/prep.css",
+    "styles/dlg.css",
     "styles/daggerheart-components.css"
   ],
   "languages": [

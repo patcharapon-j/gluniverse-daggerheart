@@ -165,22 +165,27 @@ const druid = classItem({
     Spend 3 Hope to transform into a Beastform without marking a Stress. When you do, choose one
     trait to raise by +1 until you drop out of that Beastform.`,
   ),
-  features: feat(
-    "Class Features",
-    `
-    **Beastform:** Mark a Stress to magically transform into a creature of your tier or lower from
-    the Beastform list. You can drop out of this form at any time. While transformed, you can’t
-    use weapons or cast spells from domain cards, but you can still use other features or
-    abilities you have access to. Spells you cast before you transform stay active and last for
-    their normal duration, and you can talk and communicate as normal. Additionally, you gain the
-    Beastform’s features, add their Evasion bonus to your Evasion, and use the trait specified in
-    their statistics for your attack. While you’re in a Beastform, your armor becomes part of your
-    body and you mark Armor Slots as usual; when you drop out of a Beastform, those marked Armor
-    Slots remain marked. If you mark your last Hit Point, you automatically drop out of this form.
-
-    **Wildtouch:** You can perform harmless, subtle effects that involve nature—such as causing a
-    flower to rapidly grow, summoning a slight gust of wind, or starting a campfire—at will.`,
-  ),
+  features: [
+    feat(
+      "Beastform",
+      `
+      Mark a Stress to magically transform into a creature of your tier or lower from
+the Beastform list. You can drop out of this form at any time. While transformed, you can’t
+use weapons or cast spells from domain cards, but you can still use other features or
+abilities you have access to. Spells you cast before you transform stay active and last for
+their normal duration, and you can talk and communicate as normal. Additionally, you gain the
+Beastform’s features, add their Evasion bonus to your Evasion, and use the trait specified in
+their statistics for your attack. While you’re in a Beastform, your armor becomes part of your
+body and you mark Armor Slots as usual; when you drop out of a Beastform, those marked Armor
+Slots remain marked. If you mark your last Hit Point, you automatically drop out of this form.`,
+    ),
+    feat(
+      "Wildtouch",
+      `
+      You can perform harmless, subtle effects that involve nature—such as causing a
+flower to rapidly grow, summoning a slight gust of wind, or starting a campfire—at will.`,
+    ),
+  ],
   background: [
     "Why was the community you grew up in so reliant on nature and its creatures?",
     "Who was the first wild animal you bonded with? Why did your bond end?",
@@ -541,19 +546,24 @@ const rogue = classItem({
     Spend 3 Hope to gain a +2 bonus to your Evasion until the next time an attack succeeds against
     you. Otherwise, this bonus lasts until your next rest.`,
   ),
-  features: feat(
-    "Class Features",
-    `
-    **Cloaked:** Any time you would be Hidden, you are instead Cloaked. In addition to the
-    benefits of the Hidden condition, while Cloaked you remain unseen if you are stationary when
-    an adversary moves to where they would normally see you. After you make an attack or end a
-    move within line of sight of an adversary, you are no longer Cloaked.
-
-    **Sneak Attack:** When you succeed on an attack while Cloaked or while an ally is within Melee
-    range of your target, add a number of d6s equal to your tier to your damage roll.`,
-  ),
+  features: [
+    feat(
+      "Cloaked",
+      `
+      Any time you would be Hidden, you are instead Cloaked. In addition to the
+benefits of the Hidden condition, while Cloaked you remain unseen if you are stationary when
+an adversary moves to where they would normally see you. After you make an attack or end a
+move within line of sight of an adversary, you are no longer Cloaked.`,
+    ),
+    feat(
+      "Sneak Attack",
+      `
+      When you succeed on an attack while Cloaked or while an ally is within Melee
+range of your target, add a number of d6s equal to your tier to your damage roll.`,
+    ),
+  ],
   background: [
-    "What did you get caught doing that got you exiled from your home community?",
+    "What did you get caught doing that got you exile from your home community?",
     "You used to have a different life, but you’ve tried to leave it behind. Who from your past is still chasing you?",
     "Who from your past were you most sad to say goodbye to?",
   ],
@@ -791,22 +801,30 @@ const sorcerer = classItem({
     `
     Spend 3 Hope to reroll any number of your damage dice on an attack that deals magic damage.`,
   ),
-  features: feat(
-    "Class Features",
-    `
-    **Arcane Sense:** You can sense the presence of magical people and objects within Close range.
+  features: [
+    feat(
+      "Arcane Sense",
+      `
+      You can sense the presence of magical people and objects within Close range.`,
+    ),
+    feat(
+      "Minor Illusion",
+      `
+      Make a Spellcast Roll (10). On a success, you create a minor visual
+illusion no larger than yourself within Close range. This illusion is convincing to anyone at
+Close range or farther.`,
+    ),
+    feat(
+      "Channel Raw Power",
+      `
+      Once per long rest, you can place a domain card from your loadout into
+your vault and choose to either:
 
-    **Minor Illusion:** Make a Spellcast Roll (10). On a success, you create a minor visual
-    illusion no larger than yourself within Close range. This illusion is convincing to anyone at
-    Close range or farther.
-
-    **Channel Raw Power:** Once per long rest, you can place a domain card from your loadout into
-    your vault and choose to either:
-
-    - Gain Hope equal to the level of the card.
-    - Enhance a spell that deals damage, gaining a bonus to your damage roll equal to twice the
-      level of the card.`,
-  ),
+- Gain Hope equal to the level of the card.
+- Enhance a spell that deals damage, gaining a bonus to your damage roll equal to twice the
+  level of the card.`,
+    ),
+  ],
   background: [
     "What did you do that made the people in your community wary of you?",
     "What mentor taught you to control your untamed magic, and why are they no longer able to guide you?",
@@ -925,20 +943,25 @@ const warrior = classItem({
   Becoming a warrior requires years, often a lifetime, of training and dedication to the mastery
   of weapons and violence.`,
   hopeFeature: feat("No Mercy", "Spend 3 Hope to gain a +1 bonus to your attack rolls until your next rest."),
-  features: feat(
-    "Class Features",
-    `
-    **Attack of Opportunity:** If an adversary within Melee range attempts to leave that range,
-    make a reaction roll using a trait of your choice against their Difficulty. Choose one effect
-    on a success, or two if you critically succeed:
+  features: [
+    feat(
+      "Attack of Opportunity",
+      `
+      If an adversary within Melee range attempts to leave that range,
+make a reaction roll using a trait of your choice against their Difficulty. Choose one effect
+on a success, or two if you critically succeed:
 
-    - They can’t move from where they are.
-    - You deal damage to them equal to your primary weapon’s damage.
-    - You move with them.
-
-    **Combat Training:** You ignore burden when equipping weapons. When you deal physical damage,
-    you gain a bonus to your damage roll equal to your level.`,
-  ),
+- They can’t move from where they are.
+- You deal damage to them equal to your primary weapon’s damage.
+- You move with them.`,
+    ),
+    feat(
+      "Combat Training",
+      `
+      You ignore burden when equipping weapons. When you deal physical damage,
+you gain a bonus to your damage roll equal to your level.`,
+    ),
+  ],
   background: [
     "Who taught you to fight, and why did they stay behind when you left home?",
     "Somebody defeated you in battle years ago and left you to die. Who was it, and how did they betray you?",
@@ -1051,16 +1074,21 @@ const wizard = classItem({
     `
     Spend 3 Hope to force an adversary within Far range to reroll an attack or damage roll.`,
   ),
-  features: feat(
-    "Class Features",
-    `
-    **Prestidigitation:** You can perform harmless, subtle magical effects at will. For example,
-    you can change an object’s color, create a smell, light a candle, cause a tiny object to
-    float, illuminate a room, or repair a small object.
-
-    **Strange Patterns:** Choose a number between 1 and 12. When you roll that number on a Duality
-    Die, gain a Hope or clear a Stress. You can change this number when you take a long rest.`,
-  ),
+  features: [
+    feat(
+      "Prestidigitation",
+      `
+      You can perform harmless, subtle magical effects at will. For example,
+you can change an object’s color, create a smell, light a candle, cause a tiny object to
+float, illuminate a room, or repair a small object.`,
+    ),
+    feat(
+      "Strange Patterns",
+      `
+      Choose a number between 1 and 12. When you roll that number on a Duality
+Die, gain a Hope or clear a Stress. You can change this number when you take a long rest.`,
+    ),
+  ],
   background: [
     "What responsibilities did your community once count on you for? How did you let them down?",
     "You’ve spent your life searching for a book or object of great significance. What is it, and why is it so important to you?",

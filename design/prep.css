@@ -147,10 +147,20 @@
 .prep .src.on.neg i{background:var(--wound)}
 .prep .src em{font-style:normal;font-variant-numeric:tabular-nums}
 
-/* A source you did not choose — the sheet noticed your Stress track was
-   full and said so, rather than leaving you to remember it on the eightieth
-   roll of the night. That is the whole of the automation: it is *stated*,
-   in the row where advantage is decided, and then it is in the number.
+/* A source you did not choose — a rule already acting on you, said out
+   loud in the row where advantage is decided rather than left for you to
+   remember on the eightieth roll of the night. Galapa's Retract is the
+   printed case: you are in your shell, and action rolls are at
+   disadvantage until you come out.
+
+   It is *stated* and then it is in the number, which is the whole of the
+   automation this popover permits. A first attempt used it for something
+   it does not fit — a full Stress track — on the reading that being
+   Stressed out rolls badly. It does not: marking your last Stress makes
+   you **Vulnerable**, and Vulnerable gives advantage to rolls made
+   *against* you. Nothing happens to your own dice. The chip is kept
+   because the shape is right and the rules that fit it are printed on
+   cards; what was wrong was the rule fed into it.
 
    A `<span>`, not a `<button>`, because it is not yours to press. A rule
    you can click away is a rule you will click away by accident, and the

@@ -144,10 +144,15 @@ declare module "*/ui/prep.js" {
     /** Offer the advantage row. Damage has no advantage. */
     advantage?: boolean;
     /**
-     * Advantage the roller did not choose and cannot decline — a full Stress
-     * track, and whatever else earns a place later. Listed as a named chip
-     * rather than folded into the number: an automation you cannot see is
+     * Advantage the roller did not choose and cannot decline — a rule already
+     * acting on them, like Galapa's Retract putting action rolls at
+     * disadvantage until they leave the shell. Listed as a named chip rather
+     * than folded into the number: an automation you cannot see is
      * indistinguishable from a bug the first time it changes a roll.
+     *
+     * Nothing on the character sheet fills this in today. It briefly held a
+     * full Stress track, which was a misreading — that makes you Vulnerable,
+     * and Vulnerable gives advantage to rolls made *against* you.
      */
     forced?: { k: string; v: number; why?: string }[];
     /**
@@ -179,6 +184,28 @@ declare module "*/ui/track.js" {
 }
 
 declare module "*/ui/swap.js" {
-  const anything: any;
-  export default anything;
+  /**
+   * Rects of every `[data-fk]` in the window, measured *before* the repaint
+   * that moves one of them. Also cancels any travel still in flight, so a
+   * second swap is measured against the layout rather than against an
+   * animation halfway through it.
+   */
+  export function capture(win: Element): Map<string, DOMRect>;
+  /**
+   * Play the difference backwards, after the repaint. `moved` is the
+   * `data-fk` of the card that changed hands; `from` overrides its captured
+   * rect, for a card already under the pointer; `mode` names the arrival it
+   * wears, or null for a move that should travel and nothing more.
+   */
+  export function flip(
+    win: Element,
+    before: Map<string, DOMRect>,
+    opts?: {
+      moved?: string | null;
+      from?: DOMRect | null;
+      mode?: "recall" | "shelve" | null;
+    },
+  ): void;
+  /** The pointer half — the study page's drag. The sheet does not bind it. */
+  export function swaps(root: Element, api: any): void;
 }

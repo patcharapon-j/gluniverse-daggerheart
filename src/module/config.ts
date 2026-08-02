@@ -243,6 +243,31 @@ export const SEVERITY_COST: Record<string, number> = {
   massive: 4,
 };
 
+/**
+ * What an Armor Slot buys: **one rung down the ladder**, not a subtraction.
+ *
+ * This is the rule and it is worth being blunt about, because the obvious
+ * reading of "Armor Score" is a number you take off the damage and that is
+ * not what it is. Armor Score is *how many Armor Slots you have*; a slot,
+ * once marked, reduces the severity of one instance of damage by one
+ * threshold. Severe becomes Major, Major becomes Minor.
+ *
+ * **And Minor becomes nothing.** That is the printed rule, in the printed
+ * parenthesis — "(Severe to Major, Major to Minor, Minor to Nothing)" — and
+ * this floored at Minor instead, on the reasoning that armour should not make
+ * a hit that landed not have landed. That reasoning is mine and the rule is
+ * theirs, and the cost of the invention was not a rounding error: against a
+ * Minor hit the dialog computed a ceiling of zero slots, greyed out the
+ * stepper, and printed "spending a slot would not help" — so the one case
+ * where armour completely negates a hit was the one case the sheet refused to
+ * let you spend on.
+ */
+export function reduceSeverity(severity: Severity, rungs = 1): Severity {
+  const i = SEVERITY.indexOf(severity);
+  if (i <= 0) return severity;
+  return SEVERITY[Math.max(0, i - Math.max(0, rungs))] ?? severity;
+}
+
 /* ── gear ────────────────────────────────────────────────────────────── */
 
 export const BURDENS = ["oneHanded", "twoHanded"] as const;
@@ -310,6 +335,56 @@ export const FEATURE_KIND_LABELS: Record<string, string> = {
   reaction: "Reaction",
 };
 
+/* ── conditions ──────────────────────────────────────────────────────────
+   The three the rules name, and they are genuinely all three: Daggerheart
+   has no poisoned, no prone, no blinded. Everything else a fiction produces
+   is described rather than tracked, which is a deliberate choice by the game
+   and not a gap for a system to fill in.
+
+   They are here because a condition that lives only in somebody's memory is
+   a condition that stops applying halfway through a fight. Foundry already
+   has the surface — the token HUD, the effect ring, the combat tracker — and
+   until now this system registered nothing into it, so a table using tokens
+   had Foundry's own generic list (blinded, deaf, paralysis) and none of the
+   three words the rules actually use.
+
+   `vulnerable` is also *derived*: marking your last Stress makes you
+   Vulnerable until you clear one, which is the one condition the sheet can
+   know on its own. See `syncVulnerable` in documents/actor.ts. The other two
+   are applied by a hand, because only the fiction knows.
+   ─────────────────────────────────────────────────────────────────────── */
+
+export interface ConditionDef {
+  id: string;
+  name: string;
+  img: string;
+  /** What it does, for the HUD tooltip. */
+  rule: string;
+}
+
+export const CONDITIONS: ConditionDef[] = [
+  {
+    id: "vulnerable",
+    name: "Vulnerable",
+    img: `${SYSTEM_PATH}/assets/conditions/vulnerable.svg`,
+    rule: "Rolls against a Vulnerable creature have advantage.",
+  },
+  {
+    id: "hidden",
+    name: "Hidden",
+    img: `${SYSTEM_PATH}/assets/conditions/hidden.svg`,
+    rule:
+      "Rolls against a Hidden creature have disadvantage. You stop being Hidden " +
+      "once an adversary sees you, or you move into their line of sight.",
+  },
+  {
+    id: "restrained",
+    name: "Restrained",
+    img: `${SYSTEM_PATH}/assets/conditions/restrained.svg`,
+    rule: "A Restrained creature can't move, but can still act.",
+  },
+];
+
 /* ── advancement ─────────────────────────────────────────────────────── */
 
 export const MAX_LEVEL = 10;
@@ -345,13 +420,47 @@ export function baseProficiency(level: number): number {
  *
  * Tier 1 is not here. It is character creation, and it has no options.
  */
+/**
+ * What an advancement *is*, as against where it sits.
+ *
+ * Storage is keyed by index and stays that way — a character who marked
+ * "2.1" marked the second option of tier 2 and must go on meaning that. But
+ * an index cannot tell the derivation which box raises Evasion, and the
+ * printed label is prose. So each row also carries an id, and the two upper
+ * tiers reuse the same six ids as the first because they are the same six
+ * options offered again.
+ */
+export type AdvancementId =
+  | "traits"
+  | "hitPoints"
+  | "stress"
+  | "experiences"
+  | "domainCard"
+  | "evasion"
+  | "subclass"
+  | "proficiency"
+  | "multiclass";
+
 export interface AdvancementOption {
+  id: AdvancementId;
   /** The printed text of the option. */
   label: string;
   /** How many times it may be taken across the tier. */
   slots: number;
   /** Costs both of the level's choices. */
   pair?: boolean;
+  /**
+   * A number the sheet can apply on its own, and how much of it per mark.
+   *
+   * Only the options that are purely arithmetic have one. Two traits, two
+   * Experiences, a domain card, a subclass card and a whole second class are
+   * all *choices* — the sheet cannot know which, and a system that guessed
+   * would be worse than one that asked. Those are handled in `apps/advance.ts`,
+   * which asks; these are derived straight off the marks in `data/actors.ts`,
+   * which is why marking one of them moves the rail immediately and
+   * unmarking it moves it back.
+   */
+  grants?: 1;
 }
 
 export interface AdvancementTier {
@@ -366,21 +475,23 @@ export interface AdvancementTier {
 }
 
 const TIER_OPTIONS = (cardCap: string): AdvancementOption[] => [
-  { label: "Gain a +1 bonus to two unmarked character traits and mark them", slots: 3 },
-  { label: "Permanently gain one Hit Point slot", slots: 2 },
-  { label: "Permanently gain one Stress slot", slots: 2 },
-  { label: "Permanently gain a +1 bonus to two Experiences", slots: 1 },
-  { label: `Choose an additional domain card of your level or lower${cardCap}`, slots: 1 },
-  { label: "Permanently gain a +1 bonus to your Evasion", slots: 1 },
+  { id: "traits", label: "Gain a +1 bonus to two unmarked character traits and mark them", slots: 3 },
+  { id: "hitPoints", label: "Permanently gain one Hit Point slot", slots: 2, grants: 1 },
+  { id: "stress", label: "Permanently gain one Stress slot", slots: 2, grants: 1 },
+  { id: "experiences", label: "Permanently gain a +1 bonus to two Experiences", slots: 1 },
+  { id: "domainCard", label: `Choose an additional domain card of your level or lower${cardCap}`, slots: 1 },
+  { id: "evasion", label: "Permanently gain a +1 bonus to your Evasion", slots: 1, grants: 1 },
 ];
 
 const UPGRADE_OPTIONS: AdvancementOption[] = [
   {
+    id: "subclass",
     label: "Take an upgraded subclass card, then cross out the multiclass option for this tier",
     slots: 1,
   },
-  { label: "Increase your Proficiency by +1", slots: 2, pair: true },
+  { id: "proficiency", label: "Increase your Proficiency by +1", slots: 2, pair: true, grants: 1 },
   {
+    id: "multiclass",
     label:
       "Multiclass — choose an additional class, then cross out an unused subclass upgrade and the other multiclass option",
     slots: 2,
@@ -414,6 +525,73 @@ export const ADVANCEMENT: AdvancementTier[] = [
     options: [...TIER_OPTIONS(""), ...UPGRADE_OPTIONS],
   },
 ];
+
+/**
+ * Every level from 2 up buys two advancement choices. Not two *marks* —
+ * see {@link choicesSpent}.
+ */
+export const CHOICES_PER_LEVEL = 2;
+
+/** How many levels a tier covers, and therefore how many it can be paid for. */
+const TIER_SPAN = 3;
+
+/**
+ * The choices a character's level entitles them to *within one tier*.
+ *
+ * Advancement is spent tier by tier and each tier only opens the levels it
+ * covers, so a level-6 character has all six of tier 2's choices and four of
+ * tier 3's — not ten in a pile. `t.at - 1` is the last level below the tier,
+ * so the difference is how many of the tier's own levels have been reached,
+ * and it is clamped at both ends: below the tier there is nothing, above it
+ * the tier is finished and closed.
+ */
+export function choicesDue(level: number, tier: AdvancementTier): number {
+  return CHOICES_PER_LEVEL * Math.min(TIER_SPAN, Math.max(0, level - (tier.at - 1)));
+}
+
+/**
+ * What has been spent in one tier, counted in choices rather than in marks.
+ *
+ * They are different numbers, and the difference is the whole reason this is
+ * a function. The two options the printed sheet draws in a heavier frame cost
+ * *both* of the level's picks for a single mark — so a character who took
+ * Proficiency has one box filled and two choices spent, and a panel that
+ * counted boxes would tell them they were a choice behind when they were
+ * exactly level.
+ *
+ * `taken` is the raw `system.advancement[tier]` object: option index against
+ * how many times it was taken.
+ */
+export function choicesSpent(taken: Record<string, unknown>, tier: AdvancementTier): number {
+  return tier.options.reduce(
+    (n, o, i) => n + Number(taken?.[i] ?? 0) * (o.pair ? CHOICES_PER_LEVEL : 1),
+    0,
+  );
+}
+
+/**
+ * How many times each option has been taken, summed across every tier.
+ *
+ * The same six options are offered again in tiers 3 and 4, so "how many Hit
+ * Point slots has this character bought" is a question about the whole
+ * advancement record rather than about one panel of it. This is what the
+ * DataModel derives the numbers from — see `prepareBaseData` — which is why
+ * marking a box moves the rail without anything having to write to the rail.
+ *
+ * `advancement` is the raw `system.advancement`: tier, then option index,
+ * then the count.
+ */
+export function advancementTally(advancement: any): Partial<Record<AdvancementId, number>> {
+  const out: Partial<Record<AdvancementId, number>> = {};
+  for (const tier of ADVANCEMENT) {
+    const row = advancement?.[tier.tier] ?? {};
+    tier.options.forEach((o, i) => {
+      const n = Number(row?.[i] ?? 0);
+      if (n > 0) out[o.id] = (out[o.id] ?? 0) + n;
+    });
+  }
+  return out;
+}
 
 /* ── resources ───────────────────────────────────────────────────────── */
 

@@ -1,0 +1,698 @@
+/* ══════════════════════════════════════════════════════════════════
+   DIALOGS
+
+   This system spent a long time without one, on purpose. A sheet you press
+   beats a box that asks, and the refusals it already has are answered by
+   the thing that cannot pay — the Stress track flinches, the Hope pool
+   flinches — rather than by a panel explaining itself on top of the number
+   that already said no.
+
+   Three things cannot be said that way, and they are all the same shape: a
+   decision with more than one part, taken once, that changes the sheet
+   underneath it.
+
+     take damage   how many Armor Slots, against a number you have just been
+                   shown and cannot un-see.
+     level up      which two traits, which two Experiences.
+     rest          which downtime moves, and what the dice gave you.
+
+   Each is a sentence you are still composing rather than a record you are
+   editing — the same thing the roll popover is, at a size a popover cannot
+   hold. So they get the popover's manners instead of its geometry: legal
+   the frame they open, the consequence of every answer visible before you
+   choose it, and every way out free.
+
+   Everything here assumes the panel vocabulary already loaded — `.ach`,
+   `.cfg`, `.lst` are `sheet.css`'s and apply inside any `.dh` root, which
+   is why there is no second copy of them in this file.
+
+   Two of the three also assume the *card* vocabulary: `tile.css` for the
+   landscape card and `plate.css` for the die. Both dialogs draw things the
+   player already knows how to read from somewhere else, and neither one
+   redraws them here. See `.rl .crd` and `.dtm .dt .die`.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dlg{display:flex;flex-direction:column;gap:14px;padding:2px 0}
+
+/* A host that is filled in after the dialog is in the document — see the
+   note in `damage.ts`. Foundry strips `<svg>` out of a dialog's `content`
+   exactly as it strips it out of stored chat message content, so the band,
+   the card tiles and the die all arrive by `innerHTML` afterwards. An empty
+   one must not spend a gap. */
+.hit .rules-host:empty,.dtm .rules-host:empty{display:none}
+
+/* ── picking two ───────────────────────────────────────────────────
+   The level-up picker. Two from a list and it will not settle for any
+   other number — both options it serves say "two" and mean it, and one
+   trait is not half an advancement, it is a cheaper one nobody chose.
+
+   So the boxes past the second go *dead* rather than the button going
+   red afterwards. You cannot construct an illegal answer, which means
+   nothing has to tell you off for one. */
+.picks{display:flex;flex-direction:column;gap:4px}
+.pick{display:flex;align-items:baseline;gap:10px;padding:8px 11px;cursor:pointer;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%);
+  transition:background .12s,box-shadow .12s}
+.pick:hover{background:var(--sunk-2)}
+.pick input{flex:none;margin:0;accent-color:var(--hope);cursor:pointer}
+.pick b{flex:1 1 auto;min-width:0;font:600 12.5px/1.3 var(--f-ui);color:var(--ink)}
+.pick s{flex:none;text-decoration:none;font:700 10px/1 var(--f-mono);
+  letter-spacing:.04em;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.pick:has(input:checked){background:var(--sunk-2);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 52%,var(--line))}
+.pick:has(input:checked) s{color:var(--hope-tx)}
+/* Dead, not hidden. The trait you cannot pick is still one of your six and
+   still shows its current value — it is out of *this* choice, which is a
+   different fact from not existing. */
+.pick:has(input:disabled){opacity:.4;cursor:not-allowed}
+.pick:has(input:disabled):hover{background:var(--sunk)}
+
+/* ══ taking damage ══════════════════════════════════════════════════
+   The number, the band it lands on, and the one decision in it.
+
+   `.hit`, not `.dmg`. `.dmg` is *taken* — it is the fused damage track in
+   `mark.css`, the thresholds-and-boxes object in the rail — and this file
+   loads alongside that one inside the same `.dh` root, where scoping does
+   nothing because both are ours. `.dmg .row` there and a `.row` here would
+   have been the third instance of the bug that renamed `.die.win` and
+   `.dfn .pl`, and the first two were both found from a screenshot rather
+   than from reading. See the note at the head of CLAUDE.md.
+
+   Renaming it is also what made the rest of this possible. The dialog used
+   to draw its own four-cell ladder — a second, worse picture of thresholds,
+   twenty pixels from a rail already drawing the real one. It draws the real
+   one now: `DAMAGE()` from `ui/mark.js`, the same builder the sheet calls,
+   so the band you read the hit against is the band you have been looking at
+   all session, down to the tick marks that count out the cost.
+
+   ── what changed, and why ─────────────────────────────────────────
+   Everything below the number used to be drawn at one weight: a band, a
+   forecast, a stepper, three purses, a rule line and a panel of prose, all
+   asking equally hard to be read. Every one of them is worth keeping — none
+   of this dialog's capability has gone — but they are not equally important
+   and the layout was refusing to say which was which.
+
+   So it is ranked now, and the ranking is the design:
+
+     1  the number coming in, and which rung it lands on
+     2  how far down the ladder you are buying
+     3  what that cost you
+     4  the cards that might change any of it
+
+   The tools of the ranking are weight and dimming, not removal. The zone
+   the hit lands in is lit and everything beside it steps back; the boxes
+   this hit will take are drawn louder than the ones already marked; the
+   purse ledger sits at three-quarter weight until it holds something. */
+.hit{display:flex;flex-direction:column;gap:13px}
+
+/* ── the number ────────────────────────────────────────────────────
+   The loudest thing in the dialog, and it has to be: everything below is
+   an answer to it. Big display face, tabular, with the damage type as a
+   quiet mono kicker beside it. */
+.hit .amt{display:flex;align-items:baseline;gap:11px;min-height:44px}
+.hit .amt b,.hit .amt input{font:700 40px/1.1 var(--f-display);letter-spacing:-.04em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+/* Foundry gives every `input` a fixed 28px height from its own `elements`
+   layer, and nothing here had ever named `height` — so the 40px numeral was
+   laid out in a 32px box and lost its lower third. It is the same breakage
+   the sheet's own column controls hit, and the same one line fixes it: name
+   the property, and the `system` layer wins. */
+.hit .amt input{width:3.6ch;min-width:3.6ch;height:auto;min-height:0;padding:0 0 2px;
+  border:0;border-bottom:2px solid var(--line-2);background:transparent;
+  appearance:textfield}
+.hit .amt input::-webkit-outer-spin-button,
+.hit .amt input::-webkit-inner-spin-button{appearance:none;margin:0}
+.hit .amt input:focus{outline:0;border-bottom-color:var(--hope)}
+.hit .amt s{text-decoration:none;font:700 9px/1 var(--f-mono);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-3)}
+/* The verdict, on the same line as the number it is about. It moves as you
+   spend, which is the whole point of it being here rather than under the
+   controls: the answer sits beside the question.
+
+   Second-largest thing on screen, at 26px against the number's 40. It used
+   to be 15px mono — smaller than the label of the panel underneath it —
+   which made "which threshold is this" something you worked out from the
+   band rather than something the dialog said. Now it says it, in words,
+   and the band says it again in position. */
+.hit .amt .vd{margin-left:auto;text-align:right;font:700 8.5px/1.5 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.hit .amt .vd b{display:block;font:700 26px/1.05 var(--f-display);letter-spacing:-.03em;
+  color:var(--ink)}
+.hit .amt .vd.safe b{color:var(--hope-tx)}
+
+/* ── the band, borrowed ────────────────────────────────────────────
+   `.mk.dmg` draws itself; the states below are the ones only a dialog
+   needs. Scoped under `.hit` so the rail's band can never pick them up.
+
+   Taller than the rail's 26px, because on the rail the band is one of nine
+   things in a 236px column and here it is the question. The 20px above it
+   is a lane, and it belongs to the walk-back — see `.wb`. */
+.hit .band{position:relative;height:44px;margin-top:20px}
+.hit .z{transition:filter .16s ease-out,box-shadow .18s ease-out,opacity .16s}
+.hit .lb{font-size:8.5px}
+.hit .bp{font-size:15px}
+
+/* ── which rung, unmistakably ──────────────────────────────────────
+   Lighting the landing zone was always the plan, and it was competing with
+   three neighbours drawn at exactly the same weight. The band *is* a weight
+   ramp — hue means domain in this system, so damage is said in weight —
+   which means four zones at full weight are four equal claims and the gold
+   ring on one of them is a fourth thing to notice rather than the first.
+
+   So the others step back while a hit is on screen. They stay legible, they
+   keep their breakpoints, and they come straight back the moment nothing
+   lands. Dimming three is what makes the fourth the headline; the ring
+   alone never could.
+
+   `.aim` is a class the dialog sets, not `:has(.z.on)`. Both work; the class
+   is the one that says what it means. "Anything landed" is a fact `draw` has
+   already computed to decide which zone lights up, and re-deriving it in the
+   selector puts the same condition in two places that have to agree — while
+   `.was`, which is *also* not `.on`, then needs a matching `:has()` on its own
+   rule purely to win a specificity race it should never have been in. */
+.hit .band.aim .z:not(.on){filter:saturate(.45) brightness(.86);opacity:.6}
+.hit .z.on{z-index:3;filter:brightness(1.12) saturate(1.06);
+  box-shadow:inset 0 0 0 2.5px var(--hope),0 7px 20px -7px var(--hope)}
+.hit .z.on .lb{opacity:1;letter-spacing:.16em}
+/* A gold sill along the foot of the lit zone, pointing down at the Hit
+   Points it is about to cost. Inside the zone, so it does not change the
+   band's height or shift the row underneath. */
+.hit .z.on::after{content:"";position:absolute;z-index:3;left:0;right:0;bottom:0;height:3px;
+  background:var(--hope);box-shadow:0 0 9px var(--hope)}
+
+/* ── where it would have landed ────────────────────────────────────
+   The half of this dialog that has to be unmissable. You have just spent
+   something off a track you cannot get back this scene, and the entire
+   return on it is that the damage is *not* the thing it was about to be —
+   so the zone you escaped is struck out with the same mark the boxes
+   underneath are crossed with, at zone scale, in the wound's own red.
+
+   It glows and it lands rather than appearing, because it is the one event
+   in the dialog: everything else here redraws, this happens. `wound-gl` is
+   the token for what wells up around a cut, which is exactly the job.
+
+   Declared after the dim rule and at matching specificity, because the
+   struck zone is one of the ones that is not `.on` and would otherwise be
+   handed the neighbours' grey. It is not a neighbour; it is the other half
+   of the sentence. */
+.hit .band .z.was,.hit .band.aim .z.was{filter:saturate(.5) brightness(.8);opacity:1}
+.hit .z.was .lb,.hit .z.was .bp{opacity:.5}
+.hit .z .cx{position:absolute;inset:0;display:none;place-items:center;
+  pointer-events:none;z-index:4}
+.hit .z.was .cx{display:grid;animation:hit-strike .34s cubic-bezier(.2,.9,.3,1) both}
+.hit .z .cx svg{width:27px;height:27px;fill:var(--wound-gl);
+  filter:drop-shadow(0 0 4px var(--wound-gl)) drop-shadow(0 0 11px var(--wound-gl))
+         drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+/* One rule across the whole struck zone, under the mark, so the cell reads
+   as cancelled and not merely as decorated. */
+.hit .z.was .cx::before{content:"";position:absolute;left:5%;right:5%;height:2px;
+  background:var(--wound-gl);box-shadow:0 0 7px var(--wound-gl);
+  transform-origin:left center;animation:hit-rule .3s cubic-bezier(.2,.9,.3,1) both}
+@keyframes hit-strike{
+  0%  {opacity:0;transform:scale(2.1) rotate(-26deg)}
+  60% {opacity:1;transform:scale(.9)  rotate(4deg)}
+  100%{opacity:1;transform:none}}
+@keyframes hit-rule{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){
+  .hit .z.was .cx,.hit .z.was .cx::before{animation:none}}
+
+/* ── the walk back ─────────────────────────────────────────────────
+   An Armor Slot does not subtract from the number. It moves the damage one
+   rung *down the ladder* — Severe to Major, Major to Minor, Minor to
+   nothing — and that is a direction, not an amount. Everything about the
+   printed rule is about travel and the dialog was drawing two still
+   frames: a zone struck out over here, a zone lit over there, and the
+   reader inferring the journey between them.
+
+   So the journey is drawn. A gold arrow runs from the zone the hit would
+   have landed in back to the one it lands in now, redrawn and replayed on
+   every press of the stepper, with the from→to sentence riding on the
+   shaft. The head points left because that is the direction the ladder
+   descends and the direction the numbers do.
+
+   In its own lane above the band rather than across it: a shaft drawn
+   through MAJOR and SEVERE is a line through the two words this dialog
+   most needs read. Left and width are set in JS off the zones' own rects,
+   because the zones size themselves to their contents and no stylesheet
+   can know where their centres landed. */
+.hit .wb{position:absolute;z-index:6;top:-10px;height:0;display:none;pointer-events:none}
+.hit .wb.go{display:block}
+.hit .wb u{position:absolute;left:9px;right:0;top:-1.5px;height:3px;background:var(--hope);
+  box-shadow:0 0 8px color-mix(in srgb,var(--hope) 70%,transparent);
+  transform-origin:100% 50%;animation:wb-shaft .3s cubic-bezier(.2,.9,.3,1) both}
+.hit .wb i{position:absolute;left:0;top:-6px;width:11px;height:12px;background:var(--hope);
+  clip-path:polygon(0 50%,100% 0,100% 100%);
+  filter:drop-shadow(0 0 6px color-mix(in srgb,var(--hope) 75%,transparent));
+  animation:wb-head .34s cubic-bezier(.2,.9,.3,1) both}
+/* The sentence sits *on* the shaft in a chip of paper, which costs no
+   height at all — a caption above the arrow would have made the lane 34px
+   to say something the arrow is already saying by pointing. */
+.hit .wb em{position:absolute;left:16px;top:-7px;height:14px;display:flex;align-items:center;
+  padding:0 6px;background:var(--paper);font-style:normal;
+  font:700 8px/1 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--hope-tx);white-space:nowrap;animation:wb-lb .3s .1s ease-out both}
+@keyframes wb-shaft{from{transform:scaleX(0)}}
+@keyframes wb-head{from{opacity:0;transform:translateX(38px)}}
+@keyframes wb-lb{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  .hit .wb u,.hit .wb i,.hit .wb em{animation:none}}
+
+/* ── existing damage, and incoming ─────────────────────────────────
+   The fused Hit Point row carries two different facts, and it used to draw
+   the settled one louder than the one being decided: boxes already marked
+   at full weight, the boxes this hit is about to take at 62% and fading.
+   That is backwards in the only way that matters here. What is already
+   marked is history — nothing in this dialog can change it — and what is
+   incoming is the entire subject of the dialog.
+
+   So history recedes and the forecast dominates: full weight, the wound's
+   own glow, and a pulse that brightens rather than fades. Spending a slot
+   still takes one out in front of you, which was always the most direct
+   statement of what armour bought — it is now also the loudest thing that
+   happens on the row. */
+.hit .row > i.on:not(.pv){opacity:.4;filter:saturate(.5)}
+.hit .row i.pv{opacity:1;animation:hit-pv 1.35s ease-in-out infinite}
+@keyframes hit-pv{50%{filter:brightness(1.3) drop-shadow(0 0 7px var(--wound-gl))}}
+@media (prefers-reduced-motion:reduce){.hit .row i.pv{animation:none}}
+
+/* ── what it cost ──────────────────────────────────────────────────
+   Two ideas, and deliberately only two.
+
+   **Reduce by** is the rung count, because that is the thing the rules
+   actually speak in — "reduce the severity by one threshold" — and it is
+   what the band answers to.
+
+   **Paid with** is what left your sheet to do it. They are separate
+   controls because only one rule in the book joins them: an Armor Slot
+   buys one threshold. Everything else that lowers a hit is printed on a
+   card, and cards charge what they like — a Stress, two Hope, a use off
+   something in your loadout. Fusing the two would mean inventing a price
+   for every such card, which is the automation this system keeps refusing
+   to do; separating them means the sheet does the arithmetic and the card
+   keeps the ruling.
+
+   Pressing + on Reduce takes an Armor Slot while you have one, so the
+   printed case is still one press and the ledger fills itself in.
+
+   They are no longer drawn at the same weight, though. Reduce is the
+   question; Paid with is the receipt, and a receipt that is as loud as the
+   question is a receipt asking to be filled in by hand — which is exactly
+   the mistake this dialog makes easy and should not encourage. So the
+   ledger sits back until it is holding something or you reach for it. */
+.hit .spend{display:flex;flex-direction:column;gap:8px}
+.hit .st{display:flex;align-items:center;gap:9px;min-height:28px}
+.hit .st > .k{flex:none;width:74px;font:700 8.5px/1.25 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3)}
+.hit .st em{margin-left:auto;font-style:normal;font:400 11px/1.35 var(--f-ui);
+  color:var(--ink-3);text-align:right}
+.hit .st.pay{opacity:.7;transition:opacity .16s}
+.hit .st.pay:hover,.hit .st.pay:focus-within,.hit .st.pay.live{opacity:1}
+
+/* One stepper: minus, numeral, plus. Chamfered on the outer corners only,
+   so the three read as one control rather than three buttons. */
+.hit .sp{flex:none;display:flex;align-items:stretch;gap:1px;background:var(--line)}
+.hit .sp button{width:26px;height:26px;min-height:0;padding:0;border:0;border-radius:0;
+  cursor:pointer;background:var(--sunk);color:var(--ink-2);
+  font:700 15px/1 var(--f-mono);transition:background .12s,color .12s}
+.hit .sp button:first-child{clip-path:polygon(5px 0,100% 0,100% 100%,0 100%,0 5px)}
+.hit .sp button:last-child{clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),
+  calc(100% - 5px) 100%,0 100%)}
+.hit .sp button:hover:not(:disabled){background:var(--sunk-2);color:var(--hope-tx)}
+.hit .sp button:disabled{opacity:.3;cursor:not-allowed}
+.hit .sp .n{display:flex;align-items:center;justify-content:center;min-width:30px;
+  background:var(--sunk);font:700 16px/1 var(--f-display);color:var(--ink);
+  font-variant-numeric:tabular-nums}
+/* Anything actually being spent says so in gold — the currency colour, the
+   same one the roll popover marks a paid-for Experience in. */
+.hit .st.live .sp .n{color:var(--hope-tx)}
+.hit .st.live > .k{color:var(--ink-2)}
+
+/* The rung stepper is the primary control here and takes the weight: a
+   taller cell, a bigger numeral, and buttons the size of the number they
+   move. It is the one control the whole dialog exists to offer. */
+.hit .st.rung{min-height:34px}
+.hit .st.rung .sp .n{min-width:40px;font-size:21px}
+.hit .st.rung .sp button{width:32px;height:32px;font-size:17px}
+.hit .st.rung > .k{color:var(--ink-2)}
+
+/* The three purses, on one line — they are alternatives to each other, not
+   a list of three separate questions. */
+.hit .purse{display:flex;flex-wrap:wrap;gap:7px 14px;align-items:center}
+.hit .purse .p{display:flex;align-items:center;gap:7px}
+.hit .purse .p > .k{font:700 8px/1.2 var(--f-mono);letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3)}
+.hit .purse .p.live > .k{color:var(--hope-tx)}
+.hit .purse .sp button{width:22px;height:22px;font-size:13px}
+.hit .purse .sp .n{min-width:24px;font-size:14px}
+
+.hit .out{margin:0;font:400 11px/1.45 var(--f-ui);color:var(--ink-3)}
+.hit .out b{font-weight:700;color:var(--ink-2)}
+.hit .out.no{color:var(--wound-gl)}
+
+/* ══ downtime ═══════════════════════════════════════════════════════
+   The moves, the die each one rolls, and the ledger of what happened.
+
+   This was a form — tick the moves, press OK, everything at once — and a
+   form is the wrong model for downtime. *Tend to Wounds rolls a die*, and
+   what you do with your second move depends on what the first one gave
+   you: clearing two Hit Points when you needed five is exactly the moment
+   you decide to tend wounds again rather than repair armour. A form
+   resolves all of that after you have stopped being able to use it.
+
+   So a move is pressed. It rolls and applies on the press, the rail moves
+   while the dialog is still open, and the ledger below fills in behind you.
+   Taking the same move twice stops being a special case: a checkbox is on
+   or off, a button can be pressed again.
+
+   Two is the printed number and the hint says whose card changed it — but
+   nothing here enforces it. A campaign frame, a subclass, a GM ruling and
+   a long-term project all move that number, and a dialog that refused a
+   third move would send the whole table to do the rest by hand: nine
+   tenths of the bookkeeping lost to enforce the one tenth that was never
+   fixed. So the tally *counts* and goes gold past the allowance, which is
+   the difference between telling you where you are and telling you what
+   to do. */
+.dtm{display:flex;flex-direction:column;gap:12px}
+.dtm .moves{display:flex;flex-direction:column;gap:8px}
+
+/* ── a move is a card ──────────────────────────────────────────────
+   It used to be a list row: a bold name, a line of prose, and the word
+   "take" on the right. Correct, and it read as a form field — which is the
+   one thing this dialog spent its whole redesign not being. Everything else
+   a player picks up in this system is a card, drawn in one vocabulary and
+   at three densities, and a downtime move is exactly the same kind of
+   object: a thing you choose, spend, and can choose again.
+
+   So it is the landscape card, in `tile.css`'s own grammar — art plate on
+   the left, gold seam, name in display caps, rule, footer, tier bar — but
+   it is *not* `.tile`. It cannot be. A tile is built from an Item with a
+   domain hue, a sigil and a level, and a downtime move has none of the
+   three; handing `TILE()` a graphite gear kind and a glyph would be
+   inventing an object rather than drawing one. It is a sibling in the
+   family, scoped here where it belongs, and it takes the family's
+   proportions rather than restating them.
+
+   And the plate is not a picture. It is the tray. */
+/* `height:auto` said out loud. Foundry's own `elements` layer gives every
+   button a fixed 32px, and a card is not 32px tall — the same line the big
+   damage numeral needed, for the same reason. */
+.dtm .dt{position:relative;display:flex;align-items:stretch;width:100%;
+  height:auto;min-height:104px;
+  padding:0;border:0;overflow:hidden;isolation:isolate;cursor:pointer;text-align:left;
+  background:var(--paper);color:var(--ink);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
+  box-shadow:0 6px 16px -6px rgba(0,0,0,.62),0 2px 6px rgba(0,0,0,.4);
+  transition:transform .26s cubic-bezier(.2,.8,.25,1),box-shadow .26s,filter .2s,opacity .2s}
+.dtm .dt:hover:not(:disabled){transform:translateY(-3px);
+  box-shadow:0 12px 24px -8px rgba(0,0,0,.7)}
+.dtm .dt:disabled{cursor:default}
+/* Every card locks while one of them is rolling, and the one being rolled
+   must not look locked — it is the only thing on screen that is doing
+   anything. So the dimming is for its neighbours only. */
+.dtm .dt:disabled:not(.rolling){filter:saturate(.55);opacity:.5}
+
+/* ── the tray, one per card ────────────────────────────────────────
+   The die rolls in the card that was pressed, in the panel where that card
+   would carry its artwork. There used to be one tray at the foot of the
+   dialog serving four moves, which is a die thrown somewhere else about
+   something you did up here — and with three or four rolls in a rest, the
+   answer to "what did that one give me" was always in the same box as the
+   answer to the last one.
+
+   The 280px bound is the same bound the shared tray had and for the same
+   reason: the die is thrown rather than posed, and a box the full width of
+   the dialog lets it come to rest in a far corner, which reads as a die
+   that got away. Per card it is a cap that never binds — 37% of a 500px
+   dialog is 185px — which is the point. See `dice/inplace.ts`.
+
+   The gold seam is `tile.css`'s, turned the same way: it is what divides
+   the picture from the panel on every card in this system, and this is the
+   picture. */
+.dtm .dt .tray{position:relative;flex:none;width:37%;max-width:280px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  background:radial-gradient(120% 120% at 56% 38%,var(--tint),var(--sunk));
+  perspective:420px}
+.dtm .dt .tray::after{content:"";position:absolute;z-index:2;top:0;bottom:0;right:0;
+  width:2px;background:var(--hope)}
+.dtm .dt.rolling .tray{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 45%,transparent)}
+.dtm .dt .cast{display:grid;place-items:center;min-height:46px}
+/* The notation before the roll, the total after it. Same cell, because it
+   is the same fact at two stages of being known. */
+.dtm .dt .nt{font:700 8px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);font-variant-numeric:tabular-nums}
+.dtm .dt .nt b{font:700 15px/1 var(--f-display);letter-spacing:-.02em;color:var(--hope-tx)}
+/* A move with nothing to roll — a long rest clears everything, Prepare
+   gives one Hope — states its value where the die would be. The plate is
+   the value either way; rolling is only how an unknown one becomes known. */
+.dtm .dt .fx{font:700 26px/1 var(--f-display);letter-spacing:-.03em;
+  text-transform:uppercase;color:var(--ink-2)}
+.dtm .dt.done .fx{color:var(--hope-tx)}
+
+/* ── the die ───────────────────────────────────────────────────────
+   `plate.css`'s own `.die`: the silhouette of the die that was rolled with
+   the numeral riding on its front face. That is where this table already
+   reads a rolled number — it is what a damage card draws — and a rest die
+   drawn as a numeral in a chamfered cell was the same idea said in a
+   second dialect, for no reason beyond the rest dialog having been written
+   first.
+
+   The face is the *face*, not the total: a d4 showing 6 is a d4 lying
+   about what it is, which is the rule the chat plate's `data-mx` exists to
+   keep. So the die carries what the die rolled and the caption under it
+   carries the total, exactly as the damage card splits its dice from its
+   number.
+
+   Its material is set here rather than by borrowing `.die.h`, because `h`
+   is the Hope die and this is not one. Gold anyway, once it lands: a rest
+   is the one roll in this game whose result is entirely in your favour,
+   and gold is what this system spends on things that go your way. Before
+   it lands it is unlit — an empty die, waiting. */
+.dtm .dt .die{--tone:var(--hope);--rimc:var(--line-2);--facec:var(--sunk-2);--numc:var(--ink-3)}
+.dtm .dt.done .die{--rimc:#f2d178;--facec:#d4a72c;--numc:#171008;
+  animation:dt-land .34s cubic-bezier(.2,.9,.3,1) both}
+@keyframes dt-land{
+  0%  {opacity:0;transform:scale(1.55) rotate(-13deg)}
+  60% {opacity:1;transform:scale(.94)  rotate(3deg)}
+  100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.dtm .dt.done .die{animation:none}}
+
+/* ── the panel ─────────────────────────────────────────────────────*/
+.dtm .dt .bd{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+  padding:11px 13px 12px;transition:opacity .16s}
+.dtm .dt.rolling .bd{opacity:.5}
+.dtm .dt .hd{display:flex;align-items:baseline;gap:9px;min-width:0}
+.dtm .dt .hd b{flex:1 1 auto;min-width:0;font:700 15px/1.06 var(--f-display);
+  letter-spacing:-.012em;text-transform:uppercase;color:var(--ink)}
+.dtm .dt .hd s{flex:none;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+/* Two lines, always — clamped so a long rule cannot make one card taller than
+   its neighbours, and reserved so a short one cannot make it shorter. Four
+   cards at one height is what makes them read as a set of the same thing;
+   Prepare's rule is the only one that wraps and it was pulling its own card
+   4px out of line with the three above it. */
+.dtm .dt .tx{margin:6px 0 0;font:400 11.5px/1.42 var(--f-ui);color:var(--ink-2);
+  min-height:calc(11.5px * 1.42 * 2);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.dtm .dt .ft{margin-top:auto;padding-top:9px;display:flex;align-items:center;gap:10px;
+  border-top:1px solid var(--line)}
+.dtm .dt .tb{flex:none;font:700 8px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);background:var(--sunk-2);padding:4px 6px 4px 7px}
+/* How many times this move has been taken, once it has been taken at all.
+   The rules allow the same move twice and the ledger says so in order; this
+   says so on the object, which is where you are looking when you decide
+   whether to press it again. */
+/* `.took` and `.done` are two facts and they come apart. `.took` is "this
+   move has been made"; `.done` is "this card's plate is showing a result".
+   Take a move twice and undo the second and the move still happened, while
+   the number on the plate did not. */
+.dtm .dt .ct{display:none;flex:none;font:700 8px/1 var(--f-mono);letter-spacing:.1em;
+  color:var(--hope-tx);font-variant-numeric:tabular-nums}
+.dtm .dt.took .ct{display:block}
+/* The verb, on the right, where the press lands. Quiet until the card is
+   under the pointer — the whole card is the button, and a permanently lit
+   call to action on four cards at once is four things shouting. */
+.dtm .dt .go{margin-left:auto;flex:none;font:700 8px/1 var(--f-mono);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-4);transition:color .12s}
+.dtm .dt:hover:not(:disabled) .go{color:var(--hope-tx)}
+/* The family's tier bar, doing a job the family's does not: it fills as the
+   move is taken, so a card that has been used says so from across the
+   dialog without a word. */
+.dtm .dt .tbar{position:absolute;z-index:5;left:0;right:0;bottom:0;height:3px;
+  background:var(--line-2)}
+.dtm .dt .tbar::after{content:"";position:absolute;right:0;top:0;bottom:0;width:26%;
+  background:var(--hope);transition:width .34s cubic-bezier(.2,.8,.25,1)}
+.dtm .dt.took .tbar::after{width:100%}
+
+/* ── resolve, then apply ───────────────────────────────────────────
+   Two beats, and they were one. The die used to settle and the track used
+   to move in the same frame, which meant the number and its consequence
+   arrived together and neither was read: you saw the ledger line and went
+   back for the number.
+
+   So the die lands first and is allowed to be looked at, and *then* the
+   effect goes across the card — a gold sweep over the panel, in the
+   direction the rule reads, arriving at the ledger line as it writes
+   itself. It is a transient over a card, which is the same grammar the
+   gem's gain ring uses for the same kind of event.
+
+   Undo runs it backwards in a neutral tone. Gold is the currency of things
+   going your way and taking a move back is not one of them, but nor is it
+   a wound — nothing was lost, something merely did not happen. */
+.dtm .dt .bd::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
+  opacity:0;background:linear-gradient(100deg,transparent 32%,
+    color-mix(in srgb,var(--hope) 34%,transparent) 50%,transparent 68%)}
+.dtm .dt.lands .bd::after{animation:dt-sweep .52s ease-out both}
+.dtm .dt.undone .bd::after{background:linear-gradient(100deg,transparent 32%,
+  color-mix(in srgb,var(--ink) 20%,transparent) 50%,transparent 68%);
+  animation:dt-back .42s ease-out both}
+@keyframes dt-sweep{0%{opacity:1;transform:translateX(-72%)}
+  100%{opacity:0;transform:translateX(72%)}}
+@keyframes dt-back{0%{opacity:.85;transform:translateX(62%)}
+  100%{opacity:0;transform:translateX(-62%)}}
+@media (prefers-reduced-motion:reduce){
+  .dtm .dt.lands .bd::after,.dtm .dt.undone .bd::after{animation:none}}
+
+/* A tray waiting for a real die should be empty, not holding a placeholder
+   the module is about to roll over. */
+.dtm.dsn .tmb{display:none}
+
+/* Ours, for a table with no 3D dice. It tumbles rather than counting up:
+   the face has to be seen unsettled before it settles or the motion is
+   decoration over an answer that was already decided — which it was, and
+   which is true of every die in this system. Two axes and a scale, because
+   one axis reads as a flip. */
+.tmb{flex:none;width:44px;height:44px;display:flex;align-items:center;
+  justify-content:center;background:var(--sunk-2);
+  box-shadow:inset 0 0 0 1px var(--line-2);
+  clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);
+  font:700 19px/1 var(--f-display);color:var(--ink);
+  font-variant-numeric:tabular-nums;transform-style:preserve-3d}
+.tmb.roll{animation:tmb-tumble .62s cubic-bezier(.2,.86,.28,1) both}
+@keyframes tmb-tumble{
+  0%  {transform:rotateX(-232deg) rotateY(168deg) scale(.74)}
+  62% {transform:rotateX(16deg)   rotateY(-13deg) scale(1.09)}
+  100%{transform:none}}
+/* Reduced motion keeps the *cycling* — that is information, not decoration,
+   and it is the half that says the number is not settled yet. Only the
+   spin goes. */
+@media (prefers-reduced-motion:reduce){.tmb.roll{animation:none}}
+
+/* ── the ledger ────────────────────────────────────────────────────
+   What has happened so far, newest at the bottom, in the order it
+   happened. It is the reason the moves can be taken one at a time and
+   still add up to one card at the end — and it is what you read to decide
+   the next one.
+
+   And it is where a move is taken back. A move applies the instant it is
+   pressed, which is what makes the second one an informed choice and also
+   what makes a misclick a fact about your character; the ledger is the only
+   place that knows what each press actually did, so it is the only place
+   that can undo one. Per entry rather than "undo the last": a rest is two
+   or three moves and the one you want back is not reliably the newest. */
+.dtm .log:empty{display:none}
+.dtm .log{display:flex;flex-direction:column;gap:1px;background:var(--line);
+  max-height:150px;overflow:auto}
+.dtm .log .ln{display:flex;align-items:center;gap:9px;padding:6px 8px 7px 11px;
+  background:var(--sunk);animation:log-in .22s ease-out both}
+.dtm .log .ln b{flex:none;font:600 11.5px/1.3 var(--f-ui);color:var(--ink)}
+.dtm .log .ln s{flex:none;text-decoration:none;font:700 11px/1 var(--f-display);
+  color:var(--hope-tx);font-variant-numeric:tabular-nums}
+.dtm .log .ln em{margin-left:auto;font-style:normal;font:400 11px/1.35 var(--f-ui);
+  color:var(--ink-2);text-align:right}
+.dtm .log .ln .un{flex:none;height:auto;min-height:0;padding:4px 7px;border:0;border-radius:0;
+  cursor:pointer;background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line);
+  color:var(--ink-3);font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%);
+  transition:background .12s,color .12s}
+.dtm .log .ln .un:hover:not(:disabled){background:var(--raise);color:var(--wound-gl)}
+.dtm .log .ln .un:disabled{opacity:.35;cursor:not-allowed}
+.dtm .log .ln.out{animation:log-out .2s ease-in both}
+@keyframes log-in{from{opacity:0;transform:translateY(-4px)}}
+@keyframes log-out{to{opacity:0;transform:translateX(16px)}}
+@media (prefers-reduced-motion:reduce){
+  .dtm .log .ln,.dtm .log .ln.out{animation:none}}
+
+.dtm .tally{margin:0;font:700 9px/1 var(--f-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3)}
+.dtm .tally.over{color:var(--hope-tx)}
+
+/* ══ what your own cards say about this ═════════════════════════════
+   Neither dialog automates a feature, and this is the shape of not doing
+   that. One Armor Slot buys one threshold until a subclass says two; a
+   rest is two moves until an ancestry gives you a third. Those exceptions
+   are printed on cards this character is already holding, and parsing
+   English rules text into behaviour is how a system starts quietly
+   getting rules wrong.
+
+   So the ones that mention what you are doing are put in front of you,
+   verbatim, and you apply them — because you can read. A smaller promise
+   than automation, and one that stays true for a feature the GM wrote
+   last night.
+
+   They are drawn as *cards* now, when there is a card behind them. "Takaia
+   Armored Beetles · Loadout" as a bold line over a paragraph is a rule; the
+   tile is the object that rule is printed on, and the object is what the
+   player is holding, hunting for in their loadout, and about to decide
+   whether to spend. The prose block stays for the rules that have no card
+   — a homebrew feature, an adversary's — because those genuinely are only
+   text. */
+.rl{background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);padding:10px 12px 12px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
+.rl > .k{display:block;margin-bottom:9px;font:700 8.5px/1 var(--f-mono);
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.rl .r + .r,.rl .crd + .r,.rl .r + .crd{margin-top:9px;padding-top:9px;
+  border-top:1px solid var(--line)}
+.rl .r .hd{display:flex;align-items:baseline;gap:9px;min-width:0}
+.rl .r .hd b{font:600 11.5px/1.3 var(--f-ui);color:var(--ink)}
+.rl .r .hd s{margin-left:auto;flex:none;text-decoration:none;font:700 8px/1 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4)}
+.rl .r p{margin:4px 0 0;font:400 11px/1.45 var(--f-ui);color:var(--ink-2)}
+.rl .r p b{font-weight:700;color:var(--ink)}
+.rl .r p b.t-hope{color:var(--hope-tx)}
+.rl .r p b.t-fear{color:var(--fear-tx)}
+.rl .r p i{font-style:italic}
+
+/* ── the card, un-clamped ──────────────────────────────────────────
+   `.tile` is 5:2.1 with its body clamped to three lines, and that is right
+   everywhere it is used: on a sheet the tile is a handle and the full card
+   is one click away. Here there is no card to open and the entire reason
+   the rule is on screen is that you are about to apply it by hand, so a
+   rule that stops mid-sentence is the panel failing at its one job.
+
+   So this one variant lets the panel set the height and prints the rule
+   whole. Scoped under `.rl` and not written into `tile.css`, because that
+   file belongs to the sheet and a global change would follow it there —
+   which is the same reason the move card above is `.dt` rather than a
+   fourth density of `.tile`. */
+.rl .crd + .crd{margin-top:9px}
+.rl .crd .tile{aspect-ratio:auto;min-height:98px}
+.rl .crd .tile .tx{display:block;-webkit-line-clamp:unset;overflow:visible}
+/* Why this one is here at all, when the reason is not "it mentions rests"
+   but "it is the card that gave you a third move". Said above the tile
+   rather than on it: the card says what it says, and this is the dialog's
+   note about it. */
+.rl .crd .wh{display:block;margin-bottom:5px;font:700 8px/1 var(--f-mono);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--hope-tx)}
+
+/* ══ the rest, in the log ═══════════════════════════════════════════
+   Not a card. A card is a thing you hold, and a rest is a thing that
+   happened — so it takes the plate's width and the panel's furniture
+   rather than the 5:7 frame, and it says what changed rather than what a
+   rule says. One message for the whole rest, which is the other half of
+   the dice rolling in the dialog: three moves is one record, not four. */
+.rest{width:100%;max-width:300px;background:var(--paper);
+  box-shadow:inset 0 0 0 1px var(--line),0 8px 20px -12px rgba(0,0,0,.6);
+  padding:13px 15px 15px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+.rest > .k{display:flex;align-items:baseline;gap:8px;margin-bottom:11px;
+  font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3)}
+.rest > .k s{margin-left:auto;text-decoration:none;font-size:9px;color:var(--hope-tx)}
+.rest .r + .r{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.rest .r .hd{display:flex;align-items:baseline;gap:9px}
+.rest .r .hd b{font:600 12px/1.25 var(--f-ui);color:var(--ink)}
+.rest .r .hd s{margin-left:auto;text-decoration:none;font:700 9px/1 var(--f-mono);
+  color:var(--hope-tx);font-variant-numeric:tabular-nums}
+.rest .r p{margin:3px 0 0;font:400 11px/1.4 var(--f-ui);color:var(--ink-2)}

@@ -15,6 +15,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mount, unmount, type Component } from "svelte";
+import { LOADOUT_LIMIT } from "../config.ts";
 import { SheetState } from "./sheet-state.svelte.ts";
 
 interface SvelteSheetOptions {
@@ -91,19 +92,84 @@ export function makeItemSheet(component: Component<any>, opts: SvelteSheetOption
 }
 
 /**
+ * What the browser is carrying, however it was written.
+ *
+ * `getDragEventData` is Foundry's own reader and is the right first call, but
+ * it is a namespaced static that has moved twice across major versions and
+ * throws rather than returning nothing when the payload is not JSON. The
+ * payload itself has been the same two lines of JSON on `text/plain` the
+ * whole time — it is what our own `onDragStart` writes — so reading it
+ * directly is a fallback that cannot go stale.
+ */
+function readDrop(event: DragEvent): any {
+  try {
+    const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
+    if (data) return data;
+  } catch {
+    /* fall through to the raw payload */
+  }
+  try {
+    return JSON.parse(event.dataTransfer?.getData("text/plain") ?? "");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Every Item subtype that arrives holding a domain card wants to land in the
+ * loadout if there is room for it.
+ *
+ * Dragging a card onto a sheet is the gesture for "I am taking this", and
+ * putting it in the vault instead means the gesture is always two gestures —
+ * drag, then go to the vault tab and recall it, paying Stress for a card you
+ * have not used yet. At the limit it correctly goes to the vault, because at
+ * the limit there genuinely is no room and choosing what leaves is the swap's
+ * job, not a drop's.
+ */
+function placeDomainCard(actor: any, source: any): void {
+  const limit = actor.system?.loadoutLimit ?? LOADOUT_LIMIT;
+  const held = actor.items.filter(
+    (i: any) => i.type === "domainCard" && i.system?.inLoadout,
+  ).length;
+  source.system ??= {};
+  source.system.inLoadout = held < limit;
+}
+
+/**
  * Accept a dropped Item onto an Actor sheet.
  *
  * Dropping a card that already belongs to this actor is a sort, not a copy —
  * Foundry's default would happily give you two of the same domain card.
+ *
+ * It says what landed. A drop is a gesture with no result you can see when
+ * the thing you dropped goes to a tab you are not looking at, and the
+ * commonest one does exactly that: a weapon dragged onto the loadout tab is
+ * filed under gear, correctly and invisibly. A one-line notice is the
+ * difference between "that did nothing" and "that worked, look over there".
+ *
+ * @returns the created Items, empty when nothing was accepted.
  */
-export async function handleActorDrop(actor: any, event: DragEvent): Promise<boolean> {
-  const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
-  if (data?.type !== "Item") return false;
+export async function handleActorDrop(actor: any, event: DragEvent): Promise<any[]> {
+  const data = readDrop(event);
+  if (data?.type !== "Item" || !data.uuid) return [];
 
   const item = await fromUuid(data.uuid);
-  if (!item) return false;
-  if (item.parent?.id === actor.id) return false;
+  if (!item) return [];
+  // Already ours. Foundry's own default would hand back a duplicate.
+  if (item.parent?.id === actor.id) return [];
 
-  await actor.createEmbeddedDocuments("Item", [item.toObject()]);
-  return true;
+  const source = item.toObject();
+  if (source.type === "domainCard") placeDomainCard(actor, source);
+
+  const made = await actor.createEmbeddedDocuments("Item", [source]);
+  const [first] = made ?? [];
+  if (first) {
+    ui.notifications?.info(
+      game.i18n.format("DAGGERHEART.Info.Added", {
+        name: first.name,
+        kind: game.i18n.localize(`TYPES.Item.${first.type}`),
+      }),
+    );
+  }
+  return made ?? [];
 }

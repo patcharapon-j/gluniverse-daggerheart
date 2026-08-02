@@ -39,8 +39,8 @@
   box-shadow:0 0 0 1px color-mix(in srgb,var(--hope) 55%,transparent)}
 .pnl.swap.armed .pk[data-ld]:hover::after,
 .pk[data-ld].over::after,
-.pnl.vaultp.over{box-shadow:0 0 0 1.5px var(--hope)}
-.pnl.vaultp.over{position:relative;z-index:1}
+.pnl.swap.over{box-shadow:0 0 0 1.5px var(--hope)}
+.pnl.swap.over{position:relative;z-index:1}
 
 /* the empty slot — the gear tab's empty slot at row height, because it is
    the same statement: this is a place a thing goes, and nothing is in it */
@@ -119,12 +119,32 @@
 /* What is left behind. A hatch rather than an empty box, because an empty
    box is a state this list already has — an unfilled loadout slot — and the
    hole a dragged card leaves is not that. */
-.pk.lift > .spine,.pk.lift > .stamp,.pk.lift > .shv{opacity:0}
+.pk.lift > .spine,.pk.lift > .shv{opacity:0}
 .pk.lift::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
   clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
   background:repeating-linear-gradient(45deg,transparent 0 5px,
       color-mix(in srgb,var(--line-2) 60%,transparent) 5px 6px),var(--sunk);
   box-shadow:inset 0 0 0 1px var(--line)}
+
+/* ── where it lands ────────────────────────────────────────────────
+   A caret in the gutter, not a highlight on the row. The row under the
+   pointer is not the target — the *gap beside it* is, and which of its two
+   gaps depends on which half you are over. Highlighting the row says "this
+   one", which is the answer to a different question and is exactly the
+   question a swap asks, so the two must not look alike: a lit row means
+   "this is the card that leaves".
+
+   Both lists take it, because both are ordered now. That is what the swap
+   study missed: it treated the vault as a bag, and a bag has no order, so
+   the pointer drag it built could aim at a loadout slot but could only aim
+   at the vault *panel*. A vault you have spent nine levels filling is a
+   list you keep in an order, and the order is yours to set. */
+.pk.dz::before{content:"";position:absolute;z-index:10;top:-2px;bottom:-2px;width:2px;
+  background:var(--hope);box-shadow:0 0 7px color-mix(in srgb,var(--hope) 65%,transparent);
+  animation:dz-in .14s cubic-bezier(.2,.8,.25,1) both}
+.pk.dz-b::before{left:-6px}
+.pk.dz-a::before{right:-6px}
+@keyframes dz-in{from{opacity:0;transform:scaleY(.4)}to{opacity:1;transform:none}}
 
 /* The card in the hand. Positioned by script, scaled by CSS — one transform
    each, because two owners of one transform is a fight nobody wins. */
@@ -204,9 +224,11 @@
   100%{opacity:0;transform:translateX(-115%)}}
 .pk.shelved .spine{animation:sat-dn .42s ease-in both}
 @keyframes sat-dn{from{filter:saturate(1)}to{filter:saturate(.22)}}
-/* the folder tab arriving, rather than simply being there on the next frame */
-.pk.shelved .stamp{animation:stamp-in .34s cubic-bezier(.2,.9,.25,1) .16s both}
-@keyframes stamp-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+/* the hatch settling over the artwork, rather than simply being there on the
+   next frame — it arrives *after* the colour has finished draining, because
+   the two say the same thing and saying it twice at once says it once */
+.pk.shelved .spine .thumb::after{animation:hatch-in .3s ease-out .2s both}
+@keyframes hatch-in{from{opacity:0}to{opacity:1}}
 
 /* ── refused ───────────────────────────────────────────────────────
    A recall you cannot pay for is refused by the thing that cannot pay: the
@@ -227,5 +249,6 @@
 @media (prefers-reduced-motion: reduce){
   .mk.deny .row,.mk.deny .row i:not(.on) > u{animation:none}
   .pk .swp{display:none}
-  .pk.recalled .spine,.pk.shelved .spine,.pk.shelved .stamp,.dragproxy .in{animation:none}
+  .pk.recalled .spine,.pk.shelved .spine,.dragproxy .in{animation:none}
+  .pk.shelved .spine .thumb::after,.pk.dz::before{animation:none}
 }

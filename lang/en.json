@@ -54,10 +54,58 @@
       "NoTarget": "Target a token first.",
       "NoWeapon": "The weapon this attack was made with is no longer on the sheet.",
       "NotEnoughHope": "An Experience costs a Hope, and you are short {need}.",
-      "NotEnoughFear": "An Experience costs a Fear, and the pool is short {need}."
+      "NotEnoughFear": "An Experience costs a Fear, and the pool is short {need}.",
+      "NoHopeAction": "{name} costs {cost} Hope, and you have {have}.",
+      "NoClass": "No class on this character yet — drag one in from the compendium.",
+      "NoUnmarkedTraits": "This advancement raises two unmarked traits, and {left} is left unmarked. Marks clear on entering the next tier.",
+      "NotEnoughExperiences": "This advancement raises two Experiences, and there are fewer than two to raise. Add them on the adjust tab.",
+      "NoSelection": "Select the token or tokens this lands on first.",
+      "NoCharacter": "No character is assigned to you — select a token you own, or ask your GM to assign one.",
+      "NoFeatureCost": "{name} costs {cost}, and you cannot pay it."
     },
     "Info": {
-      "DamageApplied": "{name} took {severity} damage — {marked} Hit Points marked."
+      "DamageApplied": "{name} took {severity} damage — {marked} Hit Points marked.",
+      "Added": "{name} added — {kind}.",
+      "Advanced": "{what}"
+    },
+    "Advance": {
+      "Take": "Take it",
+      "TraitsTitle": "Raise two traits",
+      "TraitsHint": "Choose two unmarked traits. Each gains +1 and is marked until the next tier.",
+      "ExperiencesTitle": "Raise two Experiences",
+      "ExperiencesHint": "Choose two Experiences. Each gains a permanent +1.",
+      "GainedExperience": "Tier {tier}: gained an Experience at +2 — name it on the adjust tab.",
+      "ClearedMarks": "Every trait mark cleared."
+    },
+    "Damage": {
+      "Title": "{name} takes damage",
+      "Apply": "Take it",
+      "Incoming": "incoming",
+      "Relevant": "Your own cards on armour",
+      "Reduce": "Reduce by",
+      "PaidWith": "Paid with",
+      "Marks": "mark {n} Hit Points",
+      "Nothing": "Nothing",
+      "NoHit": "Nothing lands — there is nothing to soften.",
+      "From": "{base} → {now}",
+      "Rule": "The rules give you one Armor Slot per hit, and one slot is one threshold.",
+      "BeyondRule": "Past the one Armor Slot the rules give you — whatever is buying this should be printed on one of your own cards.",
+      "MarksOne": "mark 1 Hit Point"
+    },
+    "Rest": {
+      "Short": "short rest",
+      "Long": "long rest",
+      "Title": "{kind}",
+      "ShortHint": "The rules give you {n} downtime moves, and this sheet does not insist. Take one and the sheet changes under you, so the next choice is made knowing what the first one gave.",
+      "LongHint": "The rules give you {n} downtime moves, and this sheet does not insist. Each is applied the moment you take it.",
+      "Relevant": "Your own cards on resting",
+      "Done": "Done",
+      "Granted": "{n} downtime moves — {from} gives you more than the printed two. Nothing here insists on the number.",
+      "Taken": "{n} of {of} taken",
+      "Take": "take",
+      "Move": "Downtime",
+      "Undo": "undo",
+      "Grants": "grants a downtime move"
     },
     "Copy": "{name} (Copy)",
     "NewItem": "New {kind}",

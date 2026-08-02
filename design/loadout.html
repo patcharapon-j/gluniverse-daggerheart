@@ -113,6 +113,29 @@ the trade: the spine compresses <i>layout</i> and keeps text at a fixed useful s
 equipment, which is why its data strip is generic. Tier and spellcast on a subclass, trait / range /
 damage / burden on a weapon: same component, same three cells, no new geometry. Graphite where there is
 no domain, exactly as on the cards.</p>
+<p class="note"><b>It does not survive the trip to the sheet unchanged, and that is this page's own
+finding turned back on itself.</b> The tile is judged here at 520px and holds up from about 368px. A
+Foundry pane hands it a <b>262px grid column</b> — 289px at a default window — and because every measure
+in <code>tile.css</code> is cqw, everything shrinks by the same 0.79. A name going 18px → 14px is still a
+name. The stat labels go 6.3px → <b>4.9px</b> and their values 9.1px → <b>7.2px</b>, and those two rows
+are the only part of a weapon anyone reads twice. So the gear tab came out a column of large pictures with
+the information set as a caption underneath: too big, and saying too little. That is not a bug in any one
+number — it is what happens when a headline and a caption are scaled by the same factor, and it is the one
+place the container-query architecture does not simply pay for itself.</p>
+<p class="note">The fix is not px type, which would cost the property that makes this component work at
+all. It is to re-weight the tile for the width a sheet gives it: the art plate drops <b>36% → 25%</b>, the
+labels come back to <b>6.1px</b> and the values to <b>8.8px</b>, the name steps down because it is no
+longer the only legible thing on the tile, the paragraph goes from three lines to two larger ones, and the
+box loses a tenth of its height. It lives in <code>sheet.css</code> under <code>.slot .tile</code>,
+<code>.eqp .tile</code> and <code>.abl .sub .tile</code> rather than in <code>tile.css</code>, because it
+is not a different tile — it is <i>this sheet's</i> column being narrow, which is a fact about the sheet.
+The base component is left exactly as drawn here for everything else that borrows one.</p>
+<p class="note">Bigger than that was measured and refused. At 3.4cqw the value reaches 9.8px and three of
+the four cells ellipse on a weapon the character actually carries, because four cells with a rule between
+each is the widest row this component ever holds and 203px is what a sheet column has. The longest row the
+game can print — KNOWLEDGE, VERY CLOSE, d12+9, TWO-HANDED — still truncates its last cell, and it
+truncated at the original size too: 196px of content in 169px of panel then, 226 in 203 now. That is what
+<code>text-overflow:ellipsis</code> has been on <code>.stats .v</code> for since it was written.</p>
 <div class="sheets"><div class="sheet" style="--pw:520px;width:520px">
   <header><h3>Equipment</h3><span class="ct">ACTIVE</span></header>
   <div class="stack" id="gear"></div>

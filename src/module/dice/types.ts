@@ -38,6 +38,19 @@ export interface PlateBase {
   mods: Term[];
 }
 
+/**
+ * A rule the roll carried with it — in practice a weapon's feature.
+ *
+ * `t` is the description in the builders' own dialect (`**bold**`,
+ * `*italic*`, `<br>`), which is what `cards.ts`'s `plain()` produces from
+ * stored HTML. The plate runs it through the same `rich` the cards do, so a
+ * feature reads identically wherever it appears.
+ */
+export interface Note {
+  n: string;
+  t: string;
+}
+
 /** A player's duality roll. */
 export interface DualityPlate extends PlateBase {
   h: number;
@@ -51,6 +64,12 @@ export interface DualityPlate extends PlateBase {
   /** A reaction roll rolls the duality dice and then throws the duality
       away: no Hope, no Fear, no GM move. */
   rxn?: boolean;
+  /**
+   * The weapon's feature, on an attack that was made with one. Everyone but
+   * the roller reads this card instead of the sheet, and without it the
+   * table is told which weapon swung and not what it does.
+   */
+  note?: Note;
 }
 
 /** A damage roll. No duality axis, no verdict — a damage roll is a quantity. */
