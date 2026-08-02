@@ -69,7 +69,8 @@
 
 import type { Rule } from "./rules.ts";
 import { type CardContext, cardOf, loadSigils } from "../sheets/cards.ts";
-import { CARD, fit, rich } from "../ui/card.js";
+import { CARD, rich } from "../ui/card.js";
+import { dialogPeeks } from "./dialog-peek.ts";
 
 const esc = (s: string) => foundry.utils.escapeHTML(s);
 
@@ -296,155 +297,19 @@ export async function ruleCardsPanel(
 /**
  * The peek, wired against the viewport.
  *
- * `peek.js` does this for the sheet and is not reusable here, for one reason
- * that is structural rather than stylistic: it positions and clamps against
- * the sheet window, which is the boundary a peek on a sheet must not cross.
- * A dialog is 500px of chrome floating over a board — a card clamped inside
- * *that* would have nowhere to go — so the frame is the viewport, the layer is
- * `position:fixed`, and the same arithmetic runs against `innerWidth` and
- * `innerHeight`. Everything a player has learned about the gesture holds:
- * right of the row, flipped when there is no room, centred and clamped, hover
- * shows and click pins.
+ * The mechanism is `dialog-peek.ts` and is not about rules — it wants a root to
+ * delegate on, a layer to draw into and a selector naming which rows peek. This
+ * is the rules panel's answer to those three, kept under its own name so
+ * callers go on asking for the thing they want rather than for the machinery
+ * underneath it.
  *
- * Called from `wire`, because a card carries inline `<svg>` and DialogV2
- * strips that out of `content` — so the panel is not in the document until
- * then, and neither `fit()` nor a `getBoundingClientRect` would have anything
- * to measure.
+ * Called from `wire`, because a card carries inline `<svg>` and DialogV2 strips
+ * that out of `content` — so the panel is not in the document until then, and
+ * neither `fit()` nor a `getBoundingClientRect` would have anything to measure.
  */
 export function wireRulePeeks(root: HTMLElement): void {
   const layer = root.querySelector<HTMLElement>(".rl .peeklayer");
-  if (!layer) return;
-
-  /* Onto <body>, and it is not optional. `position:fixed` was the obvious
-     answer and it does not work: Foundry gives every `.window-content` a
-     `backdrop-filter`, and a filtered element is the containing block for its
-     fixed descendants — so a layer that says `fixed` inside a dialog is still
-     framed by the dialog, and the card flies to coordinates that were right
-     for a frame it does not have. The host carries `dh` for the palette; the
-     layer stays a descendant of it, so every rule `sheet.css` writes for
-     `.peeklayer` and `.pkc` lands untouched. */
-  const host = document.createElement("div");
-  host.className = "dh peekhost";
-  host.append(layer);
-  document.body.append(host);
-
-  /* The host outlives the dialog unless something takes it away, and nothing
-     will: it is not a child of the window Foundry removes. Watching `body`
-     for that removal is cheaper than a close hook and does not care which of
-     the several ways out the user took. */
-  const gone = new MutationObserver(() => {
-    if (root.isConnected) return;
-    host.remove();
-    gone.disconnect();
-  });
-  gone.observe(document.body, { childList: true, subtree: true });
-
-  /* Fonts first: `fit` measures wrapped text, and metrics taken against a
-     fallback face are wrong by enough to cost a line. `fit` is idempotent, so
-     the immediate call is the one that matters and the second only corrects
-     it — a dialog opened before the face has loaded still lands compacted. */
-  fit(layer);
-  document.fonts?.ready.then(() => fit(layer));
-
-  /** Space kept from the row, and from the edges of the screen. */
-  const GAP = 14;
-  const EDGE = 12;
-
-  let open: HTMLElement | null = null;
-  let pinned = false;
-
-  const cardFor = (row: HTMLElement) =>
-    layer.querySelector<HTMLElement>(`.pkc[data-peek="${row.dataset.peek}"]`);
-
-  /* Only `close(true)` clears a pin, so pointer traffic cannot dismiss one. */
-  const close = (force?: boolean): void => {
-    if (pinned && !force) return;
-    open?.classList.remove("on", "pin");
-    open = null;
-    pinned = false;
-  };
-
-  const show = (row: HTMLElement, pin?: boolean): void => {
-    const card = cardFor(row);
-    if (!card) return;
-    if (card === open) {
-      if (pin) {
-        pinned = true;
-        card.classList.add("pin");
-      }
-      return;
-    }
-    close(true);
-
-    const r = row.getBoundingClientRect();
-    const w = card.offsetWidth;
-    const h = card.offsetHeight;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    // Right of the row by default, flipped rather than squeezed.
-    let left = r.right + GAP;
-    let side = "left";
-    if (left + w > vw - EDGE) {
-      left = r.left - GAP - w;
-      side = "right";
-    }
-    if (left < EDGE) {
-      left = Math.max(EDGE, (vw - w) / 2);
-      side = "center";
-    }
-
-    // Centred on its row, then clamped: a card half off the top of the screen
-    // is worse than one not quite level with the row it came from.
-    const mid = r.top + r.height / 2 - h / 2;
-    const top = Math.min(Math.max(EDGE, mid), Math.max(EDGE, vh - h - EDGE));
-
-    card.style.left = `${Math.round(left)}px`;
-    card.style.top = `${Math.round(top)}px`;
-    // Grows out of the row it belongs to, so the flip reads as a flip.
-    card.style.transformOrigin = side === "center" ? "center center" : `${side} center`;
-    card.classList.add("on");
-    if (pin) card.classList.add("pin");
-    open = card;
-    pinned = !!pin;
-  };
-
-  /* Delegated, and `pointerover` rather than `pointerenter`, because only a
-     delegating listener can be one listener. The layer is
-     `pointer-events:none`, so moving onto anything that is not a row closes. */
-  root.addEventListener("pointerover", (e) => {
-    const t = e.target instanceof Element ? e.target : null;
-    if (!t) return;
-    const row = t.closest<HTMLElement>(".rl .ln[data-peek]");
-    if (row) show(row);
-    else close();
-  });
-
-  /* Hover shows, click pins. A hover peek dies the moment you move toward it,
-     which is fine for "which card is this" and useless for "read this card" —
-     and reading it is the entire reason the panel exists. Clicking the pinned
-     row again unpins; clicking anywhere else in the dialog closes, so a card
-     cannot sit over the stepper you just reached for. */
-  root.addEventListener("click", (e) => {
-    const t = e.target instanceof Element ? e.target : null;
-    const row = t?.closest<HTMLElement>(".rl .ln[data-peek]");
-    if (!row) {
-      close(true);
-      return;
-    }
-    if (pinned && cardFor(row) === open) close(true);
-    else show(row, true);
-  });
-
-  root.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && open) {
-      e.stopPropagation();
-      close(true);
-    }
-  });
-  // A scroll under an open peek leaves it pointing at the wrong row.
-  root.addEventListener("scroll", () => close(true), true);
-  window.addEventListener("resize", () => close(true));
+  if (layer) dialogPeeks({ root, layer, rows: ".rl .ln[data-peek]" });
 }
 
 /**

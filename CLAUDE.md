@@ -766,6 +766,51 @@ exactly the relationship the `system` layer has to `elements` in the real
 application. Delete the reset and both pages go red in the same places the game
 did.
 
+**And the same layer draws the checkbox**, which is the first time this lesson
+has landed on a control the design deliberately left to the browser. `.pick` —
+the picker row, shared by creation's two-from-a-list and the domain-card list —
+asked for a native checkbox tinted with `accent-color`, which is exactly right
+on a page that owns itself. Foundry's `elements` layer takes every checkbox and
+radio to `appearance:none` and rebuilds it out of two Font Awesome glyphs, so
+`accent-color` had nothing left to tint and the row inherited three faults at
+once. It came in as one report — *tapping add is fine, then you click and
+suddenly there is a radio button and the height expanded* — and it is three:
+
+- **A 20px control** where the design drew eleven, because the glyph's own
+  `--checkbox-size` is what sizes it.
+- **An invisible one until it is chosen.** Unchecked, the mark is
+  `--checkbox-background-color`, Foundry's theme grey, which is within a shade
+  of `--sunk` — so it is not there, and then it is *orange*, a hue this system
+  reserves for nothing. It does not read as a control changing state. It reads
+  as a control appearing.
+- **A row that changes height when you press it.** The glyph that is *in flow*
+  swaps from the `::before` to the `::after` as the box is checked, in a
+  different Font Awesome face, and two faces do not put their baseline in the
+  same place. `.pick` aligns on baselines, so the row grew 40px → 49px on the
+  click that chose it — which is a list that jumps under the pointer that is
+  still on it.
+
+So the tick is **drawn** now, once, at the head of `sheet.css`, because three of
+our surfaces carry one and the port scopes the lot to `.dh`: the pseudo-elements
+go, the metrics are stated, and the mark is the family's rhombus filled with
+Hope. Two sites keep what is theirs and nothing else — `.pick input` sets only
+`align-self`, since a mark is not type and bottom-aligning an 11px rhombus to a
+12.5px baseline hangs it off the line, and the creation footer's is violet on
+chrome tokens rather than gold on paper. `accent-color` is gone from all three
+places that carried it, the third being an inline style on the mixed-ancestry
+switch.
+
+The study pages are the mirror image of the button case and need the opposite
+patch: they load `design/sheet.css` unported, so a bare element rule reaches the
+studio's own toggles. `.tg input[type=checkbox]` in the trimmed chrome at the
+foot of `tokens.css` hands those back to the browser — the studio is not the
+system — and the port never sees it.
+
+`tools/verify/` carries Foundry's checkbox rules beside its `button{height:28px}`
+and asserts all three outcomes: the tick measures the 11px it declares, its two
+states are the same box, and the chosen one resolves `--hope`. Strip the rules
+and it reports 20×21, 40 against 49, and two transparent marks.
+
 **An unbalanced CSS comment is the quietest failure this pipeline has**, and it
 cost an hour of this. CSS recovers from one by discarding tokens up to the next
 `}`, so the rule *after* the mistake vanishes and everything else keeps
@@ -776,6 +821,27 @@ here looks at CSS syntax — not `tsc`, not `svelte-check`, not the build — so
 `port-design-css.mjs` counts the delimiters and refuses to port an unbalanced
 file. It is not a parser and is not trying to be; it catches the mistake that
 actually happens when these files are edited by hand.
+
+**And the sheet's own buttons were never checked against that layer**, which is
+the same lesson arriving somewhere the reset had never been looked for. Three
+presses on the character sheet are *type* rather than controls — a panel
+heading's "+ new" and "+ card", the empty state's inline way out, and a slot
+header's "unequip" — and each inherits a 7.5–9px mono line. Each is a `<button>`,
+so Foundry drew all three 28px tall: on a 9px heading that is a nineteen-pixel
+hole under a correctly-sized label, which reads as a spacing choice rather than
+as an inherited height. Two of them had shipped that way for as long as the sheet
+has had them, and were found only by measuring the third. All four now state
+`height/min-height/max-height`, and `tools/verify/`'s **THE PANEL** stage asserts
+it: strip the reset and the heading goes 9px → 28px in front of the check.
+
+**A backtick inside markup closes the template literal it is in**, and that cost
+the study page its tab strip. Every builder in `design/sheet.js` is a template
+literal, so an HTML comment naming a class the way the rest of this repo names
+one — in code quotes — ends the string, and what follows becomes a *tagged
+template call* on whatever expression preceded it. It parses cleanly, throws at
+render, and the console said nothing: the sheet simply stopped halfway through
+its own body. Nothing here can catch it, because it is valid JavaScript; the
+rule is that comments inside these builders use plain words.
 
 ## Why Svelte
 
@@ -1813,13 +1879,158 @@ The nine printed options split in two, and the split is the design:
   via `advancementTally`, so the box *is* the record: mark it and the rail
   moves, unmark it and it moves back, and the two can never disagree because
   there is only one of them. A write-on-press design cannot be undone.
-- **Decisions** — which two traits, which two Experiences. The sheet cannot
-  guess and must not. These ask, apply, and store the answer in
-  `system.advancementChoices` so taking the box back undoes precisely what
-  that box did.
-- **Acquisitions** — a domain card, a subclass card, a second class. These
-  only mark, because a dialog is not a better compendium; you drag the
-  document in, which is a gesture this system already has.
+- **Decisions** — which two traits, which two Experiences, **which domain
+  card**. The sheet cannot guess and must not. These ask, apply, and store the
+  answer in `system.advancementChoices` so taking the box back undoes precisely
+  what that box did.
+- **Acquisitions** — a subclass card, a second class. These only mark, because
+  a dialog is not a better compendium; you drag the document in, which is a
+  gesture this system already has.
+
+**The domain card crossed that line**, and the reason is that it was the only
+acquisition with a *closed* set of legal answers. "Drag one in" is right for a
+subclass card, which is one of three the compendium already sorts by class, and
+for a second class, which is nine documents. It was never right for a domain
+card: what is legal is your domains — plural, and multiclassing makes it three
+or four — crossed with a ceiling that is **not your level but the tier's**.
+`tierTopLevel` is that ceiling, derived off `at` rather than stored so it cannot
+disagree with the printed `levels`, and the parenthesis it encodes — "(up to
+level 4)" — had only ever existed as prose in the option's own label. Take tier
+2's advancement at level 7 and you still get a card of level 4 or lower, because
+the choice belongs to the tier that was owed it. So the sheet knew the whole
+rule, the box marked it, and nobody was told; marking it now asks which, exactly
+as the trait option does.
+
+**And the row prints its answer.** Eight of the nine options are their own
+record — mark a Stress slot and the track is a box longer, and the two cannot
+disagree because there is only one of them. The ninth hands you a *document*, so
+a mark on it is true and useless at the same time: it says you are owed a card
+and not which, nor whether you ever went and got it. `.adv .row .got` is the card
+it took, read off the **snapshot** rather than off the document so a card deleted
+from the gear tab takes its claim back down to unchosen.
+
+**A box marked before any of this existed says so and offers the same picker**,
+which is the whole of the migration — nothing is repaired behind anyone's back,
+because the card may well be on the sheet already, dragged in by hand months ago.
+So the picker offers both halves of the honest answer: take one from the
+compendium, or **name the one you already hold**. Adopting creates nothing; it
+records that this box is what paid for that card. `unclaimedCards` is what it
+can offer — every domain card that none of the three records (`creation.granted`,
+`advancementChoices`, `levelCards`) has spoken for — which is exactly the set a
+player put there themselves, and it is empty for anybody made since creation
+existed, so the second heading only appears when there is something under it.
+
+## The card every level gives
+
+**Step 4 of the printed level-up, and this system had never handed one over.**
+"Acquire a new domain card at your level or lower" sits *beside* the two
+advancement choices rather than being one of them, and the advancement table has
+been saying so out loud in a word nobody read: "choose an **additional** domain
+card" is additional to *this* one. Two rules were missing rather than one, and
+this is the larger — it fires at every level where the option fires once a tier.
+
+`applyLevelCards` asks for it, once per level newly reached, from `setLevel`
+after `applyTierEntry`. An **event**, recorded for `tiersEntered`'s reason: a
+level typed down to 4 and back up to 5 has not reached level 5 twice.
+
+**`system.levelCards` is three-valued and the third value is the whole
+migration.** *Absent* is a level reached before the record existed; it is owed
+nothing and drawn nowhere. *Null* is a level reached and not yet spent. A
+`TakenCard` is the answer. So the loop runs from the level you **were** rather
+than from level 2 — `setLevel` reads `sys.level` before the write — and a
+character who has been level 6 all year is asked about level 7 and about nothing
+else. Nothing is guessed and nothing is seeded, where any amount of inferring
+"they must already have these" would have been doing the same thing less
+honestly on the way to the same place.
+
+**Declining is free**, and the panel is what makes it so. A level standing at
+null says so on the advancement tab and offers the same picker, so the prompt is
+a convenience and the record is the debt. One refusal ends a run of them: four
+levels typed in at once is four dialogs, and somebody who cancels the first has
+said what they think of that.
+
+It is **its own panel** above the tier tables rather than rows inside them,
+because those are the printed advancement table — a rules table this system
+copies — and this is a ledger of what happened to you. The level stands where a
+row of slot boxes stands and is a numeral rather than a box, because there is
+nothing here to mark: a level is not something you choose to have.
+
+The ceiling is **the level that owed the card**, not the level you are now.
+"At your level or lower" is a clause about the moment it was due, which is the
+same reasoning that makes the advancement option's ceiling the tier's top.
+
+Which is also why what unmarking gives back depends on which happened. A card
+this box **made** goes with it; a card it **adopted** is released and the
+document stays, because deleting it would be the panel binning somebody's
+document over a rule it was not asked to police — `cascadeOf`'s argument, from
+the other end. `TakenCard` carries that flag alongside the id, and the name too,
+so a record can name a document that has gone.
+
+**And the one unmark that destroys a document asks first.** Every other give-back
+on this tab is a number going back where it was, and the box being the record is
+what makes those exactly as safe to undo as to do. A card is not a number, the
+gear tab already confirms deleting one by hand, and unmarking is how you correct
+a mis-click — so it is the same act with the same manners, naming the card.
+Declining writes nothing at all, so the box stays marked rather than marked and
+hollow.
+
+## Picking a domain card
+
+`apps/domain-cards.ts`. **Three surfaces want the same thing for three different
+reasons, and the reason is the only thing that differs between them** — so the
+ceiling is an argument rather than something worked out inside, and a function
+that decided which of the three it was serving by inspecting its caller would be
+three rules pretending to be one.
+
+| caller | ceiling | records |
+| --- | --- | --- |
+| the advancement option | your level or the tier's top, lower wins | against the box |
+| the level card | the level that owed it | against the level |
+| the vault's **+ card** | your level | nothing — nothing bought it |
+
+The third is why the picker is not in `advance.ts`: a vault button reaching into
+a file whose first line reads "levelling up, applied rather than recorded" would
+be lying about what it was doing. It is the drag-in gesture with the compendium's
+own filter attached — the gesture has always worked and has always asked you to
+know which of 189 cards you may legally take. `ed` and not `edit`, the same call
+the gear tab's "+ new" makes: taking a card is a deliberate act in a way a click
+on a number is not. It suppresses the adopt half outright, because a card already
+on the sheet is not something to add.
+
+**Only legal cards are offered**, which departs from `pickTwo`'s
+constrain-the-offer-and-say-why for a reason that is arithmetic: 189 cards drawn
+dead with a sentence each is not a list anybody reads, and the two rules are
+already stated in the hint above it. What it keeps from that rule is that it
+never validates after the fact.
+
+**And every row peeks the card.** `pickTwo`'s rows are a trait and an Experience
+— a name, a number, nothing else to know. These stand for *printed objects*, and
+a name with "Grace · Lv 2 · Recall 1" beside it is the one thing a domain card is
+not: its whole identity is a paragraph of rules text, which the row cannot carry
+at any width without becoming a card badly. So it becomes one properly — the
+sheet's own peek, `CARD` into `.pkc` through `sheet.css`'s `.peeklayer`, exactly
+as hovering a spine in the loadout behaves.
+
+`apps/dialog-peek.ts` is that machinery, lifted out of `rule-cards.ts` when the
+second caller arrived. Nothing in it ever knew what the rows meant; it wants a
+root to delegate on, a layer to draw into and a selector naming which rows peek.
+`wireRulePeeks` is now one line on top of it, because callers should go on asking
+for the thing they want rather than for the machinery underneath.
+
+**The one thing the second caller needed differently is `pin`,** and it turns on
+a gesture rather than a look. Click-to-pin is right where the row is *inert* — a
+rules line exists to be read, and a hover peek dies the moment you move toward
+it. It is wrong where the row **is the control**: in the picker a click chooses
+the card, and a click that both chose a card and parked a 262px copy of it over
+the list is one gesture doing two things, one of them in the way. It governs the
+Escape key too — with nothing pinnable there is nothing for Escape to dismiss,
+and swallowing it would take away the dialog's own way out.
+
+The cards arrive in `wire` rather than in `content`, because they carry inline
+`<svg>` sigils and DialogV2 strips SVG out of `content` exactly as Foundry strips
+it out of stored chat message content — and `fit()` cannot measure a card that is
+not in the document either, so both problems have the answer `damage.ts` already
+reached.
 
 Because HP and Stress are derived, the adjust tab's fields are the **base** —
 what the class hands you — and advancement is added on top, exactly as an

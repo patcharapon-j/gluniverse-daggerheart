@@ -928,7 +928,16 @@
   cursor:pointer;font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;
   text-transform:uppercase;color:var(--frame-tx-3);transition:color .14s}
 .dh .forge .fbot label:hover{color:var(--frame-tx)}
-.dh .forge .fbot label input{margin:0;accent-color:var(--strain);cursor:pointer}
+/* The tick is `sheet.css`'s; two things about it are this footer's. It is
+   violet rather than gold, for the reason above. And it stands on the
+   window's *chrome* rather than on its paper — `--frame` is near-black in
+   both themes, so the paper ground the tick assumes would be a bright
+   block here on the light one. Chrome tokens for a control in the chrome. */
+.dh .forge .fbot label input{background:var(--frame-2);
+  box-shadow:inset 0 0 0 1px var(--frame-line)}
+.dh .forge .fbot label input:checked{background:var(--strain);
+  box-shadow:inset 0 0 0 1px var(--strain)}
+.dh .forge .fbot label input:focus-visible{outline-color:var(--strain)}
 .dh .forge .fbot label.on{color:var(--strain)}
 
 /* ══════════════════════════════════════════════════════════════════

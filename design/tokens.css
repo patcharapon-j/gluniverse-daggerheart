@@ -158,6 +158,15 @@ body{font-family:var(--f-ui),system-ui,sans-serif;
 .bar a:hover,.bar a.on{color:var(--hope)}
 .tg{display:flex;align-items:center;gap:7px;font:400 12.5px/1 var(--f-ui);color:#9aa3ae;cursor:pointer;user-select:none}
 input[type=range]{width:140px;accent-color:var(--hope)}
+/* The studio's toggles are the studio and not the system, so they keep the
+   browser's own control. `sheet.css` draws this system's tick as a bare
+   element rule — right, because three of our surfaces carry one and the
+   port scopes the lot to `.dh` — and a study page loading that file
+   unported gets it on its own furniture too. Specificity rather than order,
+   since sheet.css loads after this file. */
+.tg input[type=checkbox]{appearance:auto;-webkit-appearance:auto;
+  width:auto;height:auto;min-width:0;min-height:0;
+  background:none;box-shadow:none;transform:none;accent-color:var(--hope)}
 h2{font:600 15px/1 var(--f-display);color:#fff;margin:54px 0 6px}
 h2 span{font:600 10px/1 var(--f-mono);letter-spacing:.22em;color:var(--hope);display:block;margin-bottom:9px}
 .note{font:400 12.5px/1.6 var(--f-ui);color:#96a0ac;max-width:760px;margin:0 0 26px}

@@ -142,6 +142,21 @@ export class CharacterData extends (TypeDataModel() as any) {
          happened once. */
       tiersEntered: obj(),
 
+      /* The domain card every level hands over, keyed by the level that handed
+         it over. Step 4 of the printed level-up, and *not* the advancement
+         option beside it — "choose an **additional** domain card" is additional
+         to this one, which is why there are two of them and why this system
+         having neither was two rules missing rather than one.
+
+         An event, for `tiersEntered`'s reason: a level typed down to 4 and back
+         up to 5 has not reached level 5 twice. And three-valued on purpose —
+         **absent** is a level reached before this record existed and is owed
+         nothing, **null** is a level reached and not yet spent, and a card is
+         the answer. Which is what lets an old character level up and be asked
+         about that level alone, rather than handed a bill for every level they
+         have ever gained. */
+      levelCards: obj(),
+
       experiences: arr(experienceField()),
 
       /* ── what character creation wrote down ──────────────────────────

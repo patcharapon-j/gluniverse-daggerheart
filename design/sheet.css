@@ -18,6 +18,50 @@
    which are silhouettes borrowed from the printed sheet.
    ══════════════════════════════════════════════════════════════════ */
 
+/* ── the tick ──────────────────────────────────────────────────────
+   A checkbox and a radio, drawn rather than inherited. This is the fourth
+   time the same lesson has arrived from a new direction — the environment
+   is part of the component — and the first time it is about a control
+   this system genuinely wanted the browser to draw.
+
+   Foundry's `elements` layer takes both to `appearance:none` and rebuilds
+   them out of two Font Awesome glyphs: a ring in
+   `--checkbox-background-color` while the box is empty, a filled dot in
+   `--checkbox-checked-color` once it is not. Both are Foundry's own theme
+   colours. The first is a dark cool grey within a shade of `--sunk`, so a
+   picker row's control is invisible until it is chosen; the second is
+   Foundry orange, a hue this system reserves for nothing, so the control
+   does not appear to change state — it appears out of nowhere, wearing
+   somebody else's palette.
+
+   It also moves. The glyph that is *in flow* swaps from the `::before` to
+   the `::after` as the box is checked, in a different Font Awesome face,
+   and two faces do not put their baseline in the same place — so a row
+   aligned on baselines changes height the moment you press it. Every
+   study page in `design/` renders the browser's own control and can see
+   none of this; `tools/verify/` carries the layer and does.
+
+   So the pseudo-elements go, the metrics are stated rather than left to
+   whatever glyph happens to be in the box, and the mark is the family's
+   rhombus — the same shape as the pip you are about to mark, sitting on
+   the thing that would mark it. `accent-color` is not part of the answer
+   and is gone from all three sites that carried it: it is a property of
+   the *native* control, and by the time this rule runs there is no native
+   control left for it to tint. */
+input[type=checkbox],input[type=radio]{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  flex:none;width:11px;height:11px;min-width:11px;min-height:11px;
+  margin:0;padding:0;border:0;border-radius:0;cursor:pointer;
+  background:var(--raise);box-shadow:inset 0 0 0 1px var(--line-2);
+  transform:rotate(45deg);transition:background .12s,box-shadow .12s}
+input[type=checkbox]::before,input[type=checkbox]::after,
+input[type=radio]::before,input[type=radio]::after{content:none}
+input[type=checkbox]:checked,input[type=radio]:checked{
+  background:var(--hope);box-shadow:inset 0 0 0 1px var(--hope)}
+input[type=checkbox]:focus-visible,input[type=radio]:focus-visible{
+  outline:1px solid var(--hope);outline-offset:3px}
+input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
+
 /* ── the Foundry window ────────────────────────────────────────────
    position:relative because the peek layer is its child. That is not a
    detail — it is the fix for a card being clipped by the tab pane's
@@ -502,7 +546,21 @@
    not as a control parked next to it — the panel is quiet furniture and a
    button with a box on it would be the loudest thing on the tab. Gold only
    on hover: this is available, not urgent. */
+/* Every metric stated, height included, and that is not belt and braces.
+   Foundry's `elements` layer sizes every <button> to a fixed 28px, and our
+   stylesheets arrive in the `system` layer, which is declared after it — so
+   an unstated height is 28px whatever the type says. This press is 9px of
+   mono inheriting a 9px heading, and unreset it took the panel's whole
+   heading row from 9px to 28px: the label was the right size, in the right
+   place, with nineteen pixels of nothing under it, which reads as a spacing
+   choice rather than as an inherited height.
+
+   A study page cannot see it — `design/` is authored as whole documents and
+   nothing here declares Foundry's layer. See the note in `make.css`, which
+   resets this once for a whole window; there are three buttons on this sheet
+   that are type rather than controls, and each states its own. */
 .pnl > .k .nw{margin-left:auto;border:0;background:none;padding:0;cursor:pointer;
+  height:auto;min-height:0;max-height:none;
   font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--ink-3);
   transition:color .12s}
 .pnl > .k s + .nw{margin-left:0}
@@ -520,6 +578,7 @@
    rather than made a button: it is a phrase in a line of prose, and a box
    around two words in the middle of a sentence is a worse object than a link. */
 .ach .nw{border:0;background:none;padding:0;cursor:pointer;font:inherit;
+  height:auto;min-height:0;max-height:none;
   color:var(--hope-tx);text-decoration:underline;text-underline-offset:2px}
 .ach .nw:hover{color:var(--hope)}
 
@@ -1069,6 +1128,65 @@
 .adv .row .lb{font:400 11.5px/1.36 var(--f-ui);color:var(--ink-2);min-width:0}
 /* exhausted: every slot marked, so the option is spent for this tier */
 .adv .row.done .lb{color:var(--ink-3)}
+
+/* ── what a box actually took ──────────────────────────────────────
+   Eight of the nine options are their own record: mark "permanently gain
+   one Stress slot" and the Stress track is a box longer, and the two can
+   never disagree because there is only one of them. The ninth hands you a
+   *document*, and a mark on that one is true and useless at the same time
+   — it says you are owed a domain card and not which, nor whether you ever
+   went and got it.
+
+   So that row prints its answer under the option. Two states, and they are
+   deliberately different *kinds* of thing rather than two colours of one:
+   a card you hold is a fact and is set in the label's own voice, and a card
+   you are owed is an offer and is a control you can press. Nothing here is
+   ever both.
+
+   `s` rather than a second `b`: the tag is unstyled everywhere in this
+   design and the strike is turned off, exactly as `.pick s` does — it is a
+   quiet second line about the thing above it, which is the job. */
+.adv .row .got{display:block;margin-top:4px;text-decoration:none;
+  font:600 11px/1.3 var(--f-ui);color:var(--ink-2)}
+.adv .row .got::before{content:"↳ ";color:var(--ink-3)}
+/* Owed, not taken. Violet is the wrong hue — this is not a rule acting on
+   you — and the wound's red is wrong for the same reason it is wrong on the
+   budget line: nothing is broken. It is quiet, because the press two
+   millimetres away is what anybody who can act on it will see instead. */
+.adv .row .got.owed{font-weight:400;font-style:italic;color:var(--ink-3)}
+
+/* ── the card every level gives ────────────────────────────────────
+   Step 4 of the printed level-up, which is not one of the two advancement
+   choices beside it — "choose an *additional* domain card" is additional to
+   this one. So it is a panel of its own above the tier tables: those are a
+   rules table this system copies, and this is a ledger of what happened.
+
+   The level stands in the cell a row of slot boxes stands in, and it is a
+   numeral rather than a box because there is nothing here to mark: a level
+   is not something you choose to have. It is set at two boxes' width so a
+   two-digit level does not move the label under it, and gold once the
+   card has been taken — the same "spent" the budget line means by it. */
+.adv .row .lvn{flex:none;width:33px;padding-top:1px;text-align:center;
+  font:700 12px/1.25 var(--f-mono);letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;color:var(--ink-3)}
+.adv .row.done .lvn{color:var(--hope-tx)}
+
+/* The press. Gold, because it is an offer of a thing you have not spent —
+   the same claim the budget line's `owed` state makes with the same hue.
+   Every metric is stated: Foundry's `elements` layer sizes every <button>
+   to a centred 28px line, which on a control that lives inside a paragraph
+   is a 28px hole in the middle of a sentence. See the note at the head of
+   `make.css`, which resets this once for a whole window; there is one
+   button in this panel, so it states its own. */
+.adv .row .tk{display:inline-block;margin-top:5px;padding:3px 9px 4px;
+  height:auto;min-height:0;max-height:none;border:0;cursor:pointer;
+  font:700 8px/1.35 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--hope-tx);background:color-mix(in srgb,var(--hope) 11%,var(--sunk));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 45%,var(--line));
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .12s,box-shadow .12s}
+.adv .row .tk:hover{background:color-mix(in srgb,var(--hope) 20%,var(--sunk));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 70%,var(--line))}
 /* `container-type` and `width` are reset, not merely left unset, because
    `.slots` is a name two components share: track.css's slot row — HP, Stress
    and Armor Slots as one full-width component — declares
@@ -1257,7 +1375,10 @@
 .slot .sh{display:flex;align-items:baseline;gap:8px;margin-bottom:7px;
   font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
   color:var(--ink-3)}
+/* Height stated, for `.pnl > .k .nw`'s reason: an 11px control in a slot
+   header that Foundry would otherwise draw 28px tall. */
 .slot .sh button{margin-left:auto;border:0;background:transparent;cursor:pointer;padding:2px 0;
+  height:auto;min-height:0;max-height:none;
   font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-3);transition:color .14s}
 .slot .sh button:hover{color:var(--hope-tx)}

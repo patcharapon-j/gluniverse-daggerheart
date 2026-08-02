@@ -162,7 +162,17 @@ export const ADV = [
       {k: 'Permanently gain one Hit Point slot',                           slots: 2, on: 0},
       {k: 'Permanently gain one Stress slot',                              slots: 2, on: 1},
       {k: 'Permanently gain a +1 bonus to two Experiences',                slots: 1, on: 0},
-      {k: 'Choose an additional domain card of your level or lower (up to level 4)', slots: 1, on: 0},
+      /* `took` is the one thing an advancement mark cannot say on its own.
+         Eight of the nine options *are* their own record — mark a Stress
+         slot and the track is a box longer — but this one hands over a
+         document, so the mark is true and useless at the same time: you are
+         owed a card, and not which. An entry names the card; a null says the
+         box is marked and nothing has been chosen, which is both the moment
+         after you mark it and the state every character who levelled up
+         before the row could say so is in. One per mark, so an option taken
+         twice answers twice. */
+      {k: 'Choose an additional domain card of your level or lower (up to level 4)', slots: 1, on: 1,
+       took: [null]},
       {k: 'Permanently gain a +1 bonus to your Evasion',                   slots: 1, on: 0},
     ]},
   { tier: 3, lv: '5–7', at: 5,
@@ -501,7 +511,43 @@ const OPT = (o, ti, oi) => `
 <div class="row${o.on >= o.slots ? ' done' : ''}">
   <span class="slots${o.pair ? ' pair' : ''}" data-adv="${ti}.${oi}">
     ${Array.from({length: o.slots}, (_, i) => XBOX(i < o.on)).join('')}</span>
-  <span class="lb">${o.k}</span>
+  <span class="lb">${o.k}${o.took ? TOOK(o, ti, oi) : ''}</span>
+</div>`;
+
+/* What the box actually took, one line per mark. A card is a fact and is
+   set in the label's own voice; a card you are owed is an *offer* and is a
+   control you can press. Never both — a row that printed a name and a
+   button beside it would be asking a question it had already answered. */
+const TOOK = (o, ti, oi) => Array.from({length: o.on}, (_, i) => o.took[i]
+  ? `<s class="got">${o.took[i]}</s>`
+  : `<button type="button" class="tk" data-took="${ti}.${oi}.${i}">Choose a card</button>`
+).join('');
+
+/* The card every level gives — step 4 of the printed level-up, and not one
+   of the two advancement choices beside it. A ledger of what happened to
+   you, above the tier tables, which are a rules table copied. Only levels
+   the record has seen: a level reached before the record existed is owed
+   nothing and shows nothing. */
+export const LVCARDS = [
+  {level: 2, took: 'Whirlwind'},
+  {level: 3, took: null},
+];
+
+const LVROW = (r) => `
+<div class="row${r.took ? ' done' : ''}">
+  <span class="lvn">${r.level}</span>
+  <span class="lb">Level ${r.level}${r.took
+    ? `<s class="got">${r.took}</s>`
+    : `<button type="button" class="tk" data-lvcard="${r.level}">Choose a card</button>`}</span>
+</div>`;
+
+const LVPANEL = () => !LVCARDS.length ? '' : `
+<div class="pnl adv">
+  <div class="k">Domain cards<s>one at every level</s></div>
+  <p class="ach">Every level gives you a domain card at your level or lower — the printed
+  level-up's step 4, and not the advancement option beside it. A level that has not spent
+  its card says so here.</p>
+  ${LVCARDS.map(LVROW).join('')}
 </div>`;
 
 const TIER = (t, i) => {
@@ -651,7 +697,21 @@ const SWAP_TAB = (D) => {
     </div>
   </div>
   <div class="pnl swap vaultp${on}">
-    <div class="k">Vault<s>${D.vault.length} stored</s></div>
+    <!-- The one place on this tab a card arrives from outside it. Dragging
+         one in off the compendium has always worked and always asked you to
+         know which of 189 you were allowed; this is that gesture with the
+         rule already applied. The panel's own .nw, so it reads as part of
+         the heading rather than as a control parked next to it.
+
+         No backticks in this comment, and that is not a house style: every
+         builder in this file is a template literal, so a backtick inside
+         the markup *closes* it. This comment named the class in the code
+         quotes the rest of the repo uses, and what followed became a
+         tagged-template call on the expression before it. It parses
+         cleanly, throws at render, and the console said nothing — the
+         sheet simply lost its tab strip. -->
+    <div class="k">Vault<s>${D.vault.length} stored</s>
+      <button type="button" class="nw" data-addcard>+ card</button></div>
     ${COST(armed)}
     <div class="grid2">
       ${D.vault.map((c, i) => `
@@ -712,6 +772,7 @@ const BODY = (tab, D) => ({
       Proficiency is how many damage dice you roll — your ${eq('primary')
         ? `${eq('primary').name} rolls ${dmgText(eq('primary'), PC.prof)}` : 'weapon scales with it'}.</p>
     </div>
+    ${LVPANEL()}
     ${ADV.map((t, i) => TIER(t, i)).join('')}`,
   bio: `
     <div class="pnl"><div class="k">Background</div>

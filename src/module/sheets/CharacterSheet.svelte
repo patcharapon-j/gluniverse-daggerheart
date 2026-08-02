@@ -31,7 +31,16 @@
   } from "../config.ts";
   import type { ItemSnapshot, SheetState } from "../apps/sheet-state.svelte.ts";
   import { handleActorDrop } from "../apps/svelte-sheets.ts";
-  import { applyTierEntry, setAdvancement } from "../apps/advance.ts";
+  import {
+    applyLevelCards,
+    applyTierEntry,
+    choiceKey,
+    claimAdvancement,
+    claimLevelCard,
+    levelCardRows,
+    setAdvancement,
+  } from "../apps/advance.ts";
+  import { addDomainCard } from "../apps/domain-cards.ts";
   import { takeDamage } from "../apps/damage.ts";
   import { rest } from "../apps/rest.ts";
   import { absolute, cssUrl } from "../assets.ts";
@@ -322,12 +331,26 @@
    * Applied after the write, so `applyTierEntry` reads the level it is
    * reacting to. It records which tiers it has already paid out — see
    * `tiersEntered` — so a level typed down and back up does not collect twice.
+   *
+   * And **every level gives a domain card**, which is step 4 of the printed
+   * level-up and sits beside the two advancement choices rather than being one
+   * of them. `applyLevelCards` asks for it, once per level newly reached.
+   *
+   * It is handed the level you *were*, and that is the whole migration: the
+   * record only knows about levels it has seen, so a character who has been
+   * level 6 all year is asked about level 7 and about nothing else, rather
+   * than being handed a bill for a campaign's worth of levels already played.
+   * Read before the write, or the old level is the new one.
    */
   async function setLevel(n: number) {
     if (!edit) return;
+    const was = Number(sys.level ?? 1);
     const level = Math.min(MAX_LEVEL, Math.max(1, Math.round(n || 1)));
     await doc.update({ "system.level": level });
     for (const line of await applyTierEntry(doc, level)) {
+      ui.notifications?.info(line);
+    }
+    for (const line of await applyLevelCards(doc, was, level)) {
       ui.notifications?.info(line);
     }
   }
@@ -1687,6 +1710,69 @@
     void setAdvancement(doc, tier, option, on, n === on ? n - 1 : n);
   }
 
+  /* ── what the card advancement actually took ───────────────────────
+     The one option on this tab that hands you a *document*, and therefore
+     the one whose mark could be true and useless at the same time: the box
+     said you were owed a domain card and nothing on the sheet said which,
+     or whether you had ever gone and got it.
+
+     So the row prints its answer. A box with a card behind it names the
+     card; a box without one says so and offers the picker, which is both
+     the ordinary path — mark it, choose, done — and the only way a
+     character who levelled up before any of this existed can catch up. It
+     reads the *live* Item rather than the stored name, so a card deleted
+     off the gear tab takes its claim back down to unchosen rather than
+     leaving the panel asserting a document that has gone.
+
+     Both halves are read off the snapshot rather than off the document —
+     `sys` for the record and `cards` for the card — because the snapshot is
+     what Svelte tracks. `doc.items.get()` would answer correctly and answer
+     once: deleting the card off the gear tab changes no reactive value, so
+     the row would go on naming it until something else forced a pass. */
+  const cardTaken = (tier: number, option: number, n: number): string | null => {
+    const id = (sys.advancementChoices as any)?.[choiceKey(tier, option, n)]?.card?.id;
+    return (id && cards.find((c) => c.id === id)?.name) || null;
+  };
+
+  function onClaim(tier: any, option: number, n: number) {
+    if (!edit) return;
+    void claimAdvancement(doc, tier, option, n);
+  }
+
+  /* ── the card every level gives ────────────────────────────────────
+     Step 4 of the printed level-up, and its own panel rather than rows
+     inside a tier's, because it is a fact about a *level* and the tier
+     panels are the printed advancement table — one is a rules table this
+     system copies and the other is a ledger of what happened to you.
+
+     Only levels the record has seen appear, which is what keeps an old
+     character quiet: `levelCardRows` reads the keys rather than counting
+     from 2, so a level reached before any of this existed is owed nothing
+     and shows nothing. See `applyLevelCards`.
+
+     Read off the snapshot for `cardTaken`'s reason — deleting the card on
+     the gear tab has to take its name off this row. */
+  const levelCards = $derived.by(() => {
+    void sys.levelCards;
+    void sys.level;
+    return levelCardRows(doc).map((r) => ({
+      level: r.level,
+      name: (r.card?.id && cards.find((c) => c.id === r.card?.id)?.name) || null,
+    }));
+  });
+
+  function onClaimLevel(level: number) {
+    if (!edit) return;
+    void claimLevelCard(doc, level);
+  }
+
+  /* Nothing is recorded, because nothing bought it. The advancement box and
+     the level card are both settling an account and have somewhere to write
+     the answer; this is the drag-in gesture with the compendium's own filter
+     applied, and inventing a ledger entry for it would claim a rule that is
+     not there. */
+  const onAddCard = () => ed && void addDomainCard(doc);
+
   /* ── writes ───────────────────────────────────────────────────────── */
 
   const set = (path: string, value: unknown) => ed && doc.update({ [path]: value });
@@ -2610,7 +2696,19 @@
             ondragover={(e) => dragOver(e, "vault", null)}
             ondrop={(e) => dropCard(e, "vault", null)}
           >
-            <div class="k">Vault<s>{vault.length} stored</s></div>
+            <!-- The one place on this tab a card can arrive from outside it.
+                 Dragging one in off the compendium has always worked and
+                 always asked you to know which of 189 cards you were allowed
+                 to take; this is that gesture with the rule already applied.
+                 `ed` and not `edit`, the same call the gear tab's "+ new"
+                 makes: taking a card is a deliberate act in a way a click on
+                 a number is not. -->
+            <div class="k">
+              Vault<s>{vault.length} stored</s>
+              {#if ed}
+                <button type="button" class="nw" onclick={onAddCard}>+ card</button>
+              {/if}
+            </div>
 
             <div class="swcost" class:on={resting}>
               <label
@@ -2889,8 +2987,8 @@
             <p class="ach">
               <b>Marking a slot takes the advancement.</b> A Hit Point, a Stress slot, Evasion and
               Proficiency move the moment you mark them and move back when you unmark them; two
-              traits and two Experiences ask which; a card or a class you drag in yourself. Both
-              damage thresholds rise with your level on their own.
+              traits, two Experiences and a domain card ask which; a subclass card or a second class
+              you drag in yourself. Both damage thresholds rise with your level on their own.
             </p>
             <p class="ach">
               Each level, choose two options with unmarked slots. An option with a heavier frame
@@ -2905,6 +3003,49 @@
               {/if}
             </p>
           </div>
+
+          <!-- ══ the card every level gives ═════════════════════════════
+               Step 4 of the printed level-up, and *not* the advancement
+               option beside it — "choose an **additional** domain card" is
+               additional to this one, which the table says out loud and
+               nobody had read. Two rules were missing here rather than one.
+
+               Its own panel, because it is a fact about a *level* and the
+               tier panels below are the printed advancement table: one is a
+               rules table this system copies and the other is a ledger of
+               what happened to you.
+
+               Only levels the record has seen appear, so a character who
+               levelled up before any of this existed is owed nothing and
+               shown nothing until their next level. See `applyLevelCards`. -->
+          {#if levelCards.length}
+            <div class="pnl adv">
+              <div class="k">
+                {game.i18n.localize("DAGGERHEART.Advance.LevelCards")}
+                <s>{game.i18n.localize("DAGGERHEART.Advance.LevelCardsSub")}</s>
+              </div>
+              <p class="ach">{game.i18n.localize("DAGGERHEART.Advance.LevelCardsHint")}</p>
+              {#each levelCards as r (r.level)}
+                <div class="row" class:done={!!r.name}>
+                  <span class="lvn">{r.level}</span>
+                  <span class="lb">
+                    {game.i18n.format("DAGGERHEART.Advance.LevelLabel", { level: r.level })}
+                    {#if r.name}
+                      <s class="got">{r.name}</s>
+                    {:else if edit}
+                      <button type="button" class="tk" onclick={() => onClaimLevel(r.level)}>
+                        {game.i18n.localize("DAGGERHEART.Advance.Choose")}
+                      </button>
+                    {:else}
+                      <s class="got owed"
+                        >{game.i18n.localize("DAGGERHEART.Advance.Unchosen")}</s
+                      >
+                    {/if}
+                  </span>
+                </div>
+              {/each}
+            </div>
+          {/if}
 
           {#each budgets as b (b.tier.tier)}
             {@const t = b.tier}
@@ -2942,7 +3083,29 @@
                     class:pair={o.pair}
                     onclick={(e) => open && onAdvance(e, t, oi, on)}
                   >{@html boxes(o.slots, on)}</span>
-                  <span class="lb">{o.label}</span>
+                  <span class="lb">
+                    {o.label}
+                    <!-- The only option here that hands over a document, and
+                         so the only one whose mark is not the whole record.
+                         One line per mark: the card it took, or the press
+                         that goes and gets it. -->
+                    {#if o.id === "domainCard" && open}
+                      {#each Array(on) as _, i (i)}
+                        {@const got = cardTaken(t.tier, oi, i + 1)}
+                        {#if got}
+                          <s class="got">{got}</s>
+                        {:else if edit}
+                          <button type="button" class="tk" onclick={() => onClaim(t, oi, i + 1)}>
+                            {game.i18n.localize("DAGGERHEART.Advance.Choose")}
+                          </button>
+                        {:else}
+                          <s class="got owed"
+                            >{game.i18n.localize("DAGGERHEART.Advance.Unchosen")}</s
+                          >
+                        {/if}
+                      {/each}
+                    {/if}
+                  </span>
                 </div>
               {/each}
             </div>

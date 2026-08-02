@@ -585,6 +585,22 @@ export function choicesDue(level: number, tier: AdvancementTier): number {
 }
 
 /**
+ * The last level a tier covers — and therefore the ceiling its domain-card
+ * option puts on the card you may choose.
+ *
+ * "Choose an additional domain card of your level or lower **(up to level
+ * 4)**" is one rule with two limits, and the parenthesis is the one that has
+ * only ever existed as prose in the option's own label. It is the tier's top
+ * level: take tier 2's advancement at level 7 and you still get a card of
+ * level 4 or lower, because the choice belongs to the tier that was owed it
+ * rather than to the level you happen to be at when you get round to it.
+ *
+ * Derived from `at` rather than stored, so it cannot disagree with `levels`.
+ */
+export const tierTopLevel = (tier: AdvancementTier): number =>
+  Math.min(MAX_LEVEL, tier.at + TIER_SPAN - 1);
+
+/**
  * What has been spent in one tier, counted in choices rather than in marks.
  *
  * They are different numbers, and the difference is the whole reason this is

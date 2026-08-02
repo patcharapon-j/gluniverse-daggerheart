@@ -1217,7 +1217,6 @@
               type="checkbox"
               bind:checked={mixing}
               onchange={() => (mixTop = null)}
-              style="accent-color:var(--hope);margin:0"
             />
             mixed ancestry
           </label>

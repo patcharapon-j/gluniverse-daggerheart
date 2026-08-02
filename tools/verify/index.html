@@ -74,6 +74,29 @@
   @layer elements {
     button{height:28px;min-height:28px;display:flex;align-items:center;
       justify-content:center;text-align:center;font-family:inherit}
+
+    /* ── and Foundry's checkbox ────────────────────────────────────
+       The same layer takes every checkbox and radio to `appearance:none`
+       and rebuilds it out of Font Awesome: a 20px ring in Foundry's own
+       theme grey while the box is empty, and — the half that moves — a
+       *different* pseudo-element in a *different* face once it is not.
+       An unreset control is therefore 20px tall, invisible on our ground
+       until it is chosen, orange afterwards, and a different height in
+       each state. Copied at the declarations that produce all three. */
+    input[type=checkbox],input[type=radio]{
+      --checkbox-size:1.25rem;cursor:pointer;appearance:none;-webkit-appearance:none}
+    input[type=checkbox]::before,input[type=radio]::before,
+    input[type=checkbox]::after,input[type=radio]::after{
+      width:var(--checkbox-size);height:var(--checkbox-size);
+      font-size:var(--checkbox-size);line-height:var(--checkbox-size)}
+    input[type=checkbox]::before,input[type=radio]::before{
+      font-family:"Font Awesome 6 Free";font-weight:900}
+    input[type=radio]::before{content:"\f111"}
+    input[type=radio]:checked{position:relative}
+    input[type=radio]:checked::before{content:"\f192";position:absolute}
+    input[type=radio]:checked::after{content:"\f192";font-family:"Font Awesome 6 Free"}
+    input[type=checkbox]::before{content:"\f0c8"}
+    input[type=checkbox]:checked::before{content:"\f14a"}
   }
 
   /* ── Foundry's chat message, stood in for ─────────────────────────
@@ -130,6 +153,12 @@
 
 <h2><span>// THE PANE</span>Where the traits strip belongs</h2>
 <div class="stage" id="traits"></div>
+
+<h2><span>// THE PANEL</span>A sheet panel's two presses, which are type and not controls</h2>
+<div class="stage" id="panel"></div>
+
+<h2><span>// THE TICK</span>A picker row's control, which Foundry redraws in its own palette</h2>
+<div class="stage" id="tick"></div>
 
 <h2><span>// THE PREP</span>The roll popover, and the pair it now names</h2>
 <div class="stage" id="prep"></div>
@@ -412,6 +441,77 @@ document.getElementById('traits').innerHTML = `
   </div>
   <div>
     <div class="lbl">AFTER · child of .pane</div>${pane(false)}
+  </div>`;
+
+/* ── THE PANEL ──────────────────────────────────────────────────────
+   `make.css`'s lesson arriving on the character sheet, which is where it was
+   never looked for.
+
+   Three presses on this sheet are *type* rather than controls: a panel
+   heading's "+ new" and "+ card", the empty state's inline way out, and a
+   slot header's "unequip". Each inherits a 7.5–9px mono line and each is a
+   <button>, so Foundry's `elements` layer draws all three 28px tall — which
+   on a 9px heading is a nineteen-pixel hole under a correctly-sized label,
+   and reads as a spacing choice rather than as an inherited height. Two of
+   them shipped that way for as long as the sheet has had them, and were only
+   found by measuring one.
+
+   The advancement claim press is the other side of the same rule and states
+   its own metrics deliberately: it is a real press with a box on it, and 18px
+   is what its own padding and line make. If it ever measures 28 it has lost
+   them too. */
+document.getElementById('panel').innerHTML = `
+  <div class="dh" style="width:300px;background:var(--paper);padding:14px">
+    <div class="lbl">PANEL HEADING · a press that is part of the label</div>
+    <div class="pnl" style="border-top:0">
+      <div class="k">Vault<s>7 stored</s><button type="button" class="nw">+ card</button></div>
+      <p class="ach">Nothing here yet — <button type="button" class="nw">take one</button>.</p>
+    </div>
+    <div class="lbl" style="margin-top:14px">ADVANCEMENT ROW · a press that is a press</div>
+    <div class="pnl adv" style="border-top:0">
+      <div class="row">
+        <span class="lvn">3</span>
+        <span class="lb">Level 3<button type="button" class="tk">Choose a card</button></span>
+      </div>
+      <div class="row done">
+        <span class="lvn">2</span>
+        <span class="lb">Level 2<s class="got">Whirlwind</s></span>
+      </div>
+    </div>
+  </div>`;
+
+/* ── THE TICK ───────────────────────────────────────────────────────
+   The lesson above, one element along, and the first time it has landed on a
+   control this system genuinely wanted the browser to draw.
+
+   `.pick` is the picker row in `dlg.css` — two of them ship, the creation
+   window's two-from-a-list and the domain-card list — and it asked for a
+   native checkbox tinted with `accent-color`. Foundry's `elements` layer
+   takes both to `appearance:none` and rebuilds them out of Font Awesome, so
+   `accent-color` had nothing left to tint and the row inherited three faults
+   at once: a 20px control where the design drew ~11, an unchecked mark in
+   Foundry's own theme grey that is within a shade of `--sunk` and therefore
+   invisible on the row, and — because the glyph that is in flow swaps
+   pseudo-element *and* face as the box is checked — a row that changes
+   height the moment you press it. Which is what it looked like from the
+   table: nothing there, then a radio button out of nowhere and the list
+   jumping.
+
+   Both states are drawn side by side and both are measured. The height check
+   is the one that could not be seen anywhere else in this repo: `design/`
+   has no Foundry, so its study pages render the browser's control and are
+   right about a component the game was drawing wrong. */
+document.getElementById('tick').innerHTML = `
+  <div class="dh" style="width:340px;background:var(--paper);padding:14px">
+    <div class="lbl">PICKER ROWS · unchecked, chosen, and dead</div>
+    <div class="picks" id="tickrows">
+      <label class="pick"><input type="radio" name="tk">
+        <b>Whirlwind</b><s>Blade · Lv 1 · Recall 1</s></label>
+      <label class="pick"><input type="radio" name="tk" checked>
+        <b>Not Good Enough</b><s>Bone · Lv 2 · Recall 0</s></label>
+      <label class="pick"><input type="checkbox" disabled>
+        <b>Agility</b><s>now +2</s></label>
+    </div>
   </div>`;
 
 /* ── THE PREP ───────────────────────────────────────────────────────
@@ -728,8 +828,16 @@ setTimeout(async () => { try {
      26px strip still reads as a button. */
   const head = document.querySelector('#log .dhk');
   const body = document.querySelector('#log .message-content');
+  /* The seam is `margin-bottom:-1px`, so "above" means the header's bottom
+     lands within a pixel of the object's top — and the tolerance has to
+     clear the *seam itself* with room to spare, or the comparison is
+     subpixel noise against an exact bound. It sat at `+ 1`, which is the
+     seam exactly, and flipped on a fractional page offset once another
+     stage was added below it. Two pixels still tells the two cases apart:
+     a header that has drifted *below* its object is out by the height of a
+     card. That the seam is precisely -1 is checked on its own, next. */
   const above = head && body &&
-    head.getBoundingClientRect().bottom <= body.getBoundingClientRect().top + 1;
+    head.getBoundingClientRect().bottom <= body.getBoundingClientRect().top + 2;
   check('the header sits above the object', !!above,
         above ? 'header, then card' : 'the header is under the card it names');
 
@@ -1007,6 +1115,50 @@ setTimeout(async () => { try {
   const hueH = getComputedStyle(document.querySelector('#prep2 .dch.h .dsil')).backgroundColor;
   const hueF = getComputedStyle(document.querySelector('#prep2 .dch.f .dsil')).backgroundColor;
   check('the pair keeps its two hues', hueH !== hueF, `${hueH} / ${hueF}`);
+
+  /* The same lesson on the character sheet. A heading's press inherits the
+     heading's own 9px mono so that it reads as part of the label; unreset it
+     takes the whole heading row to 28. The claim press states its own metrics
+     because it genuinely is a control, and 18px is what they make. */
+  const nw = document.querySelector('#panel .pnl > .k .nw');
+  const nwH = Math.round(nw.getBoundingClientRect().height);
+  const kH = Math.round(nw.parentElement.getBoundingClientRect().height);
+  check('a heading press is type, not a 28px control', nwH < 16 && kH < 16,
+        `press ${nwH}px in a ${kH}px heading`);
+
+  const tk = document.querySelector('#panel .adv .tk');
+  const tkH = Math.round(tk.getBoundingClientRect().height);
+  check('a claim press is the size it declares', tkH > 12 && tkH < 26, `${tkH}px`);
+
+  /* The tick, and three things about it. Its *size* is ours rather than the
+     20px Foundry's glyph makes — measured on the unchecked one, since that is
+     the state the layer inflates. Its two states are the same box, which is
+     the fault a baseline-aligned row turns into a jumping list. And its mark
+     is Hope, not Foundry orange: the two states have to differ, and the
+     chosen one has to be the colour this system spends. */
+  const [tkOff, tkOn] = [...document.querySelectorAll('#tickrows input')];
+  /* offsetWidth, not a rect: the mark is a square turned 45°, so its *drawn*
+     extent is 11√2 and its *layout* box is 11. The box is what the row
+     reserves and therefore what the layer inflates, so the box is what is
+     under test. */
+  check('the tick is the size it declares, not Foundry’s glyph',
+        tkOff.offsetHeight === 11 && tkOff.offsetWidth === 11,
+        `${tkOff.offsetWidth}×${tkOff.offsetHeight} laid out`);
+
+  const tickRowH = (el) => Math.round(el.closest('.pick').getBoundingClientRect().height);
+  check('choosing one does not resize its row', tickRowH(tkOff) === tickRowH(tkOn),
+        `${tickRowH(tkOff)}px unchecked / ${tickRowH(tkOn)}px chosen`);
+
+  /* `--hope` resolved, not a literal, so a palette that stopped reaching the
+     dialog fails here rather than in front of a player. */
+  const tickHope = getComputedStyle(document.querySelector('#tickrows'))
+    .getPropertyValue('--hope').trim();
+  const tickPaint = (el) => getComputedStyle(el).backgroundColor;
+  const toRGB = (c) => { const d = document.createElement('i'); d.style.color = c;
+    document.body.append(d); const v = getComputedStyle(d).color; d.remove(); return v; };
+  check('the chosen tick is Hope, and the empty one is not',
+        tickPaint(tkOn) === toRGB(tickHope) && tickPaint(tkOff) !== tickPaint(tkOn),
+        `${tickPaint(tkOff)} → ${tickPaint(tkOn)}`);
 
   /* Third, `make.css`'s lesson arriving somewhere else. Every control in the
      popover is a <button>, and Foundry sizes those to one centred line 28px

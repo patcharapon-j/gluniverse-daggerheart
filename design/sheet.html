@@ -223,7 +223,7 @@ moves. Every panel the mode locks says so in a sentence underneath.</p>
 </div>
 
 <script type="module">
-import { PC, ADV, KIT, LOOT, CHARGES, SWAP, LOADCAP, recallCost, canPay,
+import { PC, ADV, LVCARDS, KIT, LOOT, CHARGES, SWAP, LOADCAP, recallCost, canPay,
          deck, SHEET, atkSlots, eq, twoHanded, armorSlots } from './sheet.js';
 import { fit } from './card.js';
 import { setMarks } from './mark.js';
@@ -420,8 +420,35 @@ lay.addEventListener('click', e => {
   const slot = e.target.closest('.adv .slots > i');
   if(slot && !slot.closest('.adv.shut')){
     const set = slot.parentElement, [ti, oi] = set.dataset.adv.split('.').map(Number);
-    ADV[ti].opts[oi].on = target(set, slot);
+    const o = ADV[ti].opts[oi];
+    o.on = target(set, slot);
+    /* An acquisition mark and the document it acquires are two things, and
+       marking is only the first of them. The record is trimmed to the marks
+       rather than cleared, so unmarking the third and marking it again does
+       not lose what the first two took. */
+    if(o.took) o.took = Array.from({length: o.on}, (_, i) => o.took[i] ?? null);
     paint(); return;
+  }
+
+  /* The study's stand-in for the picker. In the system this opens a dialog
+     over the domains pack, constrained to your domains and the *tier's* top
+     level — see `askDomainCard`. Here it only needs to show what the row
+     looks like once the question has been answered. */
+  const took = e.target.closest('[data-took]');
+  if(took){
+    const [ti, oi, i] = took.dataset.took.split('.').map(Number);
+    ADV[ti].opts[oi].took[i] = 'Whirlwind';
+    paint(); return;
+  }
+
+  /* The other card an advancement panel owes: the one every level gives,
+     which is step 4 of the printed level-up and not one of the two
+     choices beside it. Same press, same two states, different ledger. */
+  const lvc = e.target.closest('[data-lvcard]');
+  if(lvc){
+    const row = LVCARDS.find(r => r.level === +lvc.dataset.lvcard);
+    if(row){ row.took = 'Bare Bones'; paint(); }
+    return;
   }
 
   /* A consumable's charges. Same "click the box you want to be the last full
