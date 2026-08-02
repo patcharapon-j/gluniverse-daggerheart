@@ -588,27 +588,37 @@ on screen, which only ever happens under the GM's switch — at level 1 there is
 one tier and saying so above every group is the window answering a question
 nobody asked.
 
-The row keeps `data-pk`, so **hovering still opens the printed card**, and that
-is why the step could give the tile up without giving anything up: the tile was
-a text summary of a card that already exists in the peek layer, and the table is
-a better summary of the same card. `subgrid` is what lines the columns up
-*across* groups — one grid per group and Physical and Magic each solve their own
-widths, which is two tables of the same facts aligned differently, precisely
-what a table exists to prevent. See the equipment table block in
-`design/make.css`.
+**The row carries no `data-pk`, so nothing hovers.** `subgrid` is what lines the
+columns up *across* groups — one grid per group and Physical and Magic each
+solve their own widths, which is two tables of the same facts aligned
+differently, precisely what a table exists to prevent. See the equipment table
+block in `design/make.css`.
 
-**And none of those four steps peeks.** They carry no `data-pk` at all, which
-is the class step's argument reaching the rest of the window: the printed card
-is on screen, and a hover card over a card is the same picture twice. A
-`creationPeek` setting restored them for a while, on the reasoning that the
-argument turns on *size* — a 176px card is one you can identify and not always
-one you can read — and it is gone, because a peek is a way of asking *what is
-this* and these grids have already answered. The right answer to a card too
-small to read is a wider window. **Equipment is the one step that still peeks**,
-unconditionally: its rows are a table of five facts, not cards, so the peek
-layer is the only place the card exists at all. The review page draws no cards
-either and had been rendering one per owned item into a layer nothing could
-open; that is gone with it.
+**Nothing in this window peeks, and the layer is gone rather than empty.** The
+four card steps carry no `data-pk`, which is the class step's argument reaching
+the rest of the window: the printed card is on screen, and a hover card over a
+card is the same picture twice. A `creationPeek` setting restored them for a
+while, on the reasoning that the argument turns on *size* — a 176px card is one
+you can identify and not always one you can read — and it is gone, because a
+peek is a way of asking *what is this* and these grids have already answered.
+The right answer to a card too small to read is a wider window.
+
+Equipment was the last step holding one, and its argument was about the **tile**:
+a longsword is not a card, the tile stated five facts in five different places
+and left you asking what the object was, and the peek was the only place the
+whole thing existed. The table answers that in columns, which is what a table
+is — so the peek became a picture interrupting the comparison the table was
+built to let you make, and a picture of a weapon is a type glyph and a paragraph
+the row already prints. It went with the tile.
+
+So `CreationWindow.svelte` renders no `.peeklayer` at all, `peeks()` is not
+wired, and `.forge .peeklayer .pkc{width:393px}` is deleted rather than left
+unused — a layer rendering nothing is machinery that reads as a feature, and the
+`closePeeks()` calls on every step change would have been closing peeks
+belonging to somebody's open *character sheet*. The sheet's own peek is
+untouched; this is a claim about one window. `tools/verify/` inverted its check
+to match: a card inside a `.forge` must now measure exactly what it measures
+anywhere else, which is where a resurrected copy of that rule would surface.
 
 **Changing class cascades, and names every document first.** "3 items will be
 removed" is a sentence nobody can consent to, which is why `cascadeOf` returns

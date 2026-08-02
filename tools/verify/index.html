@@ -515,15 +515,17 @@ document.getElementById('forge').innerHTML = `
          box-shadow:inset 0 0 0 1px var(--frame-line)"></div>
   </div>
   <div>
-    <div class="lbl">PEEK · the sheet's card, and the creation window's</div>
-    <!-- Two peek layers, one inside a .forge and one not, because the size is
-         the whole argument for the creation window keeping the gesture at
-         all: the grid already draws the card, so a peek is worth opening only
-         if it is bigger than what is under the cursor. Both cards are parked
-         — visibility:hidden is a .pkc's resting state — so the check measures
-         rather than looks. (No backticks in here: this markup is a template
-         literal, and one would end it mid-comment. The whole page then draws
-         nothing at all, which is a blank study page rather than a red one.) -->
+    <div class="lbl">PEEK · the sheet's card, and no card in the window</div>
+    <!-- Two peek layers, one inside a .forge and one not, and what is under
+         test is now that make.css says nothing about the second. The creation
+         window renders no layer at all, so the qualified rule that used to
+         widen one is gone — and this is where a resurrected copy of it would
+         show up, as a sheet whose spines suddenly peek a 393px card. The card
+         is parked, since visibility:hidden is a .pkc's resting state, so the
+         check measures rather than looks. (No backticks in here: this markup
+         is a template literal, and one would end it mid-comment. The whole
+         page then draws nothing at all, which is a blank study page rather
+         than a red one.) -->
     <div class="dh" style="position:relative;width:300px;height:40px;background:var(--paper);
          box-shadow:inset 0 0 0 1px var(--frame-line)">
       <div class="peeklayer"><div class="pkc" id="pk-sheet"></div></div>
@@ -839,24 +841,22 @@ setTimeout(async () => { try {
   check('a chosen equipment row wears the gold edge',
         ring !== 'none' && ring.includes('inset'), ring === 'none' ? 'no ring' : ring);
 
-  /* The peek is the one rule in `make.css` that deliberately reaches into a
-     `sheet.css` component, and it reaches by *qualifier* — `.forge` — which
-     is the only way one of ours may. Two ways for it to fail silently, and
-     both leave a window that still works: lose the qualifier and every spine
-     on the character sheet peeks a 393px card, lose the rule and the setting
-     restores a peek the same size as the card already on screen, which is the
-     duplicate it was switched on to avoid. 262 × 1.5 is the claim.
+  /* `make.css` used to hold the one rule in this repo that deliberately reached
+     into a `sheet.css` component, widening a peeked card to 393px inside a
+     `.forge`. Nothing in the creation window peeks any more, so the rule is
+     gone and the claim inverts: a card inside a `.forge` must measure exactly
+     what it measures anywhere else. A resurrected copy of that rule shows up
+     here as the two numbers diverging — and, if it ever lost its `.forge`
+     qualifier, as every spine on the character sheet peeking a 393px card.
 
-     `offsetWidth` and not `getBoundingClientRect()`, because a peeked card
-     carries `fit()`'s scale — .97 here — and the rect is the *painted* box,
-     which is the CSS width times that. Measured that way both cards came back
-     3% short, which reads as the widths being wrong when the widths are exact
-     and it is the ruler that includes the transform. `offsetWidth` is the
-     layout box and is what a claim about a stated width wants. */
+     `offsetWidth` and not `getBoundingClientRect()`, because a parked `.pkc`
+     rests at `scale(.97)` and the rect is the *painted* box. Measured that way
+     both cards came back 3% short, which reads as the widths being wrong when
+     the widths are exact and it is the ruler that includes the transform. */
   const pkS = document.getElementById('pk-sheet').offsetWidth;
   const pkF = document.getElementById('pk-forge').offsetWidth;
-  check('the creation peek is half again the sheet\'s card',
-        pkS === 262 && pkF === Math.round(262 * 1.5),
+  check('the creation window does not resize the sheet\'s card',
+        pkS === 262 && pkF === 262,
         `${pkS}px on the sheet, ${pkF}px in the window`);
 
   /* ── the roll popover's pair ──────────────────────────────────────

@@ -351,10 +351,14 @@
    the caption only when more than one is on screen, which is only ever the
    GM's switch: at level 1 there is one tier and saying so six times is noise.
 
-   The row keeps `data-pk`, so **hovering still opens the printed card**. That
-   is the whole reason the step could give up the tile without giving anything
-   up: the tile was a text summary of a card that already exists in the peek
-   layer, and the table is a better summary of the same card.
+   **The row carries no `data-pk`, so nothing hovers.** The peek was the last
+   one left in this window and it belonged to the tile: a tile stated five
+   facts in five different places and left you asking what the object was, and
+   the peek answered. A table answers it in columns, which is what a table is
+   — so a card opening over the row under your cursor is a picture interrupting
+   the comparison the table exists to let you make, and it is a picture of a
+   weapon, which is to say a type glyph and a paragraph the row already prints.
+   See the no-peek block below.
 
    `subgrid` is what makes the columns line up across groups. The alternative
    is one grid per group, and then Physical and Magic each solve their own
@@ -642,7 +646,8 @@
    card's own independent art/type fit; the builder does not impose a second
    grid-wide scale on it.
 
-   Hover peeks nothing here — see the peek block below.
+   Hover peeks nothing here, and nowhere else in this window — see the no-peek
+   block below.
    ══════════════════════════════════════════════════════════════════ */
 
 .forge .fcards{display:grid;gap:14px;align-content:start;
@@ -695,11 +700,13 @@
   color:var(--fear-tx);background:color-mix(in srgb,var(--paper) 86%,transparent);
   box-shadow:inset 0 1px 0 var(--line)}
 
-/* ══ the peek, where it survives at all ═════════════════════════════
-   Four steps used to peek and none of them do now. Subclass, ancestry,
-   community and the domain deck all *draw the printed card* in the grid, so
-   hovering one opened a second copy of the picture already under the cursor
-   — the sheet's gesture kept out of habit rather than because it answered
+/* ══ no peek ════════════════════════════════════════════════════════
+   There are no rules here, and the absence is the decision.
+
+   Four steps used to peek and none of them do. Subclass, ancestry, community
+   and the domain deck all *draw the printed card* in the grid, so hovering
+   one opened a second copy of the picture already under the cursor — the
+   sheet's gesture kept out of habit rather than because it answered
    anything. The class step gave this up when the subclass drawer landed; the
    other three follow it for the same reason.
 
@@ -710,14 +717,17 @@
    reading control wearing a discovery gesture, and the right answer to a
    card too small to read is a wider window.
 
-   The equipment step is untouched by any of it and keeps its peek: a
-   longsword is not a card, its grid row is a text summary, and the peek is
-   the only place the card exists at all.
+   Equipment was the last step holding one, and its argument was about the
+   *tile*: a longsword is not a card, the tile stated five facts in five
+   different places, and the peek was the only place the whole object existed.
+   The table answers that question in columns — which is what a table is —
+   so the peek became a picture interrupting the comparison the table was
+   built to let you make. It went with the tile.
 
-   Only the width is stated. `.card` is container-query driven and `fit()`
-   measures whatever box it is given, so every proportion, the type ramp and
-   the art plate follow the number on their own. */
-.forge .peeklayer .pkc{width:393px}
+   So `.forge .peeklayer .pkc{width:393px}` is gone rather than unused, and
+   the window renders no layer at all. A `.peeklayer` with nothing in it is
+   machinery that reads as a feature. The character sheet's peek is untouched
+   — this is a claim about one window, not about the gesture. */
 
 /* ══ the trait spread ═══════════════════════════════════════════════
    The one bespoke control in this window, and the one step where the

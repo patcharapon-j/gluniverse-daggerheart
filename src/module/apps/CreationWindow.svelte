@@ -55,7 +55,6 @@
   import { postCard } from "../sheets/post-card.ts";
   import { CARD, fit, rich } from "../ui/card.js";
   import { setVals, sign, VALS, type ValRow } from "../ui/make.js";
-  import { closePeeks, peeks } from "../ui/peek.js";
   import { dhDialog } from "./dialog.ts";
 
   interface Props {
@@ -199,38 +198,34 @@
   );
 
   /* ══════════════════════════════════════════════════════════════════
-     PEEK
+     NO PEEK
 
-     An option carries `data-pk` and a card is rendered into the window's own
-     peek layer, so hovering it shows the printed card. The layer is rendered
-     once and `fit()` measures it with everything else, so a peek never costs
-     a layout on hover.
+     **Nothing in this window hovers a card, and that is now the whole rule
+     rather than an exception with one survivor.**
 
-     **Only the equipment step takes it.** Subclass, ancestry, community and
-     the domain deck all draw the printed card in the grid, so hovering one
-     opened a second copy of the picture already under the cursor — the
-     sheet's gesture kept out of habit rather than because it answered
-     anything. The class step gave this up when the subclass drawer landed;
-     the other three follow it, and there is no setting that brings them back:
-     a peek over a card is the same picture twice at every size.
+     Subclass, ancestry, community and the domain deck all draw the printed
+     card in the grid, so hovering one opened a second copy of the picture
+     already under the cursor — the sheet's gesture kept out of habit rather
+     than because it answered anything. The class step gave it up when the
+     subclass drawer landed and the other three followed.
 
-     Equipment keeps it because a longsword is not a card — its grid row is a
-     text summary, and the peek is the only place the card exists at all.
+     Equipment was the last one holding it, on the reasoning that a longsword
+     is not a card and the peek was the only place its card existed at all.
+     That reasoning was about the *tile*, which stated five facts in five
+     different places and left you asking what the thing was. The table
+     answers that: name, trait, range, damage, burden and feature, in columns,
+     read down against thirty-four neighbours. A card floating over the row
+     you are reading is then a picture interrupting the comparison the table
+     was built to let you make — and it is a picture of a weapon, which is to
+     say a type glyph and a paragraph you can already see.
+
+     So the layer is gone, not merely empty. It had exactly one subject left,
+     and a `.peeklayer` rendering nothing is machinery that reads as a feature.
+     The character sheet keeps its peek untouched; this window simply is not a
+     place where cards hover.
      ══════════════════════════════════════════════════════════════════ */
 
   let winEl: HTMLElement | undefined = $state();
-
-  /** The documents the current step can show a card for. */
-  const peekable = $derived.by(() => {
-    if (at === "equipment") return [...primaries, ...secondaries, ...armors];
-    return [];
-  });
-
-  const peekRows = $derived(
-    peekable
-      .map((d: any) => ({ pk: d.id as string, card: cardOf(asSnapshot(d), sigils, cardCtx)! }))
-      .filter((r) => !!r.card),
-  );
 
   /** A pack document in the shape `cardOf` reads. */
   const asSnapshot = (d: any) => ({
@@ -254,13 +249,10 @@
       inline card and its peek can never disagree about what they are of. */
   const cardFor = (d: any) => cardOf(asSnapshot(d), sigils, cardCtx);
 
-  /* `fit()` measures every `.card` in the scope, and three steps now draw
-     cards *inline* rather than only in the peek layer — so this has to run
-     when the stage changes as well as when the peek set does. Keyed on the
-     step and the document revision, which together cover every way a card can
-     appear, leave, or change what it says. */
+  /* `fit()` measures every `.card` in the scope, and four steps draw cards
+     inline. Keyed on the step and the document revision, which together cover
+     every way a card can appear, leave, or change what it says. */
   $effect(() => {
-    void peekRows;
     void at;
     void reviewing;
     void snap.rev;
@@ -268,7 +260,6 @@
     requestAnimationFrame(() => {
       if (winEl) {
         fit(winEl);
-        peeks(winEl);
         // `fit()` measures wrapped prose. Repeat the measurement after the
         // real card faces load if Foundry opened the window against fallbacks.
         if (document.fonts?.status === "loading") {
@@ -955,7 +946,6 @@
   function go(id: string) {
     const s = steps.find((x) => x.id === id);
     if (!s || s.blocked) return;
-    closePeeks();
     reviewing = false;
     at = id;
     turn();
@@ -964,7 +954,6 @@
   function next() {
     if (reviewing) return;
     const after = steps.slice(index + 1).find((s) => !s.blocked);
-    closePeeks();
     if (after) {
       at = after.id;
       turn();
@@ -975,7 +964,6 @@
   }
 
   function back() {
-    closePeeks();
     if (reviewing) {
       reviewing = false;
       turn();
@@ -1039,7 +1027,6 @@
         class:on={reviewing}
         class:done={finished}
         onclick={() => {
-          closePeeks();
           reviewing = true;
           turn();
         }}
@@ -1184,9 +1171,8 @@
               <!-- The drawer. The printed foundation card, because that is what
                    a subclass is: three cards acquired one at a time, and which
                    of the three you are holding is a fact the card states. No
-                   `data-pk`: the card at full size *is* what the peek layer
-                   would show, and a hover card over a card is the same picture
-                   twice. -->
+                   `data-pk` — nothing in this window hovers a card any more,
+                   and here it would have been the same picture twice. -->
               {#if subs.length}
                 <div class="fsub">
                   <s
@@ -1447,10 +1433,12 @@
 
           <!-- The table. Chapter 2's own shape, and the one step where it is
                right: what you compare across thirty-five weapons is five
-               columns of the same five facts, and a column is read down. The
-               row still carries `data-pk`, so hovering opens the printed card
-               exactly as the tile did. See the equipment table block in
-               `design/make.css`. -->
+               columns of the same five facts, and a column is read down.
+
+               No `data-pk`, so no hover card — the table states what the tile
+               made you hover to find out, and a picture over the row you are
+               reading interrupts the comparison it exists to let you make. See
+               the equipment table block in `design/make.css`. -->
           <div class="ftbl" class:farm={gear === "armor"}>
             <div class="fthd">
               <s>Name</s>
@@ -1479,7 +1467,6 @@
                   class:on={held?.name === w.name}
                   class:just={justId === w.id}
                   disabled={!!why}
-                  data-pk={w.id}
                   onclick={() =>
                     gear === "armor" ? pickArmor(w) : pickWeapon(w, gear as "primary" | "secondary")}
                 >
@@ -1600,14 +1587,6 @@
     </div>
   </div>
 
-  <!-- The peek layer, outside every scroller and inside the window's own clip.
-       See the head of `design/peek.js` — this is a clipping problem, not a
-       stacking one, and no z-index solves it. -->
-  <div class="peeklayer">
-    {#each peekRows as r (r.pk)}
-      <div class="pkc" class:noart={r.card.noart} data-peek={r.pk} style={r.card.art}>
-        {@html CARD(r.card)}
-      </div>
-    {/each}
-  </div>
+  <!-- No peek layer. Nothing in this window hovers a card — see the NO PEEK
+       block at the head of the script. -->
 </div>
