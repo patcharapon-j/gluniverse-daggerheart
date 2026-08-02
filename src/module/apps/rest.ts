@@ -485,6 +485,7 @@ function refreshing(actor: any): RefreshRow[] {
       source: it.system?.origin || it.system?.domain || it.type,
       text: plain(it.system?.description) || "",
       uses: `${u.value ?? 0} / ${u.max}`,
+      itemId: it.id,
     });
   }
   for (const r of rulesOf(actor)) {
