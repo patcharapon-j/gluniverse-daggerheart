@@ -22,5 +22,6 @@
 import CARDS from "./domain-cards.mjs";
 import DREAD from "./dread-cards.mjs";
 import { domainCardItem } from "./_helpers.mjs";
+import { withResources } from "./card-resources.mjs";
 
-export default [...CARDS, ...DREAD].map(domainCardItem);
+export default withResources([...CARDS, ...DREAD].map(domainCardItem));

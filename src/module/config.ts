@@ -370,6 +370,103 @@ export const FEATURE_KIND_LABELS: Record<string, string> = {
   reaction: "Reaction",
 };
 
+/* ── tracked resources ───────────────────────────────────────────────────
+   A hundred and fifty-odd cards in this game ask you to keep a number, and
+   until now this system had a `uses` pool on two subtypes that no compendium
+   entry had ever filled in and nothing anywhere decremented.
+
+   A sweep of every pack document turned up two shapes, and they run in
+   opposite directions. A **budget** starts full, is spent down, and is
+   refilled — "once per rest", "three times per rest". A **pile** starts
+   empty, is placed into, spent, and is *cleared* — "place a number of tokens
+   equal to your Spellcast trait on this card". They are the same widget and
+   the same arithmetic; the only thing that differs is what a refresh does to
+   them, which is why `onRefresh` is a field rather than two subtypes.
+
+   Everything here is a closed set for the usual reason: a table can extend
+   what a card *says*, and cannot invent a seventh way for a number to come
+   back. What a card can extend is the number itself, which is why `max` is
+   a source rather than an integer.
+   ─────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Where a resource's ceiling comes from.
+ *
+ * `open` is a first-class member rather than a fallback, and roughly six
+ * cards need it: Never Upstaged places "a number of tokens equal to the
+ * number of Hit Points you marked", and Enchanted Talisman lets you place as
+ * many as you care to pay Hope for. No sheet can compute those, and a `fixed`
+ * ceiling guessed at would be this system quietly capping a card the rules
+ * did not cap. An open pool draws no sockets, because there is no capacity to
+ * draw.
+ */
+export const RESOURCE_MAX = ["fixed", "trait", "level", "open"] as const;
+export type ResourceMax = (typeof RESOURCE_MAX)[number];
+
+/**
+ * The six traits plus Spellcast, which is a *pointer* to one of the six.
+ *
+ * Deliberately not added to {@link TRAITS}. That set reaches the roll engine,
+ * the sheet's six trait plates and every closed-set check in the system, and
+ * a seventh member would have to be special-cased in all of them to serve a
+ * ceiling — the same argument that keeps the arcane-frame wheelchair's trait
+ * out of it. Resolved against the character's subclass at the moment the
+ * ceiling is read, which is the only moment the answer exists.
+ */
+export const RESOURCE_TRAITS = [...TRAITS, "spellcast"] as const;
+
+/**
+ * When it comes back.
+ *
+ * `rest` means either kind, which is the printed default — "once per rest" is
+ * 51 entries against 59 that say "long" — and the distinction is load-bearing
+ * rather than pedantic: refreshing a once-per-long-rest card on a short rest
+ * hands the player a use the rules did not give them, which is exactly what
+ * this system has been doing since `refreshUses` was written.
+ *
+ * `scene` and `session` have no automatic trigger and are not pretending to.
+ * Foundry knows when a rest happens because this system runs the dialog; it
+ * has no idea what a scene is. They are refreshed from the sheet and from
+ * `game.daggerheart.endScene()` / `endSession()`, which is a seam for a macro
+ * or a GM module rather than a guess.
+ */
+export const RESOURCE_REFRESH = [
+  "shortRest",
+  "longRest",
+  "rest",
+  "session",
+  "scene",
+  "manual",
+] as const;
+export type ResourceRefresh = (typeof RESOURCE_REFRESH)[number];
+
+export const RESOURCE_REFRESH_LABELS: Record<string, string> = {
+  shortRest: "Short rest",
+  longRest: "Long rest",
+  rest: "Rest",
+  session: "Session",
+  scene: "Scene",
+  manual: "Manual",
+};
+
+/**
+ * What the refresh does to it — the budget/pile split above.
+ *
+ * `decrement` is one card, and it is kept because the card is unambiguous
+ * about it: the Vampire's Feed says "when you take a long rest, remove a
+ * token", not clear them. Rounding that to `clear` would make the
+ * transformation's entire bargain — you starve slowly unless you feed —
+ * happen all at once.
+ */
+export const RESOURCE_ON_REFRESH = ["fill", "clear", "decrement"] as const;
+export type ResourceOnRefresh = (typeof RESOURCE_ON_REFRESH)[number];
+
+/** Which refresh scopes a rest of this kind satisfies. */
+export const REFRESHED_BY: Record<"short" | "long", readonly ResourceRefresh[]> = {
+  short: ["rest", "shortRest"],
+  long: ["rest", "longRest"],
+};
+
 /* ── conditions ──────────────────────────────────────────────────────────
    The three the rules name, and they are genuinely all three: Daggerheart
    has no poisoned, no prone, no blinded. Everything else a fiction produces

@@ -56,6 +56,8 @@ const SHEETS = [
   "pool.css",
   "tile.css",
   "card.css",
+  "chit.css",
+  "ledger.css",
   "roll.css",
   "swap.css",
   "sheet.css",

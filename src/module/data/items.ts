@@ -33,13 +33,32 @@ import {
   html,
   int,
   maybeChoice,
-  pool,
+  migrateUses,
   printingField,
+  resourceField,
   schema,
   str,
 } from "./fields.ts";
 
 const TypeDataModel = () => foundry.abstract.TypeDataModel;
+
+/**
+ * Numbers this document asks you to keep — see `resourceField`.
+ *
+ * Spread into every subtype, and that breadth is a finding rather than
+ * laziness. `uses` lived on domain cards and features on the assumption that
+ * those were the two kinds of thing with a budget; a sweep of all four packs
+ * found resource-bearing text on ten subtypes, including thirty pieces of
+ * loot, twenty-three consumables and seven suits of armour. Dragonscale
+ * Armor is once per short rest and the Titan's Girdle is once per scene, and
+ * neither had anywhere to record it.
+ *
+ * The alternative was a base class, and a spread reads better here: this file
+ * states each subtype's schema in one literal, and a reader who wants to know
+ * what a weapon holds should not have to go up an inheritance chain to find
+ * out that it also holds this.
+ */
+const tracked = () => ({ resources: arr(resourceField()) });
 
 /* ══════════════════════════════════════════════════════════════════════
    HERITAGE
@@ -59,6 +78,7 @@ export class AncestryData extends (TypeDataModel() as any) {
       /** Set when this row came from a different ancestry than the card. */
       mixedFrom: str(),
       printing: printingField(),
+      ...tracked(),
     };
   }
 }
@@ -69,6 +89,7 @@ export class CommunityData extends (TypeDataModel() as any) {
       description: html(),
       feature: featureField(),
       printing: printingField(),
+      ...tracked(),
     };
   }
 }
@@ -110,6 +131,7 @@ export class TransformationData extends (TypeDataModel() as any) {
       /** The card's "Transformation Questions" — prompts, not rules. */
       questions: arr(str()),
       printing: printingField(),
+      ...tracked(),
     };
   }
 }
@@ -181,6 +203,7 @@ export class ClassData extends (TypeDataModel() as any) {
 
       /** The book's recommended spread, for the creation flow to offer. */
       suggestedTraits: html(),
+      ...tracked(),
     };
   }
 
@@ -227,6 +250,7 @@ export class SubclassData extends (TypeDataModel() as any) {
       spellcastTrait: maybeChoice(TRAITS),
       features: arr(featureField()),
       printing: printingField(),
+      ...tracked(),
     };
   }
 }
@@ -251,11 +275,14 @@ export class DomainCardData extends (TypeDataModel() as any) {
          actors — which is exactly what should reset it. */
       inLoadout: bool(false),
 
-      /** Cards with a limited number of uses per rest track them here. */
-      uses: pool(0),
-
       printing: printingField(),
+      ...tracked(),
     };
+  }
+
+  static migrateData(source: any) {
+    migrateUses(source);
+    return (super.migrateData as any)(source);
   }
 }
 
@@ -300,6 +327,7 @@ export class WeaponData extends (TypeDataModel() as any) {
        */
       armorScoreModifier: int(0),
       magical: bool(false),
+      ...tracked(),
     };
   }
 }
@@ -320,6 +348,7 @@ export class ArmorData extends (TypeDataModel() as any) {
       feature: featureField(),
       evasionModifier: int(0),
       magical: bool(false),
+      ...tracked(),
     };
   }
 }
@@ -331,6 +360,7 @@ export class ConsumableData extends (TypeDataModel() as any) {
       quantity: int(1, { min: 0 }),
       /** Roll table result that produced it, when generated. */
       source: str(),
+      ...tracked(),
     };
   }
 }
@@ -341,6 +371,7 @@ export class LootData extends (TypeDataModel() as any) {
       description: html(),
       quantity: int(1, { min: 0 }),
       source: str(),
+      ...tracked(),
     };
   }
 }
@@ -362,10 +393,15 @@ export class FeatureData extends (TypeDataModel() as any) {
       fearCost: int(0, { min: 0 }),
       /** Stress the owner must mark to use it, if any. */
       stressCost: int(0, { min: 0 }),
-      uses: pool(0),
       /** Where it came from: a class, an ancestry, the stat block itself. */
       origin: str(),
+      ...tracked(),
     };
+  }
+
+  static migrateData(source: any) {
+    migrateUses(source);
+    return (super.migrateData as any)(source);
   }
 }
 

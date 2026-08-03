@@ -34,6 +34,21 @@ export function registerSettings(): void {
     onChange: applyTheme,
   });
 
+  /* On by default, and world-scoped, because the whole claim the change log
+     makes is that the table can see what happened to a sheet without asking
+     the person holding it. A per-client switch would let one player opt out
+     of being seen, which is the opposite of the point; a per-client switch to
+     opt out of *seeing* would leave the GM alone with it. So it is one
+     decision for the table, and the GM's. */
+  game.settings.register(SYSTEM_ID, "changeLog", {
+    name: "DAGGERHEART.Settings.ChangeLog",
+    hint: "DAGGERHEART.Settings.ChangeLogHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   /* Off by default, and deliberately so: the chat plate draws its own dice
      with its own geometry, and a 3D d12 tumbling next to a drawn one is two
      answers to the same question. Tables that want the toy can have it. */

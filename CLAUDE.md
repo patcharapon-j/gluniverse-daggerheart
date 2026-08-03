@@ -85,8 +85,9 @@ study pages stop describing the system they are about.
 A new component in `design/` is **three registrations**, not one: the file
 list in the port script, and — for CSS — the `styles` array in `system.json`.
 Foundry reads that array once at server start, so a newly added stylesheet
-does not appear on a browser reload. Restart Foundry. `dlg.css` was the last
-one added and needed all three.
+does not appear on a browser reload. Restart Foundry. `ledger.css` was the last
+one added and needed all three; a chat card that lands unstyled after a change
+to `design/` is almost always the third one missing.
 
 `tools/verify/` is a page that loads the *ported* sheets and asserts the
 things the port could silently break — that the palette resolves inside `.dh`,
@@ -840,8 +841,15 @@ literal, so an HTML comment naming a class the way the rest of this repo names
 one — in code quotes — ends the string, and what follows becomes a *tagged
 template call* on whatever expression preceded it. It parses cleanly, throws at
 render, and the console said nothing: the sheet simply stopped halfway through
-its own body. Nothing here can catch it, because it is valid JavaScript; the
-rule is that comments inside these builders use plain words.
+its own body. The rule is that comments inside these builders use plain words.
+
+For a long time nothing here could catch it, on the reasoning that it is valid
+JavaScript — which is true of that instance and not of the general case. The
+same mistake in the chit row's comment inside `CARD` was a plain syntax error
+that took `card.js` down and every module importing it with it, and `node
+--check` sees both shapes. `port-design-js.mjs` runs it over each module and
+refuses to port one that does not parse, which is what the CSS port already
+does by counting comment delimiters.
 
 ## Why Svelte
 
@@ -1123,6 +1131,110 @@ next size up, three of four stat cells ellipse on a weapon a real character
 carries. `design/tile.css` is untouched, which is what lets the dialogs draw
 the base component unchanged.
 
+## The item sheet
+
+One sheet for all eleven Item subtypes, because they share more than they
+differ — a name, a picture, a block of rules text, a set of counters — and the
+parts that differ are a handful of fields each.
+
+**It showed a fraction of what an Item holds, and the fraction was the wrong
+half.** Four subtypes had no panel whatsoever: an ancestry, a community, a
+transformation and every feature any of them carries were simply not on
+screen. Of the seven that did have one, none reached its feature blocks, its
+printing credit or its counters, and `description` was `{@html}` — read-only,
+on the one family of documents whose entire content *is* rules text. So a GM
+could drag a card off the compendium and read it, and could not write one:
+homebrew meant hand-editing JSON or building the document in a macro.
+
+The sheet reads as finished the whole time it is doing this, which is the
+point. A panel with four controls on it looks like a complete panel; there is
+nothing on screen to say that `armorScoreModifier` exists and that the shield
+you are building will silently do nothing. That is why the gap needed a tool
+rather than a read-through — see below.
+
+**Three tabs, and they are tabs rather than steps.** The creation window draws
+that distinction and it lands the other way here: a step is a stage of
+something being made and can be *unsatisfied*, a tab is one view of a thing
+that is already whole. An Item is the second. **Details** is what it is,
+**Rules** is what it says, **Counters** is what it asks you to keep — and every
+subtype has all three, so no tab is ever a dead strip. The header sits outside
+the scroller, because it is what the window is *of*: on a sheet holding four
+panels of counters, a name that scrolls away is a sheet you can lose your place
+in.
+
+**Rules text is a `Prose` editor now, everywhere, including inside a feature
+block.** That needed one change to the component: `onsave`. A dotted path is
+how a SchemaField is written and was all any caller had ever wanted, but a
+feature inside `classFeatures` or `features` is an ArrayField element, and
+Foundry reads a dotted index as a path into an *object* — the trap the adjust
+tab learned about Experiences and `moveResource` learned about pools. Those
+callers rewrite the whole array and hand `Prose` the writer. `path` is still
+passed either way, because it is also the editor element's `name`.
+
+**A checkbox over a method that is allowed to say no has to read its answer
+back.** Equipped and In-the-loadout are not flags this sheet may set:
+`toggleEquipped` is what knows one armour, one primary and no off hand while
+the primary needs both hands, and `toggleLoadout` is what knows the limit. Both
+**decline** rather than clamp, which is this system's answer to a refusal
+everywhere else — and a decline writes nothing, so nothing re-renders, so the
+box the browser already ticked stays ticked while the document says otherwise.
+`toggleVia` reads the state back off the document afterwards. It captures the
+element before the await, because `currentTarget` is only itself during
+dispatch.
+
+Two smaller things the schema had been carrying with nowhere to say them.
+**Loadout is only a question when somebody is holding the card**, so it is
+drawn only for an owned document — on a compendium card it is a field about a
+character who does not exist. And a counter's **ceiling is a source rather than
+a number**, so the editor asks where it comes from and then prints what that
+currently resolves to; on an unowned document every trait- and level-sourced
+ceiling falls to its floor, and the panel says so rather than showing a zero
+that looks like a mistake.
+
+### Proving a field is reachable
+
+`tools/check-item-sheet.mjs` is `check-resources.mjs`'s ratchet pointed at a
+different gap. There the risk was a card that asks you to count something and
+an annotation that never said so; here it is a schema field that exists, is
+written by the compendium or by a migration, and has no control anywhere — a
+failure that is invisible by construction.
+
+    node tools/check-item-sheet.mjs
+
+It reads the fields each subtype declares out of `data/items.ts` and the paths
+and keys the sheet names out of `ItemSheet.svelte`, and fails when a declared
+field is named nowhere. `npm run typecheck` runs it, so it runs before the
+release workflow bumps a version.
+
+**What it can prove and what it cannot.** It does *not* prove the control was
+drawn under the right subtype. That would mean parsing the template's branches,
+and it is the mistake you see the instant you open the sheet — where a missing
+field is the one you never see. Coverage is the ratchet; placement is the
+reader's.
+
+It reads the source rather than the class, because a DataModel cannot be
+instantiated outside Foundry, and it strips comments before it walks the
+literal. That is not tidiness: `data/items.ts` is more commentary than code by
+volume, the commentary is English, and English has colons in it. The first run
+reported `class.once`, `weapon.Protective` and `feature.from` as missing
+fields, every one of them a word lifted out of a paragraph explaining a field
+that was present.
+
+### And the two list controls nobody had measured
+
+`.lst` is the row shape the adjust tab's Experiences and scars are made of, and
+the item sheet's every string list is made of it too — which is how this was
+found. Both of its presses had the bug that `make.css` and `pool.css` taught
+and that the panel heading's plus and the slot header's unequip were fixed for.
+
+`.lst .r .x` declared `height:24px` and beat Foundry's `height` outright. It
+had nothing for the matching `min-height` to beat, and **a floor with no
+competitor simply applies**, so it stood 28px tall in a 24px row. `.lst .add`
+declared no height at all and was a 9px word centred in a 28px box. Both read
+as spacing rather than as an inherited height, which is why they shipped.
+`tools/verify/`'s THE PANEL stage now carries a list editor and asserts both:
+strip the reset and it reports 28px in a 28px row, and 28px.
+
 ## The adjust tab
 
 Everything on it is a number some rule normally derives — Evasion off the
@@ -1159,6 +1271,130 @@ Experiences and scars are written **whole**, not by path: `system.experiences`
 is an ArrayField and Foundry reads a dotted index in an update key as a path
 into an *object*, so `"system.experiences.0.name"` writes a shape the reader
 does not expect.
+
+## Counting what a card counts
+
+**A counter you put down, not a box you cross off.** Every other row of boxes
+on this sheet is printed and marked — Hit Points, Stress, Armor Slots, a
+consumable's charges — and the boxes are always there while only the marking
+varies. That premise is false for the hundred and fifty-seven cards that count
+something. Several pools have **no maximum at all** (Twilight Toll takes a
+token every time you mark the target), several have one that **moves when your
+Spellcast trait does**, and one says *place 1d4+1*. So a chit exists or it does
+not, an empty pool draws nothing, and `design/chit.css` is the argument in
+full.
+
+**The schema stores where a ceiling comes from, not what it is.**
+`resourceField` in `data/fields.ts` is `{name, value, max:{kind,n,trait,floor},
+refresh, onRefresh, feature, onEmpty}`, and `data/resources.ts` is the one
+place a `kind` becomes a number. `open` is first-class rather than a zero,
+because a pool with no ceiling and a pool with a ceiling of zero are opposite
+things. `spellcast` is a legal `max.trait` and is deliberately **not** in
+`TRAITS` — it is a pointer to one of the six, exactly as the arcane-frame
+wheelchair's is, and adding it to the closed set would reach the roll engine
+and six trait plates to serve a handful of cards.
+
+`resources` is an array, so **every subtype has one** — `tracked()` in
+`data/items.ts` — rather than the two that had `uses`. That field is gone;
+`migrateUses` turns an old one into a fixed pool that comes back on either
+rest, which is what it meant. And `item.system.resources` shares a word with
+`actor.system.resources`, the four printed tracks. They are safe only because
+the prefix always disambiguates: two fields on two documents with no shared
+namespace to collide in, which is why this is not the clash that renamed
+`.die.win`.
+
+**A refresh has a scope, and `refreshUses` did not honour one.** It refilled on
+either rest kind, which is right for the fifty-one entries reading "once per
+rest" and wrong for the fifty-nine reading "once per **long** rest" — a latent
+bug that could not fire, because nothing in the corpus had ever authored a
+pool. `refreshResources(actor, scopes)` is the one implementation, `restScopes`
+names the two sets, and `scene`/`session` have no automatic trigger at all:
+`game.daggerheart.endScene()` and `endSession()` are the seams, because nothing
+in Foundry knows when a scene ended and a system that guessed would be wrong at
+somebody's table every week.
+
+**`onRefresh` is three values because the corpus needs three.** `fill` is a
+budget you are given back, `clear` is a pile you were accumulating, and
+`decrement` is the Vampire's six-charge card, which spends one *per long rest*
+whether or not you used it. A `fill` on an open pool is left exactly where it
+is rather than handed a number this system made up.
+
+### The annotations, and what checks them
+
+`src/packs-src/card-resources.mjs` is hand-authored and keyed `type:name`, and
+`withResources()` stamps it onto the four packs at import time — the same
+argument `equipment.mjs` makes: nothing upstream publishes this, so a generated
+file would be a second copy of facts with nothing to generate them from.
+
+It is two blocks and a list. **`PILES`** are the twenty-one cards read
+individually, because what they count is particular — Flight is *your Agility,
+minimum 1*, which is the floor's whole reason; Wild Fortress counts **Hit
+Points** upward, not uses. **`BUDGETS`** are the regular "once per X" majority,
+built by `once()`, which sets `value: n` so a freshly dragged card arrives
+**full**: a budget you have not spent is not a budget at zero. And **`DECLINED`**
+is four entries with a reason each.
+
+`tools/check-resources.mjs` is `fetch-cards.mjs`'s `TYPOS` pattern applied to a
+new problem, and the reason it is shaped that way is epistemic: **a regex
+cannot prove completeness.** Of the thirty-eight cards matching `until…rest`,
+thirty-six are durations and two are use limits, and only a reader can say
+which. So the tool is annotation-first — every entry carries `said`, the words
+it was read from, and the check **fails when those words leave the card** —
+and coverage is a ratchet: anything matching `SWEEP` must be annotated or
+declined out loud. It also binds every `feature` to a feature that exists,
+which is the first thing in this system to depend on class features having
+names of their own.
+
+    node tools/check-resources.mjs
+
+`npm run build:packs` runs it beside the other two.
+
+### Where the counters are drawn
+
+`design/chit.js` is one builder, one setter and one delegated handler.
+`setChits` is the contract `Marks` and `Gems` already keep — the row is
+rendered once and every later change diffs against it — and `parts/Chits.svelte`
+is what keeps that true on a Svelte sheet.
+
+**The number must not be in the builder's string, or there is nothing left to
+animate.** A spine and a tile are `{@html}` output from `ui/tile.js`, and
+Svelte replaces that content whenever the string changes; a row rebuilt at its
+new value has already arrived, so `setChits` finds nothing to move. So nothing
+about a pool is passed to `SPINE` or `TILE`. The component renders its row
+**detached** and appends it to a selector the host names — `slot`, resolved from
+the anchor's own parent so a caller inside an `{#each}` needs no `bind:this` —
+which leaves the builder's string identical across a spend, `{@html}` comparing
+it and skipping, and our row still standing there. `rev` is the dependency that
+re-parents after the one kind of change that *does* rewrite the markup. It is
+`message-header.ts`'s move: dress what was already drawn rather than draw a
+second one beside it.
+
+Six hosts on the sheet, and the slot differs because the slack does: a spine's
+is the meta line, a tile's is the footer, and a features row draws it in flow
+under the rule. **A card is the exception and takes it through the builder**,
+because a peeked card is rebuilt on every hover and a posted one is a record —
+both are readouts, so there is no animation to protect and `CHITS({add:false})`
+is the whole of it. Two pools go in a `.chitstack`, since the plate has one
+anchor and seven cards in the corpus carry two.
+
+**A chit is a button, so the features row stopped being one.** `.abl .a` is a
+container now and `.abl .ap` is the press — `.fcls`/`.fclsr`'s answer arriving
+on the character sheet — and `.ap` restates its own height for the reason the
+panel heading and the slot header do. `chitClicks` **stops the press at the
+row**: every host it sits on is itself pressable off a delegated handler, so
+left to bubble, placing a counter on a domain card would also post that card to
+chat.
+
+`.chits .put` and not `.add`: `sheet.css` already owns `.lst .add` at identical
+specificity, both load into the same `.dh` root, and which won would have been
+decided by the order `system.json` lists them in. Caught before it shipped
+rather than after, which is one better than `.die.win` and `.dfn .pl`.
+
+**The port now refuses a module that does not parse.** `node --check` sees the
+backtick-in-markup bug — the one CLAUDE.md said nothing here could catch — and
+it caught it on the first comment written into `CARD` for this work. It is the
+JS half of what the CSS port does by counting comment delimiters: not a linter,
+just the one mistake that actually happens when these files are edited by hand.
 
 ## Rolling
 
@@ -1443,6 +1679,125 @@ So the Fear applies at `createChatMessage` instead — see `applyFear` in
 never on a reload, and is gated on `game.users.activeGM` so a second GM at
 the table does not gain a second Fear. Anything else that wants to record
 something about a roll belongs there too, not on a timer.
+
+## The change log
+
+Everything above is an event somebody **chose** to post: a roll, a card shown,
+a rest taken, a character finished. The change log is the opposite — the record
+of what happened to a sheet while nobody was posting anything. A player marks
+three Stress and the GM, looking at the map, has no idea; a card comes out of
+the vault and the only witness is the sheet it happened on. The rules ask a
+table to keep these numbers where everybody can see them, and until now the only
+place any of them existed was the sheet of the person holding it.
+
+`src/module/ledger.ts` is the observer, `design/ledger.*` is the card, and
+`design/ledger.html` is the study page.
+
+**It observes the document rather than instrumenting the writers.** Fifteen or
+so call sites move one of these numbers — the damage dialog, a claim on a chat
+card, the roll popover paying for an Experience, a chit, a pip on the rail, the
+adjust tab, somebody's macro — and a `log()` on each is a list that is wrong the
+first time one is added, and silent about every write that never went through a
+method at all. One hook on the update catches all of them, including the ones
+that do not exist yet. It is `syncVulnerable`'s argument: the document is the
+record, so read the record.
+
+The before-state travels in `options` rather than in a second snapshot, because
+`preUpdate*` is the only moment the document still holds it and `preUpdate*` can
+be **cancelled**. Writing it into the options the update is already carrying
+means a refused write leaves nothing behind — there is no `update` hook to read
+it back off. And `has()` reads the *expanded* form while every writer in this
+system passes the flat one (`markTrack` sends `"system.resources.stress.marked"`,
+`moveResource` sends `"system.resources"`), which works because the `changed` a
+`preUpdate*` hook receives has been through `DataModel.cleanData`, whose
+`expand` defaults to true. Checked in Foundry's own `client-backend.mjs` rather
+than assumed; the Vulnerable sync has been resting on the same fact since it was
+written.
+
+**The unit is the change, not the write.** Applying damage is four writes —
+armour, stress, hope, hit points — inside about fifty milliseconds, and one
+event; a player fixing a miscount is three clicks in two seconds and one
+correction. So entries coalesce into a window and what lands is the **net**:
+3 → 5 Hit Points, never "+1, +1, −1, +2". Which also means a **net of zero posts
+nothing at all**, and marking a box by mistake and taking it straight back is not
+something the table has to watch happen. Keyed by what changed rather than
+listed, so the second write revises the first: `from` is kept from the opening
+write and `to` is overwritten by every one after.
+
+Two timers, and the second is not decoration. `QUIET` closes the window a second
+after the last change; `CEILING` closes it six seconds after the first
+regardless, because without a ceiling a steady drip never posts — one press a
+second holds the buffer open through the whole fight and the log stays empty.
+
+**A delta with no total is half a fact**, which is what the strip is for.
+"Marked 2 Stress" does not say whether she is one box from Vulnerable, and that
+is the only thing anybody wanted to know. So a row carries the track *as it now
+stands* and says which part of it moved: `.on` is settled history and recedes,
+`.up` is what this entry marked, `.dn` is the hollow ring what it gave back left
+behind. That is the damage dialog's *incoming outweighs existing* in the past
+tense, and it reads before you get to the numerals — a run of dim boxes ending
+in bright ones is a hit, ending in rings it is a heal.
+
+`.dn` is a **ring** and not a dimmer grey on purpose: an empty box and a box
+that has just been emptied are the two states the strip exists to tell apart,
+and a shade between two greys does not.
+
+**Nothing on this card is an `<svg>`, and that is a decision rather than an
+accident.** It is deliberately *not* the sheet's `MARKS` row — not for size, but
+because Foundry's sanitiser strips every `<svg>` out of stored message content,
+and a marked box that loses its X does not look broken, it looks **unmarked**.
+A posted card survives that by being redrawn from a flag on render; a lie
+cannot be styled back into the truth. So every mark here is CSS on an empty
+element, `GEMS` and `CHITS` were already `<i>`/`<b>`, and the whole message
+survives storage exactly as posted — **no flag, no redraw, no render hook**, and
+a client without this system gets unstyled but truthful markup. `tools/verify/`
+asserts both halves, so reaching for `MARKS` here to save fifty lines goes red
+rather than going quietly wrong.
+
+Hope is gems and a card's pool is chits, because those are what the sheet draws
+and the log is not the place to introduce a second drawing of either. What
+changes is that nothing is pressable: a control in a record would be offering to
+change a number that changed three hours ago. Scars ride along on Hope — the
+ceiling is already the printed six *minus* them, so the row is `max + scars`
+wide and the count says the ceiling.
+
+**Exactly two flows are muted**, and the test is narrow: does something else
+already post a card that enumerates *these same changes*, line by line. A rest
+does — with the die that produced each one — and creation does, and a second
+card in a different grammar is the log arguing with itself about which is the
+record. `refreshScope` is muted for the same reason one step out: a scene ending
+refills every once-per-scene pool at the table and a card listing twenty
+counters is not a record of anything that happened. Muting is **per actor** and
+**counted**, so the rest of the table goes on being watched while one character
+rests, and two overlapping scopes cannot have the inner one un-mute the outer's.
+
+Two cases are deliberately **not** muted, and both put a ledger card beside a
+plate rather than instead of one. A claim button pressed three hours later
+changes the sheet on a card nobody is still looking at: the plate *offered* a
+Hope, the ledger records that it was taken. Paying for an Experience is the
+same argument at one second's distance — the plate draws the term in gold,
+which says it was bought, and the ledger says what it cost and what is left.
+Both stay, because a plate is a statement about a *roll* and neither of these
+is. It is the judgement call in here most likely to want revisiting at a real
+table, and it is a `muteLedger` call away either way.
+
+**The gate is who pressed the button.** `update*` fires on every connected
+client, and posting from all of them is one message per player. The initiating
+client is also the only one whose `preUpdate*` ran, so it is the only one
+holding the before-state — the two conditions are the same condition, which is
+what makes it safe rather than merely conventional.
+
+`changeLog` is a **world** setting, on by default. A per-client switch would let
+one player opt out of being seen, which is the opposite of the point; a
+per-client switch to opt out of *seeing* would leave the GM alone with it. One
+decision for the table, and the GM's — `pool.css`'s argument about the Fear HUD,
+arriving in chat.
+
+Characters only. An adversary's Stress is the GM's working state and belongs on
+the GM's side of the screen. Gold is not watched either, and the boundary has a
+principle rather than being an oversight: the set is *the four printed tracks
+plus the two things you do to a card*, which is exactly what the sheet's rail
+and loadout show. Equipping is out for the same reason.
 
 ## The Fear HUD
 
@@ -1743,8 +2098,9 @@ number does not read as a bug in the sheet. Nothing enforces it: a campaign
 frame, a GM ruling and a long-term project all move it, and refusing a third
 move would send the table to do the whole rest by hand. That parse is
 deliberately shallow and only ever moves a *hint*; the rule itself is printed
-verbatim underneath either way. Both rests also refresh every domain card's
-`uses`, which is the rule nobody remembers.
+verbatim underneath either way. Both rests also refresh every pool whose scope
+this rest is — see "Counting what a card counts" — which is the rule nobody
+remembers, and which each rest kind now honours separately.
 
 Neither the damage nor the rest dialog automates a feature, and that is the
 shape of `apps/rules.ts`: it finds every rule this character carries that
@@ -1777,10 +2133,13 @@ kind drops into the panel's other lane — `.rf` in `dlg.css` — and they are
 told apart by removing the recharge clause and asking again (`rechargeOnly`),
 so a card that says "once per long rest, when you take a short rest…" still
 counts as changing the rest. That lane's rows come from two places, and they
-are two different kinds of knowing: an Item with a `uses` pool is a **fact**,
-and `refreshUses` is about to fill it, so the row prints the count; a rule that
-only says "once per rest" is a **reading**, and gets a row with no count
-because there is no count to be honest about.
+are two different kinds of knowing: an Item with a tracked pool is a **fact**,
+and the rest is about to fill it, so the row draws **its actual counters** — the
+same chits the card carries, at the same size the loadout draws them, a readout
+rather than a control because pressing one inside the dialog that is about to
+refill it is not a thing anybody means. A rule that only says "once per rest" is
+a **reading**, and gets a row with no count because there is no count to be
+honest about.
 
 **Every rule is a line, and the lanes differ in weight rather than in shape.**
 The bearing lane drew a full tile per rule and the recharge lane drew lines,

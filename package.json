@@ -9,13 +9,15 @@
     "build": "vite build && npm run build:packs && npm run link:dev",
     "watch": "vite build --watch",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "typecheck": "tsc --noEmit && npm run check",
+    "typecheck": "tsc --noEmit && npm run check && npm run items:check",
     "link:dev": "node scripts/link-dev-build.mjs",
     "preview": "node tools/preview-server.js",
-    "build:packs": "npm run cards:check && npm run equipment:check && node scripts/build-packs.mjs",
+    "build:packs": "npm run cards:check && npm run equipment:check && npm run resources:check && node scripts/build-packs.mjs",
     "cards:fetch": "node tools/fetch-cards.mjs",
     "cards:check": "node tools/check-cards.mjs",
-    "equipment:check": "node tools/check-equipment.mjs"
+    "equipment:check": "node tools/check-equipment.mjs",
+    "resources:check": "node tools/check-resources.mjs",
+    "items:check": "node tools/check-item-sheet.mjs"
   },
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^3.0.4",

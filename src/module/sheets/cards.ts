@@ -24,10 +24,13 @@ import {
   CARD_TYPE_LABELS,
   DOMAINS,
   FEATURE_KIND_LABELS,
+  RESOURCE_REFRESH_LABELS,
   rangeLabel,
   traitLabel,
 } from "../config.ts";
 import { cssUrl } from "../assets.ts";
+import { resourceMax, type Resource } from "../data/resources.ts";
+import { CHITS } from "../ui/chit.js";
 import { CLASSES, KINDS, byslug } from "../ui/domains.js";
 import { clazz, glyph, icon } from "../ui/domains.js";
 
@@ -112,6 +115,17 @@ export interface CardContext {
   /** Armor slots marked, so an armor tile can print "3 / 4". */
   armorMarked?: number;
   armorSlots?: number;
+  /**
+   * The character holding the card, for the ceilings that come off them.
+   *
+   * A pool "equal to your Spellcast trait" or "equal to your level" has no
+   * number until somebody is holding it, which is exactly why the schema
+   * stores where the ceiling comes from rather than what it is. Absent — the
+   * compendium browser, the creation window's grids — every such ceiling
+   * resolves to its floor, and a card belonging to nobody stating no capacity
+   * is the honest reading rather than a gap.
+   */
+  actor?: any;
 }
 
 export interface CardOptions {
@@ -186,6 +200,22 @@ export interface CardOptions {
    * `--art:none`, because CSS cannot branch on a custom property's value.
    */
   noart?: boolean;
+  /**
+   * Counter rows, already drawn, for the plate's lower left.
+   *
+   * A **readout** everywhere this appears, and the two places it appears are
+   * why. A peeked card lives in `.peeklayer`, which is `pointer-events:none`,
+   * so nothing on it could take a press; a posted card is a record, and the
+   * log's whole argument is that a row of live buttons three hours later is
+   * an invitation to spend the same use twice. Where the pool is a *control*
+   * — a features row, a loadout spine — the row is a `Chits` component and
+   * not this, because a control has to survive being driven.
+   *
+   * It travels with the options rather than being rebuilt on render for the
+   * reason `sigKey` exists: a posted card is stored as its options, and what
+   * a card said when it was posted is what it should go on saying.
+   */
+  chits?: string;
 }
 
 const dom = (slug?: string) => (slug && byslug[slug]) || KINDS.gear;
@@ -214,6 +244,45 @@ const STOCK = [
 
 const hasArt = (img?: string): boolean => !!img && !STOCK.some((rx) => rx.test(img));
 const art = (img?: string): string => `--art:${hasArt(img) ? cssUrl(img) : "none"}`;
+
+/**
+ * The three subtypes whose card has a domain, and therefore a hue.
+ *
+ * `CHITS` takes this as a statement rather than sniffing `--dom`, because a
+ * `var()` fallback asks whether the property is set anywhere up the tree and
+ * `tokens.css` sets it at `:root` — so the answer is always yes and every
+ * counter on an ancestry card would come out teal. Only the thing drawing the
+ * card knows, and this is where that is known.
+ */
+const DOMAIN_KINDS = new Set(["domainCard", "class", "subclass"]);
+
+/** Whether an Item's card carries a domain, and therefore a hue for its chits. */
+export const hasDomainHue = (type: string): boolean => DOMAIN_KINDS.has(type);
+
+/**
+ * Every pool on a card, drawn as a readout for the plate's lower left.
+ *
+ * All of them, feature-bound or not: a resource bound to a named feature is
+ * bound to a feature block printed on this same card, so the card is where it
+ * belongs either way. The row that has to know *which* feature is the one on
+ * the Features panel, which is a different surface with a different question.
+ */
+export function cardChits(it: ItemSnapshot, actor?: any): string | undefined {
+  const list: Resource[] = it.system?.resources ?? [];
+  if (!list.length) return undefined;
+  const domain = DOMAIN_KINDS.has(it.type);
+  return list
+    .map((res) =>
+      CHITS({
+        value: res.value ?? 0,
+        max: resourceMax(res, actor) ?? 0,
+        name: (res.name || "tokens").toLowerCase(),
+        dom: domain,
+        add: false,
+      }),
+    )
+    .join("");
+}
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* ── prose ────────────────────────────────────────────────────────────
@@ -308,6 +377,7 @@ export function cardOf(
     art: art(it.img),
     noart: !hasArt(it.img),
     code: s.printing?.code || undefined,
+    chits: cardChits(it, ctx.actor),
   };
 
   switch (it.type) {
@@ -579,7 +649,16 @@ function featureCosts(s: any): { k: string; v: string | number }[] | undefined {
   const out: { k: string; v: string | number }[] = [];
   if (s.stressCost) out.push({ k: "Stress", v: s.stressCost });
   if (s.fearCost) out.push({ k: "Fear", v: s.fearCost });
-  if (s.uses?.max) out.push({ k: "Uses", v: `${s.uses.value ?? 0} / ${s.uses.max}` });
+  /* A tracked resource is drawn as chits on the card itself, not as a stat —
+     see `.chits` in `design/chit.css`. What the footer still states is the
+     *scope*, which the chits cannot show: five counters look the same whether
+     they come back at dawn or at the end of the session. A fixed ceiling is
+     printed with them because it is a fact about the card; a trait- or
+     level-sourced one is not, since only the character holding it knows. */
+  for (const r of s.resources ?? []) {
+    const when = RESOURCE_REFRESH_LABELS[r.refresh];
+    if (when && r.refresh !== "manual") out.push({ k: r.name || "Tokens", v: when });
+  }
   return out.length ? out : undefined;
 }
 

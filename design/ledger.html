@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/chit.css">
+<link rel="stylesheet" href="/design/ledger.css">
+<style>
+/* ══ THE ENVIRONMENT IS PART OF THE COMPONENT ══════════════════════
+   Nothing on this card is a <button> — a ledger is a record and has no
+   controls — so `elements` has nothing to size. It is carried anyway,
+   because the day somebody puts a control on this card is the day the
+   study page has to already be telling the truth about it. */
+@layer elements{
+  button{height:var(--button-height,28px);min-height:var(--button-height,28px);
+    border-radius:4px;padding:0 8px;background:#2a3039;color:#c3cbd5;border:1px solid #3a424e;
+    line-height:1;text-align:center}
+}
+
+.grid{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.bx{background:#12151a;box-shadow:inset 0 0 0 1px #222933;padding:22px 24px 24px}
+.bx h4{font:700 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--hope);margin:0 0 18px}
+.bx h4 s{text-decoration:none;color:#6d7681;letter-spacing:.14em;margin-left:10px}
+
+/* The log is not paper and the card is. Everything on this page sits on a
+   stand-in for Foundry's chat log, because half of what the substrate is
+   doing is lifting the card off it. */
+.log{width:340px;background:#0d1014;box-shadow:inset 0 0 0 1px #1c222a;padding:20px}
+.log + .log{margin-left:0}
+.stk{display:flex;flex-direction:column;gap:16px}
+.lab{font:700 9px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:#6d7681;margin:0 0 9px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.btns button{font:700 9px/1 var(--f-mono);letter-spacing:.1em;cursor:pointer}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>ledger</b>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/chit.html">chits</a>
+  <a href="/design/ledger.html" class="on">ledger</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h1>The change log</h1>
+<p class="note">
+Everything else this system posts is an event somebody <b>chose</b>: a roll, a card shown, a
+rest taken. This is the opposite — the record of what happened to a sheet while nobody was
+posting anything. A player marks three Stress and the GM, looking at the map, has no idea; a
+card comes out of the vault and the only witness is the sheet it happened on. The rules ask a
+table to keep these numbers where everyone can see them, and until now the only place any of
+them existed was the sheet of the person holding it.
+</p>
+
+<h2><span>// THE UNIT</span>Net, not keystrokes</h2>
+<p class="note">
+The unit is the <b>change</b>, not the write. Applying damage is four writes — armour, stress,
+hope, hit points — and one event. Fixing a miscount is three writes in two seconds and one
+correction. So entries coalesce and what lands is the net: <code>3 → 5 Hit Points</code>, never
+<code>+1, +1, −1, +2</code>. Which also means a net of zero posts <em>nothing</em>, and taking
+back a box you marked by mistake is not something the table has to watch happen.
+</p>
+
+<div class="grid">
+  <div class="bx">
+    <h4>one hit <s>four writes, one card</s></h4>
+    <div class="log" id="l1"></div>
+    <p class="cap"><b>This is a Severe hit with an Armor Slot spent.</b>
+      Four separate writes to the document, inside about fifty milliseconds, and one
+      thing that happened. The card is the event, not the transaction log.</p>
+  </div>
+
+  <div class="bx">
+    <h4>a short rest's worth <s>read at a glance</s></h4>
+    <div class="log" id="l2"></div>
+    <p class="cap"><b>A run of dim boxes ending in rings is a heal.</b>
+      Ending in bright ones it is a hit. That is the whole reading, and it happens
+      before you get to the numerals.</p>
+  </div>
+</div>
+
+<h2><span>// THE STRIP</span>A delta with no total is half a fact</h2>
+<p class="note">
+“Marked 2 Stress” does not say whether she is one box from Vulnerable, which is the only thing
+anybody wanted to know. So the row carries the track <b>as it now stands</b> and says which part
+of it just moved — settled history recedes, the part that moved does not. That is the damage
+dialog's rule, in the past tense.
+</p>
+
+<div class="grid">
+  <div class="bx">
+    <h4>the three states <s>on, up, dn</s></h4>
+    <div class="log" id="l3"></div>
+    <p class="cap"><b><code>.on</code> is context and is deliberately quiet.</b>
+      <code>.up</code> is what this entry marked. <code>.dn</code> is what it gave back, drawn
+      as the ring it left rather than as a dimmer grey — an empty box and a box that just
+      emptied are the two things this row exists to tell apart, and a shade between two greys
+      does not.</p>
+  </div>
+
+  <div class="bx">
+    <h4>one box size <s>per message, not per row</s></h4>
+    <div class="log" id="l4"></div>
+    <p class="cap"><b>Twelve Hit Points over six Stress.</b>
+      Sized independently that is two different boxes in one glance, which reads as two
+      different kinds of thing. They are not — they are the same box, and the shorter row
+      simply ends early. <code>MARKS</code> made this argument first.</p>
+  </div>
+</div>
+
+<h2><span>// THE OTHER SHAPES</span>Hope is gems, a card's pool is chits</h2>
+<p class="note">
+Neither is redrawn here. Hope is gems everywhere in this system and a card's counters are the
+row the loadout draws — the log is not the place to introduce a second drawing of either. What
+does change is that <b>nothing is pressable</b>: a control in a record would be offering to
+change a number that changed three hours ago.
+</p>
+
+<div class="grid">
+  <div class="bx">
+    <h4>hope <s>and a scarred slot</s></h4>
+    <div class="log" id="l5"></div>
+    <p class="cap"><b>A scarred slot is not an empty one.</b>
+      The ceiling is four and the row is six wide — two lit, two dark, two dead. Drawing four
+      would quietly drop the permanent half of what happened to this character; drawing six
+      lit sockets would promise Hope she cannot hold.</p>
+  </div>
+
+  <div class="bx">
+    <h4>a card's counters <s>and a card crossing</s></h4>
+    <div class="log" id="l6"></div>
+    <p class="cap"><b>A move has no quantity, so it takes no numeral.</b>
+      A name and a direction, with the domain as a pip — the one hue on this card that is not
+      a track's material, and right here for the reason it is right everywhere: the colour
+      <em>is</em> how you know which card.</p>
+  </div>
+</div>
+
+<h2><span>// STORAGE</span>Why none of this is an <code>svg</code></h2>
+<p class="note">
+Foundry's sanitiser strips every <code>&lt;svg&gt;</code> out of stored message content. A posted
+card survives that by being redrawn from a flag on render. A mark track <b>cannot</b>: a marked
+box that loses its X does not look broken, it looks <em>unmarked</em>, which is a lie rather than
+a degradation. So this is not the sheet's <code>MARKS</code> row — every mark here is CSS on an
+empty element, <code>GEMS</code> and <code>CHITS</code> were already <code>&lt;i&gt;</code> and
+<code>&lt;b&gt;</code>, and the whole message survives storage exactly as posted. No flag, no
+redraw, no render hook.
+</p>
+
+<div class="grid">
+  <div class="bx">
+    <h4>the same card, unstyled <s>what a foreign client sees</s></h4>
+    <div class="log" id="l7" style="all:revert;background:#0d1014;padding:20px;width:340px;
+      color:#c3cbd5;font:400 12px/1.5 system-ui"></div>
+    <p class="cap"><b>Truthful, and readable.</b>
+      Stylesheet off, markup intact: every number, every name and every verb is still there and
+      still correct. That is the whole argument for drawing the boxes rather than borrowing
+      them.</p>
+  </div>
+</div>
+
+</div>
+
+<script type="module">
+import { LEDGER } from './ledger.js';
+
+const who = 'Kaelen Vos';
+const draw = (el, entries) => { el.innerHTML = LEDGER({ who, entries }); };
+
+/* One Severe hit with an Armor Slot spent: four writes, one event. */
+draw(l1, [
+  { kind: 'hitPoints', from: 1, to: 3, max: 8 },
+  { kind: 'armorSlots', from: 0, to: 1, max: 3 },
+]);
+
+draw(l2, [
+  { kind: 'hitPoints', from: 5, to: 1, max: 8 },
+  { kind: 'stress', from: 6, to: 3, max: 6 },
+  { kind: 'hope', from: 2, to: 3, max: 6 },
+]);
+
+draw(l3, [
+  { kind: 'stress', from: 2, to: 5, max: 6 },
+  { kind: 'stress', from: 5, to: 2, max: 6 },
+]);
+
+draw(l4, [
+  { kind: 'hitPoints', from: 4, to: 7, max: 12 },
+  { kind: 'stress', from: 1, to: 2, max: 6 },
+]);
+
+/* Two scars: a ceiling of four, drawn as six sockets, two of them dead. */
+draw(l5, [{ kind: 'hope', from: 4, to: 1, max: 4, scars: 2 }]);
+
+const grace = { light: '#a8305f', dark: '#75204a' };
+draw(l6, [
+  { kind: 'pool', label: 'Twilight Toll', from: 2, to: 4, max: 0, name: 'tokens', dom: grace },
+  { kind: 'move', label: 'Invisibility', into: true, dom: grace },
+  { kind: 'move', label: 'Rune Ward', into: false, dom: { light: '#2f5fa8', dark: '#1d3f75' } },
+]);
+
+/* The same builder, with the stylesheet taken away. */
+l7.innerHTML = LEDGER({ who, entries: [
+  { kind: 'hitPoints', from: 1, to: 3, max: 8 },
+  { kind: 'hope', from: 4, to: 3, max: 6 },
+] });
+
+lt.onchange = e => document.documentElement.classList.toggle('light', e.target.checked);
+</script>
+</body>
+</html>

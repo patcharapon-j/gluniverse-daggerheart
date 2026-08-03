@@ -70,6 +70,7 @@
 import type { Rule } from "./rules.ts";
 import { type CardContext, cardOf, loadSigils } from "../sheets/cards.ts";
 import { CARD, rich } from "../ui/card.js";
+import { CHITS } from "../ui/chit.js";
 import { dialogPeeks } from "./dialog-peek.ts";
 
 const esc = (s: string) => foundry.utils.escapeHTML(s);
@@ -181,13 +182,22 @@ const line = (o: {
   peek?: string;
   note?: string;
   uses?: string;
+  pool?: { value: number; max: number; name: string };
 }): string => `<div class="ln" tabindex="0"${o.peek ? ` data-peek="${o.peek}"` : ""}>
   <span class="hd"><b>${esc(o.name)}</b><em>${esc(o.source)}</em>${
     o.note
       ? `<s class="wh">${esc(o.note)}</s>`
-      : o.uses
-        ? `<s>${esc(o.uses)}</s>`
-        : ""
+      : /* The counters themselves, where the row is about a pool the sheet is
+           genuinely tracking — the same objects the card carries, at the same
+           size the loadout draws them, so the thing about to be handed back is
+           the thing you have been looking at all session. A readout: this is a
+           forecast of what Done will do, and pressing it here would be
+           spending a use inside the dialog that is about to refill it. */
+        o.pool
+        ? CHITS({ ...o.pool, add: false })
+        : o.uses
+          ? `<s>${esc(o.uses)}</s>`
+          : ""
   }</span>
   ${o.peek ? "" : `<p>${rich(o.text ?? "")}</p>`}
 </div>`;
@@ -210,8 +220,17 @@ export interface RefreshRow {
   source: string;
   /** The rule, held back behind a hover because it is not why this is here. */
   text: string;
-  /** "1 / 2", when the sheet is actually tracking a use pool. */
+  /**
+   * "once per rest" and nothing more — a *reading* of the rule's own words,
+   * with no count behind it to be honest about.
+   */
   uses?: string;
+  /**
+   * A pool the sheet is really tracking, drawn as its counters. A **fact**
+   * where `uses` is a reading, which is the distinction the two lanes were
+   * built around and this is the same distinction one row further in.
+   */
+  pool?: { value: number; max: number; name: string };
   /** The owned Item this row came from, when there is one. */
   itemId?: string;
 }

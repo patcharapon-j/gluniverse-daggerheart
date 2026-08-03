@@ -95,8 +95,12 @@ export const MINI = (o) => {
    first three lines of what it does. Also the shape weapons, armour and
    items get — the data strip is why, it holds trait/range/damage/burden
    as readily as tier/spellcast. */
+/* `aside` is the spine's slot, same name and same job, and it lands on the
+   footer line for the spine's own reason: that line already ends in slack on
+   every tile we draw, and the alternatives are the corners, which are taken,
+   or the artwork, which is the one place a 68px strip cannot spare. */
 export const TILE = (o) => {
-  const {d, d2, lvl, pre, rc, type, name, text, feats, stats, sig, sig2, fbsig, foot} = o;
+  const {d, d2, lvl, pre, rc, type, name, text, feats, stats, sig, sig2, fbsig, foot, aside} = o;
   // a grimoire has no single body paragraph — lead with its first spell
   const body = text ?? (feats?.length ? `**${feats[0].n}.** ${feats[0].t}` : '');
   const ramp = o.ramp ?? (d.ramp !== false);
@@ -120,7 +124,7 @@ export const TILE = (o) => {
     ${stats ? `<div class="stats">${stats.map(s =>
       `<div><span class="k">${s.k}</span><span class="v">${s.v}</span></div>`).join('')}</div>` : ''}
     ${body ? `<p class="tx">${rich(body)}</p>` : ''}
-    <div class="ft"><span class="tb">${type}</span><span class="mi">${foot ?? d.name}</span></div>
+    <div class="ft"><span class="tb">${type}</span><span class="mi">${foot ?? d.name}</span>${aside ?? ''}</div>
   </div>
   <div class="tbar"></div>
 </div>`;

@@ -27,6 +27,7 @@ import { mount, unmount } from "svelte";
 import CreationWindow from "./CreationWindow.svelte";
 import { SheetState } from "./sheet-state.svelte.ts";
 import { inferFinished } from "./creation.ts";
+import { muteLedger, unmuteLedger } from "../ledger.ts";
 
 const open = new Map<string, any>();
 
@@ -89,7 +90,7 @@ function makeApp(): any {
         this._svelte = null;
         this._state = null;
       }
-      if (this.actor?.id) open.delete(this.actor.id);
+      if (this.actor?.id && open.delete(this.actor.id)) unmuteLedger(this.actor);
       await (super._onClose as any)?.(options);
     }
   };
@@ -126,6 +127,14 @@ export async function openCreation(actor: any): Promise<any> {
   Cached ??= makeApp();
   const app = new Cached({ actor });
   open.set(actor.id, app);
+  /* Nothing this window does goes in the change log, for the rest dialog's
+     reason: finishing posts a card that is the whole character. And most of
+     what it writes is not an event anyway — the opening two Hope is a rule
+     being applied for the first time, not somebody gaining two Hope, and a
+     class swap in session four would announce a track's base moving as though
+     the character had been hit. Held for as long as the window is, since a
+     player comes back to this over weeks. */
+  muteLedger(actor);
   await app.render(true);
   return app;
 }

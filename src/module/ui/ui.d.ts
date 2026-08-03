@@ -108,6 +108,76 @@ declare module "*/ui/card.js" {
   export function rich(s: string): string;
 }
 
+declare module "*/ui/chit.js" {
+  /** A row of counters placed on a card. */
+  export function CHITS(opts: {
+    value?: number;
+    /** 0 or absent means an open pool: no ceiling, so no sockets. */
+    max?: number;
+    /** What one of them is called, for the controls' own labels. */
+    name?: string;
+    /** How many this host can enumerate before it states the number instead. */
+    cap?: number;
+    /** False for a readout — a posted card is a record and takes no input. */
+    add?: boolean;
+    round?: boolean;
+    /** Whether the host has a domain hue. Stated, never sniffed. */
+    dom?: boolean;
+    /** Handed back on `data-key`, so a delegated handler knows the subject. */
+    key?: string;
+  }): string;
+
+  /** Past this many the row states the number rather than enumerating it. */
+  export const CHIT_CAP: number;
+
+  /** Diff the row against a new value and animate only what moved. */
+  export function setChits(row: Element, value: number, max?: number): void;
+
+  /** The flinch a pool plays when it cannot take or give another. */
+  export function refuseChits(row: Element): void;
+
+  /**
+   * Delegate both gestures off one root. The handler is told the row, the
+   * value it should now hold, and which direction the press went.
+   */
+  export function chitClicks(
+    root: Element,
+    onChange: (row: HTMLElement, next: number, dir: 1 | -1) => unknown,
+  ): void;
+}
+
+declare module "*/ui/ledger.js" {
+  /**
+   * One thing that changed on a sheet.
+   *
+   * `from` and `to` are the ends of a *window*, not of a write — see
+   * `ledger.ts`. A `move` has no quantity and carries them only so a card
+   * that left and came straight back can be dropped as a net of zero.
+   */
+  export interface LedgerEntry {
+    kind: "hitPoints" | "stress" | "armorSlots" | "hope" | "pool" | "move";
+    from: number;
+    to: number;
+    /** The ceiling, and what the count on the right reads against. */
+    max?: number;
+    /** The card's name. Tracks take their own and need none. */
+    label?: string;
+    /** Hope only: dead sockets past the ceiling, drawn because they are permanent. */
+    scars?: number;
+    /** A pool only: what one counter is called. */
+    name?: string;
+    /** A pool or a move: the card's domain hue. */
+    dom?: { light: string; dark: string };
+    /** A move only: into the loadout rather than out of it. */
+    into?: boolean;
+    /** Set by the builder — the widest track in the message. Never passed in. */
+    span?: number;
+  }
+
+  /** One message for everything that settled in one window. */
+  export function LEDGER(opts: { who?: string; entries?: LedgerEntry[] }): string;
+}
+
 declare module "*/ui/tile.js" {
   export function TILE(opts: any): string;
   export function SPINE(opts: any): string;

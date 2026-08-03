@@ -20,7 +20,7 @@ import {
 } from "./config.ts";
 import { registerDataModels } from "./data/index.ts";
 import { DaggerheartActor } from "./documents/actor.ts";
-import { DaggerheartItem } from "./documents/item.ts";
+import { DaggerheartItem, refreshResources } from "./documents/item.ts";
 import { registerSheets } from "./sheets/register.ts";
 import { registerChat } from "./dice/chat.ts";
 import { registerMessageHeaders } from "./message-header.ts";
@@ -30,6 +30,7 @@ import { rollDamage, rollDuality, rollFoe } from "./dice/rolls.ts";
 import { applyTheme, gainFear, getFear, registerSettings, setFear, spendFear } from "./settings.ts";
 import { openCreation, refreshCreation } from "./apps/create.ts";
 import { registerFearHud } from "./fear-hud.ts";
+import { registerLedger, withoutLedger } from "./ledger.ts";
 
 /**
  * The design is set in Google Sans, which is not bundled — it is not ours to
@@ -85,6 +86,7 @@ Hooks.once("init", () => {
   registerSheets();
   registerChat();
   registerMessageHeaders();
+  registerLedger();
   registerDice();
   requestFonts();
 
@@ -118,6 +120,37 @@ Hooks.once("init", () => {
   }
 });
 
+/**
+ * Give back every `scene`- or `session`-scoped resource on one character, or
+ * on all of them.
+ *
+ * Only characters, and only ones somebody owns. A scene ending is a fact about
+ * the party; sweeping every Actor in the world would reach the GM's adversary
+ * roster and refill a stat block's pool because a player's card came back.
+ */
+async function refreshScope(scope: "scene" | "session", actor?: any): Promise<number> {
+  const targets = actor
+    ? [actor]
+    : (game.actors?.filter?.((a: any) => a.type === "character") ?? []);
+
+  /* Out of the change log, for the rest's reason one step further out. A
+     scene ending gives back every once-per-scene pool at the table at once,
+     and a ledger card per character listing twenty counters refilling is not
+     a record of anything that happened — it is the bookkeeping the notification
+     below already sums up in one line. */
+  let moved = 0;
+  for (const a of targets) {
+    moved += (await withoutLedger(a, () => refreshResources(a, [scope]))).length;
+  }
+
+  if (moved) {
+    ui.notifications?.info(
+      game.i18n.format("DAGGERHEART.Resource.Refreshed", { n: moved, scope }),
+    );
+  }
+  return moved;
+}
+
 Hooks.once("ready", () => {
   applyTheme();
 
@@ -138,6 +171,21 @@ Hooks.once("ready", () => {
     fear: { get: getFear, set: setFear, gain: gainFear, spend: spendFear },
     /** `game.daggerheart.create(actor)` — the same call the rail plate makes. */
     create: openCreation,
+
+    /* Two of the six refresh scopes have no automatic trigger, and these are
+       not a placeholder for one. Foundry knows a rest happened because this
+       system runs the dialog; it has no idea what a scene or a session is,
+       and every candidate for inferring one is wrong somewhere real — a
+       combat ending is not a scene ending, and a world being loaded is not a
+       session starting for the table that plays two in a day.
+
+       So they are a seam. A GM presses a macro, or a session-tracking module
+       calls them, and the twenty entries that say "once per session" or
+       "once per scene" come back. Both take an actor because a scope is a
+       fact about a character's cards; `endSession()` with no argument does
+       every player character in the world, which is what the GM means. */
+    endScene: (actor?: any) => refreshScope("scene", actor),
+    endSession: (actor?: any) => refreshScope("session", actor),
   };
 
   console.log(`${SYSTEM_ID} | Ready (v${game.system?.version ?? "unknown"})`);

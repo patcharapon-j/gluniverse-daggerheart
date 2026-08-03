@@ -70,7 +70,7 @@ const feature = (f, i, n, runin) => runin
 export const CARD = (opts) => {
   const o = {type:'SPELL', name:'Rain of Blades', corners:chips, cls:'', ...opts};
   const {d, d2, lvl, rc, type, name, text, flavour, feats, stats, tags,
-         sig, sig2, foot, code, fbsig, fbname, corners, cls} = o;
+         sig, sig2, foot, code, fbsig, fbname, corners, cls, chits} = o;
   const runin = o.runin ?? false;
 
   // Ancestry and Community opt out via their token; everything domain-derived
@@ -98,6 +98,15 @@ export const CARD = (opts) => {
     </div>
   </div>
   ${corners(o)}
+  <!-- Counters, on the plate. A direct child of the card because that is what
+       the positioning measures against: the anchor is the plate's own bottom
+       edge, which is a percentage the fitter moves, so it has to be read from
+       inside the card's box. A stack and not the row itself, because a card
+       can carry two pools — a budget it spends and a pile it builds — and one
+       absolute offset would put them on top of each other. See the ON A CARD
+       block in chit.css. No code quotes in here: a backtick would close this
+       template literal. -->
+  ${chits ? `<div class="chitstack">${chits}</div>` : ''}
   <div class="lower">
     <div class="body">
       <div class="seam"><i></i><div class="tb"><em>${type}</em></div><i></i></div>

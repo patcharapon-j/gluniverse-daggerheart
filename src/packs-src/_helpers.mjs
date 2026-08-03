@@ -315,7 +315,6 @@ export function featureItem({
   folder = "",
   stressCost = 0,
   fearCost = 0,
-  uses = 0,
   img = "",
 }) {
   return {
@@ -328,7 +327,6 @@ export function featureItem({
       description: rt(text),
       fearCost,
       stressCost,
-      uses: { value: uses, max: uses },
       origin,
     },
   };
@@ -491,7 +489,6 @@ export function domainCardItem({
   cardType = "ability",
   recall = 0,
   text,
-  uses = 0,
   art = "",
   artist = "",
   cardId = "",
@@ -510,7 +507,6 @@ export function domainCardItem({
       recallCost: recall,
       description: rt(text),
       inLoadout: false,
-      uses: { value: uses, max: uses },
       printing: { artist, code: cardId },
     },
   };

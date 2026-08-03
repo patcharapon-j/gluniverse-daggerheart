@@ -1,0 +1,125 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH LEDGER — the change log, in the chat log
+
+   Not a card. A card is a thing you hold; this is a thing that
+   happened, and it happened to somebody else's sheet. So it takes the
+   rest card's substrate — paper, a hairline, the family chamfer, the
+   plate's 300px — because those two are the same *kind* of object and
+   drawing them differently would claim they are not.
+
+   What it does not take is the rest card's die. A rest row is the
+   result of a roll and the die is where the number came from; a ledger
+   row has no die, because nothing rolled. What produced it is a box you
+   pressed, and the box is what the row draws.
+
+   See ledger.js for why the strip is hand-drawn rather than `MARKS`,
+   and why nothing here is `<svg>`.
+   ══════════════════════════════════════════════════════════════════ */
+
+.ldg{width:100%;max-width:300px;background:var(--paper);
+  box-shadow:inset 0 0 0 1px var(--line),0 8px 20px -12px rgba(0,0,0,.6);
+  padding:13px 15px 15px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+
+.ldg > .k{display:flex;align-items:baseline;gap:8px;margin-bottom:11px;
+  font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3)}
+/* The subject, named on the card itself. Foundry's own header names it
+   too and this is not a repetition for the plate's reason: a module that
+   suppresses the header must not be able to take the subject of the
+   sentence with it. */
+.ldg > .k s{margin-left:auto;text-decoration:none;font-size:9px;color:var(--hope-tx)}
+
+/* ── a row ────────────────────────────────────────────────────────
+   Two lines, not one. The strip is the widest thing here — twelve Hit
+   Points at 300px is most of the width — so it gets its own line, and
+   the heading above it carries the name and the amount. Laid out as a
+   grid rather than two flex rows because the count belongs to the strip
+   and hangs off its right end. */
+.ldg .r{display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;column-gap:9px;row-gap:6px}
+.ldg .r + .r{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+
+.ldg .r .hd{grid-column:1/-1;display:flex;align-items:baseline;gap:9px}
+.ldg .r .hd .k{font:600 12px/1.25 var(--f-ui);color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ldg .r .hd .v{flex:none;margin-left:auto;display:flex;align-items:baseline;gap:6px}
+.ldg .r .hd .v b{font:700 22px/1 var(--f-display);letter-spacing:-.04em;
+  color:var(--tk,var(--ink));font-variant-numeric:tabular-nums}
+.ldg .r .hd .v em{font-style:normal;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+
+/* The state, at the end of the strip. `5 / 6` and not `5` — a delta with
+   no total is half a fact, and the half nobody wanted. */
+.ldg .r .ct{grid-column:2;justify-self:end;font:700 10px/1 var(--f-mono);
+  color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ldg .r .ct s{text-decoration:none;color:var(--ink-4)}
+
+/* ── the strip ────────────────────────────────────────────────────
+   One box per point, chamfered — the family mark, cut once at the
+   bottom-right exactly as the card and the plate are. Sized off `--n`,
+   which the builder sets to the widest track in the *message* rather
+   than in the row, so Hit Points over Stress reads as two lengths of
+   one thing. It floors at 9px: below that the chamfer stops being a
+   cut and starts being an artefact. */
+.ldg .st{grid-column:1;display:flex;flex-wrap:wrap;gap:3px;
+  --bx:max(9px, min(13px, calc((100% - (var(--n,12) - 1) * 3px) / var(--n,12))))}
+/* `aspect-ratio` and not a second `--bx` on the height. The box size is a
+   percentage of the strip's width, and a percentage *height* resolves
+   against a container whose height is auto — which is zero, and a row of
+   thirteen-pixel-wide boxes nothing tall. */
+.ldg .st > i{flex:none;width:var(--bx);aspect-ratio:1;background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%)}
+
+/* Settled history recedes and the part that moved does not — the damage
+   dialog's rule, in the past tense. `.on` is what was already marked
+   before this entry and is deliberately quiet: it is context, and the
+   reader is here for the other two. */
+.ldg .st > i.on{background:color-mix(in srgb,var(--tk) 34%,var(--sunk));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tk) 30%,var(--line))}
+.ldg .st > i.up{background:var(--tk);
+  box-shadow:inset 0 0 0 1px var(--tk),0 0 7px -1px var(--tk)}
+/* Given back: the ring it left. Hollow rather than dim, because an empty
+   box and a box that just emptied are the two things this row exists to
+   tell apart, and a shade between two greys does not. */
+.ldg .st > i.dn{background:var(--sunk);
+  box-shadow:inset 0 0 0 1.5px var(--tk)}
+
+/* ── the tracks' own materials ────────────────────────────────────
+   The one place this system suspends "hue means domain". A wound bleeds,
+   a strain is scored, a plate fractures — and telling those apart at a
+   glance is worth more in a log you are scrolling than anywhere else.
+   Armour is steel and not gold: `--plate-fl` is the strike, which is an
+   event, and every box in this strip is already one. */
+.ldg .r[data-t="hitPoints"]{--tk:var(--wound-gl)}
+.ldg .r[data-t="stress"]{--tk:var(--strain)}
+.ldg .r[data-t="armorSlots"]{--tk:var(--plate)}
+.ldg .r[data-t="hope"]{--tk:var(--hope-tx)}
+.ldg .r[data-t="pool"]{--tk:var(--dom,var(--ink-2))}
+
+/* ── Hope, and a card's counters ──────────────────────────────────
+   Both are the components the sheet already draws, at a readout size.
+   Neither is `add`able and neither is pressed: the log is a record, and
+   a control in it would be offering to change a number that changed
+   three hours ago. */
+.ldg .gm,.ldg .ch{grid-column:1;min-width:0}
+.ldg .gm .gems{flex-wrap:wrap}
+.ldg .ch .chits{--sz:15px;--gap:4px}
+
+/* ── a card crossing ──────────────────────────────────────────────
+   No quantity, so no numeral — one line, a name and a direction. The
+   pip is the domain, which is the only thing on this card drawn in a
+   hue that is not a track's, and it is right for the reason it is right
+   everywhere else: the colour *is* how you know which card. */
+.ldg .r.mv{display:flex;align-items:center;gap:9px}
+.ldg .r.mv .pip{flex:none;width:9px;height:9px;background:var(--dom,var(--ink-3));
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.ldg .r.mv .bd{flex:1 1 auto;min-width:0}
+.ldg .r.mv .bd b{display:block;font:600 12px/1.25 var(--f-ui);color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ldg .r.mv .bd s{display:block;margin-top:3px;text-decoration:none;
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-4)}
+.ldg .r.mv .wh{flex:none;font:700 9px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dom,var(--ink-3))}

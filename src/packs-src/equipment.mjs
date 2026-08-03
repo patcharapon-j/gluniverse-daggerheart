@@ -44,6 +44,7 @@ import {
   SECONDARY as HF_SECONDARY,
 } from "./hf-equipment-tables.mjs";
 import { CONSUMABLES as HF_CONSUMABLES, ITEMS as HF_ITEMS } from "./hf-loot-tables.mjs";
+import { withResources } from "./card-resources.mjs";
 
 const TIERS = [1, 2, 3, 4];
 
@@ -53,7 +54,7 @@ const tiered = (table, fn) => TIERS.flatMap((tier) => (table[tier] ?? []).map((r
 const primary = (magic) => (row, tier) =>
   weaponItem({ ...row, tier, slot: "primary", magic });
 
-export default [
+export default withResources([
   ...tiered(PRIMARY_PHYSICAL, primary(false)),
   ...tiered(PRIMARY_MAGIC, primary(true)),
 
@@ -79,4 +80,4 @@ export default [
 
   ...HF_CONSUMABLES.map((row) => lootItem({ ...row, consumable: true })),
   ...HF_ITEMS.map((row) => lootItem({ ...row, consumable: false })),
-];
+]);

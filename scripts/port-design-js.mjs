@@ -15,6 +15,7 @@
  * Re-runnable: design/ stays the source of truth.
  */
 
+import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -28,6 +29,8 @@ const MODULES = [
   "gem.js",
   "pool.js",
   "card.js",
+  "chit.js",
+  "ledger.js",
   "tile.js",
   "domains.js",
   "peek.js",
@@ -38,9 +41,42 @@ const MODULES = [
   "make.js",
 ];
 
+/**
+ * Refuse to port a module that does not parse.
+ *
+ * The specific mistake this catches is the one this repo has already paid for
+ * twice: **a backtick inside markup closes the template literal it is in.**
+ * Every builder here is a template literal, so an HTML comment naming a class
+ * the way the rest of the repo names one — in code quotes — ends the string,
+ * and the rest of the file becomes something else entirely. What it becomes
+ * is sometimes a tagged template call, which parses and throws at render with
+ * an empty console; and sometimes, as with the chit row's comment in card.js,
+ * a plain syntax error that takes the whole module down and every module that
+ * imports it with it.
+ *
+ * `node --check` sees both, and it sees them as ESM because this package is
+ * `"type": "module"`. It is the JS half of what the CSS port already does by
+ * counting comment delimiters: not a linter, and not trying to be — just the
+ * one mistake that actually happens when these files are edited by hand.
+ */
+const parses = (file) => {
+  try {
+    execFileSync(process.execPath, ["--check", file], { stdio: "pipe" });
+    return null;
+  } catch (err) {
+    return String(err.stderr ?? err.message).trim();
+  }
+};
+
 mkdirSync(OUT, { recursive: true });
 
 for (const name of MODULES) {
+  const bad = parses(join(SRC, name));
+  if (bad) {
+    console.error(`\n${name} does not parse — nothing ported.\n\n${bad}\n`);
+    process.exit(1);
+  }
+
   let js = readFileSync(join(SRC, name), "utf8");
   js = js.replaceAll("/design/assets/", "systems/gluniverse-daggerheart/assets/");
 

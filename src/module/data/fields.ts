@@ -7,6 +7,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import {
+  RESOURCE_MAX,
+  RESOURCE_ON_REFRESH,
+  RESOURCE_REFRESH,
+  RESOURCE_TRAITS,
+} from "../config.ts";
+
 const F = () => foundry.data.fields;
 
 export const int = (initial = 0, opts: Record<string, unknown> = {}): any =>
@@ -132,6 +139,88 @@ export const printingField = (): any =>
     artist: str(),
     code: str(),
   });
+
+/**
+ * A number a card asks you to keep.
+ *
+ * See `RESOURCE_MAX` and friends in `config.ts` for what the members mean and
+ * why each set is closed. Four things about the shape here.
+ *
+ * **`max` is a source, not an integer.** "Place a number of tokens equal to
+ * your Spellcast trait" is a ceiling that moves when you multiclass, level or
+ * change subclass, and a compendium entry cannot know it — the card is the
+ * same card for every character who holds it. So the entry states where the
+ * number comes from and the actor resolves it.
+ *
+ * **`floor` is not a minimum the schema invents.** Flight prints "(minimum
+ * 1)" because Agility can be −1 at level 1, so a trait-sourced ceiling can
+ * legitimately be negative and the card says what to do about it. It is the
+ * card's own parenthesis and nothing else sets it.
+ *
+ * **`feature` binds this to one rule on a document that has several.** The
+ * Hedge's Foundation card prints Herbal Remedies and Enchanted Talisman, and
+ * only the second one takes tokens. The Features panel draws a row per rule,
+ * so a resource that could not name its rule would have to be drawn on all of
+ * them or on none. Blank means the document itself, which is the common case.
+ *
+ * **`onEmpty` is authored prose, printed verbatim.** The Vampire's Feed says
+ * what happens when the pile runs out and that is the whole bargain of the
+ * card; it is stored as a sentence rather than as a mechanism because this
+ * system parses English rules text in exactly one place and this is not it.
+ */
+export const resourceField = (): any =>
+  schema({
+    name: str("Tokens"),
+    value: int(0, { min: 0 }),
+    max: schema({
+      kind: choice(RESOURCE_MAX, "fixed"),
+      /** The ceiling when `kind` is `fixed`; ignored otherwise. */
+      n: int(1, { min: 0 }),
+      /** Which trait, when `kind` is `trait`. `spellcast` points at one of six. */
+      trait: maybeChoice(RESOURCE_TRAITS),
+      /** The card's own printed minimum, when it prints one. */
+      floor: int(0),
+    }),
+    refresh: choice(RESOURCE_REFRESH, "manual"),
+    onRefresh: choice(RESOURCE_ON_REFRESH, "fill"),
+    /** The `name` of the feature block this belongs to. Blank = the document. */
+    feature: str(),
+    /** What the card says happens at zero. */
+    onEmpty: str(),
+  });
+
+/**
+ * `uses` was a `pool` on domain cards and features, and it is now one member
+ * of `resources`.
+ *
+ * Shared by both `migrateData` implementations rather than written twice. It
+ * is deliberately generous about what it will convert and silent when there
+ * is nothing to convert: no compendium entry ever authored a `uses` pool, so
+ * in practice this fires only for a homebrew card somebody filled in by hand,
+ * and that is precisely the data that would otherwise vanish without anyone
+ * being told.
+ *
+ * The old pool had no refresh scope, and `refreshUses` refilled it on either
+ * kind of rest — so `rest` is not a guess about what the author meant, it is
+ * what the field actually did.
+ */
+export const migrateUses = (source: any): void => {
+  const u = source?.uses;
+  if (!u) return;
+  delete source.uses;
+  if (!(u.max > 0) || source.resources?.length) return;
+  source.resources = [
+    {
+      name: "Uses",
+      value: u.value ?? u.max,
+      max: { kind: "fixed", n: u.max, trait: "", floor: 0 },
+      refresh: "rest",
+      onRefresh: "fill",
+      feature: "",
+      onEmpty: "",
+    },
+  ];
+};
 
 /** Damage as the stat blocks print it: `2d6+3 phy`. */
 export const damageField = (dice = "d6", count = 1, bonus = 0): any =>

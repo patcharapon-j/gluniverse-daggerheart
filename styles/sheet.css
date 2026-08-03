@@ -666,13 +666,37 @@
 .dh .abl .dm i::before{content:"";width:7px;height:7px;flex:none;background:var(--c);
   clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 
+/* ── the row is a container, the rule inside it is the press ───────
+   `.a` was the `<button>` and cannot be, because a feature that counts
+   something carries a chit row and a chit is a button. A button inside a
+   button is not markup a browser keeps — it is the same wall `.fcls` and
+   `.fclsr` hit in the creation window, and it is answered the same way:
+   the container holds the ground, the chamfer and the hover, and `.ap`
+   holds everything you are pressing *for*.
+
+   Splitting it costs nothing on the rows that count nothing, which is most
+   of them: `.ap` restates the column so the row's own metrics are unchanged
+   whether or not a chit row follows it. What it must restate as well is the
+   *height*, because `elements` sizes every `<button>` to one 28px line and
+   a class feature is a paragraph — the fourth time this file has had to say
+   so, after the panel heading, the empty state and the slot header. */
 .dh .abl .a{display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;
-  padding:9px 12px 11px;border:0;cursor:pointer;text-align:left;
+  padding:9px 12px 11px;
   background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
   transition:background .14s,box-shadow .14s,transform .14s}
 .dh .abl .a:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
   transform:translateX(2px)}
+.dh .abl .ap{display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;
+  padding:0;margin:0;border:0;border-radius:0;background:none;color:inherit;
+  cursor:pointer;text-align:left;
+  height:auto;min-height:0;max-height:none}
+/* The chit row sits under the rule, aligned with it. It is *in* the row
+   rather than in the header, because the header is a type line — an origin
+   and a price, both read once — and a pool is the one thing on this row you
+   come back to. It takes the row's own left edge so a column of features
+   reads as a column of counters down the same rule. */
+.dh .abl .a > .chits{margin-top:1px}
 .dh .abl .hd{display:flex;align-items:baseline;gap:10px;min-width:0}
 .dh .abl .hd s{flex:1 1 auto;min-width:0;text-decoration:none;font:700 8px/1.3 var(--f-mono);
   letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
@@ -682,7 +706,7 @@
    colour three panels up — one hue, one currency. */
 .dh .abl .hd em{flex:none;font-style:normal;font:700 8px/1.3 var(--f-mono);
   letter-spacing:.14em;text-transform:uppercase;color:var(--strain)}
-.dh .abl .a > b{font:600 13px/1.3 var(--f-display);letter-spacing:-.01em;color:var(--ink)}
+.dh .abl .ap > b{font:600 13px/1.3 var(--f-display);letter-spacing:-.01em;color:var(--ink)}
 .dh .abl p{margin:0;font:400 11.5px/1.5 var(--f-ui);color:var(--ink-2);white-space:normal}
 .dh .abl p b{font-weight:700;color:var(--ink)}
 .dh .abl p b.t-hope{color:var(--hope-tx)}
@@ -918,11 +942,23 @@
 .dh .lst .r input.n::-webkit-outer-spin-button,.dh .lst .r input.n::-webkit-inner-spin-button{
   -webkit-appearance:none;margin:0}
 .dh .lst .r input:focus{outline:0;box-shadow:inset 0 0 0 1px var(--hope)}
-.dh .lst .r .x{flex:none;width:24px;height:24px;padding:0;border:0;cursor:pointer;
+/* Both of these are buttons, and both had the bug the panel heading's plus
+   and the slot header's unequip were fixed for and these two were not.
+   Foundry's `elements` layer sets `height` *and* a matching `min-height` on
+   every button — our unlayered `height:24px` wins the first outright, and
+   there was nothing of ours for the second to beat, so a floor with no
+   competitor simply applied. The remove was a 28px control on a 24px row and
+   the add was a 9px word in a 28px box, which reads as a spacing choice
+   rather than as an inherited height. `border-radius` for the same reason
+   the pool's stepper states it: Foundry rounds every button to 4px and
+   nothing in this system has a rounded corner. */
+.dh .lst .r .x{flex:none;width:24px;height:24px;min-height:0;max-height:none;
+  padding:0;border:0;border-radius:0;cursor:pointer;
   background:transparent;color:var(--ink-4);font:700 13px/1 var(--f-mono);
   transition:color .14s,background .14s}
 .dh .lst .r .x:hover{color:var(--wound);background:var(--sunk)}
-.dh .lst .add{align-self:flex-start;margin-top:3px;border:0;background:none;padding:0;cursor:pointer;
+.dh .lst .add{align-self:flex-start;margin-top:3px;border:0;border-radius:0;background:none;
+  height:auto;min-height:0;max-height:none;padding:0;cursor:pointer;
   font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
   color:var(--ink-3);transition:color .12s}
 .dh .lst .add:hover{color:var(--hope-tx)}

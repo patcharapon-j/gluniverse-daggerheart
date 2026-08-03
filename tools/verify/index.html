@@ -23,6 +23,8 @@
 <link rel="stylesheet" href="/styles/pool.css">
 <link rel="stylesheet" href="/styles/tile.css">
 <link rel="stylesheet" href="/styles/card.css">
+<link rel="stylesheet" href="/styles/chit.css">
+<link rel="stylesheet" href="/styles/ledger.css">
 <link rel="stylesheet" href="/styles/roll.css">
 <link rel="stylesheet" href="/styles/swap.css">
 <link rel="stylesheet" href="/styles/sheet.css">
@@ -160,6 +162,12 @@
 <h2><span>// THE TICK</span>A picker row's control, which Foundry redraws in its own palette</h2>
 <div class="stage" id="tick"></div>
 
+<h2><span>// THE CHITS</span>Counters on a card, in all four of the hosts that draw them</h2>
+<div class="stage" id="chits"></div>
+
+<h2><span>// THE LEDGER</span>The change log, and everything it must survive storage as</h2>
+<div class="stage" id="ledger"></div>
+
 <h2><span>// THE PREP</span>The roll popover, and the pair it now names</h2>
 <div class="stage" id="prep"></div>
 
@@ -177,6 +185,9 @@ import { MARKS, DAMAGE } from '/src/module/ui/mark.js';
 import { GEMS } from '/src/module/ui/gem.js';
 import { FEAR_HUD } from '/src/module/ui/pool.js';
 import { CARD, fit } from '/src/module/ui/card.js';
+import { CHITS } from '/src/module/ui/chit.js';
+import { LEDGER } from '/src/module/ui/ledger.js';
+import { SPINE, TILE } from '/src/module/ui/tile.js';
 import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
    two are genuinely different things — nine slugs against nine documents. */
@@ -478,6 +489,17 @@ document.getElementById('panel').innerHTML = `
         <span class="lb">Level 2<s class="got">Whirlwind</s></span>
       </div>
     </div>
+    <div class="lbl" style="margin-top:14px">LIST EDITOR · the two presses that were missed</div>
+    <div class="pnl" style="border-top:0">
+      <div class="lst" id="lsted">
+        <div class="r">
+          <input class="t" type="text" value="Grew up on the docks">
+          <input class="n" type="number" value="2">
+          <button type="button" class="x">×</button>
+        </div>
+        <button type="button" class="add">+ experience</button>
+      </div>
+    </div>
   </div>`;
 
 /* ── THE TICK ───────────────────────────────────────────────────────
@@ -513,6 +535,115 @@ document.getElementById('tick').innerHTML = `
         <b>Agility</b><s>now +2</s></label>
     </div>
   </div>`;
+
+/* ── THE CHITS ──────────────────────────────────────────────────────
+   The one component in this system whose controls are as small as its
+   decoration, drawn in every host that draws it, under the layer that keeps
+   getting them wrong.
+
+   Three separate things can only be seen here.
+
+   **The features row is no longer a button.** A chit is a button, a class
+   feature that counts something carries a row of them, and a button inside a
+   button is not markup a browser keeps — so `.a` became a container and `.ap`
+   became the press, which is `.fcls`/`.fclsr`'s answer arriving on the sheet.
+   A press that has lost its own metrics goes back to being one 28px line, and
+   on a rule that runs to a paragraph that is the whole row sheared off.
+
+   **The plus is a real control the size of a chit**, which in a row is 14px.
+   `pool.css` learned that Foundry floors every button with a `min-height` our
+   height cannot beat and rounds every one to 4px, in a system whose family
+   mark is a corner cut *off*. This is the smaller of the two controls either
+   of those would be the whole of.
+
+   **And a row in flow does not wrap.** On a card the row is absolutely
+   positioned and a second line is what a real card looks like; in a features
+   row it is in flow, so the fifth chit not fitting takes the row from 14px to
+   33 — reflowing the panel on the click that placed the chit, under the
+   pointer still on it. */
+const chitsReady = (async () => {
+  const mid = byslug.midnight;
+  const sig = await icon('midnight');
+  const pool = (o) => CHITS({ dom: true, ...o });
+  document.getElementById('chits').innerHTML = `
+    <div class="dh" style="width:300px;background:var(--paper);padding:14px">
+      <div class="lbl">FEATURES ROW · a container with a press in it</div>
+      <div class="abl"><div class="runs">
+        <div class="a">
+          <button type="button" class="ap">
+            <span class="hd"><s>Class · Sorcerer</s><em>1 Stress</em></span>
+            <b>Arcane Charge</b>
+            <p>When you take magic damage, you become Charged. While Charged
+               you can spend a charge to deal extra damage equal to your level,
+               or clear a Hit Point instead.</p>
+          </button>
+          ${CHITS({ value: 1, max: 3, name: 'charge' })}
+        </div>
+        <div class="a"><button type="button" class="ap"><b>No pool at all</b></button></div>
+      </div></div>
+
+      <div class="lbl" style="margin-top:14px">SPINE · in the meta line's own slack</div>
+      <div class="pk" style="--art:none">${SPINE({
+        d: mid, sig: sig, lvl: 3, rc: 1, type: 'SPELL',
+        name: 'Umbral Veil', foot: mid.name, aside: pool({ value: 2, max: 0 }) })}</div>
+
+      <div class="lbl" style="margin-top:14px">TILE · on the footer line</div>
+      <div class="abl"><div class="sub"><div class="pk" style="--art:none">${TILE({
+        d: mid, sig: sig, type: 'FOUNDATION', name: 'Hedge',
+        foot: 'Witch', text: '',
+        stats: [{ k: 'Spellcast', v: 'Instinct' }],
+        aside: pool({ value: 1, max: 1, name: 'use' }) })}</div></div></div>
+    </div>
+    <div class="dh" style="width:262px">
+      <div class="lbl">CARD · two pools, stacked on the plate</div>
+      ${CARD({ d: mid, sig: sig, lvl: 3, rc: 1, type: 'SPELL',
+               name: 'Umbral Veil', foot: mid.name,
+               text: 'Spend a Hope to become Cloaked. Place a token on this card each time you are attacked while Cloaked.',
+               chits: pool({ value: 1, max: 1, name: 'use', add: false }) +
+                      pool({ value: 2, max: 0, add: false }) })}
+    </div>`;
+  fit(document.getElementById('chits'));
+})();
+
+/* ── THE LEDGER ─────────────────────────────────────────────────────
+   The change log is the one thing this system posts that is drawn *entirely*
+   from stored content — no flag, no redraw hook — and that is a promise about
+   markup rather than about looks. Foundry's sanitiser takes every `<svg>` out
+   of a message on the way into the database, and a card survives that by being
+   redrawn from its options on render. A mark track cannot: a marked box that
+   loses its X does not look broken, it looks **unmarked**, which is a lie
+   rather than a degradation. So the strip is CSS on empty elements, and the
+   moment somebody reaches for `MARKS` here to save fifty lines this section
+   goes red instead of the log going quietly wrong.
+
+   Two other things only fail here.
+
+   **The box is sized by a percentage of the strip's width**, and it was
+   briefly `height:var(--bx)` as well — a percentage height against a container
+   whose height is auto, which is zero. Thirteen pixels wide and nothing tall,
+   which on a dark card is a row that is simply not there.
+
+   **And `.dn` is a ring rather than a dimmer grey.** An empty box and a box
+   that has just been emptied are the two states this strip exists to tell
+   apart; if they ever compute the same, a heal and a full track are the same
+   picture. */
+const ledgerReady = (async () => {
+  const grace = byslug.grace;
+  document.getElementById('ledger').innerHTML = `
+    <div class="dh" style="width:340px;background:#0d1014;padding:18px">
+      <div class="lbl">EVERY ROW SHAPE · one message</div>
+      ${LEDGER({ who: 'Kaelen Vos', entries: [
+        { kind: 'hitPoints', from: 1, to: 4, max: 12 },
+        { kind: 'stress', from: 6, to: 3, max: 6 },
+        { kind: 'armorSlots', from: 0, to: 1, max: 3 },
+        { kind: 'hope', from: 4, to: 1, max: 4, scars: 2 },
+        { kind: 'pool', label: 'Twilight Toll', from: 2, to: 4, max: 0,
+          name: 'tokens', dom: { light: grace.light, dark: grace.dark } },
+        { kind: 'move', label: 'Invisibility', into: true,
+          from: 0, to: 1, dom: { light: grace.light, dark: grace.dark } },
+      ] })}
+    </div>`;
+})();
 
 /* ── THE PREP ───────────────────────────────────────────────────────
    The roll popover's duality row, which is the one component in this system
@@ -1130,6 +1261,28 @@ setTimeout(async () => { try {
   const tkH = Math.round(tk.getBoundingClientRect().height);
   check('a claim press is the size it declares', tkH > 12 && tkH < 26, `${tkH}px`);
 
+  /* The same rule again, on the two controls it was never applied to — and
+     they are the two the item sheet's every list is now made of, which is how
+     they were found. `.lst .r .x` declared `height:24px` and beat Foundry's
+     `height` outright; it had nothing to beat the matching `min-height` with,
+     and a floor with no competitor simply applies, so it stood 28px tall in a
+     24px row. `.lst .add` declared no height at all and was a 9px word
+     centred in a 28px box. Both symptoms read as spacing rather than as an
+     inherited height, which is why the adjust tab shipped with them.
+
+     The remove is asserted at its declared 24 and the add is asserted to be
+     the height of its own type — under 16px, the same bound the heading press
+     is held to, because both are words rather than boxes. */
+  const lx = document.querySelector('#panel .lst .r .x');
+  const lxH = Math.round(lx.getBoundingClientRect().height);
+  const lxRow = Math.round(lx.parentElement.getBoundingClientRect().height);
+  check('a list remove is 24px, not Foundry’s floor', lxH === 24 && lxRow <= 28,
+        `${lxH}px in a ${lxRow}px row`);
+
+  const ladd = document.querySelector('#panel .lst .add');
+  const laddH = Math.round(ladd.getBoundingClientRect().height);
+  check('a list add is type, not a 28px control', laddH < 16, `${laddH}px`);
+
   /* The tick, and three things about it. Its *size* is ours rather than the
      20px Foundry's glyph makes — measured on the unchecked one, since that is
      the state the layer inflates. Its two states are the same box, which is
@@ -1249,6 +1402,125 @@ setTimeout(async () => { try {
     : 0;
   check('a chosen card wears brackets outside the artwork', cardBrackets === 6,
         `${cardBrackets} of 6 corners`);
+
+  /* ── the chits ────────────────────────────────────────────────────
+     Four hosts, four things that only fail here. */
+  await chitsReady;
+
+  /* The features row stopped being a button so it could hold ones. If `.ap`
+     ever measures 28 the reset has gone, and a class feature is a paragraph —
+     so what is left on screen is the row's first line and nothing under it. */
+  const ap = document.querySelector('#chits .abl .ap');
+  const apH = Math.round(ap?.getBoundingClientRect().height ?? 0);
+  check('a features row press is as tall as its rule, not 28px',
+        apH > 60 && document.querySelectorAll('#chits .a > button > button').length === 0,
+        `${apH}px · no nested buttons`);
+
+  /* Foundry floors every button with a `min-height` our height cannot beat,
+     and rounds every one to 4px in a system whose family mark is a corner cut
+     off. The plus is the smallest control here and either would be all of it. */
+  const put = document.querySelector('#chits .abl .chits .put');
+  const pr = put?.getBoundingClientRect();
+  const prs = put ? getComputedStyle(put) : null;
+  check('the place control keeps its own metrics and its corners',
+        !!pr && Math.round(pr.height) === 14 && prs.borderRadius === '0px',
+        pr ? `${Math.round(pr.width)}×${Math.round(pr.height)} · radius ${prs.borderRadius}` : 'no control');
+
+  /* In flow, a row that wraps takes its host from one line to two — and it
+     does it on the click that placed the chit, under the pointer still on it.
+     The chat header's bug, in a component small enough to hide it. */
+  const rowsInFlow = [...document.querySelectorAll('#chits .abl .chits, #chits .spine .chits, #chits .tile .chits')];
+  const wrapped = rowsInFlow.filter(r =>
+    r.getBoundingClientRect().height > parseFloat(getComputedStyle(r).getPropertyValue('--sz')) + 3);
+  check('a chit row in flow is exactly one line', rowsInFlow.length === 3 && !wrapped.length,
+        `${rowsInFlow.length} rows · ${wrapped.length} wrapped`);
+
+  /* The stack is anchored to the plate's own bottom edge, which `fit()` moves
+     between 40% and 50% as the prose needs room. Read off the card instead and
+     the counters end up on the paragraph — which is where they were, three
+     separate times, while that correction was missing. */
+  const stack = document.querySelector('#chits .card .chitstack');
+  const plateR = document.querySelector('#chits .card .plate')?.getBoundingClientRect();
+  const seamR = document.querySelector('#chits .card .seam')?.getBoundingClientRect();
+  const sr = stack?.getBoundingClientRect();
+  check('two pools stack on the artwork, clear of the seam',
+        !!sr && stack.querySelectorAll('.chits').length === 2 &&
+        sr.bottom < plateR.bottom && sr.bottom < seamR.top,
+        sr ? `${Math.round(plateR.bottom - sr.bottom)}px above the plate floor, ` +
+             `${Math.round(seamR.top - sr.bottom)}px clear of the seam` : 'no stack');
+
+  /* A chit's face, rim and pip are unclassed `<b>` elements in a room full of
+     stylesheets that have opinions about `<b>`. Every real rule is qualified
+     today, which is luck holding rather than a rule kept — and it did not hold
+     on the study page. */
+  const layers = [...document.querySelectorAll('#chits .chit')].flatMap(ch => {
+    const cb = ch.getBoundingClientRect();
+    return [...ch.children].filter(b => {
+      const r = b.getBoundingClientRect();
+      return r.width > cb.width + 1.5 || r.height > cb.height + 1.5;
+    });
+  });
+  check('no chit layer escapes its own chit', layers.length === 0,
+        `${document.querySelectorAll('#chits .chit').length} chits · ${layers.length} escaped`);
+
+  /* ── the ledger ───────────────────────────────────────────────────
+     One card, drawn entirely from what a database can hold. */
+  await ledgerReady;
+
+  /* The whole argument for hand-drawing the strip. An `<svg>` here is stripped
+     on the way into storage and a `url()` takes its entire `style` attribute
+     with it — and neither failure looks like a failure: the boxes come back
+     unmarked and the domain comes back grey. */
+  const lgSvg = document.querySelectorAll('#ledger .ldg svg').length;
+  const lgUrl = [...document.querySelectorAll('#ledger .ldg [style]')]
+    .filter(e => /url\(/.test(e.getAttribute('style'))).length;
+  check('nothing in a ledger needs to survive the sanitiser',
+        lgSvg === 0 && lgUrl === 0, `${lgSvg} svg · ${lgUrl} url() styles`);
+
+  /* A chat card is a fixed 300px in Foundry and does not scale — `chat.css`'s
+     own opening rule, and the one the header capped the plate with. */
+  const lgW = document.querySelector('#ledger .ldg')?.getBoundingClientRect().width;
+  check('a ledger is the plate\'s 300px', Math.round(lgW ?? 0) === 300, `${Math.round(lgW ?? 0)}px`);
+
+  /* Square, non-zero, and the same box in every row of one message. A
+     percentage height resolves against a container whose height is auto, which
+     is zero — thirteen wide and nothing tall. */
+  const lgBoxes = [...document.querySelectorAll('#ledger .st > i')].map(b => b.getBoundingClientRect());
+  const lgSquare = lgBoxes.filter(r => r.height > 4 && Math.abs(r.width - r.height) < 0.6);
+  const lgSizes = new Set(lgBoxes.map(r => Math.round(r.width * 10)));
+  check('every strip box is square and one size across the message',
+        lgBoxes.length > 0 && lgSquare.length === lgBoxes.length && lgSizes.size === 1,
+        `${lgBoxes.length} boxes · ${lgSquare.length} square · ${lgSizes.size} size(s)`);
+
+  /* `.dn` is a ring and not a dimmer grey, because an empty box and a box that
+     has just been emptied are the two states this strip exists to tell apart.
+     Compare the *painted* result: both carry `--sunk` as a fill. */
+  const lgState = (cls) => {
+    const el = document.querySelector(`#ledger .st > i${cls}`);
+    if (!el) return null;
+    const s = getComputedStyle(el);
+    return `${s.backgroundColor}|${s.boxShadow}`;
+  };
+  /* The empty box is `[class=""]` and not `:not([class])` — the builder always
+     writes the attribute — and it must stay inside the `#ledger` scope. A
+     selector list splits on the comma, so a bare `[class=""]` here would be
+     asking the whole document and reporting on somebody else's element. */
+  const [sOn, sUp, sDn, sOff] = ['.on', '.up', '.dn', '[class=""]'].map(lgState);
+  const lgStates = new Set([sOn, sUp, sDn, sOff].filter(Boolean));
+  check('marked, just-marked, just-cleared and empty are four pictures',
+        [sOn, sUp, sDn, sOff].every(Boolean) && lgStates.size === 4,
+        `${lgStates.size} of 4 distinct`);
+
+  /* Each track in its own material, which is the one place this system
+     suspends "hue means domain" — and a `--tk` that fails to resolve takes the
+     `color-mix` on `.on` with it, silently, leaving history and empty
+     identical. */
+  const lgHues = [...document.querySelectorAll('#ledger .ldg .r[data-t]')]
+    .map(r => [r.dataset.t, getComputedStyle(r).getPropertyValue('--tk').trim()]);
+  const lgUnset = lgHues.filter(([, v]) => !v);
+  check('every ledger row resolves its track\'s material',
+        lgHues.length >= 5 && lgUnset.length === 0,
+        `${lgHues.length} rows · ${lgUnset.map(([t]) => t).join(', ') || 'all resolved'}`);
 
   const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
                       'fcls', 'fclsr', 'fsub', 'fcrd', 'fcards', 'fclass',

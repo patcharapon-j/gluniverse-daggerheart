@@ -24,8 +24,23 @@
     value: string;
     height?: number;
     editable?: boolean;
+    /**
+     * How to write it, when a dotted path cannot say it.
+     *
+     * `path` is the default writer and the right one for a SchemaField, which
+     * is what every caller had until the item sheet arrived. A feature block
+     * inside an ArrayField is the exception: Foundry reads a dotted index as a
+     * path into an *object*, so `system.features.0.description` writes a shape
+     * the reader does not expect — the trap the adjust tab already learned
+     * about Experiences and `moveResource` learned about pools. Those callers
+     * rewrite the whole array and hand us the writer.
+     *
+     * `path` is still passed either way, because it is also the editor
+     * element's `name`.
+     */
+    onsave?: (value: string) => void;
   }
-  let { doc, path, value, height = 240, editable = true }: Props = $props();
+  let { doc, path, value, height = 240, editable = true, onsave }: Props = $props();
 
   let host: HTMLElement | undefined = $state();
   let el: any = null;
@@ -55,7 +70,8 @@
     const next: string = el.value ?? "";
     if (next === mine || next === (value ?? "")) return;
     mine = next;
-    void doc.update({ [path]: next });
+    if (onsave) onsave(next);
+    else void doc.update({ [path]: next });
   }
 
   async function build(raw: string) {

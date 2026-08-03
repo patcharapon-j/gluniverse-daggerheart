@@ -49,6 +49,7 @@
   import { SPINE, TILE } from "../ui/tile.js";
   import { XBOX, XMARK } from "../ui/mark.js";
   import { CARD, fit, rich } from "../ui/card.js";
+  import { chitClicks, refuseChits } from "../ui/chit.js";
   import { closePeeks, peeks } from "../ui/peek.js";
   import { capture, flip } from "../ui/swap.js";
   import { menu } from "../ui/menu.js";
@@ -59,6 +60,7 @@
     cardOf,
     featureCard,
     featurePrice,
+    hasDomainHue,
     hopeCard,
     hopeCost,
     isFree,
@@ -69,7 +71,13 @@
     type Price,
     type Sigils,
   } from "./cards.ts";
+  import {
+    liveResources,
+    resourcesFor,
+    type LiveResource,
+  } from "../data/resources.ts";
   import { postCard } from "./post-card.ts";
+  import Chits from "./parts/Chits.svelte";
   import Marks from "./parts/Marks.svelte";
   import Gems from "./parts/Gems.svelte";
   import Prose from "./parts/Prose.svelte";
@@ -477,6 +485,10 @@
     classDomains,
     armorSlots: sys.resources?.armorSlots?.max ?? 0,
     armorMarked: sys.resources?.armorSlots?.marked ?? 0,
+    /* The document and not the snapshot: a pool sized "equal to your
+       Spellcast trait" is resolved against the live actor, and the snapshot
+       is a value with no `system.spellcastTrait` derivation on it. */
+    actor: doc,
   });
 
   const opt = (it: ItemSnapshot | undefined): CardOptions | null =>
@@ -489,10 +501,12 @@
   interface Row {
     pk: string;
     card: CardOptions;
+    /** The item itself, for the counters the row draws into the builder's output. */
+    it: ItemSnapshot;
   }
   const rows = (items: ItemSnapshot[]): Row[] =>
     items
-      .map((i) => ({ pk: i.id, card: opt(i) }))
+      .map((i) => ({ pk: i.id, card: opt(i), it: i }))
       .filter((r): r is Row => r.card !== null);
 
   /* Three kinds on one row, and that is the book's own arrangement rather
@@ -643,6 +657,29 @@
 
   $effect(() => {
     if (winEl) peeks(winEl);
+  });
+
+  /* Both chit gestures, delegated from the window and bound once for the
+     same reason `peeks` is. The row is the subject and the handler stops the
+     press there — see `chitClicks` — or placing a counter on a domain card
+     would also post that card to chat, which is `onCardClick` doing its job
+     on an event that was never meant for it.
+
+     Nothing is written here optimistically. `moveResource` clamps and returns
+     false when the pool cannot go that way, and a refusal is the pool
+     flinching rather than a warning: the number that said no is the thing
+     under the pointer. The Item's update is what moves the row, through the
+     `Chits` component's own effect, so a spend looks identical whether it
+     came from this sheet or from a rest three panels away. */
+  $effect(() => {
+    if (!winEl) return;
+    chitClicks(winEl, async (row, _next, dir) => {
+      if (!ed) return refuseChits(row);
+      const [id, ix] = (row.dataset.key ?? "").split(":");
+      const item: any = doc.items.get(id);
+      if (!item) return refuseChits(row);
+      if (!(await item.moveResource(Number(ix), dir))) refuseChits(row);
+    });
   });
 
   $effect(() => {
@@ -919,6 +956,16 @@
     /** That price as a phrase, or nothing when it is free. */
     cost?: string;
     card: CardOptions | null;
+    /**
+     * The pools this feature counts, resolved against the character.
+     *
+     * Read by feature *name*, which is why every class feature had to get one
+     * of its own — a row headed "Class Features" carrying the Rogue's two
+     * rules has nowhere to hang Sneak Attack's counter that is not also
+     * Cloaked's. `tools/check-cards.mjs` polices the names; this is the first
+     * thing that depends on them being distinct.
+     */
+    res: LiveResource[];
   }
 
   const abilities = $derived.by(() => {
@@ -936,6 +983,8 @@
         className?: string;
         system?: any;
         card?: CardOptions | null;
+        /** Which feature block on the Item owns the pools. "" is the Item's own. */
+        bind?: string;
       },
     ) => {
       if (!f?.name && !f?.description) return;
@@ -949,6 +998,7 @@
         text: text ? rich(text) : "",
         price,
         cost: priceLabel(price),
+        res: resourcesFor(it, o.bind ?? f.name ?? "", doc),
         card:
           o.card !== undefined
             ? o.card
@@ -993,6 +1043,9 @@
           type: (FEATURE_KIND_LABELS[f.system?.kind] ?? "Feature").toUpperCase(),
           system: f.system,
           card: opt(f),
+          /* A whole Item, so its pools are the document's own and carry no
+             feature name — there is one feature here and it is the Item. */
+          bind: "",
         },
       );
     }
@@ -1922,6 +1975,28 @@
   };
 </script>
 
+<!-- Counters on a card that has any, put into the row the builder already
+     drew. One snippet for every spine and tile on the sheet, because they are
+     the same claim in five places — a loadout card, a vault card, an
+     ancestry, a piece of loot, a subclass tile — and a pool that looked
+     different in the vault from the way it looks in the loadout would read as
+     a different pool. `slot` is what the caller varies, and it varies because
+     a spine's slack is on its meta line and a tile's is on its footer. -->
+{#snippet pools(it: ItemSnapshot, slot: string)}
+  {#each liveResources(it, doc) as p (p.i)}
+    <Chits
+      value={p.res.value}
+      max={p.max}
+      name={(p.res.name || "tokens").toLowerCase()}
+      key="{it.id}:{p.i}"
+      dom={hasDomainHue(it.type)}
+      add={ed}
+      {slot}
+      rev={snap.rev}
+    />
+  {/each}
+{/snippet}
+
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="win"
@@ -2504,6 +2579,7 @@
               {#each loadoutCards as r (r.pk)}
                 <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
                   {@html SPINE(r.card)}
+                  {@render pools(r.it, ".spine .meta")}
                 </div>
               {/each}
               {#each Array(Math.max(0, loadoutLimit - loadoutCards.length)) as _, i (i)}
@@ -2546,24 +2622,38 @@
                    printed thing; it keeps its own rules. -->
               <div class="cols">
                 <div class="runs">
+                  <!-- The row is a `<div>` and `.ap` is the press. A feature
+                       that counts something carries a chit row, a chit is a
+                       button, and a button inside a button is not markup a
+                       browser keeps — the wall `.fcls`/`.fclsr` hit in the
+                       creation window, answered the same way. -->
                   {#each abilities as a (a.key)}
-                    <button
-                      type="button"
-                      class="a"
-                      class:paid={!!a.cost}
-                      data-pk={a.pk}
-                      title={a.cost
-                        ? `Pay ${a.cost} and show ${a.name} to the table`
-                        : `Show ${a.name} to the table`}
-                      onclick={() => useAbility(a)}
-                    >
-                      <span class="hd">
-                        <s>{a.origin}</s>
-                        {#if a.cost}<em>{a.cost}</em>{/if}
-                      </span>
-                      <b>{a.name}</b>
-                      {#if a.text}<p>{@html a.text}</p>{/if}
-                    </button>
+                    <div class="a" class:paid={!!a.cost} data-pk={a.pk}>
+                      <button
+                        type="button"
+                        class="ap"
+                        title={a.cost
+                          ? `Pay ${a.cost} and show ${a.name} to the table`
+                          : `Show ${a.name} to the table`}
+                        onclick={() => useAbility(a)}
+                      >
+                        <span class="hd">
+                          <s>{a.origin}</s>
+                          {#if a.cost}<em>{a.cost}</em>{/if}
+                        </span>
+                        <b>{a.name}</b>
+                        {#if a.text}<p>{@html a.text}</p>{/if}
+                      </button>
+                      {#each a.res as r (r.i)}
+                        <Chits
+                          value={r.res.value}
+                          max={r.max}
+                          name={(r.res.name || "tokens").toLowerCase()}
+                          key="{a.pk}:{r.i}"
+                          add={ed}
+                        />
+                      {/each}
+                    </div>
                   {:else}
                     <p class="ach">No class yet. Drag one in from the compendium.</p>
                   {/each}
@@ -2584,6 +2674,7 @@
                     {#each subclassCards as r (r.pk)}
                       <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
                         {@html TILE({ ...r.card, text: "" })}
+                        {@render pools(r.it, ".tile .ft")}
                       </div>
                     {/each}
                   </div>
@@ -2598,6 +2689,7 @@
               {#each heritageCards as r (r.pk)}
                 <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
                   {@html SPINE(r.card)}
+                  {@render pools(r.it, ".spine .meta")}
                 </div>
               {:else}
                 <p class="ach">No ancestry or community yet.</p>
@@ -2652,6 +2744,7 @@
                   }}
                 >
                   {@html SPINE(r.card)}
+                  {@render pools(r.it, ".spine .meta")}
                   <span class="swp"></span>
                   <button
                     type="button"
@@ -2764,6 +2857,7 @@
                   ondrop={(e) => dropCard(e, "vault", r.pk)}
                 >
                   {@html SPINE(r.card)}
+                  {@render pools(r.it, ".spine .meta")}
                   <span class="swp"></span>
                   <!-- Arming is a control now, not the row. Every other card
                        row on this sheet posts its card to chat when you click
@@ -2820,6 +2914,7 @@
                          rect of the thing you watched leave. -->
                     <div class:noart={card.noart} data-fk={s.it.id} style={card.art}>
                       {@html TILE(card)}
+                      {@render pools(s.it, ".tile .ft")}
                     </div>
                   </div>
                 {:else}
@@ -2861,6 +2956,7 @@
                       title={no ? `${primary?.name} is Two-Handed — no free hand` : ""}
                     >
                       {@html TILE(card)}
+                      {@render pools(g, ".tile .ft")}
                       <!-- The strip was a label over a tile that was itself
                            the button. Now it is the button and the tile is a
                            card like every other card here — which also means
@@ -2898,6 +2994,7 @@
                       : null}
                   <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
                     {@html SPINE({ ...r.card, aside })}
+                    {@render pools(r.it, ".spine .meta")}
                   </div>
                 {/each}
               </div>

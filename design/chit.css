@@ -1,0 +1,455 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH CHITS — the counters you place on a card
+
+   Seventy domain cards, thirty-four class features and a dozen ancestries
+   ask you to keep a number on the card itself. The rules text says
+   "tokens" and means the physical thing: you put them down when the spell
+   lands, you take them off one at a time as you spend them, and when the
+   last one goes the effect ends. This is that object.
+
+   It is deliberately *not* a mark track. Every other row of boxes on this
+   sheet — Hit Points, Stress, Armor Slots, charges — is **printed on the
+   sheet and crossed off**: the boxes are always there and only the marking
+   varies. That premise is false here. Six of these pools have no maximum
+   at all, several have one that moves when your Spellcast trait does, and
+   one is "place 1d4+1". A row of empty boxes on a card that can hold any
+   number is the control asserting something untrue.
+
+   So a chit exists or it does not, and an empty pool draws nothing.
+
+     .chits        the row. Sets --sz; everything else is derived from it.
+     .chit         one counter: a shadow-caster wrapping a clipped face.
+     .chit .face   the body
+     .chit .rim    the milled edge, a two-ring evenodd clip
+     .chit .pip    the rhombus at the centre — the family mark
+     .chits .sk    an empty socket, drawn only when the max is known
+     .chits .put   the way to put one down
+
+   ── the shape ─────────────────────────────────────────────────────
+   Two rules govern silhouettes here and they pull in opposite
+   directions.
+
+   The family mark is a **chamfer** — a corner cut off rather than turned
+   — and nothing in this system has a rounded corner. A disc would be the
+   only round object in the interface.
+
+   But the **rhombus is spoken for**. An edge-lit diamond is Hope and
+   Fear, "the one silhouette that belongs to nothing else", and a chit is
+   neither.
+
+   What is left is the chamfer applied all the way round: a square with
+   all four corners cut. It is the family mark stated four times, it is
+   the shape of an actual cardboard counter, and it belongs to nothing
+   else in the system. The rhombus survives as the pip stamped in the
+   middle, which is the mark doing what it does everywhere else — a
+   domain pip, a die's corner cut, the tick in a checkbox.
+
+   `.chits.round` is the alternative, kept for the study page: a true
+   disc, on the argument that a chit is the one thing here that is *not
+   printed on the card* and should therefore be foreign to it. Read them
+   side by side in chit.html before deciding.
+
+   ── the size ──────────────────────────────────────────────────────
+   `--sz` and not `cqw`. `design/tile.css` is entirely container units and
+   that is right for proportion and wrong for legibility — a component
+   scaled by 0.79 into a Foundry pane put its stat labels at 4.9px. A chit
+   has to be a thing you can hit with a pointer at every size it is drawn,
+   so the host states the size and the geometry follows. Same contract as
+   `.gem`.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Registered so the placement settle can interpolate it. An unregistered
+   custom property is a token stream and steps in one frame. */
+@property --lift{syntax:'<number>';inherits:false;initial-value:0}
+
+.chits{position:relative;display:flex;align-items:center;flex-wrap:wrap;
+  gap:var(--gap,calc(var(--sz,22px) * .26));
+  --sz:22px;
+  /* Bone by default — the colour a counter that came out of a box
+     actually is — and the domain hue only where a host says it has one.
+     `.dom` and not `var(--dom, bone)`: tokens.css sets `--dom` on :root
+     as the studio's default, so the fallback arm never once fires and
+     every chit in the system comes out teal. A var() fallback answers
+     "is this property set anywhere up the tree", which is not the
+     question. The question is whether *this card* has a domain, and only
+     the host knows that — an ancestry, a community and a class feature
+     are all cards with no domain at all. */
+  --chit:var(--bone);
+  --chit-dk:var(--bone-d);
+  --cut:calc(var(--sz) * .28)}
+
+.chits.dom{--chit:var(--dom); --chit-dk:var(--dom-dk)}
+
+/* ── one chit ─────────────────────────────────────────────────────
+   The shadow rides the wrapper and the clip rides the child, for the
+   reason gem.css spells out: painting order is filter → clip-path, so a
+   shadow declared on the clipped element is generated and then trimmed
+   off by the very shape that was meant to cast it. On the wrapper it
+   reads the child's alpha and follows the chamfer exactly.
+
+   Two stops. A tight dark contact shadow that says the chit is *on* the
+   card, and a wider soft one that says it is *above* it. One alone is
+   either a sticker or a haze. */
+/* A chit is a <button>, so it states its own metrics — all three of them.
+   Foundry's `elements` layer sizes every button to --button-size **with a
+   matching min-height**, and our sheets arrive unlayered, so `height`
+   wins on its own. `min-height` had no competitor, and a floor with no
+   competitor simply applies: every 14px chit stood 28px tall, which put
+   a features row at double height and left the pile floating in the
+   middle of it. That is pool.css's finding arriving at the fourth
+   component, after make.css and prep.css. Stated rather than zeroed,
+   because --sz is a measurement and 0 is only the absence of somebody
+   else's. */
+.chit{position:relative;flex:none;display:block;padding:0;border:0;background:none;
+  width:var(--sz);height:var(--sz);
+  min-width:var(--sz);min-height:var(--sz);
+  max-width:var(--sz);max-height:var(--sz);
+  border-radius:0;cursor:pointer;
+  --lift:0;
+  filter:
+    drop-shadow(0 calc(var(--sz) * (.04 + .05 * var(--lift))) calc(var(--sz) * (.05 + .06 * var(--lift))) rgba(0,0,0,calc(.55 - .1 * var(--lift))))
+    drop-shadow(0 calc(var(--sz) * (.10 + .16 * var(--lift))) calc(var(--sz) * (.16 + .20 * var(--lift))) rgba(0,0,0,calc(.30 + .08 * var(--lift))));
+  transition:--lift .16s ease, transform .16s cubic-bezier(.2,.8,.25,1)}
+
+/* The three layers, and the four properties that defend them.
+
+   A chit's face, rim and pip are unclassed-by-tag `<b>` elements, and a
+   `<b>` is something the surfaces around them style: `sheet.css` alone has
+   `.abl .ap > b`, `.abl p b` and `.win > .tt b`, and `tile.css` and
+   `card.css` have more. Every one of those is qualified by an intermediate
+   class today, so none reaches in — which is luck holding rather than a
+   rule being kept, and it did not hold on the study page, where
+   `.ablrow b{min-width:150px}` (meant for the row's own label) sized all
+   three layers to 150px inside a 14px chit and threw the pip 68px to the
+   left of the counter it belongs to. It read as a needle lying across the
+   row, which is not a shape anything here draws, so it took a DOM dump to
+   see that it was a `<b>` at all.
+
+   `inset:0` cannot defend itself: a `min-width` beats it outright, and an
+   absolutely positioned box then overflows its own containing block in
+   silence. So the limits are stated, for `pool.css`'s reason one property
+   further along — a floor with no competitor simply applies. */
+.chit > b{position:absolute;display:block;pointer-events:none;
+  min-width:0;max-width:none;min-height:0;max-height:none}
+
+/* Every chit sits at a slightly different angle, the way counters do when
+   they have been dropped rather than placed. Keyed off nth-child and not
+   off a random number: a re-render must not shuffle the pile, and this
+   sheet re-renders constantly. Four angles is enough to break the grid
+   and few enough that a row of twelve does not read as damaged.
+
+   `--jit` is what turns it off, and it has to exist, because **the tilt
+   is a card-scale affordance and at row scale it is a defect.** A tilted
+   square's bounding box grows by sin+cos−1 of its own size — about 9% at
+   5.5° — and that growth is a fraction of the chit while the gap between
+   chits is a fixed proportion of it. At 54px the tilt eats 4.9px of a
+   14px gap and reads as a pile somebody dropped. At 14px it eats 1.8px of
+   a 3.6px gap, and five bone chits 1.8px apart stop being five objects:
+   they merge into one continuous light bar with a ragged edge, which is
+   exactly what it looks like — a rendering fault rather than a row of
+   counters. So the row hosts set `--jit:0` and buy the gap back.
+
+   One transform rule and a per-chit `--tilt`, rather than four rules and
+   four more for hover: the hover offset is the same everywhere and only
+   the angle differs, so stating the angle as a value keeps the two from
+   drifting apart. `calc(<angle> * <number>)` is valid, so the multiplier
+   costs nothing.
+
+   `--jit` is read as a fallback and never declared on `.chit`, which is
+   gem.css's note about its socket colours: a property set on the element
+   itself always beats the value a container inherits down, so declaring
+   the default here would make every row host's `--jit:0` unreachable and
+   the fix silently do nothing. */
+.chit{--tilt:0deg;transform:rotate(calc(var(--tilt) * var(--jit,1)))}
+.chit:nth-child(4n+1){--tilt:-4.5deg}
+.chit:nth-child(4n+2){--tilt:3deg}
+.chit:nth-child(4n+3){--tilt:-1.5deg}
+.chit:nth-child(4n+4){--tilt:5.5deg}
+
+.chit:hover{--lift:1;
+  transform:rotate(calc(var(--tilt) * var(--jit,1))) translateY(calc(var(--sz) * -.07))}
+
+/* The chamfer, four times. Stated as one polygon rather than as four
+   corner treatments because a clip-path cannot be composed. */
+.chit .face,.chit .rim,.chit .pip,.chits .sk,.chits .put{
+  clip-path:polygon(
+    var(--cut) 0, calc(100% - var(--cut)) 0,
+    100% var(--cut), 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, var(--cut) 100%,
+    0 calc(100% - var(--cut)), 0 var(--cut))}
+
+/* The body. A single soft gradient from the top-left, which is where the
+   light comes from everywhere else on this sheet — enough to say the
+   thing has a top face without becoming a rendered bead. gem.css argues
+   against shading on the diamond because a gem is a *light*; a chit is an
+   object, and an object with no shading is a sticker. */
+.chit .face{inset:0;
+  background:
+    linear-gradient(148deg,
+      color-mix(in srgb,var(--chit) 82%,#fff) 0%,
+      var(--chit) 42%,
+      color-mix(in srgb,var(--chit-dk) 55%,var(--chit)) 100%)}
+
+/* The milled edge: one element, two rings, evenodd between them. Lighter
+   at the top-left and darker opposite, so the bevel agrees with the face.
+   A border cannot do this on a clipped shape and two stacked elements
+   would have to agree on their inner edge at every --sz. */
+.chit .rim{inset:0;
+  background:linear-gradient(148deg,
+    color-mix(in srgb,var(--chit) 30%,#fff),
+    color-mix(in srgb,var(--chit-dk) 70%,#000));
+  clip-path:polygon(evenodd,
+    var(--cut) 0, calc(100% - var(--cut)) 0,
+    100% var(--cut), 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, var(--cut) 100%,
+    0 calc(100% - var(--cut)), 0 var(--cut),
+
+    calc(var(--cut) + 8%) 8%, calc(92% - var(--cut)) 8%,
+    92% calc(var(--cut) + 8%), 92% calc(92% - var(--cut)),
+    calc(92% - var(--cut)) 92%, calc(var(--cut) + 8%) 92%,
+    8% calc(92% - var(--cut)), 8% calc(var(--cut) + 8%))}
+
+/* The pip. The family rhombus, stamped rather than lit — this is the mark
+   as a domain pip, not as a metacurrency gem, so it is flat and dark and
+   carries no bloom. It is what stops the chit reading as a blank disc at
+   14px on a subclass tile. */
+.chit .pip{left:50%;top:50%;width:calc(var(--sz) * .30);height:calc(var(--sz) * .30);
+  transform:translate(-50%,-50%);
+  background:color-mix(in srgb,var(--chit-dk) 78%,#000);opacity:.62;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+/* ── the empty socket ─────────────────────────────────────────────
+   Drawn only where the maximum is known. That is the schema showing
+   through honestly: a pool authored `fixed:5` or `trait:spellcast` has a
+   capacity worth seeing, and an `open` pool has none to draw. `.chits`
+   without .capped renders no sockets at all and the row is exactly as
+   long as the number of chits on it.
+
+   A socket is a hole, so it follows the ground rather than declaring a
+   colour — same reasoning as an unlit gem. */
+.chits .sk{position:relative;flex:none;width:var(--sz);height:var(--sz);
+  background:var(--socket,rgba(0,0,0,.34));
+  box-shadow:inset 0 0 0 1px var(--socket-line,rgba(255,255,255,.10))}
+.chits:not(.capped) .sk{display:none}
+
+/* ── the way to put one down ──────────────────────────────────────
+   A socket with a cross in it, and on an open pool it is the only thing
+   at the end of the row. It is a <button>, so it states its own metrics:
+   Foundry's `elements` layer sizes every button to --button-size with a
+   matching min-height, and a floor with no competitor simply applies.
+   That has now caught make.css, prep.css and pool.css in turn. */
+.chits .put{position:relative;flex:none;display:grid;place-items:center;place-content:center;
+  width:var(--sz);height:var(--sz);
+  min-width:var(--sz);min-height:var(--sz);
+  max-width:var(--sz);max-height:var(--sz);
+  padding:0;border:0;border-radius:0;cursor:pointer;
+  background:var(--socket,rgba(0,0,0,.34));
+  box-shadow:inset 0 0 0 1px var(--socket-line,rgba(255,255,255,.10));
+  color:var(--ink-3);transition:background .14s,color .14s,box-shadow .14s}
+.chits .put::before,.chits .put::after{content:"";position:absolute;
+  background:currentColor;border-radius:1px}
+.chits .put::before{width:calc(var(--sz) * .38);height:max(1.5px,calc(var(--sz) * .075))}
+.chits .put::after {height:calc(var(--sz) * .38);width:max(1.5px,calc(var(--sz) * .075))}
+.chits .put:hover{background:color-mix(in srgb,var(--chit) 30%,transparent);
+  color:color-mix(in srgb,var(--chit) 60%,#fff);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--chit) 55%,transparent)}
+.chits.full .put{display:none}
+
+/* ── the count ────────────────────────────────────────────────────
+   A row of twelve chits at 22px is 340px, which no host has. Past a
+   threshold the row stops enumerating and states the number instead,
+   with one chit standing for the pile — the same concession the loadout
+   makes when it prints "5/5" rather than five card names. */
+.chits .n{font:700 calc(var(--sz) * .58)/1 var(--f-display);color:var(--ink);
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+  margin-left:calc(var(--sz) * .1)}
+.chits .n s{text-decoration:none;color:var(--ink-3);
+  font:700 calc(var(--sz) * .40)/1 var(--f-mono)}
+
+/* ══ PLACING AND TAKING ═════════════════════════════════════════════
+   The whole motion budget, and asymmetric on purpose.
+
+   Placing is a **drop**: the chit falls onto the card from above, lands
+   slightly large, and settles. Its shadow spreads and tightens with it,
+   which is the only thing that says it fell rather than faded in.
+
+   Taking is a **lift**: it comes up toward you and away, because you
+   picked it up. It does not shrink into the card — that would be the
+   card swallowing it, and the fiction is that you are spending the thing.
+
+   No idle animation, for gem.css's reason: twelve chits breathing on a
+   sheet is twelve things asking for attention all day for nothing. */
+.chit.place{animation:chitDrop .34s cubic-bezier(.18,1.02,.32,1) both}
+.chit.take {animation:chitLift .28s cubic-bezier(.4,0,.85,.35) both;pointer-events:none}
+
+@keyframes chitDrop{
+  0%  {transform:translateY(calc(var(--sz) * -1.1)) scale(1.35) rotate(-14deg);opacity:0;
+       filter:drop-shadow(0 calc(var(--sz) * .5) calc(var(--sz) * .5) rgba(0,0,0,.5))}
+  30% {opacity:1}
+  62% {transform:translateY(0) scale(1.06) rotate(2deg)}
+  100%{transform:translateY(0) scale(1)    rotate(0);opacity:1}}
+
+@keyframes chitLift{
+  0%  {transform:translateY(0) scale(1);opacity:1}
+  30% {transform:translateY(calc(var(--sz) * -.18)) scale(1.12);opacity:1}
+  100%{transform:translateY(calc(var(--sz) * -.9)) scale(1.3);opacity:0}}
+
+/* The socket remembers. Not a glow — a chit is not a light — but the
+   short darkening of a place something was resting on. */
+.chits .sk.after{animation:chitAfter .5s cubic-bezier(.3,0,.7,1) both}
+@keyframes chitAfter{
+  0%  {background:color-mix(in srgb,var(--chit) 26%,var(--socket,rgba(0,0,0,.34)))}
+  100%{background:var(--socket,rgba(0,0,0,.34))}}
+
+/* The refusal. Trying to place past a known maximum shakes the row rather
+   than opening anything — `refusePool`'s rule, and the Fear HUD's. */
+.chits.deny{animation:chitDeny .3s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes chitDeny{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-3px)} 40%{transform:translateX(3px)}
+  60%{transform:translateX(-2px)} 80%{transform:translateX(2px)}}
+
+/* ══ THE ALTERNATIVE ════════════════════════════════════════════════
+   A true disc. The argument for it is that a chit is the only object in
+   this interface that is not printed on the card it sits on, and that
+   being foreign to the family is therefore correct rather than a lapse.
+   The argument against is that "nothing here has a rounded corner" is one
+   of the few rules this system has never broken.
+   ══════════════════════════════════════════════════════════════════ */
+.chits.round .chit .face,
+.chits.round .chit .rim,
+.chits.round .sk,
+.chits.round .put{clip-path:none;border-radius:50%}
+.chits.round .chit .rim{
+  -webkit-mask:radial-gradient(closest-side,transparent 0 82%,#000 82.5%);
+          mask:radial-gradient(closest-side,transparent 0 82%,#000 82.5%)}
+.chits.round .sk,.chits.round .put{border-radius:50%}
+
+/* ══ ON A CARD ══════════════════════════════════════════════════════
+   Where they actually go. Chits sit on the **art plate**, which is where
+   a person puts counters on a printed card — you do not stack them on the
+   rules text, because you still have to read it.
+
+   Bottom-left rather than centred: `.lvl` and `.rc` own the top corners,
+   the plate's own gradient darkens the top, and the seam and type bar
+   come up from the bottom-right. The lower-left of a plate is the one
+   region of a card in this system that carries nothing.
+
+   The anchor is measured off the plate, not off the card, and that is
+   three corrections rather than one — every one of which put the chits on
+   the prose while it was missing:
+
+     100% - var(--plate)   the plate's own bottom edge. `--plate` is a
+                           flex-basis in a column flex container, so it is
+                           a percentage of *height*, and `fit()` moves it
+                           between 40% and 50% as the prose needs room.
+                           Reading it here is what keeps the chits on the
+                           picture when it does.
+     + 5%                  `.lower` comes back up over the plate by
+                           `margin-top:-7%`, and a margin percentage
+                           resolves against the containing block's
+                           **width**. The card is 5:7, so 7% of width is
+                           5% of height. Not the same number.
+     + 8cqw                the seam and its gold hairline, 6cqw, plus
+                           clearance. A chit sitting on that rule reads as
+                           having fallen off the card.
+
+   ── the size and the gap are one decision ──
+   9cqw and not 11, which is a measurement rather than a preference. A
+   capped pool draws a socket per unspent point plus the plus, so the
+   widest row a card has to hold is max + 1 items. At 11cqw a pool of
+   five overflowed and wrapped the plus onto a second line by itself,
+   which reads as a broken layout rather than as a full card. At 9cqw
+   everything up to a max of six fits on one line; the one pool in the
+   corpus larger than that is the dread card's eight, which wraps to two
+   rows of counters — and two rows of counters is what a real card with
+   eight of them on it looks like.
+
+   The gap is 3cqw and had to be rebalanced when the size came down.
+   Dropping --sz to 9 while leaving the gap at 1.8 left 12.7% of a chit
+   between one chit and the next — measured, and the same ratio that made
+   a features row read as one bar rather than five counters. The tilt
+   stays here, because on a card it is the whole claim; what it costs has
+   to be paid out of the gap. At 3cqw the clearance is about 27% after
+   the tilt's bounding-box growth, and everything up to a max of six
+   still fits on one line: 7 items × 9 + 6 gaps × 3 = 81cqw.
+
+   ── two pools on one card ──
+   Seven cards in the corpus carry two: a Hedge subclass spends a budget
+   *and* builds a pile, and they are two different numbers about two
+   different things. The offset above is one place, so the rows go in a
+   stack rather than each claiming it — `column-reverse`, so the first pool
+   a card declares is the one on the plate's floor and a second grows
+   upward into the picture rather than pushing the first onto the seam.
+   `align-items:flex-start` because a row is as wide as its own pool and
+   stretching the short one would draw sockets that do not exist. */
+.card .chitstack{position:absolute;left:4.5cqw;z-index:7;
+  bottom:calc(100% - var(--plate) + 5% + 8cqw);
+  display:flex;flex-direction:column-reverse;align-items:flex-start;
+  gap:2.5cqw;max-width:86cqw}
+.card .chits{--sz:9cqw;--gap:3cqw;max-width:86cqw}
+
+/* On a card the ground is a photograph, so a socket cannot be "a hole in
+   the paper" — there is no paper. It is a scrim instead, which also keeps
+   the chit legible over a bright patch of artwork. */
+.card .chits .sk,.card .chits .put{--socket:rgba(0,0,0,.46);
+  --socket-line:rgba(255,255,255,.16)}
+.card .chits .n{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.card .chits .n s{color:rgba(255,255,255,.62)}
+
+/* ── in a row ─────────────────────────────────────────────────────
+   The Features panel's rows and the loadout spine. Here the ground *is*
+   paper, so the socket goes back to being a recess in it.
+
+   `--jit:0` and a gap stated in pixels rather than as a fraction of
+   `--sz`. Both are the same finding: at this size the proportional gap
+   (.26 × 14px = 3.6px) minus the tilt's own bounding-box growth (1.8px)
+   left 1.8px between one bone chit and the next, and five of them read
+   as a single light bar rather than as five counters. Flat and 5px
+   apart, they are five things.
+
+   **And a row does not wrap.** Wrapping is right on a card and wrong
+   here, and the difference is what the second line costs. On a card the
+   row is absolutely positioned on the plate and a second line of
+   counters is what a real card looks like. In a row it is *in flow*, so
+   the fifth chit not fitting makes the whole row 33px instead of 14 —
+   the panel reflows, and it reflows on the click that placed the chit,
+   under the pointer that is still there.
+
+   This is the chat header's bug exactly: a wrapping flex container
+   breaks a line before it shrinks anything on it, so what gives way is
+   the row's height rather than the text beside it. `nowrap` here, and
+   the host's text track is what must be `minmax(0,1fr)` so the prose
+   ellipses instead. Past `CHIT_CAP` the row states the number, which is
+   the same concession made for the same reason. */
+.abl .chits,.spine .chits,.ln .chits{--sz:14px;--gap:5px;--jit:0;
+  flex-wrap:nowrap;flex:none;
+  --socket:var(--sunk);--socket-line:var(--line)}
+
+/* The meta line's trailing slack, which is what `aside` was always for —
+   the same `margin-left:auto` a consumable's charge boxes take, and the
+   two can share the line when a card has both. */
+.spine .meta > .chits{margin-left:auto}
+
+/* ── on a tile ────────────────────────────────────────────────────
+   68px of strip, so the row states the number past three rather than
+   enumerating.
+
+   The footer is `space-between` with two children, which puts one at each
+   end; a third would send the domain name to the middle, so a tile that
+   counts something packs its two labels left and gives the row the slack.
+   Stated on `:has` rather than on every tile, because a tile with no pool
+   should look exactly as it always has. */
+.tile .chits{--sz:12px;--gap:4px;--jit:0;
+  flex-wrap:nowrap;flex:none;
+  --socket:var(--sunk);--socket-line:var(--line)}
+.tile .ft:has(> .chits){justify-content:flex-start;gap:2cqw}
+.tile .ft > .chits{margin-left:auto}
+
+/* ══ GROUNDS ════════════════════════════════════════════════════════
+   Bone is what a counter out of a box is the colour of, and it has to
+   survive both themes: on a dark sheet it is the lightest thing in the
+   row and on a white one it would vanish, so the light theme darkens it
+   rather than tinting it. */
+:root{--bone:#c9c2ad; --bone-d:#8a8371}
+:root.light{--bone:#a89f86; --bone-d:#6d654f}

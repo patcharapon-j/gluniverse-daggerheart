@@ -41,7 +41,9 @@
       "Theme": "Sheet theme",
       "ThemeHint": "Dark is the base. Light changes the substrate under the same palette; the window frame stays dark in both, because the frame is the application and not the sheet.",
       "DiceSoNice": "3D dice on rolls",
-      "DiceSoNiceHint": "Off by default — the chat card draws its own dice, and two answers to the same question is worse than either."
+      "DiceSoNiceHint": "Off by default — the chat card draws its own dice, and two answers to the same question is worse than either.",
+      "ChangeLog": "Post changes to chat",
+      "ChangeLogHint": "One card when a character's Hit Points, Stress, Armor Slots, Hope, counters or loadout settle. Coalesced, so applying damage is one card rather than four, and a change taken straight back is not posted at all. Rests and character creation post their own and are left alone."
     },
     "Theme": {
       "Dark": "Dark",
@@ -108,6 +110,11 @@
       "Rule": "One Armor Slot lowers the damage by one threshold.",
       "BeyondRule": "Past one Armor Slot — a card is paying for this.",
       "MarksOne": "mark 1 Hit Point"
+    },
+    "Resource": {
+      "Refreshed": "{n} refreshed at the end of the {scope}.",
+      "Full": "{name} is already full.",
+      "Empty": "No {name} left to spend."
     },
     "Rest": {
       "Short": "short rest",

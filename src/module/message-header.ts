@@ -54,8 +54,8 @@
 
 import { SYSTEM_ID } from "./config.ts";
 
-/** The three wrappers this system posts. See `frame.css`. */
-const OURS = ".dh-plate, .dh-card, .dh-rest";
+/** The four wrappers this system posts. See `frame.css`. */
+const OURS = ".dh-plate, .dh-card, .dh-rest, .dh-ledger";
 
 export function registerMessageHeaders(): void {
   Hooks.on("renderChatMessageHTML", (message: any, html: HTMLElement) => {

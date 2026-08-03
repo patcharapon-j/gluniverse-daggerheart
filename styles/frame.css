@@ -239,7 +239,7 @@
    combinator matched nothing, which is why the frame was still there. */
 
 .chat-message:has(.dh-plate),
-.chat-message:has(.dh-card, .dh-rest) {
+.chat-message:has(.dh-card, .dh-rest, .dh-ledger) {
   padding: 0;
   border: 0;
   background: none;
@@ -248,7 +248,7 @@
 }
 
 .chat-message:has(.dh-plate) .message-content,
-.chat-message:has(.dh-card, .dh-rest) .message-content {
+.chat-message:has(.dh-card, .dh-rest, .dh-ledger) .message-content {
   padding: 0;
   margin: 0;
 }

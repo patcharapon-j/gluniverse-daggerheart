@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Chits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/chit.css">
+<style>
+/* ══ THE ENVIRONMENT IS PART OF THE COMPONENT ══════════════════════
+   A study page is authored as a whole document and a Foundry system owns
+   a subtree of somebody else's. This system's stylesheets arrive
+   unlayered through their <link>s, and unlayered always beats layered —
+   which is exactly the relationship the `system` layer has to `elements`
+   in the real application. So the page has to bring the layer with it, or
+   it cannot show what the component looks like in the game.
+
+   The plus is a <button>, and Foundry sizes every button to one centred
+   28px line with a matching min-height and a 4px radius. Delete this
+   block and the plus goes 22px → 28px, the row grows, and the corner
+   turns instead of being cut. make.css, prep.css and pool.css each had to
+   learn this separately. */
+@layer elements{
+  button{height:var(--button-height,28px);min-height:var(--button-height,28px);
+    border-radius:4px;padding:0 8px;background:#2a3039;color:#c3cbd5;border:1px solid #3a424e;
+    line-height:1;text-align:center}
+}
+
+.grid{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.bx{background:#12151a;box-shadow:inset 0 0 0 1px #222933;padding:22px 24px 24px}
+.bx h4{font:700 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--hope);margin:0 0 18px}
+.bx h4 s{text-decoration:none;color:#6d7681;letter-spacing:.14em;margin-left:10px}
+.lab{font:700 9px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:#6d7681;margin:0 0 9px}
+.stk{display:flex;flex-direction:column;gap:20px}
+.big{--sz:54px;--gap:14px}
+.mid{--sz:26px}
+
+/* a strip of paper, for the row hosts */
+.paperstrip{background:var(--paper);padding:12px 14px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+
+/* The widths ride on the wrappers, not on the cards — `.card` is
+   width:100% and takes whatever it is given, which is the whole reason
+   one component draws a creation cell, a sheet peek and a chat plate. */
+.cards{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.cards .cap{text-align:center;max-width:none}
+
+/* the Features panel row, close enough to .abl to test the metrics */
+.ablrow{background:var(--paper);box-shadow:inset 0 0 0 1px var(--line);
+  padding:11px 13px;display:flex;align-items:center;gap:14px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)}
+/* `> b` and not `b`: a chit's three layers are `<b>` too, and the bare
+   selector sized every one of them to 150px inside a 14px counter. The row
+   is what this rule is about, so the row is what it says. */
+.ablrow > b{font:700 12.5px/1 var(--f-display);color:var(--ink);letter-spacing:-.01em;flex:none;min-width:150px}
+.ablrow s{text-decoration:none;font:400 11px/1.4 var(--f-ui);color:var(--ink-3);flex:1 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The mount point must not be the flex item — `display:contents` hands that
+   job to the `.chits` inside it, which declares `flex:none`. Without this the
+   wrapper shrinks below its contents at `flex:0 1 auto`, the row runs out of
+   width and the browser wraps the plus onto a second line. That is the row
+   growing 14px → 33px on the click that placed the chit, which is the reflow
+   the whole component is built to avoid. A study page has to carry the
+   environment, and this is part of it. */
+.ablrow > span{display:contents}
+
+.btns{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+.btns button{border:0;cursor:pointer;background:#242931;box-shadow:inset 0 0 0 1px #343b45;
+  color:#c3cbd5;font:700 9.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  padding:10px 14px;height:auto;min-height:0;border-radius:0;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btns button:hover{background:var(--hope);color:#14161a;box-shadow:none}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>chits</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/gear.html">gear</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/chit.html" class="on">chits</a>
+  <a href="/design/ledger.html">ledger</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+  <label class="tg"><input type="checkbox" id="rd"> disc instead of chit</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE OBJECT</span>A counter you put down, not a box you cross off</h2>
+<p class="note">
+Every other row of boxes on this sheet is <b>printed and crossed off</b> — Hit Points, Stress,
+Armor Slots, charges. The boxes are always there and only the marking varies. That premise is
+false for these: six of the pools have no maximum at all, several have one that moves when your
+Spellcast trait does, and one is <code>place 1d4+1</code>. So a chit exists or it does not, and
+an empty pool draws nothing.
+</p>
+
+<div class="grid">
+  <div class="bx">
+    <h4>the chit <s>chamfered, four times</s></h4>
+    <div class="big" id="big1"></div>
+    <p class="cap"><b>The family mark, stated four times.</b>
+      A corner <em>cut off</em> rather than turned — the same claim the sheet's
+      bottom-right makes, applied all the way round. It is also what an actual
+      cardboard counter looks like. The rhombus survives as the pip, which is the
+      mark doing its ordinary job.</p>
+  </div>
+
+  <div class="bx">
+    <h4>the disc <s>the alternative</s></h4>
+    <div class="big round" id="big2"></div>
+    <p class="cap"><b>Foreign on purpose.</b>
+      A chit is the one object here that is <em>not printed on the card</em>, so being
+      unlike the family may be right rather than a lapse. Against it: “nothing in this
+      system has a rounded corner” is a rule that has never been broken.</p>
+  </div>
+
+  <div class="bx">
+    <h4>hue <s>the card's, not its own</s></h4>
+    <div class="stk">
+      <div><p class="lab">grace</p><div class="mid" id="h1" style="--dom:#a8305f;--dom-dk:#75204a"></div></div>
+      <div><p class="lab">codex</p><div class="mid" id="h2" style="--dom:#2f5fa8;--dom-dk:#1d3f75"></div></div>
+      <div><p class="lab">no domain — a class feature, an ancestry</p><div class="mid" id="h3"></div></div>
+    </div>
+    <p class="cap"><b>Hue means domain.</b> A domain card's chits are its own colour for free.
+      A host with no domain falls to <em>bone</em>, which is the colour a counter out of a box
+      actually is.</p>
+  </div>
+</div>
+
+<h2><span>// ON A CARD</span>Where a person actually puts them</h2>
+<p class="note">
+Lower-left of the art plate. <code>.lvl</code> and <code>.rc</code> own the top corners, the
+plate's gradient darkens the top, and the seam comes up from the bottom-right — the lower-left
+is the one region of a card in this system that carries nothing. And you do not stack counters
+on the rules text, because you still have to read it.
+</p>
+<div class="cards" id="cards"></div>
+
+<h2><span>// THE THREE SIZES</span>One component, three hosts</h2>
+<p class="note">
+<code>--sz</code> and not <code>cqw</code>. <code>tile.css</code> is entirely container units,
+which is right for proportion and wrong for legibility — that is what put its stat labels at
+4.9px in a Foundry pane. A chit has to be a thing you can hit at every size it is drawn, so the
+host states the size and the geometry follows. Same contract as <code>.gem</code>.
+</p>
+<div class="grid">
+  <div class="bx" style="flex:1 1 460px">
+    <h4>a features row <s>14px</s></h4>
+    <div class="stk">
+      <div class="ablrow abl"><b>Rally</b><s>Once per session, describe how you rally the party…</s>
+        <span id="r1"></span></div>
+      <div class="ablrow abl"><b>Twilight Toll</b><s>Spend tokens to add d12s to your damage roll.</s>
+        <span id="r2"></span></div>
+    </div>
+  </div>
+  <div class="bx">
+    <h4>a spine <s>14px</s></h4>
+    <div class="paperstrip spine" style="width:300px">
+      <div class="lab">wild fortress · sage · lv 4</div>
+      <div id="r3" style="margin-top:9px"></div>
+    </div>
+  </div>
+  <div class="bx">
+    <h4>a subclass tile <s>12px</s></h4>
+    <div class="paperstrip tile" style="width:190px">
+      <div class="lab">beastbound · foundation</div>
+      <div id="r4" style="margin-top:9px"></div>
+    </div>
+  </div>
+</div>
+
+<h2><span>// THE STATES</span>Capped draws sockets; open does not</h2>
+<p class="note">
+This is the schema showing through the surface honestly. A pool authored <code>fixed:5</code> or
+<code>trait:spellcast</code> has a capacity worth seeing, so the remainder is drawn as empty
+sockets. An <code>open</code> pool — <code>1d4+1</code>, or “equal to the Hit Points you marked”
+— has no capacity to draw, so the row ends at its last chit. Past eight the row states the
+number rather than enumerating it.
+</p>
+<div class="grid" id="states"></div>
+
+<h2><span>// THE MOTION</span>A drop and a lift, and nothing idle</h2>
+<p class="note">
+Placing is a <b>drop</b>: the chit falls onto the card, lands slightly large and settles, with
+its shadow spreading and tightening behind it. Taking is a <b>lift</b> — it comes up toward you
+and away, because you picked it up; shrinking it into the card would be the card swallowing it.
+Refusal is the row flinching, never a dialog. There is no idle animation, for
+<code>gem.css</code>'s reason: twelve things breathing on a sheet is twelve things asking for
+attention all day for nothing.
+</p>
+<div class="bx" style="max-width:620px">
+  <div class="big" id="demo"></div>
+  <div class="btns">
+    <button data-d="1">place</button>
+    <button data-d="-1">take</button>
+    <button data-d="3">place three</button>
+    <button data-d="-9">take all</button>
+    <button data-d="99">refuse</button>
+  </div>
+  <p class="cap" style="max-width:none"><b>Only the difference moves.</b>
+    The row is rendered once and driven by <code>setChits</code> afterwards — the contract
+    <code>Gems</code> and <code>Marks</code> already keep. Rebuilding the markup would cut a
+    settle off mid-drop and restart it.</p>
+</div>
+
+</div>
+
+<script type="module">
+import { DOMAINS, icon } from './domains.js';
+import { CARD, T_SPELL, fit } from './card.js';
+import { CHITS, setChits, chitClicks, refuseChits } from './chit.js';
+
+const marks = Object.fromEntries(await Promise.all(DOMAINS.map(async d => [d.slug, await icon(d.slug)])));
+const by = s => DOMAINS.find(d => d.slug === s);
+
+/* ── the object ── */
+big1.innerHTML = CHITS({value:4, max:6}).replace(/^<div class="chits([^"]*)"/, '<div class="chits$1 big"');
+big2.innerHTML = CHITS({value:4, max:6, round:true}).replace(/^<div class="chits([^"]*)"/, '<div class="chits$1 big"');
+h1.innerHTML = CHITS({value:3, max:5, dom:true});
+h2.innerHTML = CHITS({value:3, max:5, dom:true});
+h3.innerHTML = CHITS({value:3, max:5});
+
+/* ── on a card ──
+   Three widths, because the same component draws a 176px creation-grid
+   cell, a 262px sheet peek and a 300px chat plate. The chits go in as a
+   sibling of .lower rather than inside .plate: the plate is
+   overflow:hidden for the domain ramp, and a clip there would cut the
+   drop shadow off and swallow the top half of the placement. */
+const ON_CARD = [
+  {d:'grace',    lvl:1, rc:0, v:2, max:0, w:176, n:'Twilight Toll'},
+  {d:'sage',     lvl:4, rc:1, v:3, max:3, w:262, n:'Wild Fortress'},
+  {d:'midnight', lvl:2, rc:1, v:0, max:5, w:300, n:'Uncanny Disguise'},
+  // Two pools, the case the stack exists for: a use you spend and a pile
+  // you build, on one card, about two different things.
+  {d:'midnight', lvl:3, rc:1, v:1, max:1, w:262, n:'Umbral Veil',
+   also:{value:2, max:0}},
+];
+
+cards.innerHTML = ON_CARD.map(c =>
+  `<div style="flex:none;width:${c.w}px">` +
+  CARD({d:by(c.d), sig:marks[c.d], text:T_SPELL, name:c.n, lvl:c.lvl, rc:c.rc,
+        chits: CHITS({value:c.v, max:c.max, dom:true, name:'use'}) +
+               (c.also ? CHITS({...c.also, dom:true}) : '')}) +
+  `<div class="cap"><b>${c.w}px</b>${
+    c.also ? 'two pools' : c.max ? c.max + ' capacity' : 'open pool'}</div></div>`).join('');
+
+/* ── the three sizes ── */
+r1.innerHTML = CHITS({value:0, max:1, name:'use'});
+r2.innerHTML = CHITS({value:5, max:0});
+r3.innerHTML = CHITS({value:2, max:3});
+r4.innerHTML = CHITS({value:1, max:2});
+
+/* ── the states ── */
+states.innerHTML = [
+  ['capped, empty',        {value:0, max:5}],
+  ['capped, part spent',   {value:2, max:5}],
+  ['capped, full',         {value:5, max:5}],
+  ['once per long rest',   {value:1, max:1}],
+  ['spent',                {value:0, max:1}],
+  ['open — no capacity',   {value:3, max:0}],
+  ['open, over the cap',   {value:11, max:0}],
+  ['a record, no control', {value:3, max:5, add:false}],
+].map(([lab, o]) => `<div class="bx" style="flex:1 1 220px">
+  <p class="lab">${lab}</p><div class="mid">${CHITS(o)}</div></div>`).join('');
+
+/* ── the motion ── */
+demo.innerHTML = CHITS({value:2, max:6}).replace(/^<div class="chits([^"]*)"/, '<div class="chits$1 big"');
+const row = demo.querySelector('[data-chits]');
+document.querySelectorAll('.btns button').forEach(b => b.onclick = () => {
+  const d = Number(b.dataset.d);
+  const v = Number(row.dataset.v);
+  if (d === 99) return refuseChits(row);
+  setChits(row, Math.max(0, Math.min(6, v + d)));
+});
+
+/* every row on the page is live */
+chitClicks(document.body, (r, v) => setChits(r, v));
+
+lt.onchange = e => document.documentElement.classList.toggle('light', e.target.checked);
+rd.onchange = e => document.querySelectorAll('.chits')
+  .forEach(r => r.classList.toggle('round', e.target.checked));
+
+fit();
+</script>
+</body>
+</html>

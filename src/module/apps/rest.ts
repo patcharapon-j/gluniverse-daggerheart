@@ -93,7 +93,9 @@ import {
   wireRulePeeks,
 } from "./rule-cards.ts";
 import { plain } from "../sheets/cards.ts";
+import { refreshResources, restScopes, restWillRefresh } from "../documents/item.ts";
 import { dhDialog } from "./dialog.ts";
+import { withoutLedger } from "../ledger.ts";
 
 const esc = (s: string) => foundry.utils.escapeHTML(s);
 
@@ -425,41 +427,48 @@ const said = (n: number, one: string, many: string, verb: string): string =>
   n === 0 ? `nothing to ${verb}` : `${verb}ed ${n} ${n === 1 ? one : many}`;
 
 /**
- * Domain cards with a limited number of uses get them back.
+ * Cards with a limited number of uses get them back.
  *
  * Both rests do this and the rules are explicit about it, and it is exactly
  * the sort of thing nobody remembers — a card you spent in the first fight of
  * the session stays spent all night unless something says otherwise.
+ *
+ * **Which rest, though.** This used to refill every pool on either kind, which
+ * was right for the fifty-one entries that say "once per rest" and wrong for
+ * the fifty-nine that say "once per *long* rest" — a short rest was handing
+ * back a use the rules do not give you, silently, on more than half the deck.
+ * It never fired, because nothing had ever authored a pool for it to refill;
+ * `restScopes` is the fix arriving at the same time as the first data that
+ * would have shown the bug.
+ *
+ * A refresh is not always a refill, either. A card that says "place tokens"
+ * *clears* on a rest rather than filling, and the Vampire's Feed removes
+ * exactly one. `refreshResources` reads that off the resource.
  */
-async function refreshUses(actor: any): Promise<number> {
-  const updates = spent(actor).map((i: any) => ({
-    _id: i.id,
-    "system.uses.value": i.system.uses.max,
-  }));
-  if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
-  return updates.length;
+async function refreshUses(actor: any, kind: RestKind): Promise<number> {
+  const moved = await refreshResources(actor, restScopes(kind === "long" ? "long" : "short"));
+  return moved.length;
 }
-
-/** Every Item this rest will hand a use back to. */
-const spent = (actor: any): any[] =>
-  [...(actor?.items ?? [])].filter(
-    (i: any) => i.system?.uses?.max > 0 && i.system.uses.value < i.system.uses.max,
-  );
 
 /**
  * The other lane: what this rest gives back rather than what it asks of you.
  *
  * Two sources, and they are two different kinds of knowing. The first is a
- * *fact* — an Item with a `uses` pool that `refreshUses` is about to fill, so
- * the row can print the count and be exactly right. The second is a *reading*:
- * a rule saying "once per rest" whose card tracks no pool, which is most of
- * the printed deck. Those get a row with no count, because there is no count
- * to be honest about.
+ * *fact* — a tracked resource that this rest is about to move, so the row can
+ * print the count and be exactly right. The second is a *reading*: a rule
+ * saying "once per rest" whose card tracks nothing, which is most of what a
+ * character is carrying. Those get a row with no count, because there is no
+ * count to be honest about.
+ *
+ * The fact half now depends on **which rest**, which the reading half cannot:
+ * a resource states its scope and a sentence does not, so a long rest's list
+ * is exactly right about the pools and as approximate as it ever was about
+ * the prose.
  *
  * Deduplicated by name, since a card with a pool that also says "once per
  * rest" is one card and would otherwise be two lines saying the same thing.
  */
-function refreshing(actor: any): RefreshRow[] {
+function refreshing(actor: any, kind: RestKind): RefreshRow[] {
   const rows: RefreshRow[] = [];
   const seen = new Set<string>();
   const add = (r: RefreshRow) => {
@@ -469,13 +478,17 @@ function refreshing(actor: any): RefreshRow[] {
     rows.push(r);
   };
 
-  for (const it of spent(actor)) {
-    const u = it.system.uses;
+  for (const lr of restWillRefresh(actor, kind === "long" ? "long" : "short")) {
+    const it = lr.item;
     add({
       name: it.name,
       source: it.system?.origin || it.system?.domain || it.type,
       text: plain(it.system?.description) || "",
-      uses: `${u.value ?? 0} / ${u.max}`,
+      pool: {
+        value: lr.res.value,
+        max: lr.max ?? 0,
+        name: (lr.res.name || "tokens").toLowerCase(),
+      },
       itemId: it.id,
     });
   }
@@ -546,7 +559,21 @@ async function postRest(actor: any, kind: RestKind, done: Outcome[], refreshed: 
 
 /* ── the dialog ────────────────────────────────────────────────────────── */
 
-export async function rest(actor: any, kind: RestKind): Promise<void> {
+/**
+ * The rest keeps its changes out of the change log, and it is one of exactly
+ * two flows that do.
+ *
+ * Not because they are unimportant — because this dialog already posts a card
+ * that names every one of them, with the die that produced it and the move it
+ * was taken for. A ledger card beside it would be the same three facts in a
+ * different grammar, and the log arguing with itself about which is the
+ * record. See `ledger.ts`; the mute is per actor, so the rest of the table is
+ * still being watched while this one rests.
+ */
+export const rest = (actor: any, kind: RestKind): Promise<void> =>
+  withoutLedger(actor, () => runRest(actor, kind));
+
+async function runRest(actor: any, kind: RestKind): Promise<void> {
   const tier = actor.system?.tier ?? 1;
   const moves = MOVES[kind];
   const allow = restAllowance(actor);
@@ -564,7 +591,7 @@ export async function rest(actor: any, kind: RestKind): Promise<void> {
     rule,
     note: game.i18n.localize("DAGGERHEART.Rest.Grants"),
   }));
-  const back = refreshing(actor);
+  const back = refreshing(actor, kind);
   const named = new Set(back.map((r) => r.name.toLowerCase()));
   const bears = merge(why, rulesAbout(actor, REST_RX)).filter(
     // A card that grants a downtime move stays a card even if it also
@@ -800,6 +827,6 @@ export async function rest(actor: any, kind: RestKind): Promise<void> {
      changed their mind, or took two and put both back, and it gets no card
      and refreshes nothing. */
   if (!done.length) return;
-  const refreshed = await refreshUses(actor);
+  const refreshed = await refreshUses(actor, kind);
   await postRest(actor, kind, done, refreshed);
 }

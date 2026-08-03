@@ -19,7 +19,11 @@ export function registerSheets(): void {
   const AdversaryApp = makeActorSheet(AdversarySheet, { width: 620, height: 760 });
   const EnvironmentApp = makeActorSheet(EnvironmentSheet, { width: 600, height: 700 });
   const CompanionApp = makeActorSheet(CompanionSheet, { width: 520, height: 560 });
-  const ItemApp = makeItemSheet(ItemSheet, { width: 540, height: 660 });
+  // Two field columns at 150px plus the panel's own padding is the floor, and
+  // the height is the rules tab: a class carries four prose editors and three
+  // feature blocks, and the point of the taller window is that the first one
+  // is open when you get there rather than scrolled to.
+  const ItemApp = makeItemSheet(ItemSheet, { width: 580, height: 740 });
 
   DocumentSheetConfig.registerSheet(Actor, SYSTEM_ID, CharacterApp, {
     types: ["character"],
