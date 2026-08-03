@@ -247,19 +247,38 @@ export function landDie(kd, value, faces, done) {
  * and a setter that trusted the markup would tumble a d8 through a d6's
  * faces on the render that grew it.
  */
-export function setKeep(row, dice, faces = Number(row.dataset.faces) || 6) {
+export function setKeep(
+  row, dice,
+  faces = Number(row.dataset.faces) || 6,
+  max = Number(row.dataset.max) || 0,
+) {
   const want = (dice ?? []).map((n) => Math.max(0, Number(n) || 0));
   const was = (row.dataset.dice || '').split(',').filter(Boolean).map(Number);
   const mode = row.dataset.mode || 'bag';
-  const max = Number(row.dataset.max) || 0;
+  const wasMax = Number(row.dataset.max) || 0;
   const cap = Number(row.dataset.cap) || KEEP_CAP;
-  if (want.join(',') === was.join(',') && faces === Number(row.dataset.faces)) return;
+  if (
+    want.join(',') === was.join(',') &&
+    faces === Number(row.dataset.faces) &&
+    max === wasMax
+  ) return;
 
-  const grewShape = faces !== Number(row.dataset.faces);
+  /* The ceiling moves, and setChits has always known it. A trait-sourced
+     capacity is not a constant: Prayer Dice are "equal to your Spellcast
+     trait", and a Seraph acquires that trait when the subclass card lands,
+     which is after the tray has been drawn. Read once off the dataset it
+     stayed at whatever it was on the frame the row was built, so the tray
+     drew no sockets forever and the card silently stopped stating the one
+     number it exists to state. Proficiency and tier do the same thing at
+     every advancement, and `fear` moves several times a session. */
+  const grewShape = faces !== Number(row.dataset.faces) || max !== wasMax;
   row.dataset.dice = want.join(',');
   row.dataset.v = String(want.length);
   row.dataset.faces = String(faces);
-  row.classList.toggle('full', mode === 'bag' && max > 0 && want.length >= max);
+  row.dataset.max = String(max);
+  const capped = mode === 'bag' && max > 0;
+  row.classList.toggle('capped', capped);
+  row.classList.toggle('full', capped && want.length >= max);
 
   /* Three things this cannot animate through, and all three are the row
      changing *shape* rather than value: the die changing size, crossing

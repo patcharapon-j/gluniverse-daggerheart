@@ -59,8 +59,17 @@
   let mount = $state<HTMLElement | null>(null);
   let row: HTMLElement | null = null;
 
-  /** The scalar the driving effect actually depends on. */
-  const sig = $derived(`${faces}:${(dice ?? []).join(",")}`);
+  /**
+   * The scalar the driving effect actually depends on.
+   *
+   * `max` is in it as well as the faces, because a ceiling is not a constant:
+   * Prayer Dice are "equal to your Spellcast trait" and a Seraph has no such
+   * trait until the subclass card lands, which is after this row was built.
+   * Left out, the tray drew whatever the ceiling was on its first frame and
+   * never again — no sockets, forever, on a card whose whole job is to say
+   * how many you may hold. Proficiency and tier move at every advancement.
+   */
+  const sig = $derived(`${faces}:${max}:${(dice ?? []).join(",")}`);
 
   const build = (): HTMLElement => {
     const box = document.createElement("div");
@@ -90,7 +99,13 @@
 
   $effect(() => {
     void sig;
-    if (row) setKeep(row, untrack(() => dice) ?? [], untrack(() => faces));
+    if (row)
+      setKeep(
+        row,
+        untrack(() => dice) ?? [],
+        untrack(() => faces),
+        untrack(() => max) ?? 0,
+      );
   });
 </script>
 

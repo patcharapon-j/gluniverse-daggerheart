@@ -153,7 +153,7 @@ declare module "*/ui/keep.js" {
   export function shapeOf(faces: number): string;
 
   /** Diff the tray against a new list of faces and move only what moved. */
-  export function setKeep(row: Element, dice: number[], faces?: number): void;
+  export function setKeep(row: Element, dice: number[], faces?: number, max?: number): void;
 
   /** Tumble one die to a face. `done` fires when it lands. */
   export function landDie(

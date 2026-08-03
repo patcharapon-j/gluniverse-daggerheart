@@ -1458,6 +1458,39 @@ both are readouts, so there is no animation to protect and `CHITS({add:false})`
 is the whole of it. Two pools go in a `.chitstack`, since the plate has one
 anchor and seven cards in the corpus carry two.
 
+**Five of the six go through one snippet and the sixth does not**, which is
+where the die pools first shipped invisible. `pools` in `CharacterSheet.svelte`
+draws both arrays for a whole Item and serves every spine and tile, because
+those rows *stand for the document*. The Features panel cannot use it: a class
+carries several features and only one of them counts anything, so its rows bind
+by feature name through `resourcesFor` and now `dicePoolsFor`, and it writes
+its own `<Chits>` and `<Keep>` inline. Adding a second kind of pool to `pools`
+therefore reaches five hosts and misses the one that draws **every class
+feature in the system** — Prayer Dice, the Bard's Rally Die, Unstoppable, the
+Patron Die and the Combo Die, five of the eleven annotations, on the panel a
+player looks at first. `dicePoolsFor` sat written and uncalled, which is the
+shape of it: the binding half was built and the drawing half was not.
+
+**And a ceiling is not a constant.** `setChits` has taken its max on every
+drive since it was written and `setKeep` read its own once, off the dataset, on
+the frame the row was built. Prayer Dice are "equal to your Spellcast trait"
+and a Seraph *has* no such trait until the subclass card lands — so the tray
+drew no sockets, forever, on the card whose entire job is to say how many you
+may hold. Three of the six ceiling sources move like that: Proficiency and tier
+at every advancement, `fear` several times a session. The row redraws on a
+changed max for the reason it redraws on a changed die size — both are the row
+changing *shape* rather than value, which is the boundary `setChits` already
+draws at its own cap. A study page cannot see this, because it holds a fixed
+capacity: a tray drawn at zero and a tray that *became* zero look identical on
+one, so the check lives in `tools/verify/`.
+
+**Where a card rolls its dice on arrival, placing one rolls it.** Prayer Dice
+carry `onRefresh: "reroll"` and no roll button, because rerolling them is
+offering to change an answer the session already gave — and `placeDie` put down
+a blank, which in a tray with no roll button is a die that can never have a
+face. "Roll a number of d4s and place them on this card" is one act. Slayer
+Dice stay blank, because those are rolled when they are *spent*.
+
 **A chit is a button, so the features row stopped being one.** `.abl .a` is a
 container now and `.abl .ap` is the press — `.fcls`/`.fclsr`'s answer arriving
 on the character sheet — and `.ap` restates its own height for the reason the

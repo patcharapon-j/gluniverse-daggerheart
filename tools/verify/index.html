@@ -199,7 +199,7 @@ import { GEMS } from '/src/module/ui/gem.js';
 import { FEAR_HUD } from '/src/module/ui/pool.js';
 import { CARD, fit } from '/src/module/ui/card.js';
 import { CHITS } from '/src/module/ui/chit.js';
-import { KEEP } from '/src/module/ui/keep.js';
+import { KEEP, setKeep } from '/src/module/ui/keep.js';
 import { LEDGER } from '/src/module/ui/ledger.js';
 import { SPINE, TILE } from '/src/module/ui/tile.js';
 import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
@@ -1756,6 +1756,32 @@ setTimeout(async () => { try {
      decided by `system.json`. A die needs more room than a counter: 17
      against 14, measured on the row that has both rules available. */
   check('a features row sizes a die above a counter', kSz === 17, `${kSz}px`);
+
+  /* And the ceiling moves. This is the one failure on this stage that is not
+     about CSS at all, and it is here because nothing else can see it: a
+     study page holds a fixed capacity, so a tray drawn at max 0 and a tray
+     that *became* max 0 look identical on one. Prayer Dice are "equal to
+     your Spellcast trait", a Seraph acquires that trait when the subclass
+     card lands, and `setKeep` read its ceiling once off the dataset — so the
+     row drew no sockets forever, on the card whose whole job is to say how
+     many you may hold. `setChits` has taken its max on every drive since it
+     was written; this is the same contract arriving one component late.
+     Proficiency and tier move at every advancement, and `fear` several
+     times a session, so three of the six sources have this shape. */
+  const kGrow = document.createElement('div');
+  kGrow.className = 'dh';
+  kGrow.style.cssText = 'position:absolute;left:-9999px';
+  kGrow.innerHTML = KEEP({ mode: 'bag', faces: 4, dice: [], max: 0, name: 'prayer dice' });
+  document.body.appendChild(kGrow);
+  const kRow = kGrow.firstElementChild;
+  const kWas = kRow.querySelectorAll('.sk').length;
+  setKeep(kRow, [], 4, 3);
+  const kNow = kRow.querySelectorAll('.sk').length;
+  check('a tray redraws when its ceiling moves',
+        kWas === 0 && kNow === 3 && kRow.classList.contains('capped'),
+        `${kWas} sockets at max 0, ${kNow} at max 3` +
+        (kRow.classList.contains('capped') ? ' · capped' : ' · NOT capped'));
+  kGrow.remove();
 
   const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
                       'fcls', 'fclsr', 'fsub', 'fcrd', 'fcards', 'fclass',

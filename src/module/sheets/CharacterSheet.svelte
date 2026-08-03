@@ -80,7 +80,7 @@
   import { postCard } from "./post-card.ts";
   import Chits from "./parts/Chits.svelte";
   import Keep from "./parts/Keep.svelte";
-  import { liveDicePools } from "../data/dice-pools.ts";
+  import { liveDicePools, dicePoolsFor, type LiveDicePool } from "../data/dice-pools.ts";
   import Marks from "./parts/Marks.svelte";
   import Gems from "./parts/Gems.svelte";
   import Prose from "./parts/Prose.svelte";
@@ -1013,6 +1013,15 @@
      * thing that depends on them being distinct.
      */
     res: LiveResource[];
+    /**
+     * And the dice it keeps, bound the same way and for the same reason.
+     *
+     * Two fields rather than one because they are two arrays on the schema
+     * and two records at the table — the Guardian's Unstoppable is a
+     * once-per-long-rest use *and* a die that climbs, and a row that merged
+     * them would be claiming the use and the die are one fact.
+     */
+    dice: LiveDicePool[];
   }
 
   const abilities = $derived.by(() => {
@@ -1046,6 +1055,12 @@
         price,
         cost: priceLabel(price),
         res: resourcesFor(it, o.bind ?? f.name ?? "", doc),
+        /* Bound the same way, because a class carries several features and
+           only one of them keeps the dice — the Seraph's Prayer Dice sit on
+           Prayer Dice and not on Life Support. `liveDicePools` is the whole
+           document's and is right for a spine or a tile, which stand for the
+           document; a row here stands for one feature block. */
+        dice: dicePoolsFor(it, o.bind ?? f.name ?? "", doc),
         card:
           o.card !== undefined
             ? o.card
@@ -2719,6 +2734,26 @@
                           name={(r.res.name || "tokens").toLowerCase()}
                           key="{a.pk}:{r.i}"
                           add={ed}
+                        />
+                      {/each}
+                      <!-- Counters first, then dice, which is the order the
+                           `pools` snippet uses on a spine and a tile — a
+                           feature carrying both spent a use and is holding a
+                           die, and that is the order it happened in. Neither
+                           takes a `slot`: this row has slack of its own, so
+                           the tray draws in flow under the rule rather than
+                           being re-parented into somebody's meta line. -->
+                      {#each a.dice as p (p.i)}
+                        <Keep
+                          mode={p.pool.mode}
+                          faces={p.pool.faces}
+                          dice={p.pool.dice}
+                          max={p.max}
+                          name={(p.pool.name || "dice").toLowerCase()}
+                          key="{a.pk}:{p.i}"
+                          add={ed}
+                          roll={p.pool.onRefresh !== "reroll"}
+                          rev={snap.rev}
                         />
                       {/each}
                     </div>

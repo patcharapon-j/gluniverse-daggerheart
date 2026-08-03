@@ -214,8 +214,31 @@ export class DaggerheartItem extends (Item as any) {
     const held: number[] = pool.dice ?? [];
     const max = poolCapacity(pool, this.actor);
     if (max !== null && held.length >= max) return false;
-    await this.setTray(index, [...held, pool.mode === "climb" ? 1 : 0]);
+
+    /* A climbing die is placed showing 1, which the three cards that use one
+       all print. Everything else is placed blank — Slayer Dice are rolled
+       when they are *spent*, so a face at this moment would be an answer the
+       card has not given yet.
+
+       Except where the card rolls them on arrival. `onRefresh: "reroll"` is
+       already the record of that — "roll a number of d4s equal to your
+       Spellcast trait and place them on this card" is one act, not two — and
+       those trays deliberately carry no roll button, because rerolling is
+       offering to change an answer the session already gave. Placing a blank
+       into one would therefore be a die that can never have a face, which is
+       the row offering a dead end. So the placement is the roll. */
+    const face =
+      pool.mode === "climb" ? 1
+      : pool.onRefresh === "reroll" ? await this.#rollOne(pool.faces ?? 6)
+      : 0;
+    await this.setTray(index, [...held, face]);
     return true;
+  }
+
+  /** One die, through Foundry's own roller so it reaches the dice log. */
+  async #rollOne(faces: number): Promise<number> {
+    const r = await new (foundry as any).dice.Roll(`1d${faces}`).evaluate();
+    return Number(r.dice[0].results[0]?.result ?? 1);
   }
 
   /** Take one die off the card. `at` is its position in the tray. */
