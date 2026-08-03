@@ -56,7 +56,7 @@
 
 import { SYSTEM_ID } from "./config.ts";
 import { FEAR_MAX, getFear, setFear } from "./settings.ts";
-import { setPool } from "./ui/gem.js";
+import { intensity, setPool } from "./ui/gem.js";
 import { FEAR_HUD } from "./ui/pool.js";
 
 /** Where the strip docks. See the note above on v13 versus v14. */
@@ -113,13 +113,28 @@ async function onStep(event: Event): Promise<void> {
   await setFear(next);
 }
 
-/** Told what the pool now is. Never asked to work it out. */
+/**
+ * Told what the pool now is. Never asked to work it out.
+ *
+ * Three things move and none of them is a rebuild. The pips diff through
+ * `setPool`; the tally is written as text, because it is text; and `--i` is
+ * the strip's own intensity, which every layer on it — the field, the weave,
+ * the corner bleed, the sockets, the rim — is written as a function of.
+ * Setting the one property is what makes the whole strip ease together
+ * rather than snap, and `pool.css` puts the transition on `.hud` for it.
+ *
+ * The gems carry their own inline `--i` as well, written by `setPool` and
+ * winning over what they inherit from here. That is not a second opinion:
+ * both are `intensity(cur, max)` of the same number, and a pip needs its
+ * own because `GEMS` is also drawn on sheets that have no strip around it.
+ */
 function show(cur: number): void {
   if (!strip) return;
   const row = strip.querySelector(".gems");
   if (row) setPool(row, cur, { fear: true, max: FEAR_MAX });
   const tally = strip.querySelector(".tally");
   if (tally) tally.innerHTML = `${cur}<s>/${FEAR_MAX}</s>`;
+  strip.style.setProperty("--i", intensity(cur, FEAR_MAX).toFixed(3));
 }
 
 /**

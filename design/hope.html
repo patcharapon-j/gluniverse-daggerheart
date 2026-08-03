@@ -175,7 +175,7 @@ behind the pip that changed, which is what sells twelve as worse than eleven.</p
 </div>
 
 <script type="module">
-import { GEM, GEMS, setPool } from './gem.js';
+import { GEM, GEMS, setPool, intensity } from './gem.js';
 import { POOL, FEAR_HUD } from './pool.js';
 
 const st = {h:4, f:7, scars:0};
@@ -228,6 +228,10 @@ function setF(v){
   fn.textContent = `${st.f} / 12`;
   f.value = st.f;
   rows('#fhud .tally, #fhud2 .tally').forEach(t => t.innerHTML = `${st.f}<s>/12</s>`);
+  // and `--i`, which every layer on the strip ramps against. Exactly what
+  // `fear-hud.ts` does — see the note in pool.js.
+  rows('#fhud .hud, #fhud2 .hud').forEach(h =>
+    h.style.setProperty('--i', intensity(st.f, 12).toFixed(3)));
 }
 
 document.addEventListener('click', e => {

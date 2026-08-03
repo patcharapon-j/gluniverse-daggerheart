@@ -2060,7 +2060,7 @@ without asking anybody for it. Which is also why there is **no setting to hide
 it from players**: `pool.css` argues the point in its own comments, and a switch
 to turn it off would be this system offering to break the rule it drew the
 component around. Players get `FEAR_HUD({gm:false})` — the same strip with the
-steppers taken off, 485px against the GM's 521 — and the **tally is on both**,
+steppers taken off, 451px against the GM's 487 — and the **tally is on both**,
 because a GM says "I have four Fear" out loud and neither of them should have
 to count pips to do it.
 
@@ -2084,6 +2084,103 @@ from the setting and the strip is only ever told what it now is.
 because there they are the only control; here there are dedicated steppers, and
 a readout that is also a control is a misclick swinging the pool six points
 mid-session.
+
+### It is the duality plate's header now
+
+The first build was honest and said nothing: a 9.5px mono caption reading FEAR,
+twelve pips and a tally, on flat graphite. Every one of those parts is correct
+and the object as a whole made no claim about what it was counting — which is a
+strange thing for the one surface in this system whose entire subject is dread
+accumulating in public.
+
+A Fear card in chat has had a grammar for that since the plate was drawn, so the
+strip borrows it: **the plate's violet field running deep→light at 103°, the
+plate's diagonal weave over it, and the count set as a display numeral** rather
+than as a caption. `.hface` carries all of it as background layers — the weave,
+a corner bleed, the field, and a near-black base with alpha so the backdrop blur
+underneath survives.
+
+**The eyebrow is gone rather than restyled.** Twelve violet diamonds and a
+stepper, docked above the map, is not an object anybody at the table has to be
+told the name of, and a caption that says what the object already says is a
+caption doing adjacency's job. That freed the width the numeral now spends.
+
+**The plate's ghost was drawn and then removed**, and the reason is worth
+keeping because it is about this component's shape rather than about taste.
+`.pl-gh` is a copy of the thing the object is about, set three times over and
+running off the frame, and it is the cheapest way to make a small box feel
+cropped out of something larger. Here the only thing to copy is the count, and
+the only place to put it is *behind the pips* — so it is legible at two Fear,
+half-eaten at seven, and at eleven it is two vertical stems poking out from
+under the lit diamonds, which reads as a rendering fault rather than as a
+number. Every other object carrying a ghost has a quiet corner to put it in;
+this one is a 51px band that is pips all the way across. So what says "cropped
+out of something larger" is light instead of type: one wide radial anchored off
+the bottom-left corner, giving the field a source it does not contain. Nothing
+to keep in sync, and nothing that can collide with a pip.
+
+**The edge flows.** `.hglow` is a single conic gradient turning about the
+strip's centre in 22 seconds, and `.hface` is inset 1.5px on top of it — so the
+rim is the only place the conic is ever visible, and it reads as light running
+round the outline. On a 10:1 box the angular sweep crosses the two short ends
+far faster than the long ones, which is what stops it reading as a wheel behind
+a window. Under the conic is a flat base, because a rim that exists only where
+the highlight currently is, is not a rim, it is a comet.
+
+**And everything on it ramps on `--i`** — the pool's own fullness, the number
+`gem.css` has always ramped a pip's burn on, now set on the strip and inherited
+down. The field saturates, the weave comes up, the sockets deepen, the corner
+bleed lifts, the rim's light strengthens. One transition on `--i` carries all of
+it, so twelve is not eleven with one more diamond lit: it is a strip that has
+got worse, easing over the half-second after the press. `show()` sets the one
+property; nothing is rebuilt.
+
+**The socket is violet-black now**, because a socket is a hole in whatever it
+sits on and what it sits on is no longer graphite. Left at the sheet's near-black
+an unlit pip read as a punched hole rather than as an empty slot, and it too
+deepens with `--i` so the empty half of the row keeps its distance from the full
+half at every value.
+
+### Fear breathes and Hope does not
+
+`gem.css` has said since it was written that there is **no idle animation
+anywhere in it** — six things breathing on a character sheet is six things
+asking for attention, all day, for nothing, and the whole motion budget belongs
+to the moment a value changes. That rule now has one exception, and it is not
+the same claim in a different hue.
+
+Hope is on your own sheet, in front of you, one of forty things on it, and it
+moves when *you* move it. Fear is docked in the chrome above the map, it is the
+GM's, and the entire reason it is up there is that the table is supposed to feel
+it sitting there between the moments anybody touches it. A pool that is
+completely still until a button is pressed is a number; a pool that is barely
+alive is a thing in the room.
+
+So a lit fear pip carries two loops, both slow, both offset by the pip's own
+place in the row — `--n`, written by `GEMS()` and set on nothing else — so the
+strip reads as one thing moving rather than as twelve things blinking:
+
+- **the breath**, an opacity on `.edge` and nothing else. That is the light
+  *inside* the glass, so dimming and recovering it is the one part of this
+  object that can waver without the object appearing to move: the silhouette
+  stays exact and the face stays flat, which is the rule the whole component is
+  drawn on. It floors at .42 of the settled value rather than at zero, because
+  a band that goes out entirely reads as a pip flickering, which is a fault
+  rather than a mood. 5.4s, offset a third of a second, so the wave takes about
+  four seconds to cross twelve pips.
+- **the swim**, one soft band turning inside the face, clipped by `.pit`'s own
+  diamond, 23 seconds to the turn. It is what makes the gem read as liquid
+  rather than as a lit tile — the strip's rotating rim making the same claim at
+  the other scale, deliberately at a period that never falls into step with it.
+
+Both are ramped on `--i` as well, so at one Fear they are very nearly nothing
+and it is only at ten or eleven that the motion is something you notice you have
+been watching. Neither runs on an unlit pip, a scarred one, or a pip playing a
+gain or a spend — `:not(.gain):not(.spend)` is what hands the element back for
+those. Both are cheap by construction: an opacity and a transform, no filter
+interpolated and no colour mixed per frame. Both stop under
+`prefers-reduced-motion`, which the gain and the spend do **not**: those are the
+answer to a press, and a press with no answer is a control that looks broken.
 
 **And it refuses out loud.** `setFear` clamps, and a clamp answers by doing
 nothing — so the bounds are tested before the write and a press that cannot
@@ -2134,14 +2231,38 @@ opposite claims at the same size.
 `tools/verify/` carries a stand-in `#ui-middle` and `#ui-top` beside its
 stand-in `elements` layer, for the reason it carries the layer at all: the
 environment is part of the component and a study page has to bring it. It
-asserts four things — that the strip resolves its ground and Fear's hue while
+asserts five things — that the strip resolves its ground and Fear's hue while
 standing outside every `.dh` root, which is exactly what the compound buys and
 what a wrapper would have hidden; that it takes its pointer events back; that a
-stepper measures 20×15 and not 28; and that the strip is **521px**, since twelve
-pips at 24 on a 7px gap make this the widest fixed object in the system and its
-width is therefore a decision rather than an outcome. The section is
-deliberately not `.stage`, because that class carries `.stage .dh{width:300px}`
-and would have handed the strip the one measurement the check exists to take.
+stepper measures 20×15 and not 28; that the **pip row** is 365px, twelve at 24
+on a 7px gap, which makes this the widest fixed object in the system and its
+width therefore a decision rather than an outcome; and that the field **ramps**.
+
+Two of those changed shape with the plate's header. The ground is `.hface` and
+not the strip's own `background` — the rim needs something over it that stops
+1.5px short of the edge — so a check reading `backgroundColor` off `.hud` gets
+transparent on a strip that is drawing perfectly. And the width is taken off the
+pips rather than off the strip: the old check asserted 521px, which silently
+included a mono word and a tally, which is *text in a webfont fetched over the
+network*. A client that has not got Google Sans Code yet lays that out in
+whatever it does have and the check goes red on a strip that is exactly right.
+Twelve boxes and eleven gaps is geometry, and no font can move it.
+
+The ramp check is the one that catches the failure with no symptom at all. Every
+layer on `.hface` is a `color-mix()` or an `rgba()` whose amount is
+`calc(… * var(--i))`, and `--i` is registered in **gem.css**, not in `pool.css`.
+Registration is what makes it a `<number>` rather than a token stream; without
+it every one of those functions is invalid and takes the whole `background`
+shorthand down with it, leaving a strip that is merely *dark*. So the computed
+background is read at `--i:0` and again at `--i:1` and the two must differ —
+which is the ramp, the registration and the field's existence in one assertion.
+The transition has to come off to take that reading, because `.hud` eases `--i`
+over .6s and a value read on the frame it was set is the one the transition is
+currently at, not the one that was asked for.
+
+The section is deliberately not `.stage`, because that class carries
+`.stage .dh{width:300px}` and would have handed the strip the one measurement
+the check exists to take.
 
 ## The three dialogs
 

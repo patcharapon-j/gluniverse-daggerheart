@@ -7,9 +7,15 @@ import { settled } from './settle.js';
    on a parent of the clipped face — painting order is filter then
    clip-path, so declared on the face itself the shadow is generated and
    then clipped away by the very shape it describes. */
-export const GEM = ({on = true, scar = false, fear = false, i = 1, sz}) => `
+/* `n` is the pip's place in the row, and it exists for one reason: Fear's
+   idle breath is offset by it. Twelve diamonds pulsing in unison is a strip
+   blinking; twelve offset by a third of a second each is something moving
+   along it, which is the difference between a light and a thing that is
+   alive. Hope never sets it, and the animations that read it are all under
+   `.gem.fear`. */
+export const GEM = ({on = true, scar = false, fear = false, i = 1, n = 0, sz}) => `
 <i class="gem${fear ? ' fear' : ''}${scar ? ' scar' : on ? ' on' : ''}"
-   style="${sz ? `--sz:${sz}px;` : ''}${fear ? `--i:${i.toFixed(3)}` : ''}">
+   style="${sz ? `--sz:${sz}px;` : ''}${fear ? `--i:${i.toFixed(3)};--n:${n}` : ''}">
   <b class="lamp"><b class="pit"></b><b class="edge"><i></i></b><b class="rim"></b></b>
   <b class="fx"></b>
 </i>`;
@@ -26,7 +32,7 @@ export const GEMS = ({cur = 4, max = 6, scars = 0, fear = false, sz, gap, ground
   const live = max - scars;
   const i = fear ? intensity(cur, max) : 1;
   const row = Array.from({length: max}, (_, n) =>
-    GEM({fear, sz, i, on: n < cur, scar: n >= live})).join('');
+    GEM({fear, sz, i, n, on: n < cur, scar: n >= live})).join('');
   return `<div class="gems${ground === 'paper' ? ' paper' : ''}"${
     gap ? ` style="--gap:${gap}px"` : ''}>${row}</div>`;
 };
