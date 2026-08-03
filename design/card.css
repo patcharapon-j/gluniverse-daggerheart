@@ -21,11 +21,11 @@
   --plate:50%; --u:.94cqw;
   box-shadow:0 18px 34px -12px rgba(0,0,0,.72),0 3px 10px rgba(0,0,0,.42);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 15px),calc(100% - 15px) 100%,0 100%)}
-/* A domain card keeps the current half-card artwork at every text length.
-   70cqw is half of the card's 140cqw minimum height. fit() compacts prose
-   first and, if that is still not enough, relaxes the aspect ratio so only
-   the paper below the image grows. */
-.card.domain-card{--plate:70cqw}
+/* A full printed card keeps the current half-card artwork at every text
+   length. 70cqw is half of the card's 140cqw minimum height. fit() compacts
+   prose first and, if that is still not enough, relaxes the aspect ratio so
+   only the paper below the image grows. */
+.card.grow{--plate:70cqw}
 /* ── no hover ──
    This used to lift 5px and deepen its shadow under the pointer. Deleted
    rather than scoped away from chat, because there is nowhere left that a

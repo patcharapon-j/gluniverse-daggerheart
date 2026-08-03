@@ -74,6 +74,9 @@ export const CARD = (opts) => {
   const {d, d2, lvl, rc, type, name, text, flavour, feats, stats, tags,
          sig, sig2, foot, code, fbsig, fbname, corners, cls, chits} = o;
   const runin = o.runin ?? false;
+  const grows = ['SUBCLASS', 'ANCESTRY', 'COMMUNITY', 'TRANSFORMATION'].includes(type) ||
+    (lvl != null && rc != null);
+  const classes = ['card', cls, grows && 'grow', d2 && 'duo'].filter(Boolean).join(' ');
 
   // Ancestry and Community opt out via their token; everything domain-derived
   // keeps the ramp. An explicit `ramp` on the card still wins.
@@ -83,7 +86,7 @@ export const CARD = (opts) => {
                (d2 ? `;--dom-2:${d2.light};--dom-2-dk:${d2.dark}` : '');
 
   return `
-<div class="card ${cls}${d2 ? ' duo' : ''}" style="${vars}">
+<div class="${classes}" style="${vars}">
   <div class="plate">
     <div class="img"></div><div class="top"></div>${ramp ? '<div class="ramp"></div>' : ''}
     <div class="fb">
@@ -138,11 +141,11 @@ export const CARD = (opts) => {
    layout. So the panel measures itself: .cnt is the one box allowed to clip,
    and the card gives ground in a fixed order.
 
-   Domain cards keep their image at the current height: 70cqw, exactly half
-   of the 5:7 minimum card. Their prose compacts first. If it still does not
-   fit at the type floor, the aspect ratio grows by precisely the remaining
-   shortfall. Expressing that growth as a ratio rather than a pixel height
-   keeps it correct when a builder, sheet or chat column changes width.
+   Full printed cards keep their image at the current height: 70cqw, exactly
+   half of the 5:7 minimum card. Their prose compacts first. If it still does
+   not fit at the type floor, the aspect ratio grows by precisely the
+   remaining shortfall. Expressing that growth as a ratio rather than a pixel
+   height keeps it correct when a builder, sheet or chat column changes width.
 
    Other card kinds retain the established fitting order:
 
@@ -182,7 +185,7 @@ export function fit(scope = document){
     card.style.setProperty('--plate', PLATE_MAX + '%');
     card.style.setProperty('--u', U_MAX + 'cqw');
 
-    if(card.classList.contains('domain-card')){
+    if(card.classList.contains('grow')){
       const PLATE_CQW = 70;
       card.style.setProperty('--plate', PLATE_CQW + 'cqw');
 
