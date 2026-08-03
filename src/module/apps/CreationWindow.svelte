@@ -1540,7 +1540,7 @@
         <div class="fcards">
           {#each legalDeck as c (c.id)}
             {@const mine = heldCards.some((h: any) => h.name === c.name)}
-            {@const why = loose ? undefined : cardRefusal(doc, c, myDomains)}
+            {@const why = loose || mine ? undefined : cardRefusal(doc, c, myDomains)}
             {@const full = !mine && !why && heldCards.length >= STARTING_DOMAIN_CARDS && !loose}
             {@const card = cardFor(c)}
             <button

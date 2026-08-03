@@ -133,12 +133,20 @@ export const CARD = (opts) => {
 };
 
 /* ── fit ──────────────────────────────────────────────────────────
-   The card is a fixed 5:7 box holding text of unknown length. Authors will
-   write long features, and a layout that only works for the text I happened
-   to test with is not a layout. So the panel measures itself: .cnt is the
-   one box allowed to clip, and the card gives ground in a fixed order.
+   Cards hold text of unknown length. Authors will write long features, and a
+   layout that only works for the text I happened to test with is not a
+   layout. So the panel measures itself: .cnt is the one box allowed to clip,
+   and the card gives ground in a fixed order.
 
-   1. The art plate, from 50% down to 40%. Cheap — the composition survives
+   Domain cards keep their image at the current height: 70cqw, exactly half
+   of the 5:7 minimum card. Their prose compacts first. If it still does not
+   fit at the type floor, the aspect ratio grows by precisely the remaining
+   shortfall. Expressing that growth as a ratio rather than a pixel height
+   keeps it correct when a builder, sheet or chat column changes width.
+
+   Other card kinds retain the established fitting order:
+
+   1. The art plate, from 50% down to 30%. Cheap — the composition survives
       it and the prose does not change at all. Taken in one step, not
       iteratively: the plate is flex 0 0, so a pixel off the plate is a pixel
       onto the panel, exactly.
@@ -170,8 +178,33 @@ export function fit(scope = document){
     const over = () => cnt.scrollHeight - cnt.clientHeight;
 
     let plate = PLATE_MAX, u = U_MAX;
+    card.style.aspectRatio = '5 / 7';
     card.style.setProperty('--plate', PLATE_MAX + '%');
     card.style.setProperty('--u', U_MAX + 'cqw');
+
+    if(card.classList.contains('domain-card')){
+      const PLATE_CQW = 70;
+      card.style.setProperty('--plate', PLATE_CQW + 'cqw');
+
+      while(over() > 0 && u > U_MIN){
+        u = Math.round((u - .02) * 100) / 100;
+        card.style.setProperty('--u', u + 'cqw');
+      }
+
+      /* One cqw is one percent of this width. The extra pixel is the same
+         rounding guard the plate fitter uses below. A second pass absorbs a
+         rare fractional-pixel remainder without ever reducing the minimum. */
+      let heightCqw = 140;
+      for(let pass = 0; pass < 2 && over() > 0; pass++){
+        const width = card.getBoundingClientRect().width;
+        if(width <= 0) break;
+        heightCqw += (over() + 1) / width * 100;
+        card.style.aspectRatio = `100 / ${heightCqw.toFixed(2)}`;
+      }
+      card.dataset.u = u.toFixed(2);
+      card.dataset.plate = PLATE_CQW.toFixed(1);
+      continue;
+    }
 
     const short = over();
     if(short > 0){
