@@ -56,6 +56,28 @@ const ARM = {
 const EXTRA = {
   stress: 'M4.83 2.15 11.56 8.44 17.85 15.17 11.24 8.76Z',
 };
+
+/* The same arm as a `clip-path`, for a surface that cannot carry SVG.
+   The change log is one: Foundry's sanitiser takes every `<svg>` out of
+   stored message content, and a marked box that loses its X does not look
+   broken, it looks unmarked. So the ledger crosses its boxes off with the
+   arm cut out of an empty element instead.
+
+   Derived here rather than typed again over there. Three of these paths
+   are pure point lists, so the polygon is exactly the same shape and not
+   an approximation of it, and there is one place the geometry lives —
+   which is the whole reason `XMARK` is exported rather than redrawn.
+
+   `plain` is absent because it is the only one with a curve in it, and a
+   polygon cannot say Q. Nothing needs it: the three tracks that get
+   crossed off in a log are the three the rules print boxes for. */
+export const armPolygon = (kind) => {
+  const n = (ARM[kind] ?? '').match(/[0-9.]+/g)?.map(Number);
+  if (!n) return null;
+  const pt = [];
+  for (let i = 0; i < n.length; i += 2) pt.push(`${n[i] * 5}% ${n[i + 1] * 5}%`);
+  return `polygon(${pt.join(',')})`;
+};
 /* The core is the same path narrowed *across* the arm and not shortened
    along it — which is a fussier transform than scaling about the centre and
    is the whole difference between a mark and a shuriken. Every arm here runs

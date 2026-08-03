@@ -1729,37 +1729,101 @@ after the last change; `CEILING` closes it six seconds after the first
 regardless, because without a ceiling a steady drip never posts — one press a
 second holds the buffer open through the whole fight and the log stays empty.
 
-**A delta with no total is half a fact**, which is what the strip is for.
-"Marked 2 Stress" does not say whether she is one box from Vulnerable, and that
-is the only thing anybody wanted to know. So a row carries the track *as it now
-stands* and says which part of it moved: `.on` is settled history and recedes,
-`.up` is what this entry marked, `.dn` is the hollow ring what it gave back left
-behind. That is the damage dialog's *incoming outweighs existing* in the past
-tense, and it reads before you get to the numerals — a run of dim boxes ending
-in bright ones is a hit, ending in rings it is a heal.
+**A change is one line, and the line is a picture rather than a sentence.**
+This is a **note in the margin of the log**, not an object in it: a plate is
+300px of card because a roll is the thing everybody is looking at, and this
+arrives unasked for while somebody is describing a room. Four of them between
+two rolls must not push the roll off the screen. Six changes — every row shape
+there is — stand 122px, where the first draft stood about 230 for three.
 
-`.dn` is a **ring** and not a dimmer grey on purpose: an empty box and a box
-that has just been emptied are the two states the strip exists to tell apart,
-and a shade between two greys does not.
+Most of what that cost was **numerals**. The row led with a 22px figure and the
+word MARKED, above a strip that had already said it, and then said the total
+again on the right. The strip states the total, the current value **and** the
+delta at once:
+
+- `.on` — marked before this entry, receding. Settled history.
+- `.up` — marked *by* this entry: full strength, and lit.
+- `.dn` — given back by it: the **ghost** of the mark that was there.
+- bare — never marked.
+
+That is the damage dialog's *incoming outweighs existing* in the past tense, and
+it needs no reading: a run of dim marks ending in bright ones is a hit, ending
+in ghosts it is a heal. The ghost is a mark and not a hollow box, because a
+cleared box on the sheet is simply *empty* — and right to be, since the sheet
+says what is true now. A log has to say what changed, and "there was a mark
+here" is a thing only the mark can say.
+
+**And the mark is the sheet's mark.** Crossing a box off has a look here and it
+is not a filled square: a wound is a tear that bows off the diagonal, a strain
+is a fine scored line, a plate is a chisel blow. That is `mark.js`'s whole
+argument — the tracks are told apart by *substance* first and hue second — and
+three identical squares in three colours would throw away the half of it that
+survives being small.
+
+So they are the same arms, off the same point lists, through **`armPolygon`**:
+three of the four are pure point lists, so a `clip-path` is exactly the same
+shape rather than an approximation. The geometry lives in two files and
+`tools/verify/` asserts they agree *numerically*, since the browser reformats
+what it is handed. Two things differ from the sheet and both are about size.
+The recess is `<u>` and the mark is the box's own pseudo-elements, exactly as
+`mark.js` splits them — a clipped element clips its descendants, so the chamfer
+has to sit on a sibling of the thing crossing the box out. And where the sheet
+scales the arm *up* past its box, this may not: these rows are four pixels
+apart and a chisel at 1.6 puts its tips through the track above. What the small
+sizes need is **width**, which is `core()`'s transform run the other way —
+rotate the arm's diagonal onto an axis, scale across it, rotate back — so the
+stroke thickens without growing a pixel longer.
 
 **Nothing on this card is an `<svg>`, and that is a decision rather than an
 accident.** It is deliberately *not* the sheet's `MARKS` row — not for size, but
 because Foundry's sanitiser strips every `<svg>` out of stored message content,
 and a marked box that loses its X does not look broken, it looks **unmarked**.
 A posted card survives that by being redrawn from a flag on render; a lie
-cannot be styled back into the truth. So every mark here is CSS on an empty
-element, `GEMS` and `CHITS` were already `<i>`/`<b>`, and the whole message
-survives storage exactly as posted — **no flag, no redraw, no render hook**, and
-a client without this system gets unstyled but truthful markup. `tools/verify/`
-asserts both halves, so reaching for `MARKS` here to save fifty lines goes red
-rather than going quietly wrong.
+cannot be styled back into the truth. So every mark here is a hole cut in an
+empty element, `GEMS` and `CHITS` were already `<i>`/`<b>`, and the whole
+message survives storage exactly as posted — **no flag, no redraw, no render
+hook**. `tools/verify/` asserts both halves, so reaching for `MARKS` here to
+save fifty lines goes red rather than going quietly wrong.
+
+**A picture reaches two readers badly**, though, and dropping the numerals is
+what made that a debt rather than a preference: somebody using a screen reader,
+for whom a strip of empty elements is nothing at all, and a client that never
+got the stylesheet, for whom it is empty boxes. Both get the sentence — `said`
+writes one clipped `.sr` span per row, which is the same element assistive
+technology needed anyway. Stripping an `<svg>` *lies*; dropping a numeral costs
+a fact, which is the better failure and still a failure.
+
+**No row carries a class of its own, and that is a fix rather than a style.**
+The pool row was `.r.pl`, and `.pl` is the **chat plate** — both load into the
+same `.dh` root where scoping does nothing, so a card's counters were drawing
+on the plate's paper ground, inside its overflow clip, playing its arrival
+animation, and it read as a deliberate tray. Fourth instance of the bug that
+renamed `.die.win` and `.dfn .crest`, and there was never anything for the class
+to say: `data-t` already names every row and an attribute cannot collide with a
+class. `tools/verify/` now asserts that **no other sheet reaches into a ledger
+row** — every element that is not part of a hosted `GEMS` or `CHITS`, against
+every rule in the ported stack. A study page cannot see this: `design/ledger.html`
+loads four stylesheets and the game loads twenty.
+
+The same page taught the other half of it. `.ldg > .hd` states `padding:0` and
+`border:0` because `tools/verify/`'s own sticky page header was an unqualified
+`.hd` with 11px/26px on it, and a metric we never state is one with no
+competitor to beat — the `min-height` lesson, arriving from the page rather than
+from the game. The card came out 145px instead of 122 and looked merely roomy.
 
 Hope is gems and a card's pool is chits, because those are what the sheet draws
 and the log is not the place to introduce a second drawing of either. What
-changes is that nothing is pressable: a control in a record would be offering to
-change a number that changed three hours ago. Scars ride along on Hope — the
-ceiling is already the printed six *minus* them, so the row is `max + scars`
-wide and the count says the ceiling.
+changes is that nothing is pressable — a control in a record would be offering
+to change a number that changed three hours ago — and that both learn the
+strip's two change states. Hope is built a pip at a time rather than through
+`GEMS`, since a gained pip and the socket a spent one left are not things
+`GEMS` has any reason to know about: it draws a pool, and this draws what
+happened to one. A pool's is a rewrite of the markup `CHITS` returned one line
+above, walking chits and sockets in document order — which is the strip's rule
+again, because `[lo, hi)` is the part that moved whichever way it went. Scars
+ride along on Hope: the ceiling is already the printed six *minus* them, so the
+row is `max + scars` wide, and a ledger drawing only the live half would quietly
+drop the permanent part of what happened to this character.
 
 **Exactly two flows are muted**, and the test is narrow: does something else
 already post a card that enumerates *these same changes*, line by line. A rest

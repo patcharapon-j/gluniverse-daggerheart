@@ -5,123 +5,230 @@
 
    Not a card. A card is a thing you hold; this is a thing that
    happened, and it happened to somebody else's sheet. So it takes the
-   rest card's substrate — paper, a hairline, the family chamfer, the
-   plate's 300px — because those two are the same *kind* of object and
-   drawing them differently would claim they are not.
+   rest card's substrate — paper, a hairline, the family chamfer —
+   because those two are the same *kind* of object and drawing them
+   differently would claim they are not.
 
-   What it does not take is the rest card's die. A rest row is the
-   result of a roll and the die is where the number came from; a ledger
-   row has no die, because nothing rolled. What produced it is a box you
-   pressed, and the box is what the row draws.
+   What it does not take is the rest card's size. A plate is 300px
+   because a roll is the thing everybody is looking at; this arrives
+   while somebody is describing a room, unasked for, and four of them
+   between two rolls must not push the roll off the screen. It is a
+   note in the margin of the log: one line per change, no numerals, and
+   about a quarter of the height it started at.
 
-   See ledger.js for why the strip is hand-drawn rather than `MARKS`,
-   and why nothing here is `<svg>`.
+   See ledger.js for why the mark is a `clip-path` and not the sheet's
+   own `<svg>`, and why nothing on this card can be.
    ══════════════════════════════════════════════════════════════════ */
 
 .dh .ldg{width:100%;max-width:300px;background:var(--paper);
-  box-shadow:inset 0 0 0 1px var(--line),0 8px 20px -12px rgba(0,0,0,.6);
-  padding:13px 15px 15px;
-  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+  box-shadow:inset 0 0 0 1px var(--line),0 6px 16px -12px rgba(0,0,0,.6);
+  padding:8px 11px 9px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%)}
 
-.dh .ldg > .k{display:flex;align-items:baseline;gap:8px;margin-bottom:11px;
-  font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--ink-3)}
-/* The subject, named on the card itself. Foundry's own header names it
-   too and this is not a repetition for the plate's reason: a module that
+/* The title, and the subject. Foundry's own header names the subject too
+   and this is not a repetition for the plate's reason: a module that
    suppresses the header must not be able to take the subject of the
-   sentence with it. */
-.dh .ldg > .k s{margin-left:auto;text-decoration:none;font-size:9px;color:var(--hope-tx)}
+   sentence with it.
+
+   `padding:0;border:0` are stated rather than left off, and that is the
+   `min-height` lesson arriving on a shorthand. `.hd` is a heading name
+   four blocks in this system already use — `.mk .hd`, `.dh.dh.prep .hd`,
+   `.dh.dh.ctxm .hd`, and this — and every one of them is qualified, so ours
+   cannot collide with ours. What can is anything *unqualified* on the
+   page we land on, and a metric we never state is one with no competitor
+   to beat: `tools/verify/`'s own sticky page header was a bare `.hd`
+   with 11px/26px on it, and it made a six-row card 145px instead of 122.
+   The card looked merely roomy. */
+.dh .ldg > .hd{display:flex;align-items:baseline;gap:8px;margin:0 0 6px;padding:0;border:0;
+  font:700 7px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-4)}
+.dh .ldg > .hd s{margin-left:auto;text-decoration:none;letter-spacing:.1em;
+  color:var(--hope-tx)}
 
 /* ── a row ────────────────────────────────────────────────────────
-   Two lines, not one. The strip is the widest thing here — twelve Hit
-   Points at 300px is most of the width — so it gets its own line, and
-   the heading above it carries the name and the amount. Laid out as a
-   grid rather than two flex rows because the count belongs to the strip
-   and hangs off its right end. */
-.dh .ldg .r{display:grid;grid-template-columns:minmax(0,1fr) auto;
-  align-items:center;column-gap:9px;row-gap:6px}
-.dh .ldg .r + .r{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+   One line, and the line is a label and a picture. There is no numeral
+   anywhere on this card: the strip states the total, the current value
+   and the delta at once, and a numeral beside it would be the second
+   telling of something already said in the form that needs no reading.
 
-.dh .ldg .r .hd{grid-column:1/-1;display:flex;align-items:baseline;gap:9px}
-.dh .ldg .r .hd .k{font:600 12px/1.25 var(--f-ui);color:var(--ink);
+   The label has a floor rather than a width, so the three tracks line
+   their strips up — that is what makes two of them comparable at a
+   glance — while a card's own name, which is as long as it is, pushes
+   its counters right instead of ellipsing to nothing. */
+.dh .ldg .r{display:flex;align-items:center;gap:8px;min-height:12px}
+.dh .ldg .r + .r{margin-top:4px}
+.dh .ldg .r > .k{flex:0 1 auto;min-width:54px;
+  font:700 7px/1.2 var(--f-mono);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dh .ldg .r .hd .v{flex:none;margin-left:auto;display:flex;align-items:baseline;gap:6px}
-.dh .ldg .r .hd .v b{font:700 22px/1 var(--f-display);letter-spacing:-.04em;
-  color:var(--tk,var(--ink));font-variant-numeric:tabular-nums}
-.dh .ldg .r .hd .v em{font-style:normal;font:700 7.5px/1 var(--f-mono);
-  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 
-/* The state, at the end of the strip. `5 / 6` and not `5` — a delta with
-   no total is half a fact, and the half nobody wanted. */
-.dh .ldg .r .ct{grid-column:2;justify-self:end;font:700 10px/1 var(--f-mono);
-  color:var(--ink-2);font-variant-numeric:tabular-nums}
-.dh .ldg .r .ct s{text-decoration:none;color:var(--ink-4)}
+/* The fact in words, for the two readers a picture reaches badly: a
+   screen reader, for which a strip of empty elements is nothing at all,
+   and a client that never got this stylesheet, for which it is empty
+   boxes. Out of flow with no offsets, so it takes its static position
+   and cannot push a scrollbar out of the log. See `said` in ledger.js
+   for why the sentence exists at all. */
+.dh .ldg .sr{position:absolute;width:1px;height:1px;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap}
 
 /* ── the strip ────────────────────────────────────────────────────
-   One box per point, chamfered — the family mark, cut once at the
-   bottom-right exactly as the card and the plate are. Sized off `--n`,
-   which the builder sets to the widest track in the *message* rather
+   One box per point. `--n` is the widest track in the *message* rather
    than in the row, so Hit Points over Stress reads as two lengths of
-   one thing. It floors at 9px: below that the chamfer stops being a
-   cut and starts being an artefact. */
-.dh .ldg .st{grid-column:1;display:flex;flex-wrap:wrap;gap:3px;
-  --bx:max(9px, min(13px, calc((100% - (var(--n,12) - 1) * 3px) / var(--n,12))))}
-/* `aspect-ratio` and not a second `--bx` on the height. The box size is a
-   percentage of the strip's width, and a percentage *height* resolves
+   one thing; the shorter row simply ends early, left-packed, which is
+   how a row of anything shorter than the row above it should end.
+
+   It floors at 6px and caps at 12: below the floor the chamfer stops
+   being a cut and becomes an artefact, and above the cap a six-box
+   track drawn across 200px of paper is a row of tiles rather than a
+   track. */
+.dh .ldg .st{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;gap:2px;
+  --bx:max(6px, min(12px, calc((100% - (var(--n,12) - 1) * 2px) / var(--n,12))))}
+
+/* `aspect-ratio` and not a second `--bx` on the height. The box size is
+   a percentage of the strip's width, and a percentage *height* resolves
    against a container whose height is auto — which is zero, and a row of
-   thirteen-pixel-wide boxes nothing tall. */
-.dh .ldg .st > i{flex:none;width:var(--bx);aspect-ratio:1;background:var(--sunk);
+   twelve-pixel-wide boxes nothing tall. */
+.dh .ldg .st > i{position:relative;flex:none;width:var(--bx);aspect-ratio:1}
+
+/* The recess is `<u>` and the mark is the box's own pseudo-elements, and
+   that split is mark.js's rather than a convenience: a clipped element
+   clips its descendants, so the chamfer has to live on a sibling of the
+   thing crossing the box out. Which puts `::before` *under* `<u>` in
+   paint order — it is the box's first child — so both arms state a
+   layer. */
+.dh .ldg .st > i > u{position:absolute;inset:0;z-index:0;background:var(--sunk);
   box-shadow:inset 0 0 0 1px var(--line);
-  clip-path:polygon(0 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%)}
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%)}
+
+/* ── the mark ─────────────────────────────────────────────────────
+   The sheet's own arm, cut out of an empty element. One diagonal drawn
+   and mirrored for the second, exactly as `X()` does it — a rotated copy
+   puts identical irregularities in both arms and the eye catches it.
+
+   Corner to corner and no further. A mark that stops short of the edge
+   is a decoration sitting inside a box; a mark that crosses it is the
+   box crossed out, which is the entire gesture — and the arm already
+   runs 0.5 to 19.5 in a 20-unit box, so it arrives at both corners on
+   its own. The sheet scales it up past that; here it may not, because
+   these rows are four pixels apart and a chisel at 1.6 puts its tips
+   through the track above.
+
+   What the small sizes need instead is **width**, and that is a
+   different transform: `core()`'s, run the other way. Rotate the arm's
+   own diagonal onto an axis, scale across it, rotate back — so the
+   stroke thickens without growing a pixel longer. Scaled about the
+   centre it would do both, which is what a mark that crosses two boxes
+   is made of.
+
+   `--w` is per track and keeps the sheet's own ranking: a scratch is the
+   finest thing here and needs the most help, since at 5% of its own
+   length it is otherwise a sub-pixel grey line; a chisel is a blunt
+   instrument at 15% and needs none. */
+.dh .ldg .st > i::before,.dh .ldg .st > i::after{content:"";position:absolute;inset:0;
+  z-index:1;background:var(--tk);clip-path:var(--arm);opacity:0;
+  transform:rotate(-45deg) scaleY(var(--w,1.25)) rotate(45deg)}
+/* The mirror is outermost, so the widening still happens in the arm's own
+   frame and is then flipped with it. */
+.dh .ldg .st > i::after{
+  transform:scaleX(-1) rotate(-45deg) scaleY(var(--w,1.25)) rotate(45deg)}
 
 /* Settled history recedes and the part that moved does not — the damage
    dialog's rule, in the past tense. `.on` is what was already marked
    before this entry and is deliberately quiet: it is context, and the
    reader is here for the other two. */
-.dh .ldg .st > i.on{background:color-mix(in srgb,var(--tk) 34%,var(--sunk));
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tk) 30%,var(--line))}
-.dh .ldg .st > i.up{background:var(--tk);
-  box-shadow:inset 0 0 0 1px var(--tk),0 0 7px -1px var(--tk)}
-/* Given back: the ring it left. Hollow rather than dim, because an empty
-   box and a box that just emptied are the two things this row exists to
-   tell apart, and a shade between two greys does not. */
-.dh .ldg .st > i.dn{background:var(--sunk);
-  box-shadow:inset 0 0 0 1.5px var(--tk)}
+.dh .ldg .st > i.on::before,.dh .ldg .st > i.on::after{opacity:.46}
+
+.dh .ldg .st > i.up::before,.dh .ldg .st > i.up::after{opacity:1;
+  filter:drop-shadow(0 0 1.7px color-mix(in srgb,var(--gl) 65%,transparent))}
+.dh .ldg .st > i.up > u{box-shadow:inset 0 0 0 1px
+  color-mix(in srgb,var(--tk) 58%,var(--line))}
+
+/* Given back: the ghost of the mark that was there. A cleared box on the
+   sheet is simply empty, and it is right to be — the sheet says what is
+   true now. A log has to say what changed, and "there was a mark here"
+   is a thing only the mark can say. Faint rather than hollow, because an
+   outline is a fifth vocabulary on a card that already has four. */
+.dh .ldg .st > i.dn::before,.dh .ldg .st > i.dn::after{opacity:.2}
+.dh .ldg .st > i.dn > u{box-shadow:inset 0 0 0 1px
+  color-mix(in srgb,var(--tk) 38%,var(--line))}
 
 /* ── the tracks' own materials ────────────────────────────────────
    The one place this system suspends "hue means domain". A wound bleeds,
    a strain is scored, a plate fractures — and telling those apart at a
    glance is worth more in a log you are scrolling than anywhere else.
-   Armour is steel and not gold: `--plate-fl` is the strike, which is an
-   event, and every box in this strip is already one. */
-.dh .ldg .r[data-t="hitPoints"]{--tk:var(--wound-gl)}
-.dh .ldg .r[data-t="stress"]{--tk:var(--strain)}
-.dh .ldg .r[data-t="armorSlots"]{--tk:var(--plate)}
+   `--arm` is the profile that carries the first half of that, and it is
+   the same point list the sheet draws: see `armPolygon` in mark.js, and
+   THE LEDGER in tools/verify/ for the check that they agree. */
+.dh .ldg .r[data-t="hitPoints"]{--tk:var(--wound);--gl:var(--wound-gl);--w:1.25;
+  --arm:polygon(2.5% 2.5%,16.45% 7.55%,31% 15.8%,45.3% 28.1%,58.05% 41.95%,
+    70.15% 56.45%,81.55% 71.65%,90.5% 85.5%,97.5% 97.5%,88.35% 87.65%,
+    77.45% 75.75%,64.6% 62%,51.5% 48.5%,37.4% 36%,22.85% 23.95%,10.95% 13.05%)}
+.dh .ldg .r[data-t="stress"]{--tk:var(--strain);--gl:var(--strain);--w:1.6;
+  --arm:polygon(3.5% 3.5%,29.3% 24.2%,57.85% 51.45%,80.1% 75.7%,96.5% 96.5%,
+    75.95% 79.85%,51.55% 57.75%,24.35% 29.15%)}
+.dh .ldg .r[data-t="armorSlots"]{--tk:var(--plate);--gl:var(--plate-fl);--w:1;
+  --arm:polygon(2% 2%,49.35% 39.15%,98% 98%,50.65% 60.85%)}
 .dh .ldg .r[data-t="hope"]{--tk:var(--hope-tx)}
 .dh .ldg .r[data-t="pool"]{--tk:var(--dom,var(--ink-2))}
+.dh .ldg .r[data-t="move"]{--tk:var(--dom,var(--ink-3))}
 
-/* ── Hope, and a card's counters ──────────────────────────────────
-   Both are the components the sheet already draws, at a readout size.
-   Neither is `add`able and neither is pressed: the log is a record, and
-   a control in it would be offering to change a number that changed
-   three hours ago. */
-.dh .ldg .gm,.dh .ldg .ch{grid-column:1;min-width:0}
-.dh .ldg .gm .gems{flex-wrap:wrap}
-.dh .ldg .ch .chits{--sz:15px;--gap:4px}
+/* ── Hope ─────────────────────────────────────────────────────────
+   The sheet's gems at a readout size — no ground of their own to
+   declare, since this is paper. The two change states are the strip's,
+   said the way a pool says them: a gained pip is the one that is lit and
+   glowing, and a spent one is the socket it left with the shape of what
+   was there drawn back over it. */
+.dh .ldg .gm{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;
+  align-items:center;gap:4px}
+.dh .ldg .gm .g{position:relative;display:inline-flex;--sz:11px}
+.dh .ldg .gm .g.up .gem{filter:drop-shadow(0 0 2.4px
+  color-mix(in srgb,var(--hope-tx) 70%,transparent))}
+/* A hollow rhombus is a rotated square with a border. The alternative is
+   a `polygon(evenodd,…)` with a hole in it, which is two rings of points
+   to keep in agreement for a mark six pixels across. */
+.dh .ldg .gm .g.dn::after{content:"";position:absolute;left:50%;top:50%;
+  width:6px;height:6px;margin:-3px 0 0 -3px;transform:rotate(45deg);
+  border:1px solid color-mix(in srgb,var(--hope-tx) 80%,transparent)}
+
+/* ── a card's counters ────────────────────────────────────────────
+   The loadout's own row, at the log's size and with nothing to press:
+   the log is a record, and a control in it would be offering to change
+   a number that changed three hours ago. */
+.dh .ldg .ch{flex:1 1 auto;min-width:0;display:flex;align-items:center}
+.dh .ldg .ch .chits{--sz:12px;--gap:3px;flex-wrap:wrap}
+.dh .ldg .ch .chit.nu{filter:drop-shadow(0 0 2.4px
+  color-mix(in srgb,var(--dom,var(--ink-2)) 75%,transparent))}
+.dh .ldg .ch .sk.gone{box-shadow:inset 0 0 0 1px
+  color-mix(in srgb,var(--dom,var(--ink-3)) 62%,transparent)}
+.dh .ldg .ch .n{font:700 8px/1 var(--f-mono);color:var(--ink-2);margin-left:4px}
+.dh .ldg .ch .n s{text-decoration:none;color:var(--ink-4)}
 
 /* ── a card crossing ──────────────────────────────────────────────
-   No quantity, so no numeral — one line, a name and a direction. The
-   pip is the domain, which is the only thing on this card drawn in a
-   hue that is not a track's, and it is right for the reason it is right
-   everywhere else: the colour *is* how you know which card. */
-.dh .ldg .r.mv{display:flex;align-items:center;gap:9px}
-.dh .ldg .r.mv .pip{flex:none;width:9px;height:9px;background:var(--dom,var(--ink-3));
+   No quantity, so no strip — a name, and which way it went. The arrow
+   says the direction and the word says the destination, which is one
+   fact drawn and one fact named rather than the same fact twice: a card
+   leaves the loadout *and* arrives in the vault, and only the second of
+   those is worth a word. */
+/* Every row is `.r[data-t]` and no row carries a class of its own, which
+   is not tidiness — the pool row was `.r.pl`, and `.pl` is the **chat
+   plate**. Both load into the same `.dh` root where scoping does nothing,
+   so a card crossing the vault was drawing on the plate's paper ground,
+   inside the plate's overflow clip, playing the plate's arrival. An
+   attribute cannot collide with a class, and `data-t` was already there
+   naming the row. */
+.dh .ldg .r[data-t="move"] .pip{flex:none;width:7px;height:7px;
+  background:var(--dom,var(--ink-3));
   clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
-.dh .ldg .r.mv .bd{flex:1 1 auto;min-width:0}
-.dh .ldg .r.mv .bd b{display:block;font:600 12px/1.25 var(--f-ui);color:var(--ink);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dh .ldg .r.mv .bd s{display:block;margin-top:3px;text-decoration:none;
-  font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ink-4)}
-.dh .ldg .r.mv .wh{flex:none;font:700 9px/1 var(--f-mono);letter-spacing:.14em;
-  text-transform:uppercase;color:var(--dom,var(--ink-3))}
+/* A card has a name rather than a label, so it is set as one — but only
+   just: two points above the mono caps beside it is enough to say which
+   is which, and a third would make the move rows the loud ones on a card
+   whose subject is the tracks. */
+.dh .ldg .r[data-t="move"] .k.nm{flex:1 1 auto;min-width:0;letter-spacing:.01em;
+  text-transform:none;font:600 9px/1.2 var(--f-ui);color:var(--ink-2)}
+.dh .ldg .r[data-t="move"] .wh{flex:none;display:flex;align-items:center;gap:5px;
+  font:700 7px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dom,var(--ink-3))}
+.dh .ldg .r[data-t="move"] .wh::before{content:"";width:6px;height:6px;
+  background:var(--dom,var(--ink-3));
+  clip-path:polygon(0 0,100% 50%,0 100%,38% 50%)}
+.dh .ldg .r[data-t="move"]:not([data-into]) .wh::before{transform:scaleX(-1)}

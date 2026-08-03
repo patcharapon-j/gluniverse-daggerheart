@@ -46,6 +46,12 @@ declare module "*/ui/mark.js" {
   export function XBOX(on: boolean): string;
   /** The neutral mark alone, for callers that build their own box. */
   export const XMARK: string;
+  /**
+   * The same arm as a `clip-path`, for a surface that cannot carry SVG —
+   * the change log is one. Null for `plain`, the only arm with a curve
+   * in it; a polygon cannot say Q.
+   */
+  export function armPolygon(kind: string): string | null;
 }
 
 declare module "*/ui/gem.js" {
@@ -158,7 +164,7 @@ declare module "*/ui/ledger.js" {
     kind: "hitPoints" | "stress" | "armorSlots" | "hope" | "pool" | "move";
     from: number;
     to: number;
-    /** The ceiling, and what the count on the right reads against. */
+    /** The ceiling — how many boxes the strip is long. */
     max?: number;
     /** The card's name. Tracks take their own and need none. */
     label?: string;
@@ -170,8 +176,6 @@ declare module "*/ui/ledger.js" {
     dom?: { light: string; dark: string };
     /** A move only: into the loadout rather than out of it. */
     into?: boolean;
-    /** Set by the builder — the widest track in the message. Never passed in. */
-    span?: number;
   }
 
   /** One message for everything that settled in one window. */

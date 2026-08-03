@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/mark.css">
 <link rel="stylesheet" href="/design/gem.css">
 <link rel="stylesheet" href="/design/chit.css">
 <link rel="stylesheet" href="/design/ledger.css">
@@ -33,12 +34,9 @@
    stand-in for Foundry's chat log, because half of what the substrate is
    doing is lifting the card off it. */
 .log{width:340px;background:#0d1014;box-shadow:inset 0 0 0 1px #1c222a;padding:20px}
-.log + .log{margin-left:0}
-.stk{display:flex;flex-direction:column;gap:16px}
-.lab{font:700 9px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
-  color:#6d7681;margin:0 0 9px}
-.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-.btns button{font:700 9px/1 var(--f-mono);letter-spacing:.1em;cursor:pointer}
+.stk{display:flex;flex-direction:column;gap:12px}
+.side{display:flex;gap:26px;align-items:flex-start}
+.side .mk{width:200px}
 </style>
 </head>
 <body class="ramp">
@@ -70,9 +68,9 @@ them existed was the sheet of the person holding it.
 <p class="note">
 The unit is the <b>change</b>, not the write. Applying damage is four writes — armour, stress,
 hope, hit points — and one event. Fixing a miscount is three writes in two seconds and one
-correction. So entries coalesce and what lands is the net: <code>3 → 5 Hit Points</code>, never
-<code>+1, +1, −1, +2</code>. Which also means a net of zero posts <em>nothing</em>, and taking
-back a box you marked by mistake is not something the table has to watch happen.
+correction. So entries coalesce and what lands is the net, never <code>+1, +1, −1, +2</code>.
+Which also means a net of zero posts <em>nothing</em>, and taking back a box you marked by
+mistake is not something the table has to watch happen.
 </p>
 
 <div class="grid">
@@ -85,31 +83,32 @@ back a box you marked by mistake is not something the table has to watch happen.
   </div>
 
   <div class="bx">
-    <h4>a short rest's worth <s>read at a glance</s></h4>
+    <h4>a short rest's worth <s>three changes, one card</s></h4>
     <div class="log" id="l2"></div>
-    <p class="cap"><b>A run of dim boxes ending in rings is a heal.</b>
-      Ending in bright ones it is a hit. That is the whole reading, and it happens
-      before you get to the numerals.</p>
+    <p class="cap"><b>A run of dim marks ending in ghosts is a heal.</b>
+      Ending in bright ones it is a hit. That is the whole reading, and there is nothing
+      to read: no numeral on this card says it, because the strip already has.</p>
   </div>
 </div>
 
-<h2><span>// THE STRIP</span>A delta with no total is half a fact</h2>
+<h2><span>// THE SIZE</span>A note in the margin, not an object in the log</h2>
 <p class="note">
-“Marked 2 Stress” does not say whether she is one box from Vulnerable, which is the only thing
-anybody wanted to know. So the row carries the track <b>as it now stands</b> and says which part
-of it just moved — settled history recedes, the part that moved does not. That is the damage
-dialog's rule, in the past tense.
+A plate is 300px of card because a roll is the thing everybody is looking at. This arrives
+<b>unasked for</b>, while somebody is describing a room — and four of them between two rolls
+must not push the roll off the screen. So a change is <b>one line</b>. The card that stood about
+230px tall for three changes stands about 60, and the thing that bought most of it was the
+numerals: a 22px figure and the word <code>MARKED</code>, sitting above a strip that had already
+said both.
 </p>
 
 <div class="grid">
   <div class="bx">
-    <h4>the three states <s>on, up, dn</s></h4>
+    <h4>four changes <s>four lines</s></h4>
     <div class="log" id="l3"></div>
-    <p class="cap"><b><code>.on</code> is context and is deliberately quiet.</b>
-      <code>.up</code> is what this entry marked. <code>.dn</code> is what it gave back, drawn
-      as the ring it left rather than as a dimmer grey — an empty box and a box that just
-      emptied are the two things this row exists to tell apart, and a shade between two greys
-      does not.</p>
+    <p class="cap"><b>Every row is a label and a picture.</b>
+      The label has a floor rather than a width, so the tracks line their strips up — that is
+      what makes two of them comparable at a glance — while a card's own name, which is as long
+      as it is, pushes its counters right instead of ellipsing to nothing.</p>
   </div>
 
   <div class="bx">
@@ -122,31 +121,70 @@ dialog's rule, in the past tense.
   </div>
 </div>
 
+<h2><span>// THE MARK</span>The sheet's arm, without the sheet's <code>svg</code></h2>
+<p class="note">
+Crossing a box off has a look in this system and it is not a filled square: a wound is a tear
+that <b>bows off the diagonal</b>, a strain is a fine scored line, a plate is a chisel blow.
+That is <code>mark.js</code>'s whole argument — the tracks are told apart by <em>substance</em>
+first and hue second — and a log drawing three identical squares in three colours would throw
+away the half of it that survives being small. So these are the same arms, off the same point
+lists, through <code>armPolygon</code>: three of the four are pure point lists, so a
+<code>clip-path</code> is exactly the same shape rather than an approximation of one.
+</p>
+
+<div class="grid">
+  <div class="bx">
+    <h4>the same three arms <s>sheet left, log right</s></h4>
+    <div class="side">
+      <div class="stk" id="l5a"></div>
+      <div class="log" id="l5" style="width:300px"></div>
+    </div>
+    <p class="cap"><b>One geometry, two means of drawing it.</b>
+      The sheet's is an <code>&lt;svg&gt;</code> with a highlight down the arm, a second scratch
+      on the strain and three cracks running out of the chisel. The log's is the arm alone, cut
+      out of an empty element — everything below about a pixel is gone at this size anyway, and
+      what is left is the profile, which is the part that identifies the track.</p>
+  </div>
+
+  <div class="bx">
+    <h4>the four states <s>on, up, dn, bare</s></h4>
+    <div class="log" id="l6"></div>
+    <p class="cap"><b><code>.on</code> is context and is deliberately quiet.</b>
+      <code>.up</code> is what this entry marked, at full strength and lit. <code>.dn</code> is
+      what it gave back, drawn as the <em>ghost</em> of the mark that was there — a cleared box
+      on the sheet is simply empty and is right to be, because the sheet says what is true now;
+      a log has to say what changed, and “there was a mark here” is a thing only the mark can
+      say.</p>
+  </div>
+</div>
+
 <h2><span>// THE OTHER SHAPES</span>Hope is gems, a card's pool is chits</h2>
 <p class="note">
 Neither is redrawn here. Hope is gems everywhere in this system and a card's counters are the
 row the loadout draws — the log is not the place to introduce a second drawing of either. What
-does change is that <b>nothing is pressable</b>: a control in a record would be offering to
-change a number that changed three hours ago.
+changes is that <b>nothing is pressable</b>, and that both learn the strip's two change states:
+a gained pip is lit and glowing, a spent one is the socket it left with the shape of what was
+there drawn back over it.
 </p>
 
 <div class="grid">
   <div class="bx">
     <h4>hope <s>and a scarred slot</s></h4>
-    <div class="log" id="l5"></div>
+    <div class="log" id="l7"></div>
     <p class="cap"><b>A scarred slot is not an empty one.</b>
-      The ceiling is four and the row is six wide — two lit, two dark, two dead. Drawing four
+      The ceiling is four and the row is six wide — one lit, three spent, two dead. Drawing four
       would quietly drop the permanent half of what happened to this character; drawing six
       lit sockets would promise Hope she cannot hold.</p>
   </div>
 
   <div class="bx">
     <h4>a card's counters <s>and a card crossing</s></h4>
-    <div class="log" id="l6"></div>
-    <p class="cap"><b>A move has no quantity, so it takes no numeral.</b>
-      A name and a direction, with the domain as a pip — the one hue on this card that is not
-      a track's material, and right here for the reason it is right everywhere: the colour
-      <em>is</em> how you know which card.</p>
+    <div class="log" id="l8"></div>
+    <p class="cap"><b>A move has no quantity, so it takes no strip.</b>
+      A name and a direction: the arrow is drawn and the destination is named, which is one fact
+      each rather than the same fact twice. The pip is the domain — the one hue on this card
+      that is not a track's material, and right here for the reason it is right everywhere: the
+      colour <em>is</em> how you know which card.</p>
   </div>
 </div>
 
@@ -155,21 +193,22 @@ change a number that changed three hours ago.
 Foundry's sanitiser strips every <code>&lt;svg&gt;</code> out of stored message content. A posted
 card survives that by being redrawn from a flag on render. A mark track <b>cannot</b>: a marked
 box that loses its X does not look broken, it looks <em>unmarked</em>, which is a lie rather than
-a degradation. So this is not the sheet's <code>MARKS</code> row — every mark here is CSS on an
-empty element, <code>GEMS</code> and <code>CHITS</code> were already <code>&lt;i&gt;</code> and
-<code>&lt;b&gt;</code>, and the whole message survives storage exactly as posted. No flag, no
+a degradation. So this is not the sheet's <code>MARKS</code> row — every mark here is a hole cut
+in an empty element, <code>GEMS</code> and <code>CHITS</code> were already <code>&lt;i&gt;</code>
+and <code>&lt;b&gt;</code>, and the whole message survives storage exactly as posted. No flag, no
 redraw, no render hook.
 </p>
 
 <div class="grid">
   <div class="bx">
     <h4>the same card, unstyled <s>what a foreign client sees</s></h4>
-    <div class="log" id="l7" style="all:revert;background:#0d1014;padding:20px;width:340px;
+    <div class="log" id="l9" style="all:revert;background:#0d1014;padding:20px;width:340px;
       color:#c3cbd5;font:400 12px/1.5 system-ui"></div>
-    <p class="cap"><b>Truthful, and readable.</b>
-      Stylesheet off, markup intact: every number, every name and every verb is still there and
-      still correct. That is the whole argument for drawing the boxes rather than borrowing
-      them.</p>
+    <p class="cap"><b>Truthful, and complete.</b>
+      Stylesheet off, markup intact — and the numerals the card stopped drawing are still in
+      it, one clipped sentence per row. A picture reaches two readers badly: somebody using a
+      screen reader, and a client that never got this file. Both get the sentence, which is the
+      same element assistive technology needed anyway.</p>
   </div>
 </div>
 
@@ -177,6 +216,7 @@ redraw, no render hook.
 
 <script type="module">
 import { LEDGER } from './ledger.js';
+import { MARKS } from './mark.js';
 
 const who = 'Kaelen Vos';
 const draw = (el, entries) => { el.innerHTML = LEDGER({ who, entries }); };
@@ -193,9 +233,13 @@ draw(l2, [
   { kind: 'hope', from: 2, to: 3, max: 6 },
 ]);
 
+const grace = { light: '#a8305f', dark: '#75204a' };
+
 draw(l3, [
-  { kind: 'stress', from: 2, to: 5, max: 6 },
-  { kind: 'stress', from: 5, to: 2, max: 6 },
+  { kind: 'hitPoints', from: 2, to: 4, max: 8 },
+  { kind: 'stress', from: 4, to: 2, max: 6 },
+  { kind: 'hope', from: 3, to: 1, max: 6 },
+  { kind: 'move', label: 'Rune Ward', into: true, from: 0, to: 1, dom: grace },
 ]);
 
 draw(l4, [
@@ -203,18 +247,38 @@ draw(l4, [
   { kind: 'stress', from: 1, to: 2, max: 6 },
 ]);
 
-/* Two scars: a ceiling of four, drawn as six sockets, two of them dead. */
-draw(l5, [{ kind: 'hope', from: 4, to: 1, max: 4, scars: 2 }]);
+/* The sheet's own row beside the log's, one track at a time. */
+l5a.innerHTML = [
+  MARKS({ label: 'Hit Points', total: 6, marked: 4, kind: 'hp' }),
+  MARKS({ label: 'Stress', total: 6, marked: 4, kind: 'stress' }),
+  MARKS({ label: 'Armor Slots', total: 6, marked: 4, kind: 'armor' }),
+].join('');
+draw(l5, [
+  { kind: 'hitPoints', from: 2, to: 4, max: 6 },
+  { kind: 'stress', from: 2, to: 4, max: 6 },
+  { kind: 'armorSlots', from: 2, to: 4, max: 6 },
+]);
 
-const grace = { light: '#a8305f', dark: '#75204a' };
+/* Marked before, marked now, given back, never touched — all four in one
+   row: two settled, two taken, and a second row that gives two back. */
 draw(l6, [
+  { kind: 'stress', from: 2, to: 4, max: 6 },
+  { kind: 'hitPoints', from: 4, to: 2, max: 6 },
+]);
+
+/* Two scars: a ceiling of four, drawn as six sockets, two of them dead. */
+draw(l7, [{ kind: 'hope', from: 4, to: 1, max: 4, scars: 2 }]);
+
+draw(l8, [
   { kind: 'pool', label: 'Twilight Toll', from: 2, to: 4, max: 0, name: 'tokens', dom: grace },
-  { kind: 'move', label: 'Invisibility', into: true, dom: grace },
-  { kind: 'move', label: 'Rune Ward', into: false, dom: { light: '#2f5fa8', dark: '#1d3f75' } },
+  { kind: 'pool', label: 'Vicious Entangle', from: 3, to: 1, max: 5, name: 'uses', dom: grace },
+  { kind: 'move', label: 'Invisibility', into: true, from: 0, to: 1, dom: grace },
+  { kind: 'move', label: 'Rune Ward', into: false, from: 1, to: 0,
+    dom: { light: '#2f5fa8', dark: '#1d3f75' } },
 ]);
 
 /* The same builder, with the stylesheet taken away. */
-l7.innerHTML = LEDGER({ who, entries: [
+l9.innerHTML = LEDGER({ who, entries: [
   { kind: 'hitPoints', from: 1, to: 3, max: 8 },
   { kind: 'hope', from: 4, to: 3, max: 6 },
 ] });

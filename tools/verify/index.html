@@ -44,10 +44,19 @@
   body{background:radial-gradient(130% 100% at 50% -20%,#191d24 0%,#0d1013 55%,#060709 100%) fixed;
        font-family:"Google Sans Text",system-ui,sans-serif;padding:0 0 80px}
   .dh{--art:url("/design/assets/art-sample-01.png")}
-  .hd{position:sticky;top:0;z-index:9;background:rgba(10,12,15,.9);backdrop-filter:blur(14px);
+  /* `.vhd` and not `.hd`, which is what this page's own header was called
+     until it collided with the ledger's. Four of our blocks name a heading
+     `.hd` and every one of them qualifies it — `.mk .hd`, `.dh.prep .hd`,
+     `.dh.ctxm .hd`, `.dh .ldg > .hd` — so they cannot reach each other. A
+     bare `.hd` here reaches all four, and it did: the ledger's title took
+     this rule's 11px/26px padding, which it does not state and therefore had
+     nothing to beat, and a six-row card came out 145px instead of 122. Same
+     shape as the `min-height` this page exists to catch, arriving from the
+     page rather than from the game. */
+  .vhd{position:sticky;top:0;z-index:9;background:rgba(10,12,15,.9);backdrop-filter:blur(14px);
       border-bottom:1px solid #22272f;padding:11px 26px;display:flex;gap:20px;align-items:center}
-  .hd b{font:700 10px/1 "Google Sans Code",monospace;letter-spacing:.2em;color:#7d8794;text-transform:uppercase}
-  .hd label{font:400 12px/1 "Google Sans Text",sans-serif;color:#9aa3ae;display:flex;gap:6px;align-items:center}
+  .vhd b{font:700 10px/1 "Google Sans Code",monospace;letter-spacing:.2em;color:#7d8794;text-transform:uppercase}
+  .vhd label{font:400 12px/1 "Google Sans Text",sans-serif;color:#9aa3ae;display:flex;gap:6px;align-items:center}
   h2{font:600 14px/1 "Google Sans",sans-serif;color:#fff;margin:40px 26px 14px}
   h2 span{display:block;font:600 9.5px/1 "Google Sans Code",monospace;letter-spacing:.22em;
           color:#d4a72c;margin-bottom:8px}
@@ -128,7 +137,7 @@
 </head>
 <body>
 
-<div class="hd">
+<div class="vhd">
   <b>ported stylesheet check</b>
   <label><input type="checkbox" id="lt"> light substrate</label>
 </div>
@@ -181,7 +190,7 @@
    is under test here is the *stylesheet* port and nothing else. */
 import { A, DMG, FOE, play } from '/design/plate.js';
 /* These come from the vendored copies the system actually ships. */
-import { MARKS, DAMAGE } from '/src/module/ui/mark.js';
+import { MARKS, DAMAGE, armPolygon } from '/src/module/ui/mark.js';
 import { GEMS } from '/src/module/ui/gem.js';
 import { FEAR_HUD } from '/src/module/ui/pool.js';
 import { CARD, fit } from '/src/module/ui/card.js';
@@ -616,17 +625,31 @@ const chitsReady = (async () => {
    moment somebody reaches for `MARKS` here to save fifty lines this section
    goes red instead of the log going quietly wrong.
 
-   Two other things only fail here.
+   Four other things only fail here.
 
    **The box is sized by a percentage of the strip's width**, and it was
    briefly `height:var(--bx)` as well — a percentage height against a container
-   whose height is auto, which is zero. Thirteen pixels wide and nothing tall,
+   whose height is auto, which is zero. Twelve pixels wide and nothing tall,
    which on a dark card is a row that is simply not there.
 
-   **And `.dn` is a ring rather than a dimmer grey.** An empty box and a box
-   that has just been emptied are the two states this strip exists to tell
-   apart; if they ever compute the same, a heal and a full track are the same
-   picture. */
+   **The four states must be four pictures.** An empty box, a box marked before
+   this entry, a box marked by it and a box it emptied are what this strip
+   exists to tell apart; if any two ever compute the same, a heal and a full
+   track are the same picture.
+
+   **The mark is the sheet's mark, and its geometry lives twice.** `mark.js`
+   draws it as an `<svg>` path and `ledger.css` cuts the same points out of an
+   empty element, because nothing on this card may be an `<svg>`. Two copies of
+   a shape is two chances for one of them to drift, so `armPolygon` derives the
+   `clip-path` from the same point list and this asserts the stylesheet agrees
+   with it — numerically, since the browser reformats what it is given.
+
+   **And it must stay small.** The whole claim this card makes is that it is a
+   note in the margin of the log rather than an object in it: one line per
+   change, no numerals, arriving unasked for while somebody is describing a
+   room. A row that grows a second line is the regression, and it grows one
+   quietly — a numeral put back, a label that stops ellipsing, a strip that
+   wraps. */
 const ledgerReady = (async () => {
   const grace = byslug.grace;
   document.getElementById('ledger').innerHTML = `
@@ -1492,14 +1515,16 @@ setTimeout(async () => { try {
         lgBoxes.length > 0 && lgSquare.length === lgBoxes.length && lgSizes.size === 1,
         `${lgBoxes.length} boxes · ${lgSquare.length} square · ${lgSizes.size} size(s)`);
 
-  /* `.dn` is a ring and not a dimmer grey, because an empty box and a box that
-     has just been emptied are the two states this strip exists to tell apart.
-     Compare the *painted* result: both carry `--sunk` as a fill. */
+  /* Four states, four pictures. The paint is split across two elements now —
+     the recess is `<u>` and the mark is the box's own pseudo-element, because a
+     clipped element clips its descendants and the chamfer has to live on a
+     sibling of the thing crossing the box out — so both are read. */
   const lgState = (cls) => {
     const el = document.querySelector(`#ledger .st > i${cls}`);
     if (!el) return null;
-    const s = getComputedStyle(el);
-    return `${s.backgroundColor}|${s.boxShadow}`;
+    const u = getComputedStyle(el.querySelector('u'));
+    const m = getComputedStyle(el, '::before');
+    return `${u.boxShadow}|${m.opacity}|${m.filter}`;
   };
   /* The empty box is `[class=""]` and not `:not([class])` — the builder always
      writes the attribute — and it must stay inside the `#ledger` scope. A
@@ -1510,6 +1535,85 @@ setTimeout(async () => { try {
   check('marked, just-marked, just-cleared and empty are four pictures',
         [sOn, sUp, sDn, sOff].every(Boolean) && lgStates.size === 4,
         `${lgStates.size} of 4 distinct`);
+
+  /* The stylesheet's cut and the sheet's path are the same three arms. Compared
+     as numbers rather than as strings, because the browser normalises what it
+     is handed — `31%` comes back `31%` but `19.6` comes back `98%`, and a
+     string test would pass or fail on formatting rather than on shape. */
+  const lgArms = [['hitPoints', 'hp'], ['stress', 'stress'], ['armorSlots', 'armor']]
+    .map(([t, kind]) => {
+      const el = document.querySelector(`#ledger .r[data-t="${t}"] .st > i`);
+      const nums = (s) => (String(s).match(/[0-9.]+/g) ?? []).map(Number);
+      const drawn = nums(getComputedStyle(el, '::before').clipPath);
+      const want = nums(armPolygon(kind));
+      const same = drawn.length === want.length && want.length > 0 &&
+                   want.every((v, i) => Math.abs(v - drawn[i]) < 0.01);
+      return [t, same];
+    });
+  const lgDrift = lgArms.filter(([, ok]) => !ok).map(([t]) => t);
+  check('the log crosses a box off with the sheet\'s own arm',
+        lgDrift.length === 0, lgDrift.length ? `drifted: ${lgDrift.join(', ')}` : 'three arms agree');
+
+  /* One line per change, and the card stays a note in the margin. Six changes
+     — every row shape this builder has — inside a hundred and thirty pixels;
+     it draws 122, and one extra line anywhere is at least twelve more. */
+  const lgRows = [...document.querySelectorAll('#ledger .ldg .r')];
+  const lgTall = lgRows.filter(r => r.getBoundingClientRect().height > 18);
+  const lgH = Math.round(document.querySelector('#ledger .ldg').getBoundingClientRect().height);
+  check('a change is one line, and six of them are a note in the margin',
+        lgRows.length === 6 && lgTall.length === 0 && lgH <= 130,
+        `${lgRows.length} rows · ${lgTall.length} over one line · ${lgH}px tall`);
+
+  /* Nothing else in the ported stack may reach into a ledger row.
+     `.dh` scoping does not help when two of *our own* sheets collide, because
+     both are inside `.dh` — that is the bug that renamed `.die.win` and
+     `.dfn .crest`, and it had a fourth instance sitting here: the pool row was
+     `.r.pl`, and `.pl` is the chat plate. It was drawing on the plate's paper
+     ground, inside its overflow clip, playing its arrival animation, and it
+     read as a deliberate tray under the counters.
+
+     A study page cannot see this — `design/ledger.html` loads four
+     stylesheets and the game loads twenty — so it is checked where the whole
+     stack is up. `.gem` and `.chits` are excluded by *element* rather than by
+     sheet, because those two are components the ledger deliberately hosts and
+     everything else about them is somebody else's rule by design. */
+  const lgOwn = [...document.querySelectorAll('#ledger .ldg, #ledger .ldg *')]
+    .filter(el => !el.closest('.gem, .chits'));
+  const lgReach = [];
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch { continue; }
+    const from = sheet.href?.split('/').pop() ?? 'page';
+    if (from === 'ledger.css') continue;
+    const walk = (rs) => { for (const r of rs) {
+      const sel = r.selectorText;
+      if (sel === undefined) { if (r.cssRules) walk(r.cssRules); continue; }
+      // The box-sizing reset is `.dh *` and is meant to reach everything.
+      if (!/box-sizing/.test(r.style.cssText)) {
+        for (const el of lgOwn) {
+          let m = false; try { m = el.matches(sel); } catch {}
+          if (m) { lgReach.push(`${from} ${sel}`); break; }
+        }
+      }
+      if (r.cssRules?.length) walk(r.cssRules);
+    }};
+    walk(rules);
+  }
+  check('no other sheet reaches into a ledger row',
+        lgOwn.length > 10 && lgReach.length === 0,
+        lgReach.length ? lgReach.slice(0, 3).join(' · ') : `${lgOwn.length} elements, none reached`);
+
+  /* No numerals are drawn, so the numbers have to be *said* — for a screen
+     reader, and for a client that never got the stylesheet. One clipped
+     sentence per row, and it is clipped rather than absent: `innerText` sees
+     it, `getBoundingClientRect` does not. */
+  const lgSaid = [...document.querySelectorAll('#ledger .ldg .r')]
+    .filter(r => r.querySelector('.sr'));
+  const lgSrBox = document.querySelector('#ledger .ldg .sr')?.getBoundingClientRect();
+  const lgWords = document.querySelector('#ledger .ldg').innerText;
+  check('every row says in words what it draws without numerals',
+        lgSaid.length === lgRows.length && (lgSrBox?.width ?? 99) <= 2 &&
+        /1 to 4 of 12/.test(lgWords),
+        `${lgSaid.length}/${lgRows.length} rows · ${Math.round(lgSrBox?.width ?? -1)}px wide`);
 
   /* Each track in its own material, which is the one place this system
      suspends "hue means domain" — and a `--tk` that fails to resolve takes the
