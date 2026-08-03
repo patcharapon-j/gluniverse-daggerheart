@@ -203,7 +203,7 @@ declare module "*/ui/chit.js" {
   export const CHIT_CAP: number;
 
   /** Diff the row against a new value and animate only what moved. */
-  export function setChits(row: Element, value: number, max?: number): void;
+  export function setChits(row: Element, value: number, max?: number, name?: string): void;
 
   /** The flinch a pool plays when it cannot take or give another. */
   export function refuseChits(row: Element): void;

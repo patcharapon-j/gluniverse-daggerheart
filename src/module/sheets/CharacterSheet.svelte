@@ -2324,7 +2324,7 @@
                  with the word ARMOR under it, and the longer label wrapped its
                  own count onto a second line in the 102px this column has. -->
             <div class="side">
-              {#key snap.items.length}
+              {#key sys.resources?.armorSlots?.max}
                 <Marks
                   kind="armor"
                   label="Slots"
@@ -2343,7 +2343,7 @@
              same question asked twice, and a divider between them claims
              otherwise while costing 28px of a rail that has none to spare. -->
         <div class="sec">
-          {#key `${sys.thresholds?.major}/${sys.thresholds?.severe}/${sys.resources?.hitPoints?.max}`}
+          {#key `${sys.thresholds?.major}/${sys.thresholds?.severe}/${sys.resources?.hitPoints?.max}/${vitSpan}`}
             <Marks
               kind="hp"
               label="Damage"
@@ -2355,7 +2355,7 @@
               onset={(n) => set("system.resources.hitPoints.marked", n)}
             />
           {/key}
-          {#key sys.resources?.stress?.max}
+          {#key `${sys.resources?.stress?.max}/${vitSpan}`}
             <Marks
               kind="stress"
               label="Stress"

@@ -103,7 +103,7 @@
   $effect(() => {
     const v = value;
     const m = max;
-    if (row) setChits(row, v, m ?? 0);
+    if (row) setChits(row, v, m ?? 0, name);
   });
 </script>
 

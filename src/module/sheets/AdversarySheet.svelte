@@ -82,7 +82,7 @@
 
         <div class="pnl">
           <div class="k">Damage &amp; stress</div>
-          {#key `${sys.resources?.hitPoints?.max}/${sys.thresholds?.major}/${sys.thresholds?.severe}`}
+          {#key `${sys.resources?.hitPoints?.max}/${sys.resources?.stress?.max}/${sys.thresholds?.major}/${sys.thresholds?.severe}`}
             <Marks
               kind="hp"
               label="Hit Points"
@@ -96,7 +96,7 @@
               onset={(n) => set("system.resources.hitPoints.marked", n)}
             />
           {/key}
-          {#key sys.resources?.stress?.max}
+          {#key `${sys.resources?.stress?.max}/${sys.resources?.hitPoints?.max}`}
             <Marks
               kind="stress"
               label="Stress"

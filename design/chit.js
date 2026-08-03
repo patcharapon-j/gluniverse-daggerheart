@@ -102,11 +102,12 @@ const addBtn = (name) =>
  * are started, so the element that is flying away is the element that was
  * there — a rebuild would animate a stranger.
  */
-export function setChits(row, value, max = Number(row.dataset.max) || 0) {
+export function setChits(row, value, max = Number(row.dataset.max) || 0, name = 'tokens') {
   const was = Number(row.dataset.v) || 0;
+  const wasMax = Number(row.dataset.max) || 0;
   const capped = max > 0;
   const now = capped ? Math.max(0, Math.min(value, max)) : Math.max(0, value);
-  if (now === was) return;
+  if (now === was && max === wasMax) return;
 
   // The cap is read back off the row rather than defaulted, because the
   // builder took it from the host and this has no way to ask the host
@@ -120,11 +121,39 @@ export function setChits(row, value, max = Number(row.dataset.max) || 0) {
   row.classList.toggle('capped', capped);
   row.classList.toggle('full', capped && now >= max);
 
+  /* A ceiling is shape, not value. Trait-, Proficiency-, tier- and
+     Fear-sourced pools can gain or lose sockets while holding the same number
+     of chits; returning on `now === was` left the old capacity on screen.
+     Redraw only for that shape change. Ordinary placement/spending stays on
+     the animated diff path below. */
+  if (max !== wasMax) {
+    row.innerHTML = CHITS({
+      value: now,
+      max,
+      name,
+      cap,
+      add: !!row.querySelector('[data-place]'),
+      round: row.classList.contains('round'),
+      dom: row.classList.contains('dom'),
+      key: row.dataset.key || '',
+    }).replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
+    return;
+  }
+
   // At the cap in either direction, the row changes shape rather than
   // count, and there is nothing honest to animate between "eleven chits"
   // and "one chit and the numeral 11". Redraw and stop.
   if (Math.max(now, was) >= cap) {
-    row.innerHTML = CHITS({value: now, max, cap, add: !!row.querySelector('[data-place]')})
+    row.innerHTML = CHITS({
+      value: now,
+      max,
+      name,
+      cap,
+      add: !!row.querySelector('[data-place]'),
+      round: row.classList.contains('round'),
+      dom: row.classList.contains('dom'),
+      key: row.dataset.key || '',
+    })
       .replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
     return;
   }

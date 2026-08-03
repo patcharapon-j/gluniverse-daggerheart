@@ -3,11 +3,11 @@
    * A mark track — Hit Points, Stress, Armor Slots — or the fused damage
    * band with its thresholds.
    *
-   * The markup is rendered **once** and never again. Every later change goes
-   * through `setMarks`, which diffs the row and animates only the boxes that
-   * moved. That is not an optimisation: a wound lands whole in 160ms and then
-   * bleeds for 340ms, and an element replaced at 40ms takes its own animation
-   * with it. `{@html}` on a reactive expression would do exactly that.
+   * Mark changes go through `setMarks`, which diffs the row and animates only
+   * the boxes that moved. Shape changes — maxima, shared span, or thresholds —
+   * redraw the markup. Keeping those paths separate is not an optimisation: a
+   * wound lands whole in 160ms and then bleeds for 340ms, and an element
+   * replaced at 40ms takes its own animation with it.
    *
    * The box does not move. All the motion belongs to the mark.
    */
@@ -16,6 +16,7 @@
 
   import { untrack } from "svelte";
   import { DAMAGE, MARKS, setMarks } from "../../ui/mark.js";
+  import { markShapeSignature } from "./marks.ts";
 
   interface Props {
     /** "hp" | "stress" | "armor" — the material, not just the hue. */
@@ -49,26 +50,36 @@
     onset,
   }: Props = $props();
 
-  // untrack() is the point, not a workaround: this markup is built from the
-  // values as they were at mount and must never be rebuilt from them again.
-  // Anything that genuinely changes the *shape* of the row — a new maximum, a
-  // new threshold — is handled by the caller keying the component instead.
-  const initial = untrack(() =>
+  const markup = (marks: number) =>
     damage
       ? DAMAGE({
           major: damage.major,
           severe: damage.severe,
           massive: damage.massive ?? false,
           hp: total,
-          marked,
+          marked: marks,
           label: label || "Damage",
           span,
         })
-      : MARKS({ label, total, marked, kind, head, vuln, span }),
-  );
+      : MARKS({ label, total, marked: marks, kind, head, vuln, span });
+
+  const shape = () => markShapeSignature({ kind, label, total, span, head, vuln, damage });
+
+  // Build once at mount. Later shape changes are handled below without making
+  // ordinary mark changes recreate their own animated elements.
+  const initial = untrack(() => markup(marked));
 
   let root: HTMLElement;
   let applied = untrack(() => marked);
+  let appliedShape = untrack(shape);
+
+  $effect(() => {
+    const next = shape();
+    if (!root || next === appliedShape) return;
+    appliedShape = next;
+    applied = marked;
+    root.innerHTML = markup(marked);
+  });
 
   $effect(() => {
     const next = marked;
