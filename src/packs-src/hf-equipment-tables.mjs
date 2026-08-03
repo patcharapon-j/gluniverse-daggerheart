@@ -33,25 +33,27 @@
  * - **Versatile**, **Protective**, **Paired** and **Padded** are the same
  *   shapes with different numbers, so they take theirs as an argument.
  *
- * ── two things the schema cannot hold, and neither is a defect ────────
+ * ── a choice the schema cannot hold, and why that is not a defect ─────
  * **The Shadowblade line deals "d8 phy/mag".** A weapon's damage carries one
  * type, and the reason this is fine is that the choice is not a property of the
  * weapon — it is the Otherworldly feature, printed on the same row, saying you
  * pick at the moment you hit. The row is filed magic because it is in the magic
  * table and requires a Spellcast trait; the feature is what states the option.
- *
- * **Several tier-4 weapons print "−1 to Agility".** There is no field for a
- * trait penalty and there should not be one — the corebook's Cumbersome ("−1 to
- * Finesse") has the same shape and is likewise carried as printed text only.
- * `ev` and `as` exist because Evasion and Armor Score are numbers the sheet
- * derives; a trait is a number the player set, and a system that quietly edited
- * it would be lying about a field the player owns.
+ * Passive trait penalties are structured modifiers. They change the derived
+ * total while equipped and leave the player's chosen base value untouched.
  */
 
-/* ── features ─────────────────────────────────────────────────────────
-   `ev` moves Evasion, `as` moves Armor Score. Both default to nothing. */
+/* ── features ───────────────────────────────────────────────────────── */
 
-const f = (name, description, mods = {}) => ({ name, description, ...mods });
+const f = (name, description, mods = {}) => {
+  const modifiers = [...(mods.modifiers ?? [])];
+  if (mods.ev) modifiers.push({ target: "evasion", value: mods.ev });
+  if (mods.as) modifiers.push({ target: "armorScore", value: mods.as });
+  for (const [trait, value] of Object.entries(mods.traits ?? {})) {
+    modifiers.push({ target: "trait", trait, value });
+  }
+  return { name, description, ...mods, modifiers };
+};
 
 /* Recurring across tiers — the staples' own features. */
 const QUICK = f("Quick", "When you make an attack, you can mark a Stress to target another creature within range.");
@@ -77,12 +79,16 @@ const STOCKPILED_S = f(
   "Stockpiled",
   "You can throw this weapon within Close range by making an attack roll using Finesse. You don’t have to retrieve it, as you always have another on hand.",
 );
-const FOCUSED = f("Focused", "+1 to primary weapon damage to targets within Very Close range");
+const FOCUSED = f("Focused", "+1 to primary weapon damage to targets within Very Close range", {
+  modifiers: [{ target: "primaryDamage", value: 1, condition: "veryCloseWeapon" }],
+});
 
 /* Armour staples. */
-const ENCHANTED_A = f("Enchanted", "Gain a bonus to your damage thresholds equal to your Spellcast trait.");
+const ENCHANTED_A = f("Enchanted", "Gain a bonus to your damage thresholds equal to your Spellcast trait.", {
+  modifiers: [{ target: "thresholds", source: "spellcastTrait" }],
+});
 const LINED = f("Lined", "Mark a Stress to negate Minor damage.");
-const CUMBERSOME = f("Cumbersome", "−1 to Finesse");
+const CUMBERSOME = f("Cumbersome", "−1 to Finesse", { traits: { finesse: -1 } });
 const BULKY = f(
   "Bulky",
   "−1 to Evasion; when you take Severe damage, you must mark a Stress.",
@@ -99,8 +105,12 @@ const PARRY = f(
 
 /* The ones whose number changes by tier. */
 const versatile = (stats) => f("Versatile", `This weapon can also be used with these statistics—${stats}`);
-const paired = (n) => f("Paired", `+${n} to primary weapon damage to targets within Melee range`);
-const padded = (n) => f("Padded", `+${n} to damage thresholds`);
+const paired = (n) => f("Paired", `+${n} to primary weapon damage to targets within Melee range`, {
+  modifiers: [{ target: "primaryDamage", value: n, condition: "meleeWeapon" }],
+});
+const padded = (n) => f("Padded", `+${n} to damage thresholds`, {
+  modifiers: [{ target: "thresholds", value: n }],
+});
 const protective = (n) => f("Protective", `+${n} to Armor Score`, { as: n });
 
 /* ── rows ─────────────────────────────────────────────────────────────
@@ -186,13 +196,13 @@ export const PRIMARY_PHYSICAL = {
     w("Legendary Whipsword", "finesse", "veryClose", "d8+9", "oneHanded", versatile("Finesse, Melee, d10+9.")),
     w("Legendary Rope Dart", "instinct", "close", "d6+10", "twoHanded"),
     w("Severed Dragon Claw", "instinct", "melee", "d10+11", "oneHanded",
-      f("Destructive", "−1 to Agility; on a successful attack, all adversaries within Very Close range must mark a Stress.")),
+      f("Destructive", "−1 to Agility; on a successful attack, all adversaries within Very Close range must mark a Stress.", { traits: { agility: -1 } })),
     w("Infinite Staff", "presence", "melee", "d10+9", "twoHanded",
       f("Extending", "You can increase the range of this weapon up to Very Far. You gain a −1 penalty to attack rolls for each step you increase the range by (such as Melee to Very Close, Very Close to Close, or Close to Far).")),
     w("Bec de Corbin", "agility", "veryClose", "d10+9", "twoHanded",
       f("Devastating", "Before you make an attack roll, you can mark a Stress to use a d20 as your damage die.")),
     w("Black Powder Serpentine", "strength", "far", "d8+12", "twoHanded",
-      f("Incendiary", "−1 to Agility; on a successful attack, all creatures within Very Close range of the target must mark a Hit Point.")),
+      f("Incendiary", "−1 to Agility; on a successful attack, all creatures within Very Close range of the target must mark a Hit Point.", { traits: { agility: -1 } })),
     w("Clockwork Crossbow", "finesse", "far", "d6+11", "oneHanded", QUICK),
     w("Arquebus", "knowledge", "far", "d8+10", "twoHanded", RELOADING),
   ],
@@ -301,7 +311,9 @@ export const SECONDARY = {
     wm("Eldritch Vambrace", "instinct", "melee", "d8", "oneHanded",
       f("Deflecting", "When you are attacked, you can mark an Armor Slot to gain a bonus to your Evasion equal to your Armor Score against the attack.")),
     w("Segmented Staff", "agility", "veryClose", "d6+4", "oneHanded",
-      f("Double Duty", "+1 to Armor Score; +1 to primary weapon damage within Melee range", { as: 1 })),
+      f("Double Duty", "+1 to Armor Score; +1 to primary weapon damage within Melee range", {
+        as: 1, modifiers: [{ target: "primaryDamage", value: 1, condition: "meleeWeapon" }],
+      })),
     w("Razor Wire", "finesse", "veryClose", "d6+3", "oneHanded",
       f("Entangling", "On a successful attack with your primary weapon against a target within Very Close range, you can spend a Hope to make the target temporarily Vulnerable.")),
   ],
@@ -313,7 +325,9 @@ export const SECONDARY = {
     wm("Advanced Rune Shield", "knowledge", "melee", "d4+4", "oneHanded", protective(3)),
     wm("Advanced Focus Runes", "instinct", "veryClose", "d6+4", "oneHanded", FOCUSED),
     w("Tinker’s Hammer", "strength", "melee", "d8+4", "oneHanded",
-      f("Trusty", "+1 to attack rolls made with your primary weapon")),
+      f("Trusty", "+1 to attack rolls made with your primary weapon", {
+        modifiers: [{ target: "primaryAttack", value: 1 }],
+      })),
     wm("Vorpal Shard", "knowledge", "melee", "d4", "oneHanded",
       f("Targeted", "When you fail a weapon attack, you can spend a Hope to succeed on your next weapon attack.")),
     wm("Soul Chain", "presence", "veryClose", "d6+5", "oneHanded",
@@ -385,7 +399,9 @@ export const ARMOR = {
        items would mean the sheet deriving a number the player would then have
        to check against the card anyway. */
     a("Granminster’s Finery", 11, 27, 2,
-      f("Magnificent", "Gain a bonus to your Armor Score equal to your Presence.")),
+      f("Magnificent", "Gain a bonus to your Armor Score equal to your Presence.", {
+        modifiers: [{ target: "armorScore", source: "trait", trait: "presence" }],
+      })),
     a("Astral Raiment", 11, 27, 5,
       f("Stellar", "Mark a Stress to gain advantage on a Spellcast roll.")),
     a("Cloverweave Cloak", 11, 27, 5,
@@ -411,7 +427,12 @@ export const ARMOR = {
        reads — see the adjust tab. Nothing here applies it: the number is on the
        actor and the card says to change it. */
     a("Rune-Forged Exosuit", 12, 39, 7,
-      f("Attuned", "The maximum number of domain cards in your loadout is reduced by one, but you gain a bonus to your damage thresholds equal to your tier.")),
+      f("Attuned", "The maximum number of domain cards in your loadout is reduced by one, but you gain a bonus to your damage thresholds equal to your tier.", {
+        modifiers: [
+          { target: "loadoutLimit", value: -1 },
+          { target: "thresholds", source: "tier" },
+        ],
+      })),
     a("Hallowed Heroplate", 13, 35, 7,
       f("Blessed", "Once per long rest, you can spend any number of Hope before you make the Risk It All death move. You gain a bonus to the result of your Hope Die equal to the number of Hope spent.")),
     a("Resonant Harness", 15, 40, 7,

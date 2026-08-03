@@ -68,6 +68,10 @@ const ancestries = [
       "Stoneskin",
       `
       Gain a permanent +1 bonus to your Armor Score and damage thresholds at character creation.`,
+      [
+        { target: "armorScore", value: 1 },
+        { target: "thresholds", value: 1 },
+      ],
     ),
     bottom: feat(
       "Immovable",

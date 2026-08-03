@@ -34,6 +34,7 @@ import {
   int,
   maybeChoice,
   migrateUses,
+  modifierField,
   printingField,
   diePoolField,
   resourceField,
@@ -71,6 +72,8 @@ const TypeDataModel = () => foundry.abstract.TypeDataModel;
 const tracked = () => ({
   resources: arr(resourceField()),
   dice: arr(diePoolField()),
+  /** Always-on self modifiers; activation follows the owning Item subtype. */
+  modifiers: arr(modifierField()),
 });
 
 /* ══════════════════════════════════════════════════════════════════════

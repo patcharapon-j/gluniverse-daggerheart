@@ -8,6 +8,7 @@
  */
 
 import PRINTINGS from "./card-printings.mjs";
+import { modifiersFor } from "./passive-modifiers.mjs";
 
 const SYSTEM_PATH = "systems/gluniverse-daggerheart";
 
@@ -150,7 +151,7 @@ export function rt(text) {
 }
 
 /** A named block of rules text: `{name, description}`, description as HTML. */
-export const feat = (name, text) => ({ name, description: rt(text) });
+export const feat = (name, text, modifiers = []) => ({ name, description: rt(text), modifiers });
 
 /* ── documents ───────────────────────────────────────────────────────── */
 
@@ -328,6 +329,7 @@ export function featureItem({
       fearCost,
       stressCost,
       origin,
+      modifiers: modifiersFor("feature", name),
     },
   };
 }
@@ -369,9 +371,11 @@ function damageOf(printed, magic) {
   };
 }
 
-/** A `{name, description}` feature block, or the schema's empty one. */
+/** A named feature block with its authored passive modifiers, or an empty one. */
 const featureOf = (feat) =>
-  feat ? { name: feat.name, description: rt(feat.description) } : { name: "", description: "" };
+  feat
+    ? { name: feat.name, description: rt(feat.description), modifiers: feat.modifiers ?? [] }
+    : { name: "", description: "", modifiers: [] };
 
 /**
  * A weapon. `slot` is primary or secondary, which is which *table* it came
@@ -424,6 +428,7 @@ export function weaponItem({
       evasionModifier: feature?.ev ?? 0,
       armorScoreModifier: feature?.as ?? 0,
       magical: magic,
+      modifiers: modifiersFor("weapon", name),
     },
   };
 }
@@ -443,6 +448,7 @@ export function armorItem({ name, tier, major, severe, score, feature = null }) 
       feature: featureOf(feature),
       evasionModifier: feature?.ev ?? 0,
       magical: false,
+      modifiers: modifiersFor("armor", name),
     },
   };
 }
@@ -474,6 +480,7 @@ export function lootItem({ name, description, roll, consumable = false, book = "
       description: rt(description),
       quantity: 1,
       source: number && book ? `${number} · ${book}` : number,
+      modifiers: modifiersFor(consumable ? "consumable" : "loot", name),
     },
   };
 }
@@ -508,6 +515,7 @@ export function domainCardItem({
       description: rt(text),
       inLoadout: false,
       printing: { artist, code: cardId },
+      modifiers: modifiersFor("domainCard", name),
     },
   };
 }

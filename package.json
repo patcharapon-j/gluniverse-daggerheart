@@ -12,11 +12,12 @@
     "typecheck": "tsc --noEmit && npm run check && npm run items:check",
     "link:dev": "node scripts/link-dev-build.mjs",
     "preview": "node tools/preview-server.js",
-    "build:packs": "npm run cards:check && npm run equipment:check && npm run resources:check && node scripts/build-packs.mjs",
+    "build:packs": "npm run cards:check && npm run equipment:check && npm run resources:check && npm run passives:check && node scripts/build-packs.mjs",
     "cards:fetch": "node tools/fetch-cards.mjs",
     "cards:check": "node tools/check-cards.mjs",
     "equipment:check": "node tools/check-equipment.mjs",
     "resources:check": "node tools/check-resources.mjs",
+    "passives:check": "node tools/check-passives.mjs && node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-passive-modifiers.mjs",
     "items:check": "node tools/check-item-sheet.mjs"
   },
   "devDependencies": {

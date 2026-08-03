@@ -45,6 +45,11 @@
   import { rest } from "../apps/rest.ts";
   import { absolute, cssUrl } from "../assets.ts";
   import { rollAttack, rollTrait, rollWeaponDamage } from "../dice/actions.ts";
+  import {
+    modifierTotal,
+    rollModifierTerms,
+    weaponModifierTerms,
+  } from "../data/modifiers.ts";
   import { platePortrait } from "../dice/plate.ts";
   import { SPINE, TILE } from "../ui/tile.js";
   import { XBOX, XMARK } from "../ui/mark.js";
@@ -1245,7 +1250,10 @@
     const o = await prep(event.currentTarget as Element, {
       kind: reaction === "only" ? "reaction roll" : `${traitLabel(trait).toLowerCase()} roll`,
       label: traitLabel(trait),
-      base: (doc as any).traitMod(trait),
+      base:
+        (doc as any).traitMod(trait) +
+        sumTerms(rollModifierTerms(doc, reaction === "only" ? "reactionRoll" : "actionRoll")) +
+        (trait === sys.spellcastTrait ? sumTerms(rollModifierTerms(doc, "spellcastRoll")) : 0),
       experiences: xpList,
       purse,
       reaction,
@@ -1266,11 +1274,10 @@
      reaction roll made with the trait, and that is the trait cell's job. */
   async function askAttack(event: MouseEvent, weaponId: string) {
     const weapon = item(weaponId);
-    const trait = (weapon?.system?.trait ?? "agility") as Trait;
     const o = await prep(event.currentTarget as Element, {
       kind: "attack roll",
       label: weapon?.name ?? "Attack",
-      base: (doc as any).traitMod(trait),
+      base: attackTotal(weapon as any),
       experiences: xpList,
       purse,
       reaction: false,
@@ -1900,6 +1907,19 @@
 
   const item = (id: string) => doc.items.get(id);
 
+  const sumTerms = (terms: { v: number }[]) => terms.reduce((n, t) => n + t.v, 0);
+  const attackTotal = (w: ItemSnapshot) =>
+    Number(sys.traits?.[w.system.trait]?.total ?? sys.traits?.[w.system.trait]?.value ?? 0) +
+    sumTerms(rollModifierTerms(doc, "actionRoll", item(w.id))) +
+    sumTerms(rollModifierTerms(doc, "attackRoll", item(w.id))) +
+    sumTerms(weaponModifierTerms(doc, item(w.id), "attack"));
+  const damageBonus = (w: ItemSnapshot) =>
+    Number(w.system.damage?.bonus ?? 0) +
+    sumTerms(rollModifierTerms(doc, "damageRoll", item(w.id))) +
+    sumTerms(weaponModifierTerms(doc, item(w.id), "damage"));
+  const damageProficiency = () =>
+    Number(sys.proficiency ?? 1) + modifierTotal(doc, "damageProficiency");
+
   /* ── taking a thing *into* the sheet ───────────────────────────────
      One handler on the root, and it always was — every subtype this
      character can hold lands the same way, and inventing four sub-targets
@@ -1980,10 +2000,11 @@
 
   /* A derived field is one the sheet is about to overwrite, and saying so
      is the difference between a control that does nothing and a control
-     that explains why. Armor Slots and both thresholds come off equipped
-     armour; the spellcast trait comes off a casting subclass. */
+     that explains why. Armor Slots follow total Armor Score, both thresholds
+     normally come off equipped armour, and the spellcast trait comes off a
+     casting subclass. */
   const derivedNote = $derived({
-    slots: armor ? `Set by ${armor.name} — unequip it to hold this.` : "",
+    slots: "Armor Slots equal total Armor Score, including shields, cards and other bonuses.",
     thresholds: sys.thresholds?.override
       ? ""
       : "Derived from armour plus your level. Switch on Override to set them.",
@@ -2513,7 +2534,7 @@
                 onchange={(e) => setTrait(t as Trait, e)}
               />
             {:else}
-              <span class="v">{sign(sys.traits?.[t]?.value ?? 0)}</span>
+              <span class="v">{sign(sys.traits?.[t]?.total ?? sys.traits?.[t]?.value ?? 0)}</span>
             {/if}
             <i class="mk"></i>
             <!-- No badge element: the spellcast trait is marked by the cell
@@ -2616,19 +2637,18 @@
                       onclick={(e) => askAttack(e, (w as any).id)}
                     >
                       <span class="dd"><i class="h"></i><i class="f"></i></span>
-                      <em>{sign(sys.traits?.[(w as any).system.trait]?.value ?? 0)}</em>
+                      <em>{sign(attackTotal(w as any))}</em>
                       <s>attack</s>
                     </button>
                     <button
                       class="go dm"
                       type="button"
-                      title="{sys.proficiency} × {(w as any).system.damage.dice}, your Proficiency"
+                      title="{damageProficiency()} × {(w as any).system.damage.dice}, including passive item effects"
                       onclick={() => rollWeaponDamage(doc, item((w as any).id))}
                     >
                       <em
-                        >{sys.proficiency}{(w as any).system.damage.dice}{(w as any).system.damage
-                          .bonus
-                          ? `+${(w as any).system.damage.bonus}`
+                        >{damageProficiency()}{(w as any).system.damage.dice}{damageBonus(w as any)
+                          ? `${damageBonus(w as any) > 0 ? "+" : "−"}${Math.abs(damageBonus(w as any))}`
                           : ""}</em
                       >
                       <s>damage</s>
@@ -3363,10 +3383,9 @@
                 <input type="number" value={sys.armorScore?.bonus ?? 0}
                   onchange={(e) => num("system.armorScore.bonus", e)} />
               </label>
-              <label class="f" class:off={!!derivedNote.slots} title={derivedNote.slots}>
+              <label class="f off" title={derivedNote.slots}>
                 <span>Armor Slots</span>
-                <input type="number" value={sys.resources?.armorSlots?.max ?? 0}
-                  onchange={(e) => num("system.resources.armorSlots.max", e, 0)} />
+                <input type="number" value={sys.resources?.armorSlots?.max ?? 0} disabled />
               </label>
             </div>
             {#if derivedNote.slots}

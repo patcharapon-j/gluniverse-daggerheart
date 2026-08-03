@@ -46,6 +46,7 @@ import {
   str,
   uuid,
 } from "./fields.ts";
+import { activeModifiers, modifierTotal, traitPassiveTotal } from "./modifiers.ts";
 
 const TypeDataModel = () => foundry.abstract.TypeDataModel;
 
@@ -86,10 +87,10 @@ export class CharacterData extends (TypeDataModel() as any) {
         hope: pool(DEFAULT_HOPE_MAX),
       }),
 
-      /* Evasion and Armor Score are two numbers, not one. A shield raises
-         the Score and leaves the Slots alone; the sheet had them fused once
-         and it was wrong in exactly that case. `bonus` is everything that is
-         not the class base or the equipped armor. */
+      /* Evasion and Armor Score are two numbers, not one. Armor Score is also
+         the capacity of the Armor Slot track, so a shield raises the score
+         and adds the matching markable box. `bonus` is everything that is
+         not the equipped armor or an owned Item. */
       evasion: schema({ base: int(10), bonus: int(0) }),
       armorScore: schema({ bonus: int(0) }),
 
@@ -246,7 +247,7 @@ export class CharacterData extends (TypeDataModel() as any) {
     };
   }
 
-  declare traits: Record<string, { value: number; marked: boolean }>;
+  declare traits: Record<string, { value: number; total?: number; marked: boolean }>;
   declare resources: any;
   declare evasion: any;
   declare armorScore: any;
@@ -304,6 +305,10 @@ export class CharacterData extends (TypeDataModel() as any) {
        what was chosen and the model holds what is true. */
     this.resources.hitPoints.max += adv.hitPoints ?? 0;
     this.resources.stress.max += adv.stress ?? 0;
+    for (const trait of TRAITS) {
+      const score = this.traits[trait];
+      if (score) score.total = score.value;
+    }
   }
 
   prepareDerivedData(): void {
@@ -338,11 +343,22 @@ export class CharacterData extends (TypeDataModel() as any) {
     const caster = items.find?.((i: any) => i.type === "subclass" && i.system.spellcastTrait);
     if (caster) this.spellcastTrait = caster.system.spellcastTrait;
 
+    /* Passive self-modifiers are authored data carried by the Item or its
+       feature block. Domain cards are live in the loadout, gear while
+       equipped, and assigned heritage/class/subclass features while owned. */
+    // Tracks go first because conditions such as Voice of Reason compare the
+    // marked Stress against the final maximum, including Human/advancement.
+    this.resources.hitPoints.max += modifierTotal(this.parent, "hitPoints");
+    this.resources.stress.max += modifierTotal(this.parent, "stress");
+    for (const trait of TRAITS) {
+      const score = this.traits[trait];
+      if (score) score.total = score.value + traitPassiveTotal(this.parent, trait);
+    }
+    this.proficiency += modifierTotal(this.parent, "proficiency");
+    this.loadoutLimit = Math.max(0, this.loadoutLimit + modifierTotal(this.parent, "loadoutLimit"));
+
     /* ── equipped armor sets Score, Slots and both thresholds ────────── */
     const armor = items.find?.((i: any) => i.type === "armor" && i.system.equipped);
-    if (armor) {
-      this.resources.armorSlots.max = armor.system.baseScore;
-    }
 
     /* Equipped gear carries flat modifiers to both of the numbers a shield
        touches, and for a long time only one of them arrived.
@@ -354,33 +370,60 @@ export class CharacterData extends (TypeDataModel() as any) {
        now, because they are the same kind of fact: a thing you are wearing
        moving a number on the rail.
 
-       Slots deliberately stay the armor's alone. "Armor Score is how many
-       slots you have" is the usual shorthand and it is not quite the rule —
-       the score is what a shield raises and the slots are what the armour
-       gives you, which is the whole reason these were two fields. */
+       Armor Score is the number of slots available, so every bonus must move
+       both the crest and the track. */
     const worn =
       items.filter?.(
         (i: any) => (i.type === "armor" || i.type === "weapon") && i.system.equipped,
       ) ?? [];
-    const gear = (key: string) =>
-      worn.reduce((n: number, i: any) => n + (i.system[key] ?? 0), 0);
+    const legacyGear = (key: string, target: string) =>
+      worn.reduce((n: number, i: any) => {
+        const structured = (i.system?.feature?.modifiers ?? []).some(
+          (m: any) => m.target === target,
+        );
+        return n + (structured ? 0 : (i.system[key] ?? 0));
+      }, 0);
+
+    const passives = activeModifiers(this.parent);
+    const bareBones = passives.some((m) => m.target === "bareBones");
+    const bareThresholds: Record<number, { major: number; severe: number }> = {
+      1: { major: 9, severe: 19 },
+      2: { major: 11, severe: 24 },
+      3: { major: 13, severe: 31 },
+      4: { major: 15, severe: 38 },
+    };
+    const baseArmorScore = bareBones
+      ? 3 + Number(this.traits.strength?.total ?? this.traits.strength?.value ?? 0)
+      : Number(armor?.system.baseScore ?? 0);
 
     this.armorScore.value =
-      (armor?.system.baseScore ?? 0) + this.armorScore.bonus + gear("armorScoreModifier");
+      baseArmorScore +
+      this.armorScore.bonus +
+      legacyGear("armorScoreModifier", "armorScore") +
+      modifierTotal(this.parent, "armorScore");
+    this.resources.armorSlots.max = Math.max(0, this.armorScore.value);
 
     this.evasion.value =
       this.evasion.base +
       this.evasion.bonus +
       (this.advancementTally?.evasion ?? 0) +
-      gear("evasionModifier");
+      legacyGear("evasionModifier", "evasion") +
+      modifierTotal(this.parent, "evasion");
 
     if (!this.thresholds.override) {
       // Add your level to both of the armor's printed values. With no armor
       // equipped there is no printed value, so the thresholds are your level
       // alone and every hit lands at least Major — which is the rule.
-      const base = armor?.system.baseThresholds ?? { major: 0, severe: 0 };
-      this.thresholds.major = base.major + this.level + this.thresholds.bonusMajor;
-      this.thresholds.severe = base.severe + this.level + this.thresholds.bonusSevere;
+      const base = bareBones
+        ? bareThresholds[this.tier] ?? bareThresholds[1]
+        : armor?.system.baseThresholds ?? { major: 0, severe: 0 };
+      const both = modifierTotal(this.parent, "thresholds");
+      this.thresholds.major =
+        base.major + this.level + this.thresholds.bonusMajor + both +
+        modifierTotal(this.parent, "majorThreshold");
+      this.thresholds.severe =
+        base.severe + this.level + this.thresholds.bonusSevere + both +
+        modifierTotal(this.parent, "severeThreshold");
     }
 
     /* ── the tracks ──────────────────────────────────────────────────── */

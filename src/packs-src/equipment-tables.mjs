@@ -26,23 +26,28 @@
  * to share a name on the page, and they stay two constants.
  *
  * ── the numbers a feature moves ───────────────────────────────────────
- * *Heavy* is −1 Evasion and *Barrier* is +N Armor Score, and the system has
- * fields for both. Those are carried on the feature as `ev` and `as` rather
- * than read out of the sentence: this codebase parses English rules text in
- * exactly one place, deliberately and narrowly (see `featurePrice`), and
- * a table we are typing in ourselves is the last place that would be needed.
- * Anything a feature does that is *not* one of those two numbers is printed
- * text and nothing more — the same promise `apps/rules.ts` makes.
+ * Every passive number rides on the feature as structured `modifiers`, rather
+ * than being parsed out of its sentence. The legacy `ev` and `as` values stay
+ * on Evasion and Armor Score features so characters holding older embedded
+ * copies still resolve correctly. The same structure now covers traits,
+ * thresholds and weapon-roll modifiers without rewriting the chosen base stat.
  */
 
-/* ── features ─────────────────────────────────────────────────────────
-   `ev` moves Evasion, `as` moves Armor Score. Both default to nothing. */
+/* ── features ───────────────────────────────────────────────────────── */
 
-const f = (name, description, mods = {}) => ({ name, description, ...mods });
+const f = (name, description, mods = {}) => {
+  const modifiers = [...(mods.modifiers ?? [])];
+  if (mods.ev) modifiers.push({ target: "evasion", value: mods.ev });
+  if (mods.as) modifiers.push({ target: "armorScore", value: mods.as });
+  for (const [trait, value] of Object.entries(mods.traits ?? {})) {
+    modifiers.push({ target: "trait", trait, value });
+  }
+  return { name, description, ...mods, modifiers };
+};
 
 /* Weapon features, alphabetical within their kind. */
 const BRUTAL = f("Brutal", "When you roll the maximum value on a damage die, roll an additional damage die.");
-const CUMBERSOME = f("Cumbersome", "−1 to Finesse");
+const CUMBERSOME = f("Cumbersome", "−1 to Finesse", { traits: { finesse: -1 } });
 const DEADLY = f("Deadly", "When you deal Severe damage, the target must mark an additional HP.");
 const HEAVY = f("Heavy", "−1 to Evasion", { ev: -1 });
 const MASSIVE = f(
@@ -53,7 +58,7 @@ const MASSIVE = f(
 const PAINFUL_W = f("Painful", "Each time you make a successful attack, you must mark a Stress.");
 const POWERFUL = f("Powerful", "On a successful attack, roll an additional damage die and discard the lowest result.");
 const QUICK = f("Quick", "When you make an attack, you can mark a Stress to target another creature within range.");
-const RELIABLE = f("Reliable", "+1 to attack rolls");
+const RELIABLE = f("Reliable", "+1 to attack rolls", { modifiers: [{ target: "ownAttack", value: 1 }] });
 const RELOADING = f(
   "Reloading",
   "After you make an attack, roll a d6. On a result of 1, you must mark a Stress to reload this weapon before you can fire it again.",
@@ -67,13 +72,15 @@ const TIMEBENDING = f("Timebending", "You choose the target of your attack after
 
 /* The ones whose number changes by tier. */
 const versatile = (stats) => f("Versatile", `This weapon can also be used with these statistics—${stats}`);
-const paired = (n) => f("Paired", `+${n} to primary weapon damage to targets within Melee range`);
+const paired = (n) => f("Paired", `+${n} to primary weapon damage to targets within Melee range`, {
+  modifiers: [{ target: "primaryDamage", value: n, condition: "meleeWeapon" }],
+});
 const protective = (n) => f("Protective", `+${n} to Armor Score`, { as: n });
 const barrier = (n) => f("Barrier", `+${n} to Armor Score; −1 to Evasion`, { as: n, ev: -1 });
 
 /* Armor features. */
 const FLEXIBLE = f("Flexible", "+1 to Evasion", { ev: 1 });
-const VERY_HEAVY = f("Very Heavy", "−2 to Evasion; −1 to Agility", { ev: -2 });
+const VERY_HEAVY = f("Very Heavy", "−2 to Evasion; −1 to Agility", { ev: -2, traits: { agility: -1 } });
 const PAINFUL_A = f("Painful", "Each time you mark an Armor Slot, you must mark a Stress.");
 const RESILIENT = f(
   "Resilient",
@@ -165,9 +172,13 @@ export const PRIMARY_PHYSICAL = {
     w("Advanced Crossbow", "finesse", "far", "d6+7", "oneHanded"),
     w("Advanced Longbow", "agility", "veryFar", "d8+9", "twoHanded", CUMBERSOME),
     w("Flickerfly Blade", "agility", "melee", "d8+5", "oneHanded",
-      f("Sharpwing", "Gain a bonus to your damage rolls equal to your Agility.")),
+      f("Sharpwing", "Gain a bonus to your damage rolls equal to your Agility.", {
+        modifiers: [{ target: "ownDamage", source: "trait", trait: "agility" }],
+      })),
     w("Bravesword", "strength", "melee", "d12+7", "twoHanded",
-      f("Brave", "−1 to Evasion; +3 to Severe damage threshold", { ev: -1 })),
+      f("Brave", "−1 to Evasion; +3 to Severe damage threshold", {
+        ev: -1, modifiers: [{ target: "severeThreshold", value: 3 }],
+      })),
     w("Hammer of Wrath", "strength", "melee", "d10+7", "twoHanded",
       f("Devastating", "Before you make an attack roll, you can mark a Stress to use a d20 as your damage die.")),
     w("Labrys Axe", "strength", "melee", "d10+7", "twoHanded", protective(1)),
@@ -200,7 +211,7 @@ export const PRIMARY_PHYSICAL = {
     w("Impact Gauntlet", "strength", "melee", "d10+11", "oneHanded",
       f("Concussive", "On a successful attack, you can spend a Hope to knock the target back to Far range.")),
     w("Sledge Axe", "strength", "melee", "d12+13", "twoHanded",
-      f("Destructive", "−1 to Agility; on a successful attack, all adversaries within Very Close range must mark a Stress.")),
+      f("Destructive", "−1 to Agility; on a successful attack, all adversaries within Very Close range must mark a Stress.", { traits: { agility: -1 } })),
     w("Curved Dagger", "finesse", "melee", "d8+9", "oneHanded",
       f("Serrated", "When you roll a 1 on a damage die, it deals 8 damage instead.")),
     w("Extended Polearm", "finesse", "veryClose", "d8+10", "twoHanded",
@@ -315,7 +326,9 @@ export const PRIMARY_MAGIC = {
     w("Wand of Essek", "knowledge", "far", "d8+13", "oneHanded", TIMEBENDING),
     w("Magus Revolver", "finesse", "veryFar", "d6+13", "oneHanded", RELOADING),
     w("Fusion Gloves", "knowledge", "veryFar", "d6+9", "twoHanded",
-      f("Bonded", "Gain a bonus to your damage rolls equal to your level.")),
+      f("Bonded", "Gain a bonus to your damage rolls equal to your level.", {
+        modifiers: [{ target: "ownDamage", source: "level" }],
+      })),
   ],
 };
 
@@ -385,7 +398,9 @@ export const SECONDARY = {
       f("Hooked", "On a successful attack, you can pull the target into Melee range.")),
     w("Improved Hand Crossbow", "finesse", "far", "d6+3", "oneHanded"),
     w("Spiked Shield", "strength", "melee", "d6+2", "oneHanded",
-      f("Double Duty", "+1 to Armor Score; +1 to primary weapon damage within Melee range", { as: 1 })),
+      f("Double Duty", "+1 to Armor Score; +1 to primary weapon damage within Melee range", {
+        as: 1, modifiers: [{ target: "primaryDamage", value: 1, condition: "meleeWeapon" }],
+      })),
     w("Parrying Dagger", "finesse", "melee", "d6+2", "oneHanded",
       f("Parry", "When you are attacked, roll this weapon’s damage dice. If any of the attacker’s damage dice rolled the same value as your dice, the matching results are discarded from the attacker’s damage dice before the damage you take is totaled.")),
     w("Returning Axe", "agility", "close", "d6+4", "oneHanded", RETURNING),
@@ -463,7 +478,7 @@ export const ARMOR = {
     a("Advanced Leather Armor", 11, 27, 5),
     a("Advanced Chainmail Armor", 13, 31, 6, HEAVY),
     a("Advanced Full Plate Armor", 15, 35, 6, VERY_HEAVY),
-    a("Bellamoi Fine Armor", 11, 27, 5, f("Gilded", "+1 to Presence")),
+    a("Bellamoi Fine Armor", 11, 27, 5, f("Gilded", "+1 to Presence", { traits: { presence: 1 } })),
     a("Dragonscale Armor", 11, 27, 5,
       f("Impenetrable", "Once per short rest, when you would mark your last Hit Point, you can instead mark a Stress.")),
     a("Spiked Plate Armor", 10, 25, 5,
@@ -481,7 +496,9 @@ export const ARMOR = {
     a("Legendary Full Plate Armor", 17, 44, 7, VERY_HEAVY),
     a("Dunamis Silkchain", 13, 36, 7,
       f("Timeslowing", "Mark an Armor Slot to roll a d4 and add its result as a bonus to your Evasion against an incoming attack.")),
-    a("Channeling Armor", 13, 36, 5, f("Channeling", "+1 to Spellcast Rolls")),
+    a("Channeling Armor", 13, 36, 5, f("Channeling", "+1 to Spellcast Rolls", {
+      modifiers: [{ target: "spellcastRoll", value: 1 }],
+    })),
     a("Emberwoven Armor", 13, 36, 6,
       f("Burning", "When an adversary attacks you within Melee range, they mark a Stress.")),
     a("Full Fortified Armor", 15, 40, 4,
@@ -489,7 +506,9 @@ export const ARMOR = {
     a("Veritas Opal Armor", 13, 36, 6,
       f("Truthseeking", "This armor glows when another creature within Close range tells a lie.")),
     a("Savior Chainmail", 18, 48, 8,
-      f("Difficult", "−1 to all character traits and Evasion", { ev: -1 })),
+      f("Difficult", "−1 to all character traits and Evasion", {
+        ev: -1, modifiers: [{ target: "trait", value: -1 }],
+      })),
   ],
 };
 

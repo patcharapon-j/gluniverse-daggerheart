@@ -42,7 +42,11 @@ export default [
     description: `
     Demigods are mortal creatures whose veins flow with the blood of the gods.`,
     features: [
-      feat("Gifted", "You gain a +1 bonus to action, reaction, and damage rolls."),
+      feat("Gifted", "You gain a +1 bonus to action, reaction, and damage rolls.", [
+        { target: "actionRoll", value: 1 },
+        { target: "reactionRoll", value: 1 },
+        { target: "damageRoll", value: 1 },
+      ]),
       feat(
         "Weight of Divinity",
         "When you fail a roll, you must **mark a Stress** or the GM gains a Fear.",

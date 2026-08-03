@@ -104,12 +104,10 @@ export const LOOT = [
 
 export const eq = slot => KIT[PC.equip[slot]] ?? null;
 
-/* Armor Score and Armor Slots are not the same number and were being
-   drawn from one field. Slots are the armour's Base Score; the Score
-   itself is that base plus every bonus on top — a Round Shield raises what
-   you subtract from a hit without giving you another box to mark. */
-export const armorSlots = () => eq('armor')?.base ?? 0;
+/* Armor Score is the Armor Slot capacity. A shield or other bonus therefore
+   changes the crest and gives the track the matching markable box. */
 export const armorScore = () => (eq('armor')?.base ?? 0) + (eq('secondary')?.armorScore ?? 0);
+export const armorSlots = () => armorScore();
 export const major  = () => (eq('armor')?.major  ?? 0) + PC.level;
 export const severe = () => (eq('armor')?.severe ?? 0) + PC.level;
 

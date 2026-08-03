@@ -466,7 +466,9 @@ const stalwart = subclassCards({
   description: "Play the Stalwart if you want to take heavy blows and keep fighting.",
   ranks: {
     foundation: [
-      feat("Unwavering", "Gain a permanent +1 bonus to your damage thresholds."),
+      feat("Unwavering", "Gain a permanent +1 bonus to your damage thresholds.", [
+        { target: "thresholds", value: 1 },
+      ]),
       feat(
         "Iron Will",
         `
@@ -475,7 +477,9 @@ const stalwart = subclassCards({
       ),
     ],
     specialization: [
-      feat("Unrelenting", "Gain a permanent +2 bonus to your damage thresholds."),
+      feat("Unrelenting", "Gain a permanent +2 bonus to your damage thresholds.", [
+        { target: "thresholds", value: 2 },
+      ]),
       feat(
         "Partners in Arms",
         `
@@ -484,7 +488,9 @@ const stalwart = subclassCards({
       ),
     ],
     mastery: [
-      feat("Undaunted", "Gain a permanent +3 bonus to your damage thresholds."),
+      feat("Undaunted", "Gain a permanent +3 bonus to your damage thresholds.", [
+        { target: "thresholds", value: 3 },
+      ]),
       feat(
         "Loyal Protector",
         `
@@ -501,7 +507,9 @@ const vengeance = subclassCards({
   description: "Play the Vengeance if you want to strike down enemies who harm you or your allies.",
   ranks: {
     foundation: [
-      feat("At Ease", "Gain an additional Stress slot."),
+      feat("At Ease", "Gain an additional Stress slot.", [
+        { target: "stress", value: 1 },
+      ]),
       feat(
         "Revenge",
         `
@@ -731,6 +739,7 @@ const nightwalker = subclassCards({
         `
         Gain a permanent +1 bonus to your Evasion. You can use your “Shadow Stepper” feature to
         move within Very Far range.`,
+        [{ target: "evasion", value: 1 }],
       ),
       feat(
         "Vanishing Act",
@@ -896,7 +905,9 @@ const wingedSentinel = subclassCards({
       ),
     ],
     mastery: [
-      feat("Ascendant", "Gain a permanent +4 bonus to your Severe damage threshold."),
+      feat("Ascendant", "Gain a permanent +4 bonus to your Severe damage threshold.", [
+        { target: "severeThreshold", value: 4 },
+      ]),
       feat(
         "Power of the Gods",
         `
@@ -1086,6 +1097,7 @@ on a success, or two if you critically succeed:
       `
       You ignore burden when equipping weapons. When you deal physical damage,
 you gain a bonus to your damage roll equal to your level.`,
+      [{ target: "damageRoll", source: "level", condition: "physicalWeapon" }],
     ),
   ],
   background: [
@@ -1289,6 +1301,7 @@ const schoolOfWar = subclassCards({
         `
         You’ve focused your studies on becoming an unconquerable force on the battlefield. Gain an
         additional Hit Point slot.`,
+        [{ target: "hitPoints", value: 1 }],
       ),
       feat(
         "Face Your Fear",
@@ -1302,6 +1315,7 @@ const schoolOfWar = subclassCards({
         `
         You can maintain a protective barrier of magic. While you have at least 2 Hope, you add
         your Proficiency to your Evasion.`,
+        [{ target: "evasion", source: "proficiency", condition: "hope", minimum: 2 }],
       ),
       feat(
         "Fueled by Fear",

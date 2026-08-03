@@ -11,6 +11,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { traitLabel, type Trait } from "../config.ts";
+import { modifierTotal, rollModifierTerms, weaponModifierTerms } from "../data/modifiers.ts";
 import { plain } from "../sheets/cards.ts";
 import { getFear, setFear } from "../settings.ts";
 import { rollDamage, rollDuality, rollFoe } from "./rolls.ts";
@@ -71,6 +72,10 @@ export async function rollTrait(actor: any, trait: Trait, opts: Common & { react
   if (!(await payFor(actor, opts.experiences))) return null;
   const mods: Term[] = [
     { k: traitLabel(trait).toLowerCase(), v: actor.traitMod(trait) },
+    ...rollModifierTerms(actor, opts.reaction ? "reactionRoll" : "actionRoll"),
+    ...(trait === actor.system?.spellcastTrait
+      ? rollModifierTerms(actor, "spellcastRoll")
+      : []),
     ...experienceTerms(opts.experiences),
     ...(opts.extra ?? []),
   ];
@@ -123,6 +128,9 @@ export async function rollAttack(actor: any, weapon: any, opts: Common & { react
   const trait = (weapon?.system?.trait ?? "agility") as Trait;
   const mods: Term[] = [
     { k: traitLabel(trait).toLowerCase(), v: actor.traitMod(trait) },
+    ...rollModifierTerms(actor, opts.reaction ? "reactionRoll" : "actionRoll", weapon),
+    ...rollModifierTerms(actor, "attackRoll", weapon),
+    ...weaponModifierTerms(actor, weapon, "attack"),
     ...experienceTerms(opts.experiences),
     ...(opts.extra ?? []),
   ];
@@ -151,8 +159,13 @@ export async function rollAttack(actor: any, weapon: any, opts: Common & { react
  */
 export async function rollWeaponDamage(actor: any, weapon: any, { critical = false } = {}) {
   const dmg = weapon?.system?.damage ?? { dice: "d6", bonus: 0, type: "physical" };
-  const proficiency = actor.system?.proficiency ?? 1;
-  const mods: Term[] = dmg.bonus ? [{ k: "weapon", v: dmg.bonus }] : [];
+  const proficiency =
+    (actor.system?.proficiency ?? 1) + modifierTotal(actor, "damageProficiency");
+  const mods: Term[] = [
+    ...(dmg.bonus ? [{ k: "weapon", v: dmg.bonus }] : []),
+    ...rollModifierTerms(actor, "damageRoll", weapon),
+    ...weaponModifierTerms(actor, weapon, "damage"),
+  ];
 
   return rollDamage({
     actor,

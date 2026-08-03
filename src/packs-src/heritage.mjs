@@ -180,7 +180,9 @@ const ancestries = [
     description: `
     Galapa resemble anthropomorphic turtles with large, domed shells into which they can
     retract.`,
-    top: feat("Shell", "Gain a bonus to your damage thresholds equal to your Proficiency."),
+    top: feat("Shell", "Gain a bonus to your damage thresholds equal to your Proficiency.", [
+      { target: "thresholds", source: "proficiency" },
+    ]),
     bottom: feat(
       "Retract",
       `
@@ -193,7 +195,9 @@ const ancestries = [
     name: "Giant",
     description: `
     Giants are towering humanoids with broad shoulders, long arms, and one to three eyes.`,
-    top: feat("Endurance", "Gain an additional Hit Point slot at character creation."),
+    top: feat("Endurance", "Gain an additional Hit Point slot at character creation.", [
+      { target: "hitPoints", value: 1 },
+    ]),
     bottom: feat(
       "Reach",
       `
@@ -228,7 +232,9 @@ const ancestries = [
     description: `
     Humans are most easily recognized by their dexterous hands, rounded ears, and bodies built
     for endurance.`,
-    top: feat("High Stamina", "Gain an additional Stress slot at character creation."),
+    top: feat("High Stamina", "Gain an additional Stress slot at character creation.", [
+      { target: "stress", value: 1 },
+    ]),
     bottom: feat(
       "Adaptability",
       `
@@ -306,7 +312,9 @@ const ancestries = [
       `
       You have advantage on Agility Rolls that involve balancing and climbing.`,
     ),
-    bottom: feat("Nimble", "Gain a permanent +1 bonus to your Evasion at character creation."),
+    bottom: feat("Nimble", "Gain a permanent +1 bonus to your Evasion at character creation.", [
+      { target: "evasion", value: 1 },
+    ]),
   }),
 ];
 

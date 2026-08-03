@@ -207,7 +207,8 @@ export class DaggerheartActor extends (Actor as any) {
 
   /** The trait modifier used by a roll, by trait key. */
   traitMod(trait: string): number {
-    return this.system?.traits?.[trait]?.value ?? 0;
+    const score = this.system?.traits?.[trait];
+    return score?.total ?? score?.value ?? 0;
   }
 
   get isCharacter(): boolean {

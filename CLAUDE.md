@@ -356,10 +356,9 @@ Which closed a real gap. `WeaponData` gained **`armorScoreModifier`**, because a
 Round Shield is *Protective: +1 to Armor Score* and there was nowhere for that
 to go — `CharacterData` read Armor Score off the equipped **armor** alone, so a
 Tower Shield charged you its −1 Evasion and silently withheld the +2 it was
-charging for. Score and Slots had already split for exactly this reason, and
-this was the other end of the same argument, missing. Both modifiers are now
-summed over the same list of worn gear. Slots stay the armour's: "Armor Score is
-how many slots you have" is shorthand, not the rule.
+charging for. Both modifiers are now summed over the same list of worn gear,
+and the derived Armor Score is the Armor Slot capacity: a shield or card that
+adds to the score adds the matching markable box too.
 
 **There is no art, and that is a finding rather than a shortcut.** Demiplane
 serves every equipment image from a signed CDN — the URLs carry query strings

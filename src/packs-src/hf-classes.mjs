@@ -259,6 +259,7 @@ const brawler = classItem({
       Melee range, and deals **d8+d6** physical damage using your Proficiency (both the **d8** and
       **d6** scale off your Proficiency). While this weapon is active, you gain a +1 bonus to your
       Evasion.`,
+      [{ target: "evasion", value: 1, condition: "noWeapons" }],
     ),
     feat(
       "Combo Strike",
@@ -291,7 +292,9 @@ const juggernaut = subclass({
   description: "Play the Juggernaut if you want to pulverize your opponents with crushing blows.",
   ranks: {
     foundation: [
-      feat("Rugged", "Gain a permanent +3 bonus to your Severe damage threshold."),
+      feat("Rugged", "Gain a permanent +3 bonus to your Severe damage threshold.", [
+        { target: "severeThreshold", value: 3 },
+      ]),
       feat(
         "Overwhelm",
         `

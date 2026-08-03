@@ -117,6 +117,26 @@ export const experienceField = (): any =>
   });
 
 /**
+ * A passive rule that changes a number on its owning character.
+ *
+ * These are authored data, never parsed out of rules prose at runtime. `source`
+ * names the actor value multiplied by `scale`; `value` is then added. Most
+ * modifiers are simply `{target, value}`. The wider shape covers rules such as
+ * “thresholds equal to your Proficiency” and “half your Agility” without a
+ * bespoke field for every printed card.
+ */
+export const modifierField = (): any =>
+  schema({
+    target: str(),
+    value: num(0),
+    source: str("fixed"),
+    trait: str(),
+    scale: num(1),
+    condition: str("always"),
+    minimum: int(0, { min: 0 }),
+  });
+
+/**
  * A named block of rules text. Ancestries, communities, classes, subclasses
  * and stat blocks are all mostly made of these, and none of them are worth
  * being their own document.
@@ -125,6 +145,7 @@ export const featureField = (): any =>
   schema({
     name: str(),
     description: html(),
+    modifiers: arr(modifierField()),
   });
 
 /**

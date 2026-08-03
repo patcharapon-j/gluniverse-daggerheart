@@ -57,7 +57,7 @@ export interface LiveResource {
 export function traitValue(actor: any, trait: string): number {
   const t = trait === "spellcast" ? actor?.system?.spellcastTrait : trait;
   if (!t) return 0;
-  return Number(actor?.system?.traits?.[t]?.value ?? 0);
+  return Number(actor?.system?.traits?.[t]?.total ?? actor?.system?.traits?.[t]?.value ?? 0);
 }
 
 /**
