@@ -60,6 +60,8 @@ declare module "*/ui/gem.js" {
     scar?: boolean;
     fear?: boolean;
     i?: number;
+    /** The pip's place in the row. Fear's idle breath is offset by it. */
+    n?: number;
     sz?: number;
   }): string;
 

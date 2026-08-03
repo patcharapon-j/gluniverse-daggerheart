@@ -18,10 +18,26 @@
      .rim    the lit edge itself
      .fx     transient: the gain ring, the spend streak
 
-   There is no idle animation anywhere in this file. Six things breathing
-   on a character sheet is six things asking for attention, all day, for
-   nothing. The whole motion budget is spent on the moment the value
-   changes, which is the only moment that carries information.
+   There is no idle animation on Hope. Six things breathing on a character
+   sheet is six things asking for attention, all day, for nothing — the
+   whole motion budget is spent on the moment the value changes, which is
+   the only moment that carries information.
+
+   **Fear is the exception, and it is not the same claim in a different
+   hue.** Hope is on your own sheet, in front of you, one of forty things
+   on it, and it moves when *you* move it. Fear is docked in the chrome
+   above the map, it is the GM's, and the whole reason it is up there at
+   all is that the table is supposed to feel it sitting there between the
+   moments anybody touches it. A pool that is completely still until the
+   GM presses a button is a number; a pool that is barely alive is a
+   thing in the room. So the fear pips breathe, and every part of that is
+   ramped on `--i` — at one Fear it is very nearly nothing, and it is only
+   at ten or eleven that it is something you notice you have been watching.
+
+   Both idle animations are cheap on purpose: an opacity on the refraction
+   band and a rotation of one pseudo-element. No filter is animated, no
+   colour is interpolated, and twelve of them cost one composited layer
+   each. See the IDLE block below.
    ══════════════════════════════════════════════════════════════════ */
 
 /* Registered so it can be interpolated — Fear's output rides the pool's
@@ -104,6 +120,61 @@
     color-mix(in srgb,var(--tone) calc(28% + 44% * var(--i)),transparent))
   drop-shadow(0 0 calc(var(--sz,30px) * (.12 + .34 * var(--i)))
     color-mix(in srgb,var(--tone) calc(12% + 32% * var(--i)),transparent))}
+
+/* ══ IDLE — FEAR ONLY ═══════════════════════════════════════════════
+   Two loops, both slow, both offset by the pip's own place in the row so
+   the strip reads as one thing moving rather than twelve things blinking.
+   `--n` is written by `GEMS()` and is only ever set on Fear.
+
+   ── the breath ────────────────────────────────────────────────────
+   The refraction band, and nothing else. `.edge` is the light *inside* the
+   glass, so dimming and recovering it is the one part of this object that
+   can waver without the object appearing to move: the silhouette is exact,
+   the face is flat, and what changes is how much light is getting out.
+   Animating the bloom instead would be a filter interpolation twelve times
+   over, and animating the face would break the flat-face rule the whole
+   component is drawn on.
+
+   The floor is `.42` of the settled opacity rather than zero — a band that
+   goes out entirely reads as the pip flickering, which is a fault, not a
+   mood. 5.4s, and the offset is a third of a second, so the wave takes
+   about four seconds to cross twelve pips: slower than anything else that
+   moves in this system, which is the point.
+
+   ── the swim ──────────────────────────────────────────────────────
+   One soft band turning inside the face, clipped by `.pit`'s own diamond,
+   twenty-three seconds to the turn. It is what makes the gem read as
+   liquid rather than as a lit tile — the same claim the strip's rotating
+   rim makes at the other scale, and deliberately at a different period so
+   the two never sit in step. A transform on a pseudo-element, so it is a
+   composite and not a repaint.
+
+   Neither runs on an unlit pip, on a scarred one, or while the pip is
+   playing a gain or a spend: `:not(.gain):not(.spend)` is what hands the
+   element back for those, since both set `animation` on the same targets
+   at lower specificity and would otherwise lose to these. */
+.gem.fear.on:not(.gain):not(.spend) .edge{
+  animation:fear-breath 5.4s ease-in-out infinite;
+  animation-delay:calc(var(--n,0) * -.33s)}
+@keyframes fear-breath{
+  0%,100%{opacity:calc(.28 + .57 * var(--i))}
+  50%    {opacity:calc((.28 + .57 * var(--i)) * .42)}}
+
+.gem.fear.on .pit::after{content:"";position:absolute;inset:-32%;
+  background:linear-gradient(96deg,transparent 38%,
+    color-mix(in srgb,#fff calc(5% + 13% * var(--i)),transparent) 50%,transparent 62%);
+  animation:fear-swim 23s linear infinite;
+  animation-delay:calc(var(--n,0) * -1.6s)}
+@keyframes fear-swim{to{transform:rotate(360deg)}}
+
+/* Idle motion is the one kind this setting is unambiguously about: it is
+   ambient, it is indefinite, and nothing is lost by stopping it — the pip
+   settles on the value both keyframes are written around. The gain and the
+   spend are left alone, because those are the feedback for a press and a
+   press with no answer is a control that looks broken. */
+@media (prefers-reduced-motion:reduce){
+  .gem.fear.on:not(.gain):not(.spend) .edge,
+  .gem.fear.on .pit::after{animation:none}}
 
 /* ── scarred ──────────────────────────────────────────────────────
    Struck out, not emptied. A hatch fill said "unavailable"; this is a

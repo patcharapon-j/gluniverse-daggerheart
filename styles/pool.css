@@ -17,6 +17,10 @@
    them: the label/tally header and the HUD strip. Three candidate forms
    (cells, chips, hero) used to live here; the diamond replaced all three.
    ══════════════════════════════════════════════════════════════════ */
+/* The rim's angle. Registered, or it is a token stream and the conic snaps
+   round in one frame instead of turning. Same reason as `--i` in gem.css. */
+@property --spin{syntax:'<angle>';inherits:false;initial-value:0deg}
+
 .dh .pool{--tone:var(--hope); --tone-tx:var(--hope-tx); --key:var(--ink-3); --num:var(--ink)}
 .dh .pool.fear{--tone:#8256cc; --tone-tx:#b79ae8}
 /* --tone-tx is the *text* weight of the hue and has to flip with the ground:
@@ -51,19 +55,127 @@
 
 /* ══ GM HUD ═════════════════════════════════════════════════════════
    Not a sheet, not a window — a strip docked in Foundry's own chrome,
-   visible to everyone all the time. Dark, one saturated hue, chamfered
-   on the same corner as everything else. Steppers only for the GM. */
-.dh.hud{display:inline-flex;align-items:center;gap:14px;padding:9px 14px 9px 16px;
-  background:rgba(14,16,20,.93);backdrop-filter:blur(14px);
-  box-shadow:inset 0 0 0 1px #2c323b,0 10px 24px -8px rgba(0,0,0,.7);
-  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
-.dh.hud > .k{font:700 9.5px/1 var(--f-mono);letter-spacing:.24em;text-indent:.24em;
-  text-transform:uppercase;color:#8b939e}
-/* Every measure inside the HUD is px, because Foundry's chrome does not scale. */
-.dh.hud .pool{flex:none}
+   visible to everyone all the time. Chamfered on the same corner as
+   everything else. Steppers only for the GM.
 
-.dh.hud .stp{display:flex;flex-direction:column;gap:3px;margin-left:2px}
-/* `min-height:0` and `max-height:none` are not padding on the declaration —
+   ── it borrows the duality plate's header, on purpose ──────────────
+   It was a mono caption, twelve pips and a tally on flat graphite: honest,
+   legible, and saying nothing whatever about what it was counting. A Fear
+   card in chat has had a grammar for that since the plate was drawn — a
+   violet field running deep→light, a diagonal weave over it, and a display
+   numeral. This is that header at strip height.
+
+   What it does *not* borrow is the eyebrow. The strip used to open with
+   the word FEAR in 9.5px mono and it is gone: twelve violet diamonds and
+   a stepper, docked above the map, is not an object anybody at this table
+   has to be told the name of, and a caption that says what the object
+   already says is a caption doing adjacency's job. The count is the one
+   fact here, so the count is what is set large — the tally is `.pl-num`
+   now rather than a footnote to a row of pips.
+
+   The plate's ghost does not come with it. See the ground below.
+
+   ── three layers, and the order is the whole of it ─────────────────
+     .hglow   the rotating rim, edge to edge
+     .hface   the ground, inset 1.5px — so .hglow is only ever visible
+              as the 1.5px band .hface does not cover
+     content  the pips, the tally, the steppers
+
+   The rim is one conic gradient turning about the strip's centre, which
+   on a 10:1 box sweeps the two short ends far faster than the long ones —
+   which is what makes it read as something flowing round the edge rather
+   than as a wheel behind it. It is a repaint of a 487×51 box per frame
+   and nothing else: no filter, no second element, and 22s to go round.
+
+   ── everything ramps ───────────────────────────────────────────────
+   `--i` is the pool's own fullness, the number `gem.css` already ramps a
+   pip's burn on, set here on the strip and inherited down. Twelve is not
+   eleven with one more diamond lit: the field saturates, the weave comes
+   up, the sockets deepen, the corner bleed lifts and the rim's light gets
+   stronger. One transition on `--i` carries all of it, so the whole strip
+   eases together over the half-second after a stepper is pressed — which
+   is also why nothing here is rebuilt on a change. See `fear-hud.ts`. */
+.dh.hud{position:relative;isolation:isolate;--i:0;--tone-hi:#ab88ea;
+  /* the socket is a hole in whatever it sits on, and what it sits on is no
+     longer graphite — an unlit pip left at the sheet's near-black read as a
+     punched hole rather than as a slot in this ground. Violet-black, and it
+     deepens with the field so the empty half of the row keeps its distance
+     from the full half at every value. */
+  --socket:color-mix(in srgb,#241a3c calc(30% + 70% * var(--i)),#14161b);
+  --socket-line:color-mix(in srgb,#3b2f5c calc(30% + 70% * var(--i)),#2b313a);
+  display:inline-flex;align-items:center;gap:14px;padding:9px 14px 9px 16px;
+  backdrop-filter:blur(14px);transition:--i .6s cubic-bezier(.2,.8,.25,1);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+/* Every measure inside the HUD is px, because Foundry's chrome does not scale. */
+.dh.hud .pool{flex:none;position:relative;z-index:3}
+
+/* ── the rim ───────────────────────────────────────────────────────
+   A flat base so the edge is always drawn — a rim that exists only where
+   the highlight currently is, is not a rim, it is a comet — and the
+   conic over it. Two lobes rather than one, opposite each other, so the
+   strip is never entirely dark down one whole side.
+
+   Registered, or the angle steps in one frame instead of turning. */
+.dh.hud .hglow{position:absolute;inset:0;z-index:0;pointer-events:none;--spin:0deg;
+  background:
+    conic-gradient(from var(--spin) at 50% 50%,
+      transparent 0deg,
+      color-mix(in srgb,var(--tone-hi) calc(24% + 56% * var(--i)),transparent) 34deg,
+      transparent 82deg,
+      transparent 166deg,
+      color-mix(in srgb,var(--tone-hi) calc(12% + 36% * var(--i)),transparent) 208deg,
+      transparent 254deg,
+      transparent 360deg),
+    linear-gradient(color-mix(in srgb,#6a41ab calc(6% + 30% * var(--i)),#2b3039) 0 100%);
+  animation:hud-flow 22s linear infinite}
+@keyframes hud-flow{to{--spin:360deg}}
+/* Same argument as the pips' breath in gem.css: the rim is ambient and
+   indefinite, and stopping it costs nothing because the base under the
+   conic is the rim. */
+@media (prefers-reduced-motion:reduce){.dh.hud .hglow{animation:none}}
+
+/* ── the ground ────────────────────────────────────────────────────
+   Four layers, top to bottom: the weave, the bleed, the field, the base.
+
+   The **field** is the plate's own, deep→light at 103°, mixed toward the
+   chrome's near-black by how full the pool is — and mixed with
+   *transparent* rather than with a colour, so the backdrop blur underneath
+   survives. The **weave** is the plate's `.shards` geometry and
+   deliberately not its class: `.shards` belongs to plate.css, both load
+   into the same `.dh` root, and that is the collision `.die.win` and
+   `.dfn .crest` are named after. A background layer needs no class at all.
+
+   The **bleed** is what is left of the plate's crop, and it is a gradient
+   rather than the obvious thing. The obvious thing was the plate's ghost —
+   the count again at three times the size, running off the bottom edge —
+   and it was drawn, and it does not survive contact with a twelve-pip row:
+   the ghost has nowhere to stand but *behind the pips*, so it is legible
+   at two Fear, half-eaten at seven, and at eleven it is two vertical stems
+   poking out from under the lit diamonds, which reads as a rendering fault
+   rather than as a number. Every other object that carries a ghost has a
+   quiet corner to put it in and this one is a 51px band that is pips all
+   the way across. So what says "cropped out of something larger" here is
+   light instead of type: one wide radial anchored off the bottom-left
+   corner, so the field has a source it does not contain. Nothing to keep
+   in sync, and nothing that can collide with a pip. */
+.dh.hud .hface{position:absolute;inset:1.5px;z-index:1;pointer-events:none;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5.1px),calc(100% - 5.1px) 100%,0 100%);
+  background:
+    repeating-linear-gradient(114deg,transparent 0 9px,
+      rgba(255,255,255,calc(.012 + .028 * var(--i))) 9px 10px,
+      transparent 10px 21px,
+      rgba(255,255,255,calc(.007 + .016 * var(--i))) 21px 23px),
+    radial-gradient(58% 240% at -4% 116%,
+      color-mix(in srgb,#a97ceb calc(7% + 15% * var(--i)),transparent) 0,
+      transparent 100%),
+    linear-gradient(103deg,
+      color-mix(in srgb,#2a1550 calc(15% + 33% * var(--i)),transparent) 0,
+      color-mix(in srgb,#4a2b8c calc(9% + 24% * var(--i)),transparent) 58%,
+      color-mix(in srgb,#6a41ab calc(6% + 20% * var(--i)),transparent) 100%),
+    linear-gradient(rgba(11,13,17,.94) 0 100%)}
+
+/* ── the steppers ──────────────────────────────────────────────────
+   `min-height:0` and `max-height:none` are not padding on the declaration —
    they are the reset `make.css` and `prep.css` both had to learn, arriving
    here third. Foundry's `elements` layer sizes every <button> to
    `--button-height`, 28px, *with a matching min-height*, and this is the one
@@ -83,13 +195,30 @@
    rounds every button to 4px, and nothing in this system has a rounded
    corner: the family mark is a chamfer, which is a corner *cut off* rather
    than turned, and the two read as opposite claims at the same size. */
+.dh.hud .stp{display:flex;flex-direction:column;gap:3px;margin-left:2px;
+  position:relative;z-index:3}
 .dh.hud .stp button{width:20px;height:15px;min-height:15px;max-height:15px;
   padding:0;border:0;border-radius:0;cursor:pointer;
-  background:#242931;box-shadow:inset 0 0 0 1px #343b45;color:#c3cbd5;
-  font:700 11px/1 var(--f-mono);transition:background .14s,color .14s}
+  background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.13);
+  color:#d8d2e6;font:700 11px/1 var(--f-mono);transition:background .14s,color .14s}
 .dh.hud .stp button:hover{background:var(--fear);color:#fff;box-shadow:none}
-/* the tally is the number even when the pips are not — a GM says "I have
-   four Fear" out loud, and the HUD should not make them count pips */
-.dh.hud .tally{font:700 21px/1 var(--f-display);color:#e6eaef;letter-spacing:-.03em;
-  font-variant-numeric:tabular-nums;min-width:1.6ch;text-align:right}
-.dh.hud .tally s{text-decoration:none;font-size:11px;color:#7d8794;margin-left:1px}
+/* The tally is the number even when the pips are not — a GM says "I have
+   four Fear" out loud, and the HUD should not make them count pips.
+
+   It is the plate's `.pl-num` now rather than a caption: display face,
+   set large, and filled with a gradient rather than a colour for the same
+   reason the field under it is. With the eyebrow gone it is the only type
+   on the strip, which is what lets it be this size without the strip
+   becoming a row of competing words. */
+.dh.hud .tally{position:relative;z-index:3;
+  font:700 30px/1 var(--f-display);letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums;min-width:2.1ch;text-align:right;
+  background:linear-gradient(172deg,#fbf8ff 0,#d8c2fb 52%,#a37ce4 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+/* Its own colour, so it paints over the gradient the parent clipped to
+   every glyph in the element rather than being part of it: the count is
+   the number and the ceiling is a footnote to it. */
+.dh.hud .tally s{text-decoration:none;font:700 11px/1 var(--f-mono);
+  color:color-mix(in srgb,var(--tone-hi) calc(34% + 40% * var(--i)),#7d8794);
+  margin-left:1px}
+

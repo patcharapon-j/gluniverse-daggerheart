@@ -1254,14 +1254,23 @@ setTimeout(async () => { try {
      no shape at all: no ground, no blur, no chamfer, just a row of gems on
      the client's own background. Which is a thing that could plausibly have
      been designed. So: the ground resolves, and the hue underneath it is
-     Fear's rather than Hope's. */
+     Fear's rather than Hope's.
+
+     The ground is `.hface` and not the strip's own `background`, which is a
+     distinction with a consequence rather than a detail: the rotating rim
+     needs something over it that stops 1.5px short of the edge, so what the
+     strip carries is a clip-path and a backdrop-filter and the field is a
+     layer inside it. Reading `backgroundColor` off `.hud` gets transparent
+     on a strip that is drawing perfectly. */
   const hud = document.querySelector('#ui-top > .dh.hud');
   const hudS = hud && getComputedStyle(hud);
   const tone = hud && getComputedStyle(hud.querySelector('.pool')).getPropertyValue('--tone').trim();
+  const ground = hud && getComputedStyle(hud.querySelector('.hface')).backgroundImage;
   check('the docked strip resolves its ground and its hue',
-        !!hudS && hudS.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+        !!hudS && !!ground && ground !== 'none' &&
         hudS.clipPath.startsWith('polygon') && tone === '#8256cc',
-        hudS ? `${hudS.backgroundColor} · --tone ${tone || 'unset'}` : 'no strip');
+        hudS ? `${(ground?.match(/gradient/g) ?? []).length} field layers · --tone ${
+          tone || 'unset'}` : 'no strip');
 
   /* Second, `#ui-middle`'s `pointer-events:none`. Foundry sets it so the top
      and bottom bands do not eat clicks meant for the canvas, and every real
@@ -1288,19 +1297,68 @@ setTimeout(async () => { try {
         Math.round(stepBox?.width ?? 0) === 20 && Math.round(stepBox?.height ?? 0) === 15,
         `${Math.round(stepBox?.width ?? 0)}×${Math.round(stepBox?.height ?? 0)}px`);
 
-  /* And the number, pinned. Twelve pips at 24px on a 7px gap is 365px before
-     the label, the tally and the steppers are counted, which makes this the
-     widest fixed object in the system by some way — wide enough that its
-     width is a design decision rather than an outcome. A change to `sz` or
-     `gap` in `design/pool.js` is allowed; making it here by accident is not.
-     The players' build is asserted *narrower* by exactly the steppers, which
-     is the only difference the two are supposed to have. */
+  /* And the numbers, pinned. Twelve pips at 24px on a 7px gap is 365px, which
+     makes this the widest fixed object in the system by some way — wide enough
+     that its width is a design decision rather than an outcome. A change to
+     `sz` or `gap` in `design/pool.js` is allowed; making it here by accident
+     is not. The players' build is asserted *narrower* by exactly the steppers,
+     which is the only difference the two are supposed to have.
+
+     It is the **pip row** that carries the number and not the whole strip, and
+     that is a correction. The old check asserted the strip's own 521px, which
+     silently included the width of a mono word and a tally — text, in a
+     webfont, fetched over the network. A client that has not got Google Sans
+     Code yet lays that out in whatever it does have, and the check goes red on
+     a strip that is exactly right. The pips are geometry: twelve boxes and
+     eleven gaps, and no font can move them. The tally is still checked, on the
+     one thing about it that is a decision rather than a measurement — that it
+     is inside the frame while the ghost is not. */
+  const pipsW = Math.round(hud?.querySelector('.gems')?.getBoundingClientRect().width ?? 0);
   const hudW = Math.round(hud?.getBoundingClientRect().width ?? 0);
   const pcW = Math.round(
     document.querySelector('#ui-top > .dh.hud:last-child')?.getBoundingClientRect().width ?? 0);
   check('the strip measures what the design draws',
-        hudW === 521 && hudW - pcW === 36,
-        `gm ${hudW}px · player ${pcW}px · steppers ${hudW - pcW}px`);
+        pipsW === 365 && hudW - pcW === 36,
+        `pips ${pipsW}px · gm ${hudW}px · player ${pcW}px · steppers ${hudW - pcW}px`);
+
+  /* The strip's ramp, which is the one thing about this component that
+     fails completely silently.
+
+     Every layer on `.hface` — the weave, the corner bleed, the field — is a
+     `color-mix()` or an `rgba()` whose amount is `calc(… * var(--i))`, and
+     `--i` is registered in **gem.css**, not here. Registration is what makes
+     it a `<number>` rather than a token stream, and an unregistered one turns
+     every one of those functions invalid, which takes the whole `background`
+     shorthand down with it. What is left is a strip that is merely dark: no
+     error, no missing element, nothing on screen that looks like a fault
+     rather than like a decision somebody made.
+
+     So it is measured as a *difference*. The computed background is read at
+     the strip's own value and again at `--i:1`, and the two must not be the
+     same string. That is the ramp working, and it is also the registration
+     working, and it cannot pass on a background that resolved to `none`.
+
+     The transition has to come off to take the reading, and that is not
+     tidiness either: `.hud` eases `--i` over .6s, so a computed value read on
+     the frame it was set is the value the *transition* is currently at, not
+     the one that was asked for. Both reads land on the same interpolated
+     number and the check fails on a strip that ramps perfectly. */
+  const face = hud && hud.querySelector('.hface');
+  const at = (i) => {
+    const was = hud.style.cssText;
+    hud.style.transition = 'none';
+    hud.style.setProperty('--i', i);
+    const bg = getComputedStyle(face).backgroundImage;
+    hud.style.cssText = was;
+    return bg;
+  };
+  const [lo, hi] = face ? [at('0'), at('1')] : ['', ''];
+  check('the field ramps on --i rather than resolving to nothing',
+        !!face && lo !== 'none' && lo !== hi &&
+        (hi.match(/gradient/g)?.length ?? 0) === 4,
+        !face ? 'no ground'
+              : `${hi.match(/gradient/g)?.length ?? 0} layers · 0 and 1 ${
+                  lo === hi ? 'resolve the SAME' : 'differ'}`);
 
   /* ── the roll popover's pair ──────────────────────────────────────
      Three things, and each one fails as a plausible-looking control rather
