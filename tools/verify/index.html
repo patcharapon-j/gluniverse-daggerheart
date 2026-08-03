@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="/styles/tile.css">
 <link rel="stylesheet" href="/styles/card.css">
 <link rel="stylesheet" href="/styles/chit.css">
+<link rel="stylesheet" href="/styles/keep.css">
 <link rel="stylesheet" href="/styles/ledger.css">
 <link rel="stylesheet" href="/styles/roll.css">
 <link rel="stylesheet" href="/styles/swap.css">
@@ -174,6 +175,9 @@
 <h2><span>// THE CHITS</span>Counters on a card, in all four of the hosts that draw them</h2>
 <div class="stage" id="chits"></div>
 
+<h2><span>// THE DIE</span>Dice a card keeps, and the four ways this one breaks</h2>
+<div class="stage" id="keep"></div>
+
 <h2><span>// THE LEDGER</span>The change log, and everything it must survive storage as</h2>
 <div class="stage" id="ledger"></div>
 
@@ -195,6 +199,7 @@ import { GEMS } from '/src/module/ui/gem.js';
 import { FEAR_HUD } from '/src/module/ui/pool.js';
 import { CARD, fit } from '/src/module/ui/card.js';
 import { CHITS } from '/src/module/ui/chit.js';
+import { KEEP } from '/src/module/ui/keep.js';
 import { LEDGER } from '/src/module/ui/ledger.js';
 import { SPINE, TILE } from '/src/module/ui/tile.js';
 import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
@@ -650,6 +655,58 @@ const chitsReady = (async () => {
    room. A row that grows a second line is the regression, and it grows one
    quietly — a numeral put back, a label that stops ellipsing, a strip that
    wraps. */
+/* ── THE DIE ────────────────────────────────────────────────────────
+   A tray of kept dice is a `.chits` row wearing a second class, which buys
+   it every socket, gap, host sizing and ground `chit.css` already solved —
+   and buys with it four ways to break that only fail here.
+
+   **The die must not wear the button's class.** `.keep .kd` is the press and
+   the `.die` inside it is the drawing, and the first draft gave `kd` to
+   both: `display:block` then beat `plate.css`'s `display:grid` and every
+   numeral came off the centre of its silhouette onto the text baseline.
+   That is `.die.win`, `.dfn .pl` and `.r.pl` a fourth time, except that
+   those were two of our sheets colliding and this was one component
+   colliding with itself — which no amount of `.dh` scoping could catch,
+   and which a study page shows as a numeral sitting slightly low.
+
+   **The numeral has to survive nine domains.** A kept die takes the card's
+   hue, and the nine run from Splendor's pale gold to Midnight's near-black.
+   Choosing an ink per card was tried and is not enough — six of the nine
+   are *mid* lightness, where neither black nor white gets anywhere — so the
+   face takes a lightness floor and the ink a ceiling, against the same
+   channel. That is a promise with a number in it, so it is measured rather
+   than described: every domain, painted and sampled.
+
+   **Foundry sizes every button**, and four of the six things in this tray
+   are one. `min-height` had no competitor in `pool.css`, `make.css`,
+   `prep.css` and `chit.css` in turn, and a floor with no competitor simply
+   applies.
+
+   **And a host override must actually win.** `.chits` and `.chits.keep` are
+   both ours, both load into one `.dh` root, and a bare `.keep` stating a
+   property `.chits` also states would have its winner decided by the order
+   `system.json` lists the two files in. A features row wants 17px where a
+   counter wants 14, so this is not hypothetical. */
+const keepReady = (async () => {
+  const hues = ['grace', 'midnight', 'splendor', 'valor', 'dread'];
+  document.getElementById('keep').innerHTML = `
+    <div class="dh" style="width:520px;background:#0d1014;padding:18px">
+      <div class="lbl">EVERY SHAPE · blank, rolled, climbing</div>
+      <div style="display:flex;gap:14px" id="kshapes">${
+        [4, 6, 8, 10, 12].map((f, i) =>
+          KEEP({ mode: 'bag', faces: f, dice: [[3, 5, 7, 9, 11][i]], add: false })).join('')}</div>
+      <div class="lbl" style="margin-top:16px">A FEATURES ROW · 17px, not the counter's 14</div>
+      <div class="abl"><div class="a" id="kabl">${
+        KEEP({ mode: 'bag', faces: 6, dice: [0, 0], max: 4, name: 'slayer dice' })}</div></div>
+      <div class="lbl" style="margin-top:16px">NINE DOMAINS · the ink is measured, not asserted</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap" id="khues">${
+        hues.map(h => `<span style="--dom:${byslug[h].light};--dom-dk:${byslug[h].dark}">${
+          KEEP({ mode: 'bag', faces: 6, dice: [6], dom: true, add: false })}</span>`).join('')}</div>
+      <div class="lbl" style="margin-top:16px">CLIMBING · one die, and the chevron that moves it</div>
+      <div id="kclimb">${KEEP({ mode: 'climb', faces: 6, dice: [3], name: 'wild surge die' })}</div>
+    </div>`;
+})();
+
 const ledgerReady = (async () => {
   const grace = byslug.grace;
   document.getElementById('ledger').innerHTML = `
@@ -1625,6 +1682,80 @@ setTimeout(async () => { try {
   check('every ledger row resolves its track\'s material',
         lgHues.length >= 5 && lgUnset.length === 0,
         `${lgHues.length} rows · ${lgUnset.map(([t]) => t).join(', ') || 'all resolved'}`);
+
+  /* ── the kept die ──────────────────────────────────────────────── */
+  await keepReady;
+
+  /* The `kd` collision. `plate.css` makes every die a centred grid; giving
+     the button's class to the drawing as well took that to `block` and put
+     every numeral on the text baseline. Checked as the *outcome* rather than
+     the declaration — a numeral within a pixel of its silhouette's middle —
+     because the next way to lose it will not be a `display`. */
+  const kDie = document.querySelector('#kshapes .kd .die');
+  const kGrid = getComputedStyle(kDie).display === 'grid';
+  const kdB = kDie.getBoundingClientRect();
+  const kemB = kDie.querySelector('em').getBoundingClientRect();
+  const kdx = Math.abs(kemB.left + kemB.width / 2 - kdB.left - kdB.width / 2);
+  check('a kept die centres its numeral on its silhouette',
+        kGrid && kdx < 1.5, `${getComputedStyle(kDie).display} · ${kdx.toFixed(2)}px off`);
+
+  /* The d4 is the one asymmetric shape: two thirds of a triangle's ink is
+     below the halfway line, so a numeral on the box's centre reads as having
+     slipped upward. `--oy` puts it at the optical centre — below 50% and
+     well above the 66.7% face centroid this file already retired. */
+  const kd4 = document.querySelector('#kshapes .die.d4');
+  const k4b = kd4.getBoundingClientRect();
+  const k4e = kd4.querySelector('em').getBoundingClientRect();
+  const k4f = (k4e.top + k4e.height / 2 - k4b.top) / k4b.height;
+  check('the d4 numeral sits at the triangle\'s optical centre',
+        k4f > 0.55 && k4f < 0.64, `${(k4f * 100).toFixed(1)}% down`);
+
+  /* Nine domains, painted and sampled. A promise with a number in it. */
+  const kcv = document.createElement('canvas'); kcv.width = kcv.height = 4;
+  const kctx = kcv.getContext('2d', { willReadFrequently: true });
+  const kpx = c => { kctx.clearRect(0, 0, 4, 4); kctx.fillStyle = c; kctx.fillRect(0, 0, 4, 4);
+    const d = kctx.getImageData(1, 1, 1, 1).data; return [d[0], d[1], d[2]]; };
+  const klum = ([r, g, b]) => { const f = v => { v /= 255;
+    return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+    return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
+  const kratio = (a, b) => { const [x, y] = [klum(kpx(a)), klum(kpx(b))].sort((p, q) => q - p);
+    return (x + .05) / (y + .05); };
+  const kInk = [...document.querySelectorAll('#khues .die')].map(d =>
+    kratio(getComputedStyle(d.querySelector('em')).color,
+           getComputedStyle(d.querySelector('.core')).backgroundColor));
+  const kWorst = Math.min(...kInk);
+  check('a numeral is legible on every domain\'s die',
+        kInk.length >= 5 && kWorst >= 4.5, `worst ${kWorst.toFixed(1)}:1 of ${kInk.length}`);
+
+  /* Four of the six things in a tray are buttons. Foundry's `elements` layer
+     is standing in above; strip our metrics and every one goes to 28. */
+  const kSz = parseFloat(getComputedStyle(document.querySelector('#kabl .keep'))
+    .getPropertyValue('--sz'));
+  /* Each against **its own** tray, which is the whole point: the two rows on
+     this stage are deliberately different sizes — a features row states 17
+     and a bare one keeps the component's 22 — so a single expected number
+     would be measuring the host rather than the reset. That was this check's
+     own first bug: it read `--sz` off the features row and the chevron off
+     the climbing one, and reported a correct 22px control as a failure. */
+  const kTall = [];
+  for (const row of document.querySelectorAll('#keep [data-keep]')) {
+    const sz = parseFloat(getComputedStyle(row).getPropertyValue('--sz'));
+    for (const el of row.querySelectorAll('.kd, .put, .tumble, .up')) {
+      kTall.push([el.className, el.offsetHeight, sz]);
+    }
+  }
+  const kKinds = new Set(kTall.map(([c]) => c.split(' ')[0]));
+  const kBad = kTall.filter(([, h, sz]) => Math.abs(h - sz) > 1);
+  check('every press in a tray is as tall as its own tray',
+        kKinds.size === 4 && kBad.length === 0,
+        `${kTall.length} presses, ${kKinds.size} kinds · ` +
+        (kBad.map(([c, h, sz]) => `${c} ${h}/${sz}px`).join(', ') || 'none off'));
+
+  /* And the host override wins, which is a claim about specificity rather
+     than about source order — a bare `.keep` here would be a coin flip
+     decided by `system.json`. A die needs more room than a counter: 17
+     against 14, measured on the row that has both rules available. */
+  check('a features row sizes a die above a counter', kSz === 17, `${kSz}px`);
 
   const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
                       'fcls', 'fclsr', 'fsub', 'fcrd', 'fcards', 'fclass',

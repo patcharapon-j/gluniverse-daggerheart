@@ -35,6 +35,7 @@ import {
   maybeChoice,
   migrateUses,
   printingField,
+  diePoolField,
   resourceField,
   schema,
   str,
@@ -58,7 +59,19 @@ const TypeDataModel = () => foundry.abstract.TypeDataModel;
  * what a weapon holds should not have to go up an inheritance chain to find
  * out that it also holds this.
  */
-const tracked = () => ({ resources: arr(resourceField()) });
+/**
+ * `dice` rides alongside for the same reason and on the same subtypes. It is
+ * a second array rather than a `kind` on the first, because a resource holds
+ * one integer and a die pool holds a list of faces: folding them together
+ * would give every reader of either a branch to take and every writer a
+ * shape to guess. Seven documents in the corpus carry both — the Guardian's
+ * Unstoppable is a once-per-long-rest *use* and a die that climbs, and those
+ * are two different records of two different things.
+ */
+const tracked = () => ({
+  resources: arr(resourceField()),
+  dice: arr(diePoolField()),
+});
 
 /* ══════════════════════════════════════════════════════════════════════
    HERITAGE

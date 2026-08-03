@@ -500,8 +500,35 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
 
    Thickened with a stroke, because Google Sans stops at 700 and 700 on
    a lit gold face is thinner than the face deserves. */
+/* ── and one shape is not symmetric ────────────────────────────────
+   Everything above assumes centring on the silhouette is centring, and
+   for five of the six it is: a square, a diamond, a kite, a hexagon and
+   a decagon all have their centre of area on the centre of their box.
+   **The triangle does not.** A d4's `polygon(50% 0,100% 100%,0 100%)`
+   carries two thirds of its ink below the halfway line, so a numeral on
+   the box's centre has a wedge of empty face under it and a crowded
+   apex above — it reads as having slipped upward, which is the one
+   thing a numeral centred by rule must not do.
+
+   The face centroid at 66.7% is where a real d4 prints it and is the
+   anchor this file already retired for being unreadable as a picture:
+   the number lands where the triangle is narrowest but the eye is not,
+   and at damage size it touches the base. So this is neither, and it is
+   the *optical* centre — far enough down that the mass below the number
+   matches the mass above, and no further.
+
+   `--oy` is a fraction of `--sz` rather than of the numeral, because
+   what it corrects is the shape and not the type. It sits beside the
+   font correction rather than being folded into it for the same reason
+   `--nudge` was taken apart: one is about Google Sans and one is about a
+   polygon, and a stored product of the two is a number that silently
+   goes wrong when either changes. */
+.dh .die{--oy:0}
+.dh .die.d4{--oy:.085}
+
 .dh .die em{position:relative;z-index:2;
-  transform:translateY(calc(var(--sz,38px) * var(--nf,.66) * .0275));
+  transform:translateY(calc(
+    var(--sz,38px) * var(--nf,.66) * .0275 + var(--sz,38px) * var(--oy,0)));
   font:700 calc(var(--sz,38px)*var(--nf,.66))/1 var(--f-display);font-style:normal;
   letter-spacing:-.045em;margin-inline-end:.045em;
   color:var(--numc);font-variant-numeric:tabular-nums;

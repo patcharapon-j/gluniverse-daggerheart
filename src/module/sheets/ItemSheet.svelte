@@ -43,7 +43,13 @@
     FEATURE_KINDS,
     RANGES,
     RANGE_LABELS,
+    DIE_FACES,
+    DIE_MODES,
+    DIE_MODE_LABELS,
+    DIE_ON_REFRESH,
+    DIE_ON_REFRESH_LABELS,
     RESOURCE_MAX,
+    RESOURCE_MAX_LABELS,
     RESOURCE_ON_REFRESH,
     RESOURCE_REFRESH,
     RESOURCE_REFRESH_LABELS,
@@ -54,6 +60,7 @@
   } from "../config.ts";
   import { SUBCLASS_RANKS } from "../data/items.ts";
   import { resourceMax } from "../data/resources.ts";
+  import { poolCapacity } from "../data/dice-pools.ts";
   import type { SheetState } from "../apps/sheet-state.svelte.ts";
   import Prose from "./parts/Prose.svelte";
 
@@ -167,6 +174,22 @@
     refresh: "manual",
     onRefresh: "fill",
     feature: "",
+    onEmpty: "",
+  });
+  /* A blank tray is a `bag` of d6s with no ceiling, which is the shape that
+     asserts least: the commonest thing to author is a pile you place into,
+     and `open` draws no sockets, so a half-filled-in pool looks unfinished
+     rather than looking like a card that caps at one. */
+  const blankDiePool = () => ({
+    name: "Dice",
+    mode: "bag",
+    faces: 6,
+    dice: [],
+    max: { kind: "open", n: 1, trait: "", floor: 0 },
+    refresh: "manual",
+    onRefresh: "clear",
+    feature: "",
+    grow: "",
     onEmpty: "",
   });
 
@@ -315,7 +338,7 @@
         {/each}
         <span class="ct">
           {tab === "counters"
-            ? `${(sys.resources ?? []).length} tracked`
+            ? `${(sys.resources ?? []).length + (sys.dice ?? []).length} tracked`
             : snap.type === "domainCard"
               ? `${domainDef(sys.domain).label} · lv ${sys.level}`
               : typeLabel}
@@ -1073,7 +1096,9 @@
                       onchange={(e) => editRow("resources", i, "max.kind", txt(e))}
                     >
                       {#each RESOURCE_MAX as k}
-                        <option value={k} selected={res.max?.kind === k}>{k}</option>
+                        <option value={k} selected={res.max?.kind === k}
+                          >{RESOURCE_MAX_LABELS[k] ?? k}</option
+                        >
                       {/each}
                     </select>
                   </label>
@@ -1182,6 +1207,198 @@
               <p class="ach">
                 Nothing tracked. Most cards count nothing; the hundred and fifty-seven that do say
                 so in their own rules text.
+              </p>
+            {/each}
+          </div>
+
+          <!-- Kept dice, and they are a second panel rather than a second
+               kind of counter. A resource holds one number; a tray holds a
+               list of faces, and the two would have spent every control
+               asking which they were. Seven documents in the corpus carry
+               both — the Guardian's Unstoppable is a once-per-long-rest use
+               *and* a die that climbs — so the two panels stack, in that
+               order, exactly as the sheet draws them. -->
+          <div class="pnl">
+            <div class="k">
+              Kept dice<s>{(sys.dice ?? []).length}</s>
+              {#if ed}
+                <button type="button" class="nw" onclick={() => addRow("dice", blankDiePool())}
+                  >+ dice</button
+                >
+              {/if}
+            </div>
+            {#each sys.dice ?? [] as pool, i (i)}
+              <div class="blk res">
+                <div class="bh">
+                  <input
+                    class="fnm"
+                    placeholder="What the card calls them"
+                    value={pool.name ?? ""}
+                    disabled={!ed}
+                    onchange={(e) => editRow("dice", i, "name", txt(e))}
+                  />
+                  {#if ed}
+                    <button
+                      type="button"
+                      class="mv"
+                      disabled={i === 0}
+                      onclick={() => moveRow("dice", i, -1)}>↑</button
+                    >
+                    <button
+                      type="button"
+                      class="mv"
+                      disabled={i === (sys.dice ?? []).length - 1}
+                      onclick={() => moveRow("dice", i, 1)}>↓</button
+                    >
+                    <button type="button" class="x" onclick={() => dropRow("dice", i)}>×</button>
+                  {/if}
+                </div>
+                <div class="fields">
+                  <label>
+                    <span>Shape</span>
+                    <select disabled={!ed} onchange={(e) => editRow("dice", i, "mode", txt(e))}>
+                      {#each DIE_MODES as m}
+                        <option value={m} selected={pool.mode === m}
+                          >{DIE_MODE_LABELS[m] ?? m}</option
+                        >
+                      {/each}
+                    </select>
+                  </label>
+                  <!-- The size is a number the table sets, not a rule this
+                       file derives. A Rally Die becomes a d8 at level 5 and a
+                       d10 at Wordsmith Mastery; a Combo Die grows by an
+                       advancement option. Those triggers live on three other
+                       documents, so the card states the size and prints its
+                       own sentence about when it moves. -->
+                  <label>
+                    <span>Die</span>
+                    <select
+                      disabled={!ed}
+                      onchange={(e) => editRow("dice", i, "faces", num(e))}
+                    >
+                      {#each DIE_FACES as f}
+                        <option value={f} selected={pool.faces === f}>d{f}</option>
+                      {/each}
+                    </select>
+                  </label>
+                  {#if pool.mode === "bag"}
+                    <label>
+                      <span>How many</span>
+                      <select
+                        disabled={!ed}
+                        onchange={(e) => editRow("dice", i, "max.kind", txt(e))}
+                      >
+                        {#each RESOURCE_MAX as k}
+                          <option value={k} selected={pool.max?.kind === k}
+                            >{RESOURCE_MAX_LABELS[k] ?? k}</option
+                          >
+                        {/each}
+                      </select>
+                    </label>
+                    {#if pool.max?.kind === "fixed"}
+                      <label>
+                        <span>That many</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={pool.max?.n}
+                          disabled={!ed}
+                          onchange={(e) => editRow("dice", i, "max.n", num(e))}
+                        />
+                      </label>
+                    {:else if pool.max?.kind === "trait"}
+                      <label>
+                        <span>Which trait</span>
+                        <select
+                          disabled={!ed}
+                          onchange={(e) => editRow("dice", i, "max.trait", txt(e))}
+                        >
+                          <option value="" selected={!pool.max?.trait}>—</option>
+                          {#each RESOURCE_TRAITS as t}
+                            <option value={t} selected={pool.max?.trait === t}
+                              >{t === "spellcast" ? "Spellcast" : traitLabel(t)}</option
+                            >
+                          {/each}
+                        </select>
+                      </label>
+                    {/if}
+                  {/if}
+                  <label>
+                    <span>Comes back</span>
+                    <select disabled={!ed} onchange={(e) => editRow("dice", i, "refresh", txt(e))}>
+                      {#each RESOURCE_REFRESH as r}
+                        <option value={r} selected={pool.refresh === r}
+                          >{RESOURCE_REFRESH_LABELS[r] ?? r}</option
+                        >
+                      {/each}
+                    </select>
+                  </label>
+                  <label>
+                    <span>And then</span>
+                    <select
+                      disabled={!ed}
+                      onchange={(e) => editRow("dice", i, "onRefresh", txt(e))}
+                    >
+                      {#each DIE_ON_REFRESH as o}
+                        <option value={o} selected={pool.onRefresh === o}
+                          >{DIE_ON_REFRESH_LABELS[o] ?? o}</option
+                        >
+                      {/each}
+                    </select>
+                  </label>
+                  {#if featureNames.length}
+                    <label>
+                      <span>Belongs to</span>
+                      <select
+                        disabled={!ed}
+                        onchange={(e) => editRow("dice", i, "feature", txt(e))}
+                      >
+                        <option value="" selected={!pool.feature}>This document</option>
+                        {#each featureNames as f}
+                          <option value={f} selected={pool.feature === f}>{f}</option>
+                        {/each}
+                      </select>
+                    </label>
+                  {/if}
+                </div>
+                <div class="fields wide">
+                  <label>
+                    <span>When the die grows</span>
+                    <input
+                      placeholder="Printed verbatim — the card's own sentence"
+                      value={pool.grow}
+                      disabled={!ed}
+                      onchange={(e) => editRow("dice", i, "grow", txt(e))}
+                    />
+                  </label>
+                  <label>
+                    <span>What happens at the end</span>
+                    <input
+                      placeholder="Printed verbatim — what the card says when it runs out"
+                      value={pool.onEmpty}
+                      disabled={!ed}
+                      onchange={(e) => editRow("dice", i, "onEmpty", txt(e))}
+                    />
+                  </label>
+                </div>
+                <p class="ach">
+                  {#if pool.mode === "roll"}
+                    Nothing is held — the card names a <b>d{pool.faces}</b> and pressing it rolls.
+                  {:else if pool.mode === "climb"}
+                    One <b>d{pool.faces}</b>, placed showing 1 and stepped up to {pool.faces}. It
+                    refuses at the top rather than clearing itself, because what happens then is
+                    printed on the card and differs between them.
+                  {:else}
+                    Up to <b>{poolCapacity(pool, doc.actor) ?? "any number"}</b> ×
+                    <b>d{pool.faces}</b>
+                    {doc.actor ? `for ${doc.actor.name}` : "— an unowned card belongs to nobody"}.
+                  {/if}
+                </p>
+              </div>
+            {:else}
+              <p class="ach">
+                No dice. Eighteen rules in the corpus keep one: a bag you spend from, a die that
+                counts up, or a die whose size is the only thing worth recording.
               </p>
             {/each}
           </div>

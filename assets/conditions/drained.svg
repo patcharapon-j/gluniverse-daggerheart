@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- A die going down a size. Drained is precisely that rule — a d12 instead
+       of a d20 until you fail a roll — so the mark states the mechanism
+       rather than a mood, which is what makes it readable to the person it
+       is happening to. -->
+  <path d="M32 2 56 16v28L32 58 8 44V16L32 2Zm0 8L15 20v24l17 10 17-10V20L32 10Z"/>
+  <path d="M24 24h5v16h-5zm11 0h5v16h-5z" fill-opacity="0"/>
+  <path d="M32 22 42 32 32 42 22 32 32 22Z"/>
+  <path d="M12 48h40v5H12z" fill-opacity="0"/>
+</svg>

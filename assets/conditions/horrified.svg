@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- A rhombus torn open. Horrified makes you Vulnerable, so it borrows that
+       mark's argument — a defence failing — and states it as the family shape
+       coming apart rather than as a face, which does not survive 24px. -->
+  <path d="M32 2 62 32 32 62 2 32 32 2Zm0 9L11 32l21 21 21-21L32 11Z"/>
+  <path d="m26 20 5 9-6 3 8 5-4 4 9 3-14 12 3-10-7-2 5-6-6-4 7-14Z"/>
+</svg>

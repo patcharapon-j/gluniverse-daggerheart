@@ -400,8 +400,44 @@ export const FEATURE_KIND_LABELS: Record<string, string> = {
  * did not cap. An open pool draws no sockets, because there is no capacity to
  * draw.
  */
-export const RESOURCE_MAX = ["fixed", "trait", "level", "open"] as const;
+/*
+ * `proficiency` and `tier` are the two the first sweep missed, and they were
+ * missed for the same reason: nothing in the *domain decks* sources a ceiling
+ * from either, so a sweep that started with the 189 cards found `trait` and
+ * `level` and stopped. Both live on subclass and class features instead —
+ * Call of the Slayer stores "a number of Slayer Dice equal to your
+ * Proficiency", the Assassin adds "a number of d4s equal to your tier". They
+ * are derived numbers on the character exactly as level is, so they belong
+ * here rather than being rounded to the nearest one that already existed.
+ *
+ * `fear` is the odd one and is here because the alternative is worse. Umbral
+ * Veil counts "tokens equal to the Fear in the GM's pool" and was annotated
+ * `open` — honest, and it draws no capacity at all, so the card states a
+ * ceiling the sheet declines to show. Fear is a world setting rather than a
+ * field on anybody's actor, which is the whole reason it was awkward; reading
+ * it is one call and the number is on screen in the HUD anyway.
+ */
+export const RESOURCE_MAX = [
+  "fixed",
+  "trait",
+  "level",
+  "proficiency",
+  "tier",
+  "fear",
+  "open",
+] as const;
 export type ResourceMax = (typeof RESOURCE_MAX)[number];
+
+/** What the counter editor calls each of them. */
+export const RESOURCE_MAX_LABELS: Record<string, string> = {
+  fixed: "A fixed number",
+  trait: "A trait",
+  level: "Your level",
+  proficiency: "Your Proficiency",
+  tier: "Your tier",
+  fear: "the GM's Fear",
+  open: "No maximum",
+};
 
 /**
  * The six traits plus Spellcast, which is a *pointer* to one of the six.
@@ -467,11 +503,77 @@ export const REFRESHED_BY: Record<"short" | "long", readonly ResourceRefresh[]> 
   long: ["rest", "longRest"],
 };
 
+/* ── dice a card asks you to keep ────────────────────────────────────────
+   A resource counts. Eighteen rules in the corpus want a second thing
+   counted *and* said: Prayer Dice are four d4s on your sheet with four
+   different faces up, and four identical counters are not a record of that.
+
+   So a die pool is its own field rather than a flag on a resource. The
+   `max` block is shared verbatim — a ceiling is a ceiling, and the Slayer's
+   is Proficiency where the Sigil's is level — but nothing else is: a
+   resource holds one integer and this holds a list of faces, and the two
+   would have spent every method asking which they were.
+
+   Three modes, and they are the three shapes the corpus has rather than
+   three somebody might want. See `design/keep.js`.
+   ─────────────────────────────────────────────────────────────────────── */
+
+export const DIE_MODES = ["bag", "climb", "roll"] as const;
+export type DieMode = (typeof DIE_MODES)[number];
+
+export const DIE_MODE_LABELS: Record<string, string> = {
+  bag: "A bag you spend from",
+  climb: "One die, counting up",
+  roll: "Named, not kept",
+};
+
+/** The five a die can be. There is no seventh polyhedron for anyone to want. */
+export const DIE_FACES = [4, 6, 8, 10, 12] as const;
+
+/**
+ * What a refresh does to a pool of dice.
+ *
+ * Three, and the third is what a resource has no equivalent of. `clear`
+ * empties the tray, which is what every "clear all unspent" card says.
+ * `fill` tops it up with **blank** dice, which is a budget of dice you have
+ * not rolled yet. `reroll` fills it and rolls every one, because Prayer Dice
+ * are handed to you already rolled — "at the beginning of each session, roll
+ * a number of d4s equal to your Spellcast trait" — and a tray of blanks
+ * would be the sheet quietly making you do it by hand.
+ *
+ * A `climb` pool takes `clear`, and that is the card's own sentence: Wild
+ * Surge says "when the die's value would exceed 6 **or you take a rest**,
+ * this form drops".
+ */
+export const DIE_ON_REFRESH = ["clear", "fill", "reroll"] as const;
+export type DieOnRefresh = (typeof DIE_ON_REFRESH)[number];
+
+export const DIE_ON_REFRESH_LABELS: Record<string, string> = {
+  clear: "Clear the tray",
+  fill: "Fill it with unrolled dice",
+  reroll: "Fill it and roll them",
+};
+
 /* ── conditions ──────────────────────────────────────────────────────────
-   The three the rules name, and they are genuinely all three: Daggerheart
-   has no poisoned, no prone, no blinded. Everything else a fiction produces
-   is described rather than tracked, which is a deliberate choice by the game
-   and not a gap for a system to fill in.
+   The three the *core rules* name, plus thirteen the cards do.
+
+   "Daggerheart has no poisoned, no prone, no blinded" is still true and was
+   never the whole claim. What this list said for a long time was that three
+   was all of them, and a sweep of the four packs says otherwise: sixteen
+   cards put a named state on a creature and say **"While X"** followed by a
+   rule, which is exactly the shape the first three have. Cloaked is the
+   Rogue's core class feature. Hexed is the Witch's. Marked for Death is the
+   Assassin's, and the Executioners Guild has three cards that turn on it.
+
+   The test for being here is that shape and nothing looser: a word the
+   fiction produces is described, and a word a card defines and then refers
+   back to is tracked. "Temporarily Enraptured" is a rule with a duration and
+   a consequence; "you know somebody who owes you a favor" is not.
+
+   Two live on the same document as a counter and that is not a duplication.
+   Arcane Charge is a Charged *state* — "you stop being Charged at your next
+   long rest" — and a one-use budget on the card; the state belongs on the
+   token, where the table can see it, and the budget belongs on the card.
 
    They are here because a condition that lives only in somebody's memory is
    a condition that stops applying halfway through a fight. Foundry already
@@ -514,6 +616,103 @@ export const CONDITIONS: ConditionDef[] = [
     name: "Restrained",
     img: `${SYSTEM_PATH}/assets/conditions/restrained.svg`,
     rule: "A Restrained creature can't move, but can still act.",
+  },
+
+  /* ── the ones the cards name ────────────────────────────────────────
+     Ordered by how many cards turn on each, which is the order a GM meets
+     them: Cloaked is on six, Marked for Death on five, Spectral on four. */
+  {
+    id: "cloaked",
+    name: "Cloaked",
+    img: `${SYSTEM_PATH}/assets/conditions/cloaked.svg`,
+    rule:
+      "A Cloaked creature is Hidden. You stop being Cloaked when you move " +
+      "into an adversary's line of sight, or when you make an attack.",
+  },
+  {
+    id: "markedForDeath",
+    name: "Marked for Death",
+    img: `${SYSTEM_PATH}/assets/conditions/marked-for-death.svg`,
+    rule:
+      "You can have only one adversary Marked for Death at a time. It lasts " +
+      "until you take a rest, the adversary is defeated, or the GM spends " +
+      "Fear equal to your tier to clear it.",
+  },
+  {
+    id: "spectral",
+    name: "Spectral",
+    img: `${SYSTEM_PATH}/assets/conditions/spectral.svg`,
+    rule:
+      "While Spectral, you're immune to physical damage and can float and " +
+      "pass through solid objects.",
+  },
+  {
+    id: "hexed",
+    name: "Hexed",
+    img: `${SYSTEM_PATH}/assets/conditions/hexed.svg`,
+    rule: "A Hexed creature is marked by your magic. What that costs them is on the card.",
+  },
+  {
+    id: "invisible",
+    name: "Invisible",
+    img: `${SYSTEM_PATH}/assets/conditions/invisible.svg`,
+    rule:
+      "An Invisible creature can't be seen except through magical means, and " +
+      "attack rolls against them have disadvantage.",
+  },
+  {
+    id: "enraptured",
+    name: "Enraptured",
+    img: `${SYSTEM_PATH}/assets/conditions/enraptured.svg`,
+    rule:
+      "While Enraptured, a target's attention is fixed on you, narrowing " +
+      "their field of view.",
+  },
+  {
+    id: "corroded",
+    name: "Corroded",
+    img: `${SYSTEM_PATH}/assets/conditions/corroded.svg`,
+    rule:
+      "While a target is Corroded, they take a penalty to their Difficulty. " +
+      "How much is on the card that applied it.",
+  },
+  {
+    id: "stunned",
+    name: "Stunned",
+    img: `${SYSTEM_PATH}/assets/conditions/stunned.svg`,
+    rule: "While Stunned, they can't use reactions and can't take any other actions.",
+  },
+  {
+    id: "charged",
+    name: "Charged",
+    img: `${SYSTEM_PATH}/assets/conditions/charged.svg`,
+    rule: "A Charged creature is holding power it has not spent yet.",
+  },
+  {
+    id: "drained",
+    name: "Drained",
+    img: `${SYSTEM_PATH}/assets/conditions/drained.svg`,
+    rule:
+      "While Drained, the target uses a d12 instead of a d20 for attack rolls " +
+      "— including for advantage or disadvantage — until they fail a roll.",
+  },
+  {
+    id: "horrified",
+    name: "Horrified",
+    img: `${SYSTEM_PATH}/assets/conditions/horrified.svg`,
+    rule: "While Horrified, they're Vulnerable.",
+  },
+  {
+    id: "silenced",
+    name: "Silenced",
+    img: `${SYSTEM_PATH}/assets/conditions/silenced.svg`,
+    rule: "While Silenced, they can't make noise and can't cast spells.",
+  },
+  {
+    id: "ablaze",
+    name: "Ablaze",
+    img: `${SYSTEM_PATH}/assets/conditions/ablaze.svg`,
+    rule: "An Ablaze creature is burning. What that costs them is on the card.",
   },
 ];
 

@@ -1,14 +1,11 @@
 /* V1, refined, and four variations. See plate.css for what each one is
    doing and why the critical is red. */
 
-/* Three layers, in the order light hits them: .lamp is the solid — its
-   ::before the outer edge, its ::after the faceted ring — and .core is
-   the front face, the one plane square to you. The numeral rides on top
-   of both. See plate.css for the projection geometry; the diamond stays
-   on the sheet, where it is the pip you mark. */
-export const DIE = (v, cls, sz, mx) =>
-  `<i class="die ${cls}"${sz ? ` style="--sz:${sz}px"` : ''}${
-    mx ? ` data-mx="${mx}"` : ''}><b class="lamp"></b><b class="core"></b><em>${v}</em></i>`;
+/* The die itself lives in `die.js` now, because `keep.js` draws dice that
+   sit on a card and has to draw them with this builder rather than one that
+   resembles it. Re-exported so every caller of `plate.js` is unaffected. */
+export { DIE } from './die.js';
+import { DIE } from './die.js';
 
 /* ── advantage ─────────────────────────────────────────────────────
    Always a d6, never anything else. Advantage adds it, disadvantage
@@ -43,12 +40,9 @@ const ADV = (r, sz) => {
    `sq` for the d6 rather than `d6`, because a square chip is also what the
    advantage die and the critical's maximum dice are, and those are not
    claiming to be a kind of die when they wear it. */
-const SHAPE = {d4:'d4', d6:'sq', d8:'d8', d10:'d10', d12:'d12', d20:'d20'};
-const shapeOf = die => SHAPE[String(die).toLowerCase()] ?? 'sq';
-const facesOf = die => {
-  const n = Math.floor(Number(String(die).replace(/^d/i, '')));
-  return Number.isFinite(n) && n > 1 ? n : 12;
-};
+/* The table moved to `die.js` with the builder it belongs to. One copy, so
+   the keep tray's d10 and the chat plate's d10 cannot become two shapes. */
+import { shapeOf, facesOf } from './die.js';
 
 /* A d6 is smaller than a d12 and is drawn smaller, because that is true
    and because it keeps the duality pair the subject of the strip. */

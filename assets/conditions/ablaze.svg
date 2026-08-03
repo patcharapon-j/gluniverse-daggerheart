@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- A flame, cut from straight runs. Nothing in this system has a curve it
+       did not need, so the fire is faceted the way the dice are — it reads as
+       belonging to the set rather than as a stock glyph dropped in. -->
+  <path d="M34 2 20 24l8 3-12 18 10 1-6 16 22-22-9-2 14-16-11-1 8-19H34Z"/>
+</svg>

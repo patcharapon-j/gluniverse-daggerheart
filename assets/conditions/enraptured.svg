@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- An eye with everything running into it. Hidden's mark is an eye struck
+       out — what someone cannot do; this is an eye that cannot look away,
+       which is the opposite claim and has to read as one at 24px. -->
+  <path d="M32 16C19 16 8.5 26 6 32c2.5 6 13 16 26 16s23.5-10 26-16c-2.5-6-13-16-26-16Zm0 27c-9 0-16.7-6-19.9-11C15.3 27 23 21 32 21s16.7 6 19.9 11C48.7 37 41 43 32 43Z"/>
+  <path d="M32 24 40 32 32 40 24 32 32 24Z"/>
+  <path d="M0 2h10v4H0zM54 2h10v4H54zM2 0h4v10H2zm56 0h4v10h-4zM0 58h10v4H0zm54 0h10v4H54zM2 54h4v10H2zm56 0h4v10h-4z"/>
+</svg>

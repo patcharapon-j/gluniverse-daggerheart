@@ -20,7 +20,7 @@ import {
 } from "./config.ts";
 import { registerDataModels } from "./data/index.ts";
 import { DaggerheartActor } from "./documents/actor.ts";
-import { DaggerheartItem, refreshResources } from "./documents/item.ts";
+import { DaggerheartItem, refreshDicePools, refreshResources } from "./documents/item.ts";
 import { registerSheets } from "./sheets/register.ts";
 import { registerChat } from "./dice/chat.ts";
 import { registerMessageHeaders } from "./message-header.ts";
@@ -141,6 +141,7 @@ async function refreshScope(scope: "scene" | "session", actor?: any): Promise<nu
   let moved = 0;
   for (const a of targets) {
     moved += (await withoutLedger(a, () => refreshResources(a, [scope]))).length;
+    moved += (await withoutLedger(a, () => refreshDicePools(a, [scope]))).length;
   }
 
   if (moved) {

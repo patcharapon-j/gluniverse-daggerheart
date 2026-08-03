@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- The figure again, with no ground under it. Invisible is a body you
+       cannot see and Spectral is a body that is not there — immune to
+       physical damage, passing through walls — so the two share a silhouette
+       and differ where it matters: one is broken, one dissolves. -->
+  <path d="M32 4c-11 0-20 9-20 20v36l7-6 6 6 7-6 7 6 6-6 7 6V24c0-11-9-20-20-20Zm0 7c7.2 0 13 5.8 13 13v26l-13-1-13 1V24c0-7.2 5.8-13 13-13Z"/>
+  <path d="M26 24h5v7h-5zm12 0h5v7h-5z"/>
+</svg>

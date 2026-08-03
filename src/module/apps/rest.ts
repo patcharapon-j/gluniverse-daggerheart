@@ -93,7 +93,12 @@ import {
   wireRulePeeks,
 } from "./rule-cards.ts";
 import { plain } from "../sheets/cards.ts";
-import { refreshResources, restScopes, restWillRefresh } from "../documents/item.ts";
+import {
+  refreshDicePools,
+  refreshResources,
+  restScopes,
+  restWillRefresh,
+} from "../documents/item.ts";
 import { dhDialog } from "./dialog.ts";
 import { withoutLedger } from "../ledger.ts";
 
@@ -446,8 +451,15 @@ const said = (n: number, one: string, many: string, verb: string): string =>
  * exactly one. `refreshResources` reads that off the resource.
  */
 async function refreshUses(actor: any, kind: RestKind): Promise<number> {
-  const moved = await refreshResources(actor, restScopes(kind === "long" ? "long" : "short"));
-  return moved.length;
+  const scopes = restScopes(kind === "long" ? "long" : "short");
+  const moved = await refreshResources(actor, scopes);
+  /* And the kept dice, which are a second record on the same cards. Both
+     rests clear a Slayer's tray and drop a Wild Surge, and neither is a
+     resource — the tray is a list of faces. Counted together because the
+     caller is counting *what this rest gave back*, and the reader does not
+     care which field it was stored in. */
+  const dice = await refreshDicePools(actor, scopes);
+  return moved.length + dice.length;
 }
 
 /**

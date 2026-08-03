@@ -25,6 +25,7 @@
     "styles/tile.css",
     "styles/card.css",
     "styles/chit.css",
+    "styles/keep.css",
     "styles/ledger.css",
     "styles/roll.css",
     "styles/swap.css",

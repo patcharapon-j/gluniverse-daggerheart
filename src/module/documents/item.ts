@@ -18,6 +18,13 @@ import {
   restRefreshes,
   type LiveResource,
 } from "../data/resources.ts";
+import {
+  liveDicePools,
+  poolCapacity,
+  refreshedDice,
+  restRefreshesDice,
+  type LiveDicePool,
+} from "../data/dice-pools.ts";
 
 export class DaggerheartItem extends (Item as any) {
   /**
@@ -165,6 +172,118 @@ export class DaggerheartItem extends (Item as any) {
       ),
     });
   }
+
+  /* ── kept dice ───────────────────────────────────────────────────────── */
+
+  /** Every die pool on this Item with its capacity resolved. */
+  get liveDicePools(): LiveDicePool[] {
+    return liveDicePools(this);
+  }
+
+  /**
+   * Write one pool's tray outright.
+   *
+   * The whole array, for `moveResource`'s reason: `system.dice` is an
+   * ArrayField and Foundry reads a dotted index in an update key as a path
+   * into an object. Every gesture below funnels through here, so there is
+   * one place that knows how a tray is written.
+   */
+  async setTray(index: number, dice: number[]): Promise<void> {
+    const list: any[] = this.system?.dice ?? [];
+    if (!list[index]) return;
+    const next = list.map((p: any, i: number) =>
+      i === index ? { ...p, dice: [...dice] } : { ...p },
+    );
+    await this.update({ "system.dice": next });
+  }
+
+  /**
+   * Put a die on the card.
+   *
+   * A climbing die arrives showing 1 — every card that has one says so, in
+   * those words — and a bag's arrives blank, because Slayer Dice and the
+   * Sigil's d8s are placed and rolled later. Prayer Dice are the exception
+   * and do not use this: they arrive by a `reroll` refresh at the start of a
+   * session, already rolled, which is what the card says happens.
+   *
+   * @returns false when the tray is full, so the row can flinch.
+   */
+  async placeDie(index: number): Promise<boolean> {
+    const pool: any = (this.system?.dice ?? [])[index];
+    if (!pool) return false;
+    const held: number[] = pool.dice ?? [];
+    const max = poolCapacity(pool, this.actor);
+    if (max !== null && held.length >= max) return false;
+    await this.setTray(index, [...held, pool.mode === "climb" ? 1 : 0]);
+    return true;
+  }
+
+  /** Take one die off the card. `at` is its position in the tray. */
+  async spendDie(index: number, at: number): Promise<boolean> {
+    const pool: any = (this.system?.dice ?? [])[index];
+    const held: number[] = pool?.dice ?? [];
+    if (!held.length || at < 0 || at >= held.length) return false;
+    await this.setTray(index, held.filter((_, k) => k !== at));
+    return true;
+  }
+
+  /**
+   * Advance a climbing die by one.
+   *
+   * **Refuses at the top rather than clearing itself**, and that refusal is
+   * the card's whole bargain. "When the die's value would exceed its maximum
+   * value... remove the die and drop out of Unstoppable" — but Wild Surge
+   * charges a Stress on the way out and Unstoppable does not, and Zone of
+   * Protection simply ends. Three different consequences behind one
+   * arithmetic condition is exactly the shape this system declines to guess
+   * at: the row says no, the rule is printed on the card, and the person who
+   * read it takes the die off.
+   */
+  async stepDie(index: number): Promise<boolean> {
+    const pool: any = (this.system?.dice ?? [])[index];
+    const held: number[] = pool?.dice ?? [];
+    const at = held[0] ?? 0;
+    if (!at || at >= (pool.faces ?? 6)) return false;
+    await this.setTray(index, [at + 1, ...held.slice(1)]);
+    return true;
+  }
+
+  /**
+   * Roll the tray, or one die in it.
+   *
+   * Through Foundry's own `Roll` rather than `Math.random`, so a table with
+   * a fairness module, a dice-log module or a shared RNG gets what it
+   * installed — and so the numbers are auditable, which is the difference
+   * between a die and a number the sheet made up.
+   *
+   * `only` names a single position. Pressing an unrolled die rolls that one,
+   * which is the commonest Slayer gesture: roll the one you are about to
+   * add rather than the whole tray you are not spending.
+   *
+   * @returns the faces rolled, so the caller can post them.
+   */
+  async rollTray(index: number, only?: number): Promise<number[]> {
+    const pool: any = (this.system?.dice ?? [])[index];
+    if (!pool) return [];
+    const faces = pool.faces ?? 6;
+    const held: number[] = pool.dice ?? [];
+
+    /* `roll` mode holds nothing between presses, so the tray it rolls is the
+       one die the card names. Everything else rolls what is standing on it. */
+    const targets =
+      pool.mode === "roll" ? [0]
+      : only !== undefined ? [only]
+      : held.map((_, k) => k);
+    if (!targets.length) return [];
+
+    const r = await new (foundry as any).dice.Roll(`${targets.length}d${faces}`).evaluate();
+    const results: number[] = r.dice[0].results.map((d: any) => d.result);
+
+    const next = pool.mode === "roll" ? [...results] : [...held];
+    if (pool.mode !== "roll") targets.forEach((t, k) => (next[t] = results[k] ?? 1));
+    await this.setTray(index, next);
+    return results;
+  }
 }
 
 /**
@@ -206,6 +325,83 @@ export async function refreshResources(
 
   if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
   return moved;
+}
+
+/**
+ * Refresh every die pool on an actor whose scope this event satisfies.
+ *
+ * `refreshResources`'s twin, and separate rather than folded in for the
+ * reason the two fields are separate: what comes back is a *list* here and a
+ * number there, so a caller that wanted to say what a rest gave back would
+ * have had to branch on the shape of every entry. The rest card asks each of
+ * them and prints two kinds of row, which is honest — "Prayer Dice: four d4s
+ * rolled" and "Grace: 1 → 3" are not the same sentence.
+ *
+ * One `Roll` per rerolled pool rather than one per die, so a Seraph's four
+ * d4s are one entry in a dice log rather than four.
+ *
+ * @returns the pools that actually moved, with what was there and what is
+ *          now, so nothing has to be re-derived to report it.
+ */
+export async function refreshDicePools(
+  actor: any,
+  scopes: readonly string[],
+): Promise<{ item: any; name: string; faces: number; from: number[]; to: number[] }[]> {
+  const moved: { item: any; name: string; faces: number; from: number[]; to: number[] }[] = [];
+  const updates: any[] = [];
+
+  for (const item of actor?.items ?? []) {
+    const list: any[] = item.system?.dice ?? [];
+    if (!list.length) continue;
+
+    let touched = false;
+    const next: any[] = [];
+    for (const pool of list) {
+      if (!scopes.includes(pool.refresh)) {
+        next.push({ ...pool });
+        continue;
+      }
+      const max = poolCapacity(pool, actor);
+      /* The RNG is passed in rather than reached for, because `refreshedDice`
+         lives in `data/` and `data/` has to stay loadable outside a running
+         game. Here there is one, so here is where it is named. */
+      const rolled: number[] = [];
+      if (pool.onRefresh === "reroll") {
+        const want = max === null ? (pool.dice ?? []).filter((d: number) => !d).length : max;
+        if (want > 0) {
+          const r = await new (foundry as any).dice.Roll(`${want}d${pool.faces ?? 6}`).evaluate();
+          rolled.push(...r.dice[0].results.map((d: any) => d.result));
+        }
+      }
+      let k = 0;
+      const to = refreshedDice(pool, max, () => rolled[k++] ?? 1);
+      const from: number[] = pool.dice ?? [];
+      if (to.length === from.length && to.every((d, j) => d === from[j])) {
+        next.push({ ...pool });
+        continue;
+      }
+      touched = true;
+      moved.push({ item, name: pool.name, faces: pool.faces ?? 6, from: [...from], to });
+      next.push({ ...pool, dice: to });
+    }
+
+    if (touched) updates.push({ _id: item.id, "system.dice": next });
+  }
+
+  if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
+  return moved;
+}
+
+/** Every die pool on this actor that a rest of this kind will act on. */
+export function restWillRefreshDice(actor: any, kind: "short" | "long"): LiveDicePool[] {
+  const out: LiveDicePool[] = [];
+  for (const item of actor?.items ?? []) {
+    for (const lp of liveDicePools(item)) {
+      if (!restRefreshesDice(lp.pool, kind)) continue;
+      out.push({ ...lp, item });
+    }
+  }
+  return out;
 }
 
 /** The scopes a rest of this kind satisfies, as `refreshResources` wants them. */

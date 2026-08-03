@@ -114,6 +114,72 @@ declare module "*/ui/card.js" {
   export function rich(s: string): string;
 }
 
+declare module "*/ui/die.js" {
+  /** One die: silhouette, facets and a numeral. No `<svg>`, so it stores. */
+  export function DIE(v: number | string, cls: string, sz?: number, mx?: number): string;
+  /** Notation to silhouette class. `sq` for the d6 — see the module. */
+  export const SHAPE: Record<string, string>;
+  export function shapeOf(die: string): string;
+  export function facesOf(die: string): number;
+}
+
+declare module "*/ui/keep.js" {
+  /** A tray of dice a card asks you to keep. */
+  export function KEEP(opts: {
+    /** bag: several held · climb: one counting up · roll: named, not kept. */
+    mode?: string;
+    /** The die's size right now: 4, 6, 8, 10 or 12. */
+    faces?: number;
+    /** The faces held. 0 is a die placed and not yet rolled. */
+    dice?: number[];
+    /** 0 or absent means an open pool: no ceiling, so no sockets. */
+    max?: number;
+    name?: string;
+    cap?: number;
+    /** False for a readout — a posted card is a record and takes no input. */
+    add?: boolean;
+    /** False where the card's dice arrive already rolled. */
+    roll?: boolean;
+    /** Whether the host has a domain hue. Stated, never sniffed. */
+    dom?: boolean;
+    key?: string;
+  }): string;
+
+  /** The five a die can be. */
+  export const FACES: number[];
+  /** Past this many the row states the count rather than enumerating it. */
+  export const KEEP_CAP: number;
+  /** Face count to silhouette class. */
+  export function shapeOf(faces: number): string;
+
+  /** Diff the tray against a new list of faces and move only what moved. */
+  export function setKeep(row: Element, dice: number[], faces?: number): void;
+
+  /** Tumble one die to a face. `done` fires when it lands. */
+  export function landDie(
+    kd: Element,
+    value: number,
+    faces: number,
+    done?: () => void,
+  ): void;
+
+  /** The flinch a tray plays when it cannot do what was asked. */
+  export function refuseKeep(row: Element): void;
+
+  /**
+   * Delegate every gesture off one root.
+   *
+   * `how` is `place`, `take`, `step`, `roll` or `roll1`; `next` is the list
+   * the tray should now hold, **except** for the two roll gestures, which
+   * hand it back unchanged because the caller owns the RNG. `i` names the
+   * die for `take` and `roll1`.
+   */
+  export function keepClicks(
+    root: Element,
+    onChange: (row: HTMLElement, next: number[], how: string, i?: number) => unknown,
+  ): void;
+}
+
 declare module "*/ui/chit.js" {
   /** A row of counters placed on a card. */
   export function CHITS(opts: {

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- The family rhombus with a sigil cut into it. A hex is a mark somebody
+       put on you, so it is the mark itself — drawn as the shape everything
+       else in this system is cut from, with the cut turned inward. -->
+  <path d="M32 2 62 32 32 62 2 32 32 2Zm0 9L11 32l21 21 21-21L32 11Z"/>
+  <path d="M32 17 47 32 32 47 17 32 32 17Zm0 8-7 7 7 7 7-7-7-7Z"/>
+  <path d="M30 0h4v10h-4zm0 54h4v10h-4zM0 30h10v4H0zm54 0h10v4H54z"/>
+</svg>

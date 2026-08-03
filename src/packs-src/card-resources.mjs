@@ -37,17 +37,20 @@
 const fixed = (n) => ({ kind: "fixed", n, trait: "", floor: 0 });
 const trait = (t, floor = 0) => ({ kind: "trait", n: 1, trait: t, floor });
 const level = (floor = 0) => ({ kind: "level", n: 1, trait: "", floor });
+const prof = (floor = 0) => ({ kind: "proficiency", n: 1, trait: "", floor });
+const tier = (floor = 0) => ({ kind: "tier", n: 1, trait: "", floor });
 const open = () => ({ kind: "open", n: 0, trait: "", floor: 0 });
 
 const res = ({
   name = "Tokens",
+  value = 0,
   max = open(),
   refresh = "manual",
   onRefresh = "clear",
   feature = "",
   onEmpty = "",
   said,
-}) => ({ name, value: 0, max, refresh, onRefresh, feature, onEmpty, said });
+}) => ({ name, value, max, refresh, onRefresh, feature, onEmpty, said });
 
 /**
  * A budget: N uses of something, refilled when the scope comes round.
@@ -326,6 +329,46 @@ const PILES = {
       said: "You stop being Charged at your next long rest",
     }),
   ],
+
+  /* ── the one class currency that is not Hope ──────────────────────
+     Favor, and it is the largest single gap the sweep turned up: thirteen
+     Pact features across both subclasses spend it, and the Warlock class
+     document carried no pool at all. A player had thirteen cards saying
+     "spend a Favor" and nowhere on the sheet that Favor existed.
+
+     `open`, because the card states no ceiling — you gain your Spellcast
+     trait's worth on a downtime move and one at a time in play, and
+     nothing caps the pile. `value: 3` because "You start with 3 Favor" is
+     the card's own first sentence, so a freshly dragged Warlock arrives
+     with them; `once()` has always done the same thing for the same
+     reason, and a budget you have not spent is not a budget at zero.
+
+     `manual` and not a rest scope. Favor does not come back — it is
+     earned, which is the whole texture of the class, and a refresh here
+     would hand out three a night. */
+  "class:Warlock": [
+    res({
+      name: "Favor",
+      value: 3,
+      feature: "Favor",
+      max: open(),
+      refresh: "manual",
+      said: "You start with 3 Favor",
+    }),
+  ],
+
+  /* The charge half of Rune Ward. Its d8 is in `DICE`; this is the ward
+     itself, which is spent by an 8 rather than by being used. */
+  "domainCard:Rune Ward": [
+    res({
+      name: "Ward",
+      value: 1,
+      max: fixed(1),
+      refresh: "rest",
+      onRefresh: "fill",
+      said: "It can be recharged for free on your next rest",
+    }),
+  ],
 };
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -492,6 +535,184 @@ const BUDGETS = {
 };
 
 /* ══════════════════════════════════════════════════════════════════════
+   KEPT DICE
+
+   Eighteen rules keep a die rather than a count, and a chit cannot say what
+   one is showing. See `DIE_MODES` in `src/module/config.ts` for the three
+   shapes and `design/keep.js` for the object.
+
+   Two things about this block are worth knowing before reading it.
+
+   **`grow` is prose and nothing reads it.** A Rally Die becomes a d8 at
+   level 5 and a d10 at Wordsmith Mastery; an Unstoppable Die becomes a d6 at
+   level 5; a Combo Die grows by an *advancement option*. Those triggers live
+   on three different documents and two of them are cards this one has never
+   heard of, so the size is a number the table sets and the card prints its
+   own sentence about when it moves. The alternative is this file learning to
+   read another document's rules text, which is the thing the whole repo is
+   arranged to avoid.
+
+   **A climbing die's `onEmpty` is not decoration either.** All three say
+   "when the value would exceed its maximum", and all three then do something
+   *different* — Wild Surge charges a Stress, Unstoppable drops a stance,
+   Zone of Protection simply ends. The tray refuses at the top and prints
+   this, and a person reads it. That is the same bargain `onEmpty` has always
+   struck for the Vampire's Feed.
+   ══════════════════════════════════════════════════════════════════════ */
+
+const die = ({
+  name = "Dice",
+  mode = "bag",
+  faces = 6,
+  max = open(),
+  refresh = "manual",
+  onRefresh = "clear",
+  feature = "",
+  grow = "",
+  onEmpty = "",
+  said,
+}) => ({ name, mode, faces, dice: [], max, refresh, onRefresh, feature, grow, onEmpty, said });
+
+export const DICE = {
+  /* ── a bag you spend from ─────────────────────────────────────────── */
+
+  /* The only pool in the corpus that arrives **rolled**. "At the beginning
+     of each session, roll a number of d4s" — so `reroll` rather than `fill`,
+     and the tray offers no roll button, because a button that rerolled them
+     would be offering to change an answer the session already gave. */
+  "class:Seraph": [
+    die({
+      name: "Prayer Dice", faces: 4, max: trait("spellcast"),
+      refresh: "session", onRefresh: "reroll", feature: "Prayer Dice",
+      said: "roll a number of d4s equal to your subclass's Spellcast trait",
+      onEmpty: "At the end of each session, clear all unspent Prayer Dice.",
+    }),
+  ],
+
+  /* One die, because this is the *Bard's own*. The feature gives one to
+     every PC, and the other four land on four other sheets — which this file
+     cannot reach and should not try to: handing out an Item to the party is
+     a gesture, not an annotation. */
+  "class:Bard": [
+    die({
+      name: "Rally Die", faces: 6, max: fixed(1),
+      refresh: "session", onRefresh: "clear", feature: "Rally",
+      said: "give yourself and each of your allies a Rally Die",
+      grow: "At level 5, your Rally Die increases to a d8. Epic Poetry takes it to a d10.",
+      onEmpty: "At the end of each session, clear all unspent Rally Dice.",
+    }),
+  ],
+
+  /* `proficiency`, and the reason that ceiling exists at all. */
+  "subclass:Call of the Slayer: Foundation": [
+    die({
+      name: "Slayer Dice", faces: 6, max: prof(),
+      refresh: "session", onRefresh: "clear", feature: "Slayer",
+      said: "You can store a number of Slayer Dice equal to your Proficiency",
+      onEmpty:
+        "At the end of each session, clear any unspent Slayer Dice on this card " +
+        "and gain a Hope per die cleared.",
+    }),
+  ],
+
+  "domainCard:Sigil of Retribution": [
+    die({
+      name: "Sigil Dice", faces: 8, max: level(),
+      said: "You can hold a number of d8s equal to your level",
+      onEmpty:
+        "This effect ends when the marked adversary is defeated or you cast " +
+        "Sigil of Retribution again.",
+    }),
+  ],
+
+  /* ── one die, counting up ─────────────────────────────────────────── */
+
+  /* The scene is the scope, not the rest. "When the die's value would exceed
+     its maximum value **or when the scene ends**, remove the die" — and the
+     once-per-long-rest half is already a `BUDGETS` entry on the same card,
+     which is exactly why the two are separate arrays. */
+  "class:Guardian": [
+    die({
+      name: "Unstoppable Die", mode: "climb", faces: 4,
+      refresh: "scene", onRefresh: "clear", feature: "Unstoppable",
+      said: "At level 1, your Unstoppable Die is a d4",
+      grow: "At level 5, your Unstoppable Die increases to a d6.",
+      onEmpty:
+        "When the die's value would exceed its maximum value or when the scene " +
+        "ends, remove the die and drop out of Unstoppable.",
+    }),
+  ],
+
+  "domainCard:Wild Surge": [
+    die({
+      name: "Wild Surge Die", mode: "climb", faces: 6,
+      refresh: "rest", onRefresh: "clear",
+      said: "place a d6 on this card with the 1 value facing up",
+      onEmpty:
+        "When the die's value would exceed 6 or you take a rest, this form drops " +
+        "and you must mark an additional Stress.",
+    }),
+  ],
+
+  "domainCard:Zone of Protection": [
+    die({
+      name: "Zone Die", mode: "climb", faces: 6,
+      refresh: "longRest", onRefresh: "clear",
+      said: "place a d6 on this card with the 1 value facing up",
+      onEmpty: "When the die's value would exceed 6, this effect ends.",
+    }),
+  ],
+
+  /* ── named, not kept ──────────────────────────────────────────────── */
+
+  /* Nothing is held; what the sheet had nowhere to record is the *size*.
+     All three of these grow, and all three grow by something this file
+     cannot see — a level, a subclass card, an advancement option. */
+  "class:Warlock": [
+    die({
+      name: "Patron Die", mode: "roll", faces: 6, feature: "Patron’s Pact",
+      said: "rolling your Patron Die and adding its result to the total",
+      grow: "Your Patron Die starts at a d6 and increases to a d8 at level 5.",
+    }),
+  ],
+
+  "class:Brawler": [
+    die({
+      name: "Combo Die", mode: "roll", faces: 4, feature: "Combo Strike",
+      said: "Your Combo Die starts as a d4",
+      grow: "Once per tier, you can increase your Combo Die by one step as a " +
+        "level advancement option.",
+    }),
+  ],
+
+  /* The count is your tier and the card says so, so the tray records the one
+     thing it does not: which die. Executioners Guild takes it to d6 at
+     Foundation and d8 at Mastery, which is two other documents again. */
+  "class:Assassin": [
+    die({
+      name: "Marked for Death", mode: "roll", faces: 4, feature: "Marked for Death",
+      said: "add a number of d4s equal to your tier to the damage roll",
+      grow: "Ambush uses d6s instead of d4s; Backstab uses d8s instead of d6s.",
+    }),
+  ],
+
+  /* Both halves of one card. The charge is a resource — it is spent and
+     comes back on a rest — and the d8 is a die you roll, and the card's
+     bargain is that rolling an 8 spends the charge. Two records because they
+     are two facts; nothing here automates the link between them, because
+     "if the result is 8" is a reading and the player has the card. */
+  "domainCard:Rune Ward": [
+    die({
+      name: "Ward Die", mode: "roll", faces: 8,
+      said: "reduce incoming damage by 1d8",
+      onEmpty:
+        "If the Ward Die result is 8, the ward's power ends after it reduces " +
+        "damage this turn. It can be recharged for free on your next rest.",
+    }),
+  ],
+};
+
+/* ══════════════════════════════════════════════════════════════════════
    DECLINED
 
    Cards whose text matches the sweep and which deliberately carry no
@@ -510,6 +731,31 @@ export const DECLINED = {
   "weapon:Powered Gauntlet":
     "Matched on the feature name “Charged”. The feature costs a Stress and " +
     "counts nothing.",
+
+  /* ── dice that live on another card ────────────────────────────────
+     Four subclass cards name a die pool and none of them holds one. The
+     tray is on the *class* card in every case, which is where the die is
+     gained and where the ceiling is stated; these change what it does.
+     That is the same reading Poisoners Guild got about the Foundation
+     card's tokens, arriving three more times.
+
+     Worth saying why this is not a sweep refinement like the Duality
+     pair in `check-resources.mjs`: "the Bard's card holds the Rally Die
+     and the Troubadour's does not" is a fact about these two cards, read
+     off them, and a fifth card could perfectly well hold its own. The
+     Hope Die will never be a tray, and that is a fact about the game. */
+  "subclass:Troubadour: Specialization":
+    "Maestro changes what a Rally Die does when it is given away. The tray " +
+    "is on the Bard class card, which is where the die is gained.",
+  "subclass:Wordsmith: Mastery":
+    "Epic Poetry grows the Rally Die to a d10. The Bard's own tray records " +
+    "the size, and the card's `grow` sentence names this feature.",
+  "subclass:Call of the Slayer: Mastery":
+    "Reroll 1s when you roll your Slayer Dice. The pool is on the Foundation " +
+    "card, which states the Proficiency ceiling.",
+  "subclass:Pact of the Wrathful: Foundation":
+    "Patron's Fury and Deadly Vengeance both roll Patron Dice. The die is " +
+    "the Warlock class card's; nothing is kept here.",
 };
 
 /* ══════════════════════════════════════════════════════════════════════ */
@@ -531,10 +777,13 @@ export default RESOURCES;
  */
 export function withResources(entries) {
   for (const e of entries) {
-    const found = RESOURCES[`${e.type}:${e.name}`];
-    if (!found) continue;
+    const key = `${e.type}:${e.name}`;
+    const found = RESOURCES[key];
     /* eslint-disable-next-line no-unused-vars */
-    e.system.resources = found.map(({ said, ...keep }) => ({ ...keep }));
+    if (found) e.system.resources = found.map(({ said, ...keep }) => ({ ...keep }));
+    const dice = DICE[key];
+    /* eslint-disable-next-line no-unused-vars */
+    if (dice) e.system.dice = dice.map(({ said, ...keep }) => ({ ...keep }));
   }
   return entries;
 }

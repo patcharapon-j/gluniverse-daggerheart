@@ -30,6 +30,8 @@ const MODULES = [
   "pool.js",
   "card.js",
   "chit.js",
+  "die.js",
+  "keep.js",
   "ledger.js",
   "tile.js",
   "domains.js",

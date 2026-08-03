@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Kept dice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/plate.css">
+<link rel="stylesheet" href="/design/chit.css">
+<link rel="stylesheet" href="/design/keep.css">
+<style>
+/* ══ THE ENVIRONMENT IS PART OF THE COMPONENT ══════════════════════
+   Every press in this tray is a <button> — the die, the chevron, the
+   roll, the plus — and Foundry sizes every button to one centred 28px
+   line with a matching min-height and a 4px radius. Our sheets arrive
+   unlayered and unlayered beats layered, so `height` wins on its own and
+   the *floor* has no competitor unless one is stated.
+
+   Delete this block and the page still looks right, which is the trap.
+   Keep it and a missing `min-height` shows up here as a 17px die
+   standing 28px tall in a 17px row — exactly what the game would do.
+   make.css, prep.css, pool.css and chit.css each learned this
+   separately; this page is the first that had it from the start. */
+@layer elements{
+  button{height:var(--button-height,28px);min-height:var(--button-height,28px);
+    border-radius:4px;padding:0 8px;background:#2a3039;color:#c3cbd5;border:1px solid #3a424e;
+    line-height:1;text-align:center}
+}
+
+.grid{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.bx{background:#12151a;box-shadow:inset 0 0 0 1px #222933;padding:22px 24px 24px}
+.bx h4{font:700 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--hope);margin:0 0 18px}
+.bx h4 s{text-decoration:none;color:#6d7681;letter-spacing:.14em;margin-left:10px}
+.lab{font:700 9px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:#6d7681;margin:0 0 9px}
+.stk{display:flex;flex-direction:column;gap:20px}
+/* `.big .chits` and not `.big`. A custom property declared on the element
+   itself always beats one inherited from an ancestor, whatever the
+   ancestor's specificity — and `.chits` declares `--sz:22px` on itself. So
+   a wrapper saying `--sz:52px` is silently ignored, which is the same trap
+   chit.css's own `--jit` note is about. Naming the row makes it a competing
+   declaration on the same element instead of an inherited one, and then
+   specificity decides and 0-2-0 wins. */
+.big .chits{--sz:52px;--gap:9px}
+.mid .chits{--sz:26px}
+
+.paperstrip{background:var(--paper);padding:12px 14px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+
+.cards{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.cards .cap{text-align:center;max-width:none}
+
+/* the Features panel row, close enough to .abl to test the metrics */
+.ablrow{background:var(--paper);box-shadow:inset 0 0 0 1px var(--line);
+  padding:11px 13px;display:flex;align-items:center;gap:14px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)}
+/* `> b` and not `b`, for chit.html's reason one component along: a die's
+   `.lamp` and `.core` are `<b>` too, and the bare selector would size both
+   to 150px inside a 17px die and throw the silhouette across the row. */
+.ablrow > b{font:700 12.5px/1 var(--f-display);color:var(--ink);letter-spacing:-.01em;flex:none;min-width:150px}
+.ablrow s{text-decoration:none;font:400 11px/1.4 var(--f-ui);color:var(--ink-3);flex:1 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ablrow > span{display:contents}
+
+.btns{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+.btns button{border:0;cursor:pointer;background:#242931;box-shadow:inset 0 0 0 1px #343b45;
+  color:#c3cbd5;font:700 9.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  padding:10px 14px;height:auto;min-height:0;border-radius:0;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btns button:hover{background:var(--hope);color:#14161a;box-shadow:none}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <b>kept dice</b>
+  <a href="/design/types.html">types</a>
+  <a href="/design/loadout.html">loadout</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/chit.html">chits</a>
+  <a href="/design/keep.html" class="on">kept dice</a>
+  <a href="/design/ledger.html">ledger</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE OBJECT</span>A counter that says something</h2>
+<p class="note">
+A chit answers <b>how many</b>. Eighteen rules in the corpus ask a second question it has no room
+for: how many, <b>and what does each one say</b>. Prayer Dice are four d4s lying on your sheet with
+four different faces up, and four identical counters are not a record of that. So the tray holds
+dice — drawn with <code>die.js</code>, the same builder the chat plate uses, so the two can never
+disagree about what a d10 looks like.
+</p>
+<p class="note">
+It is a <b>chits row wearing a second class</b>. Sockets, the way to put one down, the gap, the
+tilt, the six host sizings and both grounds are already written and already right, and a die is a
+counter that says something — it belongs in the same tray, on the same corner of the same plate.
+What <code>keep.css</code> adds is only the difference.
+</p>
+
+<div class="grid">
+  <div class="bx"><h4>bag <s>several held, spent one at a time</s></h4>
+    <div class="stk">
+      <div><p class="lab">rolled when placed — Prayer Dice</p><div class="mid" id="m1"></div></div>
+      <div><p class="lab">placed blank, rolled when spent — Slayer Dice</p><div class="mid" id="m2"></div></div>
+    </div></div>
+  <div class="bx"><h4>climb <s>one die, counting up</s></h4>
+    <div class="stk">
+      <div><p class="lab">not yet placed</p><div class="mid" id="m3"></div></div>
+      <div><p class="lab">running — Unstoppable at 3</p><div class="mid" id="m4"></div></div>
+    </div></div>
+  <div class="bx"><h4>roll <s>nothing held, only the size</s></h4>
+    <div class="stk">
+      <div><p class="lab">a Combo Die stepped twice</p><div class="mid" id="m5"></div></div>
+      <div><p class="lab">and after it was rolled</p><div class="mid" id="m6"></div></div>
+    </div></div>
+</div>
+
+<h2><span>// THE BLANK</span>An unrolled die is a chit</h2>
+<p class="note">
+Slayer Dice and the Sigil's d8s are <b>placed</b> and rolled later; Prayer Dice are rolled when
+placed. So a die here may have no face — and one with no face draws the family rhombus where its
+numeral goes, which is exactly what a chit draws and for the same reason: it is what stops the
+object reading as a blank at 14px. A pool you have not rolled is a row of counters, and it becomes
+dice at the moment that means something.
+</p>
+<div class="grid">
+  <div class="bx"><h4>side by side <s>at 52px, so the shapes are legible</s></h4>
+    <div class="stk">
+      <div><p class="lab">chits</p><div class="big" id="b1"></div></div>
+      <div><p class="lab">the same pool, as unrolled d8s</p><div class="big" id="b2"></div></div>
+      <div><p class="lab">and rolled</p><div class="big" id="b3"></div></div>
+    </div></div>
+  <div class="bx"><h4>every shape <s>d4 d6 d8 d10 d12</s></h4>
+    <div class="stk">
+      <div><p class="lab">blank</p><div class="big" id="b4"></div></div>
+      <div><p class="lab">rolled</p><div class="big" id="b5"></div></div>
+      <div><p class="lab">climbing — lit, because the effect is running</p><div class="big" id="b6"></div></div>
+    </div></div>
+</div>
+
+<h2><span>// THE STATES</span>Everything the tray can be</h2>
+<div class="grid" id="states"></div>
+
+<h2><span>// THE INK</span>A numeral that survives nine domains</h2>
+<p class="note">
+Every other die in this system is painted by hand — Hope is gold with dark ink, Fear is violet with
+white. A kept die takes the <b>card's</b> hue, and the nine domains run from Splendor's pale gold to
+Midnight's near-black, so one ink colour cannot be right. The face's own lightness is the whole
+question, so the numeral asks it: <code>clamp(0,(l - .62) * -100,1)</code> is black above the
+threshold and white below it, with nothing in between and no third colour to decode. The blank's
+rhombus takes the same answer, because it stands in the same place and has the same problem.
+</p>
+<div class="grid" id="hues"></div>
+
+<h2><span>// ON A CARD</span>The plate's lower left, where the chits go</h2>
+<p class="note">
+Same anchor, same three corrections — the plate's own bottom edge, <code>.lower</code>'s margin
+resolving against <b>width</b>, and the seam's 8cqw. Solved once in <code>chit.css</code> and
+inherited, which is the whole argument for the tray being a chits row.
+</p>
+<div class="cards" id="cards"></div>
+
+<h2><span>// IN A ROW</span>Where a die needs more room than a counter</h2>
+<p class="note">
+A chit at 14px shows a pip, which is a shape. A die at 14px shows a <b>numeral</b> at
+<code>--nf</code> of that — 8.5px on a d10 — and eight and a half pixels of Google Sans is the
+failure <code>tile.css</code> shipped when a 368px study panel met a 262px Foundry pane. So the row
+hosts take the tray to 17px and buy it back out of the gap, which they can afford because a die
+pool is at most five where a charge track is twelve.
+</p>
+<div class="stk" style="max-width:560px">
+  <div class="ablrow abl"><b>Slayer Dice</b><s>Spend any number, rolling them and adding their result.</s><span id="r1"></span></div>
+  <div class="ablrow abl"><b>Unstoppable</b><s>Add the current value of the Unstoppable Die to your damage roll.</s><span id="r2"></span></div>
+  <div class="ablrow abl"><b>Combo Strike</b><s>Roll your Combo Die and note the result, then continue rolling.</s><span id="r3"></span></div>
+</div>
+
+<h2><span>// THE MOTION</span>Placing, spending, rolling, climbing</h2>
+<p class="note">
+The first two are <code>chit.css</code>'s keyframes unchanged, and deliberately so: a die arrives on
+the card the way a counter does, because it arrives by the same gesture. The other two are this
+component's own. A <b>tumble</b> is the sheet saying it does not know the answer yet, and it has to
+end with a settle or the number reads as having been there all along. A <b>tick</b> is one number
+replacing another on an object that has not moved, so the die nudges rather than tumbles.
+</p>
+<div class="paperstrip big" style="display:inline-block"><div id="demo"></div></div>
+<div class="btns">
+  <button data-a="place">place</button>
+  <button data-a="roll">roll all</button>
+  <button data-a="take">spend one</button>
+  <button data-a="deny">refuse</button>
+</div>
+
+<div class="paperstrip big" style="display:inline-block;margin-left:26px"><div id="demo2"></div></div>
+<div class="btns">
+  <button data-b="place">place</button>
+  <button data-b="step">advance</button>
+  <button data-b="take">remove</button>
+</div>
+
+<p class="note" style="margin-top:40px">
+The step <b>refuses at the top</b> rather than wrapping or clamping, and that refusal is the card's
+whole bargain: <i>when the die's value would exceed its maximum, remove the die</i>. What the sheet
+must not do is decide for you — Wild Surge charges a Stress on the way out and Unstoppable does
+not, so the row says no and the rule is read by the person who wrote it.
+</p>
+
+</div>
+
+<script type="module">
+import { DOMAINS, icon } from './domains.js';
+import { CARD, T_SPELL, fit } from './card.js';
+import { CHITS } from './chit.js';
+import { KEEP, setKeep, keepClicks, refuseKeep } from './keep.js';
+
+const marks = Object.fromEntries(await Promise.all(
+  DOMAINS.map(async d => [d.slug, await icon(d.slug)])));
+const by = s => DOMAINS.find(d => d.slug === s);
+
+const d = (n, f) => Array.from({length:n}, () => f);
+
+/* ── the three modes ── */
+m1.innerHTML = KEEP({mode:'bag', faces:4, dice:[3,1,4,2], max:4, name:'Prayer Dice', roll:false});
+m2.innerHTML = KEEP({mode:'bag', faces:6, dice:[0,0,0], max:5, name:'Slayer Dice'});
+m3.innerHTML = KEEP({mode:'climb', faces:4, dice:[], name:'Unstoppable Die'});
+m4.innerHTML = KEEP({mode:'climb', faces:4, dice:[3], name:'Unstoppable Die'});
+m5.innerHTML = KEEP({mode:'roll', faces:8, dice:[], name:'Combo Die'});
+m6.innerHTML = KEEP({mode:'roll', faces:8, dice:[6], name:'Combo Die'});
+
+/* ── the blank, beside the counter it is ── */
+b1.innerHTML = CHITS({value:3, max:5});
+b2.innerHTML = KEEP({mode:'bag', faces:8, dice:[0,0,0], max:5, name:'dice'});
+b3.innerHTML = KEEP({mode:'bag', faces:8, dice:[7,2,5], max:5, name:'dice'});
+b4.innerHTML = [4,6,8,10,12].map(f =>
+  KEEP({mode:'bag', faces:f, dice:[0], add:false})).join('');
+b5.innerHTML = [4,6,8,10,12].map((f,i) =>
+  KEEP({mode:'bag', faces:f, dice:[[3,5,7,9,11][i]], add:false})).join('');
+b6.innerHTML = [4,6,8,10,12].map((f,i) =>
+  KEEP({mode:'climb', faces:f, dice:[[2,4,6,8,10][i]], add:false})).join('');
+[b4,b5,b6].forEach(el => el.style.display = 'flex');
+
+/* ── the states ── */
+states.innerHTML = [
+  ['capped, empty',            {mode:'bag', faces:6, dice:[], max:5}],
+  ['capped, part placed',      {mode:'bag', faces:6, dice:[0,0], max:5}],
+  ['capped, full and rolled',  {mode:'bag', faces:6, dice:[4,1,6,2,5], max:5}],
+  ['open — no capacity',       {mode:'bag', faces:8, dice:[3,7], max:0}],
+  ['over the cap',             {mode:'bag', faces:6, dice:d(9,0), max:0}],
+  ['climbing, at the top',     {mode:'climb', faces:6, dice:[6]}],
+  ['a record, no control',     {mode:'bag', faces:4, dice:[2,4,1], max:4, add:false}],
+].map(([lab, o]) => `<div class="bx" style="flex:1 1 240px">
+  <p class="lab">${lab}</p><div class="mid">${KEEP(o)}</div></div>`).join('');
+
+/* ── nine domains, every one ──
+   The numeral is the card's hue and the nine run from Splendor's pale
+   gold to Midnight's near-black, so one ink colour cannot be right. This
+   is the row that proves it: strip the `@supports` block out of keep.css
+   and half of these go blank. Both halves are shown, because a blank die
+   draws the rhombus in exactly the same place and has exactly the same
+   problem. */
+hues.innerHTML = DOMAINS.map(dm => `<div class="bx" style="flex:1 1 200px">
+  <p class="lab">${dm.name}</p>
+  <div class="mid" style="--dom:${dm.light};--dom-dk:${dm.dark}">${
+    KEEP({mode:'bag', faces:6, dice:[8 % 6 + 1, 4], max:3, dom:true, add:false})}${
+    KEEP({mode:'bag', faces:8, dice:[0, 0], max:2, dom:true, add:false})}</div></div>`).join('');
+/* The last one has to be told it has a domain, which is chit.css's own
+   note: a var() fallback on --dom asks whether the property is set
+   anywhere up the tree and tokens.css sets it at :root, so the answer is
+   always yes and every counter comes out teal. Only the host knows. */
+states.lastElementChild.style.setProperty('--dom', by('grace').light);
+states.lastElementChild.style.setProperty('--dom-dk', by('grace').dark);
+
+/* ── on a card ── */
+cards.innerHTML = [
+  {w:300, d:'grace', lvl:2, rc:1, n:'Sigil of Retribution',
+   keep:{mode:'bag', faces:8, dice:[0,0,0], max:4, dom:true, name:'d8s'}},
+  {w:262, d:'sage', lvl:1, rc:0, n:'Wild Surge',
+   keep:{mode:'climb', faces:6, dice:[3], dom:true, name:'Wild Surge Die'}},
+  {w:176, d:'splendor', lvl:3, rc:2, n:'Prayer Dice',
+   keep:{mode:'bag', faces:4, dice:[2,4,1], max:4, dom:true, roll:false, name:'Prayer Dice'}},
+].map(c => `<div style="flex:none;width:${c.w}px">` +
+  CARD({d:by(c.d), sig:marks[c.d], text:T_SPELL, name:c.n, lvl:c.lvl, rc:c.rc,
+        chits: KEEP(c.keep)}) +
+  `<div class="cap"><b>${c.w}px</b>${c.keep.mode}</div></div>`).join('');
+
+/* ── in a row ── */
+r1.innerHTML = KEEP({mode:'bag', faces:6, dice:[0,0,0], max:4, name:'Slayer Dice'});
+r2.innerHTML = KEEP({mode:'climb', faces:4, dice:[2], name:'Unstoppable Die'});
+r3.innerHTML = KEEP({mode:'roll', faces:6, dice:[], name:'Combo Die'});
+
+/* ── the motion ── */
+demo.innerHTML = KEEP({mode:'bag', faces:8, dice:[0,0], max:6, name:'dice'});
+demo2.innerHTML = KEEP({mode:'climb', faces:6, dice:[1], name:'Wild Surge Die'});
+
+const rowA = demo.querySelector('[data-keep]');
+const rowB = demo2.querySelector('[data-keep]');
+const roll = f => 1 + Math.floor(Math.random() * f);
+const held = r => (r.dataset.dice || '').split(',').filter(Boolean).map(Number);
+
+document.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+  const h = held(rowA), f = Number(rowA.dataset.faces);
+  if (b.dataset.a === 'place') return h.length >= 6 ? refuseKeep(rowA) : setKeep(rowA, [...h, 0]);
+  if (b.dataset.a === 'roll')  return setKeep(rowA, h.map(() => roll(f)));
+  if (b.dataset.a === 'take')  return h.length ? setKeep(rowA, h.slice(0, -1)) : refuseKeep(rowA);
+  refuseKeep(rowA);
+});
+document.querySelectorAll('[data-b]').forEach(b => b.onclick = () => {
+  const h = held(rowB), f = Number(rowB.dataset.faces);
+  if (b.dataset.b === 'place') return h.length ? refuseKeep(rowB) : setKeep(rowB, [1]);
+  if (b.dataset.b === 'step')  return !h.length || h[0] >= f ? refuseKeep(rowB) : setKeep(rowB, [h[0] + 1]);
+  return h.length ? setKeep(rowB, []) : refuseKeep(rowB);
+});
+
+/* Every row on the page is live, which is what a study page is for. The
+   caller owns the RNG — see the note above `keepClicks`, and note that the
+   step animation is the *caller's* to add, because only it knows a value
+   changed rather than a die arriving. */
+keepClicks(document.body, (row, next, how, i) => {
+  const f = Number(row.dataset.faces) || 6;
+  if (how === 'roll')  return setKeep(row, next.map(v => roll(f)));
+  if (how === 'roll1') return setKeep(row, next.map((v, k) => (k === i ? roll(f) : v)));
+  if (how === 'step') {
+    const kd = row.querySelector('.kd');
+    kd?.classList.add('step');
+    kd?.addEventListener('animationend', () => kd.classList.remove('step'), {once:true});
+  }
+  setKeep(row, next);
+});
+
+lt.onchange = e => document.documentElement.classList.toggle('light', e.target.checked);
+
+fit();
+</script>
+</body>
+</html>

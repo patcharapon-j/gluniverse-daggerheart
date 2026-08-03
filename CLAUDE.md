@@ -1294,6 +1294,20 @@ things. `spellcast` is a legal `max.trait` and is deliberately **not** in
 wheelchair's is, and adding it to the closed set would reach the roll engine
 and six trait plates to serve a handful of cards.
 
+**`proficiency`, `tier` and `fear` were the three that sweep missed**, and they
+were missed the same way: it started from the 189 domain cards, found `trait`
+and `level` there, and stopped. The other two live on class and subclass
+features — Call of the Slayer stores dice "equal to your Proficiency", the
+Assassin adds d4s "equal to your tier" — and both are derived numbers on the
+character exactly as level is. They read the actor's *derived* values rather
+than recomputing from level, so an advancement option that bought a point of
+Proficiency raises the Slayer's pool with it, which is why the card says
+Proficiency instead of naming a number. `fear` is the odd one and reads a
+**world setting**: Umbral Veil counts "tokens equal to the Fear in the GM's
+pool", was annotated `open` as an honest fallback, and drew no capacity at all
+for a card that states one. Two players holding a copy each see the same
+number, because there is only one.
+
 `resources` is an array, so **every subtype has one** — `tracked()` in
 `data/items.ts` — rather than the two that had `uses`. That field is gone;
 `migrateUses` turns an old one into a fixed pool that comes back on either
@@ -1349,6 +1363,73 @@ names of their own.
 
 `npm run build:packs` runs it beside the other two.
 
+### And eighteen rules keep a die
+
+A chit answers **how many**. Eighteen ask a second question it has no room
+for: how many, *and what does each one say*. Prayer Dice are four d4s lying on
+your sheet with four different faces up, and four identical counters are not a
+record of that.
+
+So `dice` is a second array beside `resources` on every subtype, and
+`diePoolField` is its own field rather than a flag on the first. The `max`
+block is shared verbatim — a ceiling is a ceiling, and `resourceMax` answers
+for both, so a source added for one is available to the other by construction
+— and nothing else is: one holds an integer and the other a list, and folding
+them together would give every reader a branch and every writer a shape to
+guess. Seven documents carry both, which is the case that settles it: the
+Guardian's Unstoppable is a once-per-long-rest **use** and a die that climbs,
+and those are two records of two things.
+
+**Three modes, and they are the three shapes the corpus has** rather than
+three somebody might want. `bag` is several held and spent one at a time —
+Prayer Dice, Slayer Dice, the Sigil's d8s, the Rally Die you were given.
+`climb` is exactly one, placed showing 1 and stepped upward — Unstoppable,
+Wild Surge, Zone of Protection. `roll` holds nothing: the card names a die
+whose *size* changes as you level, which is the fact the sheet had nowhere to
+keep, and pressing it rolls — the Patron Die, the Combo Die, Marked for Death.
+
+**`0` is a die with no face**, which is what makes one array serve both halves
+of `bag`. Slayer Dice and the Sigil's d8s are *placed* and rolled when spent;
+Prayer Dice are rolled when placed. So a die can genuinely be on the card
+showing nothing, and the array's length is the count — a number and a flag
+could not say it.
+
+**A climbing die refuses at the top rather than clearing itself**, and that
+refusal is the card's whole bargain. All three say "when the value would
+exceed its maximum" and all three then do something *different*: Wild Surge
+charges a Stress, Unstoppable drops a stance, Zone of Protection simply ends.
+Three consequences behind one arithmetic condition is exactly the shape this
+system declines to guess at, so the row says no, `onEmpty` prints the card's
+own sentence, and the person who read it takes the die off.
+
+**`faces` is a number the table sets and `grow` is prose nothing reads.** A
+Rally Die becomes a d8 at level 5 and a d10 at Wordsmith Mastery; an
+Unstoppable Die becomes a d6 at level 5; a Combo Die grows by an *advancement
+option*. Those triggers live on three different documents and two of them are
+cards the holder has never heard of. The size is therefore edited on the item
+sheet, which is where a definition is edited — the sheet's own
+definition-versus-use split, arriving on an Item.
+
+`refreshDicePools` is `refreshResources`'s twin and is separate for the reason
+the fields are: what comes back is a list here and a number there. `reroll` is
+the one `onRefresh` a resource has no equivalent of, and it exists because
+Prayer Dice arrive **already rolled** — "at the beginning of each session,
+roll a number of d4s equal to your Spellcast trait" — and a tray of blanks
+would be the sheet quietly making you do it by hand. One `Roll` per pool
+rather than per die, so a Seraph's four d4s are one entry in a dice log.
+
+`DICE` in `card-resources.mjs` is the eleven annotations, policed by the same
+`said`-provenance ratchet, and `check-resources.mjs` merges the two blocks for
+the walk — so a card carrying a counter *and* a die has its names compared
+across both, since "Unstoppable" and "Unstoppable Die" as two rows called the
+same thing would be two trays a player cannot tell apart. Its sweep gained two
+patterns and one **subtraction**: the Hope Die, the Fear Die, the pair and the
+advantage die are stripped before sweeping rather than declined afterwards.
+`DECLINED` is for a card somebody read and judged; those four are the roll
+engine's own and no reading will ever make one a tray. Which card holds a
+Rally Die *is* a reading, so the four subclass cards that name one and hold
+none are declined by hand.
+
 ### Where the counters are drawn
 
 `design/chit.js` is one builder, one setter and one delegated handler.
@@ -1384,6 +1465,67 @@ panel heading and the slot header do. `chitClicks` **stops the press at the
 row**: every host it sits on is itself pressable off a delegated handler, so
 left to bubble, placing a counter on a domain card would also post that card to
 chat.
+
+**And the tray of kept dice is a chits row wearing a second class.**
+`<div class="chits keep">`, not a row of its own: sockets, the way to put one
+down, the gap, the tilt, the six host sizings and both grounds are already
+written and already right, and a die is a counter that says something — so it
+belongs in the same tray, on the same corner of the same plate, at the same
+size. `keep.css` states only the difference. What that buys is not brevity but
+`.card .chits`'s three corrections — the plate's own bottom edge, `.lower`'s
+margin resolving against *width*, the seam's 8cqw — solved once; a second row
+would have had to rediscover all three, and the way you discover them is by
+shipping counters that sit on the prose. It carries `data-keep` rather than
+`data-chits`, so `chitClicks` declines it and `keepClicks` answers instead.
+
+**The die itself is `plate.css`'s die**, not a picture of one — `DIE()` out of
+the new `design/die.js`, which is the top of `plate.js` moved out when a second
+component wanted it. `port-design-js.mjs` copies modules verbatim and rewrites
+no import paths, so anything the system side needs has to be reachable from
+inside `src/module/ui/`; a file holding one function is a small price for the
+chat plate and the tray never disagreeing about what a d10 looks like. That is
+the finding `tools/verify/` already caught between `design/plate.js` and
+`dice/plate.ts`, arriving early rather than late.
+
+**An unrolled die draws the family rhombus**, which is exactly what a chit
+draws and for the same reason: it is what stops the object reading as a blank
+at 14px. A pool you have not rolled is a row of counters and becomes dice at
+the moment that means something. Nothing had to be invented for it.
+
+**The die must not wear `kd`.** That is the button — the thing you press — and
+the `.die` inside it is the drawing, and the first draft gave the class to
+both: `.keep .kd`'s `display:block` then beat `plate.css`'s `display:grid` and
+every numeral came off the centre of its silhouette onto the text baseline.
+Fourth instance of `.die.win` and `.dfn .pl`, and worse in one respect — those
+were two of our sheets colliding and this was one component colliding with
+itself, which no amount of `.dh` scoping could ever have caught. The colours
+ride on `.keep .die`, which says what it means.
+
+**The numeral had to survive nine domains**, and choosing an ink was not
+enough. A kept die takes the card's hue and the nine run from Splendor's pale
+gold to Midnight's near-black; asking the face's lightness and flipping
+between black and white left six of them between 2.2 and 3.4:1, because those
+hues are *mid* and neither ink gets anywhere on them. Nothing you can do to a
+numeral fixes a face it cannot be read on. So both ends are floored against
+the same channel — the face at `max(l,.74)`, the ink at `min(l,.28)`, hue and
+chroma untouched — which is a lightness gap of at least .46 on every domain by
+construction. Every one now measures 5.8:1 or better on both themes. The rim
+and the glow keep the **true** hue at full strength, so the card still says
+which domain it belongs to, round the outside of a face you can read. Do not
+chain the two: computing the ink from `var(--facec)` when that is itself an
+`oklch(from …)` drops *both* declarations silently, and a die with no face and
+no numeral reads as an empty socket.
+
+**A d4 is the one asymmetric silhouette.** Two thirds of a triangle's ink sits
+below the halfway line, so a numeral on the box's centre reads as having
+slipped upward — which is the complaint that produced `--oy`, a per-shape
+optical offset in `plate.css` applying to the chat plate too. It is neither of
+the two anchors this file has already argued about: 66.7% is the face centroid
+and where a real d4 prints it, retired for being unreadable as a picture, and
+50% is the box. The optical centre is 59.7%, and `--oy` is a fraction of
+`--sz` rather than of the numeral because what it corrects is the shape and
+not the type — beside the font correction rather than folded into it, for the
+reason `--nudge` was taken apart in the first place.
 
 `.chits .put` and not `.add`: `sheet.css` already owns `.lst .add` at identical
 specificity, both load into the same `.dh` root, and which won would have been
@@ -2467,11 +2609,31 @@ twice and should not collect a second Experience for a typo.
 
 ## Conditions
 
-`CONDITIONS` in `config.ts` registers the three the rules name — Vulnerable,
-Hidden, Restrained — as Foundry status effects, with marks in
-`assets/conditions/`. Foundry's own list is blinded, deaf, paralysis and
-prone, and none of those words appear in this game; `dead` survives the
-replacement because it is what `specialStatusEffects.DEFEATED` points at.
+`CONDITIONS` in `config.ts` registers the three the **core rules** name —
+Vulnerable, Hidden, Restrained — plus thirteen the **cards** do, as Foundry
+status effects, with marks in `assets/conditions/`. Foundry's own list is
+blinded, deaf, paralysis and prone, and none of those words appear in this
+game; `dead` survives the replacement because it is what
+`specialStatusEffects.DEFEATED` points at.
+
+"Daggerheart has no poisoned, no prone, no blinded" is still true and was
+never the whole claim. What this list said for a long time was that three was
+all of them, and a sweep of the four packs says otherwise: sixteen cards put a
+named state on a creature and then say **"While X"** followed by a rule, which
+is exactly the shape the first three have. Cloaked is the Rogue's core class
+feature and is on six cards. Marked for Death is the Assassin's and is on
+five, with three Executioners Guild cards turning on it. Hexed is the Witch's.
+The others are Spectral, Invisible, Enraptured, Corroded, Stunned, Charged,
+Drained, Horrified, Silenced and Ablaze.
+
+**The test is that shape and nothing looser.** A word the fiction produces is
+described; a word a card *defines and then refers back to* is tracked.
+"Temporarily Enraptured" is a rule with a duration and a consequence; "you
+know somebody who owes you a favor" is not. Two of them live on a document
+that also carries a counter, and that is not a duplication: Arcane Charge is a
+Charged **state** — "you stop being Charged at your next long rest" — and a
+one-use budget, and the state belongs on the token where the table can see it
+while the budget belongs on the card.
 
 Vulnerable is also derived: marking your last Stress makes you Vulnerable
 until you clear one, and that is the one condition the sheet can know on its
@@ -2711,3 +2873,47 @@ everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
   dice with the losers crossed off; nothing lets a second player contribute one.
 - Countdowns.
 - The companion sheet exists with a `partner` uuid nothing sets.
+- **The Beastform list is not content that exists.** The Druid's core feature
+  says "a creature of your tier or lower from the Beastform list" and there is
+  no such list anywhere in `src/packs-src/`; three subclass features build on
+  it. It has no upstream — the Card Creator publishes cards and a Beastform is
+  a stat block — so it is `equipment-tables.mjs`'s problem again, typed in by
+  hand and checked by its own regularities.
+- **An effect held on exactly one target has nowhere to record which.** Marked
+  for Death, Twilight Toll, the Sigil, Invisibility, Shield Aura, Midnight
+  Spirit, the Book of Sitil's Parallela and the Wayfinder's Focus each say
+  "only one at a time", and Hex says "up to your Spellcast trait". The *count*
+  is a counter and is annotated; the creature is a uuid nothing stores. It is
+  the companion's gap in a different place, and the condition marks now
+  registered are half an answer — the token wears Marked for Death, and the
+  card that put it there does not know.
+- **Eight player cards read or spend the GM's Fear** — Know Thy Enemy removes
+  one, Night Terror steals Fear and rolls it as damage, Avatar of Terror scales
+  off the pool. `fear` is a legal ceiling source now, so a card can *count*
+  against it; none of them can move it. The pool, the HUD and `setFear` all
+  exist, so this is wiring rather than design.
+- **Temporary effects.** 87 rules match the sweep for one, which is the largest
+  bucket it turned up, and the number wants breaking down before anybody acts
+  on it — a third of it is not a modifier at all.
+  - **Nineteen are a numeric bonus or penalty**, and they are the tidiest set
+    in the corpus: the six Major potions each give +1 to a named trait until
+    your next rest, Full Surge gives +2 to all six, Featherstep gives Evasion
+    equal to your tier, No Mercy +1 to attacks, Insomniac's Periapt +2 to
+    attack and damage. These are Foundry ActiveEffects and nothing else, and
+    they are where to start.
+  - **Nineteen apply a condition this system now registers** — Earthquake,
+    Shadowbind, Chokehold, Tempest, Bolt Beacon, Terrify, Rime Scepter's
+    Freezing, Adder's Fang's Venomous, the Poisoners Guild's three toxins.
+    Half-answered already: the token can wear the state, and nothing puts it
+    there.
+  - **Forty-five are a duration on something that was created**, which is not
+    a modifier and should not be built as one. Manifest Wall, Natural
+    Familiar, Book of Homet's gateway, Astral Projection, Midnight Spirit, the
+    Vial of Moondrip's darkvision, the Ring of Silence's footsteps. A handful
+    name a condition the rules use once and this system does not — "Chain",
+    "lit On Fire", "Ignites", "Corrodes", "Distract", "Prioritize" — and those
+    are a judgement call about where the `CONDITIONS` line sits, not a gap.
+  - By duration: 39 end at your next rest, 37 say only **"temporarily"**,
+    which is the rules' own keyword for a state a roll clears and is therefore
+    GM-adjudicated rather than timed. An implementation that put a timer on
+    those would be inventing a rule.

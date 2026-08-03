@@ -61,6 +61,25 @@ export function traitValue(actor: any, trait: string): number {
 }
 
 /**
+ * The GM's Fear, or zero before the setting exists.
+ *
+ * Read through a guard rather than imported from `settings.ts`, and the
+ * reason is the direction of the dependency: `data/` is the schema and
+ * `settings.ts` is the world, so a resolver reaching up into the application
+ * would make a DataModel unloadable outside a running game — which is exactly
+ * what `tools/check-item-sheet.mjs` relies on not being true. `game` is
+ * already `any` in this file's environment, so the guard costs one line and
+ * keeps the arrow pointing the way it does everywhere else in `data/`.
+ */
+function fearValue(): number {
+  try {
+    return Number((globalThis as any).game?.settings?.get?.("daggerheart", "fear") ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * The ceiling, now. Null means the card states none — see `open` in
  * `RESOURCE_MAX`.
  *
@@ -68,6 +87,16 @@ export function traitValue(actor: any, trait: string): number {
  * card that prints a minimum prints it about the result and not about the
  * source. It costs nothing on a `fixed` ceiling, which never goes below its
  * own number anyway.
+ *
+ * `proficiency` and `tier` read the actor's *derived* values rather than
+ * recomputing them from level, so an advancement option that bought a point
+ * of Proficiency raises the Slayer's dice pool with it — which is the whole
+ * reason the card says Proficiency instead of naming a number.
+ *
+ * `fear` is the one kind that does not read the actor at all. That is honest
+ * rather than sloppy: Umbral Veil's ceiling genuinely belongs to the table
+ * rather than to the character holding the card, and two players holding one
+ * each see the same number because there is only one.
  */
 export function resourceMax(res: Resource, actor: any): number | null {
   const m = res?.max;
@@ -75,6 +104,9 @@ export function resourceMax(res: Resource, actor: any): number | null {
   const raw =
     m.kind === "fixed" ? m.n
     : m.kind === "level" ? Number(actor?.system?.level ?? 1)
+    : m.kind === "proficiency" ? Number(actor?.system?.proficiency ?? 0)
+    : m.kind === "tier" ? Number(actor?.system?.tier ?? 1)
+    : m.kind === "fear" ? fearValue()
     : m.kind === "trait" ? traitValue(actor, m.trait)
     : 0;
   return Math.max(m.floor ?? 0, raw);

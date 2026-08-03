@@ -1,0 +1,363 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH KEEP — the dice a card asks you to keep
+
+   `chit.css` draws the counter you put down. Eighteen rules in the corpus
+   put down something else: a **die**, which is a counter that says
+   something. Prayer Dice are four d4s lying on your sheet with four
+   different faces up, and four identical chits are not a record of that.
+
+     .chits.keep   the tray. A chits row, wearing a second class.
+     .keep .kd     one die, and the press that spends it
+     .keep .kd .die   plate.css's die, at counter scale
+     .keep .up     the chevron that advances a climbing die
+     .keep .tumble the way to roll what is on the card
+     .keep .fx     the die's size, in words
+
+   ── it is a chits row on purpose ──────────────────────────────────
+   Sockets, the way to put one down, the gap, the tilt, the six host
+   sizings and both grounds are already written, already tested and
+   already correct, and a die is a counter that says something — it goes
+   in the same tray, on the same corner of the same plate, at the same
+   size. So the row *is* `.chits` and this file states only the
+   difference. Two components in one tray rather than a second tray that
+   has to be kept looking like the first one.
+
+   What that buys is not brevity. It is that `.card .chits`'s three
+   corrections — the plate's own bottom edge, `.lower`'s margin resolving
+   against width, the seam's 8cqw — are solved once. A second row would
+   have had to rediscover all three, and the way you discover them is by
+   shipping counters that sit on the prose.
+
+   ── the die is plate.css's die ────────────────────────────────────
+   Not a picture of one. `DIE()` from `design/plate.js`, the same builder
+   the chat plate and the rest card use, so the six silhouettes stay in
+   lockstep with the dice the roll actually posts. That is the finding
+   `tools/verify/` caught between `design/plate.js` and `dice/plate.ts` —
+   two builders drawing the same object diverged, and a 2d8 came out as
+   two d6 — arriving early rather than late.
+
+   Everything about a die is a custom property, so making one out of bone
+   is four declarations and no new geometry.
+
+   ── an unrolled die is a chit ─────────────────────────────────────
+   Slayer Dice and the Sigil's d8s are *placed* and rolled later; Prayer
+   Dice are rolled when placed. So a die here may have no face, and one
+   with no face draws the family rhombus where its numeral goes — which
+   is precisely what a chit draws, and for the same reason: it is what
+   stops the object reading as a blank at 14px. A pool you have not
+   rolled is a row of counters, and it becomes dice at the moment that
+   means something.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the tray ─────────────────────────────────────────────────────
+   Two departures from `.chits`, and both are about a die being an
+   irregular shape where a chit is a square.
+
+   A d4 is a triangle and a d10 is a kite, so the ink in the box is a
+   fraction of the box — about 60% for the triangle — and two of them at
+   the chit's gap leave a visual gap of nearly double. The gap comes down
+   to compensate, so a row of dice reads as tightly packed as a row of
+   counters rather than as a scatter.
+
+   And the tray is `align-items:center` rather than the chit's default,
+   because a socket is a square and a die is not, so the two only agree
+   about their middles. */
+/* `.chits.keep` and never a bare `.keep` where `.chits` states the same
+   property. Both files load into one document, both selectors are one
+   class, and at equal specificity the winner is decided by the order
+   `system.json` happens to list them in — which is precisely the bug that
+   renamed `.add` to `.put` before it shipped, caught this time on the
+   component that inherits the most. Adding the parent class costs nothing
+   and takes the question away from the manifest. */
+.chits.keep{gap:var(--gap,calc(var(--sz,22px) * .18))}
+
+/* ── one die ──────────────────────────────────────────────────────
+   The button is the object and the `.die` inside it is the drawing, for
+   the reason `.chit`'s three `<b>`s are inside `.chit`: a shadow declared
+   on a clipped element is generated and then trimmed off by the very
+   shape meant to cast it. `.die` is clipped nine ways, so the shadow
+   rides out here where it can read the whole silhouette's alpha.
+
+   And it states all three metrics, because it is a `<button>`. Foundry's
+   `elements` layer sizes every one to `--button-size` **with a matching
+   min-height**, our sheets arrive unlayered so `height` wins on its own,
+   and a floor with no competitor simply applies. That has now caught
+   make.css, prep.css, pool.css and chit.css in turn, which is enough
+   times that it is written down rather than rediscovered. */
+.keep .kd{position:relative;flex:none;display:block;padding:0;border:0;background:none;
+  width:var(--sz);height:var(--sz);
+  min-width:var(--sz);min-height:var(--sz);
+  max-width:var(--sz);max-height:var(--sz);
+  border-radius:0;cursor:pointer;
+  --lift:0;
+  filter:
+    drop-shadow(0 calc(var(--sz) * (.04 + .05 * var(--lift))) calc(var(--sz) * (.05 + .06 * var(--lift))) rgba(0,0,0,calc(.55 - .1 * var(--lift))))
+    drop-shadow(0 calc(var(--sz) * (.10 + .16 * var(--lift))) calc(var(--sz) * (.16 + .20 * var(--lift))) rgba(0,0,0,calc(.30 + .08 * var(--lift))));
+  transition:--lift .16s ease, transform .16s cubic-bezier(.2,.8,.25,1)}
+
+/* The scatter, keyed off nth-child exactly as the chit's is: a re-render
+   must not shuffle the pile, and this sheet re-renders constantly. Half
+   the chit's angles, because a die's silhouette already has corners
+   pointing in several directions and the two readings compete — a tilted
+   d4 stops looking dropped and starts looking wrong. `--jit` turns it off
+   in a row, where the tilt's bounding-box growth eats a fixed gap. */
+.keep .kd{--tilt:0deg;transform:rotate(calc(var(--tilt) * var(--jit,1)))}
+.keep .kd:nth-child(4n+1){--tilt:-2.5deg}
+.keep .kd:nth-child(4n+2){--tilt:1.5deg}
+.keep .kd:nth-child(4n+3){--tilt:-.75deg}
+.keep .kd:nth-child(4n+4){--tilt:3deg}
+.keep .kd:hover{--lift:1;
+  transform:rotate(calc(var(--tilt) * var(--jit,1))) translateY(calc(var(--sz) * -.07))}
+
+.keep .kd .die{width:100%;height:100%}
+
+/* ── the material ─────────────────────────────────────────────────
+   Bone, or the domain's hue where the host says it has one — the chit's
+   own two colours, so a die and a counter on one plate are made of the
+   same thing. `.chits.dom` already swings `--chit`, so this inherits the
+   swing for free and the two can never disagree about which domain a card
+   belongs to.
+
+   `--rim` is the one number that has to be re-derived rather than
+   inherited. plate.css states it in pixels per shape — 2 to 2.5 — which
+   is a proportion of the 26–38px the chat plate draws at, and the same
+   2.5px on a 14px die in a features row is a fifth of the object: the
+   edge stops being an edge and becomes most of the die. Proportional
+   here, on the same `--sz` contract everything else in the tray uses. */
+.keep .die{--rim:max(1px,calc(var(--sz) * .075));
+  --tone:var(--chit);
+  --rimc:var(--chit);
+  --facec:color-mix(in srgb,var(--chit) 52%,#fff);
+  --numc:color-mix(in srgb,var(--chit-dk) 30%,#000)}
+
+/* ── the numeral has to survive nine domains ──────────────────────
+   Every other die in this system is painted by hand: Hope is gold with
+   dark ink, Fear is violet with white, the advantage pair states it both
+   ways round. A kept die takes the **card's** hue, and the nine domains
+   run from Splendor's pale gold to Midnight's near-black. A dark ink is
+   unreadable on half of them and a light one on the other half.
+
+   The first answer was to choose the ink per card — ask the face's own
+   lightness through relative colour syntax and flip between black and
+   white at a threshold. Measured across all nine it left six between 2.2
+   and 3.4:1, and that is the honest limit of choosing an ink rather than
+   a bug in the choosing: Dread, Blade, Grace, Arcana, Codex and Midnight
+   are *mid* lightness, so neither black nor white gets anywhere on them.
+   Nothing you can do to a numeral fixes a face it cannot be read on.
+
+   So the **face** takes a lightness floor and the ink stays one colour.
+   The hue and the chroma are the domain's, untouched; only `l` is lifted
+   where it falls below .74, which leaves Valor and Splendor exactly as
+   they were and lifts Dread to something a number can sit on. Every
+   domain then measures over 8:1, and there is one ink rather than a rule
+   for choosing one.
+
+   The rim and the glow stay the **true** hue at full strength, which is
+   what keeps the claim intact: a die still says which domain it belongs
+   to, at the same saturation a card's edge says it, and it says it round
+   the outside of a face you can read. That is also what a real dice set
+   with a coloured edge looks like, so the object gains rather than loses.
+
+   `.chit .face` has been doing a weaker version of this since it was
+   drawn — a gradient starting at `color-mix(--chit 82%,#fff)` — for a
+   related reason: a flat saturated square reads as a sticker. A chit
+   carries no numeral, so 82% was enough there and a floor is needed here.
+
+   **Do not chain these two.** Computing the ink from `var(--facec)` when
+   `--facec` is itself an `oklch(from …)` was the first attempt and it
+   fails silently: relative colour syntax wants a resolved `<color>`, a
+   var() holding another relative colour is not one, and *both*
+   declarations drop. The symptom was a die drawn with no face and no
+   numeral at all, which reads as an empty socket. Each reads `--chit`. */
+@supports (color:oklch(from red l c h)){
+  .keep .die{--facec:oklch(from var(--chit) max(l,.74) c h);
+             --numc:oklch(from var(--chit) min(l,.28) c h)}
+}
+
+/* ── and the ink needed a floor of its own ────────────────────────
+   Flooring the face fixed the six dark domains and exposed the four
+   light ones, which is the same fault seen from the other side: the ink
+   was `--chit-dk`, and `--chit-dk` is a *shade of the hue* rather than a
+   dark colour. Valor's dark orange over Valor's floored orange measured
+   2.6:1; bone over bone, 2.7. The hues that had never been the problem
+   were the ones left failing.
+
+   So both ends are stated rather than one, and against the same channel.
+   The face is `max(l,.74)` and the ink is `min(l,.28)` — a lightness gap
+   of at least .46 on every hue by construction, so the contrast is a
+   property of the rule and not an outcome of which domain a card belongs
+   to. Chroma and hue are the domain's on both, so the numeral is a deep
+   tint of the card's own colour rather than a flat black, which is what
+   keeps it looking like ink on a die rather than a hole in one. */
+
+/* The blank. No face yet, so the rhombus stands where the numeral will —
+   chit.css's pip, at the chit's own proportion and opacity, because it is
+   the same claim about the same object.
+
+   Both of `.die em`'s corrections are undone first. The tracking and the
+   `margin-inline-end` that hands back the column letter-spacing took are
+   corrections for *ink*, and an empty element has none; left standing they
+   would push a centred rhombus a fortieth of the die to the right, which
+   is exactly the off-centre numeral plate.css spent a paragraph fixing. */
+.keep .die.blank em{margin-inline-end:0;letter-spacing:0}
+/* The pip takes `--numc` rather than a colour of its own, so it inherits
+   the contrast decision above wholesale — a rhombus is exactly as
+   invisible on Midnight as a numeral is, and it is standing in the same
+   place for the same reason. Softer than a numeral, because it is the
+   absence of one: this die has not been rolled, and a mark at full
+   strength would read as a face. */
+.keep .die.blank em::after{content:"";display:block;
+  width:calc(var(--sz) * .30);height:calc(var(--sz) * .30);
+  background:var(--numc);opacity:.5;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+/* ── the climbing die ─────────────────────────────────────────────
+   Lit, and it is the only die in the tray that is. The other modes hold
+   dice that are *waiting* — a Slayer Die on the card is potential, and a
+   spent one is gone. A climbing die is an effect that is running: you are
+   Unstoppable right now, the number is going up, and when it passes the
+   top the thing ends. So it takes plate.css's own `lit` treatment, which
+   is the same glow the winning duality die wears and means the same word.
+
+   It is also the one that must never be mistaken for a counter you can
+   spend down, which a row of dim bone dice would invite. */
+.keep .die.climb{--rimc:color-mix(in srgb,var(--chit) 72%,#fff);
+  --facec:color-mix(in srgb,var(--chit) 34%,#fff)}
+@supports (color:oklch(from red l c h)){
+  .keep .die.climb{--facec:oklch(from var(--chit) max(l,.86) c h)}
+}
+.keep .die.climb .lamp{
+  filter:drop-shadow(0 0 calc(var(--sz) * .18) color-mix(in srgb,var(--chit) 62%,transparent))
+         drop-shadow(0 0 calc(var(--sz) * .5) color-mix(in srgb,var(--chit) 26%,transparent))}
+
+/* ── the chevron ──────────────────────────────────────────────────
+   What advances a climbing die, and deliberately **not** the plus that
+   places a chit. Those are two different acts — one adds an object and
+   one changes the one that is there — and drawing them alike would make
+   the tray claim you can have two Unstoppable Dice.
+
+   A chevron rather than an arrow: it is the same two strokes the family
+   cuts everywhere else, and it points the way the number goes. Built out
+   of one rotated square's two borders so it costs no glyph and scales off
+   `--sz` like the rest of the tray. */
+.keep .up{position:relative;flex:none;display:grid;place-items:center;place-content:center;
+  width:var(--sz);height:var(--sz);
+  min-width:var(--sz);min-height:var(--sz);
+  max-width:var(--sz);max-height:var(--sz);
+  padding:0;border:0;border-radius:0;cursor:pointer;background:none;
+  color:color-mix(in srgb,var(--chit) 70%,var(--ink-3));
+  transition:color .14s,transform .14s cubic-bezier(.2,.8,.25,1)}
+.keep .up::before{content:"";display:block;
+  width:calc(var(--sz) * .34);height:calc(var(--sz) * .34);
+  border-left:max(1.5px,calc(var(--sz) * .085)) solid currentColor;
+  border-top:max(1.5px,calc(var(--sz) * .085)) solid currentColor;
+  transform:rotate(45deg) translate(calc(var(--sz) * .04),calc(var(--sz) * .04))}
+.keep .up:hover{color:color-mix(in srgb,var(--chit) 55%,#fff);
+  transform:translateY(calc(var(--sz) * -.09))}
+
+/* ── the way to roll ──────────────────────────────────────────────
+   Only ever drawn when there is something unrolled to roll, so its
+   presence is itself the statement that this pool is waiting on you. It
+   is the socket's own recess with three pips scattered in it — a die's
+   face seen from above, which is the one picture that means "roll" without
+   a word or an arrow. */
+.keep .tumble{position:relative;flex:none;
+  width:var(--sz);height:var(--sz);
+  min-width:var(--sz);min-height:var(--sz);
+  max-width:var(--sz);max-height:var(--sz);
+  padding:0;border:0;border-radius:0;cursor:pointer;
+  background:var(--socket,rgba(0,0,0,.34));
+  box-shadow:inset 0 0 0 1px var(--socket-line,rgba(255,255,255,.10));
+  color:color-mix(in srgb,var(--chit) 62%,var(--ink-3));
+  clip-path:polygon(
+    var(--cut) 0, calc(100% - var(--cut)) 0,
+    100% var(--cut), 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, var(--cut) 100%,
+    0 calc(100% - var(--cut)), 0 var(--cut));
+  transition:background .14s,color .14s}
+.keep .tumble::before,.keep .tumble::after{content:"";position:absolute;
+  width:calc(var(--sz) * .15);height:calc(var(--sz) * .15);background:currentColor;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.keep .tumble::before{left:24%;top:24%;box-shadow:
+  calc(var(--sz) * .30) calc(var(--sz) * .30) 0 currentColor}
+.keep .tumble::after{right:24%;top:24%}
+.keep .tumble:hover{background:color-mix(in srgb,var(--chit) 30%,transparent);
+  color:color-mix(in srgb,var(--chit) 66%,#fff)}
+
+/* ── the size, in words ───────────────────────────────────────────
+   `roll` mode's whole reason. A Combo Die that has been stepped twice is
+   a d8, that fact lives nowhere else on the sheet, and a d8 silhouette at
+   14px is a shape you recognise rather than a number you can read off —
+   the octagon and the decagon are two shapes apart at chat-plate size and
+   one shape apart in a features row. So the row says it.
+
+   Mono, because it is a value rather than a name, and it is the same
+   caption the arithmetic strip on a chat plate writes `d20 + d12` in. */
+.keep .fx{font:700 calc(var(--sz) * .44)/1 var(--f-mono);color:var(--ink-3);
+  letter-spacing:.02em;margin-left:calc(var(--sz) * .16)}
+
+/* The count, when the row stops enumerating. It states the number of dice
+   and never a face: five dice showing five different numbers have no
+   single value to print, and how big the pile is remains true. */
+.keep .n{margin-left:calc(var(--sz) * .16)}
+
+/* ══ PLACING, SPENDING, ROLLING ═════════════════════════════════════
+   The first two are chit.css's, unchanged and deliberately so: a die
+   arrives on the card the way a counter does, because it arrives by the
+   same gesture and the fiction is the same one. Reusing the keyframes
+   rather than writing a second pair is what stops the two drifting into
+   two different drops.
+
+   The third is this component's own, and it is the only motion here that
+   is about *information*: a die tumbling is the sheet saying it does not
+   know the answer yet. It has to be over quickly — this is a 14px object
+   in the corner of a card, not the subject of the screen — and it has to
+   end with a settle, or the number reads as having been there all along. */
+.keep .kd.place{animation:chitDrop .34s cubic-bezier(.18,1.02,.32,1) both}
+.keep .kd.take {animation:chitLift .28s cubic-bezier(.4,0,.85,.35) both;pointer-events:none}
+
+.keep .kd.roll{animation:keepRoll .13s linear infinite;pointer-events:none}
+@keyframes keepRoll{
+  0%  {transform:rotate(-9deg)  translateY(calc(var(--sz) * -.06))}
+  25% {transform:rotate(6deg)   translateY(0)}
+  50% {transform:rotate(-4deg)  translateY(calc(var(--sz) * -.09))}
+  75% {transform:rotate(8deg)   translateY(calc(var(--sz) * -.02))}
+  100%{transform:rotate(-9deg)  translateY(calc(var(--sz) * -.06))}}
+
+/* The settle. It lands slightly large and comes back, which is the drop's
+   own ending — the same curve, so a die that was placed and a die that
+   was rolled arrive as one kind of event. */
+.keep .kd.land{animation:keepLand .28s cubic-bezier(.18,1.02,.32,1) both}
+@keyframes keepLand{
+  0%  {transform:scale(1.22) rotate(-3deg)}
+  60% {transform:scale(.98)  rotate(1deg)}
+  100%{transform:scale(1)    rotate(0)}}
+
+/* The tick. A climbing die going up is one number replacing another on an
+   object that has not moved, so the die nudges rather than tumbles — the
+   value changed and the die did not. */
+.keep .kd.step{animation:keepStep .26s cubic-bezier(.2,.9,.25,1) both}
+@keyframes keepStep{
+  0%  {transform:translateY(0)}
+  40% {transform:translateY(calc(var(--sz) * -.16))}
+  100%{transform:translateY(0)}}
+
+/* ══ HOSTS ══════════════════════════════════════════════════════════
+   The tray inherits every host's `--sz` from `.chits`, and overrides two
+   of them, because a die needs more room than a counter to be legible and
+   a counter needs none at all.
+
+   A chit at 14px shows a pip, which is a shape; a die at 14px shows a
+   *numeral* at `--nf` of that — 8.5px on a d10 — and eight and a half
+   pixels of Google Sans is the failure `design/tile.css` shipped when a
+   368px study panel met a 262px Foundry pane. So the row hosts take the
+   tray to 17px and buy it back out of the gap, which they can afford
+   because a die pool is at most five where a charge track is twelve. */
+.abl .chits.keep,.spine .chits.keep,.ln .chits.keep{--sz:17px;--gap:4px}
+.tile .chits.keep{--sz:15px;--gap:3px}
+
+/* On a card the tray is where the chits are, at the chit's own size: the
+   plate's lower left, which is the one region of a card in this system
+   that carries nothing. `.card .chits` has already solved the three
+   corrections that put it there. */
+.card .chits.keep{--sz:10cqw;--gap:1.6cqw}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- An outline with nothing in it. Hidden is about line of sight and
+       Invisible is about the body, so this is the figure rather than the eye,
+       and it is broken rather than struck out — you are still there. -->
+  <path d="M32 4a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z"/>
+  <path d="M20 26h6v8h-6zm18 0h6v8h-6zM14 34h6v9h-6zm30 0h6v9h-6zM20 45h6v15h-6zm18 0h6v15h-6zM27 39h10v6H27zm0 12h10v9H27z"/>
+</svg>

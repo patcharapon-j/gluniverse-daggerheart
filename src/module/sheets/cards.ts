@@ -30,7 +30,9 @@ import {
 } from "../config.ts";
 import { cssUrl } from "../assets.ts";
 import { resourceMax, type Resource } from "../data/resources.ts";
+import { poolCapacity, type DiePool } from "../data/dice-pools.ts";
 import { CHITS } from "../ui/chit.js";
+import { KEEP } from "../ui/keep.js";
 import { CLASSES, KINDS, byslug } from "../ui/domains.js";
 import { clazz, glyph, icon } from "../ui/domains.js";
 
@@ -269,19 +271,38 @@ export const hasDomainHue = (type: string): boolean => DOMAIN_KINDS.has(type);
  */
 export function cardChits(it: ItemSnapshot, actor?: any): string | undefined {
   const list: Resource[] = it.system?.resources ?? [];
-  if (!list.length) return undefined;
+  const trays: DiePool[] = it.system?.dice ?? [];
+  if (!list.length && !trays.length) return undefined;
   const domain = DOMAIN_KINDS.has(it.type);
-  return list
-    .map((res) =>
-      CHITS({
-        value: res.value ?? 0,
-        max: resourceMax(res, actor) ?? 0,
-        name: (res.name || "tokens").toLowerCase(),
+  const rows = list.map((res) =>
+    CHITS({
+      value: res.value ?? 0,
+      max: resourceMax(res, actor) ?? 0,
+      name: (res.name || "tokens").toLowerCase(),
+      dom: domain,
+      add: false,
+    }),
+  );
+  /* And the kept dice, in the same stack and after the counters, which is
+     the sheet's own order — a use you spent, then a die you are holding.
+     `roll` mode is skipped outright: it holds nothing, so on a card it
+     would be a lone silhouette and the word `d8` making a claim about a
+     control that is not there. It belongs where it can be pressed. */
+  for (const pool of trays) {
+    if (pool.mode === "roll") continue;
+    rows.push(
+      KEEP({
+        mode: pool.mode,
+        faces: pool.faces ?? 6,
+        dice: pool.dice ?? [],
+        max: poolCapacity(pool, actor) ?? 0,
+        name: (pool.name || "dice").toLowerCase(),
         dom: domain,
         add: false,
       }),
-    )
-    .join("");
+    );
+  }
+  return rows.join("");
 }
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 

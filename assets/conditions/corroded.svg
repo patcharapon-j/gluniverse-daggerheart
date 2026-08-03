@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- The Armor shield again, eaten rather than cracked. Vulnerable's is the
+       same silhouette with a bolt through it; Corroded is slower and does not
+       break the shape, it removes it, so the loss is bitten out of the edge. -->
+  <path d="M32 3 7 11.4V34c0 15.5 10.9 24.4 25 28.9C46.1 58.4 57 49.5 57 34V11.4L32 3Zm0 6.4 19 6.4V34c0 11.8-7.7 18.9-19 22.7C20.7 52.9 13 45.8 13 34V15.8l19-6.4Z"/>
+  <path d="M24 22h6v6h-6zm10 4h7v7h-7zm-13 9h8v8h-8zm14 3h6v6h-6zm-6 9h5v5h-5z"/>
+</svg>

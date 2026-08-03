@@ -50,6 +50,7 @@
   import { XBOX, XMARK } from "../ui/mark.js";
   import { CARD, fit, rich } from "../ui/card.js";
   import { chitClicks, refuseChits } from "../ui/chit.js";
+  import { keepClicks, refuseKeep } from "../ui/keep.js";
   import { closePeeks, peeks } from "../ui/peek.js";
   import { capture, flip } from "../ui/swap.js";
   import { menu } from "../ui/menu.js";
@@ -78,6 +79,8 @@
   } from "../data/resources.ts";
   import { postCard } from "./post-card.ts";
   import Chits from "./parts/Chits.svelte";
+  import Keep from "./parts/Keep.svelte";
+  import { liveDicePools } from "../data/dice-pools.ts";
   import Marks from "./parts/Marks.svelte";
   import Gems from "./parts/Gems.svelte";
   import Prose from "./parts/Prose.svelte";
@@ -679,6 +682,50 @@
       const item: any = doc.items.get(id);
       if (!item) return refuseChits(row);
       if (!(await item.moveResource(Number(ix), dir))) refuseChits(row);
+    });
+  });
+
+  /* And every gesture a tray of kept dice has, off the same root and by the
+     same rules. Two handlers rather than one because they answer for
+     different rows — `chitClicks` claims `[data-chits]` and this claims
+     `[data-keep]`, and neither can see the other's.
+
+     The five gestures collapse to four calls on the document, and the one
+     that does not is `roll`: `keepClicks` hands the list back *unchanged*
+     for both roll gestures, because the RNG belongs to whoever owns the
+     dice log, and here that is Foundry. Everything else states its own
+     result and the Item decides whether it is allowed.
+
+     `step` is the only one that adds an animation from out here, and it has
+     to: a value changing on a die that did not move is not something the
+     setter can tell apart from a die arriving, so the caller — which knows
+     it pressed the chevron — says so. */
+  $effect(() => {
+    if (!winEl) return;
+    keepClicks(winEl, async (row, _next, how, at) => {
+      if (!ed) return refuseKeep(row);
+      const [id, ix] = (row.dataset.key ?? "").split(":");
+      const item: any = doc.items.get(id);
+      if (!item) return refuseKeep(row);
+      const i = Number(ix);
+
+      if (how === "place") {
+        if (!(await item.placeDie(i))) refuseKeep(row);
+        return;
+      }
+      if (how === "take") {
+        if (!(await item.spendDie(i, at ?? 0))) refuseKeep(row);
+        return;
+      }
+      if (how === "step") {
+        const kd = row.querySelector(".kd");
+        if (!(await item.stepDie(i))) return refuseKeep(row);
+        kd?.classList.add("step");
+        kd?.addEventListener("animationend", () => kd.classList.remove("step"), { once: true });
+        return;
+      }
+      const rolled = await item.rollTray(i, how === "roll1" ? at : undefined);
+      if (!rolled.length) refuseKeep(row);
     });
   });
 
@@ -1991,6 +2038,27 @@
       key="{it.id}:{p.i}"
       dom={hasDomainHue(it.type)}
       add={ed}
+      {slot}
+      rev={snap.rev}
+    />
+  {/each}
+  <!-- Kept dice go in the same slot and after the counters, so a card that
+       carries both — the Guardian's Unstoppable is a once-per-long-rest use
+       *and* a die that climbs — reads as a use it spent and a die it is
+       holding, in that order. Two arrays rather than one is the schema
+       saying they are two records; drawing them in one tray would be the
+       sheet arguing with it. -->
+  {#each liveDicePools(it, doc) as p (p.i)}
+    <Keep
+      mode={p.pool.mode}
+      faces={p.pool.faces}
+      dice={p.pool.dice}
+      max={p.max}
+      name={(p.pool.name || "dice").toLowerCase()}
+      key="{it.id}:{p.i}"
+      dom={hasDomainHue(it.type)}
+      add={ed}
+      roll={p.pool.onRefresh !== "reroll"}
       {slot}
       rev={snap.rev}
     />

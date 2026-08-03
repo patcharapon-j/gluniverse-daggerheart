@@ -8,6 +8,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
+  DIE_MODES,
+  DIE_ON_REFRESH,
   RESOURCE_MAX,
   RESOURCE_ON_REFRESH,
   RESOURCE_REFRESH,
@@ -186,6 +188,59 @@ export const resourceField = (): any =>
     /** The `name` of the feature block this belongs to. Blank = the document. */
     feature: str(),
     /** What the card says happens at zero. */
+    onEmpty: str(),
+  });
+
+/**
+ * Dice a card asks you to keep.
+ *
+ * A resource counts; this counts *and says what each one is showing*. See
+ * `DIE_MODES` in `config.ts` for why there are three modes and
+ * `design/keep.js` for the object they draw.
+ *
+ * **`dice` is a list of faces, and `0` is a die with no face.** Slayer Dice
+ * and the Sigil's d8s are placed and rolled later, so a die genuinely can be
+ * on the card without showing anything; the array's *length* is the count,
+ * which is why this is not a number and a flag. A `climb` pool holds at most
+ * one, and an empty array is the effect not running rather than a die at
+ * zero — the same distinction `open` draws for a ceiling.
+ *
+ * **`max` is the resource's own block, reused verbatim.** A ceiling is a
+ * ceiling and both fields want the same sources: the Slayer stores dice
+ * equal to their Proficiency and the Sigil holds d8s equal to their level.
+ * Sharing the shape is what lets `resourceMax` serve both, so a new source
+ * added for one is available to the other by construction.
+ *
+ * **`faces` is a plain number and `grow` is the prose that moves it.** The
+ * Rally Die becomes a d8 at level 5 and a d10 at Wordsmith Mastery; the
+ * Unstoppable Die becomes a d6 at level 5; the Combo Die grows by an
+ * *advancement option*. Those triggers live on three different documents and
+ * two of them are cards this Item has never heard of, so the size is a
+ * number the table sets and `grow` is the card's own sentence printed
+ * beside it. This system parses English rules text in exactly one place and
+ * this is not going to be the second.
+ */
+export const diePoolField = (): any =>
+  schema({
+    name: str("Dice"),
+    mode: choice(DIE_MODES, "bag"),
+    /** The die's size, now. 4, 6, 8, 10 or 12. */
+    faces: int(6, { min: 2 }),
+    /** The faces currently on the card. 0 is placed and not yet rolled. */
+    dice: arr(int(0, { min: 0 })),
+    max: schema({
+      kind: choice(RESOURCE_MAX, "fixed"),
+      n: int(1, { min: 0 }),
+      trait: maybeChoice(RESOURCE_TRAITS),
+      floor: int(0),
+    }),
+    refresh: choice(RESOURCE_REFRESH, "manual"),
+    onRefresh: choice(DIE_ON_REFRESH, "clear"),
+    /** The `name` of the feature block this belongs to. Blank = the document. */
+    feature: str(),
+    /** The card's own sentence about when the die grows. Printed, never read. */
+    grow: str(),
+    /** What the card says happens when the tray empties or the die tops out. */
     onEmpty: str(),
   });
 
