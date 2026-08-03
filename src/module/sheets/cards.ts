@@ -133,6 +133,7 @@ export interface CardContext {
 export interface CardOptions {
   d: any;
   d2?: any;
+  cls?: string;
   sig: string;
   sig2?: string;
   /**
@@ -407,6 +408,7 @@ export function cardOf(
     case "domainCard":
       return {
         ...base,
+        cls: "domain-card",
         d: dom(s.domain),
         sig: sig[s.domain] ?? "", sigKey: s.domain,
         lvl: s.level ?? 1,

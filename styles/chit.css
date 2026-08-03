@@ -389,6 +389,10 @@
   bottom:calc(100% - var(--plate) + 5% + 8cqw);
   display:flex;flex-direction:column-reverse;align-items:flex-start;
   gap:2.5cqw;max-width:86cqw}
+/* Domain-card plates are a width-relative fixed height. The lower panel
+   overlaps them by 7cqw, so the counter anchor must use the same units when
+   the paper grows beyond the 5:7 minimum. */
+.dh .card.domain-card .chitstack{bottom:calc(100% - var(--plate) + 15cqw)}
 .dh .card .chits{--sz:9cqw;--gap:3cqw;max-width:86cqw}
 
 /* On a card the ground is a photograph, so a socket cannot be "a hole in
