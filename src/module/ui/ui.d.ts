@@ -188,7 +188,7 @@ declare module "*/ui/chit.js" {
     max?: number;
     /** What one of them is called, for the controls' own labels. */
     name?: string;
-    /** How many this host can enumerate before it states the number instead. */
+    /** The held count at which this becomes one counter plus a multiplier. */
     cap?: number;
     /** False for a readout — a posted card is a record and takes no input. */
     add?: boolean;
@@ -199,7 +199,7 @@ declare module "*/ui/chit.js" {
     key?: string;
   }): string;
 
-  /** Past this many the row states the number rather than enumerating it. */
+  /** At this held count the row becomes one counter plus a multiplier. */
   export const CHIT_CAP: number;
 
   /** Diff the row against a new value and animate only what moved. */

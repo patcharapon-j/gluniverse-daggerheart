@@ -15,7 +15,7 @@
 
 const CHIT = () => '<b class="face"></b><b class="rim"></b><b class="pip"></b>';
 
-/* Past this many, the row states the number instead of enumerating it.
+/* At this many, the row states the number instead of enumerating it.
    Twelve chits at 22px is 340px and no host has that; the loadout makes
    the same concession when it prints 5/5 rather than five card names.
 
@@ -26,14 +26,14 @@ const CHIT = () => '<b class="face"></b><b class="rim"></b><b class="pip"></b>';
    Getting this wrong does not look like a cap set too high; it looks like
    a row that grew a second line, which is why `.chits` in a row is
    `nowrap` and this is not the only thing standing between them. */
-export const CHIT_CAP = 8;
+export const CHIT_CAP = 5;
 
 /**
  * value  how many are on the card
  * max    the capacity, when it is known. Null or 0 means an open pool:
  *        no sockets are drawn, because there is no capacity to draw.
  * name   what the pool is called, for the control's own label
- * cap    how many this host can enumerate before stating the number
+ * cap    the held count at which this host becomes one chit plus a multiplier
  * add    false to render a readout with no way to place — a posted chat
  *        card is a record, and a record does not take input.
  * dom    whether the host has a domain. Stated rather than sniffed: a
@@ -56,22 +56,20 @@ export const CHITS = ({value = 0, max = 0, name = 'tokens', cap = CHIT_CAP, add 
   if (capped && n >= max) cls.push('full');
   if (round) cls.push('round');
 
-  // Over the cap the row collapses to one chit and a numeral. The chit is
+  // At the cap the row collapses to one chit and a multiplier. The chit is
   // still a chit and still takes the click, so the gesture does not change
   // shape at the boundary.
   //
-  // The *sockets* count against it too, not only the chits: an empty pool
-  // of eight draws eight sockets and a plus, which is exactly as wide as a
-  // full one and just as unable to fit. `drawn` is what the row would
-  // actually put on the line.
-  const drawn = capped ? max : n;
+  // Collapse from the held value rather than the ceiling. A pool with room
+  // for five should still look empty when it is empty; it becomes a stack
+  // only once five counters are actually present.
   const open = '<div class="' + cls.join(' ') + '" data-chits data-v="' + n +
     '" data-max="' + max + '" data-cap="' + cap + '"' +
     (key ? ' data-key="' + key + '"' : '') + '>';
-  if (drawn > cap) {
+  if (n >= cap) {
     return open +
       '<button class="chit" data-take="1" title="Spend one ' + name + '">' + CHIT() + '</button>' +
-      '<span class="n">' + n + (capped ? '<s>/' + max + '</s>' : '') + '</span>' +
+      '<span class="n">×' + n + '</span>' +
       (add ? addBtn(name) : '') +
       '</div>';
   }
@@ -124,11 +122,10 @@ export function setChits(row, value, max = Number(row.dataset.max) || 0) {
   row.classList.toggle('capped', capped);
   row.classList.toggle('full', capped && now >= max);
 
-  // Over the cap in either direction, the row changes shape rather than
+  // At the cap in either direction, the row changes shape rather than
   // count, and there is nothing honest to animate between "eleven chits"
   // and "one chit and the numeral 11". Redraw and stop.
-  const drawn = capped ? max : Math.max(now, was);
-  if (drawn > cap) {
+  if (Math.max(now, was) >= cap) {
     row.innerHTML = CHITS({value: now, max, cap, add: !!row.querySelector('[data-place]')})
       .replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '');
     return;

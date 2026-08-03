@@ -1029,11 +1029,9 @@
           {/key}
         {:else}
           <!-- ── counters ──────────────────────────────────────────────
-               A counter you put down, not a box you cross off. What is
-               authored here is where the ceiling *comes from* rather than
-               what it is: "a number of tokens equal to your Spellcast trait"
-               moves when you multiclass, and a compendium card cannot know
-               it because it is the same card for every character. -->
+               A counter you put down, not a box you cross off. Compendium
+               documents intentionally carry none: the player or GM adds the
+               useful counters after the item belongs to a character. -->
           <div class="pnl">
             <div class="k">
               Tracked resources<s>{(sys.resources ?? []).length}</s>
@@ -1205,8 +1203,7 @@
               </div>
             {:else}
               <p class="ach">
-                Nothing tracked. Most cards count nothing; the hundred and fifty-seven that do say
-                so in their own rules text.
+                Nothing tracked. Add counters here after this item is on a character sheet.
               </p>
             {/each}
           </div>

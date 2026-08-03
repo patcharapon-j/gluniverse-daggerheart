@@ -39,7 +39,7 @@
     name?: string;
     /** Handed back on `data-key` so the delegated handler knows the subject. */
     key?: string;
-    /** How many this host can enumerate before it states the number instead. */
+    /** The held count at which this host becomes one counter plus a multiplier. */
     cap?: number;
     /** Whether the host has a domain hue. Stated, never sniffed — see CHITS. */
     dom?: boolean;

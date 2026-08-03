@@ -1335,18 +1335,19 @@ is rather than handed a number this system made up.
 
 ### The annotations, and what checks them
 
-`src/packs-src/card-resources.mjs` is hand-authored and keyed `type:name`, and
-`withResources()` stamps it onto the four packs at import time — the same
-argument `equipment.mjs` makes: nothing upstream publishes this, so a generated
-file would be a second copy of facts with nothing to generate them from.
+`src/packs-src/card-resources.mjs` is hand-authored and keyed `type:name`.
+Compendium documents deliberately ship without its counter annotations:
+players and GMs add only the counters they want after an Item is embedded on a
+character. `withDice()` attaches the kept-die annotations, because a die tray
+records faces rather than a scalar counter.
 
 It is two blocks and a list. **`PILES`** are the twenty-one cards read
 individually, because what they count is particular — Flight is *your Agility,
 minimum 1*, which is the floor's whole reason; Wild Fortress counts **Hit
 Points** upward, not uses. **`BUDGETS`** are the regular "once per X" majority,
-built by `once()`, which sets `value: n` so a freshly dragged card arrives
-**full**: a budget you have not spent is not a budget at zero. And **`DECLINED`**
-is four entries with a reason each.
+built by `once()`. They remain checker evidence for the rules reading, not
+runtime compendium data. **`DECLINED`** records matching cards that carry no
+tracked resource.
 
 `tools/check-resources.mjs` is `fetch-cards.mjs`'s `TYPOS` pattern applied to a
 new problem, and the reason it is shaped that way is epistemic: **a regex

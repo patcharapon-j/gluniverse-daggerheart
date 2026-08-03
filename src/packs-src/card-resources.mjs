@@ -765,22 +765,20 @@ const RESOURCES = { ...PILES, ...BUDGETS };
 export default RESOURCES;
 
 /**
- * Attach the annotations to a pack's entries.
+ * Attach only kept-die annotations to a pack's entries.
  *
  * Called at each pack's own `export default` rather than centrally in
  * `build-packs.mjs`, because `tools/verify/` imports these modules directly
  * to draw THE DECK and would otherwise draw cards the game does not have.
  *
- * `said` is stripped on the way in — it is the checker's evidence, not the
- * document's data, and a schema that carried it would be shipping a copy of
- * the rules text next to the rules text.
+ * Counters are deliberately not attached to compendium documents. A player
+ * or GM adds the counters they want after the document is on a character
+ * sheet; the compendium remains plain rules content. `said` is stripped from
+ * dice on the way in because it is checker evidence, not document data.
  */
-export function withResources(entries) {
+export function withDice(entries) {
   for (const e of entries) {
     const key = `${e.type}:${e.name}`;
-    const found = RESOURCES[key];
-    /* eslint-disable-next-line no-unused-vars */
-    if (found) e.system.resources = found.map(({ said, ...keep }) => ({ ...keep }));
     const dice = DICE[key];
     /* eslint-disable-next-line no-unused-vars */
     if (dice) e.system.dice = dice.map(({ said, ...keep }) => ({ ...keep }));
