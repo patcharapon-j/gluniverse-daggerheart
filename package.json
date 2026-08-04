@@ -11,6 +11,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "typecheck": "tsc --noEmit && npm run check && npm run items:check && npm run marks:check && npm run counters:check",
     "link:dev": "node scripts/link-dev-build.mjs",
+    "link:dev:check": "node tools/test-link-dev-build.mjs",
     "preview": "node tools/preview-server.js",
     "build:packs": "npm run cards:check && npm run equipment:check && npm run resources:check && npm run passives:check && node scripts/build-packs.mjs",
     "cards:fetch": "node tools/fetch-cards.mjs",
