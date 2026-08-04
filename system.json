@@ -35,6 +35,7 @@
     "styles/prep.css",
     "styles/dlg.css",
     "styles/make.css",
+    "styles/browse.css",
     "styles/daggerheart-components.css",
     "styles/actor-sheets.css"
   ],

@@ -33,6 +33,7 @@
 <link rel="stylesheet" href="/styles/prep.css">
 <link rel="stylesheet" href="/styles/dlg.css">
 <link rel="stylesheet" href="/styles/make.css">
+<link rel="stylesheet" href="/styles/browse.css">
 <!-- Last, exactly as system.json loads it: the Svelte components' own styles.
      Leaving it out is how the first pass missed that the sheet's stack is not
      the study page's stack. -->
@@ -109,6 +110,20 @@
     input[type=radio]:checked::after{content:"\f192";font-family:"Font Awesome 6 Free"}
     input[type=checkbox]::before{content:"\f0c8"}
     input[type=checkbox]:checked::before{content:"\f14a"}
+
+    /* ── and Foundry's text input ──────────────────────────────────
+       The same layer again, on the one control no surface in this system
+       had until the compendium browser. Foundry gives every text input a
+       height with a matching floor, a border, a background and a 4px
+       radius — so an unreset search field is a piece of Foundry's chrome
+       sitting inside our paper, which is the one thing that makes a window
+       read as belonging to a different application. Copied at the
+       declarations that produce all four. */
+    input[type=text],input[type=search],select{
+      --input-height:var(--form-field-height,28px);
+      height:var(--input-height);min-height:var(--input-height);
+      border:1px solid #444;border-radius:4px;background:#2a2e35;color:#eee;
+      padding:0 8px;font-family:inherit}
   }
 
   /* ── Foundry's chat message, stood in for ─────────────────────────
@@ -186,6 +201,12 @@
 
 <h2><span>// THE FORGE</span>The creation window, from the ported stylesheet</h2>
 <div class="stage" id="forge"></div>
+
+<h2><span>// THE BROWSER</span>The compendium window, and the one control the others never had</h2>
+<!-- Deliberately not `.stage`, for the Fear strip's reason: that class carries
+     `.stage .dh{width:300px}`, and this window's whole geometry is a 252px
+     rail beside whatever is left. -->
+<section id="browse" style="padding:0 26px"></section>
 
 <pre id="ok"></pre>
 
@@ -884,6 +905,94 @@ document.getElementById('forge').innerHTML = `
       </div>
     </div>
   </div>`;
+
+/* ══ THE BROWSER ═══════════════════════════════════════════════════
+   The compendium window, at the geometry it actually opens at: a 252px rail,
+   a head carrying the one text input in this system, a card grid inside the
+   scroller, and a table long enough for its heading to have to stick.
+
+   What only fails here is the whole point of the section. `design/browse.html`
+   loads six stylesheets and the game loads twenty-two, so a `b`-prefixed name
+   that turns out to belong to somebody else shows up on this page and nowhere
+   else — and a study page has no Foundry, so neither the button floor nor the
+   input's chrome can be seen there without standing them in, which is what the
+   layer above does.
+   ══════════════════════════════════════════════════════════════════ */
+const browseReady = (async () => {
+  const box = document.getElementById('browse');
+  const sigs = { grace: await icon('grace'), midnight: await icon('midnight') };
+
+  const CARDS = [
+    { d: byslug.grace, sig: sigs.grace, lvl: 1, rc: 0, type: 'SPELL',
+      name: 'Deft Deceiver', foot: 'Grace', code: 'DH106',
+      text: 'Spend a Hope to gain advantage on a roll to deceive or trick someone.' },
+    { d: byslug.midnight, sig: sigs.midnight, lvl: 2, rc: 1, type: 'GRIMOIRE',
+      name: 'Uncanny Disguise', foot: 'Midnight', code: 'DH140',
+      text: 'Mark a Stress to seamlessly assume the appearance of another humanoid.' },
+  ];
+
+  const chip = (label, n, o = {}) =>
+    '<button type="button" class="bchip' + (o.hue ? ' hue' : '') + (o.on ? ' on' : '') + '"' +
+    (n ? '' : ' disabled') + (o.hue ? ' style="--c:' + o.hue + '"' : '') + '>' +
+    label + '<u>' + n + '</u></button>';
+
+  const wpnRow = () =>
+    '<button type="button" class="btr"><b>Broadsword</b>' +
+    '<span class="bico"><img src="/assets/types/primary.svg" alt=""></span>' +
+    '<u>1</u><i>Agility</i><i>Melee</i><u>d8+3 phy</u>' +
+    '<p><b>Reliable:</b> +1 to attack rolls</p></button>';
+
+  box.innerHTML =
+    '<div class="dh" id="browse2" style="width:1000px;max-width:100%;height:420px;' +
+    'display:flex;background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line)">' +
+      '<div class="brw" style="flex:1 1 auto;min-width:0">' +
+        '<div class="bside"><s>Kind</s>' +
+          '<div class="bkinds">' +
+            '<button type="button" class="bkind on"><span>Domain cards</span><u>189</u></button>' +
+            '<button type="button" class="bkind"><span>Weapons</span><u>204</u></button>' +
+            '<button type="button" class="bkind" disabled><span>Transformations</span><u>0</u></button>' +
+          '</div>' +
+          '<div class="bfilts"><div class="bgrp"><s>Domain</s><div class="bchips">' +
+            chip('Grace', 21, { hue: byslug.grace.light, on: true }) +
+            chip('Midnight', 21, { hue: byslug.midnight.light }) +
+            chip('Valor', 0) +
+          '</div></div>' +
+          '<button type="button" class="bclear">clear 1 filter</button></div>' +
+        '</div>' +
+        '<div class="bstage">' +
+          '<div class="bhead"><div class="bfind">' +
+            '<svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="5"/><path d="M11 11l4 4"/></svg>' +
+            '<input type="search" placeholder="Search names and rules text…">' +
+            '<button type="button" class="bx">×</button></div>' +
+            '<div class="bcount"><b>14</b> of 189</div>' +
+            '<select class="bsort"><option>Pack order</option></select>' +
+          '</div>' +
+          '<div class="bbody" id="bgrid"><div class="bcards">' +
+            CARDS.map(c => '<button type="button" class="bcrd">' + CARD(c) + '</button>').join('') +
+          '</div>' +
+          '<button type="button" class="bmore">show 48 more<u>48 of 189</u></button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    /* A second body holding the table, because the sticky heading only has
+       anything to say once the list is longer than the scroller. */
+    '<div class="dh" id="browse3" style="width:1000px;max-width:100%;margin-top:14px;' +
+    'background:var(--paper);box-shadow:inset 0 0 0 1px var(--frame-line)">' +
+      '<div class="brw" style="display:block">' +
+        '<div class="bstage" style="height:200px">' +
+          '<div class="bbody" id="btable"><div class="btbl bwpn">' +
+            '<div class="bthd"><s>Name</s><s></s><s>Tier</s><s>Trait</s><s>Range</s>' +
+            '<s>Damage</s><s>Feature</s></div>' +
+            Array.from({ length: 24 }, wpnRow).join('') +
+          '</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  fit(document.getElementById('bgrid'));
+  document.getElementById('btable').scrollTop = 260;
+})();
 
 /* The class row and the card grid both need sigils off disk, so both are built
    asynchronously and the checks wait on this. */
@@ -1840,6 +1949,109 @@ setTimeout(async () => { try {
         `${kWas} sockets at max 0, ${kNow} at max 3` +
         (kRow.classList.contains('capped') ? ' · capped' : ' · NOT capped'));
   kGrow.remove();
+
+  /* ── the browser ──────────────────────────────────────────────────
+     Six things, and every one of them is invisible on `design/browse.html`. */
+  await browseReady;
+
+  /* First, the button floor, for the third surface to pay for it. A kind row
+     is a name and a count on one line and is genuinely close to 28px, which
+     is exactly what makes this the wrong place to eyeball it — the chip is
+     the one that gives the game away, at 21. */
+  const bKind = document.querySelector('#browse2 .bkind');
+  const bChip = document.querySelector('#browse2 .bchip');
+  const bKindH = Math.round(bKind?.getBoundingClientRect().height ?? 0);
+  const bChipH = Math.round(bChip?.getBoundingClientRect().height ?? 0);
+  /* `.bmore` is the third, and it is the one a reader would assume is safe:
+     it declares a padding rather than a height, so with Foundry's floor
+     applying it is 22px of padding inside a 28px box — larger than it asks
+     for and still wrong, which is exactly how the panel heading's plus and
+     the slot header's unequip shipped. */
+  const bMore = document.querySelector('#browse2 .bmore');
+  const bMoreH = Math.round(bMore?.getBoundingClientRect().height ?? 0);
+  check('browser controls keep their own metrics, not 28px',
+        bKindH === 27 && bChipH === 21 && bMoreH === 32 &&
+        getComputedStyle(bChip).borderRadius === '0px',
+        `kind ${bKindH}px · chip ${bChipH}px · more ${bMoreH}px · ` +
+        `radius ${getComputedStyle(bChip).borderRadius}`);
+
+  /* Second, and this one is new to this system: the text input. Foundry's
+     `elements` layer gives every one a border, a background and a 4px radius,
+     and a search field wearing those inside our paper is a piece of somebody
+     else's application sitting in the middle of ours. Read off the input
+     rather than off its shell, because the shell is ours and always drew. */
+  const bFind = document.querySelector('#browse2 .bfind input');
+  const fs = bFind ? getComputedStyle(bFind) : null;
+  check('the search field is ours and not Foundry\'s chrome',
+        !!fs && fs.borderTopWidth === '0px' && fs.borderRadius === '0px' &&
+        fs.backgroundColor === 'rgba(0, 0, 0, 0)',
+        fs ? `border ${fs.borderTopWidth} · radius ${fs.borderRadius} · ${fs.backgroundColor}`
+           : 'no field');
+
+  /* Third, the table lines up. `subgrid` is the whole of why a heading and a
+     row of a different group cannot solve their widths differently, and a
+     variant whose header cell count drifts from its `grid-template-columns`
+     silently shifts every fact one column left. */
+  const bThd = document.querySelector('#browse3 .bthd');
+  const bTr = document.querySelector('#browse3 .btr');
+  const bCols = (el) => getComputedStyle(el).gridTemplateColumns;
+  const declared = getComputedStyle(document.querySelector('#browse3 .btbl'))
+    .gridTemplateColumns.split(' ').length;
+  check('the table is one grid and the heading spans every column',
+        bCols(bThd) === bCols(bTr) && bThd.children.length === declared &&
+        bTr.children.length === declared,
+        `${declared} columns · ${bThd.children.length} headings · ${bTr.children.length} cells`);
+
+  /* Fourth, the sticky heading actually covers the top of the scroller. A
+     scroll container's padding is *inside* the scrollport, so 16px of
+     `padding-top` on `.bbody` would leave a band above the stuck heading with
+     rows sliding through it in the open — and pulling the heading up into the
+     band with a negative offset clips the heading instead. Measured under a
+     real scroll, because both failures look fine at scrollTop 0. */
+  const bTable = document.getElementById('btable');
+  const gap = Math.round(bThd.getBoundingClientRect().top - bTable.getBoundingClientRect().top);
+  check('the sticky table heading sits flush on the scrollport',
+        bTable.scrollTop > 0 && gap === 0,
+        `scrolled ${bTable.scrollTop}px · heading ${gap}px below the top`);
+
+  /* Fifth, the browser does not resize the shared card. The creation window's
+     inverted peek check, from the other side: a grid cell here is the same
+     component the chat plate is, and a rule of ours that reached `.card`
+     would be a second scale nobody asked for. */
+  const bCards = [...document.querySelectorAll('#browse2 .bcrd .card')];
+  check('a browser card is the shared card, unresized',
+        bCards.length === 2 && bCards.every(c => Number(c.dataset.u) <= .94),
+        bCards.map(c => `${c.dataset.u}/${c.dataset.plate}`).join(' · ') || 'no cards');
+
+  /* Sixth, the `b`-prefix claim, tested rather than asserted. This is the
+     ledger's check pointed at a new block: every element the browser owns,
+     against every rule in the whole ported stack. `.card` is excluded by
+     element, because the card is a component this window deliberately hosts
+     and every rule `card.css` writes for it is somebody else's by design. */
+  const bOwn = [...document.querySelectorAll('#browse2 .brw, #browse2 .brw *, #browse3 .brw, #browse3 .brw *')]
+    .filter(el => !el.closest('.card'));
+  const bReach = [];
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch { continue; }
+    const from = sheet.href?.split('/').pop() ?? 'page';
+    if (from === 'browse.css') continue;
+    const walk = (rs) => { for (const r of rs) {
+      const sel = r.selectorText;
+      if (sel === undefined) { if (r.cssRules) walk(r.cssRules); continue; }
+      // The box-sizing reset is `.dh *` and is meant to reach everything, and
+      // the stand-in `elements` layer *is* the thing browse.css resets.
+      if (!/box-sizing/.test(r.style.cssText) && !/^(button|input|select)/.test(sel)) {
+        for (const el of bOwn) {
+          let m = false; try { m = el.matches(sel); } catch {}
+          if (m) { bReach.push(`${from} ${sel}`); break; }
+        }
+      }
+      if (r.cssRules?.length) walk(r.cssRules);
+    }};
+    walk(rules);
+  }
+  check('no other sheet reaches into the browser', bReach.length === 0,
+        bReach.length ? bReach.slice(0, 4).join(' · ') : `${bOwn.length} elements clean`);
 
   const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
                       'fcls', 'fclsr', 'fsub', 'fcrd', 'fcards', 'fclass',

@@ -598,3 +598,58 @@
 .dh ::-webkit-scrollbar-thumb:hover {
   background: var(--line-2);
 }
+
+/* ── the way into the browser ────────────────────────────────────────
+   The one control this system draws in Foundry's own sidebar, and it lives
+   here with the rest of the application's furniture rather than in
+   `design/browse.css` for the reason the window chrome and the message
+   header do: it is not part of the component, it is the door.
+
+   It wears `dh` itself — the drag proxy, the context menu, the roll popover,
+   the peek host and the Fear HUD's reason, arriving in a sixth place: the
+   palette is declared on `.dh` and nothing outside one can resolve a single
+   token. What it does *not* take is the paper. It is drawn in the **frame**
+   tokens, which are the application's colours and do not flip with the theme,
+   because the compendium tab is Foundry's and a button there made of our
+   paper would be a piece of a character sheet sitting in somebody else's
+   sidebar. What it takes from us is the family mark: a chamfered corner, a
+   gold edge on hover, and no radius, because nothing in this system has a
+   rounded corner and Foundry rounds every button to 4px.
+
+   Every metric is stated. Foundry's `elements` layer gives a button a
+   height *and* a matching `min-height`, and a floor with no competitor
+   simply applies — the lesson `make.css`, `pool.css` and the sheet's own
+   three type-buttons have each paid for separately. */
+
+button.dh-browse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  margin: 0 0 8px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  background: var(--frame-2);
+  box-shadow: inset 0 0 0 1px var(--frame-line);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+  font: 700 9.5px/1 var(--f-mono), monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--frame-tx-2);
+  transition:
+    box-shadow 0.12s,
+    color 0.12s;
+}
+button.dh-browse-btn:hover {
+  box-shadow: inset 0 0 0 1px var(--hope);
+  color: var(--hope-tx);
+}
+button.dh-browse-btn i {
+  font-size: 11px;
+}

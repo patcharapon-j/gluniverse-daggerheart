@@ -1,0 +1,481 @@
+/* Ported from design/browse.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/browse.css and re-run `node scripts/port-design-css.mjs`. */
+/* ══════════════════════════════════════════════════════════════════
+   THE COMPENDIUM BROWSER
+
+   One window holding every document in every mounted Daggerheart pack,
+   narrowed by the kind's own closed sets and searched over the words that
+   are printed on the thing.
+
+   ── why this exists ───────────────────────────────────────────────
+   Foundry's compendium sidebar gives you a pack and a flat alphabetical
+   list of names with a thumbnail beside each. Every fact anybody actually
+   filters on lives in `system` and the sidebar cannot see any of it. So
+   "a Grace card at level 3 or lower whose Recall Cost I can afford" is
+   answered by opening the domains pack, scrolling 189 names, and opening
+   them one at a time — and the system already *knows* the answer, because
+   domain, level and Recall Cost are three of `config.ts`'s closed sets.
+
+   ── the rail is kinds first, then that kind's filters ─────────────
+   "All compendium contents" is not one list. A longsword and a Wizard
+   share a name and an image and nothing else, and a filter rail that was
+   the union of every subtype's axes would be nine-tenths inapplicable to
+   whatever was on screen — trait and range greyed out over a deck of
+   domain cards, level and Recall Cost greyed out over a rack of armour.
+   The first choice is therefore *what kind of thing*, and everything
+   below it belongs to that kind.
+
+   That is not a tab strip, for `make.css`'s reason inverted. A step can
+   be unsatisfied and a tab cannot; these are neither. They are the one
+   question this window asks before it can ask anything else, and they
+   carry a count each, which a tab does not.
+
+   ── the shape of a result is the kind's own claim about itself ────
+   This is the creation window's argument arriving with nothing to choose.
+   A class, a domain card, an ancestry and a subclass are *printed cards*,
+   and a text summary of one lies by omission about the two facts a card
+   carries structurally rather than in prose — the domain, which is the hue
+   and the corner sigils, and the level and Recall Cost, which are the
+   corner blocks. So those are drawn as cards.
+
+   Equipment is not that. A longsword is one line of chapter 2 and what
+   you compare across two hundred of them is five columns of the *same
+   five facts*. A tile states each fact in a different place on every
+   tile; a column is read down. So equipment is a table, and so is the
+   adversary roster, which is the same argument about tier, role,
+   difficulty and thresholds.
+
+   ── nothing peeks ─────────────────────────────────────────────────
+   `make.css` settled this and the settlement reaches here unchanged: the
+   card is already on screen at card size, so a hover card over a card is
+   the same picture twice, and the table answers "what is this object" in
+   columns, which is what a table is. There is no `.peeklayer` in this
+   window — not an empty one, none — because a layer that renders nothing
+   is machinery that reads as a feature.
+
+   What a click does instead is open the document's own sheet. This system
+   has one that draws every field of every subtype across three tabs, and
+   a second detail view here would be a second thing to keep true.
+
+   ── the prefix ────────────────────────────────────────────────────
+   Every class in this file is `b`-prefixed and the block root is `.brw`,
+   for `make.css`'s reason: `.card`, `.tile`, `.row`, `.chip` and `.find`
+   are all names something else in this system already owns, every one of
+   them loads into the same `.dh` root where scoping does nothing, and the
+   collision that renamed `.die.win` and `.dfn .crest` has now been paid
+   for four times. `.brw` itself is checked in `tools/verify/`.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .brw{display:flex;height:100%;min-height:0;background:var(--paper);color:var(--ink)}
+
+/* ── every control here is an object, not a button ─────────────────
+   `make.css` and `pool.css` both had to learn this and it is the same
+   lesson a third time: Foundry's `elements` layer sizes every `<button>`
+   to one centred line 28px tall, and our sheets arrive unlayered, so our
+   `height` wins and there is nothing of ours for the `min-height` to
+   beat — a floor with no competitor simply applies.
+
+   Nothing in this window is a button in the sense that rule means. A
+   kind, a filter chip, a card and a table row are all *things you press*,
+   and a thing is as tall as what is printed on it. Reset once at the
+   root, because the claim is about the window; the two controls that
+   genuinely are buttons — the search field's clear and the sort — state
+   their own metrics below and win on source order.
+
+   The `justify-content` half is load-bearing too, and `make.css` records
+   why: a `display:grid` child with no declared columns has one implicit
+   `auto` track, and an `auto` track only stretches to fill its container
+   while `justify-content` is `normal`. Left at `center` the track
+   collapses to the width of its ink. */
+.dh .brw button{height:auto;min-height:0;max-height:none;line-height:normal;
+  border-radius:0;justify-content:flex-start;place-content:stretch stretch;
+  font-family:inherit;color:inherit}
+
+/* And the same for the one input. Foundry's `elements` layer gives every
+   `<input>` a height, a radius, a background and a border of its own, and
+   a search field wearing Foundry's chrome inside our paper is the one
+   control on this window that would announce it belongs to a different
+   application. */
+.dh .brw input[type=search],.dh .brw input[type=text]{height:auto;min-height:0;max-height:none;
+  border-radius:0;font-family:inherit}
+
+/* ══ the rail ═══════════════════════════════════════════════════════
+   Kinds above, that kind's filters below, one scroller each. Two
+   scrollers rather than one because the top list is fixed at eleven rows
+   and the bottom one is nine chips for a domain card and thirty for a
+   weapon: sharing a scroller would push the kinds off the top of the
+   window as soon as a long filter set arrived, and the kinds are how you
+   get back.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .brw .bside{width:252px;flex:none;display:flex;flex-direction:column;min-height:0;
+  background:var(--sunk);border-right:1px solid var(--line)}
+
+.dh .brw .bside s{display:block;text-decoration:none;padding:0 16px;margin:0 0 8px;
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-4)}
+
+/* ── the kinds ─────────────────────────────────────────────────────
+   Capped at 44% of the rail so the filters always have a floor of their
+   own to stand on. Eleven Item subtypes plus two Actor ones is more than
+   fits, and the alternative — letting the list run to its natural height
+   — puts the filter for the kind you just chose below the fold on the
+   press that chose it. */
+.dh .brw .bkinds{flex:0 1 auto;min-height:0;max-height:44%;overflow-y:auto;
+  padding:14px 0 12px;border-bottom:1px solid var(--line)}
+
+.dh .brw .bkind{display:flex;align-items:baseline;gap:9px;width:100%;
+  padding:6px 16px;border:0;background:transparent;cursor:pointer;
+  text-align:left;transition:background .12s}
+.dh .brw .bkind:hover{background:var(--sunk-2)}
+.dh .brw .bkind > span{flex:1 1 auto;min-width:0;display:block;
+  font:600 11.5px/1.3 var(--f-ui);color:var(--ink-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The count is how many documents that kind has *in the world's packs*,
+   not how many survive the current filters — it belongs to the kind, and
+   a number that moved when you ticked a chip in another kind's filter set
+   would be describing something else. Tabular so a column of them is a
+   column. */
+.dh .brw .bkind > u{flex:none;text-decoration:none;font:700 9.5px/1 var(--f-mono);
+  font-variant-numeric:tabular-nums;color:var(--ink-4)}
+
+.dh .brw .bkind.on{background:var(--sunk-2);box-shadow:inset 2px 0 0 var(--hope)}
+.dh .brw .bkind.on > span{color:var(--ink);font-weight:700}
+.dh .brw .bkind.on > u{color:var(--hope-tx)}
+
+/* A kind no mounted pack has any of. Dead rather than hidden, which is
+   `dlg.css`'s rule doing real work here: a world with no adversary pack
+   installed and no `adversary` row would look like a system that has no
+   adversaries, and the player would never learn the kind exists. */
+.dh .brw .bkind[disabled]{cursor:not-allowed;opacity:.36}
+.dh .brw .bkind[disabled]:hover{background:transparent}
+
+/* ── the filters ───────────────────────────────────────────────────
+   One group per axis, and every axis is a closed set out of `config.ts`
+   — domain, tier, level, trait, range, burden, card type, adversary role.
+   Nothing here is a free-text tag: if a value is not in a closed set then
+   filtering on it is filtering on somebody's typing, and the honest place
+   for that is the search field. */
+.dh .brw .bfilts{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  padding:14px 0 18px}
+
+.dh .brw .bfilts::-webkit-scrollbar,.dh .brw .bkinds::-webkit-scrollbar{width:8px}
+.dh .brw .bfilts::-webkit-scrollbar-thumb,.dh .brw .bkinds::-webkit-scrollbar-thumb{
+  background:var(--scroll)}
+
+.dh .brw .bgrp{margin:0 0 16px}
+.dh .brw .bgrp:last-child{margin-bottom:0}
+.dh .brw .bchips{display:flex;flex-wrap:wrap;gap:5px;padding:0 14px}
+
+.dh .brw .bchip{display:inline-flex;align-items:baseline;gap:5px;
+  padding:4px 8px 5px;border:0;cursor:pointer;
+  background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line);
+  font:600 10px/1.2 var(--f-ui);color:var(--ink-2);
+  transition:background .12s,box-shadow .12s,color .12s}
+.dh .brw .bchip:hover{background:var(--raise);color:var(--ink)}
+/* Its own count, which *does* move with every other filter, because that
+   is the question a chip answers: how many are left if I also ask for
+   this. A zero says the ask is empty before you spend the click on it. */
+.dh .brw .bchip > u{text-decoration:none;font:700 8px/1 var(--f-mono);
+  font-variant-numeric:tabular-nums;color:var(--ink-4)}
+
+/* The domain chips carry the domain's hue as a pip, because a saturated
+   hue means domain everywhere else in this system and a row of nine
+   identical grey chips would be throwing that away on the one axis where
+   it is already drawn on every card in the grid below. */
+.dh .brw .bchip.hue::before{content:"";width:6px;height:6px;flex:none;
+  background:var(--c);transform:rotate(45deg);align-self:center}
+
+.dh .brw .bchip.on{background:color-mix(in srgb,var(--hope) 15%,var(--sunk-2));
+  box-shadow:inset 0 0 0 1px var(--hope);color:var(--ink)}
+.dh .brw .bchip.on > u{color:var(--hope-tx)}
+
+/* Nothing matches it under the rest of the filters. Dead, not hidden, and
+   not removed — a filter set that quietly drops its empty values is a
+   filter set that looks complete while lying about the shape of the
+   collection. It is still pressable when it is *on*, or a chip could
+   filter itself down to zero and then trap you. */
+.dh .brw .bchip[disabled]{cursor:not-allowed;opacity:.34}
+.dh .brw .bchip[disabled]:hover{background:var(--sunk-2);color:var(--ink-2)}
+
+/* Clearing. Only there when there is something to clear, because a
+   permanently-present "clear" on an unfiltered list is furniture. */
+.dh .brw .bclear{display:block;width:calc(100% - 28px);margin:2px 14px 0;
+  padding:5px 8px 6px;border:0;cursor:pointer;text-align:center;
+  background:transparent;box-shadow:inset 0 0 0 1px var(--line);
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);transition:box-shadow .12s,color .12s}
+.dh .brw .bclear:hover{box-shadow:inset 0 0 0 1px var(--fear);color:var(--fear-tx)}
+
+/* ══ the stage ══════════════════════════════════════════════════════ */
+
+.dh .brw .bstage{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+  min-height:0}
+
+/* ── the head ──────────────────────────────────────────────────────
+   The search field is the widest thing in this window and it should be:
+   it is the one control that reaches every fact at once, and it is the
+   first thing anybody's hand goes to. */
+.dh .brw .bhead{flex:none;display:flex;align-items:center;gap:14px;
+  padding:13px 20px;border-bottom:1px solid var(--line)}
+
+.dh .brw .bfind{flex:1 1 auto;min-width:0;position:relative;display:flex;
+  align-items:center;gap:8px;padding:0 10px;height:30px;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  transition:box-shadow .12s}
+.dh .brw .bfind:focus-within{box-shadow:inset 0 0 0 1px var(--hope)}
+.dh .brw .bfind svg{flex:none;width:12px;height:12px;fill:none;stroke:var(--ink-4);
+  stroke-width:2;stroke-linecap:round}
+.dh .brw .bfind:focus-within svg{stroke:var(--hope-tx)}
+.dh .brw .bfind input{flex:1 1 auto;min-width:0;height:28px;padding:0;
+  border:0;outline:0;background:transparent;box-shadow:none;
+  font:400 12px/1 var(--f-ui);color:var(--ink)}
+.dh .brw .bfind input::placeholder{color:var(--ink-4)}
+/* The `x` on a native search input is Foundry's chrome via the UA
+   stylesheet and does not match anything else here. */
+.dh .brw .bfind input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.dh .brw .bfind .bx{flex:none;width:16px;height:16px;display:grid;place-items:center;
+  padding:0;border:0;background:transparent;cursor:pointer;
+  font:700 12px/1 var(--f-ui);color:var(--ink-4)}
+.dh .brw .bfind .bx:hover{color:var(--ink-2)}
+
+/* What survived, and out of how many. Two numbers rather than one,
+   because "48" alone does not say whether the filters did anything. */
+.dh .brw .bcount{flex:none;font:700 8px/1 var(--f-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.dh .brw .bcount b{font-weight:700;color:var(--ink)}
+
+/* Sort. A `<select>` rather than a row of chips: it is one-of-N with a
+   permanent answer and it is never the thing you came here to press. */
+.dh .brw .bsort{flex:none;height:26px;min-height:0;max-height:26px;
+  padding:0 6px;border:0;border-radius:0;cursor:pointer;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  font:600 9.5px/1 var(--f-ui);color:var(--ink-2)}
+
+/* ── the body ──────────────────────────────────────────────────────
+   One scroller, whichever shape is inside it.
+
+   **No padding at the top**, and that is the sticky heading's doing rather
+   than a taste. A scroll container's padding is inside the scrollport, so
+   content scrolls *through* it and is visible there — which means a
+   `top:0` heading stuck below 16px of padding has a 16px band above it
+   with rows sliding past in the open. Pulling the heading up into the band
+   with a negative offset only moves the problem: sticky clamps against the
+   scrollport, so the heading's own first 16px are then clipped.
+
+   So the top space belongs to whatever is inside instead. The table's
+   heading *is* the top of the table and states its own padding; the card
+   grid asks for the 16px it wants. */
+.dh .brw .bbody{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  padding:0 20px 26px}
+.dh .brw .bbody::-webkit-scrollbar{width:8px}
+.dh .brw .bbody::-webkit-scrollbar-thumb{background:var(--scroll)}
+
+/* Nothing matched. It says which of the two things is responsible —
+   the search or the filters — because those have two different ways out
+   and a single "no results" leaves you guessing which one to undo. */
+.dh .brw .bnone{padding:44px 0;text-align:center}
+.dh .brw .bnone b{display:block;font:600 14px/1.3 var(--f-display);
+  letter-spacing:-.01em;color:var(--ink-2)}
+.dh .brw .bnone p{margin:7px 0 0;font:400 11.5px/1.5 var(--f-ui);color:var(--ink-4)}
+
+/* ══ results, drawn as cards ════════════════════════════════════════
+   The card kinds. `.card` is container-query driven, so the component
+   that draws a 300px chat plate draws a 196px grid cell with every
+   proportion intact — the creation window's grid, at the width a window
+   whose whole job is reading has room for.
+
+   196 rather than `make.css`'s 176 and that is the one number that
+   differs. There the grid is a *chooser* and showing more options at once
+   is worth a smaller card; here the card is the answer and the rules text
+   printed on it is what you came to read.
+
+   It is a floor and not a width. `auto-fill` counts tracks off the 196 and
+   then `1fr` spends what is left over on them, so the 787px the default
+   window gives this grid is three columns at about 250 rather than four at
+   196 — and that is the right way round for a surface whose job is reading.
+   The card is capped nowhere, because unlike the subclass drawer's two
+   there is no small fixed number of these: a wider window buys a fourth
+   column at 196 before it buys a 300px card.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .brw .bcards{display:grid;gap:15px;align-content:start;padding-top:16px;
+  grid-template-columns:repeat(auto-fill,minmax(min(196px,100%),1fr))}
+
+.dh .brw .bcrd{position:relative;display:block;width:100%;padding:0;border:0;
+  background:none;cursor:pointer;transition:transform .14s}
+.dh .brw .bcrd:hover{transform:translateY(-2px)}
+/* The card draws its own shadow and its own chamfer; the button adds
+   nothing but the gesture. `pointer-events` off it so a drag that starts
+   on the artwork is a drag on the row. */
+.dh .brw .bcrd > .card{pointer-events:none}
+/* Held mid-drag. The same claim the swap's `.lift` makes on a spine, and
+   the same reason it cannot be applied synchronously — see the note in
+   `BrowseWindow.svelte`. */
+.dh .brw .bcrd.lift{opacity:.34}
+
+/* Which pack it came from, under the card. A world can mount three packs
+   of domain cards — ours, a homebrew one and a module's — and two cards
+   with the same name and different text is exactly the case where the
+   answer to "which one is this" is the only thing that matters. Drawn
+   only when more than one pack is on screen; see `.bsrc` below. */
+.dh .brw .bsrc{display:block;margin:5px 1px 0;font:700 7px/1.3 var(--f-mono);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ══ the rest of them ═══════════════════════════════════════════════
+   A card grid is drawn a page at a time and a table is not, and that is
+   a claim about cost and about reading rather than one rule applied
+   inconsistently.
+
+   A `.card` is a container-query root that measures its own wrapped prose
+   — `fit()` steps the type scale against `scrollHeight` until it stops
+   overflowing, which is a forced layout per step — so a hundred and
+   eighty-nine of them is a hundred and eighty-nine container roots and
+   several hundred synchronous reflows on a document that already holds
+   them all. A table row is a grid row with text in it and costs nothing
+   of the sort. And the readings differ the same way: nobody compares a
+   hundred and eighty-nine paintings at once, while running an eye down
+   three hundred and fifty-eight rows of the same five columns is exactly
+   what a table is for and paging one would break it.
+
+   So this is the control, and it is a control rather than a sentinel you
+   never see: it says how many are held back, it grows the page when it is
+   pressed, and it grows the page when it is *scrolled to*, which is the
+   same act with no press. Nothing is dropped silently — the count above
+   the grid has always said how many matched, and this says how many of
+   them are drawn.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .brw .bmore{display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;height:auto;min-height:0;margin:15px 0 0;padding:11px 0;
+  border:1px solid var(--line-2);background:var(--sunk);cursor:pointer;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);transition:background .14s,color .14s,border-color .14s}
+.dh .brw .bmore:hover{border-color:var(--hope);background:var(--paper);color:var(--ink)}
+.dh .brw .bmore u{text-decoration:none;font:400 8.5px/1 var(--f-mono);
+  letter-spacing:.06em;color:var(--ink-4)}
+
+/* ══ results, drawn as a table ══════════════════════════════════════
+   `subgrid` again, and for `make.css`'s reason: one grid per group means
+   each group solves its own column widths, which is two tables of the
+   same facts aligned differently — precisely what a table exists to
+   prevent.
+
+   The column set is per kind rather than shared, because the facts are.
+   A weapon has a trait, a range, a damage expression and a burden; a
+   piece of armour has two thresholds and a score; an adversary has a
+   difficulty, a pair of thresholds and an attack. A union of all three
+   would be nine columns, five of them empty on every row.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dh .brw .btbl{display:grid;align-content:start;margin:0}
+/* Name, glyph, then that kind's own facts, then the one column with room for
+   a sentence. The glyph and the tier are the two fixed widths every variant
+   shares, so a reader moving between kinds finds the name in the same place
+   and the first fact in the same place. */
+.dh .brw .btbl.bwpn{grid-template-columns:minmax(0,1.5fr) 46px 42px 70px 68px 78px minmax(0,2fr)}
+.dh .brw .btbl.barm{grid-template-columns:minmax(0,1.4fr) 46px 42px 78px 52px minmax(0,2.4fr)}
+.dh .brw .btbl.bcon{grid-template-columns:minmax(0,1.3fr) 46px 92px minmax(0,3.2fr)}
+.dh .brw .btbl.bfea{grid-template-columns:minmax(0,1.3fr) 46px 76px minmax(0,3.2fr)}
+.dh .brw .btbl.badv{
+  grid-template-columns:minmax(0,1.4fr) 46px 42px 88px 46px 68px 60px minmax(0,1.6fr)}
+.dh .brw .btbl.benv{grid-template-columns:minmax(0,1.4fr) 46px 42px 92px 54px minmax(0,2.4fr)}
+
+.dh .brw .bthd,.dh .brw .btr{grid-column:1/-1;display:grid;
+  grid-template-columns:subgrid;align-items:start;gap:0 12px}
+
+/* The head is a caption for the columns rather than a row of the table,
+   so it carries the rule rather than sitting on one. Sticky, which the
+   creation window's table is not and does not need to be: that one is
+   thirty-five rows inside a step and this one is three hundred and
+   fifty-eight, and a column heading you have scrolled past is a column
+   heading that has stopped working.
+
+   `top:0` and not a negative offset pulling it up into `.bbody`'s own
+   padding. A scroll container's sticky rectangle is its *padding* box, so a
+   negative top parks the heading above the scrollport and the first rows
+   slide underneath it unread — which looks like a table that starts at row
+   three. The 16px of padding scrolling away above the heading is correct:
+   it is space at the top of the list, not space belonging to the heading. */
+.dh .brw .bthd{position:sticky;top:0;z-index:2;padding:8px 10px 6px;
+  background:var(--paper);border-bottom:1px solid var(--line-2)}
+.dh .brw .bthd s{text-decoration:none;font:700 7.5px/1 var(--f-mono);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-4)}
+
+.dh .brw .btr{position:relative;width:100%;padding:7px 10px 8px;border:0;
+  border-top:1px solid var(--line);cursor:pointer;text-align:left;
+  background:transparent;transition:background .12s}
+/* No lift on hover, which the card grid has. A row is read against its
+   neighbours, and a row that rises breaks the alignment that is the only
+   reason it is a row. */
+.dh .brw .btr:hover{background:var(--sunk)}
+.dh .brw .btr.lift{opacity:.34}
+.dh .brw .btr > b{font:600 12px/1.35 var(--f-display);letter-spacing:-.01em;
+  color:var(--ink)}
+.dh .brw .btr > i{font-style:normal;font:400 10px/1.45 var(--f-ui);color:var(--ink-3)}
+/* Numbers — damage, thresholds, difficulty, Armor Score. Tabular, so a
+   column of them is a column and not a ragged edge. */
+.dh .brw .btr > u{text-decoration:none;font:700 11.5px/1.45 var(--f-display);
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.dh .brw .btr > p{margin:0;font:400 10px/1.45 var(--f-ui);color:var(--ink-2)}
+.dh .brw .btr > p > b{font-weight:700;color:var(--ink-3)}
+.dh .brw .btr > p.none,.dh .brw .btr > u.none{color:var(--ink-4)}
+/* The pack, in the column the name is in, for the card grid's reason. */
+.dh .brw .btr > b > s{display:block;text-decoration:none;margin-top:2px;
+  font:700 7px/1.2 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-4)}
+
+/* A group caption. A bar down the left rather than a box around it: the
+   caption belongs *to* the rows beneath it, and a box would make it a
+   fourth object between two lists. */
+.dh .brw .bcap{grid-column:1/-1;margin:16px 0 0;padding:6px 10px 5px;
+  background:var(--sunk);box-shadow:inset 2px 0 0 var(--ink-4);
+  font:700 8px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3)}
+.dh .brw .bcap:first-child{margin-top:0}
+
+/* ══ the type glyph ═════════════════════════════════════════════════
+   A table row's one picture, and it is deliberately not artwork: the
+   equipment packs have none — Demiplane serves every equipment image from
+   a signed CDN, so there is nothing a committed tool could fetch that
+   would still resolve tomorrow — and a picture on nine rows out of three
+   hundred and fifty-eight reads as broken rather than as sparse.
+
+   So it is the design's own type glyph, at row height, in the ink the
+   rest of the row is in. Uniform by construction, which is the same call
+   `sheets/cards.ts` already makes when it counts a glyph as "not
+   artwork" and falls a card through to its fallback plate.
+   ══════════════════════════════════════════════════════════════════ */
+.dh .brw .btr > .bico{width:26px;height:26px;display:grid;place-items:center;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line)}
+.dh .brw .btr > .bico img{width:15px;height:15px;object-fit:contain;opacity:.62}
+.dh .brw .btr:hover > .bico img{opacity:.85}
+
+/* ══ the drag proxy's ground ════════════════════════════════════════
+   Nothing here draws one — Foundry takes the browser's own snapshot of
+   the element under the pointer, which for a card is the card and for a
+   row is the row, and both are the right picture. The `.lift` above is
+   the other half of that gesture and is applied one tick late for the
+   reason `CharacterSheet.svelte` records: the browser snapshots the drag
+   image at the end of the `dragstart` dispatch, so hiding the element
+   synchronously means dragging nothing across the screen.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ══ loading ════════════════════════════════════════════════════════
+   Reading six packs is a real wait the first time — `getDocuments` on the
+   domains pack is 189 documents — and a window that is simply empty for
+   two seconds is a window that looks broken. It says what it is doing
+   rather than spinning, because the number is the honest thing: a pack
+   with 358 entries takes longer than one with 27 and the reader can see
+   which they asked for.
+   ══════════════════════════════════════════════════════════════════ */
+.dh .brw .bwait{padding:52px 0;text-align:center;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-4);animation:b-wait 1.4s ease-in-out infinite}
+@keyframes b-wait{0%,100%{opacity:.45}50%{opacity:1}}
+
+@media (prefers-reduced-motion:reduce){
+  .dh .brw .bwait{animation:none;opacity:.7}
+  .dh .brw .bcrd:hover{transform:none}
+}

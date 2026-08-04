@@ -29,6 +29,7 @@ import { rollAdversaryAttack, rollAttack, rollTrait, rollWeaponDamage } from "./
 import { rollDamage, rollDuality, rollFoe } from "./dice/rolls.ts";
 import { applyTheme, gainFear, getFear, registerSettings, setFear, spendFear } from "./settings.ts";
 import { openCreation, refreshCreation } from "./apps/create.ts";
+import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
 
@@ -88,6 +89,7 @@ Hooks.once("init", () => {
   registerMessageHeaders();
   registerLedger();
   registerDice();
+  registerBrowser();
   requestFonts();
 
   /* Vulnerable, kept in step with the Stress track — the one condition the
@@ -172,6 +174,11 @@ Hooks.once("ready", () => {
     fear: { get: getFear, set: setFear, gain: gainFear, spend: spendFear },
     /** `game.daggerheart.create(actor)` — the same call the rail plate makes. */
     create: openCreation,
+
+    /** `game.daggerheart.browse()` — the same call the compendium tab's own
+        button makes. Takes nothing: the browser is about the world's packs
+        rather than about any one document. */
+    browse: openBrowser,
 
     /* Two of the six refresh scopes have no automatic trigger, and these are
        not a placeholder for one. Foundry knows a rest happened because this

@@ -724,6 +724,227 @@ beside `sheet.css`, `card.css`, `tile.css` and `dlg.css` — the stack a real
 Foundry window has and a study page never does — and asserts the two do not
 reach into each other.
 
+## Browsing the compendium
+
+`design/browse.css` is the look, `design/browse.html` the study page,
+`apps/browse-index.ts` the model and `apps/BrowseWindow.svelte` the window.
+`apps/browse.ts` is the application shell. Open it from the button at the head
+of the **compendium sidebar**, or `game.daggerheart.browse()`.
+
+**Foundry's compendium sidebar gives you a pack and a flat list of names.**
+Every fact anybody actually filters on lives in `system` and the sidebar cannot
+see any of it, so "a Grace card at level 3 or lower whose Recall Cost I can
+afford" means opening the domains pack, scrolling 189 names, and reading them
+one at a time — and this system already *knows* the answer, because domain,
+level and Recall Cost are three of `config.ts`'s closed sets. Six packs and
+about a thousand documents is past the size where a list of names is a way of
+finding anything.
+
+**The rail asks what kind of thing first, and everything under it belongs to
+that kind.** "All compendium contents" is not one list: a longsword and a
+Wizard share a name and an image and nothing else, and a filter rail that was
+the union of every subtype's axes would be nine-tenths inapplicable to whatever
+was on screen — trait and range greyed out over a deck of domain cards, level
+and Recall Cost greyed out over a rack of armour. The kinds are not a tab
+strip, for `make.css`'s reason inverted: a step can be unsatisfied and a tab
+cannot, and these are neither. They are the one question the window has to ask
+before it can ask anything else, and each carries a count, which a tab does not.
+
+**Every axis is a closed set and never a tag**, and that is a refusal rather
+than an omission. A filter built by sweeping the values that happen to be
+present describes *this world's packs* — so a chip can appear, be pressed, and
+vanish when a module is uninstalled — and it cannot say that a value exists and
+is empty, which is the whole of what dead-not-hidden is for. So the axes are
+`config.ts`'s own sets plus two that are closed by arithmetic: Recall Cost is
+0–4 because that is what is printed, and subclass rank is the three cards you
+acquire. Ancestry, community, transformation, consumable and loot get **no
+axes at all**, because nothing distinguishes one from another but what it says,
+and an axis over somebody's typing is what the search field is for.
+
+**A chip's count is what pressing it would leave behind**, counted against
+every *other* axis. Counting against its own too would give every unselected
+chip in a narrowed axis a zero — press Grace and the other eight domains read
+0, which says they are empty when what is true is that you asked for Grace.
+Within an axis the values are OR and across axes they are AND, because "Grace
+or Midnight, at level 1 or 2" is one question and "Grace and Midnight" is not
+a card.
+
+**The shape of a result is the kind's own claim about itself**, which is the
+creation window's argument arriving with nothing to choose. A class, a domain
+card, an ancestry and a subclass are printed *objects*, and a text summary of
+one lies by omission about the two facts a card carries structurally rather
+than in prose — the domain, which is the hue and the two corner sigils, and the
+level and Recall Cost, which are the corner blocks. Everything else is a table,
+because what you compare across two hundred longswords is five columns of the
+*same five facts*, and a tile states each fact in a different place on every
+tile. `feature` is a table for the reason it is a row on the character sheet:
+`cardOf` returns null for it, because it has never had a card.
+
+The grid's floor is **196px** rather than `make.css`'s 176, and it is a floor
+rather than a width — `auto-fill` counts tracks off it and `1fr` spends the
+remainder, so the default window is three columns at about 250. That is the
+right way round here: there the grid is a *chooser* and more options at once is
+worth a smaller card; here the card is the answer and the rules text printed on
+it is what you came to read.
+
+**Nothing peeks.** The creation window settled this and the settlement reaches
+here unchanged: the card is on screen at card size, so a hover card over a card
+is the same picture twice, and the table answers "what is this object" in
+columns, which is what a table is. There is no `.peeklayer` in this window —
+not an empty one, none. **A click opens the document's own sheet** instead,
+which draws every field of every subtype across three tabs; a second detail
+view here would be a second thing to keep true.
+
+**A drag hands Foundry `{type, uuid}`** — the payload `onDragStart` writes on
+the character sheet — so a card dragged out of here lands through
+`handleActorDrop` exactly as one dragged off the sidebar does, transformation
+limit and loadout placement included. `.lift` is applied **one tick late** and
+by `setTimeout` rather than `requestAnimationFrame`, for `swap.js`'s two
+reasons: the browser snapshots the drag image at the end of the `dragstart`
+dispatch, and rAF does not fire in a tab that is not painting, which is exactly
+the tab you drag *out of*.
+
+**It reads every mounted pack whose documents are ours**, which is wider than
+the six this system ships — a world with a homebrew domain pack has those cards
+in the collection the sheet drags from, and a browser that showed only ours
+would be wrong about the one thing it exists to answer. `metadata.system` is
+what says a pack is ours; a pack of the right document type belonging to
+another system holds a `system` object that means something else, and reading a
+`tier` off one is reading a coincidence. Where more than one pack is on screen,
+each result names its own — two cards with the same name and different text are
+told apart by nothing else.
+
+It is `getDocuments` and not `getIndex({fields})`, which was the obvious reach:
+an index is a promise about which paths a caller will want, and this window
+wants `system` entire — every axis reads one field, the search reads the rules
+text, and the grid hands the whole thing to `cardOf`. Cached per pack for the
+session and dropped per pack on the ordinary document hooks, which fire for
+compendium documents with `pack` set.
+
+### What it costs to open, which the study page could not tell us at all
+
+The first build did both halves of this window the expensive way and neither
+was visible on a study page holding four cards and a mock rail. Opened in a
+real world it stopped Foundry.
+
+**It read every pack before it drew anything**, because the rail's counts
+needed all of them. That is **1,332 documents** across the six packs this
+system ships — and 290 of them are adversary *Actors*, which construct their
+embedded documents and prepare their derived data on the way in. A thousand
+documents is not a wait, it is the client going away.
+
+And it was never necessary, because Foundry has already read the part that
+answers the rail. A pack's **index** is in memory at world load and carries
+`_id`, `name`, `img` and `type` for every document — which is exactly what a
+kind row says and no more. So `survey()` counts off the index, the window
+opens on the frame it is asked for, and `loadType` reads documents one subtype
+at a time, from **only the packs that hold it**. The default kind is domain
+cards, so opening now costs 210 documents out of one pack instead of 1,332 out
+of six.
+
+That is the honest form of the paragraph above rather than a retraction of it.
+An index still cannot serve the axes, the search or the grid — `indexFields`
+could be made to carry a few of those paths and never all of them. What
+changed is that the two questions were being answered by one call: the index
+says *what is there*, `getDocuments` says *what it says*, and only the first
+one is needed to draw a rail. A pack is still read **whole** and cached whole,
+because the equipment pack holds weapons, armour, consumables and loot, and
+reading it four times would be four copies of 633 documents.
+
+**And a card grid is drawn a page at a time.** Measured on the real deck
+rather than guessed: 189 domain cards cost 1.3ms to build, 11ms to insert,
+**209ms to lay out** — every card is a container-query root — and `fit()`
+solves 22 of them past their opening type scale. The freeze was the load, but
+this is what made the window bad afterwards, in two places. Any full relayout
+of the page pays that 209ms while the window is open, which is the "switching
+tabs is slow" half. And the fit effect is keyed on what is drawn, so **every
+keystroke in the search field re-solved every card on screen** — 56ms a letter,
+for cards the letter had not touched.
+
+Three things fix it and each is a different mistake. The page: 48 cards, grown
+by a control that is also its own scroll sentinel, and only under the grid —
+a table row is a grid row with text in it and paging one would break the
+reading it exists for. The mark: a fitted card wears `data-fit` and is not
+solved again, which works because the `{#each}` is keyed on the uuid, so a card
+that survived a filter change kept its element. And the chunk: six cards a
+frame, so what is left lands across paints instead of on one. Two things
+invalidate a solve and both clear the marks — fonts, because `fit()` says at
+the top that metrics against a fallback face are wrong by a line, and *width*,
+because `auto-fill` changes the column count and a card solved at 250px is not
+solved at 196.
+
+**Every piece of state that holds a document is `$state.raw`.** Plain `$state`
+deep-proxies the plain objects it is handed and creates a signal per property
+on first read, and an `Entry` is a plain object wrapping a Document and a
+DataModel — which Svelte declines to proxy, so the wrapper was buying nothing
+and standing between `countsFor` and a field a thousand times a keystroke.
+Nothing here is ever mutated in place: an entry is written once and a filter
+set is rebuilt on every press, so reassignment was always the whole of the
+reactivity.
+
+**The search haystack is built on the first search that asks**, not at load.
+It walks a dozen paths and runs `plain` over each, which is ten regex passes a
+string, and the majority of visits to this window never type a word.
+
+**The search reads rules text, not just names**, because a domain card's
+identity is its paragraph and "the one that lets me reroll a damage die" is how
+anybody looks for one. Every term must match, anywhere, so "grace stress" finds
+the Grace cards that mention Stress — which is how a search gets typed and is
+not what a single substring match does.
+
+**Nothing here writes and nothing here is stored.** It is the only window in
+this system that only reads, which is why it has no `SheetState` and no
+document, and why it is a singleton rather than one per actor. What you were
+looking at last week is not a fact about the world; it is a fact about a search
+you have already finished.
+
+### What its study page could not see, either
+
+Six things, all of them in `tools/verify/`'s **THE BROWSER** stage — and the
+button floor now covers a seventh control, `.bmore`.
+
+**The button floor, for the third surface to pay for it.** `make.css` and
+`pool.css` each learned it separately and this window has thirteen kind rows,
+three dozen chips, a card grid and three hundred table rows, none of which is a
+button in the sense Foundry's `elements` layer means. The kind row is the
+dangerous one: a name and a count on one line is genuinely close to 28px, so it
+looks merely roomy. The chip is what gives it away, at 21.
+
+**And the text input, which is new to this system.** No surface here had ever
+had one. Foundry gives every input a height with a matching floor, a border, a
+background and a 4px radius — so an unreset search field is a piece of
+Foundry's chrome sitting in the middle of our paper, which is the single thing
+that makes a window read as belonging to a different application. `browse.css`
+resets it once at the root beside the button, and `design/browse.html` and
+`tools/verify/` both had to grow the stand-in rule to be able to see it.
+
+**A scroll container's padding is inside the scrollport.** `.bbody` therefore
+carries **no padding at the top**: with 16px there, a `top:0` sticky heading
+leaves a band above itself with rows sliding through it in the open, and
+pulling the heading up into the band with a negative offset clips the heading
+instead. Both failures look perfect at `scrollTop: 0`, which is where a study
+page leaves them. So the top space belongs to whatever is inside — the table's
+heading *is* the top of the table, and the card grid asks for the 16px it
+wants.
+
+**The heading is sticky at all**, which the creation window's table is not and
+does not need to be: thirty-five rows inside a step against three hundred and
+fifty-eight here, and a column heading you have scrolled past is a column
+heading that has stopped working.
+
+**The `b`-prefix is tested rather than asserted.** Every class is `b`-prefixed
+and the block root is `.brw`, because `.card`, `.tile`, `.row`, `.chip` and
+`.find` are all names something else in this system owns, and `.ftr` — the
+creation window's own table row — is what the shape classes would have been
+called. `design/browse.html` loads six stylesheets and the game loads
+twenty-two, so the check is the ledger's, pointed at a new block: every element
+the browser owns, against every rule in the whole ported stack. `.card` is
+excluded by *element*, because the card is a component this window deliberately
+hosts.
+
+**And the browser does not resize the shared card**, which is the creation
+window's inverted peek check from the other side.
+
 ## What a study page cannot see
 
 **Every control in the creation window is a `<button>`, and Foundry sizes every

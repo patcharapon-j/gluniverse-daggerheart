@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Browsing the compendium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<!-- The browser draws the shared card and nothing else of the sheet's, but it
+     loads the sheet's stylesheet anyway: `sheet.css` and `make.css` are both
+     in the game's `.dh` root at the same time as this one, and a name of ours
+     that collides with a name of theirs shows up on this page rather than in
+     somebody's session. That is the whole reason the classes here are
+     `b`-prefixed, and the page is where the claim is tested. -->
+<link rel="stylesheet" href="/design/mark.css">
+<link rel="stylesheet" href="/design/tile.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/swap.css">
+<link rel="stylesheet" href="/design/sheet.css">
+<link rel="stylesheet" href="/design/dlg.css">
+<link rel="stylesheet" href="/design/make.css">
+<link rel="stylesheet" href="/design/browse.css">
+<style>
+  /* The study page's own chrome, trimmed off by the port. */
+  body{margin:0;padding:34px 30px 90px;background:#0b0d10;
+    font-family:var(--f-ui),system-ui,sans-serif}
+  .bar{display:flex;align-items:center;gap:18px;margin-bottom:30px}
+  .bar b{font:600 10px/1 var(--f-mono);letter-spacing:.2em;color:#7d8794;text-transform:uppercase}
+  .tg{display:flex;align-items:center;gap:7px;font:400 12.5px/1 var(--f-ui);color:#9aa3ae;
+    cursor:pointer;user-select:none}
+  h2{font:600 15px/1 var(--f-display);color:#fff;margin:44px 0 6px}
+  h2 span{font:600 10px/1 var(--f-mono);letter-spacing:.22em;color:var(--hope);
+    display:block;margin-bottom:9px}
+  .note{font:400 12.5px/1.6 var(--f-ui);color:#96a0ac;max-width:820px;margin:0 0 22px}
+  .note code{font:600 11.5px/1 var(--f-mono);color:#c3ccd8}
+  /* The window at the width it actually opens at. Every judgement on this page
+     is a judgement at a size. 1080 leaves 828px of stage beside the 252px
+     rail, which is three card columns at about 250 and a weapon table whose feature
+     column still holds a sentence. */
+  .win2{width:1080px;max-width:100%;background:var(--frame);
+    border:1px solid var(--frame-line);
+    box-shadow:0 24px 60px -20px rgba(0,0,0,.8);
+    display:flex;flex-direction:column;overflow:hidden;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%)}
+  .win2 > .tt{flex:none;display:flex;align-items:center;height:34px;padding:0 12px;
+    background:var(--frame);box-shadow:inset 0 -1px 0 var(--frame-line)}
+  .win2 > .tt b{font:700 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+    color:var(--frame-tx)}
+  .win2 > .bd2{height:640px;display:flex;min-height:0}
+
+  /* ── standing in for Foundry ──────────────────────────────────────
+     `make.html` learned this and it is copied here rather than referenced,
+     because a study page that does not carry the environment is a study page
+     that disagrees with the game and cannot tell you.
+
+     Two rules, not one. Foundry's `elements` layer sizes every `<button>` to
+     28px with a matching `min-height` — and it also gives every `<input>` a
+     height, a radius, a border and a background of its own, which is the one
+     control this window has that the creation window does not. Strip the two
+     resets at the top of browse.css and this page breaks in the same places
+     the game does: eleven kind rows sheared to one centred line, and a search
+     field wearing somebody else's chrome inside our paper. */
+  @layer elements {
+    button{height:28px;min-height:28px;display:flex;align-items:center;
+      justify-content:center;text-align:center;padding:0 8px;border:1px solid #444;
+      background:#2a2e35;color:inherit;font-family:inherit}
+    input{height:28px;min-height:28px;border:1px solid #444;border-radius:4px;
+      background:#2a2e35;color:#eee;padding:0 8px;font-family:inherit}
+    select{height:28px;min-height:28px;border:1px solid #444;border-radius:4px;
+      background:#2a2e35;color:#eee}
+  }
+</style>
+</head>
+<body class="dh">
+
+<div class="bar">
+  <b>DH · Browsing the compendium</b>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div>
+
+<h2><span>THE WINDOW</span>Kinds, then that kind's own filters, then the thing itself</h2>
+<p class="note">
+  Foundry's compendium sidebar gives you a pack and a flat alphabetical list of names.
+  Every fact anybody filters on — domain, level, Recall Cost, tier, trait, range, burden —
+  lives in <code>system</code>, and the sidebar cannot see any of it, so "a Grace card at
+  level 3 or lower I can afford to recall" means scrolling 189 names and opening them one
+  at a time. This system already <em>knows</em> those, because they are
+  <code>config.ts</code>'s closed sets.
+  The rail asks <em>what kind of thing</em> first, and everything under it belongs to that
+  kind: a filter rail that was the union of every subtype's axes would be nine-tenths
+  greyed out over whatever was on screen. Each chip carries the count it would leave
+  behind, and a chip with none is <em>dead rather than hidden</em> — a filter set that
+  drops its empty values looks complete while lying about the shape of the collection.
+</p>
+
+<div class="win2">
+  <div class="tt"><b>Compendium · Daggerheart</b></div>
+  <div class="bd2">
+    <div class="brw" style="flex:1 1 auto;min-width:0">
+      <div class="bside">
+        <s>Kind</s>
+        <div class="bkinds" id="kinds"></div>
+        <div class="bfilts" id="filts"></div>
+      </div>
+      <div class="bstage">
+        <div class="bhead">
+          <div class="bfind">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l4 4"/></svg>
+            <input type="search" id="find" placeholder="Search names and rules text…">
+            <button type="button" class="bx" id="clr" title="clear">×</button>
+          </div>
+          <div class="bcount"><b id="n">14</b> of 189</div>
+          <select class="bsort" id="sort">
+            <option>Deck order</option>
+            <option>Name</option>
+            <option>Level</option>
+          </select>
+        </div>
+        <div class="bbody" id="body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2><span>THE CARD GRID</span>A printed card is drawn as one, and nothing peeks</h2>
+<p class="note">
+  This is the creation window's argument arriving with nothing to choose. A class, a domain
+  card, an ancestry and a subclass are <em>printed objects</em>, and a text summary of one
+  lies by omission about the two facts a card carries structurally rather than in prose —
+  the domain, which is the hue and the corner sigils, and the level and Recall Cost, which
+  are the corner blocks. So they are drawn as cards, at 196px rather than
+  <code>make.css</code>'s 176: there the grid is a chooser and more options at once is
+  worth a smaller card, here the card <em>is</em> the answer and the rules text printed on
+  it is what you came to read. Nothing hover-peeks, for the reason the creation window
+  renders no peek layer at all — the card is already on screen at card size, and a hover
+  card over a card is the same picture twice. A click opens the document's own sheet.
+</p>
+<div class="brw" style="background:var(--paper);padding:20px">
+  <!-- one column, because `.brw` is the rail-and-stage grid and two children
+       of it are two columns -->
+  <div style="width:100%">
+    <div class="bcards" id="cards"></div>
+    <button type="button" class="bmore">show 48 more<u>48 of 189</u></button>
+  </div>
+</div>
+
+<h2><span>A PAGE AT A TIME</span>The grid is paged and the table is not</h2>
+<p class="note">
+  A <code>.card</code> is a container-query root that measures its own wrapped prose:
+  <code>fit()</code> writes a type scale, reads <code>scrollHeight</code> and steps until
+  the panel stops overflowing, and every step is a forced synchronous layout. A hundred
+  and eighty-nine of them on one document is a hundred and eighty-nine container roots and
+  several hundred reflows, and it is what took Foundry down the first time this window was
+  opened in it. A table row is a grid row with text in it and costs none of that, and the
+  two <em>readings</em> differ the same way — nobody compares a hundred and eighty-nine
+  paintings at once, while running an eye down three hundred and fifty-eight rows of the
+  same five columns is exactly what a table is for. So this control, and only under the
+  grid. It is its own sentinel: scrolling to it and pressing it are the same act, which is
+  <code>swap.js</code>'s rule about a surface that is both dragged and pressed. Nothing is
+  dropped silently — the count above the grid says how many matched and this says how many
+  of them are drawn.
+</p>
+
+<h2><span>THE TABLE</span>Two hundred longswords are five columns of the same five facts</h2>
+<p class="note">
+  Equipment is not an object you hold a picture of. A longsword is one line of chapter 2,
+  and what you compare across two hundred of them is trait, range, damage, burden and
+  feature — the <em>same</em> five facts, which a tile states in five different places on
+  every tile and a column is read down. <code>subgrid</code> is what lines the columns up
+  across groups, so two tables of the same facts cannot solve their widths differently.
+  The head is sticky here and is not in the creation window, and that is a difference in
+  length rather than in taste: thirty-five rows inside a step against three hundred and
+  fifty-eight here, and a column heading you have scrolled past is a column heading that
+  has stopped working. There is no artwork — the equipment packs have none, and a picture
+  on nine rows out of three hundred and fifty-eight reads as broken rather than as sparse
+  — so the one picture is the design's own type glyph at row height.
+</p>
+<div class="brw" style="background:var(--paper);padding:20px">
+  <div class="btbl bwpn" style="width:100%">
+    <div class="bthd"><s>Name</s><s></s><s>Tier</s><s>Trait</s><s>Range</s><s>Damage</s><s>Feature</s></div>
+    <div class="bcap">Physical · Tier 1</div>
+    <button type="button" class="btr">
+      <b>Broadsword<s>Equipment</s></b>
+      <span class="bico"><img src="/design/assets/types/primary.svg" alt=""></span>
+      <u>1</u><i>Agility</i><i>Melee</i><u>d8+3 phy</u>
+      <p><b>Reliable:</b> +1 to attack rolls</p>
+    </button>
+    <button type="button" class="btr">
+      <b>Longsword<s>Equipment</s></b>
+      <span class="bico"><img src="/design/assets/types/primary.svg" alt=""></span>
+      <u>1</u><i>Agility</i><i>Melee</i><u>d8+3 phy</u>
+      <p class="none">—</p>
+    </button>
+    <button type="button" class="btr">
+      <b>Battleaxe<s>Equipment</s></b>
+      <span class="bico"><img src="/design/assets/types/primary.svg" alt=""></span>
+      <u>1</u><i>Strength</i><i>Melee</i><u>d10+3 phy</u>
+      <p><b>Two-Handed:</b> occupies both hands</p>
+    </button>
+    <div class="bcap">Magic · Tier 1</div>
+    <button type="button" class="btr">
+      <b>Arcane Gauntlets<s>Equipment</s></b>
+      <span class="bico"><img src="/design/assets/types/primary.svg" alt=""></span>
+      <u>1</u><i>Strength</i><i>Melee</i><u>d10+3 mag</u>
+      <p class="none">—</p>
+    </button>
+    <button type="button" class="btr lift">
+      <b>Hallowed Axe<s>Equipment</s></b>
+      <span class="bico"><img src="/design/assets/types/primary.svg" alt=""></span>
+      <u>1</u><i>Strength</i><i>Melee</i><u>d8+3 mag</u>
+      <p><b>Reliable:</b> +1 to attack rolls</p>
+    </button>
+  </div>
+</div>
+
+<h2><span>THE EMPTY STATE</span>It says which of the two things emptied the list</h2>
+<p class="note">
+  A search and a filter set have two different ways out, and a single "no results" leaves
+  you guessing which one to undo. The loading line says what it is doing rather than
+  spinning, because the number is the honest thing — reading the domains pack is 189
+  documents and reading the heritage pack is 27, and the reader can see which they asked
+  for.
+</p>
+<div class="brw" style="background:var(--paper);padding:0 20px;display:block">
+  <div class="bnone">
+    <b>Nothing matches “thornwhip”</b>
+    <p>4 filters are also narrowing this list.</p>
+  </div>
+  <div class="bwait">Reading 358 documents…</div>
+</div>
+
+<script type="module">
+import { CARD, fit } from '/design/card.js';
+import { byslug, icon } from '/design/domains.js';
+
+document.getElementById('lt').onchange = e =>
+  document.documentElement.classList.toggle('light', e.target.checked);
+
+/* ══ the rail ═══════════════════════════════════════════════════════
+   Static here on purpose. What this page is studying is the *shape* — how
+   tall a kind row is, what a chip with a count looks like beside one without,
+   whether a dead chip still reads as a chip. The counts are real numbers off
+   the shipped packs so the columns are the widths they will really be. */
+
+const KINDS = [
+  ['Domain cards', 189, true], ['Classes', 9], ['Subclasses', 54],
+  ['Ancestries', 18], ['Communities', 9], ['Transformations', 0],
+  ['Weapons', 204], ['Armor', 34], ['Consumables', 60], ['Loot', 60],
+  ['Features', 0], ['Adversaries', 0], ['Environments', 0],
+];
+
+document.getElementById('kinds').innerHTML = KINDS.map(([name, n, on]) => `
+  <button type="button" class="bkind${on ? ' on' : ''}"${n ? '' : ' disabled'}>
+    <span>${name}</span><u>${n}</u>
+  </button>`).join('');
+
+const DOMS = ['arcana','blade','bone','codex','grace','midnight','sage','splendor','valor'];
+const COUNT = { arcana:21, blade:21, bone:21, codex:21, grace:21,
+                midnight:21, sage:21, splendor:21, valor:21 };
+
+const group = (label, chips) =>
+  `<div class="bgrp"><s>${label}</s><div class="bchips">${chips}</div></div>`;
+
+const chip = (label, n, o = {}) =>
+  `<button type="button" class="bchip${o.hue ? ' hue' : ''}${o.on ? ' on' : ''}"${
+    n ? '' : ' disabled'}${o.hue ? ` style="--c:${o.hue}"` : ''}>${label}<u>${n}</u></button>`;
+
+document.getElementById('filts').innerHTML =
+  group('Domain', DOMS.map(s => chip(byslug[s].name, COUNT[s], {
+    hue: byslug[s].light, on: s === 'grace' })).join('')) +
+  group('Level', [1,2,3,4,5,6,7,8,9,10].map(l =>
+    chip(l, l <= 4 ? 3 : (l === 10 ? 0 : 2), { on: l === 2 })).join('')) +
+  group('Recall cost', [0,1,2,3].map(r => chip(r, [4,7,3,0][r])).join('')) +
+  group('Card type', ['Ability','Spell','Grimoire'].map((t,i) =>
+    chip(t, [9,5,0][i])).join('')) +
+  '<button type="button" class="bclear">clear 2 filters</button>';
+
+/* ══ the results ════════════════════════════════════════════════════ */
+
+const grace = byslug.grace;
+const midnight = byslug.midnight;
+
+const CARDS = [
+  { d: grace, lvl: 1, rc: 0, type: 'SPELL', name: 'Deft Deceiver',
+    text: 'Spend a Hope to gain advantage on a roll to deceive or trick someone into believing a lie you tell them.' },
+  { d: grace, lvl: 2, rc: 1, type: 'ABILITY', name: 'Tell No Lies',
+    text: 'Make a **Presence Roll** against a target within Close range. On a success, they must answer your next question honestly.' },
+  { d: midnight, lvl: 1, rc: 0, type: 'SPELL', name: 'Pick and Pull',
+    text: 'You have advantage on rolls to pick locks, pockets, or steal items.' },
+  { d: midnight, lvl: 2, rc: 1, type: 'GRIMOIRE', name: 'Uncanny Disguise',
+    text: 'Mark a Stress to seamlessly assume the appearance of another humanoid.' },
+];
+
+const sigs = {};
+await Promise.all([...new Set(CARDS.map(c => c.d.slug))].map(async s =>
+  sigs[s] = await icon(s)));
+
+const grid = CARDS.map(c => `
+  <button type="button" class="bcrd">
+    ${CARD({ ...c, sig: sigs[c.d.slug], foot: c.d.name, code: 'DH106' })}
+    <s class="bsrc">Domain Cards</s>
+  </button>`).join('');
+
+document.getElementById('cards').innerHTML = grid;
+document.getElementById('body').innerHTML = `<div class="bcards">${grid}</div>`;
+
+/* `fit` measures wrapped text, so it wants the face. Idempotent, so the
+   immediate call is the one that matters and the second only corrects it. */
+const fitAll = () => document.querySelectorAll('.bcards').forEach(g => fit(g));
+fitAll();
+document.fonts?.ready.then(fitAll);
+</script>
+
+</body>
+</html>

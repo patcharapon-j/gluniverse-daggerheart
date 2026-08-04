@@ -146,6 +146,10 @@
       "ChangeClassTitle": "Change class?",
       "ChangeClassHint": "Becoming a {name} takes these with it. Anything you dragged in yourself is left alone.",
       "ChangeClassOk": "Change it"
+    },
+    "Browse": {
+      "Title": "Compendium · Daggerheart",
+      "Open": "Browse Daggerheart"
     }
   }
 }
