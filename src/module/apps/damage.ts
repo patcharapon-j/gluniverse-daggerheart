@@ -61,7 +61,7 @@
 import { SEVERITY, SEVERITY_COST, type Severity } from "../config.ts";
 import type { DamagePlan, DamageSpend } from "../documents/actor.ts";
 import { DAMAGE, XMARK } from "../ui/mark.js";
-import { REDUCE_RX, rulesAbout } from "./rules.ts";
+import { REDUCE_RX, rulesAbout, rulesAtTopLevel } from "./rules.ts";
 import { ruleCardsPanel, wireRulePeeks } from "./rule-cards.ts";
 import { dhDialog } from "./dialog.ts";
 
@@ -154,7 +154,7 @@ export async function takeDamage(
      offers rather than topics — see the note on it in `rules.ts`. */
   const panel = await ruleCardsPanel(
     actor,
-    rulesAbout(actor, REDUCE_RX).map((rule) => ({ rule })),
+    rulesAtTopLevel(actor, rulesAbout(actor, REDUCE_RX)).map((rule) => ({ rule })),
     game.i18n.localize("DAGGERHEART.Damage.Relevant"),
   );
 

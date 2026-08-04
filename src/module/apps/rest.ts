@@ -84,7 +84,14 @@
 
 import { SYSTEM_ID } from "../config.ts";
 import { DIE } from "../dice/plate.ts";
-import { REST_RX, type Rule, rechargeOnly, rulesAbout, rulesOf } from "./rules.ts";
+import {
+  REST_RX,
+  type Rule,
+  rechargeOnly,
+  rulesAbout,
+  rulesAtTopLevel,
+  rulesOf,
+} from "./rules.ts";
 import {
   type RefreshRow,
   type RuleCard,
@@ -98,6 +105,7 @@ import {
   refreshResources,
   restScopes,
   restWillRefresh,
+  restWillRefreshDice,
 } from "../documents/item.ts";
 import { dhDialog } from "./dialog.ts";
 import { withoutLedger } from "../ledger.ts";
@@ -504,8 +512,26 @@ function refreshing(actor: any, kind: RestKind): RefreshRow[] {
       itemId: it.id,
     });
   }
-  for (const r of rulesOf(actor)) {
-    if (rechargeOnly(r.text)) add({ name: r.name, source: r.source, text: r.text });
+  for (const lp of restWillRefreshDice(actor, kind === "long" ? "long" : "short")) {
+    const it = lp.item;
+    add({
+      name: it.name,
+      source: it.system?.origin || it.system?.domain || it.type,
+      text: plain(it.system?.description) || "",
+      pool: {
+        value: lp.pool.dice?.length ?? 0,
+        max: lp.max ?? 0,
+        name: (lp.pool.name || `d${lp.pool.faces ?? 6}s`).toLowerCase(),
+      },
+      itemId: it.id,
+    });
+  }
+  const proseRefreshes = rulesAtTopLevel(
+    actor,
+    rulesOf(actor).filter((rule) => rechargeOnly(rule.text)),
+  );
+  for (const r of proseRefreshes) {
+    add({ name: r.name, source: r.source, text: r.text, itemId: r.itemId });
   }
   return rows;
 }
@@ -599,16 +625,21 @@ async function runRest(actor: any, kind: RestKind): Promise<void> {
      the rest talking to the card rather than the card talking to the rest, so
      those drop into the `.rf` lane below the tiles and are named there once,
      with their rule a hover away. */
-  const why: RuleCard[] = allow.why.map((rule) => ({
+  const why: RuleCard[] = rulesAtTopLevel(actor, allow.why).map((rule) => ({
     rule,
     note: game.i18n.localize("DAGGERHEART.Rest.Grants"),
   }));
   const back = refreshing(actor, kind);
   const named = new Set(back.map((r) => r.name.toLowerCase()));
-  const bears = merge(why, rulesAbout(actor, REST_RX)).filter(
+  const itemIds = new Set(back.map((r) => r.itemId).filter(Boolean));
+  const bears = merge(why, rulesAtTopLevel(actor, rulesAbout(actor, REST_RX))).filter(
     // A card that grants a downtime move stays a card even if it also
     // recharges: the note above it is the reason it is here.
-    (e) => !!e.note || (!named.has(e.rule.name.toLowerCase()) && !rechargeOnly(e.rule.text)),
+    (e) =>
+      !!e.note ||
+      (!itemIds.has(e.rule.itemId) &&
+        !named.has(e.rule.name.toLowerCase()) &&
+        !rechargeOnly(e.rule.text)),
   );
   const panel = await ruleCardsPanel(
     actor,

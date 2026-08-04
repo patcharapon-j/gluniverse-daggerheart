@@ -29,11 +29,13 @@ export interface Rule {
   source: string;
   /** The rule, in the builders' dialect. */
   text: string;
+  /** The owned top-level Item this feature is printed on. */
+  itemId?: string;
 }
 
-const push = (out: Rule[], source: string, f: any): void => {
+const push = (out: Rule[], source: string, f: any, itemId?: string): void => {
   const text = plain(f?.description);
-  if (text) out.push({ name: f.name || "Feature", source, text });
+  if (text) out.push({ name: f.name || "Feature", source, text, itemId });
 };
 
 /**
@@ -52,20 +54,20 @@ export function rulesOf(actor: any): Rule[] {
     const s = it.system ?? {};
     switch (it.type) {
       case "class":
-        for (const f of s.classFeatures ?? []) push(out, it.name, f);
-        push(out, it.name, s.hopeFeature);
+        for (const f of s.classFeatures ?? []) push(out, it.name, f, it.id);
+        push(out, it.name, s.hopeFeature, it.id);
         break;
       case "subclass": {
         const who = s.subclassName || it.name;
-        for (const f of s.features ?? []) push(out, `${who} · ${it.name}`, f);
+        for (const f of s.features ?? []) push(out, `${who} · ${it.name}`, f, it.id);
         break;
       }
       case "ancestry":
-        push(out, it.name, s.topFeature);
-        push(out, it.name, s.bottomFeature);
+        push(out, it.name, s.topFeature, it.id);
+        push(out, it.name, s.bottomFeature, it.id);
         break;
       case "community":
-        push(out, it.name, s.feature);
+        push(out, it.name, s.feature, it.id);
         break;
       /* A transformation is heritage, and both of its features are live rules
          at all times — including the drawback, which is the half the book asks
@@ -74,21 +76,88 @@ export function rulesOf(actor: any): Rule[] {
          damage or rest dialog that did not list them would be quietly wrong in
          exactly the way these panels exist to prevent. */
       case "transformation":
-        for (const f of s.features ?? []) push(out, it.name, f);
+        for (const f of s.features ?? []) push(out, it.name, f, it.id);
         break;
       case "domainCard":
-        if (s.inLoadout) push(out, "Loadout", { name: it.name, description: s.description });
+        if (s.inLoadout) push(out, "Loadout", { name: it.name, description: s.description }, it.id);
         break;
       case "feature":
-        push(out, s.origin || "Feature", { name: it.name, description: s.description });
+        push(out, s.origin || "Feature", { name: it.name, description: s.description }, it.id);
         break;
       case "armor":
       case "weapon":
-        if (s.equipped) push(out, it.name, s.feature);
+        if (s.equipped) push(out, it.name, s.feature, it.id);
         break;
       default:
         break;
     }
+  }
+  return out;
+}
+
+/** Item shapes that are presented as one printed card rather than child rows. */
+const TOP_LEVEL_CARDS = new Set([
+  "domainCard",
+  "ancestry",
+  "community",
+  "transformation",
+  "subclass",
+  "weapon",
+  "armor",
+]);
+
+const typeLabel = (type: string): string =>
+  ({
+    domainCard: "Loadout",
+    ancestry: "Ancestry",
+    community: "Community",
+    transformation: "Transformation",
+    subclass: "Subclass",
+    weapon: "Weapon",
+    armor: "Armor",
+  })[type] ?? "Feature";
+
+/**
+ * Collapse matching child features to the printed Item that owns them.
+ *
+ * The dialog peeks a complete ancestry/subclass/etc. card. Listing each
+ * matching feature beside that full card makes one physical card appear as
+ * both its child and its parent, and two matching features appear twice.
+ * Class and standalone feature rows stay granular because they do not have a
+ * full-card representation in these dialogs.
+ */
+export function rulesAtTopLevel(actor: any, rules: Rule[]): Rule[] {
+  const items = new Map(
+    [...(actor?.items ?? [])].map((item: any) => [String(item.id), item]),
+  );
+  const out: Rule[] = [];
+  const positions = new Map<string, number>();
+
+  for (const rule of rules) {
+    const item = rule.itemId ? items.get(String(rule.itemId)) : null;
+    if (!item || !TOP_LEVEL_CARDS.has(item.type)) {
+      out.push(rule);
+      continue;
+    }
+
+    const key = String(item.id);
+    const at = positions.get(key);
+    if (at !== undefined) {
+      const current = out[at] as Rule;
+      if (!current.text.includes(rule.text)) current.text += `\n\n${rule.text}`;
+      continue;
+    }
+
+    positions.set(key, out.length);
+    out.push({
+      name: item.name,
+      source:
+        item.type === "subclass"
+          ? (item.system?.subclassName || typeLabel(item.type))
+          : typeLabel(item.type),
+      text: rule.text,
+      itemId: item.id,
+    });
   }
   return out;
 }
@@ -121,7 +190,7 @@ export const rulesAbout = (actor: any, rx: RegExp): Rule[] =>
  * does: a false positive costs one card in a panel you are reading anyway.
  */
 export const REDUCE_RX =
-  /\b(?:mark|spend|use|expend)\s+(?:an?|one|two|three|\d+)\s+armou?r\s+slots?|\breduc\w+\s+(?:the\s+)?(?:severity|damage)|\bby\s+(?:one|two|three|\d+)\s+thresholds?|\bhalve\b|\bhalf\s+(?:the\s+|that\s+)?damage|\bresistan\w+|\bimmun\w+|\bwhen\s+you\s+(?:would\s+)?take\s+(?:any\s+|\w+\s+)?damage|\b(?:instead\s+of|before|without)\s+marking|\b(?:ignore|avoid|negate)\s+(?:the\s+|all\s+)?damage/i;
+  /\b(?:mark|spend|use|expend)\s+(?:an?|one|two|three|\d+)\s+armou?r\s+slots?|\breduc\w+\s+(?:the\s+)?(?:severity|damage(?!\s+thresholds?))|\bby\s+(?:one|two|three|\d+)\s+thresholds?|\bhalve\b|\bhalf\s+(?:the\s+|that\s+)?damage|\bresistan\w+|\bimmun\w+|\bwhen\s+you\s+(?:would\s+)?take\s+(?:any\s+|\w+\s+)?damage|\b(?:instead\s+of|before|without)\s+marking|\b(?:ignore|avoid|negate)\s+(?:the\s+|all\s+)?damage/i;
 
 /** Rests and the moves made during them. */
 export const REST_RX = /\brests?\b|\bresting\b|\bdowntime\b/i;

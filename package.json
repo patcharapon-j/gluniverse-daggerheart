@@ -9,7 +9,7 @@
     "build": "vite build && npm run build:packs && npm run link:dev",
     "watch": "vite build --watch",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "typecheck": "tsc --noEmit && npm run check && npm run items:check && npm run marks:check && npm run counters:check && npm run chat-actions:check",
+    "typecheck": "tsc --noEmit && npm run check && npm run items:check && npm run marks:check && npm run counters:check && npm run chat-actions:check && npm run rest-context:check",
     "link:dev": "node scripts/link-dev-build.mjs",
     "link:dev:check": "node tools/test-link-dev-build.mjs",
     "preview": "node tools/preview-server.js",
@@ -22,6 +22,7 @@
     "marks:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-mark-track-shapes.mjs",
     "counters:check": "node tools/test-counter-pool-shapes.mjs",
     "chat-actions:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-chat-card-actions.mjs",
+    "rest-context:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-rest-context.mjs",
     "items:check": "node tools/check-item-sheet.mjs"
   },
   "devDependencies": {

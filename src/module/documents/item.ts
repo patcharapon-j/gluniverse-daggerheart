@@ -421,6 +421,16 @@ export function restWillRefreshDice(actor: any, kind: "short" | "long"): LiveDic
   for (const item of actor?.items ?? []) {
     for (const lp of liveDicePools(item)) {
       if (!restRefreshesDice(lp.pool, kind)) continue;
+      const held = lp.pool.dice ?? [];
+      const moves =
+        lp.pool.onRefresh === "clear"
+          ? held.length > 0
+          : lp.pool.onRefresh === "fill"
+            ? lp.max !== null && held.length < lp.max
+            : lp.max === null
+              ? held.some((die) => die <= 0)
+              : lp.max > 0;
+      if (!moves) continue;
       out.push({ ...lp, item });
     }
   }

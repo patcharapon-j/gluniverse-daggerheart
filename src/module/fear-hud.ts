@@ -104,6 +104,25 @@ export function registerFearHud(): void {
  * thing that cannot pay is the thing that flinches.
  */
 async function onStep(event: Event): Promise<void> {
+  const refresh = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-refresh]");
+  if (refresh && game.user?.isGM) {
+    const scope = refresh.dataset.refresh;
+    const action =
+      scope === "scene"
+        ? (game as any).daggerheart?.endScene
+        : scope === "session"
+          ? (game as any).daggerheart?.endSession
+          : null;
+    if (!action || refresh.disabled) return;
+    refresh.disabled = true;
+    try {
+      await action();
+    } finally {
+      refresh.disabled = false;
+    }
+    return;
+  }
+
   const button = (event.target as HTMLElement).closest<HTMLElement>("[data-f]");
   if (!button || !game.user?.isGM) return;
 

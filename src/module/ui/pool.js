@@ -47,10 +47,11 @@ export const POOL = ({
    gems below take the same number and each pip's own inline value — which
    `setPool` keeps current — wins where it is set. */
 export const FEAR_HUD = ({cur = 4, max = 12, gm = true}) => `
-<div class="hud" style="--i:${intensity(cur, max).toFixed(3)}">
+<div class="hud${gm ? ' gm' : ''}" style="--i:${intensity(cur, max).toFixed(3)}">
   <b class="hglow"></b>
   <b class="hface"></b>
   ${POOL({cur, max, tone: 'fear', dark: true, head: false, sz: 24, gap: 7})}
   <span class="tally">${cur}<s>/${max}</s></span>
   ${gm ? `<div class="stp"><button data-f="1">+</button><button data-f="-1">−</button></div>` : ''}
+  ${gm ? `<div class="cyc"><button data-refresh="scene" title="Refresh all once-per-scene counters and dice">scene</button><button data-refresh="session" title="Refresh all once-per-session counters and dice">session</button></div>` : ''}
 </div>`;

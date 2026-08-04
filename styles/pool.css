@@ -104,8 +104,7 @@
   --socket:color-mix(in srgb,#241a3c calc(30% + 70% * var(--i)),#14161b);
   --socket-line:color-mix(in srgb,#3b2f5c calc(30% + 70% * var(--i)),#2b313a);
   display:inline-flex;align-items:center;gap:14px;padding:9px 14px 9px 16px;
-  backdrop-filter:blur(14px);transition:--i .6s cubic-bezier(.2,.8,.25,1);
-  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+  backdrop-filter:blur(14px);transition:--i .6s cubic-bezier(.2,.8,.25,1)}
 /* Every measure inside the HUD is px, because Foundry's chrome does not scale. */
 .dh.hud .pool{flex:none;position:relative;z-index:3}
 
@@ -117,6 +116,7 @@
 
    Registered, or the angle steps in one frame instead of turning. */
 .dh.hud .hglow{position:absolute;inset:0;z-index:0;pointer-events:none;--spin:0deg;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%);
   background:
     conic-gradient(from var(--spin) at 50% 50%,
       transparent 0deg,
@@ -202,6 +202,16 @@
   background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.13);
   color:#d8d2e6;font:700 11px/1 var(--f-mono);transition:background .14s,color .14s}
 .dh.hud .stp button:hover{background:var(--fear);color:#fff;box-shadow:none}
+.dh.hud .cyc{position:absolute;z-index:3;right:12px;bottom:-21px;display:flex;gap:4px;
+  padding:3px 4px;background:rgba(11,13,17,.9);backdrop-filter:blur(10px);
+  box-shadow:inset 0 0 0 1px rgba(171,136,234,.13);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%)}
+.dh.hud .cyc button{width:auto;height:14px;min-height:14px;max-height:14px;
+  padding:0 6px;border:0;border-radius:0;cursor:pointer;
+  background:rgba(255,255,255,.055);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
+  color:#aaa1bb;font:700 8px/14px var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.dh.hud .cyc button:hover{background:rgba(171,136,234,.2);color:#eee7fb}
+.dh.hud .cyc button:disabled{opacity:.38;cursor:wait}
 /* The tally is the number even when the pips are not — a GM says "I have
    four Fear" out loud, and the HUD should not make them count pips.
 

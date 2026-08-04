@@ -109,6 +109,11 @@ const attr = (s: string): string =>
 function sourceItem(actor: any, r: Rule): any {
   const items = [...(actor?.items ?? [])];
 
+  if (r.itemId) {
+    const direct = items.find((i: any) => i.id === r.itemId);
+    if (direct) return direct;
+  }
+
   const parts = r.source.split(" · ");
   if (parts.length === 2) {
     const sub = items.find(
