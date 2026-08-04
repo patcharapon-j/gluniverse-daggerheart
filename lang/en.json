@@ -53,6 +53,8 @@
       "LoadoutFull": "Your loadout already holds {max} cards. Send one to the vault first.",
       "SecondaryBlocked": "Your primary weapon is Two-Handed — there is no free hand for a secondary.",
       "NotYours": "That is not your character to spend for.",
+      "GMOnly": "Only a GM can change the Fear pool.",
+      "CannotPay": "That resource cannot be marked or spent.",
       "AlreadyClaimed": "That has already been taken from this roll.",
       "NoTarget": "Target a token first.",
       "NoWeapon": "The weapon this attack was made with is no longer on the sheet.",

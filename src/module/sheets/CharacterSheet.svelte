@@ -1141,70 +1141,36 @@
 
   async function useHopeAction() {
     if (!ed || !classItem || !hopeAction) return;
-    if (purse < hopeAction.cost) {
-      refusePool();
-      ui.notifications?.warn(
-        game.i18n.format("DAGGERHEART.Warning.NoHopeAction", {
-          name: hopeAction.name,
-          cost: hopeAction.cost,
-          have: purse,
-        }),
-      );
-      return;
-    }
-    // Charged before the card is posted, for the reason `payFor` charges
-    // before the dice: a payment that lands after the announcement lets
-    // the table hear the move and then find out it was not affordable.
-    if (!(await (doc as any).spendHope(hopeAction.cost))) return;
     const card = hopeCard(classItem, sigils);
-    if (card) await postCard(card, doc);
+    if (card) {
+      await postCard(card, doc, {
+        price: { hope: hopeAction.cost, stress: 0, fear: 0, armor: 0 },
+      });
+    }
   }
 
   /* ── using a feature that costs something ─────────────────────────
-     The Hope action has charged for itself since it moved to the rail, and
-     it was the only one. Every other feature on this sheet that opens
+     The Hope action used to charge immediately from the rail, and it was the
+     only one automated. Every other feature on this sheet that opens
      "Spend a Hope" or "Mark a Stress" printed the price, posted the card,
      and left the paying to you — which is the half that gets forgotten,
      three hours later, when somebody notices the Stress track has not moved
      all session.
 
-     So a priced row does both, exactly as the Hope action does: the
-     resource leaves and the card lands, because those are one act. Charged
-     *before* the card is posted, for the reason `payFor` charges before the
-     dice — a payment that lands after the announcement lets the table hear
-     the move and then find out it could not be afforded.
-
-     The refusal is the track that cannot pay, flinching. No dialog: the
-     number saying no is already on screen, eighteen inches away, and this
-     system answers "you cannot afford that" by making the thing that cannot
-     afford it move. Both are checked before either is spent, so a feature
-     costing a Hope and a Stress can never take the Hope and then fail. */
+     The posted card now carries the payment. That gives the table one visible
+     place to confirm the move, and the message's claim flag makes the button
+     durable across clients and reloads. Mixed self-costs are checked and
+     written together, so a feature costing Hope and Stress cannot take one
+     and then fail the other. */
   async function useAbility(a: Ability) {
     if (!ed) return;
-    if (isFree(a.price)) return toChat(a.card);
-
-    const shortHope = a.price.hope > purse;
-    const shortStress = a.price.stress > stressLeft;
-    if (shortHope) refusePool();
-    if (shortStress) refuse();
-    if (shortHope || shortStress) {
-      ui.notifications?.warn(
-        game.i18n.format("DAGGERHEART.Warning.NoFeatureCost", {
-          name: a.name,
-          cost: a.cost ?? "",
-        }),
-      );
-      return;
+    if (a.card) {
+      await postCard(a.card, doc, {
+        price: isFree(a.price) ? undefined : a.price,
+        resourceIndexes: a.res.map((r) => r.i),
+        damageRoll: /\bdamage roll\b/i.test(a.text),
+      });
     }
-
-    if (a.price.hope) await (doc as any).spendHope(a.price.hope);
-    if (a.price.stress) await (doc as any).markTrack("stress", a.price.stress);
-    /* Fear is the GM's pool and a world setting rather than an actor field,
-       so it is stated on the row and not taken here. A player pressing a
-       feature that costs Fear is describing an adversary's move, and the
-       sheet spending the table's Fear on their behalf would be the one
-       automation nobody asked for. */
-    toChat(a.card);
   }
 
   /* ── the trait cell, in two states ─────────────────────────────────

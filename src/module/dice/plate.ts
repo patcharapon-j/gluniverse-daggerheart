@@ -224,7 +224,7 @@ const EYE = (r: { who: string; label: string }): string =>
 
 interface Claim {
   t: string;
-  /** Mine to press; the GM's claims are stated, not offered. */
+  /** Mine to press; false keeps non-actionable GM statements visually distinct. */
   mine: boolean;
   /** The chat action the button fires. */
   act?: string;
@@ -250,7 +250,7 @@ const ACT = (list: Claim[], next?: string, nextAct?: string): string =>
     : `<div class="pl-act">
     ${list
       .map((c) =>
-        c.mine
+        c.mine || c.act === "gain-fear"
           ? `<button type="button" class="pl-b" data-dh-act="${c.act ?? ""}"><i></i>${esc(c.t)}</button>`
           : `<span class="pl-b theirs" data-dh-act="${c.act ?? ""}"><i></i>${esc(c.t)}</span>`,
       )

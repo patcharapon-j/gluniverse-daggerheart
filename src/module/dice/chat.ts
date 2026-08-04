@@ -1,14 +1,9 @@
 /**
  * The chat plate, once it is in the log.
  *
- * Three jobs: apply the GM's Fear when a Fear roll is created, play the
- * arrival on a message that has just landed, and wire the claim row.
- *
- * The buttons are deliberately not fired automatically — a roll *offers* a
- * Hope, and the player takes it. The one exception is the GM's Fear, which
- * is stated on the player's card and applied on the GM's client because only
- * a GM may write the pool. That one hangs off creation rather than off
- * render; see {@link applyFear} for why it has to.
+ * Two jobs: play the arrival on a message that has just landed and wire its
+ * one-shot actions. Hope, Fear, costs and counters are all claimed by a hand;
+ * none of them fire merely because a client rendered the message.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -19,7 +14,7 @@ import { damageRecipients, noRecipientKey } from "../apps/targets.ts";
 import { getFear, setFear } from "../settings.ts";
 import { fit } from "../ui/card.js";
 import { loadSigils } from "../sheets/cards.ts";
-import { cardWrapper } from "../sheets/post-card.ts";
+import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
 import { rollWeaponDamage } from "./actions.ts";
 import { play } from "./arrival.ts";
 
@@ -73,8 +68,6 @@ const arriving = (message: any): boolean => {
 };
 
 export function registerChat(): void {
-  Hooks.on("createChatMessage", applyFear);
-
   Hooks.on("renderChatMessageHTML", (message: any, html: HTMLElement) => {
     const host = html.querySelector<HTMLElement>(".dh-card");
     if (!host) return;
@@ -94,45 +87,6 @@ export function registerChat(): void {
     if (arriving(message)) play(plate);
     else plate.classList.add("land");
   });
-}
-
-/**
- * "GM gains a Fear" applies itself, once, on one client — at creation.
- *
- * It used to apply on *render*, on a timer long enough for the arrival to
- * have finished. That was wrong in a way no timer can fix. Writing to a
- * message re-renders it, a re-render replaces the very element the arrival
- * is animating, and the delay was a guess about when the card would be done
- * being a card. The guess held on a bare Foundry and broke the moment
- * anything else had an opinion about when a message is *shown*: Dice So Nice
- * keeps the whole `<li>` at `display:none` for four or five seconds while
- * its own dice roll, and an element with no box runs no animations at all.
- * So the arrival was spent inside a hidden subtree, the element was replaced
- * 1.2s in, and what DSN eventually revealed was the replacement — settled,
- * unswept, with none of the arrival left on it. Fear was the only outcome
- * this happened to, because it is the only one that writes to itself.
- *
- * Creation is the honest moment anyway. The Fear is a fact about the roll,
- * not about anyone having looked at it, and `createChatMessage` fires once
- * per client for a genuinely new message and never on a reload — which is
- * the whole of what the `fearApplied` flag was for. That flag is gone with
- * it, and it stays gone now that `.pl-b.done` does have a rule: the Fear
- * claim is drawn spent from the first frame by {@link bindActions}, off the
- * card's own outcome rather than off a write. Recording it would mean
- * writing to a message that is mid-arrival, which is the one thing this
- * whole arrangement exists to avoid.
- *
- * Gating on the active GM makes this one client rather than every GM at the
- * table. The old code only checked `isGM`, so two GMs meant two Fear.
- */
-function applyFear(message: any): void {
-  if (game.users?.activeGM !== game.user) return;
-  if (message.getFlag(SYSTEM_ID, "kind") !== "duality") return;
-  const plate: any = message.getFlag(SYSTEM_ID, "plate");
-  // The same three conditions that put the claim on the card — see `claims`
-  // in `plate.ts`. A reaction hands nothing over, and a critical is Hope.
-  if (!plate || plate.rxn || plate.out !== "fear") return;
-  void setFear(getFear() + 1);
 }
 
 /**
@@ -194,6 +148,7 @@ async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promis
       console.error(`${SYSTEM_ID} | could not redraw a posted card`, err);
     }
   }
+  bindActions(message, host);
   await document.fonts?.ready?.catch(() => {});
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
@@ -217,6 +172,7 @@ const CLAIM_OF: Record<string, string> = {
   "clear-stress": "stress",
   "roll-damage": "damage",
   "apply-damage": "applied",
+  "gain-fear": "fear",
 };
 
 function bindActions(message: any, plate: HTMLElement): void {
@@ -226,27 +182,12 @@ function bindActions(message: any, plate: HTMLElement): void {
     const act = el.dataset.dhAct;
     if (!act) continue;
 
-    /* The GM's Fear is a <span>, not a <button>: it is not the player's to
-       press, and since it moved to `createChatMessage` it is nobody's — it
-       applies itself the instant the card exists. So it is already taken by
-       the time anyone can look at it, and it wears the spent state from the
-       first frame. That is a statement of fact rather than a disabled
-       control, which is exactly what the row has always been.
-
-       Unconditional, and deliberately so. It could be gated on there being
-       an active GM to have gained it, but then the same card would look
-       different on two screens depending on who happened to be logged in,
-       and a record that disagrees with itself across the table is worse than
-       one that is uniformly slightly optimistic. */
-    if (act === "gain-fear") {
-      el.classList.add("done");
-      continue;
-    }
     if (el.tagName !== "BUTTON") continue;
 
-    const key = CLAIM_OF[act];
+    const key = act.startsWith("card-action:") ? act.replace(":", "-") : CLAIM_OF[act];
     if (key && taken[key]) {
       el.classList.add("done");
+      (el as HTMLButtonElement).disabled = true;
       continue;
     }
 
@@ -281,7 +222,7 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
       if (!actor?.isOwner) return warn("NotYours");
       if (await claimOnce(message, "hope")) {
         await actor.gainHope(1);
-        el.classList.add("done");
+        finish(el);
       }
       return;
     }
@@ -289,7 +230,15 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
       if (!actor?.isOwner) return warn("NotYours");
       if (await claimOnce(message, "stress")) {
         await actor.clearTrack("stress", 1);
-        el.classList.add("done");
+        finish(el);
+      }
+      return;
+    }
+    case "gain-fear": {
+      if (!game.user?.isGM) return warn("GMOnly");
+      if (await claimOnce(message, "fear")) {
+        await setFear(getFear() + 1);
+        finish(el);
       }
       return;
     }
@@ -310,7 +259,7 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
       if (!(await claimOnce(message, "damage"))) return;
       const critical = message.getFlag(SYSTEM_ID, "plate")?.out === "crit";
       await rollWeaponDamage(actor, weapon, { critical });
-      el.classList.add("done");
+      finish(el);
       return;
     }
     /* The one claim with no owner: damage lands on whoever is *targeted*,
@@ -325,11 +274,82 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
     case "apply-damage": {
       const plate = message.getFlag(SYSTEM_ID, "plate");
       if (!(await applyDamageToTargets(plate?.total ?? 0, plate?.dtype))) return;
-      if (await claimOnce(message, "applied")) el.classList.add("done");
+      if (await claimOnce(message, "applied")) finish(el);
       return;
     }
     default:
+      if (act.startsWith("card-action:")) {
+        const index = Number(act.split(":")[1]);
+        const actions: CardAction[] = message.getFlag(SYSTEM_ID, "cardActions") ?? [];
+        const action = actions[index];
+        if (action) await runCardAction(action, index, ctx);
+      }
       return;
+  }
+}
+
+const finish = (el: HTMLElement): void => {
+  el.classList.add("done");
+  if (el instanceof HTMLButtonElement) el.disabled = true;
+};
+
+async function runCardAction(
+  action: CardAction,
+  index: number,
+  ctx: ActionContext,
+): Promise<void> {
+  const { actor, message, el } = ctx;
+  const key = `card-action-${index}`;
+
+  if (action.kind === "pay-cost") {
+    if (action.fear) {
+      if (!game.user?.isGM) return warn("GMOnly");
+      if (getFear() < action.fear) return warn("CannotPay");
+      if (!(await claimOnce(message, key))) return;
+      await setFear(getFear() - action.fear);
+      finish(el);
+      return;
+    }
+    if (!actor?.isOwner) return warn("NotYours");
+    const hope = actor.system?.resources?.hope;
+    const stress = actor.system?.resources?.stress;
+    const armor = actor.system?.resources?.armorSlots;
+    if ((action.hope ?? 0) > (hope?.value ?? 0)) return warn("CannotPay");
+    if ((action.stress ?? 0) > (stress?.max ?? 0) - (stress?.marked ?? 0)) return warn("CannotPay");
+    if ((action.armor ?? 0) > (armor?.max ?? 0) - (armor?.marked ?? 0)) return warn("CannotPay");
+    if (!(await claimOnce(message, key))) return;
+    const update: Record<string, number> = {};
+    if (action.hope) update["system.resources.hope.value"] = hope.value - action.hope;
+    if (action.stress) update["system.resources.stress.marked"] = stress.marked + action.stress;
+    if (action.armor) update["system.resources.armorSlots.marked"] = armor.marked + action.armor;
+    await actor.update(update);
+    finish(el);
+    return;
+  }
+
+  if (!actor?.isOwner) return warn("NotYours");
+  const item = action.itemId ? actor.items?.get?.(action.itemId) : null;
+  if (action.kind === "move-resource") {
+    const live = item?.liveResources?.[action.resourceIndex ?? -1];
+    const want = Number(live?.res?.value ?? 0) + Number(action.by ?? 0);
+    if (!live || want < 0 || (live.max !== null && want > live.max)) return warn("CannotPay");
+    if (!(await claimOnce(message, key))) return;
+    if (!(await item.moveResource(action.resourceIndex ?? -1, action.by ?? 0))) return;
+    finish(el);
+    return;
+  } else if (action.kind === "use-item") {
+    if (!item || Number(item.system?.quantity ?? 0) < 1) return warn("CannotPay");
+    if (!(await claimOnce(message, key))) return;
+    await item.update({ "system.quantity": Number(item.system.quantity) - 1 });
+    finish(el);
+    return;
+  } else if (action.kind === "roll-damage") {
+    const weapon = action.weaponId ? actor.items?.get?.(action.weaponId) : null;
+    if (!weapon) return warn("NoWeapon");
+    if (!(await claimOnce(message, key))) return;
+    await rollWeaponDamage(actor, weapon);
+    finish(el);
+    return;
   }
 }
 

@@ -820,9 +820,10 @@ export interface Price {
   hope: number;
   stress: number;
   fear: number;
+  armor: number;
 }
 
-export const isFree = (p: Price): boolean => !p.hope && !p.stress && !p.fear;
+export const isFree = (p: Price): boolean => !p.hope && !p.stress && !p.fear && !p.armor;
 
 /**
  * @param system the Item's own `system`, when the feature *is* an Item — its
@@ -834,12 +835,18 @@ export function featurePrice(feature: any, system?: any): Price {
     hope: priceOf(text, "hope"),
     stress: Number(system?.stressCost) || priceOf(text, "stress"),
     fear: Number(system?.fearCost) || priceOf(text, "fear"),
+    armor: Math.max(priceOf(text, "armor slot"), priceOf(text, "armor slots")),
   };
 }
 
 /** "3 Hope · 1 Stress", or nothing at all — which is most of them. */
 export const priceLabel = (p: Price): string | undefined =>
-  [p.hope && `${p.hope} Hope`, p.stress && `${p.stress} Stress`, p.fear && `${p.fear} Fear`]
+  [
+    p.hope && `${p.hope} Hope`,
+    p.stress && `${p.stress} Stress`,
+    p.armor && `${p.armor} Armor`,
+    p.fear && `${p.fear} Fear`,
+  ]
     .filter(Boolean)
     .join(" · ") || undefined;
 

@@ -546,6 +546,19 @@
   margin: 0;
 }
 
+/* Posted-card actions borrow the roll plate's one-shot button grammar, but
+   stand outside the card's container so they do not steal room from rules
+   text. Gold is the neutral self-sheet action hue; Fear buttons keep their
+   violet on duality plates, where the outcome supplies `--o`. */
+.chat-message .dh-card .card-actions {
+  --o: var(--hope);
+  --o-tx: var(--hope-tx);
+  --o-ink: #14161a;
+  margin-top: 1px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
 /* ── the Fear strip, docked ──────────────────────────────────────────
    `pool.css` draws the strip; this is the two facts about *where it is
    standing* that a study page cannot know, so they are hand-authored here
