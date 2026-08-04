@@ -97,7 +97,7 @@ export interface DamagePlate extends PlateBase {
   dtype: string;
 }
 
-/** An adversary's d20 attack or reaction. */
+/** An adversary's d20 attack or reaction. A null DC is intentionally unresolved. */
 export interface FoePlate extends PlateBase {
   d20: number[];
   /** Disadvantage keeps the lowest. */

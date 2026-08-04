@@ -212,7 +212,6 @@ export async function rollAdversaryAttack(
   actor: any,
   opts: {
     advantage?: number;
-    target?: any;
     experiences?: { name: string; modifier: number }[];
     extra?: Term[];
   } = {},
@@ -222,19 +221,21 @@ export async function rollAdversaryAttack(
   // Fear buys Experience on this side the way Hope does on the other, so
   // the term is drawn in violet rather than gold.
   const mods: Term[] = [
-    { k: "attack modifier", v: attack.modifier },
+    ...(!attack.modifierDice ? [{ k: "attack modifier", v: attack.modifier }] : []),
     ...(opts.experiences ?? []).map((e) => ({ k: e.name || "experience", v: e.modifier, fear: true })),
     ...(opts.extra ?? []),
   ];
 
-  const targetActor = opts.target?.actor ?? opts.target ?? null;
   return rollFoe({
     actor,
     label: attack.name || "Attack",
     mods,
+    modifierDice: attack.modifierDice,
+    modifierLabel: "attack modifier",
     advantage: opts.advantage,
-    dc: targetActor?.system?.evasion?.value ?? null,
-    target: targetActor?.name ?? "",
+    // Adversary attacks are unresolved in this rules version. The roll card
+    // reports the d20 and modifier; the table decides what that means.
+    dc: null,
   });
 }
 
@@ -244,10 +245,10 @@ export async function rollAdversaryDamage(actor: any, { critical = false } = {})
   return rollDamage({
     actor,
     label: actor.system?.attack?.name ?? "Damage",
-    count: Math.max(1, dmg.count ?? 1),
+    count: Math.max(0, dmg.count ?? 1),
     die: dmg.dice,
     mods,
-    damageType: dmg.type,
+    damageType: `${dmg.direct ? "direct " : ""}${dmg.type}`,
     critical,
   });
 }

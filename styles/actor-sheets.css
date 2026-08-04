@@ -1,0 +1,120 @@
+/* Non-character actor sheets. Loaded after sheet.css so this remains a
+   removable visual layer over the shared character-sheet vocabulary. */
+
+.dh .actor-sheet{--actor-accent:var(--hope);--actor-accent-tx:var(--hope-tx);height:100%;isolation:isolate}
+.dh .actor-sheet.foe{--actor-accent:var(--fear);--actor-accent-tx:var(--fear-tx)}
+.dh .actor-sheet .bd{background:
+  radial-gradient(circle at 88% 8%,color-mix(in srgb,var(--actor-accent) 8%,transparent),transparent 34%),
+  var(--paper)}
+.dh .actor-sheet .scr{scroll-behavior:smooth}
+
+.dh .actor-hero{position:relative;min-height:126px;display:flex;align-items:flex-end;overflow:hidden;
+  background:var(--frame);border-bottom:1px solid var(--line)}
+.dh .actor-hero::after{content:"";position:absolute;inset:auto 0 0;height:2px;z-index:2;
+  background:linear-gradient(90deg,transparent,var(--actor-accent),transparent);opacity:.82}
+.dh .actor-hero__art{position:absolute;inset:0;background:var(--actor-art) center 28%/cover no-repeat;
+  transform:scale(1.01);filter:saturate(.78) contrast(1.04);
+  transition:transform 6s cubic-bezier(.16,1,.3,1),filter .45s cubic-bezier(.16,1,.3,1)}
+.dh .actor-hero:hover .actor-hero__art{transform:scale(1.055);filter:saturate(.98) contrast(1.02)}
+.dh .actor-hero__veil{position:absolute;inset:0;background:
+  linear-gradient(90deg,rgba(8,10,14,.92),rgba(8,10,14,.54) 58%,rgba(8,10,14,.12)),
+  linear-gradient(0deg,rgba(8,10,14,.96),transparent 76%)}
+.dh .actor-hero__copy{position:relative;z-index:1;width:min(82%,620px);padding:15px 18px 13px;
+  animation:actorEnter .55s cubic-bezier(.16,1,.3,1) both}
+.dh .actor-hero__eyebrow{display:block;margin-bottom:5px;font:700 8px/1 var(--f-mono);
+  letter-spacing:.22em;text-transform:uppercase;color:var(--actor-accent-tx)}
+.dh .actor-hero h1,.dh .actor-hero__name{display:block;width:100%;margin:0;border:0;background:transparent;padding:0;
+  font:700 clamp(21px,4.2cqw,30px)/.98 var(--f-display);letter-spacing:-.042em;text-transform:uppercase;color:#fff;
+  text-shadow:0 2px 22px rgba(0,0,0,.58)}
+.dh .actor-hero__name:focus{outline:1px solid color-mix(in srgb,var(--actor-accent) 72%,white);outline-offset:5px}
+.dh .actor-hero__description{max-width:72ch;max-height:2.8em;overflow:hidden;margin:6px 0 0;
+  font:400 11px/1.4 var(--f-ui);color:#c7cdd6;mask-image:linear-gradient(#000 68%,transparent)}
+.dh .actor-hero__description.rich p{margin:.2em 0}
+.dh .actor-hero__tools{position:absolute;z-index:3;right:9px;top:9px;display:flex;gap:4px}
+.dh .actor-hero__tools button{height:auto;min-height:27px;padding:0 9px;border:1px solid rgba(255,255,255,.16);
+  background:rgba(10,12,16,.72);backdrop-filter:blur(12px);cursor:pointer;
+  font:700 8px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:#bdc4ce;
+  transition:transform .22s cubic-bezier(.16,1,.3,1),background .2s,color .2s,border-color .2s}
+.dh .actor-hero__tools button:hover{transform:translateY(-2px);color:#fff;border-color:var(--actor-accent)}
+.dh .actor-hero__tools button.active{background:var(--actor-accent);color:#121419;border-color:var(--actor-accent)}
+
+.dh .actor-sheet .actor-tabs{display:flex;position:sticky;top:0;z-index:8;background:color-mix(in srgb,var(--frame-2) 92%,transparent);
+  backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--frame-line)}
+.dh .actor-sheet .actor-tabs button{height:auto;min-height:31px;padding:0 13px;border:0;background:transparent;cursor:pointer;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.17em;text-transform:uppercase;color:var(--frame-tx-3);position:relative}
+.dh .actor-sheet .actor-tabs button:hover{color:var(--frame-tx)}
+.dh .actor-sheet .actor-tabs button.on{color:var(--paper);background:color-mix(in srgb,var(--paper) 10%,transparent)}
+.dh .actor-sheet .actor-tabs button.on::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;background:var(--actor-accent)}
+
+.dh .actor-sheet .pnl{padding:10px 14px 11px}
+.dh .actor-sheet .pnl > .k{margin-bottom:7px;font-size:8px;letter-spacing:.17em}
+.dh .actor-sheet .pnl > .k s{color:var(--actor-accent-tx)}
+.dh .actor-sheet .actor-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line)}
+.dh .actor-sheet .actor-stat{min-height:57px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--sunk);padding:7px}
+.dh .actor-sheet .actor-stat span{font:700 8px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+.dh .actor-sheet .actor-stat b{margin-top:5px;font:700 21px/1 var(--f-display);letter-spacing:-.04em;color:var(--ink)}
+
+.dh .actor-sheet .actor-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px}
+.dh .actor-sheet .actor-form.wide{grid-template-columns:1fr}
+.dh .actor-sheet .actor-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.dh .actor-sheet .actor-field > span{font:700 8px/1 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.dh .actor-sheet .actor-field input,.dh .actor-sheet .actor-field select,.dh .actor-sheet .actor-field textarea{
+  width:100%;min-width:0;height:auto;min-height:30px;border:1px solid var(--line);border-radius:0;background:var(--sunk);padding:5px 8px;
+  font:500 11.5px/1.35 var(--f-ui);color:var(--ink);transition:border-color .2s,box-shadow .2s,background .2s}
+.dh .actor-sheet .actor-field textarea{min-height:54px;resize:vertical}
+.dh .actor-sheet .actor-field input:focus,.dh .actor-sheet .actor-field select:focus,.dh .actor-sheet .actor-field textarea:focus{
+  outline:0;border-color:var(--actor-accent);background:var(--raise);box-shadow:0 0 0 3px color-mix(in srgb,var(--actor-accent) 13%,transparent)}
+.dh .actor-sheet .actor-check{display:flex;align-items:center;gap:7px;min-height:30px;color:var(--ink-2);font:500 11px/1.3 var(--f-ui)}
+.dh .actor-sheet .actor-check input:checked{background:var(--actor-accent);box-shadow:inset 0 0 0 1px var(--actor-accent)}
+
+.dh .actor-features{display:flex;flex-direction:column;gap:4px}
+.dh .actor-feature{position:relative;background:var(--sunk);border:1px solid transparent;padding:7px 9px 8px;
+  transition:transform .25s cubic-bezier(.16,1,.3,1),background .2s,border-color .2s,box-shadow .25s}
+.dh .actor-feature:hover{transform:translateY(-2px);background:var(--raise);border-color:color-mix(in srgb,var(--actor-accent) 32%,var(--line));
+  box-shadow:0 10px 28px -20px rgba(0,0,0,.8)}
+.dh .actor-feature__head{display:flex;align-items:flex-start;gap:8px}
+.dh .actor-feature__open{flex:1 1 auto;min-width:0;height:auto;min-height:20px;padding:0;border:0;background:transparent;cursor:pointer;text-align:left}
+.dh .actor-feature__open b{font:650 12px/1.25 var(--f-ui);color:var(--ink)}
+.dh .actor-feature__open i{margin-left:8px;font:700 8px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;font-style:normal;color:var(--actor-accent-tx)}
+.dh .actor-feature__delete{flex:none;width:22px;height:22px;min-height:0;padding:0;border:0;background:transparent;cursor:pointer;color:var(--ink-4);font:400 17px/1 var(--f-ui)}
+.dh .actor-feature__delete:hover{color:var(--wound);background:color-mix(in srgb,var(--wound) 9%,transparent)}
+.dh .actor-feature__text{margin-top:3px;font:400 11.25px/1.42 var(--f-ui);color:var(--ink-2)}
+.dh .actor-feature__text p{margin:.25em 0}.dh .actor-empty{margin:0;padding:9px 10px;border:1px dashed var(--line-2);color:var(--ink-3);font:400 11px/1.4 var(--f-ui)}
+.dh .actor-feature__add{display:grid;grid-template-columns:22px auto 1fr;align-items:center;gap:7px;width:100%;height:30px;min-height:0;
+  border:1px dashed color-mix(in srgb,var(--actor-accent) 42%,var(--line));background:color-mix(in srgb,var(--actor-accent) 5%,var(--sunk));padding:0 9px;cursor:pointer;text-align:left;color:var(--actor-accent-tx)}
+.dh .actor-feature__add span{display:grid;place-items:center;width:18px;height:18px;border:1px solid currentColor;font:500 15px/1 var(--f-ui)}
+.dh .actor-feature__add b{font:700 8px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase}
+.dh .actor-feature__add i{justify-self:end;font:400 10px/1 var(--f-ui);font-style:normal;color:var(--ink-3)}
+.dh .actor-feature__add:hover{background:color-mix(in srgb,var(--actor-accent) 11%,var(--sunk));border-style:solid;transform:translateY(-1px)}
+.dh .actor-feature__add:active{transform:translateY(0)}
+
+.dh .actor-sheet .actor-list{display:flex;flex-direction:column;gap:4px}
+.dh .actor-sheet .actor-list__row{display:grid;grid-template-columns:minmax(0,1fr) 72px 28px;gap:6px;align-items:center}
+.dh .actor-sheet .actor-list__row input{min-width:0;height:30px;border:1px solid var(--line);background:var(--sunk);padding:5px 8px;color:var(--ink)}
+.dh .actor-sheet .actor-list__row button,.dh .actor-sheet .actor-add{height:30px;min-height:0;border:0;background:transparent;cursor:pointer;color:var(--ink-3)}
+.dh .actor-sheet .actor-list__row button:hover{color:var(--wound)}
+.dh .actor-sheet .actor-add{align-self:flex-start;padding:0;font:700 8px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;color:var(--actor-accent-tx)}
+
+.dh .actor-sheet .atk .wr,.dh .actor-sheet .xp .r{transition:transform .2s cubic-bezier(.16,1,.3,1),background .2s}
+.dh .actor-sheet .atk .wr:hover,.dh .actor-sheet .xp .r:hover{transform:translateX(3px)}
+.dh .actor-sheet .prose{border-color:var(--line)}
+.dh .actor-sheet .actor-training{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+.dh .actor-sheet .actor-training .actor-field{display:grid;grid-template-columns:minmax(0,1fr) 58px;align-items:center;background:var(--sunk);padding:5px 7px}
+
+/* Compact the inherited roll/readout vocabulary only inside these actor sheets. */
+.dh .actor-sheet .atk{gap:3px}.dh .actor-sheet .wr{gap:8px;padding:6px 8px}
+.dh .actor-sheet .xp .r{padding:4px 7px}.dh .actor-sheet .rd{margin-top:4px}
+.dh .actor-sheet .environment-difficulty{font-size:30px}
+.dh .actor-sheet .companion-defence{grid-template-columns:112px minmax(0,1fr);gap:12px}
+.dh .actor-sheet .companion-evasion{min-height:74px}.dh .actor-sheet .companion-evasion b{margin-top:5px;font-size:32px}
+.dh .actor-sheet .training-readout span{padding:5px 8px}
+
+@keyframes actorEnter{from{opacity:0;transform:translateY(10px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+@container (max-width:620px){
+  .dh .actor-hero{min-height:116px}.dh .actor-hero__copy{width:100%;padding:40px 13px 11px}
+  .dh .actor-sheet .pnl{padding:9px 11px 10px}.dh .actor-sheet .actor-form,.dh .actor-sheet .actor-training{grid-template-columns:1fr}
+  .dh .actor-feature__add i{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .dh .actor-sheet *,.dh .actor-sheet *::before,.dh .actor-sheet *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}

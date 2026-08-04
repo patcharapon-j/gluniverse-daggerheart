@@ -209,16 +209,16 @@ export interface DamageOptions {
 
 export async function rollDamage(opts: DamageOptions): Promise<{ plate: DamagePlate; roll: any; message: any }> {
   const mods = opts.mods ?? [];
-  const count = Math.max(1, opts.count);
+  const count = Math.max(0, opts.count);
   const sides = Number(opts.die.replace(/^d/i, "")) || 6;
   const critBonus = opts.critical ? count * sides : 0;
 
   const roll = new Roll(
-    `${count}${opts.die}${critBonus ? ` + ${critBonus}` : ""}${modFormula(mods)}`,
+    `${count ? `${count}${opts.die}` : "0"}${critBonus ? ` + ${critBonus}` : ""}${modFormula(mods)}`,
   );
   await roll.evaluate();
 
-  const rolls = faces(roll.dice[0]);
+  const rolls = count ? faces(roll.dice[0]) : [];
   const plate: DamagePlate = {
     who: opts.actor?.name ?? game.user?.name ?? "—",
     label: opts.label,
@@ -251,6 +251,9 @@ export interface FoeOptions {
   label: string;
   kind?: string;
   mods?: Term[];
+  /** A rolled attack modifier such as the Outer Realms Abomination's 2d4. */
+  modifierDice?: string;
+  modifierLabel?: string;
   /** Advantage is a second d20. Positive keeps the highest, negative the lowest. */
   advantage?: number;
   /** The target's Evasion, or a Difficulty on a reaction roll. */
@@ -267,7 +270,8 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
   const dice = adv === 0 ? 1 : 2;
   const keep = adv < 0 ? "kl1" : "kh1";
 
-  const roll = new Roll(`${dice}d20${dice > 1 ? keep : ""}${modFormula(mods)}`);
+  const modifierDice = /^\d*d\d+$/i.test(opts.modifierDice ?? "") ? opts.modifierDice : "";
+  const roll = new Roll(`${dice}d20${dice > 1 ? keep : ""}${modifierDice ? ` + ${modifierDice}` : ""}${modFormula(mods)}`);
   await roll.evaluate();
 
   // The GM's die, in the GM's colour. There is no duality here to tell apart,
@@ -276,14 +280,18 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
   // the card. Advantage is a second d20 rather than an added d6, so there is
   // only ever this one term to paint, and it takes the d20's own cut.
   paint(roll.dice[0], FEAR);
+  if (modifierDice && roll.dice[1]) paint(roll.dice[1], FEAR);
 
   const d20 = faces(roll.dice[0]);
+  const displayedMods = modifierDice
+    ? [{ k: opts.modifierLabel ?? "rolled modifier", v: Number(roll.dice[1]?.total ?? 0) }, ...mods]
+    : mods;
   const base: FoePlate = {
     who: opts.actor?.name ?? "—",
     label: opts.label,
     kind: opts.kind ?? (opts.reaction ? "adversary reaction" : "adversary attack"),
     total: roll.total,
-    mods,
+    mods: displayedMods,
     d20,
     ...(adv < 0 ? { neg: true } : {}),
     target: opts.target ?? "",

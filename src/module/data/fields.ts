@@ -305,4 +305,5 @@ export const damageField = (dice = "d6", count = 1, bonus = 0): any =>
     dice: str(dice),
     bonus: int(bonus),
     type: str("physical"),
+    direct: bool(false),
   });

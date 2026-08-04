@@ -35,7 +35,8 @@
     "styles/prep.css",
     "styles/dlg.css",
     "styles/make.css",
-    "styles/daggerheart-components.css"
+    "styles/daggerheart-components.css",
+    "styles/actor-sheets.css"
   ],
   "languages": [
     {
@@ -83,6 +84,28 @@
       "label": "Equipment",
       "path": "packs/equipment",
       "type": "Item",
+      "system": "gluniverse-daggerheart",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "adversaries",
+      "label": "Adversaries",
+      "path": "packs/adversaries",
+      "type": "Actor",
+      "system": "gluniverse-daggerheart",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "environments",
+      "label": "Environments",
+      "path": "packs/environments",
+      "type": "Actor",
       "system": "gluniverse-daggerheart",
       "ownership": {
         "PLAYER": "OBSERVER",

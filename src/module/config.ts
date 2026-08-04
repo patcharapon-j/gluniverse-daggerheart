@@ -320,6 +320,7 @@ export type WeaponSlot = (typeof WEAPON_SLOTS)[number];
 
 export const ADVERSARY_TYPES = [
   "bruiser",
+  "colossus",
   "horde",
   "leader",
   "minion",
@@ -334,6 +335,7 @@ export type AdversaryType = (typeof ADVERSARY_TYPES)[number];
 
 export const ADVERSARY_TYPE_LABELS: Record<string, string> = {
   bruiser: "Bruiser",
+  colossus: "Colossus",
   horde: "Horde",
   leader: "Leader",
   minion: "Minion",
@@ -361,7 +363,7 @@ export const ENVIRONMENT_TYPE_LABELS: Record<string, string> = {
  * When a feature fires. Adversary and environment stat blocks print exactly
  * these three; character features reuse `passive` and `action`.
  */
-export const FEATURE_KINDS = ["passive", "action", "reaction"] as const;
+export const FEATURE_KINDS = ["passive", "action", "reaction", "evolution"] as const;
 export type FeatureKind = (typeof FEATURE_KINDS)[number];
 
 export const FEATURE_KIND_LABELS: Record<string, string> = {

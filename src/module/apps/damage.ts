@@ -80,14 +80,14 @@ interface Purse {
   have: number;
 }
 
-const purses = (actor: any): Purse[] =>
+const purses = (actor: any, direct = false): Purse[] =>
   (
     [
       { key: "armor", k: "Armor", have: actor.armorLeft ?? 0 },
       { key: "stress", k: "Stress", have: actor.stressLeft ?? 0 },
       { key: "hope", k: "Hope", have: actor.hopeLeft ?? 0 },
     ] as Purse[]
-  ).filter((p) => p.have > 0);
+  ).filter((p) => p.have > 0 && !(direct && p.key === "armor"));
 
 const stepper = (name: string, n = 0) => `<span class="sp" data-sp="${name}">
   <button type="button" data-step="-1" aria-label="One fewer">−</button>
@@ -116,7 +116,7 @@ export async function takeDamage(
 
   const t = actor.system?.thresholds ?? {};
   const hp = actor.system?.resources?.hitPoints ?? { max: 6, marked: 0 };
-  const pocket = purses(actor);
+  const pocket = purses(actor, /^direct\b/i.test(damageType));
 
   /* Minions print no thresholds — any damage marks their one Hit Point — so
      there is no band to draw and nothing on it to escape. The dialog is still
@@ -124,6 +124,12 @@ export async function takeDamage(
   const band = () =>
     t.none
       ? '<p class="ach">No thresholds — any damage marks one Hit Point.</p>'
+      : /* A stat block printing "4/None" has a Major rung and no Severe one.
+           The band draws three zones and the third would have to be a lie, so
+           it says the one threshold it has and leaves the ladder alone — the
+           same answer the minion above gets, for the same reason. */
+        t.severeNone
+      ? `<p class="ach">Major threshold ${t.major ?? 1} — no Severe threshold.</p>`
       : withCrosses(
           DAMAGE({
             major: t.major ?? 1,

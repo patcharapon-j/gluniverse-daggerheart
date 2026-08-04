@@ -3,7 +3,7 @@
  *
  * Source lives in `src/packs-src/*.mjs` as normalized document objects (see
  * `_helpers.mjs`). This script:
- *   1. gives each document a STABLE `_id` derived from pack + type + name, so
+ *   1. gives each document a STABLE `_id` derived from pack + type + source key, so
  *      rebuilds keep the same ids and a character that dragged a card off the
  *      compendium stays linked to it;
  *   2. materialises the folders entries asked for by name;
@@ -60,18 +60,62 @@ export const PACKS = [
     collection: "items",
     docType: "Item",
   },
+  {
+    name: "adversaries",
+    module: "adversaries.mjs",
+    label: "Adversaries",
+    collection: "actors",
+    docType: "Actor",
+  },
+  {
+    name: "environments",
+    module: "environments.mjs",
+    label: "Environments",
+    collection: "actors",
+    docType: "Actor",
+  },
 ];
 
-/** The Foundry envelope around a normalized entry. */
-function itemDoc(packName, entry, folderId) {
-  const id = stableId(`${packName}:${entry.type}:${entry.name}`);
+/**
+ * A feature living on an adversary or an environment.
+ *
+ * The CLI walks a document's hierarchy and writes every embedded document
+ * under its own LevelDB key — `!actors.items!<actor>.<item>` — so an embedded
+ * doc needs a `_key` exactly as a primary one does. Without it the batch is
+ * handed an undefined key and the whole compile fails, which is what
+ * "Key cannot be null or undefined" means. The parent's own `items` array is
+ * reduced to ids by the CLI, so both halves stay in step.
+ */
+function embeddedItem(pack, actorId, entry, index) {
+  const id = stableId(`${pack.name}:${actorId}:item:${index}:${entry.name}`);
   return {
     _id: id,
-    _key: `!items!${id}`,
+    _key: `!${pack.collection}.items!${actorId}.${id}`,
     name: entry.name,
     type: entry.type,
     img: entry.img,
     system: entry.system,
+    effects: [],
+    folder: null,
+    sort: (index + 1) * 1000,
+    flags: {},
+  };
+}
+
+/** The Foundry envelope around a normalized Item or Actor entry. */
+function documentDoc(pack, entry, folderId) {
+  const id = stableId(`${pack.name}:${entry.type}:${entry.sourceKey ?? entry.name}`);
+  const embedded = (entry.items ?? []).map((item, index) =>
+    embeddedItem(pack, id, item, index),
+  );
+  return {
+    _id: id,
+    _key: `!${pack.collection}!${id}`,
+    name: entry.name,
+    type: entry.type,
+    img: entry.img,
+    system: entry.system,
+    ...(pack.docType === "Actor" ? { items: embedded } : {}),
     effects: [],
     folder: folderId,
     sort: entry.sort ?? 0,
@@ -127,11 +171,11 @@ async function main() {
         folderId = folders.get(entry.folder)._id;
       }
 
-      const doc = itemDoc(pack.name, { ...entry, sort: (sort += 1000) }, folderId);
+      const doc = documentDoc(pack, { ...entry, sort: (sort += 1000) }, folderId);
       if (seen.has(doc._id)) {
         throw new Error(
           `Duplicate id in "${pack.name}": "${entry.name}" collides with "${seen.get(doc._id)}". ` +
-            `Ids are derived from type + name — rename one to disambiguate.`,
+            `Ids are derived from type + source key — give one entry a distinct sourceKey.`,
         );
       }
       seen.set(doc._id, entry.name);

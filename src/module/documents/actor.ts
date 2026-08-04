@@ -84,13 +84,15 @@ export class DaggerheartActor extends (Actor as any) {
    *
    * Minions print no thresholds at all — any damage marks their one Hit
    * Point — which is why the absent case is checked before the numbers.
+   * A stat block printing "4/None" has a Major rung and no Severe one, so
+   * the top two rungs are skipped rather than measured against a zero.
    */
   severityFor(amount: number): Severity {
     if (amount <= 0) return "none";
     const t = this.system?.thresholds;
     if (!t || t.none) return "minor";
-    if (amount >= t.severe * 2) return "massive";
-    if (amount >= t.severe) return "severe";
+    if (!t.severeNone && amount >= t.severe * 2) return "massive";
+    if (!t.severeNone && amount >= t.severe) return "severe";
     if (amount >= t.major) return "major";
     return "minor";
   }

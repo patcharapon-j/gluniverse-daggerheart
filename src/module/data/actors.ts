@@ -471,11 +471,17 @@ export class AdversaryData extends (TypeDataModel() as any) {
 
       /* Minions print "None" for thresholds — they mark their one Hit Point
          from any damage at all. That is an absent threshold, not a zero one,
-         so it gets its own flag rather than a sentinel value. */
+         so it gets its own flag rather than a sentinel value.
+
+         `severeNone` is the same argument one rung down. The Tiny Oozes and
+         the Phantom print "4/None": two Hit Points, so a Severe rung could
+         never do anything a Major one has not already done. A zero severe
+         would make every hit Massive, which is why it is a flag too. */
       thresholds: schema({
         none: bool(false),
         major: int(0),
         severe: int(0),
+        severeNone: bool(false),
       }),
 
       resources: schema({
@@ -486,6 +492,8 @@ export class AdversaryData extends (TypeDataModel() as any) {
       attack: schema({
         name: str("Attack"),
         modifier: int(0),
+        /** A rare stat block rolls its attack modifier instead of adding a flat value. */
+        modifierDice: str(),
         range: choice(RANGES, "melee"),
         damage: damageField("d6", 1, 0),
       }),

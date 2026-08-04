@@ -450,7 +450,8 @@ const FOE_ARITH = (r: FoePlate): string =>
     ...r.mods,
   ]);
 
-/* The target's name is in the sentence, not the eyebrow, because the eyebrow
+/* When a target number is supplied, the target's name is in the sentence,
+   not the eyebrow, because the eyebrow
    already answers "whose roll is this" and the answer is the adversary. Who
    it landed on is the *outcome*, and the outcome slot is where outcomes go. */
 const FOE_V = (r: FoePlate): string =>
@@ -460,6 +461,8 @@ const FOE_V = (r: FoePlate): string =>
       : r.hit
         ? "success"
         : "failure"
+    : r.dc == null
+      ? foeCrit(r) ? "critical" : ""
     : foeCrit(r)
       ? `critical hit ${esc(r.target)}`
       : r.hit
@@ -467,11 +470,11 @@ const FOE_V = (r: FoePlate): string =>
         : `missed ${esc(r.target)}`;
 
 const FOE_GH = (r: FoePlate): string =>
-  r.rxn ? "REACTION" : foeCrit(r) ? "CRITICAL" : r.hit ? "HIT" : "MISS";
+  r.rxn ? "REACTION" : foeCrit(r) ? "CRITICAL" : r.dc == null ? "ATTACK" : r.hit ? "HIT" : "MISS";
 
 /* Evasion and Difficulty are different target numbers and the chip says
    which — a GM reading a log full of both should never have to work out what
-   the number on the right was. */
+   the number on the right was. An unresolved attack has no chip at all. */
 const FOE_META = (r: FoePlate): string =>
   `<div class="pl-meta"><span>${esc(r.kind ?? "adversary attack")}</span>${
     r.dc == null ? "" : `<s>vs ${r.rxn ? "" : "evasion "}${r.dc}</s>`
