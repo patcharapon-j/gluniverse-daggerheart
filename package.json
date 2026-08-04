@@ -25,6 +25,7 @@
     "rest-context:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-rest-context.mjs",
     "adversary-roll:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-adversary-roll.mjs",
     "actors:check": "node tools/check-actor-sheets.mjs",
+    "stat-blocks:extract": "node tools/extract-stat-blocks.mjs && npm run stat-blocks:check",
     "stat-blocks:check": "node tools/check-stat-blocks.mjs",
     "items:check": "node tools/check-item-sheet.mjs"
   },
