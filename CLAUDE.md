@@ -307,6 +307,105 @@ and names all 234 of them. It is committed because the cards are drawn with it
 — unlike `docs/`, which nothing reads — but if this history goes public, that
 folder is the first thing to move into `.gitignore`.
 
+## Root and Void — a campaign frame's two domains
+
+*The Twilight Marked* adds two decks nobody's class carries. `config.ts` has
+them at the end of `DOMAINS` rather than filed alphabetically, because the
+printed ten are a closed set somebody else owns and reading them as one block
+is worth more than one alphabetised list. `design/marked.css` is the frame the
+cards wear, `src/packs-src/marked-cards.mjs` is the forty-two, and
+`src/module/marked.ts` is the mechanic around them.
+
+**The frame is stamped by `cardOf`, so every surface gets it at once** — sheet
+peeks, chat, the browser, creation, the rules panel, the card picker. `cls` on
+`CardOptions` is read by `CARD` and by neither `TILE` nor `SPINE`, which is the
+boundary that decides what may go in it: a class naming a *frame* is a claim
+about the card as a printed object, and a tile and a spine are handles for one.
+That is also why the deck's name rides in **`code`** — the footer's right cell,
+`CARD`-only — and not in `foot`: `foot` is shared with the tile and the spine,
+so putting "TM·ROOT" there would rename the deck in every loadout row and gear
+tile, where nothing explains the word. It also retires a lie, since these cards
+would otherwise print a Darrington Press card number for a card nobody printed.
+
+**They have no upstream at all**, which is one step past Dread. Dread has none
+because the Card Creator publishes the corebook only; these have none because
+nobody published them. So `check-cards.mjs` skips them by construction, and
+what replaces the audit is `tools/check-marked.mjs` — `check-equipment.mjs`'s
+argument arriving at a deck: when there is nothing to compare a line to, assert
+that the line obeys the rules every printed line obeys.
+
+    node tools/check-marked.mjs --report
+
+**Two of those rules were measured off the 210 printed cards, not asserted.**
+*A repeatable damage card scales with Proficiency; a flat-dice card is gated* —
+every printed card dealing flat dice pays a Hope, Stress or a once-per-rest,
+and every one castable again for nothing writes `dN+M using your Proficiency`.
+And *area damage above level 4 takes a Reaction Roll and halves on a success* —
+below that the idiom is "Spellcast Roll against all targets", and from Chain
+Lightning up it is always a save-for-half. Six cards broke one or the other and
+were rewritten. The tool also refuses a card that names a **player's turn**:
+this game has a spotlight, and the printed corpus says "your turn" zero times
+in 210 cards while saying "the GM spends a Fear on their turn" freely.
+
+**The damage band is `check-resources.mjs`'s ratchet in a new place.** A card
+over the largest printed average *at or below its level*, for its own kind
+(save-for-half or not), must be listed in `AHEAD` with the reading that put it
+there — and a card listed there that is no longer over its band fails too,
+because a justification for a number that has since changed is one nobody has
+re-read. Three are listed, and all three are the same finding: print has **no
+save-for-half area card between levels 4 and 7**, so the band at level 7 is
+still quoting a level 3 grimoire. A measurement cannot know that; a reader can.
+
+`card-resources.mjs` annotates these by **derivation** rather than by hand, and
+that is a departure from every entry above it. Those are readings — somebody
+decided whether "until your next rest" was a duration or a use limit. These we
+wrote, to a rule the check enforces, so there is no reading to record and
+listing them would be a second copy of what `marked-cards.mjs` already says.
+The provenance survives: `once()` takes its `said` from the scope, so an entry
+is still evidenced by the words being on the card.
+
+**The mechanic is four rules and two of them are automated on purpose.**
+
+- **Using a card is a press, not a side effect of posting.** Clicking a card
+  posts it, and you show a card to argue about it at least as often as you play
+  it — so the posted card carries a claim button spending the same one-per-
+  message flag a duality plate's "Gain a Hope" does. That also answers the
+  three cases the frame calls out: a reaction, a second activation and a use
+  that failed are all *somebody pressing this*. It is `unshift`ed to the head
+  of the action row because it is the one action there that is not optional.
+- **The GM's Fear is written by the GM.** A player cannot write a world
+  setting, so the press leaves a flag and the **active GM's** client answers
+  it — `applyFear`'s arrangement one step along, gated for `syncVulnerable`'s
+  reason. **A full pool does not make the deck free**: Fear caps at 12 and the
+  cost lands as Stress instead, or the cards would cost nothing exactly when
+  the table is in the most trouble.
+- **The toll is observed, not instrumented.** A card reaches the loadout by at
+  least five routes — the recall button, either drag, the item sheet, a macro
+  — so `ledger.ts`'s argument applies unchanged: one `updateItem` hook catches
+  every route including the ones that do not exist yet. `firstOwner` picks the
+  client that pays, because unlike Fear this is not the GM's to write.
+- **The Spellcast override is stated and not substituted.** Root casts with
+  Instinct and Void with Knowledge, and `markedSpellcast` is exposed on
+  `game.daggerheart.marked` — but nothing swaps the trait under a roll the
+  player started from a trait plate. Doing so would be a campaign rule reaching
+  into the roll engine, and the first time it was wrong nobody could see why.
+
+`system.mark` and `system.surging` are the only campaign-frame state in the
+character schema, and they are there rather than on a "Marked" feature Item
+holding an open counter — which the counter machinery would have allowed —
+because `marked.ts` has to *read* them, and reading a number off "the resource
+named Mark on the Item named Marked" is string-matching a document a player can
+rename. Both default to zero and false, so a table not running the frame
+carries two fields that say nothing.
+
+**Two balance findings are worth keeping.** The long-rest roll is 2d12 against
+8 + Mark with no trait, which stops being a roll around Mark 8 — a Difficulty
+of 16 against an average of 13 is a tax with dice on it. It can be **bought
+down two points per Stress**, which puts the decision back and charges the
+currency the decks already burn. And *Surging* had no teeth at all: it is now
+double Fear per use until your next long rest, which is the frame stating
+itself twice as hard rather than a new rule to remember.
+
 ## The equipment tables
 
 `src/packs-src/equipment-tables.mjs` and `loot-tables.mjs` are chapter 2, typed

@@ -32,6 +32,7 @@ import { openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
+import { clearMark, isMarkedCharacter, markedSpellcast, payUpkeep, registerMarked, rollOffMark } from "./marked.ts";
 
 /**
  * The design is set in Google Sans, which is not bundled — it is not ours to
@@ -88,6 +89,12 @@ Hooks.once("init", () => {
   registerChat();
   registerMessageHeaders();
   registerLedger();
+
+  /* The campaign frame's two hooks — the Fear a marked card owes, and the toll
+     for holding both decks. Both are observers rather than instrumentation, so
+     registering them costs a table not running the frame two predicates that
+     return on their first line. */
+  registerMarked();
   registerDice();
   registerBrowser();
   requestFonts();
@@ -194,6 +201,24 @@ Hooks.once("ready", () => {
        every player character in the world, which is what the GM means. */
     endScene: (actor?: any) => refreshScope("scene", actor),
     endSession: (actor?: any) => refreshScope("session", actor),
+
+    /* *The Twilight Marked*. A seam rather than a surface, for the reason
+       `endScene` is one: the long rest already runs the roll and the loadout
+       already pays its own toll, and what is left is a GM wanting to mark
+       somebody mid-session, take a mark off, or re-roll one by hand.
+
+       `roll` takes the buy-down as an argument because the dialog does not ask
+       — two Stress per two Difficulty is a real decision and it has nowhere to
+       be made yet, so a table that wants it makes it in a macro until the
+       character sheet grows a control for it. Stated here rather than left
+       undiscoverable. */
+    marked: {
+      is: isMarkedCharacter,
+      spellcast: markedSpellcast,
+      roll: (actor: any, bought = 0) => rollOffMark(actor, bought),
+      upkeep: payUpkeep,
+      clear: clearMark,
+    },
   };
 
   console.log(`${SYSTEM_ID} | Ready (v${game.system?.version ?? "unknown"})`);

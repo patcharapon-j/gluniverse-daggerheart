@@ -117,6 +117,25 @@ export class CharacterData extends (TypeDataModel() as any) {
          `LOADOUT_LIMIT` stays as the default so nothing has to be migrated. */
       loadoutLimit: int(LOADOUT_LIMIT, { min: 0 }),
 
+      /* *The Twilight Marked*'s two fields, and the only campaign-frame state
+         in this schema. They are here rather than on a "Marked" feature Item
+         holding an open counter — which is what the machinery would otherwise
+         allow — for one reason: `src/module/marked.ts` has to *read* them, and
+         reading a number off "the resource named Mark on the Item named
+         Marked" is string-matching a document a player can rename.
+
+         `mark` is uncapped during play and cleared by the long-rest roll, so
+         it has a floor and no ceiling: a pool with no limit and a pool with a
+         limit of zero are opposite things, which is `resourceField`'s own
+         argument about `open`. `surging` is what a failed roll leaves behind,
+         and it clears at the next long rest.
+
+         Both default to zero and false, so a character who has never been
+         marked carries two fields that say nothing — which is what a frame
+         nobody at this table is running should look like. */
+      mark: int(0, { min: 0 }),
+      surging: bool(false),
+
       /* Which advancement slots are filled, keyed `"<tier>.<option>"` against
          the count taken — so `{"2.0": 2}` is "the trait option, twice, in
          tier 2". Keyed rather than a field per option because the option
@@ -448,6 +467,8 @@ export class CharacterData extends (TypeDataModel() as any) {
   declare biography: any;
   declare gold: any;
   declare loadoutLimit: number;
+  declare mark: number;
+  declare surging: boolean;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

@@ -34,6 +34,12 @@
    number comes from and the character supplies it, because the card in the
    compendium belongs to nobody. */
 
+/* The one module this reads. See THE MARKED DECKS at the foot: Root and Void
+   are annotated by derivation rather than by hand, so their card list has to
+   be here. Nothing else in this file imports anything, and nothing else
+   should — every other entry is a reading of a card somebody else printed. */
+import MARKED_CARDS from "./marked-cards.mjs";
+
 const fixed = (n) => ({ kind: "fixed", n, trait: "", floor: 0 });
 const trait = (t, floor = 0) => ({ kind: "trait", n: 1, trait: t, floor });
 const level = (floor = 0) => ({ kind: "level", n: 1, trait: "", floor });
@@ -758,10 +764,51 @@ export const DECLINED = {
     "the Warlock class card's; nothing is kept here.",
 };
 
+/* ══════════════════════════════════════════════════════════════════════
+   THE MARKED DECKS
+
+   Root and Void are **derived rather than listed**, and that is a departure
+   from everything above it for a reason that is about who wrote the cards.
+
+   Every entry above is a *reading*: somebody opened a printed card, decided
+   whether "until your next rest" was a duration or a use limit, and wrote down
+   the words they decided it from. A regex cannot do that, which is what the
+   whole `said` ratchet is for — of the thirty-eight cards matching
+   `until…rest`, thirty-six are durations and two are use limits.
+
+   These forty-two we wrote, to a rule `tools/check-marked.mjs` enforces: a
+   card is either gated or it scales with Proficiency, and where it is gated it
+   says so in the corpus's own words at the head of its text. So there is no
+   reading to record, and listing them would be a second copy of a fact
+   `marked-cards.mjs` already states — `equipment.mjs`'s argument arriving on a
+   deck. Add a card and it is annotated by construction; miss the gate and
+   `check-marked.mjs` fails the build before this ever runs.
+
+   The provenance survives the derivation, which is the part that matters:
+   `once()` takes its `said` from the refresh scope, so an entry here is still
+   evidenced by the words "once per rest" being on the card, and still fails
+   the drift check the day they leave it.
+   ══════════════════════════════════════════════════════════════════════ */
+
+const MARKED = Object.fromEntries(
+  MARKED_CARDS.flatMap((c) => {
+    const t = String(c.text).replace(/\*\*|__|\*|_/g, "");
+    /* Long first: "once per long rest" contains "once per rest"'s words in a
+       different order but not its phrase, and testing the shorter one first
+       would still be the wrong habit to write down. */
+    const scope = /once per long rest/i.test(t)
+      ? "longRest"
+      : /once per rest/i.test(t)
+        ? "rest"
+        : null;
+    return scope ? [[`domainCard:${c.name}`, [once(scope)]]] : [];
+  }),
+);
+
 /* ══════════════════════════════════════════════════════════════════════ */
 
 /** Every annotation, keyed `type:name`. */
-const RESOURCES = { ...PILES, ...BUDGETS };
+const RESOURCES = { ...PILES, ...BUDGETS, ...MARKED };
 export default RESOURCES;
 
 /**

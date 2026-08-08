@@ -17,6 +17,12 @@ export const ITEM_MODIFIERS = {
   "domainCard:Splendor-Touched": [domain("severeThreshold", 3)],
   "domainCard:Valor-Touched": [domain("armorScore", 1)],
 
+  /* The campaign frame's two. Only the Spellcast half is a modifier — the
+     other bullet is "once per rest you don't gain a Mark", which is a budget
+     and lives in `card-resources.mjs` where the other budgets live. */
+  "domainCard:Root-Touched": [domain("spellcastRoll", 1)],
+  "domainCard:Void-Touched": [domain("spellcastRoll", 1)],
+
   "domainCard:Fortified Armor": [fixed("thresholds", 2, { condition: "armor" })],
   "domainCard:Untouchable": [from("evasion", "trait", { trait: "agility", scale: 0.5 })],
   "domainCard:Bare Bones": [fixed("bareBones", 1, { condition: "noArmor" })],

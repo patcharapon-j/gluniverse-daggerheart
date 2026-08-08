@@ -49,6 +49,24 @@ const DECLINED = {
  * exact means a renamed/new rule fails this audit instead of being silently
  * waved through by a broad prose heuristic.
  */
+/*
+ * Root and Void's thirty-one are at the foot of the list below, and they are
+ * worth a word because they arrive as one block rather than one at a time.
+ *
+ * Two of the forty-two *are* automated and are therefore absent: Root-Touched
+ * and Void-Touched each carry a `spellcastRoll` modifier in
+ * `passive-modifiers.mjs`, which is what the printed `-Touched` cards do and
+ * the only thing on either deck that ownership alone can truthfully activate.
+ *
+ * The rest fail the candidate test for two reasons and neither is a passive.
+ * Most are the STAT/EFFECT pair firing on the words "make a Spellcast Roll",
+ * which every spell in the game says — the same over-match that put a hundred
+ * and thirty-three printed domain cards on this list. The handful that really
+ * do move a number move it either on a *target* (Crush, Rend, Thorn Spray) or
+ * only after you have spent something to turn them on (Barkskin, The Beast,
+ * Alpha, Apex), and an activated state is exactly what the note above DECLINED
+ * says ownership cannot stand in for.
+ */
 const REVIEWED_MANUAL = new Set([
   ...Object.keys(DECLINED),
   ...`class:Druid:Beastform
@@ -347,7 +365,38 @@ consumable:Emberite Shard
 consumable:Tears of the Undying Hero
 loot:Grapnel
 loot:Loaded Dice
-loot:Crucible Frames`.split("\n"),
+loot:Crucible Frames
+domainCard:Excise
+domainCard:Null Grip
+domainCard:Fold
+domainCard:Weight of the Void
+domainCard:Silence the Song
+domainCard:Vector
+domainCard:Unmake
+domainCard:Crush
+domainCard:The Hollow Note
+domainCard:Elsewhere
+domainCard:Solve
+domainCard:Erasure
+domainCard:Geometry of Ruin
+domainCard:Sever
+domainCard:Disjunction
+domainCard:Second Silence
+domainCard:Barkskin
+domainCard:Hungry Fire
+domainCard:The Pack Knows
+domainCard:Thorn Spray
+domainCard:Amber
+domainCard:The Beast
+domainCard:Rend
+domainCard:Regrow
+domainCard:Wildfire
+domainCard:Alpha
+domainCard:Deep Dreaming
+domainCard:Bloom
+domainCard:The Long Memory
+domainCard:The Undergrowth Wakes
+domainCard:The World Tree`.split("\n"),
 ]);
 
 const TARGETS = new Set([

@@ -109,6 +109,7 @@ import {
 } from "../documents/item.ts";
 import { dhDialog } from "./dialog.ts";
 import { withoutLedger } from "../ledger.ts";
+import { payUpkeep, rollOffMark } from "../marked.ts";
 
 const esc = (s: string) => foundry.utils.escapeHTML(s);
 
@@ -872,4 +873,23 @@ async function runRest(actor: any, kind: RestKind): Promise<void> {
   if (!done.length) return;
   const refreshed = await refreshUses(actor, kind);
   await postRest(actor, kind, done, refreshed);
+
+  /* *The Twilight Marked*'s two long-rest rules, and they run **after** the
+     card has been posted rather than as moves inside the dialog.
+
+     A downtime move is something you choose and could have chosen otherwise;
+     these are neither. The upkeep is a bill for what is already in your
+     loadout and the roll is the mark deciding whether it lets go — putting
+     either on the deck would offer a decision that does not exist, and the
+     Stress they cost is Stress this rest is explicitly not clearing, so it
+     must land after the rest has finished giving things back.
+
+     The roll posts a plate of its own, which is right: it is a duality roll
+     against a Difficulty, and the rest's card is a record of what you spent
+     your moves on. Both are silent when the character carries no Mark and no
+     marked cards, which is every character at a table not running the frame. */
+  if (kind === "long") {
+    await payUpkeep(actor);
+    await rollOffMark(actor);
+  }
 }

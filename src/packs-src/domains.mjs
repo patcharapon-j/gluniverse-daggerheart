@@ -21,7 +21,23 @@
 
 import CARDS from "./domain-cards.mjs";
 import DREAD from "./dread-cards.mjs";
+import MARKED from "./marked-cards.mjs";
 import { domainCardItem } from "./_helpers.mjs";
 import { withDice } from "./card-resources.mjs";
 
-export default withDice([...CARDS, ...DREAD].map(domainCardItem));
+/**
+ * Root and Void go last, after Dread, for the reason Dread goes after the nine.
+ *
+ * A compendium folder list reading "…Splendor, Valor, Dread, Root, Void" says
+ * three things an alphabetical merge would hide: which nine came together, that
+ * Dread arrived with a later book, and that the last two came from neither —
+ * they are *The Twilight Marked*'s and no class carries them. `config.ts` puts
+ * them in the same place in `DOMAINS` and for the same reason.
+ *
+ * `thread` is the campaign's own axis rather than the game's, so it is dropped
+ * here rather than carried into `system`: `domainCardItem` takes the fields a
+ * domain card *has*, and inventing an eleventh for two decks would put a field
+ * on all 231 documents that 189 of them can never answer.
+ * `tools/check-marked.mjs` is the only thing that reads it.
+ */
+export default withDice([...CARDS, ...DREAD, ...MARKED].map(domainCardItem));

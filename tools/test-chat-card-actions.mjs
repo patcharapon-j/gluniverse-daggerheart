@@ -141,6 +141,50 @@ if (!counterActions.some((action) => action.kind === "move-resource" && action.b
   throw new Error(`Counter spend/mark actions incomplete: ${JSON.stringify(counterActions)}`);
 }
 
+/* *The Twilight Marked*. Three things worth asserting and each has a way of
+   going quietly wrong.
+
+   That the toll appears at all on a Root or Void card — it is the one action
+   in the row that is not optional, so a card posted without it is a card that
+   costs nothing and looks complete.
+
+   That it is **first**. `unshift` rather than `push` is a one-character
+   difference nothing else would catch, and a compulsory cost drawn after two
+   optional ones reads as the least important thing on the row.
+
+   And that the two level 10 cards cost 3, read off the words the frame uses
+   rather than off a list of their names. */
+const markedCard = item("marked", "domainCard", { domain: "void" });
+const markedActions = await actionsFor({
+  id: markedCard.id,
+  type: "DOMAIN CARD",
+  name: "Null Grip",
+  text: "Once per rest, **mark a Stress** and make a **Spellcast Roll**.",
+}, [markedCard]);
+if (markedActions[0]?.kind !== "mark-use" || markedActions[0]?.mark !== 1) {
+  throw new Error(`Marked card's toll is missing or not first: ${JSON.stringify(markedActions)}`);
+}
+if (!hasCost(markedActions, "stress", 1)) {
+  throw new Error(`Marked card lost its own printed cost: ${JSON.stringify(markedActions)}`);
+}
+
+const answerCard = item("answer", "domainCard", { domain: "root" });
+const answerActions = await actionsFor({
+  id: answerCard.id,
+  type: "DOMAIN CARD",
+  name: "No More Waiting",
+  text: "Once per long rest, you can take an additional action. When you do, you gain **3 Mark** instead of 1.",
+}, [answerCard]);
+if (answerActions[0]?.mark !== 3) {
+  throw new Error(`The extra-action card should cost 3 Mark: ${JSON.stringify(answerActions)}`);
+}
+
+const plainCard = item("plain", "domainCard", { domain: "grace" });
+const plainActions = await actionsFor({ id: plainCard.id, type: "DOMAIN CARD", name: "Plain" }, [plainCard]);
+if (plainActions.some((a) => a.kind === "mark-use")) {
+  throw new Error(`A printed domain card must not carry the frame's toll: ${JSON.stringify(plainActions)}`);
+}
+
 console.log(
-  "chat card actions: all 11 Item subtypes plus costs, counters, quantities and damage covered",
+  "chat card actions: all 11 Item subtypes plus costs, counters, quantities, damage and the Mark toll covered",
 );
