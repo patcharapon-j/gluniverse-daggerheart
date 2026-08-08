@@ -15,13 +15,15 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SYSTEM_ID } from "../config.ts";
+import { SYSTEM_ID, isMarkedDomain } from "../config.ts";
 import { CARD } from "../ui/card.js";
 import { featurePrice, isFree, plain, type CardOptions, type Price } from "./cards.ts";
 
 export interface CardAction {
-  kind: "pay-cost" | "move-resource" | "use-item" | "roll-damage";
+  kind: "pay-cost" | "move-resource" | "use-item" | "roll-damage" | "mark-use";
   label: string;
+  /** `mark-use` only: how much Mark this press costs. 3 on the two level 10s. */
+  mark?: number;
   hope?: number;
   stress?: number;
   armor?: number;
@@ -125,6 +127,25 @@ function actionsFor(card: CardOptions, actor: any, options: PostCardOptions): Ca
 
   if (item && ["consumable", "loot"].includes(item.type) && Number(item.system?.quantity) > 0) {
     out.push({ kind: "use-item", label: `Use ${item.name}`, itemId: item.id });
+  }
+
+  /* *The Twilight Marked*'s toll, and it goes **first** in the row.
+     Every other action here is optional — a cost the card offers you, a
+     counter you may spend, a damage roll you may want. This one is not: using
+     a Root or Void card gains a Mark and feeds the GM's pool whether you like
+     it or not, so it is the first thing the row says rather than the last.
+
+     It is a *press* and not something the post applies, because posting a card
+     is how you show it as often as it is how you play it. Which also settles
+     the three cases the frame calls out — a reaction, a second activation and
+     a use that failed are all somebody pressing this.
+
+     The two level 10 cards buy an extra action and cost 3. Read off the text
+     rather than listed, because the cards say it in the words the frame uses
+     and a second list of two names is a second thing to keep true. */
+  if (item?.type === "domainCard" && isMarkedDomain(item.system?.domain)) {
+    const mark = /gain \*\*?3 Mark/i.test(String(card.text ?? "")) ? 3 : 1;
+    out.unshift({ kind: "mark-use", label: mark === 1 ? "Use · Mark" : `Use · ${mark} Mark`, mark });
   }
 
   const saysDamageRoll = /\bdamage roll\b/i.test(plain(card.text || ""));

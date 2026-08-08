@@ -12,6 +12,7 @@ import { SYSTEM_ID } from "../config.ts";
 import { takeDamage } from "../apps/damage.ts";
 import { damageRecipients, noRecipientKey } from "../apps/targets.ts";
 import { getFear, setFear } from "../settings.ts";
+import { payMark } from "../marked.ts";
 import { fit } from "../ui/card.js";
 import { loadSigils } from "../sheets/cards.ts";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
@@ -341,6 +342,27 @@ async function runCardAction(
     if (!item || Number(item.system?.quantity ?? 0) < 1) return warn("CannotPay");
     if (!(await claimOnce(message, key))) return;
     await item.update({ "system.quantity": Number(item.system.quantity) - 1 });
+    finish(el);
+    return;
+  } else if (action.kind === "mark-use") {
+    /* The one action whose cost is not fully known until it is pressed: how
+       much of it lands as Fear and how much as Stress depends on the GM's pool
+       at this moment, and a label written when the card was posted would be
+       stating a price that has since changed. So `payMark` decides and the
+       notification says which it was — the button cannot.
+
+       Claimed *after* the payment rather than before, unlike the rest of this
+       switch, because `payMark` is the thing that knows whether the Stress can
+       be afforded. A claim spent on a refusal is a card that can never be
+       used. */
+    const price = await payMark(actor, message, action.mark ?? 1);
+    if (!price) return warn("CannotPay");
+    if (!(await claimOnce(message, key))) return;
+    ui.notifications?.info(
+      `${actor.name} gains ${price.mark} Mark` +
+        (price.fear ? ` · the GM gains ${price.fear} Fear` : "") +
+        (price.stress ? ` · ${price.stress} Stress (the pool is full)` : ""),
+    );
     finish(el);
     return;
   } else if (action.kind === "roll-damage") {

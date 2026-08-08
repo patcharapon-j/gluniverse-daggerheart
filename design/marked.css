@@ -1,0 +1,300 @@
+/* ══════════════════════════════════════════════════════════════════
+   TWILIGHT MARKED — the campaign decks
+
+   Root and Void are two domains belonging to one campaign frame rather
+   than to the game. They have to be tellable from the ten the books
+   print, and the question this file exists to answer is *by what*.
+
+   Hue cannot do it on its own. The wheel is full: inside the family's
+   own band (L 40-72, C .07-.15) the best-separated point left sits
+   0.091 from its nearest neighbour in OKLab, and the corebook's own
+   tightest genuine pair, Codex and Midnight, is 0.093. The best hue
+   available is worse than the closest call the books already make. So
+   an eleventh and twelfth colour would read as an eleventh and twelfth
+   *domain*, which is the one thing these are not.
+
+   Everything below is therefore a change to something the card holds
+   CONSTANT across all ten. Each option is one idea, one class, and
+   they stack — so the study page can show them alone and in
+   combination, and the choice is somebody's rather than mine.
+
+   Nothing in here changes the layout. That was tried at length and it
+   is the wrong lever: a card whose frame, stock, field and panel have
+   all moved is not a Daggerheart card wearing a mark, it is a
+   different component that happens to be 5:7. These cards sit in a
+   loadout beside nine corebook ones and have to belong to the same
+   deck of cards while being obviously not of it.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the deck token ────────────────────────────────────────────────
+   Worn by every marked card whichever options are on. `--metal` is
+   the set's own trim, and it is one silver for BOTH decks rather than
+   a colour each: what has to read at a glance is "this is not a
+   corebook card", which is a fact about the frame, and the deck is
+   already said by the hue, the sigil, the corner blocks and the bar.
+   Two metals would spend the signal on a distinction nothing needs. */
+.card.mk{--metal:#c3ced9}
+
+/* Which deck. `mk-root` and `mk-void` and not the bare words: `.root` and
+   `.void` would both load into the same `.dh` root the whole ported stack
+   shares, where scoping does nothing, and this repo has renamed `.die.win`,
+   `.dfn .pl` and `.ldg .r.pl` for exactly that. The prefix costs three
+   characters and closes it before it happens. */
+.card.mk-root{--motif:url("/design/assets/marked/root.svg")}
+.card.mk-void{--motif:url("/design/assets/marked/void.svg")}
+
+/* ══ A · THE TRIM ══════════════════════════════════════════════════
+   Gold, on every card the game prints, in five places at once: the
+   hairline under both corner blocks, the recall bolt, the seam, the
+   type badge and the tail of the bottom bar. It is the most repeated
+   constant the component has and the only one carried on every card
+   regardless of domain, level, artwork or type.
+
+   It is also the one with a *meaning*. Gold on a card is Hope — the
+   currency, the gems on the rail, the term picked out in the prose —
+   and a deck that is not bought with Hope has a reason to say so.
+
+   Silver is the oldest print distinction there is, it survives being
+   200px wide, and it needs no second element. `--trim` in card.css
+   exists for exactly this and names the five sites rather than
+   moving them. */
+.card.mk-trim{--trim:var(--metal)}
+
+/* ══ B · THE DOUBLE CUT ════════════════════════════════════════════
+   The card's silhouette: one 15px chamfer, bottom-right, on every
+   card in the system. Cut the bottom-left as well and the outline is
+   symmetrical, which no corebook card is.
+
+   Shape is the one signal that survives everything. It reads at
+   thumbnail size, in a peek, face-down in a stack, over any artwork,
+   at any colour temperature, and to somebody who cannot tell
+   Splendor from Valor. It costs one declaration and no ink at all.
+
+   The bar runs the full width underneath, so both ends of it are cut
+   with the corner rather than stopping short — the bar is part of
+   the card's edge and has to be cut like one. */
+.card.mk-cut{clip-path:polygon(0 0,100% 0,
+  100% calc(100% - 15px),calc(100% - 15px) 100%,
+  15px 100%,0 calc(100% - 15px))}
+
+/* ══ C · INVERTED STOCK ════════════════════════════════════════════
+   The largest signal available, and the first draft of it was a
+   mistake worth keeping a note of: it said "print these two on black
+   board", which is what a corebook card is already printed on. This
+   system's default theme is dark — tokens.css sets --paper to #171a1f
+   — so a darker card came out two RGB points from its neighbours and
+   the option said nothing at all. The constant is not "dark". It is
+   "the same substrate as everything else on the sheet".
+
+   So a marked card takes the OTHER theme's paper, whichever one is
+   on: ivory on a dark sheet, board on a light one. It is the only
+   card in the hand that is the opposite colour to the hand, and it
+   stays that way when somebody flips the theme — which a hard-coded
+   value would not, since under the light theme it would become the
+   one card that matched.
+
+   The values are lifted verbatim from tokens.css's opposite block
+   rather than computed. Those two ramps differ by more than
+   lightness: --hope-tx is #e0b647 on dark and #8a6810 on light,
+   because gold at the same value is illegible on white. A filter or
+   an invert() over the card would flatten that deliberate ladder
+   onto whatever the arithmetic produced.
+
+   The layout, the furniture and the type scale are untouched. Only
+   the paper differs. */
+.card.mk-stock{
+  --paper:#f7f8f9; --tint:#ffffff;
+  --line:#d6dade; --line-2:#b9c0c7;
+  --ink:#14161a; --ink-2:#3a4049; --ink-3:#7b828d; --ink-4:#9aa1aa;
+  --hope-tx:#8a6810; --fear-tx:#6d3fa3}
+:root.light .card.mk-stock{
+  --paper:#171a1f; --tint:#0f1216;
+  --line:#2b313a; --line-2:#3a424e;
+  --ink:#e8ecf1; --ink-2:#a9b2be; --ink-3:#78818e; --ink-4:#59616c;
+  --hope-tx:#e0b647; --fear-tx:#a688ea}
+
+/* ══ D · THE EDGE ══════════════════════════════════════════════════
+   No corebook card has an edge of any kind. They are a picture, a
+   panel and a bar, and the paper simply stops. So this one is
+   *bounded*: a hairline of the set's metal round the outside, a dark
+   line under it so the metal has something to sit on, and the
+   domain's own light bleeding inward off the rim.
+
+   Three declarations on one element and each does a different job.
+   The border is the edge. The first inset shadow is the shade under
+   it — a metal line on paper with nothing behind it reads as drawn
+   rather than as an edge. The second is the glow, and it is what the
+   motif below is lit by, so the two are one effect seen at the rim
+   and in the field.
+
+   `inset:0`, so it follows the card's own box and the chamfer cuts
+   it: a clip-path clips pseudo-elements too. The 15px diagonal is
+   therefore bare of hairline and carries only the glow, which is
+   correct — the cut corner is the family mark and a line drawn
+   across it would be arguing with it.
+
+   z-index 10 puts it over the corner blocks at 8 and the bar at 9.
+   A frame that dodged the furniture would read as a mistake in the
+   furniture; one that runs straight through reads as something laid
+   over the whole print.
+
+   Uses the card's own free ::after. Neither of the card's two
+   pseudo-elements is claimed by card.css — the arrival sheen lives
+   on .plate::after — so an option may take one, and only one may. */
+.card.mk-edge::after{content:"";position:absolute;inset:0;z-index:10;
+  pointer-events:none;
+  border:1px solid color-mix(in srgb,var(--metal) 42%,transparent);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.42),
+             inset 0 0 26px -10px color-mix(in srgb,var(--dom) 80%,transparent),
+             inset 0 -18px 30px -22px color-mix(in srgb,var(--dom) 90%,transparent)}
+
+/* ══ E · THE MARQUE ════════════════════════════════════════════════
+   The footer's left cell prints the domain name on every card. On a
+   marked card it prints the frame's name instead, in the set's
+   metal — the card saying out loud which box it came out of.
+
+   The domain is not lost by it: the sigil is in the level block, the
+   corner blocks and the bar are the domain's colour, and the type
+   badge is above the prose. The footer cell was the fifth statement
+   of the same fact.
+
+   The word itself is content and comes from the builder's foot
+   option, not from here. This is only what it looks like.
+
+   **And the system does not stamp it**, which is a finding the study
+   page could not have produced. `foot` is not the card's — TILE and
+   SPINE read the same option and print it in a gear tile and a
+   loadout row, where there is no silver and no edge to explain the
+   word and the domain name is the one fact the row carries. So
+   renaming that cell renames the deck everywhere it is listed.
+
+   What the frame says instead is `code`, the footer's RIGHT cell,
+   which CARD alone draws: `TM·ROOT`. A set and a deck, in the cell
+   whose printed contents are a set and a card number, on a card that
+   has no printed number to lose. The rule below is left in and
+   unstamped — it is the metal treatment of whatever that cell says,
+   and a table that wants the marque has one class to add. */
+.card.mk-marque .ft .mi:first-child{color:var(--metal);font-weight:700;letter-spacing:.16em}
+
+/* ══ F · THE MOTIF ═════════════════════════════════════════════════
+   Crystal for Starbound, roots for Rootwoken, in the lower portion
+   of the card, behind the rules text, lit from below.
+
+   **It is in the panel and never on the plate**, which is the whole
+   reason this version of the idea survives and the earlier one did
+   not. A pattern over the artwork competes with a painting somebody
+   commissioned; a pattern in the panel is the card's own stationery,
+   and the panel is the one region of a Daggerheart card that is
+   flat colour by design. Real art can land tomorrow and nothing
+   here has to move.
+
+   **The drawings are generated**, by tools/make-marked-motifs.mjs,
+   and both are arithmetic a person is bad at: a honeycomb has to be
+   a real offset lattice or it reads as chicken wire, and a vine has
+   to taper, which is a polygon offset along a curve's own normals.
+   The first hand-plotted pair came out as a barcode and a field of
+   grass. They are masks — white only, opacity is the drawing — so
+   this file supplies the hue, the falloff and the light, and one
+   drawing serves both stocks. An <img> would have baked all three.
+
+   Four layers, bottom to top:
+
+   1. **The ground.** Three radials in the panel's own background: a
+      wide bloom off the bottom edge, a tighter core inside it, and
+      one off-centre so the light has a *direction*. This is what the
+      motif sits in front of, and without it the panel is a flat
+      rectangle with a pattern on it.
+   2. **The bloom** — the motif again, blurred, added as light. This
+      is the whole of why the figure reads as luminous rather than as
+      a stencil: line art glows when a soft copy of it sits under the
+      crisp one, and nothing else does it. The blur is in `cqw`, not
+      px, or a 198px loadout card gets a 300px card's blur radius.
+   3. **The motif**, crisp, over its own bloom.
+   4. **The falloff**, a second mask layer intersected with the
+      drawing. Not decoration: the footer's micro-type is `--ink-3`
+      at 2.5cqw and it was sitting exactly where the light was
+      brightest — 2.75:1, against 4.43 on plain paper. Lifting the
+      light rather than dimming it is what kept the motif.
+
+   Sized off the panel's *width* (`100% auto`) and anchored to its
+   bottom, so it holds proportion when `fit()` compacts a card and
+   never grows into the prose on a sparse one. Both files are 300:120,
+   which lands the drawing in the lower ~60% of a full panel.
+
+   `.cnt` and `.ft` take `position:relative` and a z-index so the text
+   paints over both layers — the crisp motif is on `::after`, which is
+   *after* them in source order, so source order alone would not have
+   done it. Named rather than `.body > *`: `.seam` is the panel's
+   third child and is `position:absolute`, and a blanket rule would
+   drop it out of its pinned corner and take the gold rule and the
+   type badge with it.
+
+   The cost is one blur filter per card. It is a static composite and
+   invisible on a sheet, but a compendium browser draws two hundred at
+   once — if that ever bites, layer 2 is the one to drop and the rest
+   stands. */
+.card.mk-motif{
+  --mkmask:var(--motif),
+    linear-gradient(180deg,#000 0 76%,rgba(0,0,0,.24) 91%,transparent 100%)}
+.card.mk-motif .body{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(56% 34% at 50% 100%,
+      color-mix(in srgb,var(--dom) 26%,transparent),transparent 74%),
+    radial-gradient(120% 66% at 50% 112%,
+      color-mix(in srgb,var(--dom) 19%,transparent),transparent 72%),
+    radial-gradient(64% 44% at 84% 104%,
+      color-mix(in srgb,var(--dom) 12%,transparent),transparent 74%)}
+.card.mk-motif .body::before,
+.card.mk-motif .body::after{content:"";position:absolute;inset:0;z-index:0;
+  pointer-events:none;
+  -webkit-mask-image:var(--mkmask);mask-image:var(--mkmask);
+  -webkit-mask-size:100% auto,100% 100%;mask-size:100% auto,100% 100%;
+  -webkit-mask-position:bottom,bottom;mask-position:bottom,bottom;
+  -webkit-mask-repeat:no-repeat,no-repeat;mask-repeat:no-repeat,no-repeat;
+  -webkit-mask-composite:source-in;mask-composite:intersect}
+/* the bloom */
+.card.mk-motif .body::before{
+  background:radial-gradient(84% 70% at 50% 96%,
+    color-mix(in srgb,var(--dom) 62%,#fff),
+    var(--dom) 42%,transparent 82%);
+  filter:blur(2.2cqw);opacity:.28;mix-blend-mode:screen}
+/* the motif */
+.card.mk-motif .body::after{
+  background:radial-gradient(90% 74% at 50% 94%,
+    color-mix(in srgb,var(--dom) 74%,#fff) 0,
+    var(--dom) 34%,
+    color-mix(in srgb,var(--dom) 58%,transparent) 72%,
+    transparent 100%);
+  opacity:.3}
+
+/* ── the halo ──────────────────────────────────────────────────────
+   z-index alone puts the prose *over* the motif; it does not make it
+   readable on one. A glyph is a thin figure and the motif is a field
+   of thin figures at a similar weight, so where a vine runs behind a
+   descender the two are the same drawing and the eye has to pick the
+   letter out of it. Lowering the pattern helps and cannot finish the
+   job, because the worst case is not the average one: it is the one
+   stroke that happens to land under one word.
+
+   So the type carries its own ground. `--paper` and not black or a
+   fixed value — that is the substrate the card is printed on, so the
+   halo is the paper pushing the pattern away from the letters rather
+   than a shadow drawn around them, and it flips with `mk-stock` and
+   with the theme for nothing. Two stops: a tight one that does the
+   separating and a wider, softer one that keeps the tight one from
+   reading as an outline.
+
+   In `cqw`, for the bloom's reason one line up — a 198px loadout card
+   must not wear a 300px card's halo. Set on `.cnt` and `.ft` rather
+   than on each of the eight things inside them, since text-shadow
+   inherits and every one of them wants it. */
+.card.mk-motif .cnt,.card.mk-motif .ft{position:relative;z-index:1;
+  text-shadow:0 0 .8cqw var(--paper),0 0 1.9cqw var(--paper)}
+/* On the inverted stock the paint is light-on-light and nearly gone,
+   so the motif goes to multiply and darkens instead — and the bloom
+   goes entirely, because a glow on white paper is not a glow, it is a
+   smudge. What replaces it there is the ground, which multiply reads
+   perfectly well. */
+.card.mk-motif.mk-stock .body::before{display:none}
+.card.mk-motif.mk-stock .body::after{mix-blend-mode:multiply;opacity:.2}

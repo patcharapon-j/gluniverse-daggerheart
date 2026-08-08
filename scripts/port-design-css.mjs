@@ -68,6 +68,7 @@ const SHEETS = [
   "dlg.css",
   "make.css",
   "browse.css",
+  "marked.css",
 ];
 
 /**

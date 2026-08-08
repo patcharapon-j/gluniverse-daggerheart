@@ -24,7 +24,9 @@ import {
   CARD_TYPE_LABELS,
   DOMAINS,
   FEATURE_KIND_LABELS,
+  MARKED_SET,
   RESOURCE_REFRESH_LABELS,
+  isMarkedDomain,
   rangeLabel,
   traitLabel,
 } from "../config.ts";
@@ -218,9 +220,60 @@ export interface CardOptions {
    * a card said when it was posted is what it should go on saying.
    */
   chits?: string;
+  /**
+   * Extra classes for the card's own root, which `CARD` joins onto `.card`.
+   *
+   * **Read by `CARD` and by neither `TILE` nor `SPINE`**, which is the
+   * boundary that decides what may go in here: a class naming a *frame* is
+   * a claim about the card as a printed object, and a tile and a spine are
+   * handles for one rather than smaller copies of it. Today one thing sets
+   * it — see `marked` below.
+   */
+  cls?: string;
 }
 
 const dom = (slug?: string) => (slug && byslug[slug]) || KINDS.gear;
+
+/* ── the campaign frame ───────────────────────────────────────────────
+   Root and Void are one campaign frame's domains and have to be tellable
+   from the ten the books print. `design/marked.css` is the whole of that
+   argument and this is the whole of the wiring: four classes and a set
+   mark, off the domain slug.
+
+   The four are `design/marked.html`'s section F — the trim in silver
+   rather than Hope's gold, the second chamfer, the bounded edge, and the
+   motif behind the panel's prose. `mk-stock`, the fifth, is deliberately
+   not stamped: it is the largest of the signals and the one most likely
+   to be somebody's taste rather than the system's, and it is one class
+   away for a table that wants it.
+
+   **The marque is not among them, and the reason is a finding rather than
+   a preference.** `mk-marque` prints the frame's name in the footer's left
+   cell in place of the domain's, and marked.css says so — but the cell's
+   *content* is `foot`, and `foot` is read by `TILE` and `SPINE` as well.
+   So renaming it would rename the deck in every loadout row and gear tile
+   too, where there is no silver and no edge to explain the word and the
+   domain name is the one fact the row is carrying. The frame therefore
+   says which box it came out of in `code`, the footer's right cell, which
+   `CARD` alone draws — and the deck goes on being named where it always
+   was. */
+const MARKED_CLASSES = ["mk-trim", "mk-cut", "mk-edge", "mk-motif"] as const;
+
+/** `mk mk-root mk-trim …`, or nothing at all for the printed ten. */
+const marked = (domain?: string): string | undefined =>
+  isMarkedDomain(domain) ? ["mk", `mk-${domain}`, ...MARKED_CLASSES].join(" ") : undefined;
+
+/**
+ * The set mark for the footer's right cell — `TM·ROOT`.
+ *
+ * `code` is the number printed on a physical card, and these have no
+ * printing: left unset, `CARD` falls through to its own `DH·ROO·004`
+ * placeholder, which is a Darrington Press card number for a card
+ * Darrington Press never printed. A set and a deck is what is actually
+ * true about one of these, so that is what it says.
+ */
+const markedCode = (domain?: string): string | undefined =>
+  isMarkedDomain(domain) ? `${MARKED_SET}·${String(domain).toUpperCase()}` : undefined;
 
 /**
  * Two kinds of image are *not* artwork.
@@ -407,6 +460,10 @@ export function cardOf(
     case "domainCard":
       return {
         ...base,
+        // The frame, if this is one of the campaign's two. `code` overrides
+        // `base`'s, which is a printing this card does not have.
+        cls: marked(s.domain),
+        code: base.code ?? markedCode(s.domain),
         d: dom(s.domain),
         sig: sig[s.domain] ?? "", sigKey: s.domain,
         lvl: s.level ?? 1,

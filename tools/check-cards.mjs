@@ -144,6 +144,12 @@ const NO_UPSTREAM = new Set([
   ...(await noUpstream("hf-heritage.mjs")),
   ...(await noUpstream("transformations.mjs")),
   ...(await noUpstream("dread-cards.mjs")),
+  /* Root and Void go further than Dread does: Dread has no upstream because
+     the Card Creator publishes the corebook only, and these have none because
+     nobody published them at all. What replaces the audit is
+     `tools/check-marked.mjs`, which asserts the regularities the printed
+     corpus keeps rather than comparing text to a snapshot that has no row. */
+  ...(await noUpstream("marked-cards.mjs")),
   /* A subclass is three documents wearing one name, and it is the *subclass*
      name the official index is keyed by — so this collects that rather than
      the document's "Hedge: Foundation". Classes and the Martial Stances come

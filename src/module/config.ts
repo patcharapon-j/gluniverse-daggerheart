@@ -65,6 +65,22 @@ export const DOMAINS = [
   "sage",
   "splendor",
   "valor",
+
+  /* ── the campaign frame's two ────────────────────────────────────────
+     Root and Void are *The Twilight Marked*'s, not the game's, and they
+     are appended rather than filed alphabetically — which would have put
+     Root between Midnight and Sage — because the printed set is a closed
+     set somebody else owns and reading it as one block is worth more than
+     one alphabetised list. Anything that wants them sorted can sort.
+
+     Colours and blurbs are the same two facts `design/domains.js` holds in
+     its `MARKED` export, and that is deliberate duplication of the kind
+     the header of `sheets/cards.ts` describes: the builders read hues off
+     the vendored module and never off this table, so these two entries
+     exist for the sheet's dropdowns, the browser's axis and the sigil
+     preload rather than for the card. Change one, change both. */
+  "root",
+  "void",
 ] as const;
 export type Domain = (typeof DOMAINS)[number];
 
@@ -177,7 +193,44 @@ export const DOMAIN_CONFIG: Record<string, DomainDef> = {
     icon: `${SYSTEM_PATH}/assets/domains/valor.svg`,
     blurb: "Protection. Formidable strength raised in defense of others.",
   },
+
+  /* Root and Void. See the note in DOMAINS above. Both hues are the ones
+     `MARKED` in `design/domains.js` states, and neither is a hue the
+     printed wheel had room for — which is the whole reason the deck is
+     told apart by its frame instead. Root is the one green that is not
+     Sage's, dark to bark rather than to a deeper green; Void is not a hue
+     at all so much as a value, which is what makes it the odd card out in
+     a hand of ten saturated ones. */
+  root: {
+    label: "Root",
+    light: "#6eb26d",
+    dark: "#4b3216",
+    icon: `${SYSTEM_PATH}/assets/domains/root.svg`,
+    blurb: "Hunger and the dreaming root. What grows through you does not ask.",
+  },
+  void: {
+    label: "Void",
+    light: "#bfccd8",
+    dark: "#405567",
+    icon: `${SYSTEM_PATH}/assets/domains/void.svg`,
+    blurb: "Unmaking and calculation. The cold arithmetic of a thing removed.",
+  },
 };
+
+/**
+ * The domains that belong to the campaign frame rather than to the game.
+ *
+ * One place, because three surfaces ask the same question and none of them
+ * should ask it by listing two strings: the card builder, which stamps the
+ * frame on them, and anything that ever wants to draw the line between the
+ * printed deck and this one.
+ */
+export const MARKED_DOMAINS = ["root", "void"] as const;
+export const isMarkedDomain = (d?: string): boolean =>
+  (MARKED_DOMAINS as readonly string[]).includes(String(d));
+
+/** What the campaign frame calls itself, in the one cell that says so. */
+export const MARKED_SET = "TM";
 
 /**
  * What a card with no domain is drawn in. In this system a saturated hue

@@ -55,7 +55,44 @@ export const DOMAINS = [
     classes:['Guardian','Seraph'],  blurb:'Protection. Formidable strength raised in defense of others.' },
 ];
 
-export const byslug = Object.fromEntries(DOMAINS.map(d => [d.slug, d]));
+// ── the campaign decks ────────────────────────────────────────────────
+// Root and Void belong to one campaign frame rather than to the game, so
+// they are a second list rather than two more rows above: DOMAINS is "the
+// ten the books print", and a study page or a compendium that wants the
+// printed set must go on getting exactly it.
+//
+// Their hues are the factions' own — Rootwoken is earth and growth, Starbound
+// is silver and platinum — and they are *not* chosen for separation, because
+// there is none left to choose. Inside the family's band (L 40–72, C .07–.15)
+// the best-separated cold point sits 0.091 from its nearest neighbour in
+// OKLab and the corebook's own tightest genuine pair, Codex/Midnight, is
+// 0.093: the best available hue is worse than the closest call the books
+// already make. So the *frame* carries the distinction (see marked.css) and
+// these two are free to be right. Root lands 0.109 from Splendor and 0.149
+// from Sage, Void 0.198 from Valor, and 0.188 from each other.
+//
+// Both are picked to read on the dark stock a marked card is printed on
+// rather than on paper: 7.2:1 and 11.3:1 against it.
+//
+// **Root carries two hues and it is the only card in this system that does.**
+// Every other domain's `dark` is its `light` taken down; Root's is bark under
+// moss, because the faction is earth *and* growth and one swatch cannot say
+// both. The card spends them exactly where that reads — the level block and
+// the type badge in bark, the sigil, the bottom bar and the feature markers in
+// green. There is a third brown lighting the foot of the fallback plate and
+// it is deliberately *not* here — it is one gradient stop in marked.css, a
+// fact about the look rather than about the deck, and a `DomainDef` field
+// invented to carry it would be a second home for one colour.
+export const MARKED = [
+  { slug:'root', name:'Root', light:'#6eb26d', dark:'#4b3216', mk:'root',
+    classes:['Batch 47'],
+    blurb:'Hunger and the dreaming root. What grows through you does not ask.' },
+  { slug:'void', name:'Void', light:'#bfccd8', dark:'#405567', mk:'void',
+    classes:['Batch 47'],
+    blurb:'Unmaking and calculation. The cold arithmetic of a thing removed.' },
+];
+
+export const byslug = Object.fromEntries([...DOMAINS, ...MARKED].map(d => [d.slug, d]));
 
 // The official marks are not centred inside their 250x250 viewBoxes — the ink
 // sits up to 3px off centre, and the drawn size varies ~5% between domains, so
