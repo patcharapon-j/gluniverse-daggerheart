@@ -19,6 +19,14 @@
      original print study. It applies identically in builder, sheet peeks and
      chat; `fit()` may compact further, but no host invents its own font size. */
   --plate:50%; --u:.94cqw;
+  /* The trim: the hairline under both corner blocks, the seam, the type
+     badge, the recall bolt and the tail of the bottom bar. It is gold on
+     every printed card and always was — this names it rather than moving
+     it, because gold on a card is *Hope*, and a deck that is not bought
+     with Hope has to be able to say so. See marked.css. The `t-hope`
+     game-term ink stays --hope-tx and is not part of this: that is the
+     word Hope in a sentence, which is gold wherever it is printed. */
+  --trim:var(--hope);
   box-shadow:0 18px 34px -12px rgba(0,0,0,.72),0 3px 10px rgba(0,0,0,.42);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 15px),calc(100% - 15px) 100%,0 100%)}
 /* A full printed card keeps the current half-card artwork at every text
@@ -101,7 +109,7 @@ body.noart .card .fb,.noart .card .fb{display:grid}
   clip-path:polygon(0 0,100% 0,100% calc(100% - 2.7cqw),calc(100% - 2.7cqw) 100%,0 100%)}
 .card .rc{right:0;height:8.4cqw;display:flex;align-items:center;gap:1.4cqw;padding:0 2.9cqw 0 3.2cqw;
   clip-path:polygon(0 0,100% 0,100% 100%,2.7cqw 100%,0 calc(100% - 2.7cqw))}
-.card .lvl::after,.card .rc::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.5px;background:var(--hope)}
+.card .lvl::after,.card .rc::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.5px;background:var(--trim)}
 
 .card .lvl .v{position:relative;display:grid;place-items:center;padding:1.2cqw 1.7cqw 1cqw}
 .card .lvl .k{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
@@ -122,7 +130,7 @@ body.noart .card .fb,.noart .card .fb{display:grid}
 .card .lvl.duo{background:linear-gradient(180deg,var(--dom) 0 38%,var(--dom-2) 62% 100%)}
 .card .lvl.duo .sg{background:none}
 
-.card .rc .blt{width:2.5cqw;color:var(--hope);display:block}
+.card .rc .blt{width:2.5cqw;color:var(--trim);display:block}
 .card .rc .blt svg{width:100%;height:auto;display:block}
 .card .rc .n{font:700 5.7cqw/1 var(--f-display);color:#fff;letter-spacing:-.04em}
 
@@ -145,9 +153,9 @@ body.noart .card .fb,.noart .card .fb{display:grid}
    — no length in CSS could have known where that is. */
 .card .seam{position:absolute;left:0;right:0;bottom:100%;height:6cqw;
   display:flex;align-items:stretch;z-index:3}
-.card .seam > i{flex:1 1 auto;align-self:flex-end;height:var(--rule);background:var(--hope)}
+.card .seam > i{flex:1 1 auto;align-self:flex-end;height:var(--rule);background:var(--trim)}
 .card .seam > i:last-child{flex:0 0 0}
-.card .tb{position:relative;flex:none;background:var(--hope);color:#fff;
+.card .tb{position:relative;flex:none;background:var(--trim);color:#fff;
   display:flex;align-items:center;padding:0 5.5% 0 4.6cqw;
   clip-path:polygon(3.9cqw 0,100% 0,100% 100%,0 100%)}
 /* The dark fill. Inset off the top *and* stepped right along the diagonal — a
@@ -278,7 +286,7 @@ body.noart .card .fb,.noart .card .fb{display:grid}
 .card .tk i{width:1.2px;height:1.4cqw;background:var(--line)}
 .card .tk i:nth-child(3n){height:2.4cqw;background:var(--ink-3)}
 .card .bar4{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--dom);z-index:9}
-.card .bar4::after{content:"";position:absolute;right:0;top:0;bottom:0;width:26%;background:var(--hope)}
+.card .bar4::after{content:"";position:absolute;right:0;top:0;bottom:0;width:26%;background:var(--trim)}
 /* two domains: solid at each end, blending only across the middle quarter */
 .card.duo .bar4{background:linear-gradient(90deg,var(--dom) 0 37%,var(--dom-2) 63% 100%)}
 

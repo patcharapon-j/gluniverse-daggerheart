@@ -34,6 +34,11 @@
 <link rel="stylesheet" href="/styles/dlg.css">
 <link rel="stylesheet" href="/styles/make.css">
 <link rel="stylesheet" href="/styles/browse.css">
+<!-- The campaign frame's two decks. It loads after card.css because it only
+     ever overrides — and it is here at all because this page's job is to be
+     the stack a real Foundry window has, which is system.json's `styles`
+     array and not a subset of it. -->
+<link rel="stylesheet" href="/styles/marked.css">
 <!-- Last, exactly as system.json loads it: the Svelte components' own styles.
      Leaving it out is how the first pass missed that the sheet's stack is not
      the study page's stack. -->

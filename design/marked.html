@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Marked</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/marked.css">
+<style>
+.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw,215px),1fr));gap:22px;align-items:start}
+.hand{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.hand > div{width:198px;flex:none}
+.opt{border-left:2px solid #2a313a;padding-left:16px;margin:0 0 14px}
+.opt .t{font:700 11px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:#c3ced9;
+  display:block;margin-bottom:7px}
+.opt p{font:400 13px/1.6 var(--f-ui);color:#aab3bd;max-width:66ch;margin:0 0 8px}
+.opt .for,.opt .agn{font:400 12px/1.55 var(--f-ui);max-width:66ch;margin:0 0 4px;padding-left:17px;position:relative}
+.opt .for{color:#8fc48c} .opt .agn{color:#c98d8d}
+.opt .for::before{content:"+";position:absolute;left:0;font-weight:700}
+.opt .agn::before{content:"\2212";position:absolute;left:0;font-weight:700}
+.rank{width:100%;border-collapse:collapse;font:400 12.5px/1.5 var(--f-ui);color:#b6bec8;max-width:860px}
+.rank th{font:600 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:#7d8794;
+  text-align:left;padding:0 14px 9px 0;border-bottom:1px solid #2a313a}
+.rank td{padding:8px 14px 8px 0;border-bottom:1px solid #1e242b;vertical-align:top}
+.rank b{color:#e6eaef}
+</style>
+</head>
+<body class="ramp">
+
+<div class="bar"><div class="wrap">
+  <a href="/design/index.html">card</a>
+  <a href="/design/types.html">types</a>
+  <a href="/design/loadout.html">loadout</a>
+  <b>marked</b>
+  <a href="/design/bone.html">bone</a>
+  <a href="/design/vault.html">vault</a>
+  <a href="/design/chat.html">chat</a>
+  <a href="/design/sheet.html">sheet</a>
+  <label class="tg"><input type="checkbox" id="lightT"> light theme</label>
+  <label class="tg"><input type="checkbox" id="noart"> remove art</label>
+  <label class="tg"><input type="checkbox" id="rampT" checked> domain ramp</label>
+  <label class="tg">size <input type="range" id="size" min="150" max="330" value="215"></label>
+  <b id="stat" style="margin-left:auto"></b>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// TM · 0 · THE PROBLEM</span>An eleventh colour reads as an eleventh domain</h2>
+<p class="note">Root and Void belong to one campaign frame rather than to the game, and they have to be
+tellable from the ten the books print. Hue alone cannot do it. Sweeping OKLCH inside the family's band
+(L 40–72, C .07–.15) for the point furthest from all ten, the best-separated cold point sits
+<b>0.091</b> from its nearest neighbour in OKLab — and the corebook's own tightest genuine pair,
+Codex and Midnight, is <b>0.093</b>. The best hue available is worse than the closest call the books
+already make.</p>
+<p class="note">Which frees the hues to be the factions' own — Rootwoken is earth and growth,
+Starbound is silver and platinum — and moves the whole question onto the <b>frame</b>. Below is one
+option per card constant, each on its own, so they can be judged separately and then stacked. The
+card layout does not move in any of them. Text is placeholder; this study is about the object.</p>
+<div class="row" id="base"></div>
+
+<h2><span>// TM · A · THE TRIM</span>Gold is Hope. These decks are not bought with Hope.</h2>
+<div class="opt">
+  <span class="t">One line · <code>--trim</code></span>
+  <p>Gold appears on every card the game prints, in five places at once: the hairline under both
+  corner blocks, the recall bolt, the seam, the type badge and the tail of the bottom bar. It is the
+  most repeated constant the component has, and the only one carried by every card regardless of
+  domain, level, artwork or type. It is also the one with a meaning — gold on a card is <i>Hope</i>.</p>
+  <p class="for">Five separate pieces of furniture change at once, so it reads instantly and at any size.</p>
+  <p class="for">Silver against gold is the oldest print distinction there is, and it is one declaration.</p>
+  <p class="agn">Both decks share one metal, so the trim says "campaign", not "which".</p>
+</div>
+<div class="row" id="oA"></div>
+
+<h2><span>// TM · B · THE DOUBLE CUT</span>Change the silhouette</h2>
+<div class="opt">
+  <span class="t">One line · <code>clip-path</code></span>
+  <p>Every card in the system carries exactly one 15px chamfer, bottom-right. Cut the bottom-left as
+  well and the outline is symmetrical, which no corebook card is.</p>
+  <p class="for">Shape survives everything — thumbnail size, a peek, artwork, colourblindness, a
+  face-down card.</p>
+  <p class="for">Costs no ink at all, so it composes with every other option and with any art.</p>
+  <p class="agn">Quiet on its own. At 200px it is a decision you have to already know about to notice.</p>
+</div>
+<div class="row" id="oB"></div>
+
+<h2><span>// TM · C · INVERTED STOCK</span>The one card in the hand that is the other colour</h2>
+<div class="opt">
+  <span class="t">Nine tokens · <code>--paper --tint --ink* --line*</code></span>
+  <p>The first draft of this said "print them on black board" — which is what a corebook card is
+  already printed on, since the default theme is dark. It came out two RGB points from its
+  neighbours. The constant is not <i>dark</i>, it is <b>the same substrate as everything else</b>,
+  so a marked card takes the <b>other</b> theme's paper: ivory on a dark sheet, board on a light one.
+  Flip the theme toggle in the bar and they swap with it.</p>
+  <p class="for">Unmistakable at any size, in any hand, next to any card, in either theme.</p>
+  <p class="agn">Loud. Two of these among nine become the thing the loadout is about.</p>
+  <p class="agn">The silver trim nearly disappears on ivory, so A and C fight each other — see G.</p>
+</div>
+<div class="row" id="oC"></div>
+
+<h2><span>// TM · D · THE EDGE</span>Bounded, where the paper otherwise just stops</h2>
+<div class="opt">
+  <span class="t">One rule · <code>.card::after</code></span>
+  <p>No corebook card has an edge of any kind — they are a picture, a panel and a bar, and the paper
+  simply stops. This one is <i>bounded</i>: a hairline of the set's metal round the outside, a dark
+  line under it so the metal has something to sit on, and the domain's own light bleeding inward off
+  the rim. Three declarations, three jobs — the edge, the shade under it, and the glow.</p>
+  <p class="for">The glow is the same light the motif below is lit by, so the rim and the field read
+  as one effect rather than two.</p>
+  <p class="for"><code>inset:0</code>, so the chamfer cuts it — a clip-path clips pseudo-elements too.
+  The 15px diagonal carries only the glow, which is right: the cut corner is the family mark and a
+  line across it would argue with it.</p>
+  <p class="agn">Spends the card's one free pseudo-element, which is also what a foil overlay would want.</p>
+</div>
+<div class="row" id="oD"></div>
+
+<h2><span>// TM · E · THE MARQUE</span>The footer names the box it came out of</h2>
+<div class="opt">
+  <span class="t">One rule + content · <code>foot</code></span>
+  <p>The footer's left cell prints the domain name on every card — the fifth statement of a fact the
+  sigil, the corner blocks, the bar and the type badge have already made. On a marked card it prints
+  the frame's name instead.</p>
+  <p class="for">Explicit. Nobody has to infer anything, and it survives being described out loud.</p>
+  <p class="for">Costs nothing: the cell already existed and was saying something redundant.</p>
+  <p class="agn">2.5cqw mono. Legible on a posted card, gone in a loadout row.</p>
+</div>
+<div class="row" id="oE"></div>
+
+<h2><span>// TM · M · THE MOTIF</span>Crystal and roots, in the panel, lit from below</h2>
+<div class="opt">
+  <span class="t">Two rules + two SVGs · <code>.body</code> + <code>.body::before</code></span>
+  <p>It is <b>in the panel and never on the plate</b>, which is the whole reason this version of the
+  idea survives and the last one did not. A pattern over the artwork competes with a painting somebody
+  commissioned; a pattern in the panel is the card's own stationery, and the panel is the one region
+  of a Daggerheart card that is flat colour by design. Real art can land tomorrow and nothing here moves.</p>
+  <p><b>The drawings are generated</b>, by <code>tools/make-marked-motifs.mjs</code>, and both are
+  arithmetic a person is bad at: a honeycomb has to be a real offset lattice (dx = √3·r, dy = 1.5·r,
+  alternate rows shifted half a cell) or it reads as chicken wire, and a vine has to <i>taper</i>,
+  which is a polygon offset along a curve's own normals. The first hand-plotted pair came out as a
+  barcode and a field of grass. The seed is fixed, so the committed SVGs are reproducible — run it
+  twice and git sees nothing.</p>
+  <p>Four layers. <b>The ground</b> — three radials in the panel's background: a wide bloom off the
+  bottom edge, a tighter core inside it, and one off-centre so the light has a direction. <b>The
+  bloom</b> — the motif again, blurred, added as light; this is the whole of why the figure reads as
+  luminous rather than as a stencil, because line art glows when a soft copy sits under the crisp one.
+  <b>The motif</b>, crisp, over its own bloom. <b>The falloff</b>, a second mask layer intersected
+  with the drawing.</p>
+  <p class="for">Sized off the panel's width and anchored to its bottom, so it holds proportion when
+  <code>fit()</code> compacts a card and never grows into the prose on a sparse one.</p>
+  <p class="for">Says <i>which deck</i> — the one thing the trim deliberately does not.</p>
+  <p class="for">The blur is in <code>cqw</code>, not px, or a 198px loadout card gets a 300px card's
+  blur radius.</p>
+  <p class="agn">The only option that costs assets and a tool rather than a declaration — and one blur
+  filter per card, which is nothing on a sheet and two hundred in the compendium browser.</p>
+</div>
+<div class="row" id="oM"></div>
+<p class="note" style="margin-top:22px">The motif starts <b>51.5%</b> down the panel and a one-paragraph
+card's prose stops at <b>38.6%</b>, so on most cards they never meet. A grimoire is the case that
+tests it — three feature runs fill the panel to the footer, and the question is whether rules text
+stays readable over the drawing. The falloff over the bottom fifth is there for the footer's own
+micro-type, which is <code>--ink-3</code> at 2.5cqw and was sitting exactly where the light was
+brightest: 2.75:1, against 4.43 on plain paper.</p>
+<div class="row" id="oM2"></div>
+
+<h2><span>// TM · F · THE PICK</span>All five</h2>
+<div class="opt">
+  <span class="t">Recommended</span>
+  <p>Signals at four distances, none of which fights artwork. The <b>edge</b> and the <b>trim</b>
+  carry it across the room, the <b>cut</b> carries it into a thumbnail and a face-down card, the
+  <b>motif</b> says which deck once the card is open, and the <b>marque</b> names it outright when you
+  are close enough to read prose. The layout, the stock and the type stay the game's, so the card
+  still belongs to the deck it is sitting in.</p>
+  <p class="for">Nothing here needs artwork to cooperate, so it all holds when real art lands.</p>
+</div>
+<div class="row" id="oF"></div>
+
+<h2><span>// TM · G · WITH INVERTED STOCK</span>The same pick, if loud is what you want</h2>
+<p class="note">Same three, plus the paper. Worth seeing beside F before choosing — this is the version
+people notice from across the table, and the version that makes two cards in a nine-card loadout the
+loudest things on the sheet. Note what happens to the trim: silver on ivory is nearly gone, so
+stacking A on C spends A for nothing. If C wins, the trim wants to go dark rather than metal.</p>
+<div class="row" id="oG"></div>
+
+<h2><span>// TM · H · IN THE HAND</span>Loadout size, mixed with corebook cards</h2>
+<p class="note">198px, which is about what a loadout row gives a card. This is the test that matters:
+the two marked cards have to be findable in a fan of six without being read.</p>
+<div class="hand" id="hand"></div>
+
+<h2><span>// TM · I · SUMMARY</span></h2>
+<table class="rank"><thead><tr><th>Option</th><th>Cost</th><th>Reads at 198px</th><th>Survives artwork</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><b>A · Trim</b></td><td>1 line</td><td>Yes</td><td>Yes</td><td>Gold means Hope; silver means neither deck is.</td></tr>
+<tr><td><b>B · Cut</b></td><td>1 line</td><td>Faintly</td><td>Yes</td><td>The only signal that survives greyscale and a face-down card.</td></tr>
+<tr><td><b>C · Stock</b></td><td>9 tokens</td><td>Loudly</td><td>Yes</td><td>Biggest signal, biggest side effect. Cancels A.</td></tr>
+<tr><td><b>D · Edge</b></td><td>1 rule</td><td>Yes</td><td>Yes</td><td>Hairline + shade + rim glow. Spends <code>.card::after</code>.</td></tr>
+<tr><td><b>E · Marque</b></td><td>1 rule</td><td>No</td><td>Yes</td><td>Free — the cell was already redundant.</td></tr>
+<tr><td><b>M · Motif</b></td><td>4 rules + 2 generated SVGs</td><td>Yes</td><td>Yes — it is in the panel</td><td>The only one that says <i>which</i> deck.</td></tr>
+</tbody></table>
+
+</div>
+
+<script type="module">
+import { byslug, icon } from './domains.js';
+import { CARD, fit } from './card.js';
+
+const marks = Object.fromEntries(await Promise.all(
+  ['root','void','midnight','grace','sage','valor','codex']
+    .map(async s => [s, await icon(s)])));
+
+const CARDS = {
+  root: { d:byslug.root, sig:marks.root, lvl:2, rc:1, type:'GROWTH', name:'The Pack Knows',
+    code:'TM·ROOT·004',
+    text:'Mark a Stress to ask the GM what the nearest living thing wants. Spend a Hope to ask what it fears instead.' },
+  void: { d:byslug.void, sig:marks.void, lvl:3, rc:2, type:'UNMAKING', name:'Excise',
+    code:'TM·VOID·007',
+    text:'Spend a Hope and mark a Stress to remove one object or effect within Close range from the scene until your next rest.' },
+  mid:  { d:byslug.midnight, sig:marks.midnight, lvl:2, rc:1, type:'SPELL', name:'Rain of Blades',
+    text:'Spend a Hope to make a Spellcast Roll and conjure throwing blades that strike out at all targets within Very Close range.' },
+};
+
+// One row: Root and Void with the option applied, plus an untouched
+// corebook card as the constant to judge them against.
+function row(el, cls, marque = false){
+  const mk = k => CARD({...CARDS[k], cls:['mk', 'mk-' + k, ...cls].join(' '),
+                        ...(marque ? {foot:'TWILIGHT MARKED'} : {})});
+  const cap = (b, t) => `<div class="cap"><b>${b}</b>${t}</div>`;
+  el.innerHTML =
+    `<div>${mk('root')}${cap('Root', 'Rootwoken · moss over bark')}</div>` +
+    `<div>${mk('void')}${cap('Void', 'Starbound · platinum over gunmetal')}</div>` +
+    `<div>${CARD(CARDS.mid)}${cap('Midnight', 'Untouched — the constant to judge against')}</div>`;
+}
+
+const PICK = ['mk-trim','mk-cut','mk-marque','mk-edge','mk-motif'];
+row(base, []);
+row(oA, ['mk-trim']);
+row(oB, ['mk-cut']);
+row(oC, ['mk-stock']);
+row(oD, ['mk-edge']);
+row(oE, ['mk-marque'], true);
+row(oM, ['mk-motif']);
+
+// A full panel — three feature runs, so the prose reaches the drawing.
+const LONG = [
+  {n:'Take Root', t:'Spend a Hope to anchor yourself. Until you move, you have **advantage** on rolls to resist being moved and cannot be knocked prone.'},
+  {n:'Deepen',    t:'Mark a Stress to ask the GM one question about the ground beneath you. They must answer honestly.'},
+  {n:'The Turning', t:'When you take Severe damage, you may mark 2 Stress to reduce it by one threshold.'},
+];
+oM2.innerHTML = ['root','void'].map(k => {
+  const c = CARD({...CARDS[k], cls:['mk','mk-'+k,'mk-motif'].join(' '),
+                  type:'GRIMOIRE', text:null, feats:LONG, runin:true});
+  return `<div>${c}<div class="cap"><b>${k === 'root' ? 'Root' : 'Void'} · full panel</b>` +
+    `Three feature runs. The prose reaches the drawing.</div></div>`;
+}).join('') +
+  `<div>${CARD({...CARDS.mid, type:'GRIMOIRE', text:null, feats:LONG, runin:true})}` +
+  `<div class="cap"><b>Midnight · full panel</b>The same card with no motif.</div></div>`;
+row(oF, PICK, true);
+row(oG, [...PICK,'mk-stock'], true);
+
+// The hand: the pick, dropped into a fan of corebook cards.
+const pick = k => CARD({...CARDS[k], cls:['mk','mk-'+k,...PICK].join(' '),
+                        foot:'TWILIGHT MARKED'});
+const core = (s, lvl, rc) => CARD({d:byslug[s], sig:marks[s], lvl, rc, text:CARDS.mid.text});
+hand.innerHTML = [
+  core('grace',1,0), pick('root'), core('sage',2,1),
+  core('valor',3,1), pick('void'), core('codex',2,2),
+].map(c => `<div>${c}</div>`).join('');
+
+lightT.onchange = e => document.documentElement.classList.toggle('light', e.target.checked);
+noart.onchange = e => document.body.classList.toggle('noart', e.target.checked);
+rampT.onchange = e => document.body.classList.toggle('ramp', e.target.checked);
+size.oninput = e => document.documentElement.style.setProperty('--cw', e.target.value + 'px');
+size.dispatchEvent(new Event('input'));
+await document.fonts.ready;
+fit();
+stat.textContent = `${document.querySelectorAll('.card').length} cards · 5 options`;
+</script>
+</body>
+</html>
