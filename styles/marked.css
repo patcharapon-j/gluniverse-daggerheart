@@ -260,7 +260,7 @@ html.dh-light .dh .card.mk-stock{
   background:radial-gradient(84% 70% at 50% 96%,
     color-mix(in srgb,var(--dom) 62%,#fff),
     var(--dom) 42%,transparent 82%);
-  filter:blur(2.2cqw);opacity:.5;mix-blend-mode:screen}
+  filter:blur(2.2cqw);opacity:.28;mix-blend-mode:screen}
 /* the motif */
 .dh .card.mk-motif .body::after{
   background:radial-gradient(90% 74% at 50% 94%,
@@ -268,12 +268,35 @@ html.dh-light .dh .card.mk-stock{
     var(--dom) 34%,
     color-mix(in srgb,var(--dom) 58%,transparent) 72%,
     transparent 100%);
-  opacity:.5}
-.dh .card.mk-motif .cnt,.dh .card.mk-motif .ft{position:relative;z-index:1}
+  opacity:.3}
+
+/* ── the halo ──────────────────────────────────────────────────────
+   z-index alone puts the prose *over* the motif; it does not make it
+   readable on one. A glyph is a thin figure and the motif is a field
+   of thin figures at a similar weight, so where a vine runs behind a
+   descender the two are the same drawing and the eye has to pick the
+   letter out of it. Lowering the pattern helps and cannot finish the
+   job, because the worst case is not the average one: it is the one
+   stroke that happens to land under one word.
+
+   So the type carries its own ground. `--paper` and not black or a
+   fixed value — that is the substrate the card is printed on, so the
+   halo is the paper pushing the pattern away from the letters rather
+   than a shadow drawn around them, and it flips with `mk-stock` and
+   with the theme for nothing. Two stops: a tight one that does the
+   separating and a wider, softer one that keeps the tight one from
+   reading as an outline.
+
+   In `cqw`, for the bloom's reason one line up — a 198px loadout card
+   must not wear a 300px card's halo. Set on `.cnt` and `.ft` rather
+   than on each of the eight things inside them, since text-shadow
+   inherits and every one of them wants it. */
+.dh .card.mk-motif .cnt,.dh .card.mk-motif .ft{position:relative;z-index:1;
+  text-shadow:0 0 .8cqw var(--paper),0 0 1.9cqw var(--paper)}
 /* On the inverted stock the paint is light-on-light and nearly gone,
    so the motif goes to multiply and darkens instead — and the bloom
    goes entirely, because a glow on white paper is not a glow, it is a
    smudge. What replaces it there is the ground, which multiply reads
    perfectly well. */
 .dh .card.mk-motif.mk-stock .body::before{display:none}
-.dh .card.mk-motif.mk-stock .body::after{mix-blend-mode:multiply;opacity:.32}
+.dh .card.mk-motif.mk-stock .body::after{mix-blend-mode:multiply;opacity:.2}
