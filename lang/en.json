@@ -42,8 +42,9 @@
       "ThemeHint": "Dark is the base. Light changes the substrate under the same palette; the window frame stays dark in both, because the frame is the application and not the sheet.",
       "DiceSoNice": "3D dice on rolls",
       "DiceSoNiceHint": "Off by default — the chat card draws its own dice, and two answers to the same question is worse than either.",
-      "ChangeLog": "Post changes to chat",
-      "ChangeLogHint": "One card when a character's Hit Points, Stress, Armor Slots, Hope, counters or loadout settle. Coalesced, so applying damage is one card rather than four, and a change taken straight back is not posted at all. Rests and character creation post their own and are left alone."
+      "ChangeLog": "Watch changes to characters",
+      "ChangeLogHint": "Records one entry in the GM's activity log when a character's Hit Points, Stress, Armor Slots, Hope, counters or loadout settle. Coalesced, so applying damage is one entry rather than four, and a change taken straight back is not recorded at all. Nothing is posted to chat, and players see none of it. Rests and character creation post their own card and are left alone.",
+      "Activity": "Activity log"
     },
     "Theme": {
       "Dark": "Dark",
@@ -154,6 +155,21 @@
     "Browse": {
       "Title": "Compendium · Daggerheart",
       "Open": "Browse Daggerheart"
+    },
+    "Activity": {
+      "Title": "Activity",
+      "Open": "Activity log",
+      "Count": "{n} entries",
+      "None": "none",
+      "Clear": "Clear",
+      "ClearTitle": "Clear the activity log?",
+      "ClearBody": "Everything recorded so far goes, for every GM at the table. Nothing on anybody's sheet changes.",
+      "Watching": "Watching",
+      "Paused": "Paused",
+      "Off": "Not watching. Nothing that happens to a character is being recorded while this is <b>off</b>.",
+      "EmptyTitle": "Nothing yet",
+      "EmptyNote": "Changes to a character's tracks, counters and loadout land here as they settle.",
+      "GMOnly": "The activity log is the GM's record of the table."
     }
   }
 }

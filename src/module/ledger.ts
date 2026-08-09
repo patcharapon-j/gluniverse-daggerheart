@@ -21,12 +21,22 @@
  * `preUpdate*` can be cancelled. Writing what was there into the options the
  * update is carrying means a cancelled write leaves nothing behind — there is
  * no `update` hook to read it back.
+ *
+ * **Where it lands is `activity-log.ts` and no longer chat.** That file argues
+ * the move; what it changes here is one word in the gate. `options` travel to
+ * every client with the update, so the before-state is on the GM's client
+ * whoever pressed the button, and the client that buffers and posts is now the
+ * one whose record it is rather than the one that started it. The stamp stays
+ * where it was, which is what keeps `muteLedger` working across the wire: it
+ * is read on the initiating client, and an unstamped update says nothing to
+ * anybody.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID, domainDef } from "./config.ts";
-import { LEDGER, type LedgerEntry } from "./ui/ledger.js";
+import { type LedgerEntry } from "./ui/ledger.js";
+import { recordActivity } from "./activity-log.ts";
 import { resourceMax } from "./data/resources.ts";
 
 /** The four printed tracks, and what each is called in `system.resources`. */
@@ -146,7 +156,7 @@ function note(actor: any, key: string, entry: LedgerEntry): void {
 }
 
 /**
- * Post one message for everything that settled, and drop what did not move.
+ * Record one entry for everything that settled, and drop what did not move.
  *
  * A net of zero is not an event. Marking a box and taking it straight back is
  * a correction, and a table that has to watch every correction happen learns
@@ -161,13 +171,7 @@ async function flush(id: string): Promise<void> {
   const entries = [...buf.entries.values()].filter((e) => e.from !== e.to);
   if (!entries.length) return;
 
-  const actor = buf.actor;
-  await ChatMessage.create({
-    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
-    speaker: ChatMessage.getSpeaker({ actor }),
-    content: `<div class="dh dh-ledger">${LEDGER({ who: actor.name, entries })}</div>`,
-    flags: { [SYSTEM_ID]: { kind: "ledger" } },
-  });
+  await recordActivity(buf.actor.name, entries);
 }
 
 /* ── reading the writes ───────────────────────────────────────────────── */
@@ -284,15 +288,22 @@ function noteItem(item: any, before: { pools?: number[]; loadout?: boolean }): v
 /* ── wiring ───────────────────────────────────────────────────────────── */
 
 /**
- * The gate is **who pressed the button**, not who is a GM.
+ * The gate is **who keeps the record**, which is the active GM.
  *
- * `update*` fires on every connected client; posting from all of them is one
- * message per player. The initiating client is also the only one whose
- * `preUpdate*` ran, so it is the only one holding the before-state — the two
- * conditions are the same condition, which is what makes this safe rather than
- * merely conventional.
+ * It used to be whoever pressed the button, because the log was a chat message
+ * and `update*` fires on every connected client — twelve clients agreeing to
+ * post is twelve copies of one card. The record now lives in a world setting
+ * that only a GM may write, so the nominated writer replaces the initiator, and
+ * one nominated writer is `syncVulnerable`'s and `applyFear`'s arrangement
+ * exactly: two GMs at one table would otherwise append the same entry twice.
+ *
+ * What makes the swap possible at all is that `options` are broadcast with the
+ * update, so the before-state stamped by the initiating client's `preUpdate*`
+ * arrives here. What makes it *safe* is that the stamp is still gated by
+ * `watching()` where it is written: an actor muted on the client doing the work
+ * hands this one nothing to record.
  */
-const mine = (userId: string): boolean => userId === game.user?.id;
+const writer = (): boolean => game.users?.activeGM === game.user;
 
 export function registerLedger(): void {
   Hooks.on("preUpdateActor", (actor: any, changed: any, options: any) => {
@@ -301,9 +312,9 @@ export function registerLedger(): void {
     if (before) foundry.utils.setProperty(options, `${SYSTEM_ID}.was`, before);
   });
 
-  Hooks.on("updateActor", (actor: any, _c: any, options: any, userId: string) => {
+  Hooks.on("updateActor", (actor: any, _c: any, options: any) => {
     const before = options?.[SYSTEM_ID]?.was;
-    if (!before || !mine(userId) || !watching(actor)) return;
+    if (!before || !writer() || !watching(actor)) return;
     noteActor(actor, before);
   });
 
@@ -313,9 +324,9 @@ export function registerLedger(): void {
     if (before) foundry.utils.setProperty(options, `${SYSTEM_ID}.was`, before);
   });
 
-  Hooks.on("updateItem", (item: any, _c: any, options: any, userId: string) => {
+  Hooks.on("updateItem", (item: any, _c: any, options: any) => {
     const before = options?.[SYSTEM_ID]?.was;
-    if (!before || !mine(userId) || !watching(item?.parent)) return;
+    if (!before || !writer() || !watching(item?.parent)) return;
     noteItem(item, before);
   });
 }
