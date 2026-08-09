@@ -9,6 +9,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID } from "../config.ts";
+import { askRoll } from "../apps/ask-roll.ts";
 import { takeDamage } from "../apps/damage.ts";
 import { damageRecipients, noRecipientKey } from "../apps/targets.ts";
 import { getFear, setFear } from "../settings.ts";
@@ -17,6 +18,7 @@ import { fit } from "../ui/card.js";
 import { loadSigils } from "../sheets/cards.ts";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
 import { rollWeaponDamage } from "./actions.ts";
+import { rollDamage } from "./rolls.ts";
 import { play } from "./arrival.ts";
 
 /** When each message was first announced on this client. */
@@ -329,6 +331,64 @@ async function runCardAction(
   }
 
   if (!actor?.isOwner) return warn("NotYours");
+
+  /* The two presses the card itself answers, and they are above the item
+     lookup because neither needs one: both were resolved against the card at
+     the moment it was posted and carry their own answer in the flag.
+
+     `roll-trait` takes **no claim at all**, which is the one departure from
+     everything else in this switch. A claim exists because a Hope leaves a
+     purse and cannot leave it twice; a roll leaves nothing. You will roll this
+     card again next round, and a button that burned itself on the first press
+     would send you back to the sheet for every press after it. Ownership is
+     the whole gate.
+
+     It is also its own press, independent of the price above it. Rolling and
+     paying are two decisions the card states separately — several cards let
+     you pay *after* seeing whether you needed to — so folding them into one
+     button would be this file deciding the order for the table.
+
+     The popover opens beside the button that was pressed, which is what the
+     seam takes an anchor for: `prep` flips left when it would overflow, and a
+     300px sidebar is where that matters most. `askRoll` resolves null on every
+     way out, and every way out is free — so a dismissed popover leaves the row
+     exactly as it found it. */
+  if (action.kind === "roll-trait") {
+    // Narrowing rather than a check: a call with no trait it could resolve
+    // emits no button, so the only way here is a hand-edited flag.
+    if (!action.trait) return;
+    await askRoll(actor, action.trait, el, {
+      label: action.label,
+      dc: action.dc ?? null,
+    });
+    return;
+  }
+
+  /* Card damage **is** claimed, and the distinction from the roll above is
+     what the two things are. A duality roll is a question and you may ask it
+     as often as you like; damage completes an attack, and the plate's own
+     `roll-damage` has been claim-once since it was written for exactly that
+     reason. Two clients pressing this is one attack dealing damage twice.
+
+     No critical is read. See the block in `sheets/post-card.ts` — a posted
+     card has no honest link to the roll that critted. */
+  if (action.kind === "roll-card-damage") {
+    if (!(await claimOnce(message, key))) return;
+    await rollDamage({
+      actor,
+      /* The plate is named after the *object*, exactly as a weapon's is — the
+         button says the dice because it sits next to another button that also
+         rolls damage, and a plate has no such neighbour to be told apart from. */
+      label: action.damageName || (message.getFlag(SYSTEM_ID, "card")?.name ?? "Damage"),
+      count: action.count ?? 1,
+      die: action.die ?? "d6",
+      mods: action.bonus ? [{ k: "card", v: action.bonus }] : [],
+      damageType: action.damageType,
+    });
+    finish(el);
+    return;
+  }
+
   const item = action.itemId ? actor.items?.get?.(action.itemId) : null;
   if (action.kind === "move-resource") {
     const live = item?.liveResources?.[action.resourceIndex ?? -1];

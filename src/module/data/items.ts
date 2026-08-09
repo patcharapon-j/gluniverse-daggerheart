@@ -30,6 +30,7 @@ import {
   choice,
   damageField,
   featureField,
+  fillCardDamage,
   html,
   int,
   maybeChoice,
@@ -43,6 +44,32 @@ import {
 } from "./fields.ts";
 
 const TypeDataModel = () => foundry.abstract.TypeDataModel;
+
+/**
+ * What every Item subtype below extends, rather than `TypeDataModel` itself.
+ *
+ * It adds **no schema**, which is what keeps `tracked()`'s argument intact — a
+ * reader who wants to know what a weapon holds still finds all of it in the
+ * one literal, and nothing here can grow a field without that stopping being
+ * true. What it adds is `prepareBaseData`, because a system model can only
+ * read its own document's name through `this.parent` and the damage
+ * annotation is keyed by it. See `fillCardDamage` for why that is a
+ * preparation step and not a `migrateData`.
+ *
+ * A wrapper rather than a named parent class, and called once per subtype, so
+ * the ten `extends` clauses stay one word long and there is no chain for a
+ * later reader to walk up looking for fields.
+ */
+const ItemModel = (): any =>
+  class extends (TypeDataModel() as any) {
+    declare parent: any;
+    declare cardDamage: any[];
+
+    prepareBaseData(): void {
+      super.prepareBaseData();
+      fillCardDamage(this, this.parent?.type, this.parent?.name);
+    }
+  };
 
 /**
  * Numbers this document asks you to keep — see `resourceField`.
@@ -69,9 +96,36 @@ const TypeDataModel = () => foundry.abstract.TypeDataModel;
  * Unstoppable is a once-per-long-rest *use* and a die that climbs, and those
  * are two different records of two different things.
  */
+/**
+ * `cardDamage` rides along on the same argument for the third time, and its
+ * breadth is settled the same way: a sweep found printed damage expressions on
+ * domain cards, subclass cards, ancestries, transformations, consumables, a
+ * class feature and two pieces of equipment, and a guessed subset would leave
+ * a card that prints dice with nowhere to say so and nothing on screen to
+ * suggest anything was missing. An empty array costs nothing, so all ten
+ * carry it.
+ *
+ * **It is `cardDamage` and not `damage`, and that is the fix rather than a
+ * flourish.** `WeaponData` has held `damage` since the beginning and it is the
+ * weapon's own stat line — one expression, singular, rolled Proficiency times,
+ * read by the roll engine, the browser, the creation window's equipment table
+ * and both gear sheets. Spreading an *array* called `damage` into every
+ * subtype would have shadowed it on the one subtype that already had one, and
+ * left every reader of `system.damage` holding a field that is a schema on a
+ * weapon and a list everywhere else. That is the bug that renamed `.die.win`
+ * and `.dfn .pl`, arriving in the schema instead of the stylesheets, and it is
+ * cheaper to catch here than after somebody has written the branch.
+ *
+ * The two are genuinely different things and the names now say so: a weapon's
+ * `damage` is what the object does when you swing it, and `cardDamage` is a
+ * reading of an expression printed in rules text. A weapon carries both,
+ * because a weapon's *feature* can print one.
+ */
 const tracked = () => ({
   resources: arr(resourceField()),
   dice: arr(diePoolField()),
+  /** Damage this document's rules text prints — see `damageField`. */
+  cardDamage: arr(damageField()),
   /** Always-on self modifiers; activation follows the owning Item subtype. */
   modifiers: arr(modifierField()),
 });
@@ -85,7 +139,7 @@ const tracked = () => ({
  * ancestry takes the *top* feature of one and the *bottom* of another. So
  * they are named for their position on the card, not for their importance.
  */
-export class AncestryData extends (TypeDataModel() as any) {
+export class AncestryData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -99,7 +153,7 @@ export class AncestryData extends (TypeDataModel() as any) {
   }
 }
 
-export class CommunityData extends (TypeDataModel() as any) {
+export class CommunityData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -139,7 +193,7 @@ export class CommunityData extends (TypeDataModel() as any) {
  * class's `backgroundQuestions` and is stored the same way: prose the sheet
  * offers rather than a rule the sheet applies.
  */
-export class TransformationData extends (TypeDataModel() as any) {
+export class TransformationData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -156,7 +210,7 @@ export class TransformationData extends (TypeDataModel() as any) {
    CLASS AND SUBCLASS
    ══════════════════════════════════════════════════════════════════════ */
 
-export class ClassData extends (TypeDataModel() as any) {
+export class ClassData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -253,7 +307,7 @@ export class ClassData extends (TypeDataModel() as any) {
  */
 export const SUBCLASS_RANKS = ["foundation", "specialization", "mastery"] as const;
 
-export class SubclassData extends (TypeDataModel() as any) {
+export class SubclassData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -275,7 +329,7 @@ export class SubclassData extends (TypeDataModel() as any) {
    DOMAIN CARD
    ══════════════════════════════════════════════════════════════════════ */
 
-export class DomainCardData extends (TypeDataModel() as any) {
+export class DomainCardData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       domain: maybeChoice(DOMAINS),
@@ -306,7 +360,7 @@ export class DomainCardData extends (TypeDataModel() as any) {
    GEAR
    ══════════════════════════════════════════════════════════════════════ */
 
-export class WeaponData extends (TypeDataModel() as any) {
+export class WeaponData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -348,7 +402,7 @@ export class WeaponData extends (TypeDataModel() as any) {
   }
 }
 
-export class ArmorData extends (TypeDataModel() as any) {
+export class ArmorData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -369,7 +423,7 @@ export class ArmorData extends (TypeDataModel() as any) {
   }
 }
 
-export class ConsumableData extends (TypeDataModel() as any) {
+export class ConsumableData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -381,7 +435,7 @@ export class ConsumableData extends (TypeDataModel() as any) {
   }
 }
 
-export class LootData extends (TypeDataModel() as any) {
+export class LootData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       description: html(),
@@ -400,7 +454,7 @@ export class LootData extends (TypeDataModel() as any) {
    word the stat block prints in bold — Passive, Action, Reaction.
    ══════════════════════════════════════════════════════════════════════ */
 
-export class FeatureData extends (TypeDataModel() as any) {
+export class FeatureData extends (ItemModel() as any) {
   static defineSchema() {
     return {
       kind: choice(FEATURE_KINDS, "passive"),

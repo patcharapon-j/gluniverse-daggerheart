@@ -468,11 +468,24 @@
    is six pixels away. The modifier is the value, so it gets the display
    face and the gold; the phrase is the label. */
 .dh .xp{display:flex;flex-direction:column;gap:2px}
-.dh .xp .r{display:flex;align-items:center;gap:10px;padding:5px 9px;background:var(--sunk);
+/* The phrase wraps and is never ellipsed. An Experience is a sentence
+   somebody wrote, and the half of it that fits is not the half you are
+   choosing between — a truncated one hides the very thing being chosen.
+   The rail is a fixed 288px and its scroller does not go sideways, so
+   dropping the ellipsis without wrapping would clip instead of scroll;
+   overflow-wrap covers the one case wrapping alone cannot, a single
+   unbroken word.
+
+   The row aligns on the baseline rather than on centres, and that is what
+   pins the modifier to the first line: the modifiers stay a column you can
+   read straight down however tall the phrase beside one gets. On the
+   ordinary one-line row it lands where centring already put it, so the
+   common case is unmoved. */
+.dh .xp .r{display:flex;align-items:baseline;gap:10px;padding:5px 9px;background:var(--sunk);
   cursor:pointer;transition:background .14s,transform .14s}
 .dh .xp .r:hover{background:var(--sunk-2);transform:translateX(2px)}
 .dh .xp .r b{font:600 12px/1.25 var(--f-ui);color:var(--ink);min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  overflow-wrap:anywhere}
 .dh .xp .r em{margin-left:auto;flex:none;font:700 13px/1 var(--f-display);font-style:normal;
   color:var(--hope-tx);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 

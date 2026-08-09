@@ -42,6 +42,7 @@ import { classItem, feat, subclassCards } from "./_helpers.mjs";
    which nine arrived together. */
 import HOPE_AND_FEAR from "./hf-classes.mjs";
 import { withDice } from "./card-resources.mjs";
+import { withDamage } from "./card-damage.mjs";
 
 /* ══════════════════════════════════════════════════════════════════════
    THE CHAPTER OPENERS
@@ -1346,7 +1347,7 @@ const schoolOfWar = subclassCards({
    reads the way the book's chapter does.
    ══════════════════════════════════════════════════════════════════════ */
 
-export default withDice([
+export default withDamage(withDice([
   bard,
   ...troubadour,
   ...wordsmith,
@@ -1376,4 +1377,4 @@ export default withDice([
   ...schoolOfWar,
 
   ...HOPE_AND_FEAR,
-]);
+]));

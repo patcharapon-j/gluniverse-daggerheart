@@ -233,6 +233,27 @@ export const isMarkedDomain = (d?: string): boolean =>
 export const MARKED_SET = "TM";
 
 /**
+ * The mark is the casting organ, so the deck names the trait and not the class.
+ *
+ * The *rule* is `marked.ts`'s and is argued there; this is the closed set it
+ * reads, keyed on the two domains three lines above. It sits here because a
+ * card builder asking which trait a Root card casts with is asking a question
+ * about a domain, and reaching the whole frame mechanic to answer it drags the
+ * roll engine — and Dice So Nice's module-scope texture table with it — into
+ * anything that merely draws a card.
+ *
+ * `spellcast` is a pointer to one of the six and never a seventh trait, which
+ * is why the value is a plain string checked against `TRAITS` by its caller.
+ */
+export const MARKED_SPELLCAST: Record<string, string> = {
+  root: "instinct",
+  void: "knowledge",
+};
+
+export const markedSpellcast = (domain?: string): string | undefined =>
+  MARKED_SPELLCAST[String(domain)];
+
+/**
  * What a card with no domain is drawn in. In this system a saturated hue
  * means "domain", so ancestry, community and equipment read graphite.
  */

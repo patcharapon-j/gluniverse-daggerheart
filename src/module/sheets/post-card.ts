@@ -15,12 +15,21 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SYSTEM_ID, isMarkedDomain } from "../config.ts";
+import {
+  SYSTEM_ID, TRAITS, isMarkedDomain, markedSpellcast, traitLabel, type Trait,
+} from "../config.ts";
 import { CARD } from "../ui/card.js";
 import { featurePrice, isFree, plain, type CardOptions, type Price } from "./cards.ts";
 
 export interface CardAction {
-  kind: "pay-cost" | "move-resource" | "use-item" | "roll-damage" | "mark-use";
+  kind:
+    | "pay-cost"
+    | "move-resource"
+    | "use-item"
+    | "roll-damage"
+    | "roll-card-damage"
+    | "roll-trait"
+    | "mark-use";
   label: string;
   /** `mark-use` only: how much Mark this press costs. 3 on the two level 10s. */
   mark?: number;
@@ -32,6 +41,17 @@ export interface CardAction {
   resourceIndex?: number;
   by?: number;
   weaponId?: string;
+  /** `roll-trait` only: which of the six, already resolved off the card. */
+  trait?: Trait;
+  /** `roll-trait` only: a Difficulty the card *printed*, or null for none. */
+  dc?: number | null;
+  /** `roll-card-damage` only: the expression, already resolved. */
+  count?: number;
+  die?: string;
+  bonus?: number;
+  damageType?: string;
+  /** `roll-card-damage` only: what the damage plate is named after. */
+  damageName?: string;
 }
 
 export interface PostCardOptions {
@@ -71,6 +91,135 @@ const actionRow = (actions?: CardAction[]): string =>
 export const cardWrapper = (card: CardOptions & { actions?: CardAction[] }): string =>
   `<div class="${wrapperClass(card)}" style="${attr(card.art ?? "")}">` +
   `${CARD(card)}${actionRow(card.actions)}</div>`;
+
+/**
+ * The card's prose, in the blocks it is printed in.
+ *
+ * Everything below reads *both* `text` and `feats`, and that is a fix rather
+ * than a flourish. The damage sniff this replaces read `card.text` alone — so
+ * a subclass, a class, an ancestry, a community and a transformation, every
+ * subtype whose rules live in feature blocks and whose `text` is empty, could
+ * never get a damage button at all. It looked like those cards simply had no
+ * damage on them.
+ *
+ * `n` is the prefix a label wears, and it follows `addPrice`'s rule exactly:
+ * a feature block is named only when there is more than one of them, because
+ * one block's name is the card's name and the card is already on screen. The
+ * `text` block never carries one for the same reason.
+ *
+ * Both strings arrive from `cardOf` already through `plain`, which is why the
+ * patterns below are written against markdown emphasis — `**`, `_`, `•`,
+ * `<br>` — rather than against markup.
+ */
+const blocks = (card: CardOptions): { n: string; t: string }[] => {
+  const feats = card.feats ?? [];
+  return [
+    ...(card.text ? [{ n: "", t: card.text }] : []),
+    ...feats.map((f) => ({ n: feats.length > 1 ? f.n : "", t: f.t })),
+  ];
+};
+
+/* ── "Make a Spellcast Roll" ───────────────────────────────────────────
+   The second parse of English rules text in this system, and it has to argue
+   for itself the way the first one does. `featurePrice` is the other, and its
+   whole discipline is that a pattern over rules text is only allowed where the
+   book writes the thing in one shape, on purpose, every time.
+
+   A roll is written that way. Daggerheart asks for one in the imperative and
+   in one shape — "Make a Spellcast Roll", "make an Instinct Roll (12)" — and
+   everything else that puts a trait next to the word *Roll* is describing a
+   bonus to a roll rather than asking for one:
+
+       Channeling — "+1 to Spellcast Rolls"
+       Not Good Enough — "you gain a +1 bonus to your next Knowledge Roll"
+       Deadly Focus — "+10 bonus to your damage rolls"
+
+   None of those says *make*, and that verb is the whole of what a button
+   needs. So it is required, and required to be *imperative* — which is
+   `featurePrice`'s own
+   discriminator arriving at a different question. There it is "who is paying";
+   here it is "who is being told to roll", and the shape of the answer is the
+   same: the clause head, or an offer. What precedes `make` is the whole test.
+
+       "When you would make a Spellcast Roll, you can spend a Hope…"
+       "Additionally, before you make a Spellcast Roll while within…"
+
+   Both name a roll being made somewhere else and neither is a call to roll
+   now; "would" and "you" are not in the caller set, so neither is reached. A
+   card saying "by making an additional Spellcast Roll" is out on the verb
+   alone.
+
+   Two more things fall out of the shape rather than needing a rule of their
+   own, and both are worth stating because they look like omissions:
+
+   - **No Reaction Rolls.** The trait word has to sit immediately against
+     `Roll`, so "make an Agility Reaction Roll" and "must succeed on a Reaction
+     Roll (16)" are both unreachable. That is also what keeps the *target's*
+     rolls off this card: in this game the thing a target is forced to make is
+     always a Reaction Roll, which is why `to` is safe in the caller set even
+     though it is the word a coercion is written with.
+   - **"make the … Roll" is given up**, deliberately, as `featurePrice` gives
+     up "must". Two cards phrase it that way and nothing in the sentence tells
+     the definite article apart from a reference back to a roll already named.
+
+   A printed Difficulty rides along in the same match, because the book prints
+   it in the same breath — "Make a Spellcast Roll (15)". An *unprinted* one
+   does not and must not: a target number is the GM's everywhere else in this
+   system, and the popover deliberately declines to offer one. */
+
+const ROLL_MK = "[\\s*_]";
+const ROLL_CALLER =
+  "(?:^|<br>|•|[.!?:;,]|\\band\\b|\\bthen\\b|\\byou can\\b|\\byou may\\b|\\bto\\b)";
+const ROLL_WORDS = [...TRAITS, "spellcast"].join("|");
+const ROLL_RX = new RegExp(
+  `${ROLL_CALLER}${ROLL_MK}*make${ROLL_MK}+an?${ROLL_MK}+(${ROLL_WORDS})` +
+    `${ROLL_MK}+roll\\b${ROLL_MK}*(?:\\(${ROLL_MK}*(\\d+)${ROLL_MK}*\\))?`,
+  "i",
+);
+
+/** The first roll a block asks for, and only the first — see `actionsFor`. */
+const rollCall = (text: string): { word: string; dc: number | null } | null => {
+  const m = ROLL_RX.exec(text);
+  return m ? { word: String(m[1]).toLowerCase(), dc: m[2] ? Number(m[2]) : null } : null;
+};
+
+/**
+ * Which of the six a call resolves to, or nothing at all.
+ *
+ * Five of the six are themselves. "Spellcast" is a *pointer* — the same
+ * pointer the arcane-frame wheelchair carries and the same one a counter's
+ * ceiling carries — and it is resolved against the character, because that is
+ * the only place the answer exists.
+ *
+ * **Except on a Root or Void card, and this is the one place the campaign
+ * frame's override is honest.** `marked.ts` states the rule and refuses to
+ * substitute it, because swapping the trait under a roll a player started from
+ * a trait plate would be a campaign rule reaching into the roll engine and
+ * nothing on screen would say why. A button *on the card* is the other
+ * situation entirely: the object naming the trait is the object being pressed,
+ * the player is looking straight at it, and reading `spellcastTrait` there
+ * would be this file quietly overruling the card in the reader's hand.
+ *
+ * With no Spellcast trait and no mark, there is **no button** rather than a
+ * button on a trait we picked. A character with no spellcasting subclass
+ * holding a card that calls for a Spellcast Roll is a table conversation, and
+ * a row that answered it by rolling Finesse would be a worse answer than
+ * silence.
+ */
+const traitOf = (word: string, actor: any, item: any): Trait | undefined => {
+  if (word !== "spellcast") return word as Trait;
+  const mark = markedSpellcast(item?.system?.domain);
+  const trait = mark ?? actor?.system?.spellcastTrait;
+  return (TRAITS as readonly string[]).includes(String(trait)) ? (trait as Trait) : undefined;
+};
+
+/** What the card called it, which is not always what is being rolled. */
+const rollLabel = (word: string): string =>
+  `${word === "spellcast" ? "Spellcast" : traitLabel(word as Trait)} Roll`;
+
+/** "Roll 3d6+2" — and the dice are the point. See the damage block below. */
+const damageLabel = (name: string, count: number, die: string, bonus: number): string =>
+  `${name ? `${name} · ` : ""}Roll ${count}${die}${bonus > 0 ? `+${bonus}` : bonus < 0 ? `${bonus}` : ""}`;
 
 const costLabel = (p: Price): string => [
   p.hope && `Spend ${p.hope} Hope`,
@@ -148,7 +297,81 @@ function actionsFor(card: CardOptions, actor: any, options: PostCardOptions): Ca
     out.unshift({ kind: "mark-use", label: mark === 1 ? "Use · Mark" : `Use · ${mark} Mark`, mark });
   }
 
-  const saysDamageRoll = /\bdamage roll\b/i.test(plain(card.text || ""));
+  /* The row reads in the order the card's sentence does — pay, roll, damage —
+     which is what puts this after every price above it and before both damage
+     blocks below. A card that asks for a Stress, a roll and then some dice is
+     a card whose buttons are pressed left to right.
+
+     **One button per block, and the first invocation only.** A block that
+     calls for two rolls is calling for the second *because of* how the first
+     went ("on a success, make a Presence Roll"), so a row offering both up
+     front would be offering a roll nobody has earned yet. The reader can press
+     the trait plate on their own sheet for the second, which is what they did
+     before this button existed.
+
+     **Repeatable, and therefore no claim.** Every other action in this row
+     spends something once — a Hope leaves a purse, a use leaves a counter —
+     and a row of live buttons three hours later is an invitation to collect it
+     twice. A roll spends nothing. You will genuinely roll the same card again
+     next round, and burning the button on the first press would send you back
+     to the sheet for every press after it. Ownership is the whole gate. */
+  for (const b of blocks(card)) {
+    const call = rollCall(b.t);
+    if (!call) continue;
+    const trait = traitOf(call.word, actor, item);
+    if (!trait) continue;
+    out.push({
+      kind: "roll-trait",
+      label: `${b.n ? `${b.n} · ` : ""}${rollLabel(call.word)}`,
+      trait,
+      dc: call.dc,
+    });
+  }
+
+  /* The card's own dice, which is a different button from the one below it.
+     Two, never one, and the corpus is what settles it: seventy-seven entries
+     print a complete damage expression, the "damage roll" sniff below matches
+     fifty of which thirty-four print no dice at all, and *not one* card with a
+     complete expression says the phrase. The two are not two readings of one
+     thing — "add a d6 to your damage roll" is a clause about the weapon in
+     your hand, and "they take 2d8+4 magic damage" is the card rolling.
+
+     So the label **prints the dice**. A row carrying two buttons both reading
+     "Roll damage" is precisely the ambiguity this exists to remove, and the
+     expression is the one thing that can never be true of both.
+
+     `proficiency` is resolved *here* rather than at the press, unlike the
+     weapon below, and the reason is the label: a button reading "Roll 3d8+2"
+     that rolled a different number of dice would be worse than no label at
+     all. The Proficiency in it is the one this character had when the card was
+     posted, which is what the card said when it was posted.
+
+     **No critical.** A weapon's damage button is reached from an attack plate
+     and reads the crit off the message that hit; a posted card is a card, and
+     there is no honest link from it to a roll that critted — the player may
+     have posted it before rolling, after rolling, or to argue about what it
+     says. Guessing would double dice on a hit that never happened. */
+  for (const d of (item?.system?.cardDamage ?? []) as any[]) {
+    const count = Math.max(1, Number(d.count) || 1) *
+      (d.proficiency ? Math.max(1, Number(actor?.system?.proficiency) || 1) : 1);
+    const bonus = Number(d.bonus) || 0;
+    const mode = String(d.name ?? "");
+    out.push({
+      kind: "roll-card-damage",
+      label: damageLabel(mode, count, String(d.dice || "d6"), bonus),
+      damageName: mode ? `${card.name} · ${mode}` : card.name,
+      count,
+      die: String(d.dice || "d6"),
+      bonus,
+      // Direct rides in the type, as it does on an adversary's attack, because
+      // `apps/damage.ts` reads it back off the same string. Save-for-half does
+      // not travel at all — halving is the *target's* outcome, decided against
+      // thresholds this side of the exchange does not own.
+      damageType: `${d.direct ? "direct " : ""}${String(d.type || "physical")}`,
+    });
+  }
+
+  const saysDamageRoll = blocks(card).some((b) => /\bdamage roll\b/i.test(plain(b.t)));
   if (item?.type === "weapon" || options.damageRoll || saysDamageRoll) {
     const weapon = item?.type === "weapon"
       ? item

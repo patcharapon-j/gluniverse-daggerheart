@@ -55,14 +55,18 @@ import { SYSTEM_ID, isMarkedDomain } from "./config.ts";
 import { FEAR_MAX, gainFear, getFear } from "./settings.ts";
 import { rollDuality } from "./dice/rolls.ts";
 
-/** The mark is the casting organ, so the deck names the trait and not the class. */
-export const MARKED_SPELLCAST: Record<string, string> = {
-  root: "instinct",
-  void: "knowledge",
-};
-
-export const markedSpellcast = (domain?: string): string | undefined =>
-  MARKED_SPELLCAST[String(domain)];
+/**
+ * The mark is the casting organ, so the deck names the trait and not the class.
+ *
+ * The table itself is `config.ts`'s, beside the two domains it is keyed on, and
+ * is re-exported here because this is the file the rule is *stated* in — the
+ * frame's four rules are read here and nowhere else. What that buys is that a
+ * caller wanting the lookup alone need not import this module, which imports
+ * the roll engine, which evaluates Dice So Nice's texture table at module
+ * scope: reaching the trait for a card being drawn would otherwise cost every
+ * card-drawing surface a live `foundry`.
+ */
+export { MARKED_SPELLCAST, markedSpellcast } from "./config.ts";
 
 /** The flag a press leaves for the GM's client to answer. */
 const FEAR_OWED = "markedFear";
