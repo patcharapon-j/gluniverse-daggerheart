@@ -86,6 +86,7 @@
   import Chits from "./parts/Chits.svelte";
   import Keep from "./parts/Keep.svelte";
   import { liveDicePools, dicePoolsFor, type LiveDicePool } from "../data/dice-pools.ts";
+  import { damageDice } from "../data/damage.ts";
   import Marks from "./parts/Marks.svelte";
   import Gems from "./parts/Gems.svelte";
   import Prose from "./parts/Prose.svelte";
@@ -2609,11 +2610,16 @@
                     <button
                       class="go dm"
                       type="button"
-                      title="{damageProficiency()} × {(w as any).system.damage.dice}, including passive item effects"
+                      title="{damageProficiency()} × {damageDice(
+                        (w as any).system.damage,
+                      )}, including passive item effects"
                       onclick={() => rollWeaponDamage(doc, item((w as any).id))}
                     >
                       <em
-                        >{damageProficiency()}{(w as any).system.damage.dice}{damageBonus(w as any)
+                        >{damageDice(
+                          (w as any).system.damage,
+                          damageProficiency(),
+                        )}{damageBonus(w as any)
                           ? `${damageBonus(w as any) > 0 ? "+" : "−"}${Math.abs(damageBonus(w as any))}`
                           : ""}</em
                       >
@@ -3180,8 +3186,8 @@
               Each level, choose two options with unmarked slots. An option with a heavier frame
               costs both choices. Proficiency is how many damage dice you roll — your
               {#if primary}
-                {primary.name} rolls {sys.proficiency}{primary.system.damage.dice}{primary.system
-                  .damage.bonus
+                {primary.name} rolls {damageDice(primary.system.damage, sys.proficiency)}{primary
+                  .system.damage.bonus
                   ? `+${primary.system.damage.bonus}`
                   : ""}.
               {:else}

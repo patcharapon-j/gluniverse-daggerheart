@@ -25,6 +25,7 @@
     TRAIT_VERBS,
     domainDef,
   } from "../config.ts";
+  import { damageDice } from "../data/damage.ts";
   import {
     armorRefusal,
     cardRefusal,
@@ -1477,7 +1478,7 @@
                     <i>{TRAIT_LABELS[w.system?.trait] ?? "—"}</i>
                     <i>{RANGE_LABELS[w.system?.range] ?? "—"}</i>
                     <u
-                      >{w.system?.damage?.dice}{w.system?.damage?.bonus
+                      >{damageDice(w.system?.damage)}{w.system?.damage?.bonus
                         ? `+${w.system.damage.bonus}`
                         : ""}</u
                     >
