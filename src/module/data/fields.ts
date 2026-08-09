@@ -15,6 +15,11 @@ import {
   RESOURCE_REFRESH,
   RESOURCE_TRAITS,
 } from "../config.ts";
+/* The one place this module reaches into `src/packs-src/`. It is content and
+   it is authored as `.mjs`, so there is nothing for `tsc` to resolve — see
+   `fillCardDamage` for why the table has to be readable at runtime at all. */
+// @ts-expect-error - content module, deliberately untyped
+import CARD_DAMAGE from "../../packs-src/card-damage.mjs";
 
 const F = () => foundry.data.fields;
 
@@ -298,12 +303,91 @@ export const migrateUses = (source: any): void => {
   ];
 };
 
-/** Damage as the stat blocks print it: `2d6+3 phy`. */
+/**
+ * Damage as the stat blocks print it: `2d6+3 phy`.
+ *
+ * Two of the members are here for damage printed on a *card* rather than on a
+ * weapon or a stat block, and both exist because the corpus has cards the
+ * other five cannot describe.
+ *
+ * **`proficiency` is the difference between a card that scales and one that
+ * does not.** Sixteen of the seventy-seven entries that print their own dice
+ * say "using your Proficiency" and sixty-one do not, and the two are not
+ * interchangeable — it is the rule the marked decks were measured against: a
+ * card you can cast again for nothing scales with Proficiency, and a card
+ * dealing flat dice is gated behind a Hope, a Stress or a rest. So it is a
+ * flag rather than a number, because the multiplier belongs to the character
+ * and not to the card. The weapon path has always rolled Proficiency copies
+ * of `count`; this is what lets a card ask for the same treatment or decline
+ * it.
+ *
+ * **`name` is which mode.** A card can print several expressions — Tempest
+ * prints Sandstorm and two siblings, each with its own dice — and a button
+ * offering "Roll damage" three times has said nothing about which is which.
+ * Blank is the common case and the only case for a weapon or a stat block,
+ * both of which print exactly one.
+ */
 export const damageField = (dice = "d6", count = 1, bonus = 0): any =>
   schema({
+    /** Which printed mode this is. Blank = the document has only one. */
+    name: str(),
     count: int(count, { min: 0 }),
     dice: str(dice),
     bonus: int(bonus),
+    /** Roll Proficiency copies of `count` rather than `count` flat. */
+    proficiency: bool(false),
     type: str("physical"),
     direct: bool(false),
   });
+
+/**
+ * Damage a card prints, arriving on a card somebody is already holding.
+ *
+ * `src/packs-src/card-damage.mjs` is the reading — one entry per printed
+ * expression, keyed `type:name` — and rebuilding the packs puts it on every
+ * future drag and on none of the copies already sitting in a loadout. That is
+ * `ClassData.migrateData`'s argument unchanged: the card on a character sheet
+ * is an *embedded copy* made when it was dragged in.
+ *
+ * It is **not** a `migrateData`, and that is a finding rather than a taste.
+ * Foundry hands `migrateData` the `system` object and nothing else —
+ * `migrateDataSafe` takes `(source, options)` and drops the cleaning state
+ * before it calls, so the document's own `name` and `type` are not reachable
+ * from there — and a table keyed by name cannot be read without them.
+ * `prepareBaseData` is the documented place that can, via `this.parent`, so
+ * the fill is a preparation step instead: it runs on every construction,
+ * embedded or compendium, exactly where a migration would have, and stores
+ * nothing.
+ *
+ * Storing nothing is what makes the guard matter, in both directions. A
+ * non-empty array is *somebody's own* — a homebrew card a GM filled in by hand
+ * — and an annotation about a card of the same name must never win over it.
+ * The cost of the same rule read backwards is that an array somebody emptied
+ * is indistinguishable from one that was never filled, so the annotation comes
+ * back. Renaming the card is what says "this is not that card", which is the
+ * answer `build-packs.mjs` already gives about a stable `_id`.
+ *
+ * Entries are copied rather than shared, and completed against the schema's
+ * own defaults: two characters holding the same card must not hold the same
+ * object, and a consumer reading `proficiency` off an annotation that did not
+ * bother to state it should read `false` rather than `undefined`.
+ */
+export const fillCardDamage = (system: any, type?: string, name?: string): void => {
+  if (!type || !name || system?.cardDamage?.length) return;
+  /* Optional on the table itself, not on the lookup: this runs on the
+     construction of every Item in the world, so a malformed content module
+     must fail as a card with no damage rather than as a world that will not
+     open. */
+  const printed = (CARD_DAMAGE as Record<string, any[]> | undefined)?.[`${type}:${name}`];
+  if (!printed?.length) return;
+  system.cardDamage = printed.map((d: any) => ({
+    name: "",
+    count: 1,
+    dice: "d6",
+    bonus: 0,
+    proficiency: false,
+    type: "physical",
+    direct: false,
+    ...d,
+  }));
+};

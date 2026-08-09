@@ -837,18 +837,64 @@ export const HOPE_ACTION_COST = 3;
    The sheet is *already* doing this for the Hope action and has been since
    that moved to the rail.
 
-   It is kept honest by only ever reading the **opening clause**. Daggerheart
-   states a price the way an invoice does — first thing, imperative — and
-   anything later in the paragraph is describing what the feature does, not
-   what it costs. That distinction is not cosmetic:
+   It is kept honest by a bound, and the bound is **grammatical rather than
+   positional**. That is a correction: it used to be a run of at most 64
+   characters from the start of the text, stopped dead at the first `.`, on
+   the reasoning that Daggerheart states a price the way an invoice does —
+   first thing, imperative. It does, on the cards that have one thing to say.
+   It does not on the ones that name a trigger first, and there are a great
+   many of those:
+
+       Shadow Stepper — "You can move from shadow to shadow. While in shadow,
+       you can mark a Stress to disappear…"          killed by the '.' at 34
+       Wings of Light — "You can fly. While flying… • Mark a Stress to pick
+       up and carry another willing creature…"       killed by the '.' at 12
+       Heart of a Poet — "After you make an action roll to impress, persuade,
+       or offend someone, you can spend a Hope…"     lead-in runs to 78
+
+   A hundred and eleven feature blocks across the four packs stated a cost the
+   sheet could not see, which is the failure this parse exists to prevent
+   arriving from the other side: the player presses the row, nothing is
+   charged, and nothing on screen says a price went unpaid.
+
+   So the position is dropped and what replaces it is **who is paying**. A
+   price is the holder's, and the holder's price is written one of two ways:
+   an offer — "you can spend", "you may mark" — or a bare imperative at the
+   head of a clause, which is the same sentence with the subject left out.
+   Anything else in the paragraph belongs to somebody else or is a
+   consequence rather than a purchase, and the counter-example is still the
+   one that settles it:
 
        Ranger's Focus — "Spend a Hope and make an attack against a target.
        … When you deal damage to them, they must mark a Stress."
 
-   The first is your price. The second is the *target's*, and a regex over
-   the whole paragraph charges you for it. Anchoring at the start of the text
-   and stopping at the first sentence is what tells those two apart, and it
-   is why the pattern is written the way it is rather than more permissively.
+   The first is your price. The second is the *target's*, and a regex that
+   reads the whole paragraph without asking who is paying charges you for it.
+   "they must mark" is neither an offer nor the head of a clause, so it is not
+   reached — and the same test takes twenty-nine clauses the old anchored run
+   *was* already charging, every one of them a trigger, a consequence or
+   somebody else's bill. Three weapons named Scary say "the target must mark a
+   Stress" and the sheet was charging that Stress to the wielder; four suits of
+   Banded Armor say Severe damage costs you one, and were charging it on a
+   press rather than on the damage.
+
+   One of the twenty-nine is a genuine price written as an obligation — the
+   Ethereal Zweihänder's "You must mark a Stress to conjure this weapon" — and
+   it is given up deliberately. "must" is how this book writes a consequence
+   far more often than a price, and nothing in the sentence tells them apart.
+
+   Two bounds remain, and both are worth stating because neither is obvious:
+
+   - **The first such clause per currency, and no more.** A card that prices
+     two different uses gets charged for both, one per unit, which is the
+     one-price-per-feature model showing its edge rather than a parse error.
+   - **Only the four currencies this sheet can spend.** Nothing here reads a
+     cost it has no track to take it from.
+
+   `tools/check-cards.mjs` is what keeps the widening honest: every clause
+   this prices across the four packs is listed there with the words it was
+   read from, so a new over-match fails a build rather than quietly charging
+   somebody a Stress.
 
    An authored `stressCost`/`fearCost` on a `feature` Item always wins over
    the text, because somebody typed it deliberately. */
@@ -860,16 +906,46 @@ const AMOUNTS: Record<string, number> = {
 const amount = (w: string): number => AMOUNTS[w.toLowerCase()] ?? (Number(w) || 0);
 
 /**
- * `^` and a sentence-bounded run: the price is the first thing the rule says.
- * The run allows a short lead-in — "Once per long rest, spend 3 Hope to…" —
- * and `[^.!?]` stops it dead at the end of the opening sentence.
+ * Emphasis and whitespace, together, anywhere the two can meet.
+ *
+ * `plain` leaves markdown behind rather than markup — a card that prints
+ * "you can **mark a Stress**" arrives with the asterisks still in it, and
+ * they land in the middle of the phrase rather than around it. Every junction
+ * in the pattern therefore has to allow them.
  */
-const priceOf = (text: string, unit: string): number => {
-  const rx = new RegExp(
-    `^[^.!?]{0,64}?\\b(?:spend|mark|pay)\\s+(a|an|one|two|three|four|five|six|\\d+)\\s+${unit}\\b`,
+const MK = "[\\s*]";
+
+/**
+ * What may stand immediately before the verb: a clause head, or an offer.
+ *
+ * These are the two ways the holder's own price is written. Everything else
+ * that could precede "mark a Stress" — "must", "would", "they", "the target",
+ * a bare "when you" — is a consequence or somebody else's bill, and is left
+ * unreachable on purpose. See the argument above.
+ *
+ * `•` is here because `plain` renders a list item as one, so a bulleted price
+ * is a price at the head of a clause with no punctuation in front of it.
+ */
+const PAYER = "(?:^|<br>|•|[.!?:;,]|\\band\\b|\\bthen\\b|\\byou can\\b|\\byou may\\b)";
+
+/**
+ * The clause itself, kept separate from the number so the ratchet can quote it.
+ *
+ * `tools/check-cards.mjs` cannot import this — it is a `.mjs` tool and this is
+ * TypeScript — so it lifts these three declarations out of the file as *text*,
+ * which is `check-item-sheet.mjs`'s move for the same reason. That is what
+ * keeps there from being a second copy of the pattern maintained by hand, and
+ * it is why the three are named constants rather than one inlined literal.
+ */
+const priceClause = (text: string, unit: string): RegExpExecArray | null =>
+  new RegExp(
+    `${PAYER}${MK}*(?:spend|mark|pay)${MK}+(a|an|one|two|three|four|five|six|\\d+)${MK}+${unit}\\b`,
     "i",
-  );
-  const m = rx.exec(text);
+  ).exec(text);
+
+/** The first clause in which *you* are asked to pay this currency, if any. */
+const priceOf = (text: string, unit: string): number => {
+  const m = priceClause(text, unit);
   return m ? amount(m[1] as string) : 0;
 };
 

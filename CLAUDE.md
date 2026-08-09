@@ -260,15 +260,61 @@ paying to you, which is the half that gets forgotten. `featurePrice` in
 the track that cannot pay flinching rather than a dialog.
 
 That is a parse of English rules text, which this system refuses to do
-everywhere else, so it is bounded hard: **only the opening clause counts.**
-Daggerheart states a price the way an invoice does — first thing, imperative
-— and anything later in the paragraph is describing what the feature *does*.
-Ranger's Focus is the case that proves it: "Spend a Hope and make an attack…
-When you deal damage to them, they must mark a Stress." The first is your
-price and the second is the target's, and a regex over the whole paragraph
-charges you for both. Anchoring at the start and stopping at the first
-sentence is what tells them apart. A `feature` Item's authored `stressCost`
-always wins over the prose.
+everywhere else, so it is bounded hard — and **the bound was the wrong one.**
+It was *positional*: `^[^.!?]{0,64}?`, on the reading that Daggerheart states a
+price the way an invoice does, first thing and imperative. It does, when there
+is nothing in front of it. Shadow Stepper's first full stop lands at character
+thirty-four and Wings of Light's at twelve, because both open with the
+condition the price is attached to, and neither price was ever reached.
+Measured across the subclass cards: fifteen of a hundred and eighteen features
+were priced, and twenty-two more stated a cost and were silently missed.
+
+**That reads as missing plumbing, which is why it survived so long.** The
+complaint is "the subclass card has no Mark Stress button", and every part of
+the machinery a reader would go and check is present and correct — subclass
+features do reach `card.feats[]`, `actionsFor` does scan them, the button is
+drawn for the features that *are* priced. Nothing is unwired. The card simply
+has no price on it, according to a regex that stopped reading four words in.
+
+**So the position is dropped, and what replaces it is whose price it is.** A
+price is the holder's, and the holder's price is written one of two ways: an
+offer — "you can spend", "you may mark" — or a bare imperative at the head of a
+clause, which is the same sentence with the subject left out. `PAYER` in
+`cards.ts` is that set and `MK` is markdown emphasis at every junction, because
+`plain` leaves the asterisks *inside* the phrase rather than around it. Ranger's
+Focus is still the case that settles it — "Spend a Hope and make an attack…
+When you deal damage to them, they must mark a Stress" — and it survives the
+widening untouched, because "they must mark" is neither an offer nor a clause
+head. The discriminator was never the sentence.
+
+A hundred and eleven feature blocks gained a price they had always stated, and
+twenty-nine clauses **lost** one they should never have had: three weapons named
+Scary were charging the wielder the Stress the *target* marks, and four suits of
+Banded Armor were charging Severe damage's Armor Slot on a press rather than on
+the damage. One genuine price goes with them — the Ethereal Zweihänder's "You
+must mark a Stress to conjure this weapon" — because "must" writes a consequence
+far more often than a price and nothing in the sentence tells the two apart.
+
+**`tools/check-cards.mjs` is what keeps the widening honest**, and it is
+`check-resources.mjs`'s ratchet pointed at a third reading: every clause the
+pattern charges across the four packs is listed with the words it was read from
+— 288 of them on 274 documents — a `said` that leaves a card fails, and anything
+priced on neither list is a new over-match and fails too. The pattern is
+**lifted out of `cards.ts` as text** rather than copied, which is
+`check-item-sheet.mjs`'s move: a `.mjs` tool cannot import TypeScript, and a
+second regex maintained by hand is the exact thing the list exists to prevent.
+A rename in `cards.ts` stops the tool rather than leaving it checking a pattern
+the sheet no longer uses.
+
+**`DECLINED` turned out to be one finding stated five times.** Every one is a
+feature naming *two* currencies — Wings of Light's two bullets, Know Thy Enemy's
+"Additionally, on a success", the Book of Korvax's Rune Circle beside Recant —
+and `featurePrice` charges both, which nobody at a table pays. The invariant the
+block records is therefore that **no feature prices two currencies**, so a sixth
+fails rather than silently double-charging somebody.
+
+A `feature` Item's authored `stressCost`/`fearCost` always wins over the prose,
+because somebody typed it deliberately.
 
 The one fact the class card carried that had nowhere else to go is the two
 domains, so they are two coloured diamonds above the list — and there may be
@@ -389,6 +435,14 @@ is still evidenced by the words being on the card.
   `game.daggerheart.marked` — but nothing swaps the trait under a roll the
   player started from a trait plate. Doing so would be a campaign rule reaching
   into the roll engine, and the first time it was wrong nobody could see why.
+  There is now exactly one place it *is* substituted, and it is the other
+  situation entirely: a roll button on the posted card itself, where the object
+  naming the trait is the object being pressed. See "A card that asks for a
+  roll" under Chat. The lookup table moved to `config.ts` for it, beside the two
+  domains it is keyed on — `marked.ts` imports the roll engine, which evaluates
+  Dice So Nice's texture table at module scope, so asking which trait a Root
+  card casts with used to cost every card-drawing surface a live `foundry`.
+  `marked.ts` re-exports it, because the *rule* is still stated there.
 
 `system.mark` and `system.surging` are the only campaign-frame state in the
 character schema, and they are there rather than on a "Marked" feature Item
@@ -1450,6 +1504,43 @@ next size up, three of four stat cells ellipse on a weapon a real character
 carries. `design/tile.css` is untouched, which is what lets the dialogs draw
 the base component unchanged.
 
+## An Experience is a sentence
+
+`.xp .r b` truncated with an ellipsis, in a rail that is a fixed 288px — about
+thirty characters, which is a clause. An Experience is not a label picked off a
+list; it is a phrase the player wrote, and the half of it that fits is not the
+half being chosen between. Two Experiences that begin the same way are the
+common case, because the thing they begin with is the character.
+
+Two other answers were available and both are worse. **Widening the rail** taxes
+every other thing on the sheet for one field, and the rail is where Hope, the
+four tracks and both thresholds live. **Shrinking the type to fit** is the gear
+tile's failure one section above, arriving by choice rather than by accident: a
+7px Experience beside a 12px one is large pictures and caption-sized data again,
+and this time we would have typed it in.
+
+So it wraps. `overflow-wrap:anywhere` and not `break-word`, because only
+`anywhere` also shrinks the min-content contribution — the rail's scroller does
+not go sideways, so a single unbroken word would otherwise force the column open
+rather than break inside it.
+
+**The modifier is pinned to the first line**, and `align-items:baseline` is what
+does it. Flexbox baseline alignment takes an item's *first* baseline, so a `+2`
+beside a phrase that has grown to three lines stays level with line one, and the
+rail stays a column of numbers you read straight down rather than one where the
+modifier drifts to the middle of whatever height its row happens to be. On the
+ordinary one-line row it lands within a fraction of a pixel of where centring
+already put it and no row changes height, so the common case is unmoved.
+
+`.xp` is one component making one claim, so the adversary and companion sheets
+take it with the character sheet. **And the roll popover's `.xr b` takes the
+same treatment**, which is the surface where it matters most: on the sheet an
+Experience is a record you are reading, and in the popover it is the thing you
+are *choosing*, so hiding which one you are about to buy is the worse of the two
+failures. Baseline alignment there picks up the tick and the 7px cost caption
+for free — both sit on the first line of however long a phrase, rather than
+being centred against a block that may now be tall.
+
 ## The item sheet
 
 One sheet for all eleven Item subtypes, because they share more than they
@@ -1891,6 +1982,88 @@ it caught it on the first comment written into `CARD` for this work. It is the
 JS half of what the CSS port does by counting comment delimiters: not a linter,
 just the one mistake that actually happens when these files are edited by hand.
 
+## A card's damage is data
+
+`post-card.ts` decided whether a card rolls damage by sniffing its prose for the
+literal phrase **"damage roll"**, and the corpus says that is the wrong question
+twice over. Seventy-seven entries print a complete expression — a count, a die
+and usually a bonus — and **not one of them says the phrase**. The phrase
+matches fifty entries, thirty-four of which print no dice at all. The two sets
+are very nearly disjoint, because the English is not being used the same way in
+them: "add a d6 to your damage roll" is a clause about a roll the *weapon* is
+making, and "they take 2d8+4 magic damage" is the card rolling.
+
+**So there are two buttons and never one.** The weapon's `roll-damage` was right
+all along for the clauses it fired on and keeps every one of them; the card's
+own is a second action beside it, and its label prints its dice — "Roll 3d8+2" —
+because that is what tells it from its neighbour. The plate it posts is named
+after the *object* instead, exactly as a weapon's is, because a plate has no
+neighbour to be told apart from.
+
+`src/packs-src/card-damage.mjs` is the annotation, hand-authored and keyed
+`type:name`, and it is `card-resources.mjs`'s argument arriving at a second
+reading. `domain-cards.mjs` is generated from a snapshot we do not own, so an
+interpretation living inside it is an interpretation that gets overwritten — and
+an interpretation is what these are. "1d20+2 magic damage **for each Stress
+marked**" is a printed expression and not a formula: the dice repeat a number of
+times only the table knows at the moment of casting. Unleash Chaos rolls a d10
+per token spent. Preservation Blast scales its count on the Spellcast trait, and
+the only scaling this shape offers is Proficiency. Every one of those matches a
+regex for dice, and recording any of them as a fixed count is quietly wrong on
+every character who holds it.
+
+**What cannot be held honestly is declined out loud** — sixty-one phrases on
+fifty-eight documents, each with the words it was read from and the reading that
+disqualified it, under four headings: additive, reduction, a count this shape
+cannot hold, and somebody else's stat line. `DECLINED`'s values are **arrays**
+here where `card-resources.mjs`'s are strings, because a document can decline
+twice for unrelated reasons — the Werewolf does — and Hungry Fire is annotated
+*and* declined, its d8+2 being what casting deals and its extra 1d8 firing on
+the target's next spotlight.
+
+Fifty-seven expressions on fifty-two cards carry an annotation, and `withDamage`
+attaches them at each pack's own `export default`, beside `withDice` and for the
+same reason: no generator emits either call, because a generated file is an
+*ingredient* and the wrap is hand-written downstream where a re-fetch cannot
+revert it. Unlike a counter this **does** ride on the compendium document — a
+counter is something a player decides to keep, and a printed expression is on
+the card whether anybody wants it or not. The field is **`cardDamage`** and not
+`damage`, because a weapon's `damage` is its own singular stat line and
+spreading an array of that name over every subtype would shadow it.
+
+`tools/check-card-damage.mjs` is `check-resources.mjs`'s twin and asserts six
+things: every key names a document, every `said` is still on its card, the
+closed sets hold, two modes on one document do not share a name, the ratchet —
+a card matching the sweep and dispositioned nowhere — and **agreement**, which
+the twin has no equivalent of. Agreement is that the `{count, dice, bonus}`
+triple must be one the quoted phrase actually prints, and it is the failure that
+happens when seventy-seven expressions are typed in by hand: an entry recording
+`3d10+8` beside a `said` that reads 3d10+6. Both halves are perfectly well
+formed and every other check here passes it.
+
+    node tools/check-card-damage.mjs
+
+`npm run build:packs` runs it beside the others, off the committed pack sources
+and never the network.
+
+Two deliberate partings from the twin, both stated in its header. It does **not**
+fail a decline the sweep no longer reaches, because every decline here carries
+`said` and a phrase is a better handle than a deliberately broad regex — seven
+Versatile weapons are declined and swept by nothing, which is somebody having
+read further than the sweep reaches and is the direction this should fail in.
+And it does not fail a card that is annotated *and* declined, because Hungry
+Fire is that card and the file argues it out loud.
+
+**The ratchet fired on its first run against the whole world, which is what a
+ratchet is for.** Fifteen cards matched the sweep and were dispositioned
+nowhere, every one of them in a deck that arrived after the reading was taken —
+the file had been read against one corpus and is swept against a larger one. Six
+print a complete expression and were missing a *button*, not merely a record;
+nine landed under readings `DECLINED` already names. All fifteen were written up
+rather than silenced, which is the only way a coverage ratchet is worth having,
+and the six new readings are newer than the rest of the file and worth a second
+reader.
+
 ## Rolling
 
 Every roll on the character sheet goes through **the roll popover**
@@ -2174,6 +2347,89 @@ So the Fear applies at `createChatMessage` instead — see `applyFear` in
 never on a reload, and is gated on `game.users.activeGM` so a second GM at
 the table does not gain a second Fear. Anything else that wants to record
 something about a roll belongs there too, not on a timer.
+
+### A card that asks for a roll
+
+A posted card has carried a row of actions since the marked decks arrived — pay
+the price, spend a counter, roll the weapon's damage. What it could not do is
+the thing most cards actually ask for. "Make a Spellcast Roll (15)" is the first
+line of half the domain deck, and the only answer was to read it, go and find
+the sheet, and press the trait plate saying the same word.
+
+**This is the second bounded parse of English rules text in a system that
+permits one**, so it argues for itself the way `featurePrice` does or it does
+not get to exist. A roll is written in one shape, on purpose, every time:
+Daggerheart asks for one in the imperative — "Make a Spellcast Roll", "make an
+Instinct Roll (12)" — and everything else putting a trait next to the word
+*Roll* is describing a bonus to one rather than asking for one. Channeling's
+"+1 to Spellcast Rolls" earns no button, and neither does "you gain a +1 bonus
+to your next Knowledge Roll" or "+10 bonus to your damage rolls". None of them
+says **make**, and that verb is the whole of what a button needs.
+
+Required, and required to be *imperative*, which is `featurePrice`'s own
+discriminator asking a different question. There it is who is paying; here it is
+who is being told to roll, and the answer has the same shape — a clause head or
+an offer. "When you *would* make a Spellcast Roll" and "before *you* make a
+Spellcast Roll" both name a roll being made somewhere else, and neither "would"
+nor "you" is in the caller set. Over `src/packs-src/` the pattern takes a
+hundred and fifteen matches in thirty-one distinct shapes, and every
+counter-example above was checked one at a time rather than assumed.
+
+**No Reaction Rolls, and that falls out of the shape rather than needing a rule
+of its own.** The trait word has to sit immediately against `Roll`, so "make an
+Agility Reaction Roll" is unreachable — which is the point and not a limitation.
+Twenty-four cards name one and almost every one is the *target's* roll, so a
+button would put the roll on the wrong side of the exchange, which is precisely
+the failure `apps/targets.ts` was written to fix for damage. It is also what
+makes `to` safe in the caller set, even though `to` is the word a coercion is
+written with.
+
+**The button opens the roll popover rather than rolling.** A card saying "make a
+Spellcast Roll" is the start of a sentence you are still composing — the
+advantage and its sources, the flat modifier, the Experiences and the Hope they
+cost — and a button that rolled raw would be the one roll surface in this system
+where you cannot bring an Experience. `apps/ask-roll.ts` is that seam and it is
+thin on purpose: `dice/chat.ts` is the *message* layer, it knows which flag a
+claim spends and how an `<li>` is dressed, and it has no business knowing where
+a popover anchors or how a base modifier is summed — while `CharacterSheet.svelte`
+owns that arithmetic already and cannot lend it, because a Svelte component is
+not something chat can import. One call, two callers, no second copy. The anchor
+is the pressed button, because `prep` flips left when it would overflow and a
+300px sidebar is where that matters most. A Difficulty rides along **only when
+the card printed one**: a target number is the GM's everywhere else here, and
+"Make a Spellcast Roll (15)" is the single case where the table can already read
+it off the object in front of them.
+
+**And this is the one place the marked decks' Spellcast override is honest.**
+Root casts with Instinct and Void with Knowledge, and *Root and Void* says the
+rule is stated and not substituted — which is a claim about a roll the player
+started from a trait plate, where a campaign rule reaching into the roll engine
+is invisible the first time it is wrong. A button on the card is the other
+situation entirely: the object naming the trait is the object being pressed and
+the player is looking straight at it, so reading `spellcastTrait` there would be
+this file quietly overruling the card in the reader's hand. With no Spellcast
+trait and no mark there is **no button** — a character with no spellcasting
+subclass holding a card that calls for a Spellcast Roll is a table conversation,
+and a row that answered it by rolling Finesse is a worse answer than silence.
+
+**Two action kinds, and they claim differently.** `roll-trait` spends no flag at
+all: a claim exists because a Hope leaves a purse and cannot leave it twice, and
+a roll leaves nothing — you will roll this card again next round, and a button
+that burned itself on the first press sends you back to the sheet for every
+press after it. Ownership is the whole gate, and rolling stays independent of
+the price above it, because several cards let you pay *after* seeing whether you
+needed to. `roll-card-damage` **is** claimed, for the reason the plate's own
+`roll-damage` has been since it was written: damage completes an attack, and two
+clients pressing it is one attack dealing damage twice.
+
+**And `blocks()` was the older half of the gap.** The damage sniff read
+`card.text` alone, so a subclass, a class, an ancestry, a community and a
+transformation — every subtype whose prose lives in `feats[]` and whose `text`
+is empty — could never get a damage button at all. It read as those cards simply
+not having damage on them. `blocks()` yields the text and every feature block,
+and both parses walk it. That is a gap invisible by construction, which is what
+`check-item-sheet.mjs` exists for in a different place and what nothing was
+watching for here.
 
 ## The change log
 
@@ -3366,6 +3622,37 @@ everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
   off the pool. `fear` is a legal ceiling source now, so a card can *count*
   against it; none of them can move it. The pool, the HUD and `setFear` all
   exist, so this is wiring rather than design.
+- **Reaction Rolls get no button, and the reason is whose roll it is.**
+  Twenty-four cards name one and almost every one belongs to the *target* —
+  "each target must make an Agility Reaction Roll". A button on the caster's
+  posted card would put the roll on the wrong side of the exchange, which is
+  exactly what `apps/targets.ts` was written to fix for damage, and nothing on
+  the card says which side it is on in a shape a pattern can read. `askRoll`
+  already takes a `reaction` flag and nothing passes one, so the seam is there
+  for whoever settles the targeting question first.
+- **Card damage reads no critical.** A weapon's damage button is posted by the
+  attack that produced it and knows whether it critted; a card's is posted by
+  the card, which has no honest link to any roll. Inventing one — the last
+  duality roll this actor made, say — would be right most of the time and
+  silently wrong exactly when somebody is watching, so it is commented rather
+  than omitted.
+- **Save-for-half is not encoded**, deliberately, in `damageField` or in the
+  annotations. Halving on a success is what happens to a *target* after the
+  dice land, and a damage expression is what the caster rolls. It belongs with
+  `apps/damage.ts` and the targeting question above, not on the card.
+- **The seven Versatile weapons print a second stat line with nowhere to put
+  it.** "This weapon can also be used with these statistics—Presence, Melee,
+  d8" is a whole alternate weapon — trait, range and die together — and
+  `WeaponData.damage` is one stat line rather than a list of them. They are
+  declined in `card-damage.mjs` under "somebody else's stat line", which is the
+  honest record and not the fix: the fix is a second stat line on the schema
+  and a way to say which one you are swinging.
+- **A feature *block* has no authored cost field**, so the prose parse is the
+  only route to its price. `featureField()` is `{name, description, modifiers}`
+  and the escape hatch — `stressCost`/`fearCost`, which always outrank the text
+  — exists only on the `feature` Item subtype. That is why the widening above
+  had to be got right rather than worked around: a class or subclass feature
+  the pattern cannot read is a feature nobody can price by hand either.
 - **Temporary effects.** 87 rules match the sweep for one, which is the largest
   bucket it turned up, and the number wants breaking down before anybody acts
   on it — a third of it is not a modifier at all.

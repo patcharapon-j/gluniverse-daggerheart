@@ -279,15 +279,20 @@
    the purse is mentioned at all — the count itself lives on the sheet
    directly behind this popover, and a second copy could disagree with it. */
 .dh.prep .xps{display:flex;flex-direction:column;gap:2px}
-.dh.prep .xr{display:flex;align-items:center;gap:9px;width:100%;border:0;text-align:left;
+.dh.prep .xr{display:flex;align-items:baseline;gap:9px;width:100%;border:0;text-align:left;
   padding:4px 8px;background:var(--sunk);cursor:pointer;
   transition:background .14s,transform .14s}
 .dh.prep .xr:hover:not(:disabled){background:var(--sunk-2);transform:translateX(2px)}
 .dh.prep .xr i{flex:none;width:8px;height:8px;background:none;
   box-shadow:inset 0 0 0 1.5px var(--line-2);transform:rotate(45deg);
   transition:background .13s,box-shadow .13s}
+/* Wraps and is never ellipsed, for sheet.css's reason arriving at the
+   moment it matters most: a truncated Experience hides the thing you are
+   choosing, and this row is where the choosing happens. The row is
+   baseline-aligned rather than centred, so the tick, the modifier and the
+   cost all stay on the first line of however long a phrase. */
 .dh.prep .xr b{flex:1 1 auto;min-width:0;font:600 11px/1.25 var(--f-ui);color:var(--ink);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  overflow-wrap:anywhere}
 .dh.prep .xr em{flex:none;font:700 11.5px/1 var(--f-display);font-style:normal;
   color:var(--hope-tx);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .dh.prep .xr.on{background:var(--sunk-2)}
