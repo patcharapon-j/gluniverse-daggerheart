@@ -533,6 +533,72 @@ the answer exists. Not a seventh trait: "Spellcast" is a pointer to one of the
 six, and adding it to `TRAITS` would reach the roll engine, the sheet's six
 plates and every closed-set check in the system to serve one item.
 
+## The Brawler has no gear, and needed a weapon anyway
+
+*I Am the Weapon* says you have a primary weapon called **Brawler's Strike**
+equipped while you have no other Active Weapons, using a trait of your choice,
+at Melee range, dealing `d8+d6` physical damage using your Proficiency. Half of
+that shipped: `legacyFeatureModifiers` has carried the +1 Evasion since *Hope
+and Fear*'s classes arrived, and the sentence it hangs off — the weapon — was
+nowhere in the system. **The one class in the book built around carrying no gear
+was the one class that could not attack.**
+
+`src/module/brawler.ts` is the whole of it, and it is three decisions.
+
+**The weapon is a real Item.** Every surface that matters already works off
+`actor.items` — the gear tab's slots, the attack and damage buttons,
+`weaponModifierTerms`, the item sheet, somebody's macro — so a *derived* weapon
+would mean teaching all of them about a second kind of thing that is a weapon
+except when it is not. A document costs one creation and is then
+indistinguishable from a longsword, which is what the rule says it is.
+
+**It is observed rather than instrumented**, which is `ledger.ts`'s argument
+arriving at equipment: a weapon becomes active by at least five routes and a
+hand-off written into each is wrong the first time a sixth appears. It is found
+back by a **flag** and not by its name, because a player may rename their fists
+— the objection this file already states about reading a number off "the
+resource named Mark on the Item named Marked". The *feature* is matched by name,
+because that is the established idiom (`legacyFeatureModifiers` is an exact-name
+registry and `resourcesFor` binds a pool the same way). `firstOwner` picks the
+client that writes: unlike Fear this is not the GM's to author, and two
+connected owners both creating one is two Brawler's Strikes.
+
+**And `noWeapons` had to stop counting the strike.** The condition the +1
+Evasion hangs on means "no *other* Active Weapons", and the moment the fists
+became an equipped weapon they would have switched off the bonus they are the
+condition for — the feature paying out only in the instant before it took
+effect. That is the shape of bug this change creates and the reason the
+condition is now written the way the card is.
+
+**`d8+d6` is one expression with two die sizes, and `damageField.extra` is
+where it goes.** It is not the Versatile problem wearing a hat: that is a whole
+alternate stat line — its own trait, range and die, *chosen between* — and it
+still has nowhere to go. These are rolled together, always. A list rather than
+one more pair of fields, because two is what the corpus happens to print and not
+a rule anybody wrote, and because a `dice2` blank on 358 documents is a field
+every reader has to test. It inherits `proficiency` rather than restating it:
+"both the d8 and the d6 scale off your Proficiency" is one claim about the
+expression, and a group that could opt out would be inventing a printed form
+nobody has.
+
+The plate follows. A `DamagePlate` keeps its first group spread across
+`n`/`die`/`rolls`/`max` and holds any others in `extra`, for the reason `hd`/`fd`
+are optional on the duality plate — every damage card posted before an expression
+could hold two shapes was stored with those four fields, and a log is a record.
+One term per group in the arithmetic strip, so an expression with two shapes
+says what each contributed; two runs and one operator in the dice strip, because
+the division that matters on a critical is awarded-versus-rolled and the groups
+inside each run tell themselves apart by their own silhouettes. A critical
+maximises **every** group, since it is the expression that doubles and half a
+doubled expression is neither.
+
+`card-damage.mjs` declined this expression and the decline stands, with its
+reason rewritten: the shape can hold it now, and the class card is still not
+where you swing your fists. The trait is left at the schema's default with the
+weapon's own `description` saying so, which is the arcane-frame wheelchair's
+answer one step earlier — "of your choice" is a choice this system cannot make
+and should not pretend to have made.
+
 ## Making a character
 
 A button on the sheet's rail opens a window that walks the book's creation
@@ -2431,6 +2497,68 @@ and both parses walk it. That is a gap invisible by construction, which is what
 `check-item-sheet.mjs` exists for in a different place and what nothing was
 watching for here.
 
+### Rolling a die again
+
+A great many cards say to reroll something — a damage die, a Hope Die, the whole
+lot — and the only way to do any of it was to roll again from the sheet and ask
+the table to ignore the first card. That is two records of one roll, and the
+second one is what everybody argues about. So **the die on the plate is the
+control**: press it and it rolls again, in place, on the card that already
+exists. `dice/reroll.ts` is the engine and `data-rr` is the handle.
+
+**It rolls a real `Roll`.** The engine's opening promise — the dice log, seeded
+randomness and any 3D-dice module stay honest — is not one a reroll may quietly
+drop by writing a number into a flag. So a `Roll` is built, evaluated, painted
+with the same DSN role the die was thrown under, appended to the message's own
+`rolls`, and shown in 3D when the table is running the toy. `showForRoll` is
+called rather than relied on, because DSN animates on message *creation* and
+this is an update; it is gated on the same setting that suppresses the dice on a
+fresh plate, which is the two halves of one switch.
+
+**The plate is the record and the markup is a rendering of it.** Nothing here
+touches the DOM: the stored options are updated and the content is rebuilt by
+the same three builders that wrote it. That is what forced `next`/`nextAct` to
+start being *stored* — they were the one part of a plate that lived only in the
+markup, so a rebuild without them silently ate the "Roll damage" button. A card
+posted before that has `weaponId`, which is the only trailing button any plate
+has ever had, so the one lossy case answers itself.
+
+**The face that was replaced stays on the card**, drawn beside its replacement
+and struck through with `dim` — the class that already means *this did not
+count* on a discarded helper's d6 and an adversary's unkept d20. A rerolled face
+is the same claim and gets the same mark rather than a fourth vocabulary for one
+idea. That is also what makes an **unlimited** reroll safe to offer: this system
+does not enforce the card that permits one — it prints the rule and lets the
+table read it — so what it owes the table instead is an honest record of how
+many times you asked. A silent reroll would be the only thing on a chat card
+that could be done without leaving a mark. Measured: the strip holds its 49px
+through two supersedings and grows one line at three.
+
+**A settled roll is settled.** The moment anything on the card is claimed — the
+Hope taken, the Fear gained, the damage rolled or applied — the dice go inert,
+or a claimed Fear could be rerolled into an unclaimed Hope and the claim flags,
+which exist precisely so a thing cannot be collected twice, would be guarding an
+outcome that no longer happened. `canUserModify` is the other half of the gate,
+the same test `message-header.ts` uses to decide who gets a trash can: the author
+of a roll and a GM are exactly the two people entitled to change what it says.
+
+**The builders say which die each one is and stop there.** `data-rr` is emitted
+unconditionally; `.rr` and the click are added by `dice/chat.ts`, which is the
+division `data-dh-act` and `CLAIM_OF` already draw one function above. A builder
+that asked who was looking would be a card that renders differently per reader,
+which is the thing storing a plate as its options exists to prevent — and it
+means a settled card's dice carry no hover at all, rather than a pointer that
+lifts a die and then refuses it.
+
+**The affordance is motion and light, not a mark.** Every mark this component
+has is load-bearing — the X means "this did not count", `lit` means "this side
+won", the deep-cut rim means "awarded, not rolled" — and a sixth badge on a 26px
+chip is a sixth thing to decode on the one surface read at a glance. No
+pseudo-elements either: `.dim` owns both of a die's, and a rerollable die is very
+often a dim one, since an unkept advantage d6 is exactly the die somebody wants
+to try again. The awarded maximum dice are the one set that never reroll, for
+the reason they never tumble.
+
 ## The change log
 
 Everything above is an event somebody **chose** to post: a roll, a card shown,
@@ -3646,7 +3774,12 @@ everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
   `WeaponData.damage` is one stat line rather than a list of them. They are
   declined in `card-damage.mjs` under "somebody else's stat line", which is the
   honest record and not the fix: the fix is a second stat line on the schema
-  and a way to say which one you are swinging.
+  and a way to say which one you are swinging. **`damageField.extra` is not
+  that**, and reading it as a head start would be the wrong lesson — it adds
+  die *groups* inside one expression, rolled together and never chosen between,
+  which is the Brawler's `d8+d6`. What Versatile needs is the list this schema
+  still does not have: `damage` as several stat lines with a live choice
+  between them.
 - **A feature *block* has no authored cost field**, so the prose parse is the
   only route to its price. `featureField()` is `{name, description, modifiers}`
   and the escape hatch — `stressCost`/`fearCost`, which always outrank the text

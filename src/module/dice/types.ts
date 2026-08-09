@@ -36,6 +36,19 @@ export interface PlateBase {
   kind?: string;
   total: number;
   mods: Term[];
+  /**
+   * Faces a reroll set aside, keyed by which die they came off.
+   *
+   * A log is a record, so a rerolled die does not disappear — the face it
+   * showed stays on the card beside the one that replaced it, struck through
+   * with the X that means *this did not count* everywhere else in this system.
+   * That is also what keeps rerolling honest without a limit anybody has to
+   * enforce: the table can see how many times you asked.
+   *
+   * Absent on every card posted before rerolling existed, and on the great
+   * majority of them afterwards.
+   */
+  rr?: Record<string, number[]>;
 }
 
 /**
@@ -82,8 +95,8 @@ export interface DualityPlate extends PlateBase {
   note?: Note;
 }
 
-/** A damage roll. No duality axis, no verdict — a damage roll is a quantity. */
-export interface DamagePlate extends PlateBase {
+/** One group of same-sized dice inside a damage expression. */
+export interface DiceGroup {
   /** Number of dice rolled, i.e. Proficiency copies. */
   n: number;
   /** "d6", "d12". */
@@ -92,6 +105,21 @@ export interface DamagePlate extends PlateBase {
   /** Present only on a critical: the awarded maximum, which never tumbles
       because it was not rolled. */
   max?: number[];
+}
+
+/** A damage roll. No duality axis, no verdict — a damage roll is a quantity. */
+export interface DamagePlate extends PlateBase, DiceGroup {
+  /**
+   * Further groups in the *same* expression — the Brawler's Strike is
+   * `d8+d6` and both halves scale off Proficiency.
+   *
+   * The first group stays spread across `n`/`die`/`rolls`/`max` rather than
+   * being folded into this list, for the reason `hd`/`fd` are optional on the
+   * duality plate: a log is a record, and every damage card posted before an
+   * expression could hold two shapes was stored with those four fields and
+   * nothing else. Absent reads as one group, which is what it was.
+   */
+  extra?: DiceGroup[];
   /** A bonus die some features add on top. */
   bonus?: { k: string; v: number; mx?: number };
   dtype: string;

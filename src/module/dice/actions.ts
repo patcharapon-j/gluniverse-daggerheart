@@ -156,6 +156,13 @@ export async function rollAttack(actor: any, weapon: any, opts: Common & { react
 /**
  * Proficiency copies of the weapon's die. On a critical the maximum of those
  * dice is awarded *and* they are rolled — both halves show on the card.
+ *
+ * A weapon whose printed expression carries more than one die *size* scales
+ * every group by the same Proficiency, because that is what "using your
+ * Proficiency" means about an expression rather than about a die. The
+ * Brawler's Strike is the only one in the corpus and it says so twice: "deals
+ * d8+d6 physical damage using your Proficiency (both the d8 and the d6 scale
+ * off your Proficiency)".
  */
 export async function rollWeaponDamage(actor: any, weapon: any, { critical = false } = {}) {
   const dmg = weapon?.system?.damage ?? { dice: "d6", bonus: 0, type: "physical" };
@@ -172,6 +179,9 @@ export async function rollWeaponDamage(actor: any, weapon: any, { critical = fal
     label: weapon?.name ?? "Damage",
     count: proficiency * Math.max(1, dmg.count ?? 1),
     die: dmg.dice,
+    extra: (dmg.extra ?? [])
+      .filter((g: any) => g?.dice)
+      .map((g: any) => ({ count: proficiency * Math.max(1, g.count ?? 1), die: g.dice })),
     mods,
     damageType: dmg.type,
     critical,

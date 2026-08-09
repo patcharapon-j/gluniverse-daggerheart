@@ -49,6 +49,9 @@
       "Dark": "Dark",
       "Light": "Light"
     },
+    "Chat": {
+      "Reroll": "Roll this die again. The face it showed stays on the card, struck through."
+    },
     "Warning": {
       "LoadoutFull": "Your loadout already holds {max} cards. Send one to the vault first.",
       "SecondaryBlocked": "Your primary weapon is Two-Handed — there is no free hand for a secondary.",
@@ -56,6 +59,7 @@
       "GMOnly": "Only a GM can change the Fear pool.",
       "CannotPay": "That resource cannot be marked or spent.",
       "AlreadyClaimed": "That has already been taken from this roll.",
+      "RollSettled": "Something on this roll has already been claimed, so its dice are settled.",
       "NoTarget": "Target a token first.",
       "NoWeapon": "The weapon this attack was made with is no longer on the sheet.",
       "NotEnoughHope": "An Experience costs a Hope, and you are short {need}.",

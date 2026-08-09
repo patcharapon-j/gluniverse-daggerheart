@@ -11,7 +11,7 @@
  */
 
 import { rich } from "../ui/card.js";
-import type { DamagePlate, DualityPlate, FoePlate, Term } from "./types.ts";
+import type { DamagePlate, DiceGroup, DualityPlate, FoePlate, PlateBase, Term } from "./types.ts";
 
 /**
  * Three layers, in the order light hits them: `.lamp` is the solid — its
@@ -22,11 +22,41 @@ import type { DamagePlate, DualityPlate, FoePlate, Term } from "./types.ts";
  * d6 that flashes an 11 on its way to landing is a d6 that is lying about
  * what it is. Dice with no range never tumble — they were awarded, not
  * rolled, and showing them spin would be the one false claim on the card.
+ *
+ * `data-rr` names the die so a reroll can address it: `h`, `f`, `adv:1`,
+ * `dmg:0:2`, `d20:0`. The markup states which die this *is* and stops there —
+ * whether it may be pressed is `dice/chat.ts`'s to decide, exactly as
+ * `data-dh-act` states which claim a button spends and lets the same file work
+ * out whether it has already been spent. A builder that also asked who was
+ * looking would be a card that renders differently per reader, which is the
+ * thing storing a plate as its options exists to prevent.
  */
-export const DIE = (v: number | string, cls: string, sz?: number, mx?: number): string =>
+export const DIE = (
+  v: number | string,
+  cls: string,
+  sz?: number,
+  mx?: number,
+  rr?: string,
+): string =>
   `<i class="die ${cls}"${sz ? ` style="--sz:${sz}px"` : ""}${
     mx ? ` data-mx="${mx}"` : ""
-  }><b class="lamp"></b><b class="core"></b><em>${v}</em></i>`;
+  }${rr ? ` data-rr="${rr}"` : ""}><b class="lamp"></b><b class="core"></b><em>${v}</em></i>`;
+
+/**
+ * The faces a reroll set aside on this die, drawn before the live one.
+ *
+ * Struck rather than removed, and struck with `dim` — the class that already
+ * means *this did not count* on a discarded helper's d6 and on an adversary's
+ * unkept d20. A rerolled face is the same claim, so it gets the same mark
+ * rather than a fourth vocabulary for the same idea.
+ *
+ * No colour class and no `data-mx`: colourless because a superseded Hope Die
+ * is not a Hope Die any more, it is a number that did not count, and it sits
+ * directly beside the one that did; no range because it has already landed and
+ * replaying its tumble would announce an event that is over.
+ */
+const PAST = (r: PlateBase, key: string, shape: string, sz: number): string =>
+  (r.rr?.[key] ?? []).map((v) => DIE(v, `${shape} dim`, sz)).join("");
 
 const esc = (s: unknown): string => foundry.utils.escapeHTML(String(s ?? ""));
 
@@ -87,7 +117,11 @@ const ADV = (r: DualityPlate, sz: number): string => {
   if (!r.adv) return "";
   const keep = r.adv.dice.indexOf(advDie(r));
   return r.adv.dice
-    .map((v, i) => DIE(v, `sq a${r.adv!.neg ? " neg" : ""}${i === keep ? "" : " dim"}`, sz, 6))
+    .map(
+      (v, i) =>
+        PAST(r, `adv:${i}`, "sq", sz) +
+        DIE(v, `sq a${r.adv!.neg ? " neg" : ""}${i === keep ? "" : " dim"}`, sz, 6, `adv:${i}`),
+    )
     .join("");
 };
 
@@ -107,8 +141,10 @@ const DICE = (r: DualityPlate, sz: number): string => {
   const hd = dualityDie(r, "h");
   const fd = dualityDie(r, "f");
   return (
-    DIE(r.h, `h ${shapeOf(hd)}` + (r.out === "fear" ? "" : " lit"), sz, facesOf(hd)) +
-    DIE(r.f, `f ${shapeOf(fd)}` + (r.out === "hope" ? "" : " lit"), sz, facesOf(fd)) +
+    PAST(r, "h", shapeOf(hd), sz) +
+    DIE(r.h, `h ${shapeOf(hd)}` + (r.out === "fear" ? "" : " lit"), sz, facesOf(hd), "h") +
+    PAST(r, "f", shapeOf(fd), sz) +
+    DIE(r.f, `f ${shapeOf(fd)}` + (r.out === "hope" ? "" : " lit"), sz, facesOf(fd), "f") +
     ADV(r, Math.round(sz * 0.76))
   );
 };
@@ -363,17 +399,64 @@ export const platePortrait = (r: DualityPlate): string =>
 
 const sum = (a: number[]): number => a.reduce((x, y) => x + y, 0);
 
+/**
+ * The damage expression's groups, first one included.
+ *
+ * A stored plate spreads its first group across `n`/`die`/`rolls`/`max` and
+ * keeps any others in `extra`, because every damage card posted before an
+ * expression could hold two die *shapes* was written that way and a log is a
+ * record. Everything below reads this instead of either half, so the one-group
+ * case — which is all but one document in the world — draws exactly the string
+ * it has always drawn.
+ */
+export const damageGroups = (r: DamagePlate): DiceGroup[] => [
+  { n: r.n, die: r.die, rolls: r.rolls, ...(r.max ? { max: r.max } : {}) },
+  ...(r.extra ?? []),
+];
+
+/** `2d8+2d6`, the dice half of the printed notation. */
+const groupNotation = (groups: DiceGroup[]): string =>
+  groups.map((g) => `${g.n}${g.die}`).join("+");
+
 export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): string => {
-  const crit = !!r.max?.length;
+  const groups = damageGroups(r);
+  const crit = groups.some((g) => !!g.max?.length);
   const flat = sum(r.mods.map((m) => m.v));
-  const notation = `${r.n}${r.die}${flat ? "+" + flat : ""}`;
+  const notation = `${groupNotation(groups)}${flat ? "+" + flat : ""}`;
+
+  /* One term per group, so an expression with two shapes in it says what each
+     shape contributed rather than handing the reader a single figure to take
+     apart. With one group this is the line it has always been. */
   const terms: Term[] = [
-    ...(crit ? [{ k: `${r.n}${r.die} maximum`, v: sum(r.max!) }] : []),
-    { k: `${r.n}${r.die}`, v: sum(r.rolls) },
+    ...(crit
+      ? groups.map((g) => ({ k: `${g.n}${g.die} maximum`, v: sum(g.max ?? []) }))
+      : []),
+    ...groups.map((g) => ({ k: `${g.n}${g.die}`, v: sum(g.rolls) })),
     ...(r.bonus ? [{ k: r.bonus.k, v: r.bonus.v }] : []),
     ...r.mods,
   ];
-  const shape = shapeOf(r.die);
+
+  /* Two runs and one operator, not one run per group: the division that
+     matters on a critical is awarded-versus-rolled, and the groups inside each
+     run tell themselves apart by their own silhouettes.
+
+     `mx` is omitted for the awarded set: a die with no range never tumbles,
+     because it was not rolled and showing it spin would be the one false
+     claim on the card. */
+  const DICE_OF = (pick: (g: DiceGroup) => number[], cls: string, tumble: boolean): string =>
+    groups
+      .map((g, gi) =>
+        pick(g)
+          .map((v, i) =>
+            tumble
+              ? PAST(r, `dmg:${gi}:${i}`, shapeOf(g.die), 26) +
+                DIE(v, `${shapeOf(g.die)} ${cls}`, 26, facesOf(g.die), `dmg:${gi}:${i}`)
+              : DIE(v, `${shapeOf(g.die)} ${cls}`, 26),
+          )
+          .join(""),
+      )
+      .join("");
+
   return `
 <div class="pl a1 wound blk${crit ? " mat" : ""}">
   ${CRIT(crit)}
@@ -387,10 +470,10 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
   <div class="dmg-st">
     ${
       crit
-        ? `<span class="grp"><s>max</s>${r.max!.map((v) => DIE(v, `${shape} w max`, 26)).join("")}</span><span class="op">+</span>`
+        ? `<span class="grp"><s>max</s>${DICE_OF((g) => g.max ?? [], "w max", false)}</span><span class="op">+</span>`
         : ""
     }
-    <span class="grp">${r.rolls.map((v) => DIE(v, `${shape} w`, 26, +r.die.slice(1))).join("")}</span>
+    <span class="grp">${DICE_OF((g) => g.rolls, "w", true)}</span>
     ${
       r.bonus
         ? `<span class="op">+</span><span class="grp">${DIE(r.bonus.v, "sq a", 26, r.bonus.mx ?? 6)}</span>`
@@ -430,13 +513,16 @@ export const foeCrit = (r: FoePlate): boolean =>
 const D20 = (r: FoePlate, sz: number): string => {
   const keep = r.d20.indexOf(d20Keep(r));
   return r.d20
-    .map((v, i) =>
-      DIE(
-        v,
-        "d20" + (i === keep ? (v === 20 && !r.rxn ? " nat" : " w") + " lit" : " dim"),
-        sz,
-        20,
-      ),
+    .map(
+      (v, i) =>
+        PAST(r, `d20:${i}`, "d20", sz) +
+        DIE(
+          v,
+          "d20" + (i === keep ? (v === 20 && !r.rxn ? " nat" : " w") + " lit" : " dim"),
+          sz,
+          20,
+          `d20:${i}`,
+        ),
     )
     .join("");
 };
