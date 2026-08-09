@@ -61,6 +61,7 @@
   import { SUBCLASS_RANKS } from "../data/items.ts";
   import { resourceMax } from "../data/resources.ts";
   import { poolCapacity } from "../data/dice-pools.ts";
+  import { damageDice } from "../data/damage.ts";
   import type { SheetState } from "../apps/sheet-state.svelte.ts";
   import Prose from "./parts/Prose.svelte";
 
@@ -80,15 +81,8 @@
     snap.type === "domainCard" && sys.domain ? domainDef(sys.domain).light : "#5c636d",
   );
 
-  /** `1d8+1d6` — every group in the printed expression, in one string. */
-  const damageNotation = $derived(
-    [
-      `${sys.damage?.count ?? 1}${sys.damage?.dice ?? ""}`,
-      ...((sys.damage?.extra ?? []) as { count: number; dice: string }[]).map(
-        (g) => `${g.count}${g.dice}`,
-      ),
-    ].join("+"),
-  );
+  /** `d8+d6` — every group in the printed expression, in one string. */
+  const damageNotation = $derived(damageDice(sys.damage));
 
   const num = (e: Event) => Number((e.currentTarget as HTMLInputElement).value) || 0;
   const txt = (e: Event) => (e.currentTarget as HTMLInputElement).value;

@@ -592,6 +592,24 @@ inside each run tell themselves apart by their own silhouettes. A critical
 maximises **every** group, since it is the expression that doubles and half a
 doubled expression is neither.
 
+**And the sheet did not follow, which is the half that shipped wrong.** The
+plate drew `d8+d6` correctly from the first roll, and every surface that
+*prints* the expression without rolling it said `d8` — the attack bar's damage
+button, the gear tile's Damage stat, the advancement tab's sentence about
+Proficiency and the creation window's equipment table. All four wrote
+`${count}${dice}` inline, because until this weapon existed the first group was
+the whole expression and a helper would have been one function wrapping a
+string interpolation. That is the shape of it: extending a schema is one edit
+and extending what *reads* the schema is four, and the four are invisible
+because each one is correct about the field it names. `damageDice` in
+`data/damage.ts` is the one function now, and it takes an optional multiplier
+because the surfaces mean two different expressions — a tile prints what is on
+the weapon (`d8+d6`, a leading 1 being noise on a stat line) and the attack bar
+prints what will be thrown (`2d8+2d6`). The **bonus stays with the caller**,
+since a tile means the weapon's own and the attack bar means that plus every
+passive item effect in scope, and a function that folded both in would be
+choosing between them with no way to know.
+
 `card-damage.mjs` declined this expression and the decline stands, with its
 reason rewritten: the shape can hold it now, and the class card is still not
 where you swing your fists. The trait is left at the schema's default with the

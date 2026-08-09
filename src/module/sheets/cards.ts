@@ -31,6 +31,7 @@ import {
   traitLabel,
 } from "../config.ts";
 import { cssUrl } from "../assets.ts";
+import { damageDice } from "../data/damage.ts";
 import { resourceMax, type Resource } from "../data/resources.ts";
 import { poolCapacity, type DiePool } from "../data/dice-pools.ts";
 import { CHITS } from "../ui/chit.js";
@@ -633,7 +634,7 @@ export function cardOf(
           // The *printed* damage. The rolled dice are Proficiency copies of
           // this, and they appear only in the attack bar where Proficiency
           // is in scope.
-          { k: "Damage", v: `${s.damage?.dice ?? "d6"}${s.damage?.bonus ? `+${s.damage.bonus}` : ""}` },
+          { k: "Damage", v: `${damageDice(s.damage)}${s.damage?.bonus ? `+${s.damage.bonus}` : ""}` },
           { k: "Burden", v: BURDEN_LABELS[s.burden] ?? "One-Handed" },
         ],
         text: plain(s.feature?.description || s.description) || undefined,
