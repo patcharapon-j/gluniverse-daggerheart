@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { isBrawlerStrike } from "../brawler.ts";
 import { TRAITS, type Trait } from "../config.ts";
 
 export interface PassiveModifier {
@@ -133,8 +134,15 @@ const conditionMet = (actor: any, item: any, m: PassiveModifier): boolean => {
     case "noArmor": return !armor;
     case "noPrimary":
       return !items.some((i: any) => i.type === "weapon" && i.system?.equipped && i.system?.slot === "primary");
+    /* "While this weapon is active" — the Brawler's, and the only user of
+       this condition. It excludes the Brawler's Strike itself, because the
+       strike *is* what being active means: counted as an ordinary weapon it
+       would switch off the Evasion bonus it is the condition for, and the
+       feature would pay out only in the moment before it took effect. */
     case "noWeapons":
-      return !items.some((i: any) => i.type === "weapon" && i.system?.equipped);
+      return !items.some(
+        (i: any) => i.type === "weapon" && i.system?.equipped && !isBrawlerStrike(i),
+      );
     case "hope": return Number(actor.system?.resources?.hope?.value ?? 0) >= Number(m.minimum ?? 0);
     case "stressFull": {
       const stress = actor.system?.resources?.stress;

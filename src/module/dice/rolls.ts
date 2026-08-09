@@ -28,7 +28,7 @@ import { SYSTEM_ID } from "../config.ts";
 import { getFear, setFear } from "../settings.ts";
 import { ADV, DIS, FEAR, HOPE, paint } from "./dsn.ts";
 import { damagePlate, dualityPlate, foeCrit, foePlate } from "./plate.ts";
-import type { DamagePlate, DualityPlate, FoePlate, Note, Outcome, Term } from "./types.ts";
+import type { DamagePlate, DiceGroup, DualityPlate, FoePlate, Note, Outcome, Term } from "./types.ts";
 
 /** Pull every rolled face off a term, kept and discarded alike. */
 const faces = (term: any): number[] => (term?.results ?? []).map((r: any) => r.result);
@@ -178,6 +178,8 @@ export async function rollDuality(opts: DualityOptions): Promise<DualityOutcome>
     actor: opts.actor,
     type: "duality",
     plate,
+    next: opts.next,
+    nextAct: opts.nextAct,
     extra: opts.weaponId ? { weaponId: opts.weaponId } : undefined,
   });
 
@@ -193,6 +195,15 @@ export interface DamageOptions {
   count: number;
   /** "d6", "d12". */
   die: string;
+  /**
+   * Further groups in the same expression, already scaled — the Brawler's
+   * Strike is `d8+d6` with both halves multiplied by Proficiency. They are
+   * rolled in one `Roll` alongside the first group, because they are one
+   * expression: two `Roll`s would be two entries in the dice log for a single
+   * printed line, and a critical would have to decide which of them it
+   * maximised.
+   */
+  extra?: { count: number; die: string }[];
   /** Flat additions shown as their own terms. */
   mods?: Term[];
   /** "physical" | "magic", or anything a feature invents. */
@@ -207,18 +218,48 @@ export interface DamageOptions {
   nextAct?: string;
 }
 
+/** How many faces a notation claims. Anything unparseable is a d6. */
+const sidesOf = (die: string): number => Number(String(die).replace(/^d/i, "")) || 6;
+
 export async function rollDamage(opts: DamageOptions): Promise<{ plate: DamagePlate; roll: any; message: any }> {
   const mods = opts.mods ?? [];
-  const count = Math.max(0, opts.count);
-  const sides = Number(opts.die.replace(/^d/i, "")) || 6;
-  const critBonus = opts.critical ? count * sides : 0;
+  /* One expression, so one list of groups and one formula. The first group is
+     spread back out afterwards, because that is the shape a stored plate has
+     had since damage cards were first posted. */
+  const groups = [
+    { count: Math.max(0, opts.count), die: opts.die },
+    ...(opts.extra ?? []).map((g) => ({ count: Math.max(0, g.count), die: g.die })),
+  ].filter((g, i) => i === 0 || g.count > 0);
 
-  const roll = new Roll(
-    `${count ? `${count}${opts.die}` : "0"}${critBonus ? ` + ${critBonus}` : ""}${modFormula(mods)}`,
-  );
+  // A critical awards the maximum of every group, not only the first: it is
+  // the expression that doubles, and half a doubled expression is neither.
+  const critBonus = opts.critical
+    ? groups.reduce((n, g) => n + g.count * sidesOf(g.die), 0)
+    : 0;
+
+  const dicePart = groups
+    .map((g, i) => (g.count ? `${g.count}${g.die}` : i === 0 ? "0" : ""))
+    .filter(Boolean)
+    .join(" + ");
+
+  const roll = new Roll(`${dicePart}${critBonus ? ` + ${critBonus}` : ""}${modFormula(mods)}`);
   await roll.evaluate();
 
-  const rolls = count ? faces(roll.dice[0]) : [];
+  /* `roll.dice` holds only the groups that actually rolled, so the term index
+     walks alongside rather than being the group index — a zero-count first
+     group contributes a literal `0` and no term at all. */
+  let term = 0;
+  const drawn: DiceGroup[] = groups.map((g) => ({
+    n: g.count,
+    die: g.die,
+    rolls: g.count ? faces(roll.dice[term++]) : [],
+    ...(opts.critical ? { max: Array.from({ length: g.count }, () => sidesOf(g.die)) } : {}),
+  }));
+  // `groups` is built with its first entry unconditional, so this cannot be
+  // absent — the assertion says so rather than inventing a fallback group that
+  // would then be a second opinion about what was rolled.
+  const [first, ...rest] = drawn as [DiceGroup, ...DiceGroup[]];
+
   const plate: DamagePlate = {
     who: opts.actor?.name ?? game.user?.name ?? "—",
     label: opts.label,
@@ -226,10 +267,8 @@ export async function rollDamage(opts: DamageOptions): Promise<{ plate: DamagePl
     frame: frameOf(opts.actor),
     total: roll.total,
     mods,
-    n: count,
-    die: opts.die,
-    rolls,
-    ...(opts.critical ? { max: Array.from({ length: count }, () => sides) } : {}),
+    ...first,
+    ...(rest.length ? { extra: rest } : {}),
     dtype: opts.damageType ?? "physical",
   };
 
@@ -239,6 +278,8 @@ export async function rollDamage(opts: DamageOptions): Promise<{ plate: DamagePl
     actor: opts.actor,
     type: "damage",
     plate,
+    next: opts.next,
+    nextAct: opts.nextAct,
   });
 
   return { plate, roll, message };
@@ -310,6 +351,8 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
     actor: opts.actor,
     type: "adversary",
     plate: base,
+    next: opts.next,
+    nextAct: opts.nextAct,
   });
 
   return { plate: base, roll, message };
@@ -347,6 +390,17 @@ interface PostOptions {
   actor?: any;
   type: "duality" | "damage" | "adversary";
   plate: unknown;
+  /**
+   * The trailing button, recorded rather than only rendered.
+   *
+   * A plate is stored as its options and the markup is a rendering of them —
+   * which was true of every number on it and *not* of this, because the label
+   * and action of "Roll damage" were arguments to the builder and went nowhere
+   * else. Rebuilding a card from its flag therefore lost the button, and
+   * `reroll.ts` is the first thing that ever needed to.
+   */
+  next?: string;
+  nextAct?: string;
   /** Anything the card's own buttons will need when they are pressed. */
   extra?: Record<string, unknown>;
 }
@@ -357,7 +411,16 @@ interface PostOptions {
  * palette to our own root is what keeps `--ink` and `--paper` from leaking
  * into every other package on the page.
  */
-async function postPlate({ roll, content, actor, type, plate, extra }: PostOptions): Promise<any> {
+async function postPlate({
+  roll,
+  content,
+  actor,
+  type,
+  plate,
+  next,
+  nextAct,
+  extra,
+}: PostOptions): Promise<any> {
   return ChatMessage.create({
     type,
     style: CONST.CHAT_MESSAGE_STYLES.OTHER,
@@ -368,7 +431,16 @@ async function postPlate({ roll, content, actor, type, plate, extra }: PostOptio
     // play for dice nobody is being shown — the two halves of one setting.
     sound: game.settings.get(SYSTEM_ID, "diceSoNice") ? undefined : null,
     content: `<div class="dh dh-plate">${content}</div>`,
-    flags: { [SYSTEM_ID]: { plate, kind: type, actorUuid: actor?.uuid ?? null, ...extra } },
+    flags: {
+      [SYSTEM_ID]: {
+        plate,
+        kind: type,
+        actorUuid: actor?.uuid ?? null,
+        next: next ?? null,
+        nextAct: nextAct ?? null,
+        ...extra,
+      },
+    },
   });
 }
 

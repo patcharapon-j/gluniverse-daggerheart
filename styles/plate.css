@@ -370,6 +370,37 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
 .dh .die.dim::before{transform:rotate(42deg)}
 .dh .die.dim::after{transform:rotate(-42deg)}
 
+/* ── a die you may roll again ───────────────────────────────────────
+   A great many cards say to reroll something, and the die on the card
+   is the obvious place to do it: the object you are being told to
+   reroll is right there, showing the number you want rid of.
+
+   The affordance is **motion and light, not a mark.** Every mark this
+   component has is load-bearing — the X means "this did not count",
+   `lit` means "this side won", the deep-cut rim means "awarded, not
+   rolled" — and a sixth badge on the same 26px chip would be a sixth
+   thing to decode on the one surface that has to be read at a glance.
+   A press-state is also the one kind of information that does not need
+   to survive a screenshot: it exists only while a pointer is on it.
+
+   So no pseudo-elements. `.dim` already owns both of a die's, and a
+   rerollable die is very often a dim one — an unkept advantage d6 is
+   exactly the die somebody wants to try again.
+
+   The lift is 2px and the plate clips at its own edge, so it stays
+   inside the strip's padding at every size this draws at. */
+.dh .die.rr{cursor:pointer;transition:transform .12s ease,filter .12s ease}
+.dh .die.rr:hover{transform:translateY(-2px) scale(1.06);filter:brightness(1.12)}
+.dh .die.rr:active{transform:translateY(0) scale(.98)}
+/* The hover is a hint about what a press would do rather than an answer
+   to one, so it is the half that goes. Compare the gain and the spend
+   on a Fear pip, which stay: a press with no answer is a control that
+   looks broken. */
+@media (prefers-reduced-motion:reduce){
+  .dh .die.rr{transition:none}
+  .dh .die.rr:hover,.dh .die.rr:active{transform:none}
+}
+
 /* Damage dice are the wound: the material a Hit Point is made of, and
    the one place this card is allowed to use that red. On a critical the
    maximised set is struck rather than rolled, so it is shown as the deep

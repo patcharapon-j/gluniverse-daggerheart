@@ -80,6 +80,16 @@
     snap.type === "domainCard" && sys.domain ? domainDef(sys.domain).light : "#5c636d",
   );
 
+  /** `1d8+1d6` — every group in the printed expression, in one string. */
+  const damageNotation = $derived(
+    [
+      `${sys.damage?.count ?? 1}${sys.damage?.dice ?? ""}`,
+      ...((sys.damage?.extra ?? []) as { count: number; dice: string }[]).map(
+        (g) => `${g.count}${g.dice}`,
+      ),
+    ].join("+"),
+  );
+
   const num = (e: Event) => Number((e.currentTarget as HTMLInputElement).value) || 0;
   const txt = (e: Event) => (e.currentTarget as HTMLInputElement).value;
   const chk = (e: Event) => (e.currentTarget as HTMLInputElement).checked;
@@ -131,7 +141,11 @@
      time. These arrays are three or four entries long and it is one update
      either way. */
 
-  const rowsOf = (key: string): any[] => foundry.utils.deepClone(sys[key] ?? []);
+  /* `getProperty` rather than an index, so a nested list works — a weapon's
+     further damage groups are `damage.extra`. It is still the *array* being
+     named and never a position inside one, which is the trap above. */
+  const rowsOf = (key: string): any[] =>
+    foundry.utils.deepClone(foundry.utils.getProperty(sys, key) ?? []);
   const writeRows = (key: string, rows: any[]) => ed && doc.update({ [`system.${key}`]: rows });
 
   const addRow = (key: string, blank: unknown) => writeRows(key, [...rowsOf(key), blank]);
@@ -515,6 +529,58 @@
                   />
                 </label>
               </div>
+              <!-- Further die *sizes* in the same expression, and the only
+                   weapon in the corpus that prints one is the Brawler's
+                   Strike: d8+d6, both halves scaling off Proficiency. It is
+                   full width and below the grid because a row is three
+                   controls and a 150px cell is two of them.
+
+                   Not the Versatile problem. That is a whole alternate stat
+                   line — its own trait, range and die, chosen between — and
+                   it still has nowhere to go. These are rolled together,
+                   always, and never chosen between. -->
+              <div class="fields wide">
+                <label>
+                  <span>Also rolls</span>
+                  <div class="lst">
+                    {#each sys.damage?.extra ?? [] as g, i (i)}
+                      <div class="r">
+                        <input
+                          type="number"
+                          min="0"
+                          value={g.count}
+                          disabled={!ed}
+                          onchange={(e) => editRow("damage.extra", i, "count", num(e))}
+                        />
+                        <select
+                          disabled={!ed}
+                          onchange={(e) => editRow("damage.extra", i, "dice", txt(e))}
+                        >
+                          {#each DAMAGE_DICE as d}
+                            <option value={d} selected={g.dice === d}>{d}</option>
+                          {/each}
+                        </select>
+                        {#if ed}
+                          <button
+                            type="button"
+                            class="x"
+                            title="Remove"
+                            onclick={() => dropRow("damage.extra", i)}>×</button
+                          >
+                        {/if}
+                      </div>
+                    {/each}
+                    {#if ed}
+                      <button
+                        type="button"
+                        class="add"
+                        onclick={() => addRow("damage.extra", { count: 1, dice: "d6" })}
+                        >+ die group</button
+                      >
+                    {/if}
+                  </div>
+                </label>
+              </div>
               <div class="sws">
                 <label class="sw">
                   <input
@@ -542,8 +608,8 @@
                    count above is the *printed* count and is almost always 1;
                    the multiplication is the character's and is done there. -->
               <p class="ach">
-                Rolled as <b>Proficiency × {sys.damage?.count ?? 1}{sys.damage?.dice}</b> — the
-                character sheet does the multiplication.
+                Rolled as <b>Proficiency × {damageNotation}</b> — the character sheet does the
+                multiplication.
               </p>
             </div>
           {:else if snap.type === "armor"}

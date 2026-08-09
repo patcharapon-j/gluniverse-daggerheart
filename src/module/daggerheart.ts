@@ -32,6 +32,7 @@ import { openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
+import { registerBrawler } from "./brawler.ts";
 import { clearMark, isMarkedCharacter, markedSpellcast, payUpkeep, registerMarked, rollOffMark } from "./marked.ts";
 
 /**
@@ -95,6 +96,10 @@ Hooks.once("init", () => {
      registering them costs a table not running the frame two predicates that
      return on their first line. */
   registerMarked();
+  /* The Brawler's fists, kept in step with what else is equipped. Same shape
+     and the same reason: a weapon becomes active by five routes and the
+     document is the record. */
+  registerBrawler();
   registerDice();
   registerBrowser();
   requestFonts();

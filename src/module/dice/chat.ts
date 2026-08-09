@@ -18,6 +18,7 @@ import { fit } from "../ui/card.js";
 import { loadSigils } from "../sheets/cards.ts";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
 import { rollWeaponDamage } from "./actions.ts";
+import { canReroll, rerollDie } from "./reroll.ts";
 import { rollDamage } from "./rolls.ts";
 import { play } from "./arrival.ts";
 
@@ -82,6 +83,7 @@ export function registerChat(): void {
     if (!plate) return;
 
     bindActions(message, plate);
+    bindRerolls(message, plate);
 
     // Only the arrival, not every re-render. A message that was already in
     // the log when the client connected has nothing to announce — and it
@@ -198,6 +200,53 @@ function bindActions(message: any, plate: HTMLElement): void {
       event.preventDefault();
       const actor = await resolveActor(message);
       await runAction(act, { message, actor, el });
+    });
+  }
+}
+
+/**
+ * Make every die on the plate pressable, or none of them.
+ *
+ * The markup states which die each one *is* — `data-rr`, written by the
+ * builders — and this decides whether anybody may press it, which is exactly
+ * the division `data-dh-act` and `CLAIM_OF` already draw one function above.
+ * A builder that asked who was looking would be a card that renders
+ * differently per reader, and a plate is stored as its options precisely so
+ * that it cannot.
+ *
+ * The class is added here rather than in the builder for the same reason: it
+ * is the *affordance*, and a card in somebody else's log has nothing to
+ * afford. That also means a settled card's dice carry no hover at all, which
+ * is the honest answer to a roll that can no longer change — rather than a
+ * pointer that lifts a die and then refuses it.
+ */
+function bindRerolls(message: any, plate: HTMLElement): void {
+  if (!canReroll(message)) return;
+  const hint = game.i18n.localize("DAGGERHEART.Chat.Reroll");
+
+  for (const el of plate.querySelectorAll<HTMLElement>("[data-rr]")) {
+    const key = el.dataset.rr;
+    if (!key) continue;
+    el.classList.add("rr");
+    el.title = hint;
+
+    el.addEventListener("click", async (event) => {
+      event.preventDefault();
+      /* The plate itself carries no click handler today, but the sheet's
+         `data-pk` rows do and this markup is drawn into a peek layer as well —
+         a die that also posted the card it is drawn on would be one press
+         doing two things. `chitClicks` stops at the row for the same reason. */
+      event.stopPropagation();
+      // A second press while the first is still rolling is one die rerolled
+      // twice, which is not what a double-click means.
+      if (el.dataset.rolling) return;
+      el.dataset.rolling = "1";
+      el.classList.remove("rr");
+      try {
+        await rerollDie(message, key);
+      } finally {
+        delete el.dataset.rolling;
+      }
     });
   }
 }

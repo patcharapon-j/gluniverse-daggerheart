@@ -663,8 +663,11 @@ export const DECLINED = {
         "deals d8+d6 physical damage using your Proficiency (both the d8 and d6 scale off your " +
         "Proficiency)",
       why:
-        "Two scaling dice in one expression, both multiplied by Proficiency, which the " +
-        "count/dice/bonus shape cannot hold. It is also a weapon: Brawler's Strike is equipped.",
+        "Somebody else's stat line. The expression is the Brawler's Strike's, a weapon the " +
+        "feature grants and `brawler.ts` keeps equipped, and it is annotated on that weapon " +
+        "rather than here. `damageField.extra` holds the two die sizes now — the shape was " +
+        "the reason this was declined and it no longer is — but a damage button on the class " +
+        "card would roll the fists from the one document you cannot swing.",
     },
   ],
   "transformation:Werewolf": [

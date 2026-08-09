@@ -326,6 +326,25 @@ export const migrateUses = (source: any): void => {
  * offering "Roll damage" three times has said nothing about which is which.
  * Blank is the common case and the only case for a weapon or a stat block,
  * both of which print exactly one.
+ *
+ * **`extra` is the second die *size* in one expression, and it is not the
+ * Versatile problem wearing a different hat.** Versatile prints a whole
+ * alternate stat line — its own trait, range and die — and asks which one you
+ * are swinging; that is still a list of stat lines this schema does not hold.
+ * This is one stat line whose printed dice are not all the same shape. The
+ * Brawler's Strike deals `d8+d6` and both halves scale off Proficiency, so it
+ * is a single expression with two groups in it, rolled together, applied
+ * together, and never chosen between.
+ *
+ * A list rather than one more pair of fields, because two is the count the
+ * corpus happens to print and not a rule anybody wrote down — and because a
+ * `dice2` that is blank on three hundred and fifty-eight documents is a field
+ * every reader has to test before it can be trusted. An empty array is the
+ * common case and needs no test at all.
+ *
+ * It inherits `proficiency` rather than restating it. "Both the d8 and the d6
+ * scale off your Proficiency" is one claim about the expression; a group that
+ * could opt out would be inventing a printed form nobody has.
  */
 export const damageField = (dice = "d6", count = 1, bonus = 0): any =>
   schema({
@@ -334,6 +353,8 @@ export const damageField = (dice = "d6", count = 1, bonus = 0): any =>
     count: int(count, { min: 0 }),
     dice: str(dice),
     bonus: int(bonus),
+    /** Further die groups in the *same* expression — see above. */
+    extra: arr(schema({ count: int(1, { min: 0 }), dice: str("d6") })),
     /** Roll Proficiency copies of `count` rather than `count` flat. */
     proficiency: bool(false),
     type: str("physical"),
@@ -385,6 +406,7 @@ export const fillCardDamage = (system: any, type?: string, name?: string): void 
     count: 1,
     dice: "d6",
     bonus: 0,
+    extra: [],
     proficiency: false,
     type: "physical",
     direct: false,
