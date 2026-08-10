@@ -657,6 +657,13 @@ button.dh-activity-btn {
      the negotiation entirely, which is the difference between a button that
      is 28px and one that is 28px because two rules disagreed. */
   flex: none;
+  /* And it takes its own clicks. Foundry sets `pointer-events:none` on whole
+     bands of its interface so they do not eat clicks meant for the canvas,
+     with each real control switching them back on for itself — the Fear strip
+     pays for this in `#ui-middle`. A door that inherits `none` is drawn
+     perfectly and does nothing when pressed, which is indistinguishable from
+     a door that was never wired. */
+  pointer-events: auto;
   width: 100%;
   height: 28px;
   min-height: 28px;

@@ -424,7 +424,11 @@ const chatPanels = (): HTMLElement[] => {
      markup no browser keeps, in the one place nobody would look for it. */
   const all = [
     ...document.querySelectorAll<HTMLElement>("#chat, .chat-sidebar, section[data-tab='chat']"),
-  ].filter((el) => !el.closest("nav"));
+    /* And never the floating notification pane, which holds a chat log of its
+       own over the canvas: it is a readout rather than a room, and it sits in
+       a band Foundry sets `pointer-events:none` on, so a door there would be
+       drawn perfectly and take no clicks. */
+  ].filter((el) => !el.closest("nav, #chat-notifications"));
   /* One panel can match twice — `#chat.chat-sidebar` is both — and a nested
      pair would take two buttons. Keep the innermost of any nesting. */
   return all.filter((el) => !all.some((other) => other !== el && el.contains(other)));
@@ -455,7 +459,9 @@ function mountButton(): void {
     button.innerHTML = `<i class="fa-solid fa-clipboard-list"></i> ${foundry.utils.escapeHTML(
       game.i18n.localize("DAGGERHEART.Activity.Open"),
     )}`;
-    button.addEventListener("click", () => void openActivity());
+    /* No listener on the element. See `registerActivityLog` — the press is
+       delegated off the document, because the lifetime of this node is
+       Foundry's and a listener does not survive being re-parsed. */
 
     /* Above the messages, as a **sibling** of the log rather than inside it.
        The log is one of the application's parts, and a part's element is
@@ -487,6 +493,27 @@ function mountButton(): void {
 }
 
 export function registerActivityLog(): void {
+  /* The press is delegated off the document, and that is a correction rather
+     than a preference.
+
+     A listener belongs to the *node*, and this node's lifetime is Foundry's.
+     Chat re-renders constantly, and the ways a live element comes back as a
+     lookalike — an ancestor's `innerHTML` read back and written, an
+     `outerHTML` move, a pane rebuilt from a cached string — all produce the
+     same thing: the button is still on screen, still ours by class, and has
+     no handler on it. Nothing about that is visible; it is a button that does
+     nothing, which is exactly what a button that is not wired looks like.
+
+     Delegation has no such lifetime. It is also what this system already does
+     for every gesture on the sheet — `data-pk` is four handlers on the window
+     root rather than four per row — so it is the idiom rather than a patch. */
+  document.addEventListener("click", (ev: Event) => {
+    const press = (ev.target as HTMLElement)?.closest?.(".dh-activity-btn");
+    if (!press) return;
+    ev.preventDefault();
+    void openActivity();
+  });
+
   /* Four ways the panel can arrive, and `mountButton` is idempotent, so they
      cost a `querySelector` each when there is nothing to do. `renderChatLog`
      is the one that ought to be enough; the other three are the sidebar being

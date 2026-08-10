@@ -2671,6 +2671,18 @@ when no panel is found at all it says so once in the console, naming the API —
 a door that silently fails to appear is the one failure there is nothing on
 screen to diagnose.
 
+**The press is delegated off the document**, which is the same argument as the
+wall. A listener belongs to the *node*, and this node's lifetime is Foundry's:
+every way a live element comes back as a lookalike — an ancestor's `innerHTML`
+read back and written, an `outerHTML` move, a pane rebuilt from a cached
+string — leaves the button on screen, ours by class, and carrying no handler.
+That is invisible, and it is indistinguishable from a button nobody wired. It
+is also the idiom already: `data-pk` is four gestures delegated off the sheet
+root rather than four handlers per row. The button additionally states
+`pointer-events:auto`, because Foundry sets `none` on whole bands of its own
+interface and a control that inherits it is drawn perfectly and takes no
+clicks — the Fear strip pays for exactly that in `#ui-middle`.
+
 **The open singleton is keyed on `rendered`, not on being non-null**, and that
 is the same failure one step in. The reference used to be taken before the
 render was awaited, so a render that threw left a half-built application
