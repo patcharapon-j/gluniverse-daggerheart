@@ -250,6 +250,36 @@ declare module "*/ui/ledger.js" {
   export function LEDGER(opts: { who?: string; entries?: LedgerEntry[] }): string;
 }
 
+declare module "*/ui/activity.js" {
+  import type { LedgerEntry } from "*/ui/ledger.js";
+
+  /** One settled window of changes, as the log holds it. */
+  export interface ActivityEntry {
+    id?: string;
+    when?: string;
+    who?: string;
+    entries?: LedgerEntry[];
+  }
+
+  /** The time, and the card. Prepended one at a time as they land. */
+  export function ACTIVITY_ENTRY(entry: ActivityEntry): string;
+
+  /** Nothing yet: what the window is, and why it is empty. */
+  export function ACTIVITY_EMPTY(opts: { title?: string; note?: string }): string;
+
+  /** The whole panel, drawn once. Every string arrives localised and escaped. */
+  export function ACTIVITY(opts: {
+    title?: string;
+    count?: string;
+    watching?: boolean;
+    watchLabel?: string;
+    clearLabel?: string;
+    off?: string;
+    empty?: { title?: string; note?: string };
+    events?: ActivityEntry[];
+  }): string;
+}
+
 declare module "*/ui/tile.js" {
   export function TILE(opts: any): string;
   export function SPINE(opts: any): string;

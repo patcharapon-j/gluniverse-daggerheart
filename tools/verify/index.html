@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="/styles/chit.css">
 <link rel="stylesheet" href="/styles/keep.css">
 <link rel="stylesheet" href="/styles/ledger.css">
+<link rel="stylesheet" href="/styles/activity.css">
 <link rel="stylesheet" href="/styles/roll.css">
 <link rel="stylesheet" href="/styles/swap.css">
 <link rel="stylesheet" href="/styles/sheet.css">
@@ -154,6 +155,15 @@
      looks exactly like a strip whose steppers work. */
   #ui-middle{pointer-events:none}
   #ui-top{display:flex;flex-direction:column;align-items:flex-start}
+
+  /* ── and the window's permission to be short, stood in for ────────
+     The log states its own `height:100%`; what `frame.css` adds is the two
+     declarations that let it be *shorter* than its content, because a flex
+     item's default `min-height:auto` refuses to shrink and the scroller then
+     never scrolls. Copied here for the reason `#ui-top` is: the environment
+     is part of the component, and the scroll check below is only a check if
+     the frame's half of it is present. */
+  #acwin > .aclog{min-height:0;max-height:100%}
 </style>
 </head>
 <body>
@@ -201,6 +211,13 @@
 <h2><span>// THE LEDGER</span>The change log, and everything it must survive storage as</h2>
 <div class="stage" id="ledger"></div>
 
+<h2><span>// THE ACTIVITY LOG</span>The window the change log lands in now that it is not chat</h2>
+<!-- Deliberately not `.stage`, for the browser's and the Fear strip's reason:
+     that class carries `.stage .dh{width:300px}`, and half of what is checked
+     here is that a 300px card sits inside a 348px window without either of
+     them moving. -->
+<section id="activity" style="padding:0 26px"></section>
+
 <h2><span>// THE PREP</span>The roll popover, and the pair it now names</h2>
 <div class="stage" id="prep"></div>
 
@@ -227,6 +244,7 @@ import { CARD, fit } from '/src/module/ui/card.js';
 import { CHITS } from '/src/module/ui/chit.js';
 import { KEEP, setKeep } from '/src/module/ui/keep.js';
 import { LEDGER } from '/src/module/ui/ledger.js';
+import { ACTIVITY } from '/src/module/ui/activity.js';
 import { SPINE, TILE } from '/src/module/ui/tile.js';
 import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
@@ -731,6 +749,87 @@ const keepReady = (async () => {
       <div class="lbl" style="margin-top:16px">CLIMBING · one die, and the chevron that moves it</div>
       <div id="kclimb">${KEEP({ mode: 'climb', faces: 6, dice: [3], name: 'wild surge die' })}</div>
     </div>`;
+})();
+
+/* ── THE ACTIVITY LOG ───────────────────────────────────────────────
+   The change log left chat and became a window of the GM's own, and three of
+   the four ways that goes wrong only fail here.
+
+   **The head is made of buttons**, which the ledger card never was. Foundry's
+   `elements` layer sizes every one of them to a centred line 28px tall *with a
+   matching floor*, and a floor with no competitor simply applies — the lesson
+   `make.css`, `pool.css`, `prep.css`, the sheet's own three type-buttons and
+   the list editor's two have each paid for separately. Two 19px controls in a
+   35px head stand 28 each and take the head to 44, which reads as roomy rather
+   than as broken.
+
+   **A head that scrolls is not a head.** The whole shape of this window is one
+   region that stays and one that moves, and the two ways to lose it are a body
+   that will not scroll — `min-height:auto` on a flex child reports the full
+   content height and the scrollbar never appears, which is the sheet's own
+   five-faced bug — and a head inside the scrollport, which looks perfect until
+   somebody scrolls.
+
+   **And the card it hosts is the shared card**, unresized. This is the
+   browser's inverted peek check arriving on a third window: `.ldg` is 300px in
+   the chat log, on a study page and here, and a rule of ours that reached into
+   it would be a second size nobody asked for.
+
+   The fourth is the `ac`-prefix claim, which is the ledger's own ownership
+   check pointed at the block that hosts it — and it is not hypothetical here.
+   `.act` was the obvious root for this window and is taken: `sheet.css` owns
+   `.eqp .act`, the gear tile's press. */
+const activityReady = (async () => {
+  const grace = byslug.grace;
+  const entry = (id, when, who, entries) => ({ id, when, who, entries });
+  const dom = { light: grace.light, dark: grace.dark };
+  /* Six, and the number is load-bearing rather than generous: the scroll
+     check below is only a check if the body actually overflows, and three
+     entries in a 420px window do not. An evening at a table is dozens. */
+  const events = [
+    entry('a6', '21:47', 'Kaelen Vos', [
+      { kind: 'hitPoints', from: 1, to: 4, max: 12 },
+      { kind: 'stress', from: 6, to: 3, max: 6 },
+    ]),
+    entry('a5', '21:44', 'Sena Wrenlow', [
+      { kind: 'pool', label: 'Twilight Toll', from: 2, to: 4, max: 0, name: 'tokens', dom },
+      { kind: 'move', label: 'Invisibility', into: true, from: 0, to: 1, dom },
+    ]),
+    entry('a4', '21:41', 'Orin Hale', [
+      { kind: 'hope', from: 4, to: 1, max: 4, scars: 2 },
+      { kind: 'armorSlots', from: 0, to: 1, max: 3 },
+    ]),
+    entry('a3', '21:38', 'Kaelen Vos', [{ kind: 'stress', from: 2, to: 4, max: 6 }]),
+    entry('a2', '21:35', 'Sena Wrenlow', [
+      { kind: 'move', label: 'Rune Ward', into: false, from: 1, to: 0, dom },
+    ]),
+    entry('a1', '21:30', 'Orin Hale', [{ kind: 'hope', from: 2, to: 5, max: 6 }]),
+  ];
+  document.getElementById('activity').innerHTML = `
+    <!-- The door, in a band with the pointer events switched off. Measured in
+         a real client before it was stated: the injected button computed
+         pointer events of none, so it drew perfectly and took no clicks, which
+         is indistinguishable from a button nobody wired. Second instance of
+         the lesson the Fear strip paid for in ui-middle. Plain words in here,
+         never code quotes: a backtick inside markup closes the template
+         literal it is in, and this page has just paid for that too. -->
+    <div class="lbl">THE DOOR · in a band Foundry switches pointer events off in</div>
+    <div id="acdock" style="pointer-events:none;width:200px;margin-bottom:22px">
+      <button type="button" class="dh dh-activity-btn" data-n="3">
+        <i class="fa-solid fa-clipboard-list"></i> Activity log</button>
+    </div>
+    <div class="lbl">THE WINDOW · 348 x 420, which is the shipping width</div>
+    <div class="dh" id="acwin" style="width:348px;height:420px;
+         border:1px solid var(--frame-line);display:flex;flex-direction:column">${
+      ACTIVITY({
+        title: 'Activity',
+        count: `${events.length} entries`,
+        watchLabel: 'Watching',
+        clearLabel: 'Clear',
+        empty: { title: 'Nothing yet', note: 'Changes land here as they settle.' },
+        events,
+      })
+    }</div>`;
 })();
 
 const ledgerReady = (async () => {
@@ -1854,6 +1953,103 @@ setTimeout(async () => { try {
   check('every ledger row resolves its track\'s material',
         lgHues.length >= 5 && lgUnset.length === 0,
         `${lgHues.length} rows · ${lgUnset.map(([t]) => t).join(', ') || 'all resolved'}`);
+
+  /* ── the activity log ─────────────────────────────────────────────
+     Four things, and the first three are the window rather than the card. */
+  await activityReady;
+
+  /* The door first, and it is a measurement rather than a precaution: in a
+     real client this button computed `pointer-events: none`, inherited from
+     one of Foundry's own layout containers — the bands it switches off so they
+     do not eat clicks meant for the canvas, with each real control switching
+     them back on for itself. The Fear strip pays for this in `#ui-middle` and
+     has a check of its own; this is the same lesson arriving in the sidebar,
+     where the failure is a button that is drawn perfectly, is the right size,
+     is in the right place, and does nothing. The badge goes with it, because
+     an unread count that resolves to nothing is a door that has stopped
+     saying the one thing it says. */
+  const acDoor = document.querySelector('#acdock .dh-activity-btn');
+  const acPe = getComputedStyle(acDoor).pointerEvents;
+  const acDoorH = Math.round(acDoor.getBoundingClientRect().height);
+  const acPip = getComputedStyle(acDoor, '::after').content;
+  check('the door takes its own pointer events, its height and its count',
+        acPe === 'auto' && acDoorH === 28 && acPip === '"3"',
+        `${acPe} · ${acDoorH}px · badge ${acPip}`);
+
+  /* Foundry's button, on a head that is made of two of them. Stated height,
+     stated floor, stated ceiling — and the radius with them, because nothing
+     in this system has a rounded corner and Foundry rounds every button to
+     4px. Strip the metrics from `.acbt` and this reports 28. */
+  const acBtns = [...document.querySelectorAll('#acwin .acbt')];
+  const acTall = acBtns.filter(b => Math.round(b.getBoundingClientRect().height) !== 19);
+  const acRound = acBtns.filter(b => getComputedStyle(b).borderTopLeftRadius !== '0px');
+  const acHead = Math.round(document.querySelector('#acwin .achd').getBoundingClientRect().height);
+  check('the head\'s two presses are 19px and square',
+        acBtns.length === 2 && acTall.length === 0 && acRound.length === 0 && acHead <= 36,
+        `${acBtns.map(b => Math.round(b.getBoundingClientRect().height) + 'px').join(' · ')} · head ${acHead}px`);
+
+  /* One region that stays and one that moves. Measured under a real scroll,
+     because a head inside the scrollport looks perfect at scrollTop 0 — and a
+     body that cannot scroll at all is the sheet's own `min-height:auto` bug,
+     which reports the full content height and never draws a scrollbar. */
+  const acBody = document.querySelector('#acwin .acbd');
+  const acHd = document.querySelector('#acwin .achd');
+  const acTop = acHd.getBoundingClientRect().top;
+  acBody.scrollTop = 40;
+  const acMoved = Math.round(acHd.getBoundingClientRect().top - acTop);
+  check('the head does not scroll and the body does',
+        acBody.scrollHeight > acBody.clientHeight && acBody.scrollTop > 0 && acMoved === 0,
+        `${acBody.scrollHeight}px in ${acBody.clientHeight}px · scrolled ${acBody.scrollTop}px · head moved ${acMoved}px`);
+  acBody.scrollTop = 0;
+
+  /* And the card is the shared card. The browser's inverted peek check on a
+     third window: a ledger card is 300px in the chat log, on its study page
+     and here, and a rule of this window's that reached into `.ldg` would be a
+     second size nobody asked for. */
+  const acCards = [...document.querySelectorAll('#acwin .ace .ldg')];
+  const acWide = acCards.filter(c => Math.round(c.getBoundingClientRect().width) !== 300);
+  check('a hosted ledger card is still the plate\'s 300px',
+        acCards.length === 6 && acWide.length === 0,
+        `${acCards.length} cards · ${acWide.length ? acWide.map(c => Math.round(c.getBoundingClientRect().width) + 'px').join(' · ') : 'all 300px'}`);
+
+  /* The `ac`-prefix claim, tested rather than asserted — the ledger's own
+     ownership check pointed at the block that hosts it. Not hypothetical: the
+     obvious root for this window was `.act`, and `sheet.css` owns `.eqp .act`,
+     the gear tile's press. `.ldg` is excluded by *element*, because the card
+     is a component this window deliberately hosts and every rule
+     `ledger.css` writes for it is somebody else's by design.
+
+     And so is this page's own `#acwin` rule, which is not another sheet
+     reaching in: it is the **frame** handing the root the window's height,
+     which `frame.css` does in the game and a page with no window has to stand
+     in for. Saying how tall its content region is, is the one thing the chrome
+     is for. */
+  const acOwn = [...document.querySelectorAll('#acwin .aclog, #acwin .aclog *')]
+    .filter(el => !el.closest('.ldg'));
+  const acReach = [];
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch { continue; }
+    const from = sheet.href?.split('/').pop() ?? 'page';
+    if (from === 'activity.css') continue;
+    const walk = (rs) => { for (const r of rs) {
+      const sel = r.selectorText;
+      if (sel === undefined) { if (r.cssRules) walk(r.cssRules); continue; }
+      // The box-sizing reset is `.dh *` and is meant to reach everything, the
+      // stand-in `elements` layer *is* the thing activity.css resets, and
+      // `#acwin` is this page standing in for the window frame.
+      if (!/box-sizing/.test(r.style.cssText) && !/^(button|input|select)/.test(sel) &&
+          !/#acwin/.test(sel)) {
+        for (const el of acOwn) {
+          let m = false; try { m = el.matches(sel); } catch {}
+          if (m) { acReach.push(`${from} ${sel}`); break; }
+        }
+      }
+      if (r.cssRules?.length) walk(r.cssRules);
+    }};
+    walk(rules);
+  }
+  check('no other sheet reaches into the activity log', acOwn.length > 8 && acReach.length === 0,
+        acReach.length ? acReach.slice(0, 4).join(' · ') : `${acOwn.length} elements clean`);
 
   /* ── the kept die ──────────────────────────────────────────────── */
   await keepReady;

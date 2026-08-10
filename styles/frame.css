@@ -100,6 +100,18 @@
   min-height: 0;
 }
 
+/* The activity log is a head over a scroller and needs the second half of the
+   same thing. It states its own `height:100%` — a log has no size but its
+   window's, so unlike `.win` it is never drawn any other way — and what it
+   cannot state for itself is the permission to be *shorter* than its content:
+   a flex item's default `min-height:auto` refuses that, which is the sheet's
+   own five-faced bug and would leave the body reporting its full height and
+   never drawing a scrollbar. */
+.application.dh-activity .window-content > .aclog {
+  min-height: 0;
+  max-height: 100%;
+}
+
 /* ── the dialogs ─────────────────────────────────────────────────────
    Three of them — take damage, pick two, rest — and they wear the sheet's
    frame at a smaller chamfer, because they are the same application in a
@@ -236,7 +248,13 @@
 
    `:has(.dh-plate)` and not `:has(> .dh-plate)`. Foundry wraps message
    content in `.message-content`, so our object is a grandchild — the child
-   combinator matched nothing, which is why the frame was still there. */
+   combinator matched nothing, which is why the frame was still there.
+
+   `.dh-ledger` stays in the list although nothing posts one any more: the
+   change log is the GM's window now (`activity-log.ts`), and a world that ran
+   an older version has those cards *in its log already*. Dropping the selector
+   would not tidy anything up, it would put a Foundry frame around a card that
+   was drawn without one. A record is a record however it was made. */
 
 .chat-message:has(.dh-plate),
 .chat-message:has(.dh-card, .dh-rest, .dh-ledger) {
@@ -599,11 +617,17 @@
   background: var(--line-2);
 }
 
-/* ── the way into the browser ────────────────────────────────────────
-   The one control this system draws in Foundry's own sidebar, and it lives
-   here with the rest of the application's furniture rather than in
-   `design/browse.css` for the reason the window chrome and the message
-   header do: it is not part of the component, it is the door.
+/* ── the two ways in ─────────────────────────────────────────────────
+   The two controls this system draws in Foundry's own sidebar — the browser,
+   at the head of the compendium tab, and the activity log, at the head of the
+   chat tab. They live here with the rest of the application's furniture rather
+   than in `design/browse.css` and `design/activity.css` for the reason the
+   window chrome and the message header do: neither is part of the component,
+   each is the door to one.
+
+   One rule for both, because they make the same claim in two places: a way
+   into a window of ours, standing in a tab of Foundry's. Where they differ is
+   only what is written on them, and — for the log — a count.
 
    It wears `dh` itself — the drag proxy, the context menu, the roll popover,
    the peek host and the Fear HUD's reason, arriving in a sixth place: the
@@ -621,11 +645,25 @@
    simply applies — the lesson `make.css`, `pool.css` and the sheet's own
    three type-buttons have each paid for separately. */
 
-button.dh-browse-btn {
+button.dh-browse-btn,
+button.dh-activity-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
+  /* The chat tab is a flex column whose log takes the slack, and a flex item
+     is shrinkable by default — so a door standing in one has to say it is
+     not. `min-height` would hold the box open anyway; this keeps it out of
+     the negotiation entirely, which is the difference between a button that
+     is 28px and one that is 28px because two rules disagreed. */
+  flex: none;
+  /* And it takes its own clicks. Foundry sets `pointer-events:none` on whole
+     bands of its interface so they do not eat clicks meant for the canvas,
+     with each real control switching them back on for itself — the Fear strip
+     pays for this in `#ui-middle`. A door that inherits `none` is drawn
+     perfectly and does nothing when pressed, which is indistinguishable from
+     a door that was never wired. */
+  pointer-events: auto;
   width: 100%;
   height: 28px;
   min-height: 28px;
@@ -646,10 +684,51 @@ button.dh-browse-btn {
     box-shadow 0.12s,
     color 0.12s;
 }
-button.dh-browse-btn:hover {
+button.dh-browse-btn:hover,
+button.dh-activity-btn:hover {
   box-shadow: inset 0 0 0 1px var(--hope);
   color: var(--hope-tx);
 }
-button.dh-browse-btn i {
+button.dh-browse-btn i,
+button.dh-activity-btn i {
   font-size: 11px;
+}
+
+/* ── and how many you have not looked at ─────────────────────────────
+   A log that is only ever read when you remember it exists is a log nobody
+   reads, and this one is deliberately silent: it does not toast, it does not
+   steal focus, and it no longer lands in a column somebody is watching. So
+   the door carries the count, which is the least a surface can say and still
+   be saying something.
+
+   Drawn on the button rather than beside it, from `data-n` — one attribute
+   the module writes and one rule that reads it, instead of an element to
+   create, find again and remove. Absent or zero is nothing at all: a badge
+   reading 0 is a badge that has stopped meaning anything. Absolutely
+   positioned so the count cannot move the label off centre as it grows from
+   one digit to two. */
+
+button.dh-activity-btn {
+  position: relative;
+}
+button.dh-activity-btn[data-n]:not([data-n="0"]) {
+  color: var(--hope-tx);
+}
+button.dh-activity-btn[data-n]:not([data-n="0"])::after {
+  content: attr(data-n);
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  min-width: 15px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  background: var(--hope);
+  color: #14161a;
+  font: 700 8px/1 var(--f-mono), monospace;
+  letter-spacing: 0.04em;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%);
 }

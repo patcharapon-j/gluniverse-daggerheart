@@ -1,0 +1,143 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH ACTIVITY — the change log, in a window of the GM's own
+
+   `ledger.css` draws the card. This draws the place it lands, and the
+   two are a different kind of object on purpose.
+
+   ── why it is not chat ────────────────────────────────────────────
+   The change log went into the chat log for as long as it has existed,
+   and that was the wrong room for it. Everything else this system
+   posts is an event somebody **chose** — a roll, a card shown, a rest
+   taken — and the whole argument of the ledger is that it is the
+   opposite: the record of what happened while nobody was posting
+   anything. Those two do not belong in one column.
+
+   What it costs to mix them is paid by the player, who never asked the
+   question. A four-person party in a fight settles a dozen tracks a
+   round, and every one of them pushed the roll everybody *was* looking
+   at further up a log four people are reading. Turning it off was the
+   only relief available, and it took the record away from the one
+   person it was for.
+
+   So the record moves to the GM, who is the person the rules ask to
+   keep it, and it is a window rather than a feed: it is there when you
+   look at it and silent when you do not.
+
+   ── the window is a log, so it is a column and a scroller ─────────
+   Two regions and nothing else. The **head** is outside the scroller,
+   because it says how many there are and holds the two controls, and a
+   count that scrolls away is a count you have to go and find. The
+   **body** is the scroller and holds the cards, newest first.
+
+   Newest first, which is the opposite of chat and is the right way
+   round here. A chat log is a conversation and reads downward; this is
+   a record you *glance* at — the question is always "what just
+   happened", never "what happened at the top of the session" — and
+   putting the answer at the top means the window never has to be
+   scrolled, never has to be auto-scrolled, and cannot fight the
+   scrollbar you are holding while a card arrives.
+
+   ── frame tokens, not paper ───────────────────────────────────────
+   Every colour here is `--frame-*`, which is the *application's*
+   palette and does not flip with the theme. The card it hosts is
+   paper and does. That is the same relationship the chat log had with
+   the card sitting in it, and it is what keeps the card reading as an
+   object in a place rather than as a panel of the window.
+   ══════════════════════════════════════════════════════════════════ */
+
+.aclog{display:flex;flex-direction:column;height:100%;min-height:0;
+  background:var(--frame);color:var(--frame-tx)}
+
+/* ── the head ─────────────────────────────────────────────────────
+   The name of the thing, how much of it there is, and the two presses
+   that are about the log rather than about anything in it. */
+.aclog > .achd{flex:none;display:flex;align-items:center;gap:8px;
+  padding:8px 11px;background:var(--frame-2);
+  border-bottom:1px solid var(--frame-line)}
+.aclog > .achd > b{font:700 8.5px/1 var(--f-mono);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--frame-tx-2)}
+/* `<s>` with the line taken off, which is `ledger.css`'s own idiom for
+   the second half of a heading: the subject is not emphasis and not a
+   label, it is the heading's other half. */
+.aclog > .achd > s{margin-right:auto;text-decoration:none;
+  font:700 8px/1 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--frame-tx-3)}
+
+/* Every metric stated, and the radius with them.
+   Foundry's `elements` layer gives a `<button>` a height *and* a matching
+   `min-height`, and a floor with no competitor simply applies — the lesson
+   `make.css`, `pool.css`, `prep.css` and the sheet's own three type-buttons
+   have each paid for separately. Two 19px controls in a 35px head come out
+   28 each and take the head to 44 while looking merely roomy. The 4px
+   radius is the other half: nothing in this system has a rounded corner,
+   because the family mark is a corner *cut off* rather than turned. */
+.aclog .acbt{flex:none;display:flex;align-items:center;justify-content:center;
+  height:19px;min-height:19px;max-height:19px;padding:0 8px;
+  border:0;border-radius:0;cursor:pointer;
+  background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line);
+  color:var(--frame-tx-2);
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%);
+  transition:box-shadow .12s,color .12s}
+.aclog .acbt:hover{box-shadow:inset 0 0 0 1px var(--hope);color:var(--hope-tx)}
+/* Watching is the ordinary state and says so quietly; paused is the one
+   worth seeing, and it is said twice — the label changes and the banner
+   below appears. No colour on either, because gold is Hope's everywhere
+   else in this system and a third meaning for it is a third thing to
+   decode on a control that is read once a session. */
+.aclog .acbt[aria-pressed="false"]{color:var(--frame-tx-3)}
+
+/* ── the banner ───────────────────────────────────────────────────
+   A window that is empty because nothing has happened and a window that
+   is empty because nothing is being watched are opposite facts, and the
+   empty state below cannot tell them apart on its own. It takes height
+   rather than overlaying, which is edit mode's rule and the same
+   reasoning: this lasts until somebody changes it back. */
+.aclog > .acoff{flex:none;padding:8px 12px 9px;
+  background:color-mix(in srgb,var(--hope) 7%,var(--frame-2));
+  box-shadow:inset 2px 0 0 var(--hope);
+  font:400 10.5px/1.5 var(--f-ui);color:var(--frame-tx-2)}
+.aclog > .acoff b{font-weight:600;color:var(--frame-tx)}
+
+/* ── the body ─────────────────────────────────────────────────────
+   The padding is inside the scrollport, which is `browse.css`'s finding
+   and lands the other way round here: there the top space had to go
+   because a `top:0` sticky heading left a band above itself with rows
+   running through it. Nothing in this window is sticky — the head is
+   outside the scroller entirely — so the space at the top is simply the
+   margin the newest card sits in, and it is wanted. */
+.aclog > .acbd{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;
+  padding:13px 12px 16px;display:flex;flex-direction:column;gap:13px}
+
+/* ── one entry ────────────────────────────────────────────────────
+   A time and the card it belongs to. The card already names the
+   character — `LEDGER` puts `who` in its own heading, for the plate's
+   reason — so the line above it says the one thing the card cannot: a
+   record is only a record if it says when. */
+.aclog .ace{flex:none;display:flex;flex-direction:column;gap:4px;
+  width:100%;max-width:300px}
+.aclog .acw{display:flex;align-items:baseline;gap:7px;
+  font:700 7px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--frame-tx-3)}
+
+/* It arrives, once, and only on the card that just landed.
+   No fill and no `forwards`: every keyframe here ends on the element's
+   own natural value, so a re-render that hands the element back mid-flight
+   leaves it exactly where the layout already put it. The class comes off
+   after the run, which is what stops the whole column replaying the next
+   time anything is drawn. */
+@keyframes ac-in{from{opacity:0;transform:translateY(-7px)}}
+.aclog .ace.new{animation:ac-in .26s cubic-bezier(.2,.7,.3,1)}
+@media (prefers-reduced-motion:reduce){
+  .aclog .ace.new{animation:none}
+}
+
+/* ── nothing yet ──────────────────────────────────────────────────
+   Centred in the scroller rather than pinned to the top of it: an empty
+   log is not a list with no rows, it is a window with nothing in it, and
+   a sentence hanging under the head reads as the first entry. */
+.aclog .acnil{margin:auto;padding:22px 16px;text-align:center;max-width:252px}
+.aclog .acnil b{display:block;margin-bottom:8px;
+  font:700 8px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--frame-tx-2)}
+.aclog .acnil span{font:400 11px/1.65 var(--f-ui);color:var(--frame-tx-3)}

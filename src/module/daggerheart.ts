@@ -32,6 +32,7 @@ import { openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
+import { openActivity, registerActivityLog } from "./activity-log.ts";
 import { registerBrawler } from "./brawler.ts";
 import { clearMark, isMarkedCharacter, markedSpellcast, payUpkeep, registerMarked, rollOffMark } from "./marked.ts";
 
@@ -90,6 +91,9 @@ Hooks.once("init", () => {
   registerChat();
   registerMessageHeaders();
   registerLedger();
+  /* And where it lands. The ledger observes; this is the GM's window it is
+     observed into, which is where the change log used to be a chat card. */
+  registerActivityLog();
 
   /* The campaign frame's two hooks — the Fear a marked card owes, and the toll
      for holding both decks. Both are observers rather than instrumentation, so
@@ -191,6 +195,12 @@ Hooks.once("ready", () => {
         button makes. Takes nothing: the browser is about the world's packs
         rather than about any one document. */
     browse: openBrowser,
+
+    /* `game.daggerheart.activity()` — the same call the chat sidebar's own
+       button makes, and the same refusal: it is the GM's record, so a player
+       who is handed the macro is told whose window it is rather than shown an
+       empty one. */
+    activity: openActivity,
 
     /* Two of the six refresh scopes have no automatic trigger, and these are
        not a placeholder for one. Foundry knows a rest happened because this

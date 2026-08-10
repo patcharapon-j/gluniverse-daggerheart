@@ -33,6 +33,7 @@ const MODULES = [
   "die.js",
   "keep.js",
   "ledger.js",
+  "activity.js",
   "tile.js",
   "domains.js",
   "peek.js",

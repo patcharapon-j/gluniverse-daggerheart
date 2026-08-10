@@ -34,12 +34,13 @@ export function registerSettings(): void {
     onChange: applyTheme,
   });
 
-  /* On by default, and world-scoped, because the whole claim the change log
-     makes is that the table can see what happened to a sheet without asking
-     the person holding it. A per-client switch would let one player opt out
-     of being seen, which is the opposite of the point; a per-client switch to
-     opt out of *seeing* would leave the GM alone with it. So it is one
-     decision for the table, and the GM's. */
+  /* On by default, and world-scoped, because what is being switched is
+     whether the table's changes are *recorded at all* rather than who gets to
+     look at the record. That question stopped being a matter of taste when
+     the log left chat: a per-client switch would have let one player opt out
+     of being seen, which was always the opposite of the point, and now there
+     is nothing for a player to opt out of — the record is the GM's window and
+     nobody else's. One decision, and the GM's. */
   game.settings.register(SYSTEM_ID, "changeLog", {
     name: "DAGGERHEART.Settings.ChangeLog",
     hint: "DAGGERHEART.Settings.ChangeLogHint",
@@ -47,6 +48,24 @@ export function registerSettings(): void {
     config: true,
     type: Boolean,
     default: true,
+    onChange: () => Hooks.callAll("daggerheart.activityChanged"),
+  });
+
+  /* The record itself. World-scoped because it is the table's evening rather
+     than one client's session — a GM who reloads rejoins it, and two GMs read
+     one log instead of two — and `config:false` because it is data rather than
+     a preference: the window is where it is read and cleared.
+
+     Only the active GM ever writes it; see `activity-log.ts`. The `onChange`
+     is the one hook every reader listens to, so the window and the unread
+     badge have one thing to be told rather than two. */
+  game.settings.register(SYSTEM_ID, "activity", {
+    name: "DAGGERHEART.Settings.Activity",
+    scope: "world",
+    config: false,
+    type: Array,
+    default: [],
+    onChange: () => Hooks.callAll("daggerheart.activityChanged"),
   });
 
   /* Off by default, and deliberately so: the chat plate draws its own dice

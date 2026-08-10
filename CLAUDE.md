@@ -85,9 +85,11 @@ study pages stop describing the system they are about.
 A new component in `design/` is **three registrations**, not one: the file
 list in the port script, and — for CSS — the `styles` array in `system.json`.
 Foundry reads that array once at server start, so a newly added stylesheet
-does not appear on a browser reload. Restart Foundry. `ledger.css` was the last
-one added and needed all three; a chat card that lands unstyled after a change
-to `design/` is almost always the third one missing.
+does not appear on a browser reload. Restart Foundry. `activity.css` was the
+last one added and needed all three — plus a fourth for a component that also
+ships JavaScript, since `activity.js` is a builder and had to join the module
+list too. A card or a window that lands unstyled after a change to `design/` is
+almost always the `system.json` registration missing.
 
 `tools/verify/` is a page that loads the *ported* sheets and asserts the
 things the port could silently break — that the palette resolves inside `.dh`,
@@ -2588,7 +2590,120 @@ table to keep these numbers where everybody can see them, and until now the only
 place any of them existed was the sheet of the person holding it.
 
 `src/module/ledger.ts` is the observer, `design/ledger.*` is the card, and
-`design/ledger.html` is the study page.
+`design/ledger.html` is the study page. `src/module/activity-log.ts` is the
+window it lands in, `design/activity.*` is that window, and
+`design/activity.html` is its study page.
+
+**And it is not in chat any more, which is the whole of the change.** For as
+long as the ledger has existed the card went into the chat log, and that was
+the wrong room. Everything else this system posts is an event somebody *chose*;
+this is the record of what happened while nobody was posting anything, and
+those two do not belong in one column. The cost was paid by the player, who
+never asked the question: a four-person party in a fight settles a dozen tracks
+a round, and every one of those cards pushed the roll everybody *was* looking
+at further up a log four people are reading. The only relief available was the
+world switch, which does not narrow the log — it deletes the record, and
+deletes it for the one person it was for.
+
+So it goes to the GM, who is who the rules ask to keep it, and stops being a
+feed: **a window, there when you look at it and silent when you do not.**
+Players get nothing at all, and that is not a permission being withheld — a
+player already watches their own sheet move, and what the log adds is the other
+three characters, which is the GM's job to hold.
+
+**The store is a world setting and the active GM writes it.** A pile in memory
+per client was the obvious build and is wrong twice: a GM who reloads
+mid-session loses the session, and two GMs keep two records of one evening. So
+it is `system` setting `activity`, capped at a hundred entries, written by
+`game.users.activeGM` alone — `applyFear`'s arrangement for `syncVulnerable`'s
+reason. Every GM's window reads one record and a reload rejoins it. The one
+thing given up is a table playing with no GM connected: nothing is recorded,
+because there is nobody whose record it would be.
+
+Appends go through **one promise queue**, and that is not defensive
+programming. An append is a read and then a write, the ledger buffers per
+actor, and an area attack landing on three characters opens three windows
+within a millisecond and closes them the same way — three appends in one tick,
+two of which would read the store before the first had written it. The record
+would be silently short exactly when the most was happening.
+
+`tools/test-activity-log.mjs` is what keeps all three honest, and it is
+`check-resources.mjs`'s ratchet pointed at behaviour rather than at content:
+that a player's client and a second GM's record nothing, that three appends in
+one tick are three entries, that the cap keeps the *recent* hundred, and that a
+card called `<b>Twilight</b> Toll` arrives as text. The last is the one thing
+the move out of chat took away — a posted card went through Foundry's sanitiser
+on the way into the database, and this draws into our own window — which is why
+`panel()` is exported at all. `npm run typecheck` runs it, so it runs before
+the release workflow spends a version number.
+
+    node tools/test-activity-log.mjs
+
+The window is **rendered once and driven afterwards**, which is `setMarks`'s
+and `setPool`'s contract arriving on an application: an entry that lands keeps
+its arrival to itself, the twenty underneath it do not replay theirs, and a GM
+reading the middle of the log does not have the scroller pulled out from under
+them. `sync` diffs on the entry id — the store is append-only, so almost always
+that is one new node prepended.
+
+The door is a button at the head of the **chat sidebar**, GM-only, wearing the
+count of what has not been looked at yet — `game.daggerheart.activity()` is the
+other way in, and it refuses a player out loud rather than opening an empty
+window. Not a scene control: that toolbar is for tools that act on the canvas,
+and this acts on nothing at all.
+
+**It finds its own wall rather than taking the one a hook hands it**, which is
+the browse button's arrangement corrected. `ChatLog` is an ApplicationV2 built
+out of *parts* in both supported generations, so what its render hook passes
+and what its markup is called are two things this repo does not own and has
+watched move once already — the Fear strip's dock changed between v13 and v14.
+So `chatPanels()` looks for `#chat`, `.chat-sidebar` or a `section` on the chat
+tab, minus anything inside a `nav` (the tab strip carries `data-tab="chat"`
+too, and a button prepended into a nav item is a button inside a button) and
+minus the outer of any nested pair. It runs on four hooks and again at `ready`,
+and it is idempotent, so the cost of the extra three is a `querySelector` each.
+Plural, because the chat exists twice the moment anybody pops it out.
+
+The button goes in as a **sibling** of the message log rather than inside it: a
+part's element is replaced wholesale on every re-render, which chat does
+constantly, so a door in there would be swept away by the next message. And
+when no panel is found at all it says so once in the console, naming the API —
+a door that silently fails to appear is the one failure there is nothing on
+screen to diagnose.
+
+**The press is delegated off the document**, which is the same argument as the
+wall. A listener belongs to the *node*, and this node's lifetime is Foundry's:
+every way a live element comes back as a lookalike — an ancestor's `innerHTML`
+read back and written, an `outerHTML` move, a pane rebuilt from a cached
+string — leaves the button on screen, ours by class, and carrying no handler.
+That is invisible, and it is indistinguishable from a button nobody wired. It
+is also the idiom already: `data-pk` is four gestures delegated off the sheet
+root rather than four handlers per row.
+
+**And the button states `pointer-events:auto`, which is a measurement rather
+than a precaution.** In a real client the injected door computed
+`pointer-events: none`, inherited from one of Foundry's own layout containers —
+the bands it switches off so they do not eat clicks meant for the canvas, with
+each real control switching them back on for itself. The Fear strip pays for
+exactly this in `#ui-middle`; this is the same lesson arriving in the sidebar,
+where the symptom is a button that is the right size, in the right place,
+drawn perfectly, and dead. `tools/verify/` puts a door inside a band with the
+pointer events off and asserts it takes its own back, along with its 28px and
+its unread badge — strip the declaration and it reports `none`, which is what
+the client reported.
+
+**The open singleton is keyed on `rendered`, not on being non-null**, and that
+is the same failure one step in. The reference used to be taken before the
+render was awaited, so a render that threw left a half-built application
+standing in it forever: every click afterwards found something there, brought a
+window that had never been drawn to the front, and did nothing whatever. One
+failure became a dead button, with the symptom outliving the cause and saying
+nothing about it. A failed open now clears the reference, logs and says so.
+
+`.dh-ledger` stays in `frame.css`'s list of message kinds although nothing
+posts one any more. A world that ran an older version has those cards in its
+log already, and dropping the selector would not tidy anything up — it would
+put a Foundry frame around a card drawn without one.
 
 **It observes the document rather than instrumenting the writers.** Fifteen or
 so call sites move one of these numbers — the damage dialog, a claim on a chat
@@ -2632,6 +2747,10 @@ This is a **note in the margin of the log**, not an object in it: a plate is
 arrives unasked for while somebody is describing a room. Four of them between
 two rolls must not push the roll off the screen. Six changes — every row shape
 there is — stand 122px, where the first draft stood about 230 for three.
+
+The move to a window of its own does not relax that, it re-argues it: a chat
+log is a mixture and this is a column of nothing but these, so a card at twice
+the height is half as much of the session on screen at once.
 
 Most of what that cost was **numerals**. The row led with a 22px figure and the
 word MARKED, above a strip that had already said it, and then said the total
@@ -2681,6 +2800,15 @@ empty element, `GEMS` and `CHITS` were already `<i>`/`<b>`, and the whole
 message survives storage exactly as posted — **no flag, no redraw, no render
 hook**. `tools/verify/` asserts both halves, so reaching for `MARKS` here to
 save fifty lines goes red rather than going quietly wrong.
+
+**That reason expired with the move and the rule is kept anyway**, which is
+worth saying out loud rather than leaving as a check nobody can justify. A card
+drawn into our own window is not sanitised by anybody, so an `<svg>` would
+survive it — but the card is unchanged, nothing is gained by rewriting it, and
+an older world's chat log still holds the posted ones. What replaces the reason
+is a smaller one: the entries are stored as **data** and the markup is built on
+render, so whatever the card is made of is rebuilt every time and the cheapest
+thing it can be made of is the thing it already is.
 
 **A picture reaches two readers badly**, though, and dropping the numerals is
 what made that a debt rather than a preference: somebody using a screen reader,
@@ -2742,17 +2870,29 @@ Both stay, because a plate is a statement about a *roll* and neither of these
 is. It is the judgement call in here most likely to want revisiting at a real
 table, and it is a `muteLedger` call away either way.
 
-**The gate is who pressed the button.** `update*` fires on every connected
-client, and posting from all of them is one message per player. The initiating
-client is also the only one whose `preUpdate*` ran, so it is the only one
-holding the before-state — the two conditions are the same condition, which is
-what makes it safe rather than merely conventional.
+**The gate was who pressed the button and is now who keeps the record.** It was
+the initiator because the log was a chat message and `update*` fires on every
+connected client — twelve clients agreeing to post is twelve copies of one
+card. The record is a world setting now and only a GM may write one, so the
+nominated writer replaces the initiator, which is `syncVulnerable`'s and
+`applyFear`'s arrangement a third time: two GMs would otherwise append the same
+entry twice.
 
-`changeLog` is a **world** setting, on by default. A per-client switch would let
-one player opt out of being seen, which is the opposite of the point; a
-per-client switch to opt out of *seeing* would leave the GM alone with it. One
-decision for the table, and the GM's — `pool.css`'s argument about the Fear HUD,
-arriving in chat.
+What makes the swap possible is that **`options` are broadcast with the
+update**, so the before-state stamped by the initiator's `preUpdate*` arrives at
+the GM's client already — there is no socket here and none is needed. What
+makes it *safe* is that the stamp is still written where it always was, under
+`watching()`: an actor muted on the client doing the work hands the GM nothing
+to record, so `muteLedger` goes on working from the other end of the wire
+without knowing there is a wire.
+
+`changeLog` is a **world** setting, on by default, and what it switches is
+whether changes are *recorded at all* rather than who may look. That stopped
+being a matter of taste when the log left chat: a per-client switch would have
+let one player opt out of being seen, which was always the opposite of the
+point, and there is now nothing for a player to opt out of. One decision for
+the table, and the GM's — `pool.css`'s argument about the Fear HUD, arriving one
+room over.
 
 Characters only. An adversary's Stress is the GM's working state and belongs on
 the GM's side of the screen. Gold is not watched either, and the boundary has a
@@ -3742,8 +3882,10 @@ everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
   hand. The window declines to walk the second half.
 - Death moves. Scars are recordable on the adjust tab and cost a Hope slot;
   Blaze of Glory, Avoid Death and Risk It All are not implemented.
-- The GM screen. The Fear pool is docked and public — see the Fear HUD above —
-  but nothing else on the GM's side has a surface of its own.
+- The GM screen. Two pieces of it exist — the Fear pool is docked and public,
+  and the activity log is a window of the GM's own — and the rest of what a GM
+  keeps beside the map still has no surface: countdowns, the adversary roster,
+  the environment in play.
 - Damage rolls and the adversary d20 do not open the roll popover.
 - Help an Ally and tag team rolls. The plate already draws several advantage
   dice with the losers crossed off; nothing lets a second player contribute one.
