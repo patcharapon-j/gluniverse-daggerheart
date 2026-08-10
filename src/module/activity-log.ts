@@ -340,14 +340,33 @@ export async function openActivity(): Promise<any> {
     ui.notifications?.warn(game.i18n.localize("DAGGERHEART.Activity.GMOnly"));
     return null;
   }
-  if (open) {
+
+  /* `rendered` and not merely non-null, and the difference is a whole class of
+     silent failure. The reference used to be taken before the render was
+     awaited, so a render that threw left a half-built application standing in
+     it forever — and every click after that found something there, brought a
+     window that had never been drawn to the front, and did nothing at all.
+     One failure became a dead button, which is the worst way to fail: the
+     symptom outlives the cause and says nothing about it. */
+  if (open?.rendered) {
     open.bringToFront?.();
     return open;
   }
+
   Cached ??= makeApp();
-  open = new Cached();
-  await open.render(true);
-  return open;
+  const app = new Cached();
+  try {
+    await app.render(true);
+  } catch (err) {
+    /* Said out loud. A window that fails to open is indistinguishable from a
+       button that is not wired, and only one of those is worth reporting. */
+    console.error(`${SYSTEM_ID} | the activity log failed to open`, err);
+    ui.notifications?.error(game.i18n.localize("DAGGERHEART.Activity.Failed"));
+    open = null;
+    return null;
+  }
+  open = app;
+  return app;
 }
 
 /* ── the way to it, and the badge on it ───────────────────────────────────

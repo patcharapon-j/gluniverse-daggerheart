@@ -2671,6 +2671,14 @@ when no panel is found at all it says so once in the console, naming the API —
 a door that silently fails to appear is the one failure there is nothing on
 screen to diagnose.
 
+**The open singleton is keyed on `rendered`, not on being non-null**, and that
+is the same failure one step in. The reference used to be taken before the
+render was awaited, so a render that threw left a half-built application
+standing in it forever: every click afterwards found something there, brought a
+window that had never been drawn to the front, and did nothing whatever. One
+failure became a dead button, with the symptom outliving the cause and saying
+nothing about it. A failed open now clears the reference, logs and says so.
+
 `.dh-ledger` stays in `frame.css`'s list of message kinds although nothing
 posts one any more. A world that ran an older version has those cards in its
 log already, and dropping the selector would not tidy anything up — it would

@@ -169,7 +169,8 @@
       "Off": "Not watching. Nothing that happens to a character is being recorded while this is <b>off</b>.",
       "EmptyTitle": "Nothing yet",
       "EmptyNote": "Changes to a character's tracks, counters and loadout land here as they settle.",
-      "GMOnly": "The activity log is the GM's record of the table."
+      "GMOnly": "The activity log is the GM's record of the table.",
+      "Failed": "The activity log could not be opened — see the console."
     }
   }
 }
