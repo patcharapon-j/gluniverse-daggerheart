@@ -806,6 +806,18 @@ const activityReady = (async () => {
     entry('a1', '21:30', 'Orin Hale', [{ kind: 'hope', from: 2, to: 5, max: 6 }]),
   ];
   document.getElementById('activity').innerHTML = `
+    <!-- The door, in a band with the pointer events switched off. Measured in
+         a real client before it was stated: the injected button computed
+         pointer events of none, so it drew perfectly and took no clicks, which
+         is indistinguishable from a button nobody wired. Second instance of
+         the lesson the Fear strip paid for in ui-middle. Plain words in here,
+         never code quotes: a backtick inside markup closes the template
+         literal it is in, and this page has just paid for that too. -->
+    <div class="lbl">THE DOOR · in a band Foundry switches pointer events off in</div>
+    <div id="acdock" style="pointer-events:none;width:200px;margin-bottom:22px">
+      <button type="button" class="dh dh-activity-btn" data-n="3">
+        <i class="fa-solid fa-clipboard-list"></i> Activity log</button>
+    </div>
     <div class="lbl">THE WINDOW · 348 x 420, which is the shipping width</div>
     <div class="dh" id="acwin" style="width:348px;height:420px;
          border:1px solid var(--frame-line);display:flex;flex-direction:column">${
@@ -1945,6 +1957,24 @@ setTimeout(async () => { try {
   /* ── the activity log ─────────────────────────────────────────────
      Four things, and the first three are the window rather than the card. */
   await activityReady;
+
+  /* The door first, and it is a measurement rather than a precaution: in a
+     real client this button computed `pointer-events: none`, inherited from
+     one of Foundry's own layout containers — the bands it switches off so they
+     do not eat clicks meant for the canvas, with each real control switching
+     them back on for itself. The Fear strip pays for this in `#ui-middle` and
+     has a check of its own; this is the same lesson arriving in the sidebar,
+     where the failure is a button that is drawn perfectly, is the right size,
+     is in the right place, and does nothing. The badge goes with it, because
+     an unread count that resolves to nothing is a door that has stopped
+     saying the one thing it says. */
+  const acDoor = document.querySelector('#acdock .dh-activity-btn');
+  const acPe = getComputedStyle(acDoor).pointerEvents;
+  const acDoorH = Math.round(acDoor.getBoundingClientRect().height);
+  const acPip = getComputedStyle(acDoor, '::after').content;
+  check('the door takes its own pointer events, its height and its count',
+        acPe === 'auto' && acDoorH === 28 && acPip === '"3"',
+        `${acPe} · ${acDoorH}px · badge ${acPip}`);
 
   /* Foundry's button, on a head that is made of two of them. Stated height,
      stated floor, stated ceiling — and the radius with them, because nothing

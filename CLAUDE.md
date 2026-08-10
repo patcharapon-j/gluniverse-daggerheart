@@ -2678,10 +2678,19 @@ read back and written, an `outerHTML` move, a pane rebuilt from a cached
 string — leaves the button on screen, ours by class, and carrying no handler.
 That is invisible, and it is indistinguishable from a button nobody wired. It
 is also the idiom already: `data-pk` is four gestures delegated off the sheet
-root rather than four handlers per row. The button additionally states
-`pointer-events:auto`, because Foundry sets `none` on whole bands of its own
-interface and a control that inherits it is drawn perfectly and takes no
-clicks — the Fear strip pays for exactly that in `#ui-middle`.
+root rather than four handlers per row.
+
+**And the button states `pointer-events:auto`, which is a measurement rather
+than a precaution.** In a real client the injected door computed
+`pointer-events: none`, inherited from one of Foundry's own layout containers —
+the bands it switches off so they do not eat clicks meant for the canvas, with
+each real control switching them back on for itself. The Fear strip pays for
+exactly this in `#ui-middle`; this is the same lesson arriving in the sidebar,
+where the symptom is a button that is the right size, in the right place,
+drawn perfectly, and dead. `tools/verify/` puts a door inside a band with the
+pointer events off and asserts it takes its own back, along with its 28px and
+its unread badge — strip the declaration and it reports `none`, which is what
+the client reported.
 
 **The open singleton is keyed on `rendered`, not on being non-null**, and that
 is the same failure one step in. The reference used to be taken before the
