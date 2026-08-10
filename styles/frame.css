@@ -651,6 +651,12 @@ button.dh-activity-btn {
   align-items: center;
   justify-content: center;
   gap: 7px;
+  /* The chat tab is a flex column whose log takes the slack, and a flex item
+     is shrinkable by default — so a door standing in one has to say it is
+     not. `min-height` would hold the box open anyway; this keeps it out of
+     the negotiation entirely, which is the difference between a button that
+     is 28px and one that is 28px because two rules disagreed. */
+  flex: none;
   width: 100%;
   height: 28px;
   min-height: 28px;

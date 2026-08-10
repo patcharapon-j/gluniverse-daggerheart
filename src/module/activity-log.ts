@@ -361,6 +361,8 @@ export async function openActivity(): Promise<any> {
    this acts on nothing at all — it is a record. */
 
 let btn: HTMLElement | null = null;
+/** Said once. A door that cannot find its wall is worth exactly one line. */
+let warned = false;
 
 /**
  * What the GM has not looked at yet.
@@ -383,37 +385,97 @@ function badge(): void {
   btn.dataset.n = String(unread);
 }
 
-/** Put the door in a chat tab. Called per render, and once more at `ready`. */
-function mountButton(html: any): void {
+/**
+ * Every chat panel currently in the document.
+ *
+ * Found from the document rather than taken from whatever a hook hands over,
+ * and that is the correction rather than belt and braces. `ChatLog` is an
+ * ApplicationV2 built out of **parts** in both supported generations, so what
+ * a render hook passes and what its markup is called are two things this repo
+ * does not own and has already watched move once — the Fear strip's dock did
+ * exactly that between v13 and v14. A selector list that names four things is
+ * four chances to still be right; one hook argument is one.
+ *
+ * Plural because the chat exists twice as soon as anybody pops it out, and a
+ * door in one copy is no door at all if you are looking at the other.
+ */
+const chatPanels = (): HTMLElement[] => {
+  /* Not a bare `[data-tab="chat"]`: the sidebar's own tab strip carries that
+     too, and a button prepended into a nav item is a button inside a button —
+     markup no browser keeps, in the one place nobody would look for it. */
+  const all = [
+    ...document.querySelectorAll<HTMLElement>("#chat, .chat-sidebar, section[data-tab='chat']"),
+  ].filter((el) => !el.closest("nav"));
+  /* One panel can match twice — `#chat.chat-sidebar` is both — and a nested
+     pair would take two buttons. Keep the innermost of any nesting. */
+  return all.filter((el) => !all.some((other) => other !== el && el.contains(other)));
+};
+
+/**
+ * Put the door in every chat panel that has not got one.
+ *
+ * Idempotent by construction: the guard is per panel, so this is safe to call
+ * on every render, on every sidebar event, and again at `ready`.
+ */
+function mountButton(): void {
   if (!game.user?.isGM) return;
-  const el: HTMLElement | null =
-    html instanceof HTMLElement ? html : (html?.[0] ?? html?.element ?? null);
-  if (!el || el.querySelector(".dh-activity-btn")) return;
+  let mounted = 0;
 
-  const button = document.createElement("button");
-  button.type = "button";
-  /* `dh` for the palette and nothing else, which is the sixth place this
-     system has needed it: every token is declared on `.dh`, so an element
-     outside one resolves none of them. */
-  button.className = "dh dh-activity-btn";
-  button.innerHTML = `<i class="fa-solid fa-clipboard-list"></i> ${foundry.utils.escapeHTML(
-    game.i18n.localize("DAGGERHEART.Activity.Open"),
-  )}`;
-  button.addEventListener("click", () => void openActivity());
+  for (const panel of chatPanels()) {
+    if (panel.querySelector(".dh-activity-btn")) {
+      mounted++;
+      continue;
+    }
 
-  /* Above the log, which is what it is an alternative to. The anchor falls
-     through to the tab root, because a button in the wrong place that still
-     works is the right failure for chrome we do not own — `registerBrowser`
-     says the same thing about the compendium tab. */
-  const head = el.querySelector(".chat-controls") ?? el.querySelector("header") ?? el;
-  head.prepend(button);
+    const button = document.createElement("button");
+    button.type = "button";
+    /* `dh` for the palette and nothing else, which is the sixth place this
+       system has needed it: every token is declared on `.dh`, so an element
+       outside one resolves none of them. */
+    button.className = "dh dh-activity-btn";
+    button.innerHTML = `<i class="fa-solid fa-clipboard-list"></i> ${foundry.utils.escapeHTML(
+      game.i18n.localize("DAGGERHEART.Activity.Open"),
+    )}`;
+    button.addEventListener("click", () => void openActivity());
 
-  btn = button;
+    /* Above the messages, as a **sibling** of the log rather than inside it.
+       The log is one of the application's parts, and a part's element is
+       replaced wholesale on every re-render — which chat does constantly — so
+       a button inside it would be swept away by the next message to arrive.
+       A sibling is not. The fall-through prepends to the panel, because a
+       button in the wrong place that still works is the right failure for
+       chrome we do not own; `registerBrowser` says the same thing about the
+       compendium tab. */
+    const log = panel.querySelector("#chat-log, .chat-log, ol.chat-log");
+    if (log?.parentElement) log.parentElement.insertBefore(button, log);
+    else panel.prepend(button);
+
+    btn = button;
+    mounted++;
+  }
+
+  /* A door that silently fails to appear is the one failure there is nothing
+     on screen to diagnose, so it says so once instead. Named, because the
+     window is still open-able and the sentence has to say how. */
+  if (!mounted && !warned) {
+    warned = true;
+    console.warn(
+      `${SYSTEM_ID} | no chat panel found for the activity log's button — ` +
+        `open it with game.daggerheart.activity()`,
+    );
+  }
   badge();
 }
 
 export function registerActivityLog(): void {
-  Hooks.on("renderChatLog", (_app: any, html: any) => mountButton(html));
+  /* Four ways the panel can arrive, and `mountButton` is idempotent, so they
+     cost a `querySelector` each when there is nothing to do. `renderChatLog`
+     is the one that ought to be enough; the other three are the sidebar being
+     drawn, being changed and being popped out, which are the events after
+     which the panel exists and that hook has already fired. */
+  for (const hook of ["renderChatLog", "renderSidebar", "changeSidebarTab", "collapseSidebar"]) {
+    Hooks.on(hook, () => mountButton());
+  }
 
   /* The store and the switch both report through one hook, so the window has
      one thing to listen to and the badge has one place to be counted. */
@@ -429,13 +491,6 @@ export function registerActivityLog(): void {
     if (!game.user?.isGM) return;
     /* Nothing that happened before this client connected is news to it. */
     seeAll();
-    /* And one pass over the chat tab as it stands, which costs nothing when
-       the hook has already run — the guard is per element. It is here because
-       the door is the only way in besides a macro, and `renderChatLog` is a
-       hook named after a class in somebody else's application: it has moved
-       once across the two generations this system supports, and a door that
-       silently fails to appear is the one failure there is nothing on screen
-       to diagnose. */
-    mountButton((ui as any).chat?.element);
+    mountButton();
   });
 }

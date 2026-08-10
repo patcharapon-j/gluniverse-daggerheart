@@ -2650,10 +2650,26 @@ The door is a button at the head of the **chat sidebar**, GM-only, wearing the
 count of what has not been looked at yet — `game.daggerheart.activity()` is the
 other way in, and it refuses a player out loud rather than opening an empty
 window. Not a scene control: that toolbar is for tools that act on the canvas,
-and this acts on nothing at all. The button is also mounted once at `ready` off
-`ui.chat.element`, because `renderChatLog` is a hook named after a class in
-somebody else's application and a door that silently fails to appear is the one
-failure there is nothing on screen to diagnose.
+and this acts on nothing at all.
+
+**It finds its own wall rather than taking the one a hook hands it**, which is
+the browse button's arrangement corrected. `ChatLog` is an ApplicationV2 built
+out of *parts* in both supported generations, so what its render hook passes
+and what its markup is called are two things this repo does not own and has
+watched move once already — the Fear strip's dock changed between v13 and v14.
+So `chatPanels()` looks for `#chat`, `.chat-sidebar` or a `section` on the chat
+tab, minus anything inside a `nav` (the tab strip carries `data-tab="chat"`
+too, and a button prepended into a nav item is a button inside a button) and
+minus the outer of any nested pair. It runs on four hooks and again at `ready`,
+and it is idempotent, so the cost of the extra three is a `querySelector` each.
+Plural, because the chat exists twice the moment anybody pops it out.
+
+The button goes in as a **sibling** of the message log rather than inside it: a
+part's element is replaced wholesale on every re-render, which chat does
+constantly, so a door in there would be swept away by the next message. And
+when no panel is found at all it says so once in the console, naming the API —
+a door that silently fails to appear is the one failure there is nothing on
+screen to diagnose.
 
 `.dh-ledger` stays in `frame.css`'s list of message kinds although nothing
 posts one any more. A world that ran an older version has those cards in its
