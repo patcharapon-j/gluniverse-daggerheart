@@ -50,12 +50,17 @@ const LIFT  = 6;     // px of travel before a press becomes a drag
    it is; the interrupted travel snaps, which is the honest report of two
    things asked for at once. Nothing sticks, because no travel is filled —
    see flip(). */
+/* Every cancel first, then every measure, rather than the two interleaved.
+   A rect is a *read* and a cancel is a write, so alternating them made the
+   browser lay the document out again between each pair — once per row, on
+   a vault that is twenty rows long. Batched it is one layout for the lot.
+   The result is identical either way: a transform on one row cannot move
+   another row's box, so no rect here depends on the order. */
 export const capture = win => {
+  const els = [...win.querySelectorAll('[data-fk]')];
+  for(const el of els) el.getAnimations().forEach(a => a.cancel());
   const m = new Map();
-  win.querySelectorAll('[data-fk]').forEach(el => {
-    el.getAnimations().forEach(a => a.cancel());
-    m.set(el.dataset.fk, el.getBoundingClientRect());
-  });
+  for(const el of els) m.set(el.dataset.fk, el.getBoundingClientRect());
   return m;
 };
 
@@ -65,20 +70,32 @@ export const capture = win => {
    the travel is true, but a recall's sweep and brackets say "this card is
    in your hand now" and a breastplate has not joined a loadout. */
 export function flip(win, before, {moved = null, from = null, mode = 'recall'} = {}){
-  win.querySelectorAll('[data-fk]').forEach(el => {
+  /* Measure everything, then animate everything — capture()'s rule on the
+     other side of the write. Starting an animation dirties style, so a rect
+     taken after one is a forced synchronous layout, and this loop took a
+     rect and started an animation per row alternately: twenty rows, twenty
+     layouts, on the one frame a FLIP has to land in. The distances are all
+     read off the same layout now, which is also the only way they can be
+     consistent with each other. */
+  const moves = [];
+  for(const el of win.querySelectorAll('[data-fk]')){
     const k = el.dataset.fk;
     const b = (k === moved && from) ? from : before.get(k);
-    if(!b) return;                                  // a card that was not on screen before
+    if(!b) continue;                                // a card that was not on screen before
     const a = el.getBoundingClientRect();
     const dx = b.left - a.left, dy = b.top - a.top;
-    if(k !== moved && Math.abs(dx) < .5 && Math.abs(dy) < .5) return;
+    if(k !== moved && Math.abs(dx) < .5 && Math.abs(dy) < .5) continue;
+    moves.push([el, dx, dy, k === moved]);
+  }
+
+  for(const [el, dx, dy, isMoved] of moves){
     /* No `fill`. Every travel ends on the element's own `transform:none`,
        so a superseded or cancelled one leaves nothing behind — which is
        the whole guarantee that a row cannot be stranded mid-flight by a
        second swap landing on top of the first. */
     el.animate([{transform:`translate(${dx}px,${dy}px)`}, {transform:'none'}],
-               {duration: k === moved ? MOVE : SHIFT, easing: EASE});
-  });
+               {duration: isMoved ? MOVE : SHIFT, easing: EASE});
+  }
 
   if(!moved || !mode) return;
   const el = win.querySelector(`[data-fk="${CSS.escape(moved)}"]`);

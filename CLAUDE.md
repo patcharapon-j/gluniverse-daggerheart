@@ -1318,6 +1318,91 @@ fine-grained updates keep the DOM, and `Marks.svelte` / `Gems.svelte` push it
 further — they render once and drive every later change through the design's
 own `setMarks` / `setPool`, which diff the row and animate only what moved.
 
+## What a frame costs
+
+The browse window's "what it costs to open" is above, and everything in it
+turned out to be true of three other surfaces that had no idea. The findings
+are one finding stated four times: **work keyed on a signal that changes more
+often than the thing it is about.** None of them looks wrong afterwards —
+every card is correct, every mark lands — so the whole cost is in the frame
+that was dropped, which is the one place nothing can show you.
+
+**`SheetState` is `$state.raw`, and always should have been.** Plain `$state`
+deep-proxies the object it is handed and mints a signal per property on first
+read, and a character's snapshot is one `system` object plus one per Item. The
+proxies bought nothing: fine-grained invalidation is a claim about *writes*,
+and `sync` replaces each field wholesale, so the top-level signal changes
+identity and every reader invalidates however deeply it read. Svelte does not
+diff the new object against the old. Reassignment was always the entire
+mechanism and the proxy was overhead standing between every `$derived` on the
+sheet and the field it wanted — which is `browse-index.ts`'s own paragraph,
+arriving on the sheet a level up. `of()` is memoized against the array `sync`
+built, because the character sheet asks it two dozen times a pass; the key is
+the array's identity rather than `rev`, so a stale bucket is unreachable by
+construction.
+
+**`fit()` is not an idempotent tidy-up and was being run as one.** It resets a
+card to its opening type scale and steps down, reading `scrollHeight` each
+time, so every step is a forced synchronous layout — and a card is a
+container-query root, so the layout it forces is its own. The character sheet
+called it on `peekRows`, whose array identity `rows()` rebuilds every pass, and
+the creation window called it on `snap.rev`, which is bumped by definition. So
+**marking a Stress box re-solved every peeked card** and **placing a trait chip
+re-solved every card in the window**, several hundred forced layouts behind a
+gesture whose own work was writing one number.
+
+`apps/fit-cards.ts` is the browse window's answer lifted out for all of them —
+`data-fit` plus a few cards a frame — and the two dialogs' peek host takes it
+too, where the domain card picker draws forty cards on the frame the window
+appears. The mark moved onto the **`.card` itself**, which is what `{@html}`
+replaces when a card's text genuinely changes; a mark on the wrapper Svelte
+keeps outlives a rewritten card and would skip it.
+
+Two consequences worth knowing. The supersede has to happen **after** the work
+is found and not before — bumping the pass counter on a run with nothing to do
+cancels a pass still walking, and a change that only *removes* cards is exactly
+that run. And a solve is invalidated by width, so a grid that reflows needs a
+`ResizeObserver`; the creation window never had one and did not need one while
+every write re-solved everything anyway. The sheet's peek layer does not, and
+that is a fact rather than an omission: a `.pkc` is a fixed 262px.
+
+**A chat card is one card, and fifty of them are not.** `renderChatMessageHTML`
+fires per message and each scheduled its own `fit` into the same double-`rAF`
+callback, so opening the log or reconnecting was fifty solves on one frame.
+`fitSoon` is one shared queue at the same few-per-frame rate, with each card's
+arrival still landing after its own fit — a card that had to wait for
+forty-nine strangers has stopped arriving.
+
+**Restarting an animation costs a layout, so do it once.** Re-firing a CSS
+animation means taking the class off, flushing style and putting it back, and
+the flush is a read of `offsetWidth`. `setMarks` and `setPool` both did it
+*inside* their diff loop, so the cost scaled with how much moved: a Severe hit
+marks four boxes, a rest clears seven, the Hope action spends three pips. The
+flush only has to sit between the removal and the addition, so one serves
+everything that moved, and both drivers are two passes now.
+`tools/test-mark-restarts.mjs` asserts the flush count **beside** the resulting
+classes rather than instead of them — a driver that is fast and leaves a spent
+Hope lit is the bug `settle.js` was written about, and it fails in the
+direction that looks like nothing is wrong.
+
+**And the FLIP read and wrote alternately.** `capture()` cancelled a travel and
+measured a row in the same step; `flip()` took a rect and started an animation
+in the same step. Both are a write followed by a `getBoundingClientRect`, so
+each pair forced another layout, once per row, on a vault twenty rows long and
+on the one frame a FLIP has to land in. Batched, the result is identical — a
+transform on one row cannot move another row's box, so no rect ever depended on
+the order, and one layout is also the only way the distances can be consistent
+with each other.
+
+**One thing was measured and left alone.** `hud-flow` animates a registered
+custom property feeding a conic gradient, so the Fear strip's rim repaints
+every frame, indefinitely, in the chrome above the canvas. It is real and it is
+25,000 pixels; making it composited means rotating a square large enough to
+cover the strip's diagonal and moving the chamfer to a wrapper, which is a
+visual change to a designed component to buy back a cost that has not been
+shown to matter. The pips' own idle motion is already a transform and an
+opacity and is free.
+
 ## Build
 
 `npm run build` compiles `src/` into `dist/module/daggerheart.js`, copies

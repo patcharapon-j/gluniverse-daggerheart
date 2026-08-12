@@ -33,7 +33,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { fit } from "../ui/card.js";
+import { cardFitter } from "./fit-cards.ts";
 
 export interface DialogPeekOptions {
   /** The dialog, where the rows live and every listener is delegated. */
@@ -96,12 +96,19 @@ export function dialogPeeks({ root, layer, rows, pin = true }: DialogPeekOptions
   });
   gone.observe(document.body, { childList: true, subtree: true });
 
-  /* Fonts first: `fit` measures wrapped text, and metrics taken against a
-     fallback face are wrong by enough to cost a line. `fit` is idempotent, so
-     the immediate call is the one that matters and the second only corrects
-     it — a dialog opened before the face has loaded still lands compacted. */
-  fit(layer);
-  document.fonts?.ready.then(() => fit(layer));
+  /* A few per frame rather than all of them on the one that opened the
+     dialog. The rules panel holds a handful and this was fine; the domain
+     card picker holds every card legal at your level, which is forty or more
+     at tier 3, and forty solves is forty runs of forced layout landing on the
+     frame the window appears — the stall reads as the dialog being slow to
+     open rather than as anything to do with cards.
+
+     Nothing measures these but the peek that shows one, and the earliest a
+     peek can happen is a hover after the dialog is on screen. The fitter also
+     owns the font pass that used to be spelt out here: metrics taken against
+     a fallback face are wrong by enough to cost a line. See
+     `apps/fit-cards.ts`. */
+  cardFitter(() => layer).run();
 
   let open: HTMLElement | null = null;
   let pinned = false;

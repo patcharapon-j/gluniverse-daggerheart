@@ -53,7 +53,8 @@
   import { platePortrait } from "../dice/plate.ts";
   import { SPINE, TILE } from "../ui/tile.js";
   import { XBOX, XMARK } from "../ui/mark.js";
-  import { CARD, fit, rich } from "../ui/card.js";
+  import { CARD, rich } from "../ui/card.js";
+  import { cardFitter } from "../apps/fit-cards.ts";
   import { chitClicks, refuseChits } from "../ui/chit.js";
   import { keepClicks, refuseKeep } from "../ui/keep.js";
   import { closePeeks, peeks } from "../ui/peek.js";
@@ -735,13 +736,22 @@
     });
   });
 
+  /* Only the cards that arrived, a few per frame — see `apps/fit-cards.ts`.
+     This used to be `fit(winEl)`, the whole solve over every peeked card, and
+     it ran on every sync rather than on every *change*: `peekRows` is rebuilt
+     by `rows()` on each pass, so its array identity is new whatever happened,
+     and marking a Stress box paid for re-measuring a dozen cards nobody had
+     touched. The mark rides on the `.card` itself, which is what `{@html}`
+     replaces when a card's text genuinely changes, so a real edit invalidates
+     its own solve and nothing else's. */
+  const fitter = cardFitter(() => winEl);
+
   $effect(() => {
     void peekRows;
-    if (!winEl) return;
-    const el = winEl;
-    // After paint, or the cards are measured at zero height.
-    requestAnimationFrame(() => fit(el));
+    fitter.run();
   });
+
+  $effect(() => () => fitter.stop());
 
   /* ── fitting the window, once ──────────────────────────────────────
      Five tabs of wildly different heights share one window: Advancement is
@@ -905,13 +915,14 @@
      later is wired the moment it is drawn. The alternative was the same
      `onclick` copied onto eight `{#each}` bodies, which is eight places for
      the ninth to be forgotten. */
-  const cardByPk = $derived(
-    new Map(
-      snap.items
-        .map((i) => [i.id, opt(i)] as const)
-        .filter((e): e is readonly [string, CardOptions] => e[1] !== null),
-    ),
-  );
+  /* One card, not a map of all of them. Both callers are gestures — a click
+     that posts a row and a right-click that opens its menu — and each wants
+     exactly the card under the pointer, so building every item's options to
+     answer for one was the whole sheet's worth of `cardOf` on the frame a
+     press has to feel instant. A map would earn its keep if something
+     iterated it; nothing ever has. */
+  const cardFor = (pk: string): CardOptions | null =>
+    opt(snap.items.find((i) => i.id === pk));
 
   /* ── rolling ────────────────────────────────────────────────────────
      Every roll on this sheet goes through the popover, and the popover
@@ -1267,7 +1278,7 @@
     // them mean "show everyone this card".
     if (t.closest?.("button, input, label, a, [data-act]")) return;
     const pk = t.closest<HTMLElement>("[data-pk]")?.dataset.pk;
-    if (pk) toChat(cardByPk.get(pk) ?? null);
+    if (pk) toChat(cardFor(pk));
   }
 
   /* ── the right-click menu ─────────────────────────────────────────
@@ -1296,7 +1307,7 @@
 
   function rowsFor(it: ItemSnapshot): MenuRow[] {
     const live = item(it.id);
-    const card = cardByPk.get(it.id) ?? null;
+    const card = cardFor(it.id);
     const rows: MenuRow[] = [];
 
     if (card) rows.push({ k: "Show to chat", run: () => toChat(card) });
@@ -1402,12 +1413,21 @@
      four handlers of their own for the reorder. `onDragStart` above is
      delegated on the window root, so it still runs for them and still
      writes the Foundry payload — a vault card can leave for another
-     character exactly like any other row. */
+     character exactly like any other row.
+
+     Only the rows that have not been stamped yet. `el.draggable = true`
+     reflects to a content attribute, so re-stamping a row that already had it
+     is an attribute mutation on every row on the sheet, on every sync — which
+     is a style invalidation bought for nothing. `:not([draggable])` makes the
+     sweep idempotent, and a row Svelte adds later arrives without the
+     attribute and is therefore still caught. */
   $effect(() => {
     void peekRows;
     void tab;
     if (!winEl) return;
-    for (const el of winEl.querySelectorAll<HTMLElement>("[data-pk]:not([data-swap])")) {
+    for (const el of winEl.querySelectorAll<HTMLElement>(
+      "[data-pk]:not([data-swap]):not([draggable])",
+    )) {
       el.draggable = true;
     }
   });

@@ -263,12 +263,22 @@ export const DAMAGE = ({major, severe, hp, marked = 0, massive = false,
 export function setMarks(mk, marked){
   const boxes = [...mk.querySelectorAll('.row > i')];
 
-  boxes.forEach((b, k) => {
+  /* Two passes and one flush, for setPool's reason and with more riding on
+     it here: a Severe hit marks four boxes at once and a rest clears the
+     whole track, so the per-box `offsetWidth` this used to do was four to
+     seven forced synchronous layouts inside one loop. The restart needs a
+     flush *between* a class coming off and going back on, not one each. */
+  const moving = [];
+  for(const [k, b] of boxes.entries()){
     const want = k < marked;
-    if(want === b.classList.contains('on')) return;
-
+    if(want === b.classList.contains('on')) continue;
     b.classList.remove('hit', 'clr');
-    void b.offsetWidth;                        // restart, not resume
+    moving.push([b, want]);
+  }
+
+  if(moving.length) void mk.offsetWidth;       // restart, not resume — once
+
+  moving.forEach(([b, want]) => {
     const token = String((+b.dataset.seq || 0) + 1);
     b.dataset.seq = token;
 

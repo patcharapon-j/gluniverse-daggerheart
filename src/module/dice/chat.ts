@@ -14,7 +14,7 @@ import { takeDamage } from "../apps/damage.ts";
 import { damageRecipients, noRecipientKey } from "../apps/targets.ts";
 import { getFear, setFear } from "../settings.ts";
 import { payMark } from "../marked.ts";
-import { fit } from "../ui/card.js";
+import { fitSoon } from "../apps/fit-cards.ts";
 import { loadSigils } from "../sheets/cards.ts";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
 import { rollWeaponDamage } from "./actions.ts";
@@ -155,12 +155,20 @@ async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promis
   }
   bindActions(message, host);
   await document.fonts?.ready?.catch(() => {});
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() => {
-      fit(host);
-      if (fresh) host.querySelector(".card")?.classList.add("arrive");
-    }),
-  );
+  /* Queued rather than solved here, and the queue is shared with every other
+     card the same paint is drawing — see `fitSoon` in `apps/fit-cards.ts`.
+     One card is one card; fifty of them landing together, which is what
+     opening the log or reconnecting does, was fifty solves on one frame.
+
+     The arrival still goes on after the fit and not before, because `fit`
+     steps the plate's height and a card that started animating first would
+     be animating one shape into another mid-flight. */
+  requestAnimationFrame(() => {
+    const card = host.querySelector(".card");
+    fitSoon(card, () => {
+      if (fresh) card?.classList.add("arrive");
+    });
+  });
 }
 
 /**

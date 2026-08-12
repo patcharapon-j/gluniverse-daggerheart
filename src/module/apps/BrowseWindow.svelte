@@ -23,7 +23,8 @@
     TRAIT_LABELS,
   } from "../config.ts";
   import { cardOf, loadSigils, plain, type Sigils } from "../sheets/cards.ts";
-  import { CARD, fit } from "../ui/card.js";
+  import { CARD } from "../ui/card.js";
+  import { cardFitter } from "./fit-cards.ts";
   import {
     axesFor,
     countsFor,
@@ -118,11 +119,6 @@
          click into and then search. */
       findEl?.focus();
     })();
-
-    /* Once, and not per pass: a card solved against a fallback face is
-       solved against the wrong metrics, and `fonts.ready` is the only
-       moment anybody can say the real ones have arrived. */
-    if (document.fonts?.status === "loading") void document.fonts.ready.then(refitCards);
   });
 
   /* ══════════════════════════════════════════════════════════════════
@@ -236,19 +232,28 @@
      in the search field — so every letter re-solved every card on screen,
      including the ones the letter did not touch.
 
-     Both halves are the same fix. A card that has been fitted wears
-     `data-fit` and is not fitted again, so a keystroke pays only for the
-     cards that arrived with it; and the ones that did arrive are fitted a
-     few per frame, so the cost is spread across paints instead of landing
-     on one. The `{#each}` is keyed on the uuid, which is what makes the
-     attribute survive a filter change — a card that stayed on screen kept
-     its element and therefore its solve.
+     Both halves are the same fix and it lives in `apps/fit-cards.ts` now,
+     because the character sheet's peek layer and the creation window turned
+     out to have the same bug and no idea they had it. A card that has been
+     fitted wears `data-fit` and is not fitted again, so a keystroke pays
+     only for the cards that arrived with it; and the ones that did arrive
+     are fitted a few per frame. The `{#each}` is keyed on the uuid, which is
+     what makes the attribute survive a filter change — a card that stayed on
+     screen kept its element and therefore its solve.
+
+     The mark moved onto the `.card` itself when the helper was extracted,
+     and that is a correction rather than a detail: `.bcrd` is the button
+     Svelte keeps, and the card inside it is `{@html}` output, which is
+     replaced when — and only when — the card's text genuinely changes. A
+     mark on the button outlives a rewritten card and would skip it.
 
      Two things invalidate a solve and both clear the marks. Fonts, because
      metrics measured against a fallback face are wrong by enough to cost a
-     line — the vendored `fit()` says so at the top. And width, because
-     `auto-fill` changes the column count as the window resizes and a card
-     solved at 250px is not solved at 196. Nothing else does: the grid's
+     line — the vendored `fit()` says so at the top, and the fitter owns that
+     half now, since every caller wanted it. And width, because `auto-fill`
+     changes the column count as the window resizes and a card solved at
+     250px is not solved at 196 — which stays here, because it is a fact
+     about this grid and not about fitting. Nothing else does: the grid's
      height is free to change, and does, every time this runs.
      ══════════════════════════════════════════════════════════════════ */
 
@@ -264,49 +269,15 @@
 
   const cardFor = (e: Entry) => cardOf(asSnapshot(e), sigils);
 
-  /** Cards solved per frame. Six is about a frame's worth at this size. */
-  const CHUNK = 6;
-
-  /** Supersedes any pass still walking, so a filter change abandons the old
-      one rather than racing it. */
-  let pass = 0;
-
-  function fitCards(): void {
-    if (!body || meta.shape !== "cards") return;
-    const mine = ++pass;
-    const todo = [...body.querySelectorAll<HTMLElement>(".bcrd:not([data-fit])")];
-    if (!todo.length) return;
-
-    let i = 0;
-    const step = (): void => {
-      if (mine !== pass || !body) return;
-      for (const end = Math.min(i + CHUNK, todo.length); i < end; i++) {
-        const el = todo[i]!;
-        /* The `.card` is the button's only child, so the button is a legal
-           scope for a one-card solve — `fit` wants something to
-           `querySelectorAll` and nothing else. */
-        fit(el);
-        el.dataset.fit = "1";
-      }
-      if (i < todo.length) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }
-
-  /** Every solve on screen is stale. Throw them all away and start again. */
-  function refitCards(): void {
-    if (!body) return;
-    for (const el of body.querySelectorAll<HTMLElement>(".bcrd[data-fit]")) {
-      delete el.dataset.fit;
-    }
-    fitCards();
-  }
+  const fitter = cardFitter(() => body);
 
   $effect(() => {
     void capped;
     void sigils;
-    fitCards();
+    fitter.run();
   });
+
+  $effect(() => () => fitter.stop());
 
   /* Width, and only width. `fit` writes an `aspect-ratio`, so the grid's
      height moves every time this runs — observing that would be a loop. */
@@ -316,7 +287,7 @@
     const ro = new ResizeObserver(() => {
       if (!body || body.clientWidth === was) return;
       was = body.clientWidth;
-      refitCards();
+      fitter.reset();
     });
     ro.observe(body);
     return () => ro.disconnect();
