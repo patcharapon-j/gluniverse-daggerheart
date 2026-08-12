@@ -56,18 +56,36 @@ export function setPool(row, cur, {fear = false, max} = {}){
   const gems = [...row.querySelectorAll('.gem')];
   const n = max ?? gems.length;
 
-  gems.forEach((g, k) => {
-    if(g.classList.contains('scar')) return;
+  /* Which pips are moving, decided before any of them is touched.
+
+     The restart is the reason this is two passes rather than one. Re-firing
+     a CSS animation means taking the class off, flushing style, and putting
+     it back — and the flush is a *forced synchronous layout*, so doing it
+     inside the loop costs one whole layout per pip that moved. That is fine
+     for the single gain this row usually sees and is not fine for the cases
+     that matter most: the Hope action spends three at once, and a Severe hit
+     marks four boxes through mark.js's identical loop.
+
+     One flush serves every pip, because what the restart needs is a flush
+     *between* the removal and the addition — not one each. So: strip them
+     all, read once, then dress them all. */
+  const moving = [];
+  for(const [k, g] of gems.entries()){
+    if(g.classList.contains('scar')) continue;
     // A gem mid-spend still carries `on` — it is not removed until the
     // collapse finishes. Without discounting it here, re-gaining inside that
     // ~400ms window reads as "no change", nothing re-fires, and the pending
     // spend then turns off a pip the count says is lit.
     const want = k < cur;
     const has = g.classList.contains('on') && !g.classList.contains('spend');
-    if(want === has) return;
-
+    if(want === has) continue;
     g.classList.remove('gain', 'spend', 'after');
-    void g.offsetWidth;                       // restart, not resume
+    moving.push([g, want]);
+  }
+
+  if(moving.length) void row.offsetWidth;     // restart, not resume — once
+
+  moving.forEach(([g, want]) => {
     // a later click wins outright: dataset is strings, so bump explicitly
     const token = String((+g.dataset.seq || 0) + 1);
     g.dataset.seq = token;
