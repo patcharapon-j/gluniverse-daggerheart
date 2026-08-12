@@ -274,6 +274,29 @@
 
   $effect(() => () => fitter.stop());
 
+  /* Width, and only width. The card steps are `auto-fill` grids, so resizing
+     the window changes the column count and a card solved at 210px is not
+     solved at 176. Nothing used to watch for that — the old effect covered it
+     only by accident, because every step here writes to the actor and the
+     next write re-solved the lot. Marking the solves makes the accident stop
+     happening, so the real dependency has to be stated.
+
+     `fit` writes an `aspect-ratio`, so the grid's height moves every time
+     this runs; observing that would be a loop. The browse window's grid
+     draws exactly the same distinction. */
+  $effect(() => {
+    if (!winEl) return;
+    const el = winEl;
+    let was = el.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth === was) return;
+      was = el.clientWidth;
+      fitter.reset();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+
   /* ══════════════════════════════════════════════════════════════════
      STEP 1 — CLASS
      ══════════════════════════════════════════════════════════════════ */
