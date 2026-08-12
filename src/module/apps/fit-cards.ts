@@ -37,6 +37,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { SYSTEM_ID } from "../config.ts";
 import { fit } from "../ui/card.js";
 
 /** Cards solved per frame. Six is about a frame's worth at card size. */
@@ -95,9 +96,19 @@ export function cardFitter(
       void document.fonts.ready.then(() => reset()).catch(() => {});
     }
 
-    const mine = ++pass;
+    /* The work first, and the supersede only if there is any — which is the
+       other way round from how this reads, and the way round it has to be.
+       Bumping `pass` on a run with nothing to do would cancel a pass still
+       walking, and the cards it had not reached yet would stay unsolved
+       until something unrelated happened to ask again. A change that only
+       *removes* cards is exactly that run, and it is a filter narrowing or a
+       tab losing a row rather than anything exotic.
+
+       Superseding is safe when there is work, because `todo` is everything
+       still unmarked — including whatever the abandoned pass had left. */
     const todo = [...root.querySelectorAll(`${select}:not([data-fit])`)];
     if (!todo.length) return;
+    const mine = ++pass;
 
     let i = 0;
     const step = (): void => {
@@ -150,8 +161,17 @@ function drain(): void {
     const { card, done } = queue.shift()!;
     // A message can be removed between the ask and the frame.
     if (!card.isConnected) continue;
-    fit(only(card));
-    done?.();
+    /* One card's failure is one card's. This queue is module-level and
+       shared by every message in the log, so an exception escaping here
+       would leave `draining` true with a queue that never empties — every
+       card posted afterwards silently unfitted, for the rest of the
+       session. */
+    try {
+      fit(only(card));
+      done?.();
+    } catch (err) {
+      console.error(`${SYSTEM_ID} | could not fit a card`, err);
+    }
   }
   if (queue.length) requestAnimationFrame(drain);
   else draining = false;
