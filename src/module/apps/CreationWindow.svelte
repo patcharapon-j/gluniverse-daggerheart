@@ -54,7 +54,8 @@
   } from "./creation.ts";
   import { cardOf, classKey, loadSigils, plain, type Sigils } from "../sheets/cards.ts";
   import { postCard } from "../sheets/post-card.ts";
-  import { CARD, fit, rich } from "../ui/card.js";
+  import { CARD, rich } from "../ui/card.js";
+  import { cardFitter } from "./fit-cards.ts";
   import { setVals, sign, VALS, type ValRow } from "../ui/make.js";
   import { dhDialog } from "./dialog.ts";
 
@@ -250,25 +251,28 @@
       inline card and its peek can never disagree about what they are of. */
   const cardFor = (d: any) => cardOf(asSnapshot(d), sigils, cardCtx);
 
-  /* `fit()` measures every `.card` in the scope, and four steps draw cards
-     inline. Keyed on the step and the document revision, which together cover
-     every way a card can appear, leave, or change what it says. */
+  /* Four steps draw cards inline, and one of them is a deck. Keyed on the
+     step and the document revision, which together cover every way a card can
+     appear, leave, or change what it says.
+
+     `snap.rev` is the reason this had to stop being `fit(winEl)`. It is
+     bumped by every sync by definition, and a step that writes to the actor
+     on every gesture — the trait spread writes six numbers per chip — was
+     therefore re-solving every card in the window after each press, several
+     hundred forced layouts behind a control whose own work is one number.
+     `cardFitter` solves only what arrived and spreads it across frames; the
+     font pass it used to spell out here is the fitter's now, because all
+     three windows wanted it. See `apps/fit-cards.ts`. */
+  const fitter = cardFitter(() => winEl);
+
   $effect(() => {
     void at;
     void reviewing;
     void snap.rev;
-    if (!winEl) return;
-    requestAnimationFrame(() => {
-      if (winEl) {
-        fit(winEl);
-        // `fit()` measures wrapped prose. Repeat the measurement after the
-        // real card faces load if Foundry opened the window against fallbacks.
-        if (document.fonts?.status === "loading") {
-          void document.fonts.ready.then(() => winEl && fit(winEl));
-        }
-      }
-    });
+    fitter.run();
   });
+
+  $effect(() => () => fitter.stop());
 
   /* ══════════════════════════════════════════════════════════════════
      STEP 1 — CLASS

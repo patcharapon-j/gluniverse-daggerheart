@@ -30,9 +30,29 @@ export class SheetState {
   name = $state("");
   img = $state("");
   type = $state("");
-  system = $state<any>({});
-  flags = $state<any>({});
-  items = $state<ItemSnapshot[]>([]);
+
+  /* ── raw, and that is the whole of the reactivity ──────────────────
+     These three are `$state.raw` for the reason `browse-index.ts`'s entries
+     are: plain `$state` deep-proxies the object it is handed and mints a
+     signal per property on first read, and a character's snapshot is one
+     `system` object plus one per Item — thousands of properties, re-proxied
+     on every sync.
+
+     The proxies bought nothing. Fine-grained invalidation is a claim about
+     *writes*, and nothing here is ever written to in place: `sync` replaces
+     each of these wholesale, so the top-level signal changes identity and
+     every reader invalidates regardless of how deeply it read. Svelte does
+     not diff the new object against the old one — reassignment was always
+     the entire mechanism, and the proxy was pure overhead standing between
+     every `$derived` on the sheet and the field it wanted.
+
+     What this costs is that a component may no longer mutate `snap.system`
+     and expect the sheet to notice. Nothing does, and nothing should: edits
+     go through `doc.update(...)` and come back as a re-render, which is the
+     one direction this class has ever supported. */
+  system = $state.raw<any>({});
+  flags = $state.raw<any>({});
+  items = $state.raw<ItemSnapshot[]>([]);
 
   /**
    * Whether the viewing user may modify the document. Mirrors the sheet's
@@ -83,8 +103,24 @@ export class SheetState {
     this.rev++;
   }
 
-  /** Items of one subtype, in sort order. */
+  /**
+   * Items of one subtype, in sort order.
+   *
+   * Memoized against the array `sync` last built, because the character sheet
+   * asks this two dozen times per pass — once per panel, and again for every
+   * `$derived` that narrows one of those lists. The key is the array's own
+   * identity rather than `rev`, so a stale bucket is not something this can
+   * hand back: `items` is `$state.raw` and only ever replaced, so a new list
+   * is a new object and the old cache is unreachable by construction.
+   */
+  #buckets = new WeakMap<ItemSnapshot[], Map<string, ItemSnapshot[]>>();
+
   of(type: string): ItemSnapshot[] {
-    return this.items.filter((i) => i.type === type);
+    const items = this.items;
+    let byType = this.#buckets.get(items);
+    if (!byType) this.#buckets.set(items, (byType = new Map()));
+    let list = byType.get(type);
+    if (!list) byType.set(type, (list = items.filter((i) => i.type === type)));
+    return list;
   }
 }
