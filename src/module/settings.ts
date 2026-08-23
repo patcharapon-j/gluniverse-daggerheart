@@ -59,6 +59,68 @@ export function registerSettings(): void {
      Only the active GM ever writes it; see `activity-log.ts`. The `onChange`
      is the one hook every reader listens to, so the window and the unread
      badge have one thing to be told rather than two. */
+  /* The chip itself. Client-scoped and on by default, because what it
+     switches is whether *this* screen draws them — which is a matter of
+     taste in a way the change log's switch deliberately is not. A player
+     running a small window, or one who simply wants the artwork, is making
+     a decision about their own display and nobody else's. */
+  game.settings.register(SYSTEM_ID, "tokenChip", {
+    name: "DAGGERHEART.Settings.TokenChip",
+    hint: "DAGGERHEART.Settings.TokenChipHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => Hooks.callAll("daggerheart.tokenChipChanged"),
+  });
+
+  /* The range rings under the selected token, and it is client-scoped for
+     the reason the chip's switch is rather than a similar one: a selection
+     only ever exists on one screen, so a ruler is only ever drawn on the
+     screen of the person who made it. There is no permission question here
+     and therefore no world setting — which is also why this needed no
+     `adversaryChip` of its own. */
+  game.settings.register(SYSTEM_ID, "rangeRuler", {
+    name: "DAGGERHEART.Settings.RangeRuler",
+    hint: "DAGGERHEART.Settings.RangeRulerHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => Hooks.callAll("daggerheart.rangeRulerChanged"),
+  });
+
+  /* What players see on an adversary, and it is world-scoped for the reason
+     the change log is: it is a ruling about the table rather than a
+     preference about a screen. A GM who has decided the party may not read
+     an ogre's Stress cannot have one player opt back in.
+
+     Three values rather than two, because the interesting one is in the
+     middle. `none` is the default and the traditional answer. `full` is the
+     card-on-the-table game. `marks` is the one this system is actually
+     shaped for — the arcs without the Difficulty, so the table can see that
+     the ogre is nearly out of Stress without being handed the number they
+     are supposed to be discovering by rolling against it.
+
+     Vulnerable is exempt at every setting and that is not an oversight: a
+     creature that is easier to hit is a fact somebody at the table produced,
+     and hiding the consequence of your own hit is the system taking back
+     something the fiction already gave you. */
+  game.settings.register(SYSTEM_ID, "adversaryChip", {
+    name: "DAGGERHEART.Settings.AdversaryChip",
+    hint: "DAGGERHEART.Settings.AdversaryChipHint",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      none: "DAGGERHEART.AdversaryChip.None",
+      marks: "DAGGERHEART.AdversaryChip.Marks",
+      full: "DAGGERHEART.AdversaryChip.Full",
+    },
+    default: "none",
+    onChange: () => Hooks.callAll("daggerheart.tokenChipChanged"),
+  });
+
   game.settings.register(SYSTEM_ID, "activity", {
     name: "DAGGERHEART.Settings.Activity",
     scope: "world",

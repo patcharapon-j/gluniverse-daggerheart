@@ -38,6 +38,8 @@
     "styles/make.css",
     "styles/browse.css",
     "styles/marked.css",
+    "styles/token.css",
+    "styles/ruler.css",
     "styles/daggerheart-components.css",
     "styles/actor-sheets.css"
   ],

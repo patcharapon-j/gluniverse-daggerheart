@@ -40,6 +40,11 @@
      the stack a real Foundry window has, which is system.json's `styles`
      array and not a subset of it. -->
 <link rel="stylesheet" href="/styles/marked.css">
+<!-- The token chip, which is drawn on the board and therefore outside every
+     .dh root — so like the Fear strip it arrives as a compound, and whether
+     that compound resolves the palette is exactly what this page is for. -->
+<link rel="stylesheet" href="/styles/token.css">
+<link rel="stylesheet" href="/styles/ruler.css">
 <!-- Last, exactly as system.json loads it: the Svelte components' own styles.
      Leaving it out is how the first pass missed that the sheet's stack is not
      the study page's stack. -->
@@ -230,6 +235,42 @@
      rail beside whatever is left. -->
 <section id="browse" style="padding:0 26px"></section>
 
+<h2><span>// THE TOKEN</span>The chip on the board, which is outside every sheet</h2>
+<!-- Deliberately not `.stage`, for the Fear strip's and the browser's reason:
+     that class carries `.stage .dh{width:300px}`, and every measurement this
+     component makes is a *scene* pixel on a token that is a hundred of them.
+     Handed 300 the whole geometry would still be right and every number below
+     would be wrong by a factor of three.
+
+     The band is the other half of the environment. Foundry puts the canvas
+     inside regions it has switched `pointer-events` off in, and each real
+     control switches them back on for itself — the Fear strip pays for that
+     in `frame.css` and the activity log's door pays for it in the sidebar.
+     The chip is the opposite claim under the opposite pressure: it may never
+     take them back, on a band that has them ON, because the canvas owns
+     click, drag and box-select over exactly these pixels and a chip that
+     swallows a `dragstart` is a token you cannot move. -->
+<section id="tokenband" style="padding:0 26px;pointer-events:auto">
+  <div id="tokenlayer" class="dh tok-layer"
+       style="position:relative;height:170px;background:#0b0d10"></div>
+</section>
+
+<h2><span>// THE RULER</span>The range rings, which are the chip's environment and none of its arithmetic</h2>
+<!-- Not `.stage` for the chip's reason, and under the same band for the chip's
+     other one: the ruler covers a great deal more of the canvas than a chip
+     does, so "may never take pointer events back" matters more here, not less.
+
+     The band deliberately hosts BOTH layers, in the order `range-ruler.ts`
+     hangs them, because one of the checks below is that a ring cannot draw
+     over an arc — and that is a fact about two siblings rather than about
+     either one of them. -->
+<section id="rulerband" style="padding:0 26px;pointer-events:auto">
+  <div id="rulerstage" style="position:relative;height:300px;background:#0b0d10;overflow:hidden">
+    <div id="rulerlayer" class="dh ruler-layer" style="position:absolute;inset:0"></div>
+    <div id="rulerchips" class="dh tok-layer" style="position:absolute;inset:0"></div>
+  </div>
+</section>
+
 <pre id="ok"></pre>
 
 <script type="module">
@@ -247,6 +288,8 @@ import { LEDGER } from '/src/module/ui/ledger.js';
 import { ACTIVITY } from '/src/module/ui/activity.js';
 import { SPINE, TILE } from '/src/module/ui/tile.js';
 import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
+import { TOKEN_CHIP, setChip, setTier } from '/src/module/ui/token.js';
+import { RANGE_RULER, radiusOf, setRulerZoom } from '/src/module/ui/ruler.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
    two are genuinely different things — nine slugs against nine documents. */
 import { CLASSES as CLASS_SLUGS, KINDS, byslug, icon, glyph, clazz } from '/src/module/ui/domains.js';
@@ -1510,6 +1553,45 @@ setTimeout(async () => { try {
         Math.round(stepBox?.width ?? 0) === 20 && Math.round(stepBox?.height ?? 0) === 15,
         `${Math.round(stepBox?.width ?? 0)}×${Math.round(stepBox?.height ?? 0)}px`);
 
+  /* The view switch, which is a third control on this strip and pays the same
+     button floor — a 14px row is half of Foundry's 28, so left unreset it
+     doubles the height of the plinth it sits on and reads as merely roomy.
+
+     And the thing a stepper cannot test: this one carries a STATE, so the two
+     values have to be visibly different. `aria-pressed` is the whole of that
+     claim — it is the accessible name and the styling hook at once — so the
+     check flips the attribute and asserts the drawing actually followed. A
+     switch whose two states look identical is worse than no switch, because
+     pressing it appears to do nothing. */
+  const vis = hud?.querySelector('.vis button');
+  const visBox = vis?.getBoundingClientRect();
+  check('the view switch keeps its own metrics, not Foundry\'s 28px',
+        Math.round(visBox?.height ?? 0) === 14 &&
+        getComputedStyle(vis).borderRadius === '0px',
+        `${Math.round(visBox?.width ?? 0)}×${Math.round(visBox?.height ?? 0)}px · ` +
+        `radius ${getComputedStyle(vis)?.borderRadius}`);
+
+  const visPip = vis?.querySelector('i');
+  /* The transitions come off first, and that is the `--i` ramp's lesson in a
+     second place: both the pip and the word ease over .18s, so a value read on
+     the frame the attribute was set is the one the transition is currently AT
+     rather than the one it was asked for. Read live, this reports the two
+     states as identical — which is a check that fails on a control drawing
+     perfectly, and the first draft of it did exactly that. */
+  const litOf = v => {
+    vis.style.transition = 'none';
+    visPip.style.transition = 'none';
+    vis.setAttribute('aria-pressed', v);
+    return [getComputedStyle(visPip).backgroundColor, getComputedStyle(vis).color];
+  };
+  const [pipOn, txOn] = litOf('true');
+  const [pipOff, txOff] = litOf('false');
+  vis?.setAttribute('aria-pressed', 'true');
+  if (vis) { vis.style.transition = ''; visPip.style.transition = ''; }
+  check('the switch draws its two states differently',
+        !!vis && pipOn !== pipOff && txOn !== txOff,
+        `pip ${pipOff} → ${pipOn}`);
+
   /* And the numbers, pinned. Twelve pips at 24px on a 7px gap is 365px, which
      makes this the widest fixed object in the system by some way — wide enough
      that its width is a design decision rather than an outcome. A change to
@@ -2253,6 +2335,358 @@ setTimeout(async () => { try {
   }
   check('no other sheet reaches into the browser', bReach.length === 0,
         bReach.length ? bReach.slice(0, 4).join(' · ') : `${bOwn.length} elements clean`);
+
+  /* ══ THE TOKEN ═════════════════════════════════════════════════════
+     Six things, and every one of them is invisible on design/token.html —
+     which loads three stylesheets and no Foundry, and draws its tokens on
+     a board it invented. The game loads twenty-three and draws them on
+     somebody else's canvas. */
+
+  const tkLayer = document.getElementById('tokenlayer');
+  const tkAt = (x, s) => {
+    const host = document.createElement('div');
+    host.innerHTML = TOKEN_CHIP(s);
+    const chip = host.firstElementChild;
+    Object.assign(chip.style, { left: `${x}px`, top: '35px', width: '100px', height: '100px' });
+    tkLayer.appendChild(chip);
+    return chip;
+  };
+
+  const tkPC = tkAt(30, { hp: { marked: 5, max: 12 }, stress: { marked: 2, max: 6 },
+                          armor: { marked: 1, max: 3 }, hope: { value: 4, max: 6 }, scars: 1 });
+  const tkVuln = tkAt(190, { hp: { marked: 5, max: 12 }, stress: { marked: 6, max: 6 },
+                             armor: { marked: 0, max: 2 }, vuln: true });
+  const tkFoe = tkAt(350, { hp: { marked: 6, max: 14 }, stress: { marked: 3, max: 6 },
+                            difficulty: 16 });
+  const tkMin = tkAt(510, { hp: { marked: 0, max: 1 }, stress: { marked: 1, max: 2 }, vuln: true });
+  setTier(tkMin, 20);
+
+  /* 1. The compound. `.tok` is rewritten to `.dh.tok`, so the element wears
+        both classes and takes its palette from one and its shape from the
+        other — while standing outside every `.dh` root, which is the whole
+        thing a wrapper would have hidden. Read off an arc's channel, since
+        that is where a dead `color-mix` would show. */
+  const tkArc = tkPC.querySelector('.tkarc.hp .ch');
+  const tkInk = getComputedStyle(tkArc).backgroundImage;
+  check('the chip resolves the palette outside every .dh root',
+        tkInk.includes('rgb') && !tkInk.includes('var('),
+        tkInk === 'none' ? 'no gradient at all' : 'channel resolves');
+
+  /* 2. Nothing here is pressable, on a band that is. */
+  const tkLive = [tkPC, ...tkPC.querySelectorAll('*')]
+    .filter(el => getComputedStyle(el).pointerEvents !== 'none');
+  check('nothing in the chip takes pointer events', tkLive.length === 0,
+        tkLive.length ? `${tkLive.length} live, first .${tkLive[0].className}` : 'inert throughout');
+
+  /* 3. Off the painting. Every track is outside the token's own circle, so
+        the innermost arc's INNER edge must clear radius 50 — the tracks are
+        drawn and the creature is drawn and neither is drawn over the other.
+        Measured rather than read off the declaration, because the width is a
+        mask and the radius is an inset and only the result is the claim. */
+  const tkBand = (cls) => {
+    const el = tkPC.querySelector(`.tkarc.${cls}`);
+    const r = el.getBoundingClientRect().width / 2;
+    return [r - parseFloat(getComputedStyle(el).getPropertyValue('--aw')), r];
+  };
+  const [tkSin] = tkBand('stress');
+  const tkBands = ['stress', 'hp', 'armor'].map(tkBand);
+  check('every track is outside the sprite', tkSin >= 50,
+        `innermost inner edge at ${tkSin.toFixed(1)}, sprite at 50`);
+
+  /* 4. And far enough apart to be three tracks. Three arcs a pixel apart
+        read as one striped band you can see the hue change in and cannot
+        count, which is what the first pass shipped. */
+  const tkGaps = [tkBands[1][0] - tkBands[0][1], tkBands[2][0] - tkBands[1][1]];
+  check('the tracks are separated', tkGaps.every(g => g >= 1.2),
+        tkGaps.map(g => g.toFixed(1)).join(' and ') + ' between them');
+
+  /* 5. Hope lies on ONE circle. This is a real bug caught late and worth a
+        check of its own: the gems are placed by angle from the token's
+        centre, and without `transform-origin:0 0` each rotates about its own
+        middle instead — half a gem away — so the row comes out as an arc
+        that drifts outward, 52.0 to 54.6 over six. It reads as gems that
+        very nearly follow the ring, which is worse than gems that plainly do
+        not: a straight row is a decision and a skewed arc is a mistake. */
+  const tkBox = tkPC.getBoundingClientRect();
+  const tkR = [...tkPC.querySelectorAll('.tkhope .tkg')].map(g => {
+    const r = g.getBoundingClientRect();
+    return Math.hypot(r.left + r.width / 2 - tkBox.left - tkBox.width / 2,
+                      r.top + r.height / 2 - tkBox.top - tkBox.height / 2);
+  });
+  const tkSpread = tkR.length ? Math.max(...tkR) - Math.min(...tkR) : Infinity;
+  check('the Hope gems lie on one circle', tkR.length === 6 && tkSpread < 0.5,
+        `${tkR.length} gems, radius spread ${tkSpread.toFixed(2)}px`);
+
+  /* 6. The ladder culls, and Vulnerable outlives all of it. At the bottom
+        rung there is no track left and the word is gone too — but the
+        vignette is still burning, because "which of these is Vulnerable" is
+        a question asked while looking at the whole fight, which is exactly
+        the zoom where everything else has been removed. */
+  const tkGone = (el, sel) => {
+    const n = el.querySelector(sel);
+    return !n || getComputedStyle(n).display === 'none';
+  };
+  check('the ladder culls to Vulnerable alone',
+        tkMin.dataset.t === 'min' && tkGone(tkMin, '.tkarcs') && tkGone(tkMin, '.tkvuln .wr')
+          && !tkGone(tkMin, '.tkvuln .vig'),
+        `data-t=${tkMin.dataset.t}, tracks gone, vignette lit`);
+
+  /* 7. Nobody else reaches in. The browser's check pointed at a new block:
+        `design/token.html` loads three stylesheets and the game loads
+        twenty-three, and this component's members are tk-prefixed precisely
+        because `.row`, `.hd`, `.n` and `.trk` already belong to somebody.
+        Two exclusions and both are hosted components rather than leniency.
+        `.gems` and everything under it is `gem.js`'s row, drawn here on
+        purpose, so every rule `gem.css` writes for it is somebody else's by
+        design — the browser's check excludes `.card` for that reason and
+        this is the same claim. And the chip's **root** is excluded because
+        it deliberately wears `.dh`: that is where the palette comes from,
+        and a check that called `tokens.css .dh` a trespass would be calling
+        the compound itself the bug. What is under test is the members. */
+  const tkOwn = [...tkLayer.querySelectorAll('.tok *')]
+    .filter(el => !el.closest('.gems'));
+  const tkReach = [];
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch { continue; }
+    const from = sheet.href?.split('/').pop() ?? 'page';
+    if (from === 'token.css') continue;
+    const walk = (rs) => { for (const r of rs) {
+      const sel = r.selectorText;
+      if (sel === undefined) { if (r.cssRules) walk(r.cssRules); continue; }
+      if (!/box-sizing/.test(r.style.cssText)) {
+        for (const el of tkOwn) {
+          let m = false; try { m = el.matches(sel); } catch {}
+          if (m) { tkReach.push(`${from} ${sel}`); break; }
+        }
+      }
+      if (r.cssRules?.length) walk(r.cssRules);
+    }};
+    walk(rules);
+  }
+  check('no other sheet reaches into a token chip', tkReach.length === 0,
+        tkReach.length ? tkReach.slice(0, 4).join(' · ') : `${tkOwn.length} elements clean`);
+
+  /* 8. THE ALIGNMENT, which is the one thing about this component a study
+        page could not see and which three builds of `token-hud.ts` got wrong
+        in three different ways — a stale hook, a measured offset, a ticker.
+        Every one of them re-derived where a chip goes from
+        `canvas.stage.worldTransform`, and Foundry does not put its own HUD
+        there by that route at all.
+
+        What it actually does, in two functions:
+
+          Canvas#pan → HeadsUpDisplayContainer#align
+            left/top   = canvas.primary.getGlobalPosition()
+            width/height = canvas.dimensions
+            transform  = scale(canvas.stage.scale.x), origin top left
+
+          PlaceableHUD#_updatePosition   (Foundry's own Token HUD)
+            left/top   = the token's bounds — RAW SCENE COORDINATES,
+                         and no transform whatsoever of its own.
+
+        So this stands both of those up and asserts the property the user
+        actually reported missing: a chip and its token are concentric, and
+        stay concentric **at every zoom**. A constant offset passes at 1x and
+        fails at 2.4x, which is exactly what "it drifts when I zoom" is. */
+  const algMock = document.createElement('div');
+  algMock.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;overflow:hidden';
+  document.body.appendChild(algMock);
+
+  const algHud = document.createElement('div');            // stands in for #hud
+  algHud.style.cssText = 'position:absolute;transform-origin:top left;pointer-events:none';
+  algMock.appendChild(algHud);
+
+  const algLay = document.createElement('div');
+  algLay.className = 'dh tok-layer';
+  algHud.appendChild(algLay);
+
+  const algChip = document.createElement('div');
+  algChip.className = 'dh tok';
+  algLay.appendChild(algChip);
+
+  /* One creature, somewhere unremarkable in a large scene. */
+  const algX = 1500, algY = 900, algW = 100, algH = 100;
+  Object.assign(algChip.style, {
+    left: `${algX}px`, top: `${algY}px`, width: `${algW}px`, height: `${algH}px`,
+  });
+
+  const algDrift = [];
+  for (const [ox, oy, k] of [[0, 0, 1], [-640, -320, 2.4], [220, 90, 0.35]]) {
+    Object.assign(algHud.style, {
+      width: '4000px', height: '3000px',
+      left: `${ox}px`, top: `${oy}px`, transform: `scale(${k})`,
+    });
+    /* `transform-origin:top left` keeps the origin point still, so the rect's
+       own corner is the untransformed one and needs no unwinding. */
+    const h = algHud.getBoundingClientRect();
+    const c = algChip.getBoundingClientRect();
+    const dx = c.left + c.width / 2 - (h.left + (algX + algW / 2) * k);
+    const dy = c.top + c.height / 2 - (h.top + (algY + algH / 2) * k);
+    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+      algDrift.push(`${k}x: off by ${dx.toFixed(2)}, ${dy.toFixed(2)}`);
+    }
+  }
+  algMock.remove();
+
+  check('a chip stays concentric with its token at every zoom',
+        algDrift.length === 0,
+        algDrift.length ? algDrift.join(' · ') : 'aligned at 0.35x, 1x and 2.4x');
+
+  /* ══ THE RULER ═════════════════════════════════════════════════════
+     Eight, and the interesting half are about arithmetic rather than about
+     paint — which is the difference between this component and the chip. A
+     chip is drawn wrong or right; a ruler can be drawn perfectly and be
+     *lying*, and nothing on screen says which.
+
+     Drawn at a 100px grid so a square is a square and every number below can
+     be read as one. */
+  const ruGrid = 100;
+  const ruSq = { melee: 1, veryClose: 2, close: 6, far: 12 };
+  const ruBands = Object.entries(ruSq).map(([key, sq]) => ({
+    key,
+    label: key === 'veryClose' ? 'Very Close' : key[0].toUpperCase() + key.slice(1),
+    dist: `${sq * 5} ft`,
+    r: radiusOf(sq, ruGrid, 50),
+  }));
+
+  const ruLayer = document.getElementById('rulerlayer');
+  const ruHost = document.createElement('div');
+  ruHost.innerHTML = RANGE_RULER(ruBands);
+  const ruEl = ruHost.firstElementChild;
+  Object.assign(ruEl.style, { left: '400px', top: '150px', width: '100px', height: '100px' });
+  ruLayer.appendChild(ruEl);
+  setRulerZoom(ruEl, 1);
+
+  /* 1. The compound. `.ruler` is rewritten to `.dh.ruler`, so the element
+        wears both classes while standing outside every `.dh` root. Read off
+        the lettering's font, because `--f-mono` is declared on `.dh` and is
+        the one palette value this component actually consumes — a failed
+        rewrite leaves the literal `var(--f-mono)` with nothing behind it. */
+  const ruText = ruEl.querySelector('.rngt text');
+  const ruFont = getComputedStyle(ruText).fontFamily;
+  check('the ruler resolves the palette outside every .dh root',
+        ruFont.includes('Google Sans Code'),
+        ruFont || 'no font at all');
+
+  /* 2. Nothing pressable, on a band that has pointer events ON. The chip's
+        rule under more pressure: this covers twelve squares of canvas, and
+        the canvas owns click, drag and box-select over every one of them. */
+  const ruLive = [ruEl, ...ruEl.querySelectorAll('*')]
+    .filter(el => getComputedStyle(el).pointerEvents !== 'none');
+  check('nothing in the ruler takes pointer events', ruLive.length === 0,
+        ruLive.length ? `${ruLive.length} live: ${ruLive[0].className}` : 'inert on a live band');
+
+  /* 3. The rings scale with the map and the type does not. `--k` is the
+        reciprocal of the camera scale, so doubling it must double the type's
+        size in SCENE pixels — which is what holds it still on screen. A study
+        page cannot see this: it has one zoom. */
+  const ruSize = () => parseFloat(getComputedStyle(ruEl.querySelector('.rngt text')).fontSize);
+  ruEl.style.setProperty('--k', '1');
+  const ruAt1 = ruSize();
+  ruEl.style.setProperty('--k', '2');
+  const ruAt2 = ruSize();
+  ruEl.style.setProperty('--k', '1');
+  check('the lettering counter-scales with the camera',
+        ruAt1 > 0 && Math.abs(ruAt2 - ruAt1 * 2) < 0.05,
+        `${ruAt1}px at 1x, ${ruAt2}px at 2x`);
+
+  /* 4. THE READABILITY, and it is the one thing that made this component
+        worth a second draft. One circular path puts the bottom third of
+        every ring upside down. Two half-arcs of opposite handedness do not —
+        so the check is that the two paths are genuinely opposite: the upper
+        one's midpoint is ABOVE the centre and the lower one's is BELOW, and
+        both run left to right. Sampled off the geometry rather than read off
+        the `d` attribute, because a sweep flag is easy to write and hard to
+        be sure of. */
+  const ruPaths = [...ruEl.querySelectorAll('.rngt')[0].querySelectorAll('defs path')];
+  const ruMid = p => p.getPointAtLength(p.getTotalLength() / 2);
+  const ruEnds = p => [p.getPointAtLength(0), p.getPointAtLength(p.getTotalLength())];
+  const ruTop = ruMid(ruPaths[0]);
+  const ruBot = ruMid(ruPaths[1]);
+  const [ruA, ruB] = ruEnds(ruPaths[0]);
+  const [ruC, ruD] = ruEnds(ruPaths[1]);
+  const ruCentre = ruBands[0].r;
+  check('the two lettering arcs are opposite-handed, both left to right',
+        ruTop.y < ruCentre - 1 && ruBot.y > ruCentre + 1 && ruB.x > ruA.x && ruD.x > ruC.x,
+        `top y=${ruTop.y.toFixed(0)}, bottom y=${ruBot.y.toFixed(0)}, centre ${ruCentre}`);
+
+  /* 5. THE ARITHMETIC. A ruler drawn beautifully on the wrong radius is the
+        failure this component can have that the chip cannot, and it has no
+        symptom — the rings look exactly as they should and the answer is
+        wrong. Melee is one square out from the token's EDGE, so its radius is
+        the token's own 50 plus one grid; Far is twelve. Measured off the
+        elements the browser actually laid out, not off the array. */
+  const ruBad = [];
+  for (const [i, band] of ruBands.entries()) {
+    const el = ruEl.querySelectorAll('.rngr')[i];
+    const want = 50 + ruSq[band.key] * ruGrid;
+    /* offsetWidth, and NOT a bounding rect. The rings are mid-arrival when
+       this runs, and a rect reports the box an animation is *drawing*
+       rather than the one the layout holds — so the first run of this
+       check reported every radius at exactly 0.55 of itself, which is the
+       opening scale of the arrival keyframe. It is the capture-before-the-
+       write lesson from token-hud.ts, arriving in a check rather than in a
+       FLIP — and here it fails
+       in the worst direction: a plausible wrong number on a component
+       whose whole job is to be a number you can trust. */
+    const got = el.offsetWidth / 2;
+    if (Math.abs(got - want) > 0.5) ruBad.push(`${band.key}: ${got.toFixed(1)} not ${want}`);
+  }
+  check('every ring is its own range out from the token edge',
+        ruBad.length === 0,
+        ruBad.length ? ruBad.join(' · ') : 'melee 150, very close 250, close 650, far 1250');
+
+  /* 6. The ladder, and it works the opposite way round from the chip's: a
+        chip culls from the OUTSIDE in as it shrinks, and this culls from the
+        inside, because the ring that stops meaning anything at a pulled-back
+        camera is the small one. The outermost legend is never dropped —
+        answering a wide shot with the word MELEE is the wrong survivor. */
+  setRulerZoom(ruEl, 0.08);
+  const ruSmall = [...ruEl.querySelectorAll('.rngr')].map(r => r.hasAttribute('data-lo'));
+  const ruWords = [...ruEl.querySelectorAll('.rngt')].map(t => t.hasAttribute('data-lo'));
+  setRulerZoom(ruEl, 1);
+  check('the ladder culls inward and never the outermost legend',
+        ruSmall[0] === true && ruSmall[3] === false && ruWords[3] === false,
+        `rings ${ruSmall.map(v => (v ? 'off' : 'on')).join('/')} · outer legend ${ruWords[3] ? 'DROPPED' : 'kept'}`);
+
+  /* 7. A ring may not draw over an arc. Two different kinds of claim about
+        one creature, and the readout wins — so the ruler's layer is below the
+        chip's. Stated in the stylesheet AND ordered in the DOM by
+        `range-ruler.ts`, because `#hud` is rebuilt and the layers can come
+        back in either order; this checks the half that survives that. */
+  const ruZ = getComputedStyle(ruLayer).zIndex;
+  const tkZ = getComputedStyle(document.getElementById('rulerchips')).zIndex;
+  check('the ruler layer sits under the chip layer',
+        Number(ruZ) < Number(tkZ),
+        `ruler z${ruZ} · chips z${tkZ}`);
+
+  /* 8. And the reach check, for the seventh block to pay for it. The names
+        wanted here were `.rr`, `.rl` and `.ln` and all three were taken —
+        by plate.css's die run, dlg.css's rules line and that line's own body.
+        design/ruler.html loads four stylesheets and the game loads
+        twenty-four, so no study page could ever have shown it. The root is
+        excluded for the chip's reason: it deliberately wears `.dh`. */
+  const ruOwn = [...ruEl.querySelectorAll('*')];
+  const ruReach = [];
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch { continue; }
+    const from = sheet.href?.split('/').pop() ?? 'page';
+    if (from === 'ruler.css') continue;
+    const walk = (rs) => { for (const r of rs) {
+      const sel = r.selectorText;
+      if (sel === undefined) { if (r.cssRules) walk(r.cssRules); continue; }
+      if (!/box-sizing/.test(r.style.cssText)) {
+        for (const el of ruOwn) {
+          let m = false; try { m = el.matches(sel); } catch {}
+          if (m) { ruReach.push(`${from} ${sel}`); break; }
+        }
+      }
+      if (r.cssRules?.length) walk(r.cssRules);
+    }};
+    walk(rules);
+  }
+  check('no other sheet reaches into the range ruler', ruReach.length === 0,
+        ruReach.length ? ruReach.slice(0, 4).join(' · ') : `${ruOwn.length} elements clean`);
 
   const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
                       'fcls', 'fclsr', 'fsub', 'fcrd', 'fcards', 'fclass',

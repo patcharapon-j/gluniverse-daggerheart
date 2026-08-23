@@ -3032,6 +3032,50 @@ because there they are the only control; here there are dedicated steppers, and
 a readout that is also a control is a misclick swinging the pool six points
 mid-session.
 
+### The underside, which is not about Fear at all
+
+The strip is the only piece of this system's chrome that is always on screen,
+so it has become where the controls with nowhere else to go live. There are two
+plinths hanging under it and **the split is whose they are**: on the left the
+switch for what *this screen* draws, on the right the two acts that reach the
+whole table. Only the left one survives the players' build — a scene ending is
+the GM's to declare, and what your own screen draws never was.
+
+`scene` and `session` are the two refresh scopes nothing in Foundry can infer,
+and they are `endScene()`/`endSession()` with a button on them.
+
+**The view switch turns the token chips off**, and it is on the players' strip
+too — which is the one press here they may make. That follows from the setting
+rather than from generosity: `tokenChip` is **client**-scoped, a preference
+about one screen, so a player who finds the rings busy should not have to ask
+the GM about it. It never touches `adversaryChip`, which is world-scoped and
+stays a ruling about the table.
+
+None of that weakens `pool.css`'s refusal to hide the Fear pool from players.
+That claim is about the *pool*; a control that hides something else, on one
+screen, at its owner's request, is a different thing entirely.
+
+**It is a state and its neighbours are acts**, which is the whole of why it is
+not simply a third button in the same group. `scene` and `session` do something
+when pressed and say nothing standing still; a switch has to read as on or off
+before anybody touches it. So it carries a mark, and the mark is a rhombus lit
+like a pip against a socket — deliberately the vocabulary of the twelve fear
+gems twenty pixels above it rather than a new one. `aria-pressed` is where the
+state lives: the accessible name for exactly this and the styling hook at once,
+so there is no class to keep in step by hand.
+
+**The button is a reading of the setting and never a copy.** The press writes
+`tokenChip`, the setting's own `onChange` raises `daggerheart.tokenChipChanged`,
+and that hook is the only thing that ever moves the button — so the strip and
+the checkbox in Foundry's settings window cannot disagree, whichever one you
+used. `token-hud.ts` listens to the same hook to redraw the chips, and neither
+file knows the other is there.
+
+The chamfer stays on the **bottom-right** of both plinths although one of them
+is docked left. The family mark is not a decoration that mirrors with its
+container; it is the one corner this system always cuts, and two plinths
+cutting opposite corners would read as two different objects.
+
 ### It is the duality plate's header now
 
 The first build was honest and said nothing: a 9.5px mono caption reading FEAR,
@@ -3175,6 +3219,16 @@ every button to 4px, and nothing in this system has a rounded corner — the
 family mark is a chamfer, a corner *cut off* rather than turned, and the two are
 opposite claims at the same size.
 
+The switch pays the same floor a stepper does, and `tools/verify/` asserts it
+alongside the thing a stepper has no equivalent of: **that the two states are
+drawn differently**, since a switch whose values look identical is worse than
+no switch — pressing it appears to do nothing. That check failed on its first
+run against a control drawing perfectly, which is the `--i` ramp's lesson in a
+second place: the pip and the word both ease over .18s, so a computed value
+read on the frame the attribute was set is the one the transition is currently
+*at*. The transitions come off before the reading, exactly as they do for the
+ramp.
+
 `tools/verify/` carries a stand-in `#ui-middle` and `#ui-top` beside its
 stand-in `elements` layer, for the reason it carries the layer at all: the
 environment is part of the component and a study page has to bring it. It
@@ -3210,6 +3264,605 @@ currently at, not the one that was asked for.
 The section is deliberately not `.stage`, because that class carries
 `.stage .dh{width:300px}` and would have handed the strip the one measurement
 the check exists to take.
+
+## The token chip
+
+Foundry draws a green bar and a blue bar under a token. Daggerheart has
+neither number. It has **boxes you cross off**, and a bar at 60% cannot say
+whether the next hit costs you one box or four — which is the entire question
+anybody asks of a Hit Point track, and the whole reason `apps/damage.ts` is a
+dialog rather than a subtraction. So the bars come off and the tracks go on
+the creature. `design/token.css` is the component, `design/token.js` the
+builder, `design/token.html` the study page, and `src/module/token-hud.ts` the
+layer they live in.
+
+**Two drafts were thrown away and both are worth keeping as arguments.** The
+first ported the sheet's own row unchanged — twelve Hit Points, six Stress,
+three Armor Slots and six Hope, **twenty-seven objects at seven pixels** — and
+that is texture rather than a readout. What made it so is the box that is
+*empty*: on the sheet an empty box is the **affordance**, the thing you press,
+and nothing on a token is pressable. Half the component was drawing the part of
+the sheet that existed only to be clicked, and it cost exactly as much ink as a
+mark. The second took the empty boxes out and still lost, on two counts — a
+centred row filled from the left puts 5-of-12 visibly off-centre, and the strip
+sat on the artwork anyway, since the circle is inscribed in the square and the
+bottom band *at centre* is the painting. Only the corners are free.
+
+**The ring won because the circumference is about three times the width**, so a
+fourteen-unit track finally has room to be fourteen things, and because it is
+the shape a token actually is. Everything below follows from that.
+
+### The gauge
+
+Every track shares one origin and one direction: they start at **210°**,
+lower-left, and run clockwise over the top to lower-right. The **60° left open
+at six o'clock is not waste** — it is the slot where Hope sits on a character
+and Difficulty on an adversary. The rings open for the thing the creature
+spends.
+
+Radially, outermost first: **Armor, then Hit Points, then Stress**. That order
+is the rule rather than a layout — armour is what stands between a hit and your
+Hit Points, so it stands outside them.
+
+**Armor is not a ring**, and that is the one place a full circle actively lies.
+It is two or three slots on most characters and can be six, and a circle
+divided into two is not a track, it is a pie chart. So Armor alone runs at a
+**fixed angular pitch** and stops when it runs out — three slots is 39° of arc
+and six is 78° — so the arc's own *length* is the capacity, which a full ring
+normalises away.
+
+**And Armor reads the other way round, which no other track does.** Hit Points
+and Stress are things that happen *to* you: the mark is the damage, the lit run
+grows as the fight goes badly, and an empty ring is a creature that is fine.
+Armor is not damage — it is a **purse**, slots you still have to spend, which is
+the number anybody actually asks at the table and the number the damage dialog
+counts down while you decide. So Armor lights what is **left** and goes dark as
+it is spent. Drawn like the damage tracks it would put a bright band meaning
+nothing on a fresh character and nothing at all on a spent one, which is exactly
+backwards. `litOf` in `token.js` is the whole of the difference.
+
+**Everything is outside the sprite.** The innermost track's inner edge is at
+radius 50.2, a tenth of a pixel past the token's own circle: the creature is
+drawn and the tracks are drawn, and neither is drawn over the other. The first
+pass put all three *on* the painting at 2.4–3.2px wide and about 1.2px apart,
+which fails twice over — a 3px arc loses to a pale highlight however saturated
+it is, and three arcs that close are not three tracks but one striped band you
+can see the hue change in and cannot count. They are 3.0–3.8px now with **1.6px
+between them**, over half an arc: the empty ring is what says there are three.
+
+The cost is a footprint and it is real. The outer edge is at 63.4 where the grid
+cell's is 50, so a chip reaches about an eighth of a cell into each neighbour
+and two adjacent creatures' Armor arcs can cross. That is what buys the artwork
+back, and it is the judgement here most likely to want revisiting at a crowded
+table.
+
+**Hope is gems and curves with everything else.** Not a ring and not a variant
+of one — Hope is gold diamonds on the rail, in the rest dialog and in the
+ledger, so it is `gem.js`'s own `GEM` and a token is not where that gets
+re-taught. What changes is placement: each gem is put down **by angle** on the
+tracks' own circle and **tilts with it**, filling the 60° opening. A straight
+row underneath would be a caption below a gauge, and Hope is not a caption. The
+gems rotate rather than counter-rotate, because a diamond is symmetric about
+both axes so a tilt costs it no legibility, while a row of upright gems on a
+curve reads as a row that has been bent.
+
+`transform-origin:0 0` is the entire rule working. `left/top:50%` puts a gem's
+*top-left corner* on the token's centre, which is what the rotation needs to
+pivot about — but the origin defaults to the box's own middle, half a gem away.
+Without it all six pivot about the wrong point and the row comes out as an arc
+that **drifts**: measured, radii of 52.0 through 54.6 where six identical
+numbers are the whole claim. That is a bug worth naming because it does not
+look like one — gems that plainly ignore the ring read as a decision, and gems
+that *very nearly* follow it read as sloppiness with nothing on screen to say
+which. `tools/verify/` measures the spread rather than trusting the rule.
+
+**Difficulty is the other occupant of that opening and never both.** A character
+spends Hope; an adversary makes you beat a number. It is the one numeral on the
+whole component and it earns it by having no units — Difficulty does not move
+during a scene and there is nothing to cross off.
+
+### Material
+
+Three layers per track, and each is a **different claim** rather than a
+different opacity of one. `.ch` is the channel — every slot the track *has*,
+recessed — which is what says "fourteen" while six are marked and what lets an
+unmarked slot be genuinely absent from `.lit` rather than a washed-out copy of a
+marked one. `.lit` is what is marked (or, on Armor, what is left). `.fx` is the
+landing.
+
+Substance is what the ring costs and this is how much comes back. Hue and radius
+do most of the telling apart, and then **Stress is scored** — fine hairlines
+across the annulus, the scratch's own character — while **Armor is plate**, the
+only one with a specular run down its outer edge. It is not the tear, the
+scratch and the chisel that `mark.js` argues for, and it is more than three
+colours.
+
+**It has to survive the artwork**, which is the one thing no other surface in
+this system does. Every other component draws on paper it owns; this draws on
+somebody's painting. So each layer carries its own dark contour, and it is a
+`drop-shadow` rather than a `box-shadow` for a reason that is not taste: **a
+mask clips a box shadow along with the box**, and every layer here is masked to
+its annulus, while a drop-shadow is taken from the *result* and traces the
+silhouette of the slots themselves. Two of them on the marked run and they are
+opposite claims — a tight near-black seat, so the arc reads as sitting in a
+groove cut through the sprite, and a wide coloured one that keeps the hue
+legible at the distance where the arc is two pixels.
+
+**The landing is a flash, not a travel**, for `mark.css`'s reason: a cut is not
+a gesture you watch happen, it is a thing that has happened. `.fx` is handed a
+wedge covering exactly the slots that moved and restarted with **one** forced
+flush for the whole change, which is `setMarks`' own two-pass shape and for its
+reason — a Severe hit moves four slots and four restarts is four layouts.
+
+### Vulnerable
+
+**The most important thing on the chip**, because it is the condition the table
+meets most often and it arrives two ways: a full Stress track, and a hand.
+
+It is **not a fourth ring**. Three concentric arcs already say "track", and a
+condition drawn as a fourth would be a track you cannot count — so it goes
+**inward**, where nothing else lives, and it is the one thing that stays inside
+the sprite. That is a claim rather than a leftover: the tracks are a reading
+*off* the creature and this is a claim *about* it, so the thing that is
+Vulnerable is the thing in the middle.
+
+It is `mark.js`'s own run of terms bent round a circle. The sheet answers this
+condition with a scrolling strip because it is read at a glance, out of the
+corner of an eye, while the GM is describing something; a token has no room for
+the rules and every room for the word. `textLength` with `lengthAdjust="spacing"`
+is what makes it seamless — a repeated string almost never comes out to the
+exact circumference, and the leftover otherwise shows as a gap travelling round
+with the text.
+
+**Three loops and none of them is a colour change.** `pool.css` took the one
+exception to `gem.css`'s ban on idle motion, for the Fear strip, because dread
+sitting in the room between the moments anybody touches it is the whole claim.
+This is the second and the reasoning is identical: a condition giving every roll
+against this creature advantage is live for as long as it is on, and a ring that
+is perfectly still is a border. The vignette breathes at 4.6s, the words turn
+clockwise at 46s, and a `plus-lighter` sweep runs **anticlockwise** at 7.5s.
+Deliberately incommensurate and deliberately in two directions: a sweep going
+the same way as the text is a highlight stuck to a word, and the point is that
+it passes over them. All three are cheap by construction — both turns are a
+`transform` on a static gradient rather than an animated gradient angle, so they
+composite and never repaint — which matters here where the Fear strip's does
+not, because this can be on eight creatures at once.
+
+**And `syncVulnerable` was silently erasing the hand-applied half.** The method
+compared "should be Vulnerable" against "is Vulnerable" and toggled, so every
+write to the actor re-asserted the derived answer over an ad-hoc one: a GM marks
+a creature Vulnerable, the player marks a Hope, and the effect disappears. It
+reads as the condition not sticking, which is the worst shape of bug — the cause
+is a hook nobody has reason to suspect and the symptom shows on somebody else's
+screen. The effect the track creates is **flagged as its own** now, and only a
+flagged one is ever removed. That is `creation.granted`'s provenance argument
+arriving at a condition, and it fails in the right direction: an effect nobody
+claimed is left alone, which is always recoverable.
+
+### The ladder
+
+Every measurement in the component is a **scene** pixel — a 1×1 token is a
+hundred of them, at every zoom — so legibility is a separate question and the
+ladder is the answer. Tracks leave from the outside in, which is the order they
+were argued in:
+
+    data-t=near   110px or more of footprint on screen — everything
+    data-t=mid    55 to 110px — the three tracks, no Hope and no Difficulty
+    data-t=far    28 to 55px — Hit Points and Stress
+    data-t=min    below that — nothing but Vulnerable
+
+Nothing shrinks its way out. An arc below the width where its slots separate is
+a coloured smudge claiming to be a count, so it is **removed**. Vulnerable
+outlives all of it and burns brighter with the tracks gone, because "which of
+these is Vulnerable" is a question asked while looking at the whole fight —
+which is exactly the zoom where everything else has been culled.
+
+The threshold is asked in **footprint** rather than in camera scale, because a
+2×2 creature is legible at half the zoom a 1×1 one needs and one table then
+answers for both.
+
+**`data-t` is written by JS and that is not a shortcut.** CSS cannot ask a range
+question about a transformed size: a container query measures *layout*, and the
+layout never changes here — the ancestor's transform does. It is still nearly
+free, because `setTier` returns false unless the chip actually crossed a
+threshold, so a slow zoom across twelve creatures writes an attribute a handful
+of times rather than twelve times a frame.
+
+### The layer
+
+**An HTML layer, not a PIXI one**, and the board is a PIXI stage so that wants
+justifying. Every part of this component is something PIXI would have to be
+taught: a conic gradient in fourteen segments, a radial mask,
+`mix-blend-mode:plus-lighter`, text bent round a path, three composited loops.
+Drawing those into a canvas means re-deriving all of it in a second language and
+then keeping two copies true — which is exactly the trade `port-design-js.mjs`
+exists to refuse.
+
+So it is one layer of HTML over the board with the chips inside it placed in
+scene coordinates, which is why every number in `token.css` is a scene pixel.
+
+**The layer is a child of `#hud`, and that is the whole of the alignment.**
+Three builds hung it *beside* `#hud` and re-derived where it goes from
+**`canvas.stage.worldTransform`** — a `matrix()`, then a measured offset between
+the wall and the canvas element, then a ticker to keep the matrix fresh. Each
+fixed something real and each still drifted, because all three were a second
+opinion about a number Foundry had already published.
+
+Foundry aligns `#hud` in `Canvas#pan` and does not use `worldTransform` to do
+it: `left`/`top` are `canvas.primary.getGlobalPosition()`, the size is
+`canvas.dimensions`, and the zoom is a plain `transform:scale()` against
+`transform-origin:top left`. Its **own Token HUD** is then a child of that
+element positioned at the token's `bounds.x`/`bounds.y` — raw scene
+coordinates, with no transform whatsoever of its own. A chip is now exactly
+that, so there is no matrix here, no offset and no ticker: nothing left for
+this file to get wrong.
+
+The price is the activity log's, arriving where it cannot be answered the same
+way. `#hud` is an ApplicationV2 whose `_replaceHTML` assigns `innerHTML`, so
+every render of it sweeps the layer away. There the fix was to become a
+*sibling* of the part that gets rebuilt; here the element that gets rebuilt
+**is the coordinate system**, so standing outside it is the bug rather than the
+fix. It re-hangs on the render hook instead, and only when it has actually been
+evicted — re-appending unconditionally would throw away every chip's arrival
+mid-play.
+
+**Nothing of ours writes on a pan or a zoom.** Foundry moves `#hud` and the
+chips ride it. A token moving moves its own chip off `refreshToken` — the same
+`refreshPosition` render flag that moves Foundry's own nameplate and border, so
+it is raised on every frame of an animated move by construction rather than by
+our hoping so — and `place` writes four styles only when one of its four
+numbers changed. The one thing the camera still costs is `data-t`, which is a
+question about how large the chip has become *on screen* and can only be asked
+from `canvasPan`.
+
+**`canvasPan`'s reputation here was undeserved**, and that is worth recording
+because it cost a whole build. It was blamed for the drift and replaced with a
+ticker on the reasoning that it fires when Foundry *decides* to pan rather than
+per frame. `Canvas#pan` settles it: the hook is raised two lines above the
+`align()` that moves Foundry's own HUD, from the same function, once per pan
+step and animated pans included. It was never the lagging part.
+
+**And a constant offset does look like drift**, which is the reasoning error
+under all three builds. The intuition says a fixed screen-pixel error is a
+fixed misalignment and therefore not drift — but the *token* changes size with
+the zoom while the error does not, so six pixels is a sixth of a creature at
+0.35x and invisible at 2.4x. "It moves about when I zoom" is exactly what that
+looks like, and it sent every diagnosis after a per-frame cause.
+
+**The chip is rendered once**, which is the contract `setMarks`, `setPool` and
+`setChits` already keep. `setChip` diffs, and the markup is rebuilt only when
+its *shape* changes — a track's maximum, Hope's ceiling under a scar, an
+adversary becoming visible. Getting that boundary wrong is visible in both
+directions: rebuild too eagerly and every arrival is cut off mid-play, too
+rarely and a levelled-up character keeps last level's Hit Point count.
+
+**The host is asked for, not searched for**, and that is `chatPanels()`'s rule
+*declined* rather than applied a second time. That rule is about finding a place
+to stand, and a fallback is a reasonable answer when the element is a backdrop.
+This element is not a backdrop, it is the coordinate system — so a fallback is a
+second coordinate system somebody has to align by hand, which is precisely what
+the three drifting builds were. It asks `canvas.hud` first, because that is the
+API and it will still answer if Foundry moves the element or renames the id, and
+if there is no host at all it says so once and names the file.
+
+**Nothing here is pressable, no exceptions.** `pool.css` argues the first half —
+a readout that is also a control is a misclick, and here a misclick costs
+somebody a Hit Point. The second half is worse: the canvas owns click, drag and
+box-select over exactly these pixels, and a chip that swallows a `dragstart` is
+a token you cannot move. That is the inverse of the pressure the Fear strip and
+the activity log's door are under, both of which have to *take* pointer events
+back from a band Foundry switched them off in — so `tools/verify/` puts the chip
+in a band that has them on and asserts it stays inert anyway.
+
+### What it may say, and to whom
+
+A GM sees everything. Everybody else sees their own characters and companions in
+full, and sees an adversary according to one **world** setting: `none` (the
+default), `marks`, or `full`. World-scoped for the change log's reason — it is a
+ruling about the table rather than a preference about a screen, and a GM who has
+decided the party may not read an ogre's Stress cannot have one player opt back
+in.
+
+Three values rather than two, because the interesting one is in the middle.
+`marks` draws the arcs and withholds the **Difficulty**, which is precisely what
+the players are supposed to be discovering by rolling against it — so the table
+can see the ogre is nearly out of Stress without being handed the number.
+
+**Vulnerable is exempt at every setting**, and that is not an oversight. A
+creature that is easier to hit is a fact somebody at the table produced by
+hitting it, and hiding the consequence of your own hit is the system taking back
+what the fiction just gave you. A hidden adversary that is Vulnerable still gets
+a chip, holding nothing but the word.
+
+**A token nobody may see gets no chip at all** rather than a hidden one: the fog
+is a fact about what this client knows, and an element carrying a creature's
+Stress is the wrong thing to leave in the DOM of somebody who has not found it
+yet. `.hidden` on the chip is the *other* case — a token the GM has toggled
+invisible, which the GM can still see. **Defeated keeps its marks and dims**,
+for the ledger's reason: a corpse's slots are what the table just spent the
+fight producing, and clearing them at the last one is the record vanishing at
+the moment it meant the most.
+
+### Foundry's bars
+
+Off in two halves, because there are two populations. **New actors** get
+`displayBars: NONE` on their prototype token via `_preCreate` — a *default*
+rather than a rule, so a table that wants a bar can turn it back on and both
+attribute paths stay declared. **Every actor that already exists** is answered at
+draw time by a `Token` subclass whose `drawBars` returns early for our four
+types, because rewriting somebody's prototype tokens on upgrade is a migration
+nobody asked for. The override is a guess about somebody else's private API and
+fails in the right direction: if a later Foundry renames the method, our
+override stops being called and the bars come back, which is visible.
+
+### What its study page could not see
+
+`tools/verify/`'s **THE TOKEN** stage, and it earned itself on the first run.
+
+The naming discipline is the reason. Members are `tk`-prefixed because `.row`,
+`.hd`, `.n` and `.trk` already belong to somebody, and the chip is drawn outside
+every `.dh` root so `port-design-css.mjs` rewrites it to a **compound** —
+the sixth after the drag proxy, the context menu, the roll popover, the rules
+panel's peek host and the Fear strip. **The word ring was `.wr` for exactly one
+run of that page**, and `roll.css` has owned `.wr` since the roll panel was
+drawn: both load into the same `.dh` root where scoping does nothing, so the
+token's SVG would have arrived wearing a flex row's padding and background.
+Sixth instance of the bug that renamed `.die.win` and `.dfn .pl`, and the first
+one this system caught **before** shipping it — `design/token.html` loads three
+stylesheets and the game loads twenty-three, so no study page could ever have
+shown it.
+
+One more consequence of the naive rewrite: it runs over comments too, so
+`design/token.css` **may not spell its own selectors in prose**. Written out,
+they come back through the port carrying two copies of the prefix and describing
+something that does not exist.
+
+The stage asserts eight things: that the compound resolves the palette while
+standing outside every `.dh` root; that nothing in the chip takes pointer events
+on a band that has them; that every track clears radius 50; that the gaps
+between tracks survive; that the six Hope gems lie on **one** circle, which is
+the `transform-origin` bug measured rather than trusted; that the bottom rung
+culls to Vulnerable alone; that no other sheet in the ported stack reaches into
+a chip; and **that a chip stays concentric with its token at every zoom**.
+
+That last one is the alignment, and it is the check three broken builds needed
+and did not have. It stands up Foundry's own two functions rather than
+describing them — a host sized and scaled the way `align()` sizes and scales
+`#hud`, a chip inside it at raw scene coordinates the way `PlaceableHUD` places
+itself — and measures the distance between the two centres at 0.35x, 1x and
+2.4x. Three zooms rather than one, because the failure is a constant screen-pixel
+offset and a single zoom cannot tell that from being correct. Injecting six
+pixels of error makes it report `6.00` at all three, which is the negative
+control the check was confirmed against.
+
+Two exclusions in the reach check and both are hosted components rather than
+leniency: `.gems` and everything under it is `gem.js`'s row, drawn here on
+purpose, and the chip's **root** deliberately wears `.dh` because that is where
+the palette comes from. A check calling `tokens.css .dh` a trespass would be
+calling the compound itself the bug.
+
+**One thing is not yet measured and should be before this is trusted at scale.**
+Nine masked elements and three `drop-shadow` filters per chip, times however
+many creatures are on the board. It is the shape of cost the browse window's
+"what it costs to open" turned out to be about — invisible afterwards, because
+every chip is correct, and paid entirely in frames that were dropped.
+
+## The range ruler
+
+Daggerheart's ranges are fiction-first and the book says so out loud: Melee,
+Very Close, Close, Far and Very Far are agreements at the table, and the feet
+printed beside them in `config.ts`'s `RANGE_FEET` are the book's own
+approximations rather than a conversion. That is the *reason* to draw them
+rather than a reason not to — **an approximation nobody can see is not one
+agreement, it is four people holding four of them**, and the disagreement
+surfaces after somebody has already committed to a move.
+
+Select a token and four rings come out of it. `design/ruler.css` is the look,
+`design/ruler.js` the builder, `design/ruler.html` the study page, and
+`src/module/range-ruler.ts` the half a study page cannot have.
+
+**It is not a fourth arc on the chip.** The chip is a readout *of* a creature;
+this is a measurement *from* one, and the two differ in every dimension that
+matters — lifetime (a chip lives as long as the token, a ruler as long as the
+selection), size (0.63 of a grid cell against twelve of them) and subject. So
+it is its own layer, and it sits **under** the chips: two different kinds of
+claim about one creature, and the readout wins.
+
+**It rides the chip's arrangement rather than repeating it.** `token-hud.ts`
+cost three broken builds to learn where a layer over the board goes, and every
+one of those lessons applies here unchanged — child of `#hud`, positioned in
+raw scene coordinates, aligned by Foundry's own `Canvas#pan`, re-hung when
+`#hud`'s `_replaceHTML` sweeps it away. That file's long note is the argument;
+this one is a second caller of it.
+
+**The ruler has no hue, and that is a rule rather than a gap.** Every colour on
+a token in this system already means a resource: wound is Hit Points, strain is
+Stress, plate is Armor, gold is Hope, violet is Fear. A ruler measures the
+*ground*, so it is drawn in the map's own ink and buys its legibility with
+contrast and contour — the chip's own dark drop-shadow contour, for the chip's
+own reason. A saturated ruler would be a sixth meaning for a hue that has one,
+on the single surface where all five are already in play. Its ink is a literal
+rather than a palette token for the same reason: scene artwork has no theme and
+does not become parchment because a *sheet* went light.
+
+**Certainty is the line style.** Melee and Very Close are solid, because within
+arm's reach is a thing you can be sure of; Close and Far break into dashes,
+because those are the two the book leaves most to the table. The dash is an
+**arc length** and not an angle — a fixed angular period would make Far's
+dashes eight times longer than Melee's and the four rings would stop reading as
+one instrument.
+
+**A band is four layers and each is a claim**, which is `token.css`'s rule
+about the chip's arcs arriving somewhere with more room for it. A bevel — light
+bleeding inward off the line, shadow falling outward, one claim about one edge
+and therefore one gradient — makes the ring sit *in* the ground rather than on
+it. The line carries the certainty. A finer companion rule just outside it is
+how this design draws a border everywhere else, and it is what stops a single
+stroke reading as a fence. Then the lettering. **None of it is a fill**: a wash
+over the disc would tint the map, which is the thing the reader came for.
+
+**The light on the line is a second mask, not an overlay**, and that is not a
+preference. A conic alpha intersected with the annulus dims the ring toward the
+lower right so it reads as a solid thing lit from above. An overlay in
+`plus-lighter` doing the same job would brighten the *gaps* in a dashed ring as
+readily as the dashes, and there would be no dash left. Composited, the light
+can only ever take away — the same guarantee `plate.css`'s facet ring gives its
+numerals.
+
+### The name follows the ring
+
+Which is what makes a band identifiable from wherever the reader is looking at
+the board, rather than one they have to trace back to a tag somewhere on it. It
+is the chip's own gesture: `token.js` bends VULNERABLE round a circle for the
+same reason, that a token has no room for a caption and every room for a word.
+
+**Two half-arcs rather than one circle, and that is the whole of the
+readability.** A single circular path puts the bottom third of every ring
+upside down. An upper arc running left-to-right over the top and a lower arc
+running left-to-right *under* the bottom are both upright — the map-maker's
+answer to labelling a contour, and it costs one extra `<path>`. `paint-order`
+is the other half: stroking a dark halo first and filling over it knocks a
+channel out of the line behind every glyph, so the words read as cut *into* the
+ring. That is also why this needs no plinth — a box would be an object on the
+map.
+
+**Placed, not poured**, and this is where the chip's technique had to be
+abandoned rather than copied. The chip fills its circle exactly, with
+`textLength` forcing the repeat to the path's own length so no gap travels
+round with the words. Ask that of Far and it is about ninety repeats and a
+thousand glyphs; cap the repeat *while still forcing the length* and eleven
+letters spread over half a circle. Those are the same mechanism failing from
+either end. So the legends are placed — N per half arc, evenly spaced, each at
+its natural width, with N taken from the arc's length **on screen**. A ring
+gains more legends as the camera comes in rather than larger ones, and the
+lettering is rewritten only when N actually changes, which is `setTier`'s
+discipline rather than a similar one. The offsets are (m + ½)/N, a fence-post
+rule doing real work: it keeps every run clear of the two seams at three and
+nine o'clock, where the arcs meet and a run anchored to the end of one would
+hang off it.
+
+**The rings scale with the map and the type does not.** A ring is a distance on
+the ground, so it is a scene pixel and rides the camera exactly as the grid
+does; the lettering is chrome *about* a ring, so it counter-scales through
+`--k` and holds one size on screen at every zoom. A legend that shrinks with
+the map is a legend twice.
+
+**Two ladders, and they are different questions.** A ring below its floor is
+not a small ring, it is a dot inside the creature — its stroke wider than the
+gap to its neighbour — so it leaves, exactly as a track leaves the chip's. The
+lettering's is separate: two bands a hundred scene pixels apart stay a hundred
+apart on the ground forever, but on screen that gap shrinks with the camera
+while the type does not, so below some zoom Melee's words print through Very
+Close's however far apart the circles are. That is a middling-zoom failure,
+which is the worst kind — correct at the zoom anybody builds it at and wrong at
+the one they play at. Walked from the **outside in**, because the outermost
+band is the one still worth reading when the type is crowding, and keeping the
+innermost instead would answer a pulled-back camera with the word MELEE.
+
+**No idle motion.** `gem.css`'s ban has taken two exceptions — the Fear strip
+and Vulnerable — and both earned it the same way: each is a live threat sitting
+in the room between the moments anybody touches it. A ruler is not that. It is
+a measurement you take, read and stop looking at, and a ring turning slowly
+under a token somebody is trying to *move* is motion competing with the gesture
+it exists to serve. The rings arrive staggered outward at 62ms, one wave leaves
+the creature and is gone, a 240ms collapse says the measurement is over, and
+after that nothing on this layer moves until the selection does.
+
+### The arithmetic, which is the only thing here that can be silently wrong
+
+**Squares, not feet.** The obvious build divides `RANGE_FEET` by the scene's
+own `grid.distance`, which is right on every imperial table and quietly wrong
+on every other one — it reads a number labelled *metres* as though it were
+feet, and Melee lands at three and a third squares on a 1.5m grid. The squares
+are the invariant, so `rangeSquares` in `config.ts` is `RANGE_FEET / 5` — the
+book's own five feet to the square — the ring comes off the **grid**, and only
+the printed distance comes off `grid.distance` and its units. That paragraph in
+`config.ts` saying nothing here does arithmetic with the feet now has exactly
+one exception, and it does the arithmetic somewhere else.
+
+**Measured from the token's edge**, because reach is what the rule means: a
+three-by-three dragon threatens a square beyond its own body, and measuring
+from its centre would put half of Melee inside the dragon. It costs nothing on
+a one-by-one and is the difference between right and roughly right on
+everything larger — which is why a resize rebuilds rather than repositions.
+
+**Very Far is declined out loud.** Twenty-four squares is a ring 4,900 scene
+pixels across before the token is added, on a scene that is typically four
+thousand by three thousand. It stops being a measurement and becomes a claim
+that the answer is *everywhere*, and it drags the ladder out with it: at the
+zoom where it fits, Melee is nine pixels and has already been culled. `BANDS`
+is four, and the fifth is left out in `range-ruler.ts` rather than filtered out
+of `RANGES`, because the closed set is the rules' and this is a drawing
+decision.
+
+### One selection, one screen
+
+**One ruler at a time**, and only when exactly one token is controlled. With
+several selected you are moving them, not measuring, and four bands each on
+three creatures is several thousand pixels of overlapping circles with nothing
+to read in them.
+
+**`controlToken` is raised per token**, so a box-select over three creatures
+raises it three times and the set is a different size at each — one of which is
+a set of one. Answering each in turn builds a ruler on the first and takes it
+down on the second, which is a 240ms collapse playing over a gesture that never
+wanted one. So the answer is coalesced to the end of the batch, on a macrotask
+rather than a `requestAnimationFrame` — that is `swap.js`'s rule inverted: rAF
+is the right tool for *before the next paint* and the wrong one for *after the
+current batch*, and it does not fire at all in a tab that is not painting.
+
+**Nobody sees yours.** A selection only ever exists on one client, so there is
+no permission question here and therefore no world setting — which is also why
+this needed no `adversaryChip` of its own. The switch is the second on the Fear
+strip's left plinth, beside `tracks`, client-scoped for the chip switch's
+reason, and it is a *reading* of the setting rather than a copy: the press
+writes `rangeRuler`, the setting's own `onChange` raises the hook, and that
+hook is the only thing that ever moves either the button or the rings.
+
+### What its study page could not see
+
+`tools/verify/`'s **THE RULER** stage, eight checks, and the interesting half
+are about arithmetic rather than about paint — which is the difference between
+this component and the chip. **A chip is drawn wrong or right; a ruler can be
+drawn perfectly and be lying**, and nothing on screen says which. So one check
+measures every ring's radius against the range it claims, and it caught its own
+author first: written with `getBoundingClientRect` it reported every radius at
+exactly 0.55 of itself, because a rect reports the box an animation is
+*drawing* rather than the one the layout holds and 0.55 is the arrival's
+opening scale. `capture()`'s lesson from `token-hud.ts`, arriving in a check
+rather than in a FLIP, and failing in the worst direction — a plausible wrong
+number on the one component whose whole job is to be a number you can trust.
+
+The rest: that the compound resolves the palette outside every `.dh` root; that
+nothing takes pointer events on a band that has them, which matters *more* here
+than on a chip because this covers twelve squares of a canvas that owns click,
+drag and box-select; that the lettering counter-scales; that the two arcs are
+genuinely opposite-handed, sampled off the path geometry rather than read off a
+sweep flag; that the ladder culls inward and never the outermost legend; that
+the ruler's layer sits under the chip's; and that no other sheet reaches in.
+
+**Three names were wanted and all three were taken** — `.rr` is a die run in
+`plate.css`, `.rl` is the rules panel's line in `dlg.css` and `.ln` is that
+line's own body. `dlg.css` draws inside a `.dh` root, so `.dh .rl` would have
+matched a legend of ours the moment the two were on screen together. Seventh
+instance of the bug that renamed `.die.win`, and the second one caught before
+shipping — by grepping the ported stack rather than by a study page, which
+loads four stylesheets against the game's twenty-four.
+
+**And the root is spelled out rather than shortened, which is that lesson one
+step further.** `.rul` is the name it wants and the port forbids it: the class
+rewrites in `port-design-css.mjs` run over **every** ported sheet, and `.rul` is
+a substring of `card.css`'s own `.rules`. A three-letter root would have reached
+into a stylesheet this component has nothing to do with and renamed a class
+there. A root has to be unique against the whole stack, not merely against the
+selectors it shares a file with — and members still take a prefix that is *not*
+a continuation of the root's, which is the chip's `tok`/`tk` split followed
+rather than rediscovered.
+
+**Unprofiled, like the chip.** Four rings of masked gradients and up to twenty
+SVG legends, on one selected token. It is one object against the chip's N, so
+it is the smaller worry of the two — but it is the same shape of cost, and
+neither has been measured on a real board.
 
 ## The three dialogs
 
@@ -4055,10 +4708,35 @@ place in the world that knows the import path.
   hand. The window declines to walk the second half.
 - Death moves. Scars are recordable on the adjust tab and cost a Hope slot;
   Blaze of Glory, Avoid Death and Risk It All are not implemented.
-- The GM screen. Two pieces of it exist — the Fear pool is docked and public,
-  and the activity log is a window of the GM's own — and the rest of what a GM
-  keeps beside the map still has no surface: countdowns, the adversary roster,
-  the environment in play.
+- The GM screen. Three pieces of it exist — the Fear pool is docked and public,
+  the activity log is a window of the GM's own, and every creature's tracks are
+  on the creature — and the rest of what a GM keeps beside the map still has no
+  surface: countdowns, the adversary roster, the environment in play.
+- **The token chip has never been profiled.** Nine masked elements and three
+  `drop-shadow` filters per creature, times however many are on the board, plus
+  three composited loops on every Vulnerable one. Every part of it is cheap by
+  argument and none of it is cheap by measurement, and this is precisely the
+  shape of cost the browse window turned out to be carrying — invisible
+  afterwards, because every chip is correct, and paid entirely in dropped
+  frames. A twenty-token scene is the test that matters.
+- **A chip is wider than its grid cell**, by about an eighth on each side, which
+  is what buys the tracks their way off the artwork. Two creatures on adjacent
+  squares can therefore cross Armor arcs. It has not been seen at a real table
+  yet and it is one number in `token.css` if it turns out to matter.
+- **The range ruler has never been profiled either**, and it shares the
+  chip's exact exposure: masked gradients and, at a close camera, up to twenty
+  SVG text runs. One object against the chip's N, so it is the smaller of the
+  two worries — and the same unmeasured one.
+- **A ruler is drawn for a selection and never for a target.** The reticle is
+  where "how far is that thing" is actually asked, and `apps/targets.ts`
+  already draws the line between the two: selection is what you are acting
+  *with*, targeting is what you are acting *on*. Rings under a target would be
+  a second answer in the same grammar and it is not obvious they should agree.
+- **The other fifteen conditions are not on the token.** Vulnerable is, because
+  it is the one the sheet derives and the one the table meets most often;
+  Cloaked, Hexed, Marked for Death and the rest wear Foundry's own status icons
+  and nothing more. Whether they want a place on the chip is a design question
+  nobody has asked yet — sixteen of anything is not a badge row.
 - Damage rolls and the adversary d20 do not open the roll popover.
 - Help an Ally and tag team rolls. The plate already draws several advantage
   dice with the losers crossed off; nothing lets a second player contribute one.

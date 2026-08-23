@@ -165,6 +165,13 @@ sheet is gold-filled, so the eye goes straight to it without the pool needing to
 <p class="note">Public to the table — the rules ask the GM to keep the pool visible. Players see the same
 strip without the steppers. Drag the fear slider or use the steppers; the whole strip's glow eases up
 behind the pip that changed, which is what sells twelve as worse than eleven.</p>
+<p class="note">The underside carries two groups and the split is <b>whose they are</b>. On the left, the
+switches for what <i>this screen</i> draws over the canvas — <b>tracks</b> is the token chip and
+<b>range</b> is the ruler under the selected token. Each reads as a state standing still, lit pip against
+socket, which is the same vocabulary as the row of fear gems twenty pixels above it. On the right, the two
+<i>acts</i> that reach the whole table, and that difference in kind is why the switches are not a third
+button in the same group. Only the left group survives the players' build: a scene ending is the GM's to
+declare, and what your own screen draws never was.</p>
 <div class="place" style="flex-direction:column;align-items:stretch">
   <div class="vp" id="fhud"></div>
   <p class="vpc">gm view · steppers</p>
@@ -238,6 +245,18 @@ document.addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
   if(b.dataset.h) setH(b.dataset.h === 'reset' ? 4 : st.h + +b.dataset.h);
   if(b.dataset.f) setF(b.dataset.f === 'reset' ? 7 : st.f + +b.dataset.f);
+  /* The view switches. Both strips move together here because they are two
+     drawings of one screen's preference, not two screens — which is also why
+     the real ones are client settings and every strip on the page reads them.
+     One handler for both, keyed on whichever attribute the press carries:
+     they are two answers to the same question, which is what this screen
+     draws over the canvas. */
+  for(const key of ['data-chip','data-ruler']){
+    if(!b.hasAttribute(key)) continue;
+    const on = b.getAttribute('aria-pressed') !== 'true';
+    rows(`#fhud [${key}], #fhud2 [${key}]`)
+      .forEach(x => x.setAttribute('aria-pressed', on ? 'true' : 'false'));
+  }
 });
 h.oninput = e => setH(+e.target.value);
 f.oninput = e => setF(+e.target.value);

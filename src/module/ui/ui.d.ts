@@ -105,7 +105,13 @@ declare module "*/ui/pool.js" {
    * The GM's strip. `gm:false` is the same strip without the steppers, which
    * is what every player at the table sees — see `fear-hud.ts`.
    */
-  export function FEAR_HUD(opts: { cur?: number; max?: number; gm?: boolean }): string;
+  export function FEAR_HUD(opts: {
+    cur?: number;
+    max?: number;
+    gm?: boolean;
+    chips?: boolean;
+    ruler?: boolean;
+  }): string;
 }
 
 declare module "*/ui/card.js" {
@@ -472,4 +478,51 @@ declare module "*/ui/swap.js" {
   ): void;
   /** The pointer half — the study page's drag. The sheet does not bind it. */
   export function swaps(root: Element, api: any): void;
+}
+
+declare module "*/ui/token.js" {
+  /** The chip's markup, rendered once. See design/token.css for the argument. */
+  export function TOKEN_CHIP(s?: any): string;
+  /**
+   * Write the ladder rung for a chip, given its footprint in *screen*
+   * pixels. Returns whether it changed, so a caller sweeping every creature
+   * on a zoom pays a comparison rather than an attribute write.
+   */
+  export function setTier(el: Element, footprintPx: number): boolean;
+  /**
+   * Diff a chip against a new state. Only what moved is redrawn, and only
+   * what moved plays an arrival — the contract setMarks, setPool and
+   * setChits keep on the sheet.
+   */
+  export function setChip(el: Element, s?: any): void;
+  /** The ladder's thresholds, in screen pixels of token footprint. */
+  export const TIER_PX: { near: number; mid: number; far: number };
+  export function tierFor(px: number): "near" | "mid" | "far" | "min";
+  /** Where every track starts, and how far it runs. Degrees. */
+  export const ORIGIN: number;
+  export const SWEEP: number;
+}
+
+declare module "*/ui/ruler.js" {
+  /** One band, already resolved into scene pixels by the host. */
+  export interface RangeBand {
+    key: string;
+    label: string;
+    dist: string;
+    r: number;
+  }
+
+  /** Scene pixels, from the token's EDGE. Squares rather than feet — see `config.ts`. */
+  export function radiusOf(squares: number, gridPx: number, tokenR: number): number;
+
+  export function RANGE_RULER(rings: RangeBand[]): string;
+
+  /** Camera scale in, `true` when anything actually moved. */
+  export function setRulerZoom(el: HTMLElement, k: number): boolean;
+
+  /** Plays the collapse, then removes the element. */
+  export function closeRuler(el: HTMLElement | null, done?: () => void): void;
+
+  /** How long that collapse takes, stated once. */
+  export const TTL: number;
 }

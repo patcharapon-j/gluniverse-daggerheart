@@ -317,6 +317,23 @@ export const RANGE_FEET: Record<string, number> = {
   veryFar: 120,
 };
 
+/**
+ * The book's own five feet to the square, and the ranges expressed in it.
+ *
+ * The paragraph above says nothing here does arithmetic with the feet, and
+ * the range ruler is the one thing that now does — so it does it in the unit
+ * a virtual tabletop actually has. A ring comes off SQUARES and only the
+ * printed distance comes off the scene's `grid.distance` and units.
+ *
+ * Dividing the feet by the scene's own distance is the obvious build and is
+ * quietly wrong on every table not playing in feet: it reads a number
+ * labelled *metres* as though it were feet, and Melee lands at three and a
+ * third squares on a 1.5m grid. The squares are the invariant.
+ */
+export const FEET_PER_SQUARE = 5;
+
+export const rangeSquares = (r: string): number => (RANGE_FEET[r] ?? 0) / FEET_PER_SQUARE;
+
 /* ── damage ──────────────────────────────────────────────────────────── */
 
 export const DAMAGE_TYPES = ["physical", "magic"] as const;

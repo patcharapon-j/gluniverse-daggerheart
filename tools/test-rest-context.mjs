@@ -88,8 +88,73 @@ assert.match(gmHud, /data-refresh="scene"/);
 assert.match(gmHud, /data-refresh="session"/);
 assert.doesNotMatch(FEAR_HUD({ gm: false }), /data-refresh=/);
 
+/* The view switch, and what it asserts is the division rather than the markup.
+   The two refresh scopes reach every character at the table, so they are the
+   GM's; the switch is what THIS screen draws, backed by a client-scoped
+   setting, so it is on the players' strip too. Getting that backwards is not
+   a visible bug — a player simply never discovers the control exists and
+   assumes the rings are compulsory — so it is asserted rather than left to
+   whoever next edits the `gm` ternary they both sit near. */
+assert.match(FEAR_HUD({ gm: false }), /data-chip/, "players get the view switch");
+assert.match(gmHud, /data-chip/, "and so does the GM");
+
+/* And the second one, on the same plinth and by the same argument: a range
+   ruler is drawn from a *selection*, which only ever exists on one screen, so
+   there is no permission question and therefore no world setting. Asserted
+   beside the first rather than folded into it, because the two settings are
+   independent and the failure that matters is one press moving both. */
+assert.match(FEAR_HUD({ gm: false }), /data-ruler/, "players get the ruler switch too");
+assert.match(gmHud, /data-ruler/, "and so does the GM");
+
+/* Each carries a state, and the state is `aria-pressed` in both directions —
+   the accessible name and the styling hook at once, which is only one source
+   of truth if the builder actually writes both values. */
+assert.match(FEAR_HUD({ chips: true }), /data-chip aria-pressed="true"/s);
+assert.match(FEAR_HUD({ chips: false }), /data-chip aria-pressed="false"/s);
+assert.match(FEAR_HUD({ ruler: true }), /data-ruler aria-pressed="true"/s);
+assert.match(FEAR_HUD({ ruler: false }), /data-ruler aria-pressed="false"/s);
+
+/* The two do not move together. `chips:false, ruler:true` has to draw one off
+   and one on — which is the whole reason they are two settings, and exactly
+   what a shared `on` parameter or a single delegated handler keyed on the
+   wrong attribute would silently break. */
+const mixed = FEAR_HUD({ chips: false, ruler: true });
+assert.match(mixed, /data-chip aria-pressed="false"/s, "the chips switch reads its own value");
+assert.match(mixed, /data-ruler aria-pressed="true"/s, "and so does the ruler switch");
+
 const poolCss = readFileSync(new URL("../styles/pool.css", import.meta.url), "utf8");
 assert.doesNotMatch(poolCss, /\.dh\.hud\.gm\{padding-bottom/);
 assert.match(poolCss, /\.dh\.hud \.cyc\{[^}]*bottom:-21px/s);
+/* Both plinths on the same line, and on opposite sides. They are two groups
+   telling the reader whose the controls are, which only works if they do not
+   drift apart or collide. */
+assert.match(poolCss, /\.dh\.hud \.vis\{[^}]*left:12px;bottom:-21px/s);
+assert.match(poolCss, /\.dh\.hud \.cyc\{[^}]*right:12px;bottom:-21px/s);
+/* And the button floor, which this strip has now paid for twice. */
+assert.match(poolCss, /\.dh\.hud \.vis button\{[^}]*min-height:14px/s);
+/* Two switches on one plinth need a gap, or they read as one wide control
+   with a word in the middle of it. */
+assert.match(poolCss, /\.dh\.hud \.vis\{[^}]*gap:3px/s);
 
-console.log("rest context: top-level cards, mitigation filters, refresh scopes and GM HUD controls covered");
+/* The ruler's stylesheet has to be *registered*, and that is the failure this
+   repo has shipped before: Foundry reads the `styles` array once at server
+   start, so a component whose CSS is ported and unlisted lands unstyled and
+   looks like a broken component rather than a missing line. */
+const manifest = JSON.parse(readFileSync(new URL("../system.json", import.meta.url), "utf8"));
+assert.ok(manifest.styles.includes("styles/ruler.css"), "system.json declares the ruler stylesheet");
+
+/* The port rewrites the ruler's root to a compound, exactly as it does the
+   chip's — it is drawn on the board, outside every `.dh` root. And the root is
+   spelled in full rather than shortened, because the rewrite list is global
+   and the short form is a substring of card.css's own rules block: this
+   asserts the collateral damage did not happen. */
+const rulerCss = readFileSync(new URL("../styles/ruler.css", import.meta.url), "utf8");
+assert.match(rulerCss, /\.dh\.ruler\{/, "the ruler root is a compound");
+assert.match(rulerCss, /\.dh\.ruler-layer\{/, "and so is its layer");
+const cardCss = readFileSync(new URL("../styles/card.css", import.meta.url), "utf8");
+assert.doesNotMatch(cardCss, /\.dh\.rules/, "the rewrite did not reach card.css");
+
+console.log(
+  "rest context: top-level cards, mitigation filters, refresh scopes, " +
+    "the two view switches and GM HUD controls covered",
+);

@@ -70,6 +70,8 @@ const SHEETS = [
   "make.css",
   "browse.css",
   "marked.css",
+  "token.css",
+  "ruler.css",
 ];
 
 /**
@@ -265,6 +267,32 @@ function port(name) {
     // Foundry uses for its own furniture and `.dh .hud` would match any of
     // it that ever landed inside one of our roots.
     .replaceAll(".hud", ".dh.hud")
+    // The token chip, sixth, and the one that is drawn the most times: one
+    // per creature on the board, in a layer over the canvas that mirrors
+    // `canvas.stage.worldTransform`. Nothing on the board is inside a sheet,
+    // so it takes the same treatment as the Fear strip — and here the
+    // compound is again the safer form rather than merely the shorter one,
+    // since the descendant version would match anything of Foundry's that
+    // ever landed inside one of our roots wearing the same name.
+    //
+    // One rewrite covers both classes, because the layer's name begins with
+    // the chip's. That is also why design/token.css may not spell either
+    // selector in its own prose: this runs over comments too, and a comment
+    // naming the class would come back carrying two prefixes.
+    .replaceAll(".tok", ".dh.tok")
+    // The range ruler, seventh, and it is the chip's case again with one
+    // extra lesson attached. Same reason for the compound — it is drawn on
+    // the board, outside every root of ours — and the same one-rewrite-two-
+    // classes trick, since the layer's name begins with the ruler's.
+    //
+    // The root is spelled out in full rather than shortened to three
+    // letters, and this list is why: these rewrites run over every ported
+    // sheet, and the short form is a substring of card.css's own class for
+    // a rules block. It would have reached into a stylesheet the ruler has
+    // nothing to do with and renamed a class there. A root has to be unique
+    // against the whole stack rather than merely against the file it is in,
+    // which is the naming rule one step past the one that renamed .die.win.
+    .replaceAll(".ruler", ".dh.ruler")
     /* `../assets/`, not `systems/gluniverse-daggerheart/assets/`.
        A relative `url()` resolves against the stylesheet it is written in,
        and these end up in `styles/` — so the absolute-looking form was

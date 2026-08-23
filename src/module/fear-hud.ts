@@ -20,6 +20,30 @@
  * present on both — a GM says "I have four Fear" out loud, and neither of them
  * should have to count pips to do it.
  *
+ * ── the underside, which is not about Fear at all ────────────────────
+ * The strip is also the only piece of this system's chrome that is always on
+ * screen, so it has become where the controls with nowhere else to go live.
+ * There are two groups and the split is **whose they are**:
+ *
+ * - **left, the view switch** — whether this screen draws the token chips. It
+ *   is on the players' strip too, which is the one press here they may make,
+ *   and that follows from the setting rather than from generosity:
+ *   `tokenChip` is client-scoped, a preference about one screen. A player who
+ *   finds the rings busy should not have to ask the GM about it. It never
+ *   touches `adversaryChip`, which is world-scoped and stays the GM's.
+ * - **right, `scene` and `session`** — the two refresh scopes nothing in
+ *   Foundry can infer, and both reach every character at the table. GM only.
+ *
+ * The switch differs from those two in kind and not merely in scope: they are
+ * acts and it is a **state**, so it has to read as on or off standing still.
+ * It says so in `aria-pressed`, which is the accessible name for exactly this
+ * and doubles as the styling hook — one source of truth rather than a class
+ * kept in step by hand.
+ *
+ * None of that weakens the paragraph above. The claim there is that the *pool*
+ * may not be hidden; a control that hides something else, on one screen, at
+ * its owner's request, is a different thing entirely.
+ *
  * ── what a study page could not see ──────────────────────────────────
  * Two things, and both are Foundry's chrome rather than the component:
  *
@@ -80,7 +104,13 @@ export function registerFearHud(): void {
   strip?.remove();
 
   const host = document.createElement("div");
-  host.innerHTML = FEAR_HUD({ cur: getFear(), max: FEAR_MAX, gm: !!game.user?.isGM });
+  host.innerHTML = FEAR_HUD({
+    cur: getFear(),
+    max: FEAR_MAX,
+    gm: !!game.user?.isGM,
+    chips: chipsOn(),
+    ruler: rulerOn(),
+  });
   strip = host.firstElementChild as HTMLElement | null;
   if (!strip) return;
 
@@ -90,20 +120,57 @@ export function registerFearHud(): void {
   strip.classList.add("dh");
   dock.append(strip);
 
-  strip.addEventListener("click", onStep);
+  strip.addEventListener("click", onPress);
   Hooks.on("daggerheart.fearChanged", show);
   Hooks.on("daggerheart.fearRefused", refuse);
+  /* The switch is a *reading* of the setting, never a second copy of it. The
+     press writes the setting, the setting's own `onChange` raises this, and
+     this is the only thing that ever moves the button — so the strip and the
+     checkbox in Foundry's own settings window cannot disagree, whichever one
+     you used. `token-hud.ts` is listening to the same hook for the same
+     reason, and neither knows about the other. */
+  Hooks.on("daggerheart.tokenChipChanged", showChips);
+  Hooks.on("daggerheart.rangeRulerChanged", showChips);
+}
+
+/** Whether this screen is drawing the token chips. Client-scoped: mine, not the table's. */
+const chipsOn = (): boolean => game.settings?.get(SYSTEM_ID, "tokenChip") !== false;
+
+/** And whether it is drawing the range rings. Client-scoped for the same reason. */
+const rulerOn = (): boolean => game.settings?.get(SYSTEM_ID, "rangeRuler") !== false;
+
+/**
+ * Told what the switches now are, exactly as `show` is told what the pool now
+ * is. Both are read here rather than one each, because a press only ever
+ * writes a *setting* — what the button says comes back through the setting's
+ * own `onChange`, so there is no state on this strip to keep in step.
+ */
+function showChips(): void {
+  strip?.querySelector("[data-chip]")?.setAttribute("aria-pressed", chipsOn() ? "true" : "false");
+  strip?.querySelector("[data-ruler]")?.setAttribute("aria-pressed", rulerOn() ? "true" : "false");
 }
 
 /**
- * A stepper press.
+ * A press on the strip — the steppers, the two cycle buttons, or the switch.
  *
- * The bounds are tested here rather than left to `setFear`'s clamp, because a
- * clamp answers by doing nothing and this control has to answer by saying no.
- * That is the Stress track's rule reaching the GM's side of the table: the
- * thing that cannot pay is the thing that flinches.
+ * The stepper's bounds are tested here rather than left to `setFear`'s clamp,
+ * because a clamp answers by doing nothing and this control has to answer by
+ * saying no. That is the Stress track's rule reaching the GM's side of the
+ * table: the thing that cannot pay is the thing that flinches.
  */
-async function onStep(event: Event): Promise<void> {
+async function onPress(event: Event): Promise<void> {
+  /* The view switch, and it is the one press on this strip a player may make.
+     `tokenChip` is client-scoped — a preference about one screen rather than a
+     ruling about the table — which is exactly why it is not gated on `isGM`
+     the way everything else here is. It writes the setting and nothing else:
+     the button's own state comes back through `showChips`. */
+  const view = (event.target as HTMLElement).closest<HTMLElement>("[data-chip],[data-ruler]");
+  if (view) {
+    const key = view.hasAttribute("data-chip") ? "tokenChip" : "rangeRuler";
+    await game.settings?.set(SYSTEM_ID, key, game.settings.get(SYSTEM_ID, key) === false);
+    return;
+  }
+
   const refresh = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-refresh]");
   if (refresh && game.user?.isGM) {
     const scope = refresh.dataset.refresh;
