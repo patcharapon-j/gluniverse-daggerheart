@@ -3424,19 +3424,56 @@ Drawing those into a canvas means re-deriving all of it in a second language and
 then keeping two copies true — which is exactly the trade `port-design-js.mjs`
 exists to refuse.
 
-So it is one absolutely-positioned layer over the board carrying a `matrix()`
-copied straight off **`canvas.stage.worldTransform`**, with the chips inside it
-placed in scene coordinates. That is Foundry's own arrangement for `#hud`, and
-it is why every number in `token.css` is a scene pixel. The transform is read
-off the stage rather than recomputed from pan and zoom, because the stage is
-what actually drew the frame and anything derived alongside it is a second
-opinion that can be a frame stale.
+So it is one layer of HTML over the board with the chips inside it placed in
+scene coordinates, which is why every number in `token.css` is a scene pixel.
 
-**One write per frame.** Panning and zooming move the *layer* — one transform on
-one node, however many creatures are out. A token moving moves its own chip,
-because a token moves in scene coordinates and the layer's transform knows
-nothing about it; `refreshToken` fires on every frame of a move and every frame
-of a drag, and `place` is four style writes.
+**The layer is a child of `#hud`, and that is the whole of the alignment.**
+Three builds hung it *beside* `#hud` and re-derived where it goes from
+**`canvas.stage.worldTransform`** — a `matrix()`, then a measured offset between
+the wall and the canvas element, then a ticker to keep the matrix fresh. Each
+fixed something real and each still drifted, because all three were a second
+opinion about a number Foundry had already published.
+
+Foundry aligns `#hud` in `Canvas#pan` and does not use `worldTransform` to do
+it: `left`/`top` are `canvas.primary.getGlobalPosition()`, the size is
+`canvas.dimensions`, and the zoom is a plain `transform:scale()` against
+`transform-origin:top left`. Its **own Token HUD** is then a child of that
+element positioned at the token's `bounds.x`/`bounds.y` — raw scene
+coordinates, with no transform whatsoever of its own. A chip is now exactly
+that, so there is no matrix here, no offset and no ticker: nothing left for
+this file to get wrong.
+
+The price is the activity log's, arriving where it cannot be answered the same
+way. `#hud` is an ApplicationV2 whose `_replaceHTML` assigns `innerHTML`, so
+every render of it sweeps the layer away. There the fix was to become a
+*sibling* of the part that gets rebuilt; here the element that gets rebuilt
+**is the coordinate system**, so standing outside it is the bug rather than the
+fix. It re-hangs on the render hook instead, and only when it has actually been
+evicted — re-appending unconditionally would throw away every chip's arrival
+mid-play.
+
+**Nothing of ours writes on a pan or a zoom.** Foundry moves `#hud` and the
+chips ride it. A token moving moves its own chip off `refreshToken` — the same
+`refreshPosition` render flag that moves Foundry's own nameplate and border, so
+it is raised on every frame of an animated move by construction rather than by
+our hoping so — and `place` writes four styles only when one of its four
+numbers changed. The one thing the camera still costs is `data-t`, which is a
+question about how large the chip has become *on screen* and can only be asked
+from `canvasPan`.
+
+**`canvasPan`'s reputation here was undeserved**, and that is worth recording
+because it cost a whole build. It was blamed for the drift and replaced with a
+ticker on the reasoning that it fires when Foundry *decides* to pan rather than
+per frame. `Canvas#pan` settles it: the hook is raised two lines above the
+`align()` that moves Foundry's own HUD, from the same function, once per pan
+step and animated pans included. It was never the lagging part.
+
+**And a constant offset does look like drift**, which is the reasoning error
+under all three builds. The intuition says a fixed screen-pixel error is a
+fixed misalignment and therefore not drift — but the *token* changes size with
+the zoom while the error does not, so six pixels is a sixth of a creature at
+0.35x and invisible at 2.4x. "It moves about when I zoom" is exactly what that
+looks like, and it sent every diagnosis after a per-frame cause.
 
 **The chip is rendered once**, which is the contract `setMarks`, `setPool` and
 `setChits` already keep. `setChip` diffs, and the markup is rebuilt only when
@@ -3445,13 +3482,14 @@ adversary becoming visible. Getting that boundary wrong is visible in both
 directions: rebuild too eagerly and every arrival is cut off mid-play, too
 rarely and a levelled-up character keeps last level's Hit Point count.
 
-**The wall is found rather than assumed**, which is `chatPanels()`'s rule in a
-second place — Foundry has moved the canvas's neighbours once already between
-the two supported generations, and a layer appended into a region that no longer
-exists is a feature that silently stops existing. `#hud` first, because that is
-the element Foundry itself transforms in step with the stage; if none of the
-fallbacks is there we say so once and name the file, because a layer that fails
-to appear is the failure with nothing on screen to diagnose.
+**The host is asked for, not searched for**, and that is `chatPanels()`'s rule
+*declined* rather than applied a second time. That rule is about finding a place
+to stand, and a fallback is a reasonable answer when the element is a backdrop.
+This element is not a backdrop, it is the coordinate system — so a fallback is a
+second coordinate system somebody has to align by hand, which is precisely what
+the three drifting builds were. It asks `canvas.hud` first, because that is the
+API and it will still answer if Foundry moves the element or renames the id, and
+if there is no host at all it says so once and names the file.
 
 **Nothing here is pressable, no exceptions.** `pool.css` argues the first half —
 a readout that is also a control is a misclick, and here a misclick costs
@@ -3531,9 +3569,17 @@ on a band that has them; that every track clears radius 50; that the gaps
 between tracks survive; that the six Hope gems lie on **one** circle, which is
 the `transform-origin` bug measured rather than trusted; that the bottom rung
 culls to Vulnerable alone; that no other sheet in the ported stack reaches into
-a chip; and that the layer transforms from its corner, which is the other half
-of the same bug — a matrix copied off the stage is only the stage's transform if
-it is applied from the origin.
+a chip; and **that a chip stays concentric with its token at every zoom**.
+
+That last one is the alignment, and it is the check three broken builds needed
+and did not have. It stands up Foundry's own two functions rather than
+describing them — a host sized and scaled the way `align()` sizes and scales
+`#hud`, a chip inside it at raw scene coordinates the way `PlaceableHUD` places
+itself — and measures the distance between the two centres at 0.35x, 1x and
+2.4x. Three zooms rather than one, because the failure is a constant screen-pixel
+offset and a single zoom cannot tell that from being correct. Injecting six
+pixels of error makes it report `6.00` at all three, which is the negative
+control the check was confirmed against.
 
 Two exclusions in the reach check and both are hosted components rather than
 leniency: `.gems` and everything under it is `gem.js`'s row, drawn here on

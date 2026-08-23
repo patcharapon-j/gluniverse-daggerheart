@@ -15,25 +15,48 @@
  * re-deriving all of it in a second language and then keeping two copies
  * true — which is exactly the trade `port-design-js.mjs` exists to refuse.
  *
- * So it is one absolutely-positioned layer over the board, carrying a
- * `matrix()` copied from `canvas.stage.worldTransform`, with the chips inside
- * it placed in **scene** coordinates. That is Foundry's own arrangement for
- * `#hud`, which is where the token HUD and the drawing controls live, and it
- * is why every measurement in `token.css` is a scene pixel: a 1x1 token is a
- * hundred of them, at every zoom, forever.
+ * So it is one layer of HTML over the board, with the chips inside it placed
+ * in **scene** coordinates. That is why every measurement in `token.css` is a
+ * scene pixel: a 1x1 token is a hundred of them, at every zoom, forever.
  *
- * ── one write per frame ──────────────────────────────────────────────
- * Panning and zooming move the *layer* — one transform on one node, however
- * many creatures are out. A token moving moves its own chip, because a token
- * moves in scene coordinates and the layer's transform knows nothing about
- * it. Those are the only two things that write during a gesture.
+ * ── the layer is INSIDE `#hud`, and that is the whole of the alignment ─
+ * Three builds of this file kept the layer *beside* `#hud` and re-derived the
+ * alignment from `canvas.stage.worldTransform` — a `matrix()`, a measured
+ * offset between our wall and the canvas element, a ticker to keep it fresh.
+ * Every one of those was a second opinion about a number Foundry had already
+ * published, and it drifted, because the two are not computed the same way.
  *
- * `data-t` is the third and is deliberately not one of them. It is written
- * per chip, and only when a chip actually *crosses* a threshold — `setTier`
- * returns false otherwise — so a slow zoom across a board of twelve
- * creatures writes an attribute a handful of times rather than twelve times
- * a frame. CSS cannot ask the question itself: a container query measures
- * layout, and the layout never changes here, the ancestor's transform does.
+ * Foundry aligns `#hud` in `Canvas#pan` and does **not** use `worldTransform`
+ * to do it: `left`/`top` are `canvas.primary.getGlobalPosition()`, the size is
+ * `canvas.dimensions`, and the zoom is a plain `transform:scale()` against
+ * `transform-origin:top left`. Its own Token HUD is then a child of that
+ * element positioned at `bounds.x`/`bounds.y` — **raw scene coordinates, with
+ * no transform of its own at all**.
+ *
+ * So a chip is exactly what Foundry's Token HUD is: a child of `#hud` at the
+ * token's scene x and y. There is no matrix here, no offset and no ticker,
+ * because there is nothing left for this file to get wrong — the layer is
+ * aligned by the same call, on the same element, as everything else Foundry
+ * draws over the board.
+ *
+ * The one thing that buys has a price, and it is the activity log's: `#hud` is
+ * an ApplicationV2 whose `_replaceHTML` assigns `innerHTML`, so every render of
+ * it sweeps our layer away. That is answered by re-hanging on its render hook
+ * rather than by hanging somewhere safer, because "somewhere safer" is what the
+ * three drifting builds were.
+ *
+ * ── what still writes during a gesture ───────────────────────────────
+ * A token moving moves its own chip, off `refreshToken` — the same render flag
+ * (`refreshPosition`) that moves Foundry's own nameplate and border, so it is
+ * raised on every frame of an animated move by construction rather than by our
+ * hoping so. Panning and zooming write nothing of ours whatsoever.
+ *
+ * `data-t` is the exception and is deliberately not per frame. It is written
+ * per chip and only when a chip actually *crosses* a threshold — `setTier`
+ * returns false otherwise — so a slow zoom across a board of twelve creatures
+ * writes an attribute a handful of times rather than twelve times a frame. CSS
+ * cannot ask the question itself: a container query measures layout, and the
+ * layout never changes here, the ancestor's transform does.
  *
  * ── the chip is rendered once ────────────────────────────────────────
  * `setChip` diffs, exactly as `setMarks`, `setPool` and `setChits` do on the
@@ -75,25 +98,18 @@ let layer: HTMLElement | null = null;
 const chips = new Map<string, HTMLElement>();
 
 /* ── where the layer goes ─────────────────────────────────────────────
-   Found rather than assumed, which is `chatPanels()`'s rule in a second
-   place. Foundry has moved the canvas's neighbours once already between the
-   two supported generations, and a layer appended into a region that no
-   longer exists is a feature that silently stops existing.
+   `#hud`, and nothing else. The earlier builds took `chatPanels()`'s rule —
+   look for a wall, fall back, fall back again — and that rule is about
+   finding a place to *stand*. This is not that: the element is not a
+   backdrop, it is the coordinate system, and a fallback is a second
+   coordinate system that has to be aligned by hand. Which is what the
+   three drifting builds were.
 
-   `#hud` first, because that is the element Foundry itself transforms in
-   step with the stage — landing beside it is landing in the one place on
-   the page already known to be correct for this. The rest are fallbacks in
-   descending confidence, and if none of them is there we say so once and
-   name the file, because a layer that fails to appear is the failure with
-   nothing on screen to diagnose. */
-const WALLS = ["#hud", "#interface", "#board"];
-
-function wall(): HTMLElement | null {
-  for (const sel of WALLS) {
-    const el = document.querySelector(sel);
-    if (el?.parentElement) return sel === "#hud" ? el.parentElement : (el as HTMLElement);
-  }
-  return null;
+   Asked of `canvas.hud` first, because that is the API and it is what will
+   still answer if Foundry moves the element or renames the id. */
+function hudElement(): HTMLElement | null {
+  const el = (canvas as any)?.hud?.element ?? document.querySelector("#hud");
+  return el instanceof HTMLElement ? el : null;
 }
 
 /* ── reading a creature ───────────────────────────────────────────────
@@ -189,28 +205,32 @@ const shapeOf = (s: ChipState | null): string =>
       ].join("/");
 
 /* ── placing one ──────────────────────────────────────────────────────
-   In scene coordinates, so the layer's transform does the rest. The chip's
-   own `inset:0` is overridden here, which is what `token.css` means when it
-   says the rule is load-bearing for a host that positions the chip itself.
+   Raw scene coordinates, exactly as Foundry's own Token HUD writes them,
+   because the layer's coordinate system IS `#hud`'s and `#hud`'s origin is
+   scene (0,0). The chip's own `inset:0` is overridden here, which is what
+   `token.css` means when it says the rule is load-bearing for a host that
+   positions the chip itself.
+
+   `token.position`, not `token.document.x`. They agree at rest — Foundry's
+   own `_refreshPosition` copies one into the other — and the container is the
+   one that is true mid-animation, which is the frame that matters.
 
    The tier is asked in *screen* pixels of footprint rather than in camera
    scale, because a 2x2 creature is legible at half the zoom a 1x1 one needs
    and one table then answers for both. */
-function place(chip: HTMLElement, token: any, retier = true): void {
+const boxes = new WeakMap<HTMLElement, string>();
+
+function place(chip: HTMLElement, token: any): void {
   const doc = token.document ?? token;
   const grid = canvas.grid?.size ?? 100;
   const w = token.w ?? (doc.width ?? 1) * grid;
   const h = token.h ?? (doc.height ?? 1) * grid;
-  /* `token.position`, not `token.document.x`. A Token is a PIXI container and
-     a move animates the *container* while the document already holds the
-     destination — so reading the document during a move puts the chip on the
-     square the creature has not arrived at yet, which is the drift you see
-     for exactly as long as the animation lasts. */
   const x = token.position?.x ?? token.x ?? doc.x ?? 0;
   const y = token.position?.y ?? token.y ?? doc.y ?? 0;
 
-  /* Written only when it moved. On a still board this is four number
-     comparisons per creature per frame and no style write at all. */
+  /* Written only when it moved. `refreshToken` is raised for a dozen reasons
+     that are not movement — a nameplate, a ring, an elevation — and four
+     number comparisons is cheaper than four style writes that change nothing. */
   const key = `${x}/${y}/${w}/${h}`;
   if (boxes.get(chip) !== key) {
     boxes.set(chip, key);
@@ -221,7 +241,7 @@ function place(chip: HTMLElement, token: any, retier = true): void {
     st.height = `${h}px`;
   }
 
-  if (retier) setTier(chip, w * (canvas.stage?.scale?.x ?? 1));
+  setTier(chip, w * (canvas.stage?.scale?.x ?? 1));
 }
 
 /* A token nobody may see gets no chip at all rather than a hidden one: the
@@ -283,104 +303,26 @@ function redraw(): void {
   }
 }
 
-/* ══ the transform ════════════════════════════════════════════════════
-   Read off the stage rather than recomputed from pan and zoom, because the
-   stage is what actually drew the frame and anything derived alongside it is
-   a second opinion that can be a frame stale. `transform-origin:0 0` is
-   stated in the stylesheet; without it the matrix means something else
-   entirely, which is the bug the Hope gems already paid for once.
+/* ══ the zoom ═════════════════════════════════════════════════════════
+   The only thing pan and zoom still cost us. The layer is aligned by
+   Foundry, so nothing of ours moves — but `data-t` is a question about how
+   large the chip has become *on screen*, and only the camera can answer it.
 
-   ── it is measured against the canvas, not assumed flush with it ────
-   `worldTransform` maps scene coordinates into the **canvas element's** own
-   pixel space, and our layer hangs on whatever wall `wall()` found — which
-   is a neighbour of that element and not guaranteed to share its origin.
-   Any difference is a constant offset, and a constant offset on a layer
-   whose contents scale is exactly the failure that looks like drift: at low
-   zoom the chips sit near their creatures and at high zoom they are inches
-   away, so it reads as tracking badly rather than as being shifted.
-
-   So the offset is measured once per build and added to the matrix's
-   translation. Two `getBoundingClientRect` calls, on a build and a resize,
-   and never in a frame — a layout forced per frame to place a decoration is
-   the cost `fit-cards.ts` exists to refuse. */
-let offX = 0;
-let offY = 0;
-
-function measureOffset(): void {
-  offX = offY = 0;
-  const host = layer?.parentElement;
-  const board: HTMLElement | null = (canvas as any)?.app?.view ?? document.querySelector("#board");
-  if (!host || !board?.getBoundingClientRect) return;
-  const a = board.getBoundingClientRect();
-  const b = host.getBoundingClientRect();
-  offX = a.left - b.left;
-  offY = a.top - b.top;
-}
-
-function syncTransform(): void {
-  if (!layer) return;
-  const t = canvas.stage?.worldTransform;
-  if (!t) return;
-  layer.style.transform =
-    `matrix(${t.a},${t.b},${t.c},${t.d},${t.tx + offX},${t.ty + offY})`;
-}
-
-/* ══ the frame ════════════════════════════════════════════════════════
-   `canvasPan` was the whole of this and it is not enough. It fires when
-   Foundry *decides* to pan, not on every frame of one — so an animated pan,
-   a zoom with easing, or the camera following a token leaves the layer on
-   last frame's matrix for the whole of the movement and snaps into place at
-   the end. That is the "moves about" half, and it is invisible at rest,
-   which is why it survived a static check.
-
-   The same is true of a token: `refreshToken` is reliable for a drag and is
-   not something to *rely* on for an animated move, because how many render
-   flags a move raises is Foundry's business and not ours.
-
-   So there is one ticker callback, at Foundry's own frame rate, and it is
-   built to be cheap rather than to be clever:
-
-     - the transform is one style write, unconditionally, because comparing
-       six matrix components costs about what writing them does;
-     - a chip's box is written ONLY when one of its four numbers changed,
-       which on a still board is never;
-     - the tier is asked only when the zoom actually moved.
-
-   Every number it reads is a property on a PIXI object or a plain field on a
-   document. Nothing here reads the DOM, so nothing here forces a layout. */
+   `canvasPan` is exactly the right hook and its reputation here is undeserved:
+   an earlier build blamed it for the drift and replaced it with a ticker, and
+   reading `Canvas#pan` settles that it fires from the same function, two lines
+   above the `align()` that moves Foundry's own HUD. It is raised once per pan
+   step, animated pans included. It was never the lagging part. */
 let lastK = 0;
 
-const boxes = new WeakMap<HTMLElement, string>();
-
-function frame(): void {
-  if (!layer) return;
-  syncTransform();
-
+function retier(): void {
   const k = canvas.stage?.scale?.x ?? 1;
-  const zoomed = k !== lastK;
-  if (zoomed) lastK = k;
-
+  if (k === lastK) return;
+  lastK = k;
   for (const token of canvas.tokens?.placeables ?? []) {
     const chip = chips.get(token.document?.id ?? token.id);
-    if (chip) place(chip, token, zoomed);
+    if (chip) setTier(chip, (token.w ?? 100) * k);
   }
-}
-
-/* The ticker we are attached to, rather than a boolean. A boolean is right
-   until the application is rebuilt underneath us, at which point it says we
-   are ticking on something that no longer ticks — which is the same shape as
-   the hook that had already fired, and would present the same way: nothing
-   moves and nothing says why. */
-let ticker: any = null;
-
-function startTicking(): void {
-  const t = (canvas as any)?.app?.ticker;
-  if (!t?.add || t === ticker) return;
-  ticker?.remove?.(frame);
-  /* Last in the frame, so the matrix we copy is the one the stage just drew
-     with rather than the one it is about to replace. */
-  t.add(frame, undefined, -100);
-  ticker = t;
 }
 
 /* ══ Foundry's bars ═══════════════════════════════════════════════════
@@ -422,14 +364,14 @@ export function registerTokenBars(): void {
   CONFIG.Token.objectClass = DaggerheartToken;
 }
 
-/** Hang a fresh layer on the wall and fill it. Every scene change does this. */
+/** Hang a fresh layer inside `#hud` and fill it. Every scene change does this. */
 function build(): void {
   layer?.remove();
-  const host = wall();
+  const host = hudElement();
   if (!host) {
     console.error(
-      `${SYSTEM_ID} | nowhere to hang the token layer — tried ${WALLS.join(", ")}. ` +
-        `Foundry's canvas layout has changed and token-hud.ts needs a new wall.`,
+      `${SYSTEM_ID} | nowhere to hang the token layer — canvas.hud has no element ` +
+        `and there is no #hud on the page. token-hud.ts needs a new host.`,
     );
     layer = null;
     return;
@@ -438,10 +380,23 @@ function build(): void {
   layer.className = "dh tok-layer";
   host.appendChild(layer);
   chips.clear();
-  measureOffset();
-  syncTransform();
+  lastK = canvas.stage?.scale?.x ?? 1;
   redraw();
-  startTicking();
+}
+
+/* `#hud` is an ApplicationV2 and its `_replaceHTML` assigns `innerHTML`, so
+   every render of it takes our layer with it — the activity log's own lesson,
+   arriving somewhere we cannot answer it the same way. There the door became a
+   *sibling* of the part that gets rebuilt; here the element that gets rebuilt
+   is the coordinate system, so standing outside it is the bug rather than the
+   fix. We re-hang instead, which is cheap and has one condition: only when the
+   layer has actually been evicted, or a render during play would throw away
+   every chip's arrival mid-play. */
+function rehang(): void {
+  if (!layer) return;
+  const host = hudElement();
+  if (!host || layer.parentElement === host) return;
+  host.appendChild(layer);
 }
 
 /**
@@ -469,21 +424,23 @@ function build(): void {
 export function registerTokenChips(): void {
   Hooks.on("canvasReady", build);
 
-  /* Pan and zoom are the ticker's, not this hook's — see the note on
-     `frame`. What is left for `canvasPan` is the thing a frame cannot
-     measure without forcing a layout: whether the canvas element has moved
-     relative to our wall, which happens when the sidebar collapses or the
-     window resizes and never mid-gesture. */
-  Hooks.on("canvasPan", measureOffset);
-  Hooks.on("collapseSidebar", measureOffset);
-  window.addEventListener("resize", measureOffset);
+  /* Pan and zoom move nothing of ours — Foundry moves `#hud` and the chips
+     ride it. All that is left is the ladder, which is a question about the
+     camera and can only be asked here. */
+  Hooks.on("canvasPan", retier);
 
-  /* A token arriving. Movement is the ticker's, for `frame`'s reason: how
-     many render flags an animated move raises is Foundry's business and not
-     something to hang a position on. */
+  /* `#hud` re-rendered and took the layer with it. */
+  Hooks.on("renderHeadsUpDisplayContainer", rehang);
+
+  /* A token moving, resizing, or arriving. This is the same render flag that
+     moves Foundry's own nameplate and border (`refreshPosition`), so it is
+     raised on every frame of an animated move by construction — which is what
+     makes a ticker of our own unnecessary rather than merely redundant. */
   Hooks.on("refreshToken", (token: any) => {
     if (!layer) return;
-    if (!chips.has(token.document?.id ?? token.id)) sync(token);
+    const chip = chips.get(token.document?.id ?? token.id);
+    if (chip) place(chip, token);
+    else sync(token);
   });
 
   Hooks.on("drawToken", (token: any) => sync(token));
@@ -525,21 +482,38 @@ export function registerTokenChips(): void {
  * to complain from, so it gets asked instead. `game.daggerheart.tokenChips()`.
  */
 export function reportTokenChips(): Record<string, unknown> {
-  const t = canvas?.stage?.worldTransform;
+  /* The alignment, measured rather than asserted. A chip and its token are
+     two rectangles that must be concentric at every zoom, and the difference
+     between their centres is the one number every drifting build got wrong.
+     Reported in *screen* pixels, because that is where the error is visible
+     and where a scene-pixel figure would flatter it at low zoom. */
+  const off = (() => {
+    const token = canvas?.tokens?.placeables?.[0];
+    const chip = token && chips.get(token.document?.id ?? token.id);
+    if (!token || !chip) return "no token to measure against";
+    const k = canvas.stage?.scale?.x ?? 1;
+    const w = canvas.stage?.worldTransform;
+    const c = chip.getBoundingClientRect();
+    const view = (canvas as any)?.app?.view?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
+    /* Where the token's centre actually is on screen, straight off the stage. */
+    const tx = view.left + w.tx + (token.position.x + token.w / 2) * k;
+    const ty = view.top + w.ty + (token.position.y + token.h / 2) * k;
+    const dx = c.left + c.width / 2 - tx;
+    const dy = c.top + c.height / 2 - ty;
+    return `${dx.toFixed(2)}, ${dy.toFixed(2)} px at zoom ${k.toFixed(3)} (0,0 is aligned)`;
+  })();
+
   return {
     setting: game.settings?.get(SYSTEM_ID, "tokenChip"),
     adversaries: game.settings?.get(SYSTEM_ID, "adversaryChip"),
     stylesheetLoaded: [...document.styleSheets].some((s) => s.href?.includes("token.css")),
-    wall: layer?.parentElement
+    host: layer?.parentElement
       ? `${layer.parentElement.tagName.toLowerCase()}#${layer.parentElement.id || "(no id)"}`
       : "NONE — the layer was never hung",
-    layerBox: layer ? layer.getBoundingClientRect().toJSON() : null,
-    transform: t ? `matrix(${t.a},${t.b},${t.c},${t.d},${t.tx},${t.ty})` : "no stage",
-    offset: `${offX}, ${offY}  (wall to canvas element)`,
-    ticking: !!ticker,
+    hosted: layer?.parentElement === hudElement(),
+    misalignment: off,
     tokensOnScene: canvas?.tokens?.placeables?.length ?? 0,
     chipsDrawn: chips.size,
-    walls: WALLS.map((w) => `${w}: ${document.querySelector(w) ? "found" : "absent"}`),
   };
 }
 

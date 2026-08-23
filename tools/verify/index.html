@@ -2409,13 +2409,71 @@ setTimeout(async () => { try {
   check('no other sheet reaches into a token chip', tkReach.length === 0,
         tkReach.length ? tkReach.slice(0, 4).join(' · ') : `${tkOwn.length} elements clean`);
 
-  /* 8. The layer's own transform origin, which is the other half of the bug
-        the gems paid for. The layer carries a matrix copied straight off
-        `canvas.stage.worldTransform`, and that matrix is only the stage's
-        transform if it is applied from the corner. */
-  check('the layer transforms from its corner',
-        getComputedStyle(tkLayer).transformOrigin.startsWith('0px 0px'),
-        getComputedStyle(tkLayer).transformOrigin);
+  /* 8. THE ALIGNMENT, which is the one thing about this component a study
+        page could not see and which three builds of `token-hud.ts` got wrong
+        in three different ways — a stale hook, a measured offset, a ticker.
+        Every one of them re-derived where a chip goes from
+        `canvas.stage.worldTransform`, and Foundry does not put its own HUD
+        there by that route at all.
+
+        What it actually does, in two functions:
+
+          Canvas#pan → HeadsUpDisplayContainer#align
+            left/top   = canvas.primary.getGlobalPosition()
+            width/height = canvas.dimensions
+            transform  = scale(canvas.stage.scale.x), origin top left
+
+          PlaceableHUD#_updatePosition   (Foundry's own Token HUD)
+            left/top   = the token's bounds — RAW SCENE COORDINATES,
+                         and no transform whatsoever of its own.
+
+        So this stands both of those up and asserts the property the user
+        actually reported missing: a chip and its token are concentric, and
+        stay concentric **at every zoom**. A constant offset passes at 1x and
+        fails at 2.4x, which is exactly what "it drifts when I zoom" is. */
+  const algMock = document.createElement('div');
+  algMock.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;overflow:hidden';
+  document.body.appendChild(algMock);
+
+  const algHud = document.createElement('div');            // stands in for #hud
+  algHud.style.cssText = 'position:absolute;transform-origin:top left;pointer-events:none';
+  algMock.appendChild(algHud);
+
+  const algLay = document.createElement('div');
+  algLay.className = 'dh tok-layer';
+  algHud.appendChild(algLay);
+
+  const algChip = document.createElement('div');
+  algChip.className = 'dh tok';
+  algLay.appendChild(algChip);
+
+  /* One creature, somewhere unremarkable in a large scene. */
+  const algX = 1500, algY = 900, algW = 100, algH = 100;
+  Object.assign(algChip.style, {
+    left: `${algX}px`, top: `${algY}px`, width: `${algW}px`, height: `${algH}px`,
+  });
+
+  const algDrift = [];
+  for (const [ox, oy, k] of [[0, 0, 1], [-640, -320, 2.4], [220, 90, 0.35]]) {
+    Object.assign(algHud.style, {
+      width: '4000px', height: '3000px',
+      left: `${ox}px`, top: `${oy}px`, transform: `scale(${k})`,
+    });
+    /* `transform-origin:top left` keeps the origin point still, so the rect's
+       own corner is the untransformed one and needs no unwinding. */
+    const h = algHud.getBoundingClientRect();
+    const c = algChip.getBoundingClientRect();
+    const dx = c.left + c.width / 2 - (h.left + (algX + algW / 2) * k);
+    const dy = c.top + c.height / 2 - (h.top + (algY + algH / 2) * k);
+    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+      algDrift.push(`${k}x: off by ${dx.toFixed(2)}, ${dy.toFixed(2)}`);
+    }
+  }
+  algMock.remove();
+
+  check('a chip stays concentric with its token at every zoom',
+        algDrift.length === 0,
+        algDrift.length ? algDrift.join(' · ') : 'aligned at 0.35x, 1x and 2.4x');
 
   const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
                       'fcls', 'fclsr', 'fsub', 'fcrd', 'fcards', 'fclass',
