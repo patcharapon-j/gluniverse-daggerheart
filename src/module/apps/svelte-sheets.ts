@@ -175,7 +175,7 @@ export async function handleActorDrop(actor: any, event: DragEvent): Promise<any
     const held = actor.items.filter((i: any) => i.type === "transformation");
     if (held.length >= TRANSFORMATION_LIMIT) {
       ui.notifications?.warn(
-        game.i18n.format("DAGGERHEART.Warn.OneTransformation", {
+        game.i18n.format("DAGGERHEART.Warning.OneTransformation", {
           name: actor.name,
           held: held.map((i: any) => i.name).join(", "),
         }),
