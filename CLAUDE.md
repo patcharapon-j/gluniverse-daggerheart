@@ -3307,9 +3307,18 @@ Hit Points, so it stands outside them.
 **Armor is not a ring**, and that is the one place a full circle actively lies.
 It is two or three slots on most characters and can be six, and a circle
 divided into two is not a track, it is a pie chart. So Armor alone runs at a
-**fixed angular pitch** and stops when it runs out — three slots is 39° of arc
-and six is 78° — so the arc's own *length* is the capacity, which a full ring
+**fixed angular pitch** and stops when it runs out — three slots is 51° of arc
+and six is 102° — so the arc's own *length* is the capacity, which a full ring
 normalises away.
+
+The pitch was 13° and the band was the *narrowest* of the three at 3.0px, and
+both had it backwards. Armor is the **outermost** track, so it is the only one
+drawn against the map rather than against another arc of ours; it is the only
+one that lights what is *left*, so a nearly-spent purse is a nearly-empty ring
+with nothing to hold the eye; and its slots are the shortest marks on the chip,
+because it alone stops. Three claims all pointing the same way, and the answer
+to every one of them is ink — 17° and 4.2px, the widest band rather than the
+narrowest.
 
 **And Armor reads the other way round, which no other track does.** Hit Points
 and Stress are things that happen *to* you: the mark is the damage, the lit run
@@ -3327,14 +3336,16 @@ drawn and the tracks are drawn, and neither is drawn over the other. The first
 pass put all three *on* the painting at 2.4–3.2px wide and about 1.2px apart,
 which fails twice over — a 3px arc loses to a pale highlight however saturated
 it is, and three arcs that close are not three tracks but one striped band you
-can see the hue change in and cannot count. They are 3.0–3.8px now with **1.6px
+can see the hue change in and cannot count. They are 3.2–4.2px now with **1.6px
 between them**, over half an arc: the empty ring is what says there are three.
 
-The cost is a footprint and it is real. The outer edge is at 63.4 where the grid
-cell's is 50, so a chip reaches about an eighth of a cell into each neighbour
+The cost is a footprint and it is real. The outer edge is at 64.6 where the grid
+cell's is 50, so a chip reaches about a seventh of a cell into each neighbour
 and two adjacent creatures' Armor arcs can cross. That is what buys the artwork
 back, and it is the judgement here most likely to want revisiting at a crowded
 table.
+
+**But 50 is an assumption, and three arrangements break it** — see below.
 
 **Hope is gems and curves with everything else.** Not a ring and not a variant
 of one — Hope is gold diamonds on the rail, in the rest dialog and in the
@@ -3377,6 +3388,17 @@ only one with a specular run down its outer edge. It is not the tear, the
 scratch and the chisel that `mark.js` argues for, and it is more than three
 colours.
 
+**There was a fourth layer and it is gone**, and the two are worth telling
+apart because they are the same technique. The bevel rode the **channel** — a
+pale ramp at each track's outer edge, drawn whether anything was marked or not.
+On the two inner tracks it was invisible under the lit run. On Armor, which is
+the outermost band and therefore the one place the chip meets the map, it drew
+a continuous pale ring all the way round the outside of the chip: **light with
+no object under it**, and the first thing anybody noticed about the component.
+The specular survives because it rides the **lit** run, so it appears only
+where a slot is — and a highlight along the top of a filled slot is what plate
+does.
+
 **It has to survive the artwork**, which is the one thing no other surface in
 this system does. Every other component draws on paper it owns; this draws on
 somebody's painting. So each layer carries its own dark contour, and it is a
@@ -3393,6 +3415,93 @@ a gesture you watch happen, it is a thing that has happened. `.fx` is handed a
 wedge covering exactly the slots that moved and restarted with **one** forced
 flush for the whole change, which is `setMarks`' own two-pass shape and for its
 reason — a Severe hit moves four slots and four restarts is four layouts.
+
+### The ring, and the room it takes
+
+Every radius above is written against one assumption: that the creature ends at
+the grid cell's own circle, radius 50. That is true of a plain token and
+**false of three arrangements a table can be in** — a dynamic token ring in
+either of its fit modes, and a token whose artwork is scaled. In all three the
+chip is drawn *on the painting*, which is the one thing this component
+promised.
+
+**The numbers are not measured and not guessed.** Foundry publishes the ring
+texture's own proportions in the spritesheet beside the artwork —
+`rings-steel.json` carries `defaultColorBand: {startRadius: .666, endRadius:
+.7225}`, the edge of the subject's hole and the edge of the visible band. (The
+`.666` is the same number `TokenRing` holds as its default subject thickness,
+which is the check that these are one reading rather than two.)
+
+**The two fit modes are two normalisations of that one texture**, which is why
+one constant answers both and they are reciprocals:
+
+| | the hole | the rim |
+| --- | --- | --- |
+| **subject fit** — Foundry's default | at the cell | **1.0848** cells out |
+| **grid fit** | **0.9218** of the cell | at the cell |
+
+Subject fit is the collision, and it is exact: 1.0848 of 50 is **54.2**, and
+the chip's innermost track began at **50.2**. The two were drawn on top of each
+other, to within a third of a pixel, on every ringed token at every table
+running Foundry's default. Grid fit needs no push at all — nothing of
+Foundry's reaches past the cell — and is instead the one arrangement where the
+*creature* is smaller than its cell.
+
+**So there are two scales rather than one, because there are two claims.**
+`--tkr` is the **readout** — three tracks, the Hope gems, the Difficulty —
+which is a reading *off* the creature and moves out to clear whatever it now
+occupies. `--tkv` is **Vulnerable**, which goes inward, on the creature,
+because the thing that is Vulnerable is the thing in the middle — so it follows
+the *subject* and may go below 1. Grid fit is exactly what separates them, and
+a build that collapsed the two into one number would pass every other check and
+draw VULNERABLE across the tracks on every ringed token at the table.
+
+**Radii only.** A band's width, a gem and a numeral keep their size at every
+setting. That is the range ruler's own rule arriving here — the rings are
+geometry and scale with what they measure, the lettering is read and does not —
+and it is what stops the dial making one creature's Stress track fatter than
+its neighbour's. The obvious build is a `transform:scale` on the whole readout
+and it is the one `tools/verify/` fails.
+
+**The readout is floored at the grid cell** however small the art is. Following
+a 0.6-scale sprite inward would draw its Stress track at 0.6 the size of the
+creature beside it, and being countable across a whole fight at a glance is the
+entire job. The creature gets a gap, which reads as deliberate; the reading
+stays comparable. Vulnerable has no floor, for the reason it has its own scale.
+
+**`chipScale` is the arithmetic and lives beside the radii** in
+`design/token.js`; `token-hud.ts` is the half a study page cannot have, which
+is asking Foundry what the token is actually wearing. Four questions, and the
+split between them is who owns the answer: the ring and both scales are **per
+token**, the fit mode is a **world setting of Foundry's**, and
+`tokenChipScale` is ours. It reads the **document** rather than `token.ring`,
+which is `ledger.ts`'s rule and load-bearing for a second reason — the live
+`TokenRing` only exists once the token has been drawn with one, so a chip built
+on `drawToken` would read a null on exactly the frame it decides its radii.
+
+**The dial is world-scoped where the two switches are not**, and that is a
+claim about what it governs rather than an inconsistency. `tokenChip` and
+`rangeRuler` say what *this screen* draws. This says how large a chip is over a
+creature, and the creatures are the GM's — they make the tokens, choose the
+artwork, set the ring and pick the fit mode. A per-client dial would mean four
+people looking at one ogre and seeing its Stress in four places, with the one
+who built the token unable to fix it for anybody else.
+
+It is a **multiplier** and never a replacement. The fit modes and both token
+scales are answered automatically; this is the correction for what the
+derivation cannot see — a module's own ring, a sprite cropped tight inside its
+square, a table that wants more air. Setting it absolutely would throw the
+automatic handling away to fix one token.
+
+**And it is the honest escape hatch for the one input that is read rather than
+measured.** Subject scale reaches Foundry's shader as a **UV correction**, not
+as a radius, and a UV expanded about its centre draws its texture *smaller* —
+so a larger subject means a relatively smaller ring, which is the direction
+taken here and the direction the two fit modes then read from opposite ends.
+It is derived from the source rather than confirmed against a running game.
+If it is backwards at a real table the dial is the answer, and
+`game.daggerheart.tokenChips()` reports the whole computation so the question
+can be asked rather than guessed at.
 
 ### Vulnerable
 
@@ -3617,10 +3726,14 @@ One more consequence of the naive rewrite: it runs over comments too, so
 they come back through the port carrying two copies of the prefix and describing
 something that does not exist.
 
-The stage asserts eight things: that the compound resolves the palette while
+The stage asserts thirteen things: that the compound resolves the palette while
 standing outside every `.dh` root; that nothing in the chip takes pointer events
 on a band that has them; that every track clears radius 50; that the gaps
-between tracks survive; that the six Hope gems lie on **one** circle, which is
+between tracks survive; **five about the ring** — that the two fit modes are
+one texture read two ways, that the readout is floored and Vulnerable is not,
+that a pushed chip genuinely clears the rim it was pushed for, that the dial
+moves radii and never band widths, and that the two scales are two claims; that
+the six Hope gems lie on **one** circle, which is
 the `transform-origin` bug measured rather than trusted; that the bottom rung
 culls to Vulnerable alone; that no other sheet in the ported stack reaches into
 a chip; and **that a chip stays concentric with its token at every zoom**.
@@ -4719,10 +4832,19 @@ place in the world that knows the import path.
   shape of cost the browse window turned out to be carrying — invisible
   afterwards, because every chip is correct, and paid entirely in dropped
   frames. A twenty-token scene is the test that matters.
-- **A chip is wider than its grid cell**, by about an eighth on each side, which
-  is what buys the tracks their way off the artwork. Two creatures on adjacent
-  squares can therefore cross Armor arcs. It has not been seen at a real table
-  yet and it is one number in `token.css` if it turns out to matter.
+- **A chip is wider than its grid cell**, by about a seventh on each side, and
+  by a third on a token wearing Foundry's default dynamic ring — which is what
+  buys the tracks their way off the artwork. Two creatures on adjacent squares
+  can therefore cross Armor arcs, and rings make that likelier rather than
+  less. It has not been seen at a real table yet and `tokenChipScale` is now
+  the dial for it, at the cost of pulling every chip in at once.
+- **Which way subject scale moves the ring is read rather than measured.** It
+  reaches Foundry's shader as a UV correction, and the direction taken here —
+  a larger subject means a relatively smaller ring — comes from reading
+  `TokenRing#configureSize` rather than from watching a token. It only matters
+  on a token whose scale has been moved off 1, the dial is the answer if it is
+  backwards, and `game.daggerheart.tokenChips()` prints the whole computation.
+  One evening at a table with a ringed token settles it.
 - **The range ruler has never been profiled either**, and it shares the
   chip's exact exposure: masked gradients and, at a close camera, up to twenty
   SVG text runs. One object against the chip's N, so it is the smaller of the

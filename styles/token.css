@@ -130,8 +130,42 @@
 /* `inset:0` is load-bearing rather than tidy: a host that positions the
    chip itself (the real layer does, in scene coordinates) overrides it,
    and a host that wraps it is served by it. */
-.dh.tok{position:absolute;inset:0;pointer-events:none;container-type:inline-size}
+.dh.tok{position:absolute;inset:0;pointer-events:none;container-type:inline-size;
+  --tkr:1;--tkv:1;--tk0:calc(50.2 * var(--tkr))}
 .dh.tok *{pointer-events:none}
+
+/* == THE RING, AND THE ROOM IT TAKES ===============================
+   Every radius below is written against one assumption: that the
+   creature ends at the grid cell's own circle, radius 50. That is true
+   of a plain token and false of three arrangements a table can be in,
+   and in all three the chip lands ON the artwork it was drawn to stay
+   off, which is the one thing this component promised.
+
+   So there are two scales rather than one, because there are two claims.
+
+   --tkr  the READOUT: three tracks, the Hope gems, the Difficulty. It
+          is a reading OFF the creature, so it moves OUT to clear
+          whatever the creature now occupies, and it is floored at 1 --
+          a small sprite does not get small tracks, or two creatures in
+          one fight would have their Stress drawn at two sizes for a
+          reason that is about somebody's PNG.
+   --tkv  VULNERABLE: it goes inward, on the creature, because the thing
+          that is Vulnerable is the thing in the middle. So it follows
+          the SUBJECT rather than the ring, and it is NOT floored: art
+          at 0.6 scale gets its word ring at 0.6.
+
+   Radii only. A band's width, a gem and a numeral keep their size at
+   every setting, which is the range ruler's rule arriving here -- the
+   rings are geometry and scale with what they measure, the lettering is
+   read and does not. The dial exists to move the readout clear of
+   something, never to make a bigger readout, and a chip whose tracks
+   are 8% fatter than the chip beside it is two tracks you cannot
+   compare at a glance.
+
+   --tk0 is where the innermost track's inner edge sits, which is the
+   only radius on this component anybody has ever had a question about.
+   Both scales are written by token-hud.ts, which is where the questions
+   get asked -- a stylesheet cannot see a fit mode. */
 
 /* ── the three tracks ──────────────────────────────────────────────
    The radii are the part of the geometry that does not move, so they
@@ -157,7 +191,7 @@
    somebody's painting for the same pixels, which is an argument a 3px arc
    loses against a pale highlight however saturated it is.
 
-   So the arcs are 3.0-3.8px, the gaps between them are 1.6px — over half
+   So the arcs are 3.2-4.2px, the gaps between them are 1.6px — over half
    an arc, and the empty ring is what says there are three — and every
    inset is NEGATIVE: the innermost track's inner edge is at radius 50.2,
    which is the first tenth of a pixel outside the token's own circle. The
@@ -168,21 +202,29 @@
    and because it is a claim about the creature rather than a reading off
    it: the thing that is Vulnerable is the thing in the middle.
 
-   The cost is a footprint, and it is real. The outermost edge is at 63.4
-   where the grid cell's is 50, so a chip reaches about an eighth of a cell
-   into each neighbour and two adjacent creatures' Armor arcs can cross.
-   That is what buys the artwork back. */
-.dh.tok .tkarc.armor {inset:-13.4%;--aw:3.0px}
-.dh.tok .tkarc.hp    {inset:-8.8%;--aw:3.8px}
-.dh.tok .tkarc.stress{inset:-3.4%;--aw:3.2px}
+   Armor is the widest of the three at 4.2px and it used to be the
+   narrowest at 3.0, which had it exactly backwards. It is the outermost
+   band, so it is the one drawn against whatever is beyond the token
+   rather than against another arc of ours; it is the only track that
+   reads the other way round, lighting what is LEFT rather than what is
+   spent, so a nearly-spent purse is a nearly-empty ring with nothing to
+   hold the eye; and its slots are the shortest thing on the chip,
+   because it alone runs at a fixed pitch and stops. Three claims all
+   pointing the same way, and the answer to every one of them is ink.
 
-/* The bevel rides on the channel rather than over the marked run, so a
-   lit slot keeps its own colour at full strength and the groove it sits
-   in is what carries the light. Outer edge only: that is where a real
-   channel catches it. */
-.dh.tok .tkarc .ch::after{content:"";position:absolute;inset:0;border-radius:50%;
-  background:radial-gradient(closest-side,transparent 86%,
-    rgba(255,255,255,.09) 96%,transparent 100%)}
+   The cost is a footprint, and it is real. The outermost edge is at 64.6
+   where the grid cell's is 50, so a chip reaches about a seventh of a
+   cell into each neighbour and two adjacent creatures' Armor arcs can
+   cross. That is what buys the artwork back. */
+/* One number decides all three, and it is the innermost track's INNER
+   edge — which is the only radius here anybody has ever had a question
+   about. Everything else stacks outward from it at a fixed width and a
+   fixed gap, so a chip pushed clear of a dynamic token ring is the same
+   readout further out rather than a bigger one. See "the ring, and the
+   room it takes" below for who writes it. */
+.dh.tok .tkarc.stress{inset:calc((50 - (var(--tk0) + 3.2)) * 1%);--aw:3.2px}
+.dh.tok .tkarc.hp    {inset:calc((50 - (var(--tk0) + 8.6)) * 1%);--aw:3.8px}
+.dh.tok .tkarc.armor {inset:calc((50 - (var(--tk0) + 14.4)) * 1%);--aw:4.2px}
 
 /* ── it has to survive the artwork ─────────────────────────────────
    Every other surface in this system draws on paper it owns. This one
@@ -204,7 +246,7 @@
                         drop-shadow(0 0 2.6px var(--gl))}
 .dh.tok .tkarc.hp     .lit{--gl:color-mix(in srgb,var(--wound-gl) 78%,transparent)}
 .dh.tok .tkarc.stress .lit{--gl:color-mix(in srgb,var(--strain) 60%,transparent)}
-.dh.tok .tkarc.armor  .lit{--gl:color-mix(in srgb,var(--plate-fl) 62%,transparent)}
+.dh.tok .tkarc.armor  .lit{--gl:color-mix(in srgb,var(--plate-fl) 78%,transparent)}
 
 /* Stress is scored. A second layer of fine hairlines across the annulus,
    at a frequency nothing else here has, so the two damage tracks differ
@@ -216,11 +258,18 @@
     rgba(255,255,255,.52) 0 .55deg,transparent .55deg 2.4deg)}
 
 /* Armor is plate: the brightest of the three and the only one with a
-   specular run down its outer edge. */
+   specular run down its outer edge. It survived the cull that took the
+   channel bevel out and it is the same technique, which is worth saying
+   out loud. The difference is what it is ON: this rides the LIT run, so
+   it only ever appears where a slot is, and a highlight along the top of
+   a filled slot is what plate does. The bevel rode the CHANNEL, so it
+   drew a continuous pale ring all the way round the outside of the chip
+   whether anything was marked or not — light with no object under it,
+   and on the outermost band, which is where the chip meets the map. */
 .dh.tok .tkarc.armor .lit::after{content:"";position:absolute;inset:0;
   border-radius:50%;
-  background:radial-gradient(closest-side,transparent 82%,
-    rgba(255,255,255,.32) 94%,transparent 100%)}
+  background:radial-gradient(closest-side,transparent 80%,
+    rgba(255,255,255,.4) 93%,transparent 100%)}
 
 /* ── the landing ───────────────────────────────────────────────────
    What a conic gradient cannot do per slot, one wedge can do for the run
@@ -252,7 +301,8 @@
    at all, and a row of upright gems on a curve reads as a row that has
    been bent — which is the one thing it must not look like. */
 .dh.tok .tkhope{position:absolute;inset:0}
-.dh.tok .tkhope .gems{position:absolute;inset:0;display:block;--r:53.6px}
+.dh.tok .tkhope .gems{position:absolute;inset:0;display:block;
+  --r:calc((var(--tk0) + 3.4) * 1px)}
 /* `transform-origin:0 0` is the whole of this rule working, and leaving it
    out is a bug that looks like a taste problem. `left/top:50%` puts the
    gem's *top-left corner* on the token's centre, which is exactly what the
@@ -276,7 +326,8 @@
    adversary makes you beat a number. It is the one numeral on the whole
    component and it earns it by having no units — Difficulty does not
    move during a scene and there is nothing to cross off. */
-.dh.tok .tkdiff{position:absolute;left:50%;bottom:1.5%;transform:translateX(-50%);
+.dh.tok .tkdiff{position:absolute;left:50%;
+  bottom:calc((50 - (var(--tk0) - 1.7)) * 1%);transform:translateX(-50%);
   display:flex;align-items:baseline;gap:1.6px;padding:1px 3px 1.4px;
   background:rgba(4,5,7,.88);
   box-shadow:inset 0 0 0 .8px color-mix(in srgb,var(--ink) 26%,transparent);
@@ -326,8 +377,14 @@
    may only ever ADD, so it cannot dim a word it crosses and cannot dirty
    the artwork under it. That is the same guarantee plate.css's facet
    ring keeps by only ever darkening. */
+/* One transform carries the lot. The vignette, the word ring and the
+   sweep are three insets and an SVG viewBox, and scaling the parent is
+   the only way all four stay in step -- the alternative is four numbers
+   that have to be kept true by hand, on the one part of this component
+   nobody looks at until it is wrong. It composes with the children's own
+   rotations rather than fighting them. */
 .dh.tok .tkvuln{position:absolute;inset:0;opacity:0;
-  transition:opacity .42s ease}
+  transform:scale(var(--tkv));transition:opacity .42s ease}
 .dh.tok.vuln .tkvuln{opacity:1}
 
 /* The creature's own edge going dark, from the inside. An inset shadow

@@ -288,7 +288,8 @@ import { LEDGER } from '/src/module/ui/ledger.js';
 import { ACTIVITY } from '/src/module/ui/activity.js';
 import { SPINE, TILE } from '/src/module/ui/tile.js';
 import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
-import { TOKEN_CHIP, setChip, setTier } from '/src/module/ui/token.js';
+import { TOKEN_CHIP, chipScale, setChip, setTier,
+         RING_OUT, RING_IN } from '/src/module/ui/token.js';
 import { RANGE_RULER, radiusOf, setRulerZoom } from '/src/module/ui/ruler.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
    two are genuinely different things — nine slugs against nine documents. */
@@ -2337,7 +2338,7 @@ setTimeout(async () => { try {
         bReach.length ? bReach.slice(0, 4).join(' · ') : `${bOwn.length} elements clean`);
 
   /* ══ THE TOKEN ═════════════════════════════════════════════════════
-     Six things, and every one of them is invisible on design/token.html —
+     Thirteen things, and every one of them is invisible on design/token.html —
      which loads three stylesheets and no Foundry, and draws its tokens on
      a board it invented. The game loads twenty-three and draws them on
      somebody else's canvas. */
@@ -2400,6 +2401,84 @@ setTimeout(async () => { try {
   check('the tracks are separated', tkGaps.every(g => g >= 1.2),
         tkGaps.map(g => g.toFixed(1)).join(' and ') + ' between them');
 
+  /* 4b. THE RING, and this is the arithmetic half rather than the paint
+        half — which is the same division the range ruler's own stage
+        draws, and for the same reason: a chip is drawn wrong or right,
+        and a chip can be drawn perfectly at a radius that is a lie.
+
+        The numbers come from Foundry's spritesheet, so they are asserted
+        against it rather than against themselves: the ring texture's hole
+        is at .666 and its rim at .7225, and the two fit modes are the two
+        normalisations of that one texture. Which is why RING_OUT and
+        RING_IN are reciprocals, and why one of them being edited without
+        the other is the mistake worth catching. */
+  const tkK = {
+    plain: chipScale({}),
+    subject: chipScale({ ring: true }),
+    grid: chipScale({ ring: true, gridFit: true }),
+    small: chipScale({ art: 0.6 }),
+    dial: chipScale({ ring: true, manual: 1.2 }),
+  };
+  const tkNear = (a, b) => Math.abs(a - b) < 5e-4;
+  check('the two fit modes are one texture read two ways',
+        tkNear(RING_OUT * RING_IN, 1) && tkNear(RING_OUT, 0.7225 / 0.666)
+          && tkNear(tkK.subject.readout, RING_OUT)
+          && tkNear(tkK.grid.subject, RING_IN),
+        `subject fit pushes to ${tkK.subject.readout}, grid fit pulls to ${tkK.grid.subject}`);
+
+  /* 4c. The floor, which is a decision rather than a clamp. A .6-scale
+        sprite does NOT get .6-scale tracks: the whole of what these are
+        for is being countable across a fight at a glance, and two
+        creatures' Stress drawn at two sizes for a reason about somebody's
+        PNG is exactly what that costs. Vulnerable is the exception and
+        has no floor, so the two must disagree here or the floor has been
+        applied to both. */
+  check('the readout is floored at the cell and Vulnerable is not',
+        tkK.small.readout === 1 && tkNear(tkK.small.subject, 0.6),
+        `art x .6 -> readout ${tkK.small.readout}, vulnerable ${tkK.small.subject}`);
+
+  /* 4d. And it lands. The arithmetic being right is worth nothing if the
+        stylesheet does not read it, and this is the check that would have
+        caught the radii still being hard percentages. Subject fit puts
+        Foundry's rim at 1.0848 cells — 54.2 where the innermost track
+        used to BEGIN at 50.2, which is the collision this whole section
+        is about — so under that scale the track has to clear it. */
+  tkPC.style.setProperty('--tkr', String(tkK.subject.readout));
+  const tkPushed = tkBand('stress')[0];
+  check('a pushed chip clears the ring it was pushed for',
+        tkPushed > RING_OUT * 50,
+        `innermost inner edge at ${tkPushed.toFixed(1)}, rim at ${(RING_OUT * 50).toFixed(1)}`);
+
+  /* 4e. Radii only. A band's width does not change with the dial, which
+        is the range ruler's rule arriving here — the rings are geometry
+        and scale with what they measure, the marks are read and do not.
+        This is the check that fails a well-meaning rewrite to a single
+        transform:scale on the whole readout, which is the obvious build
+        and would make one creature's tracks fatter than its neighbour's
+        for as long as the dial is off 1. */
+  const tkWide = parseFloat(getComputedStyle(tkPC.querySelector('.tkarc.hp'))
+    .getPropertyValue('--aw'));
+  tkPC.style.setProperty('--tkr', '1');
+  const tkNarrow = parseFloat(getComputedStyle(tkPC.querySelector('.tkarc.hp'))
+    .getPropertyValue('--aw'));
+  check('the dial moves radii and never band widths',
+        tkWide > 0 && tkNear(tkWide, tkNarrow),
+        `${tkNarrow}px at 1x, ${tkWide}px pushed`);
+
+  /* 4f. And the two scales are two claims, not one number used twice.
+        Grid fit is the arrangement that separates them — it shrinks the
+        creature INSIDE its cell, so the readout needs no push at all and
+        the word ring has to come in with the artwork. A build that
+        collapsed them would pass every check above and draw VULNERABLE
+        across the tracks on every ringed token at the table. */
+  tkVuln.style.setProperty('--tkv', String(tkK.grid.subject));
+  const tkWr = tkVuln.querySelector('.tkvuln').getBoundingClientRect().width;
+  const tkTrk = tkVuln.querySelector('.tkarc.stress').getBoundingClientRect().width;
+  tkVuln.style.setProperty('--tkv', '1');
+  const tkRest = tkVuln.querySelector('.tkarc.stress').getBoundingClientRect().width;
+  check('Vulnerable scales without moving a track',
+        tkWr < 100 && tkNear(tkTrk, tkRest),
+        `word ring ${tkWr.toFixed(1)}px inside a 100px cell, track unmoved`);
   /* 5. Hope lies on ONE circle. This is a real bug caught late and worth a
         check of its own: the gems are placed by angle from the token's
         centre, and without `transform-origin:0 0` each rotates about its own

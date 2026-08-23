@@ -27,8 +27,15 @@
 // It is two or three slots on most characters and can be six, and a full
 // circle divided into two is not a track, it is a pie chart. So Armor
 // runs along the circle at a FIXED angular pitch and stops when it runs
-// out: three slots is 39° of arc, six is 78°. The arc's length is the
+// out: three slots is 51° of arc, six is 102°. The arc's length is the
 // capacity, which a full ring can never say.
+//
+// The pitch was 13° and is 17°, which is the same correction as Armor's
+// band going from the narrowest of the three to the widest. A slot here
+// is not one of twelve on a full ring, it is one of three on a run that
+// stops -- so it is both the shortest mark on the chip and the only one
+// whose LENGTH is carrying information. Nine degrees of arc could not
+// do that job.
 //
 // ── Hope is gems ─────────────────────────────────────────────────
 // Not a ring and not a variant of one. Hope is gold diamonds everywhere
@@ -48,6 +55,105 @@
 
 import { GEM, setPool } from './gem.js';
 
+/* ══ the ring, and the room it takes ═════════════════════════
+   Every radius in token.css is written against one assumption: the
+   creature ends at the grid cell's own circle. A dynamic token ring
+   breaks it, and so does a token whose artwork is scaled, and when it
+   breaks the chip is drawn ON the painting it exists to stay off.
+
+   The arithmetic is here because it is arithmetic. Which of the two fit
+   modes is on, and what this token's scales are, is a question about
+   Foundry and belongs to token-hud.ts; what those answers MEAN in radii
+   is a question about this component and belongs beside the radii. The
+   study page calls the same function with numbers it makes up, which is
+   the only way a study page can see any of this at all.
+
+   ── the two numbers, and where they come from ──────────────
+   Not measured and not guessed. Foundry PUBLISHES the ring texture's
+   own proportions, in the spritesheet beside the artwork:
+
+       rings-steel.json  defaultColorBand: {startRadius: .666,
+                                            endRadius: .7225}
+
+   startRadius is where the subject's hole ends and the visible band
+   begins; endRadius is where the band stops. (The .666 is the same
+   number TokenRing carries as its default subject thickness, which is
+   the check that these two readings are one reading.)
+
+   The two fit modes are then two normalisations of that one texture,
+   which is why one constant answers both and they are reciprocals:
+
+     subject fit  the hole is matched to the cell, so the band's rim
+                  lands .7225/.666 = 1.0848 cells out. The readout has
+                  to start beyond THAT, not beyond the cell -- and 1.0848
+                  of 50 is 54.2, which is very nearly exactly where the
+                  chip's innermost track used to begin. The two were
+                  drawn on top of each other.
+     grid fit     the rim is matched to the cell, so the hole stops at
+                  .666/.7225 = .9218 of it. Nothing of Foundry's reaches
+                  past the cell, so the readout needs no push at all --
+                  and the creature is SMALLER than the cell, which is
+                  the one arrangement where Vulnerable has to come in.
+
+   ── what subject scale does ─────────────────────────
+   A per-token dial on the token config, default 1, and it says how large
+   the subject sits inside its ring -- so it divides in one mode and
+   multiplies in the other, and both are the same sentence read from
+   different ends. It is the least certain thing here: it reaches the
+   shader as a UV correction rather than as a radius, and a UV expanded
+   about its centre draws its texture SMALLER, which is the direction
+   taken here. If it is backwards at a real table the dial is the answer,
+   which is a good part of why the dial exists.
+
+   ── the floor ────────────────────────────────────
+   The readout never comes inside the grid cell, however small the art
+   is. Following a .6-scale sprite inward would draw its Stress track at
+   .6 the size of the creature beside it, and the whole of what these
+   tracks are for is being countable across a fight at a glance. The
+   creature gets a gap; the reading stays comparable. Vulnerable is the
+   exception and has no floor, because it is a claim about the creature
+   rather than a reading off it. */
+
+/** The ring texture's own two radii, from Foundry's spritesheet. */
+export const RING_HOLE = 0.666;
+export const RING_RIM = 0.7225;
+
+/** Subject fit: how far past the cell the visible band reaches. */
+export const RING_OUT = RING_RIM / RING_HOLE;
+/** Grid fit: how far short of the cell the subject stops. */
+export const RING_IN = RING_HOLE / RING_RIM;
+
+/**
+ * The chip's two scales, from what the token is actually wearing.
+ *
+ * @param {object} [t]
+ * @param {boolean} [t.ring]     this token draws a dynamic ring
+ * @param {boolean} [t.gridFit]  CONFIG.Token.ring.isGridFitMode
+ * @param {number}  [t.subject]  token.document.ring.subject.scale
+ * @param {number}  [t.art]      the larger of the texture's two scales
+ * @param {number}  [t.manual]   the table's own multiplier
+ * @returns {{readout:number, subject:number}}
+ */
+export function chipScale(t = {}) {
+  const ring = !!t.ring;
+  const grid = !!t.gridFit;
+  const subj = Math.max(0.5, Number(t.subject) || 1);
+  const art = Math.max(0.1, Math.abs(Number(t.art) || 1));
+  const dial = Math.max(0.1, Number(t.manual) || 1);
+
+  /* What the creature plus its ring now occupies, in cells. */
+  const out = ring && !grid ? Math.max(art, RING_OUT / subj) : art;
+  /* Where the artwork itself ends. */
+  const inn = ring && grid ? RING_IN * subj * art : art;
+
+  return {
+    readout: round(Math.max(1, out) * dial),
+    subject: round(inn * dial),
+  };
+}
+
+const round = (n) => Math.round(n * 1e4) / 1e4;
+
 /* ── the ladder ───────────────────────────────────────────────────
    Thresholds in *screen* pixels of token footprint, not camera scale: a
    2x2 token is legible at half the scale of a 1x1 one, and asking in
@@ -66,7 +172,7 @@ export const tierFor = (px) =>
    move. Two files, one seam, and the seam is a number of degrees. */
 export const ORIGIN = 210;   // lower-left, so the sweep reads as a gauge
 export const SWEEP  = 300;   // leaving 60° open at six o'clock
-const PITCH = 13;            // Armor's fixed angular slot
+const PITCH = 17;            // Armor's fixed angular slot
 const OPEN  = 360 - SWEEP;   // the southern gap Hope and Difficulty share
 
 const wedge = (a, b, c) => `${c} ${a}deg ${b}deg`;
@@ -92,7 +198,7 @@ const armorArc = (n, from, to, ink) => {
   if (!n) return 'none';
   const stops = [];
   for (let i = 0; i < n; i++) {
-    const a = i * PITCH, b = a + PITCH - 4;
+    const a = i * PITCH, b = a + PITCH - 4.5;
     stops.push(i >= from && i < to ? wedge(a, b, ink) : clear(a, b));
     stops.push(clear(b, a + PITCH));
   }
