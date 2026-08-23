@@ -90,6 +90,37 @@ export function registerSettings(): void {
     onChange: () => Hooks.callAll("daggerheart.rangeRulerChanged"),
   });
 
+  /* The dial, and it is WORLD-scoped where the two switches above are not.
+     Those say what this screen draws, which is a preference; this says how
+     large a chip is over a creature, and the creatures are the GM's — they
+     make the tokens, choose the artwork, set the ring and pick the fit
+     mode. A per-client dial would mean four people looking at one ogre and
+     seeing its Stress track in four places, with the one who built the
+     token unable to fix it for anybody else.
+
+     A MULTIPLIER on the derived radius and never a replacement for it. The
+     fit modes and the two token scales are read and answered automatically;
+     this is the correction for the case the derivation cannot see — a
+     module's own ring, a sprite cropped tight inside its own square, or a
+     table that simply wants more air. Setting it absolutely would throw the
+     automatic handling away to fix one token.
+
+     It is also the honest escape hatch for the one input this system cannot
+     verify. Subject scale reaches Foundry's shader as a UV correction rather
+     than as a radius, and which way it moves the ring is read off the source
+     rather than measured; see chipScale in design/token.js. If it is
+     backwards at a real table, this is the answer, and it is one press. */
+  game.settings.register(SYSTEM_ID, "tokenChipScale", {
+    name: "DAGGERHEART.Settings.TokenChipScale",
+    hint: "DAGGERHEART.Settings.TokenChipScaleHint",
+    scope: "world",
+    config: true,
+    type: Number,
+    range: { min: 0.8, max: 1.6, step: 0.01 },
+    default: 1,
+    onChange: () => Hooks.callAll("daggerheart.tokenChipChanged"),
+  });
+
   /* What players see on an adversary, and it is world-scoped for the reason
      the change log is: it is a ruling about the table rather than a
      preference about a screen. A GM who has decided the party may not read

@@ -47,6 +47,8 @@
       "Activity": "Activity log",
       "TokenChip": "Resources on tokens",
       "TokenChipHint": "Draws each creature's Hit Points, Stress, Armor Slots and Hope on its own token, as arcs around it. Replaces Foundry's bars, which cannot say whether the next hit costs one box or four.",
+      "TokenChipScale": "Token chip size",
+      "TokenChipScaleHint": "How far the resource rings sit from a creature. A dynamic token ring and a scaled token texture are already answered automatically; this is the correction for anything they miss. 1 is normal.",
       "RangeRuler": "Range rings on the selected token",
       "RangeRulerHint": "Draws Melee, Very Close, Close and Far as rings around whichever token you have selected, measured from its edge and in the scene's own units. Yours only — a selection exists on one screen.",
       "AdversaryChip": "What players see on adversary tokens",

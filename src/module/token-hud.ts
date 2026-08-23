@@ -66,6 +66,36 @@
  * ceiling moving under a scar, an adversary becoming visible — and every
  * ordinary hit is a diff into the row that is already standing.
  *
+ * ── the cell is not where the creature ends ──────────────────────────
+ * Every radius in `token.css` is written against one assumption: that the
+ * creature ends at the grid cell's own circle. A **dynamic token ring**
+ * breaks it in both of its fit modes, and so does a token whose **artwork
+ * is scaled** — and when it breaks, the chip is drawn on the painting it
+ * exists to stay off, which is the one thing the component promised.
+ *
+ * `chipScale` is the arithmetic and lives beside the radii in
+ * `design/token.js`, with the derivation written out. This file is the
+ * half a study page cannot have: **asking Foundry what the token is
+ * actually wearing.** Four questions, and the split between them is who
+ * owns the answer:
+ *
+ *   the ring       `token.document.ring.enabled` — per token
+ *   the fit mode   `CONFIG.Token.ring.isGridFitMode` — a WORLD setting of
+ *                  Foundry's, so one answer for the whole table
+ *   subject scale  `ring.subject.scale` — per token, on its config sheet
+ *   art scale      `texture.scaleX/scaleY` — per token, and it applies
+ *                  whether or not there is a ring at all
+ *
+ * plus `tokenChipScale`, ours, world-scoped, a multiplier over the lot.
+ *
+ * The result is two numbers rather than one, because there are two claims.
+ * `--tkr` is the READOUT — three tracks, the gems, the Difficulty — which
+ * is a reading *off* the creature and moves out to clear whatever it now
+ * occupies. `--tkv` is VULNERABLE, which goes inward, on the creature, and
+ * therefore follows the subject and may go *below* 1. Grid fit is exactly
+ * the case that separates them: it shrinks the creature inside its cell,
+ * so the readout needs no push and the word ring has to come in.
+ *
  * ── what it may say, and to whom ─────────────────────────────────────
  * A GM sees everything. Everybody else sees their own characters and their
  * companions in full, and sees an adversary according to one world setting —
@@ -79,7 +109,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID } from "./config.ts";
-import { TOKEN_CHIP, setChip, setTier } from "./ui/token.js";
+import { TOKEN_CHIP, chipScale, setChip, setTier } from "./ui/token.js";
 
 /** What the chip is told about a creature. Mirrors token.js's `s`. */
 interface ChipState {
@@ -220,6 +250,49 @@ const shapeOf = (s: ChipState | null): string =>
    and one table then answers for both. */
 const boxes = new WeakMap<HTMLElement, string>();
 
+/**
+ * What this token is wearing, in the terms `chipScale` asks for.
+ *
+ * Read off the *document* rather than off `token.ring`, which is the
+ * ledger's rule again and load-bearing here for a second reason: the live
+ * `TokenRing` only exists once the token has been drawn with one, so a
+ * chip built on `drawToken` would be reading a null on exactly the frame
+ * it is deciding its radii. The document is true from `createToken`.
+ *
+ * `hasDynamicRing` is Foundry's own name for the question and is preferred
+ * where it answers, because `ring.enabled` is the flag and that getter is
+ * the *rule* — a subclass or a module may have one without the other.
+ */
+function wearOf(token: any): Record<string, unknown> {
+  const doc = token?.document ?? token;
+  const tex = doc?.texture ?? {};
+  return {
+    ring: doc?.hasDynamicRing ?? !!doc?.ring?.enabled,
+    gridFit: !!(CONFIG as any).Token?.ring?.isGridFitMode,
+    subject: doc?.ring?.subject?.scale ?? 1,
+    /* The larger of the two, because a track has one radius and the
+       artwork's wider side is what it has to clear. Absolute, since a
+       mirrored token carries a negative scale and is the same size. */
+    art: Math.max(Math.abs(tex.scaleX ?? 1), Math.abs(tex.scaleY ?? 1)),
+    manual: Number(game.settings?.get(SYSTEM_ID, "tokenChipScale") ?? 1) || 1,
+  };
+}
+
+/* Written only when one of the two actually moves. Both are inherited by
+   every radius in the stylesheet, so a write here invalidates the chip's
+   whole layout — and `refreshToken` fires for a dozen reasons that are not
+   a scale change. Two comparisons against two style writes. */
+const scales = new WeakMap<HTMLElement, string>();
+
+function rescale(chip: HTMLElement, token: any): void {
+  const k = chipScale(wearOf(token) as any);
+  const key = `${k.readout}/${k.subject}`;
+  if (scales.get(chip) === key) return;
+  scales.set(chip, key);
+  chip.style.setProperty("--tkr", String(k.readout));
+  chip.style.setProperty("--tkv", String(k.subject));
+}
+
 function place(chip: HTMLElement, token: any): void {
   const doc = token.document ?? token;
   const grid = canvas.grid?.size ?? 100;
@@ -241,6 +314,7 @@ function place(chip: HTMLElement, token: any): void {
     st.height = `${h}px`;
   }
 
+  rescale(chip, token);
   setTier(chip, w * (canvas.stage?.scale?.x ?? 1));
 }
 
@@ -503,9 +577,27 @@ export function reportTokenChips(): Record<string, unknown> {
     return `${dx.toFixed(2)}, ${dy.toFixed(2)} px at zoom ${k.toFixed(3)} (0,0 is aligned)`;
   })();
 
+  /* The scales, for the one input this system reads and cannot verify.
+     Subject scale reaches Foundry's shader as a UV correction rather than
+     as a radius; if it turns out to move the ring the other way, this is
+     the line that says so, and `tokenChipScale` is the fix. */
+  const wear = (() => {
+    const token = canvas?.tokens?.placeables?.[0];
+    if (!token) return "no token to read";
+    const w = wearOf(token) as any;
+    const k = chipScale(w);
+    return (
+      `ring ${w.ring ? (w.gridFit ? "grid fit" : "subject fit") : "off"}` +
+      `, subject ${w.subject}, art ${w.art}, dial ${w.manual}` +
+      ` -> readout ${k.readout}, vulnerable ${k.subject}`
+    );
+  })();
+
   return {
     setting: game.settings?.get(SYSTEM_ID, "tokenChip"),
     adversaries: game.settings?.get(SYSTEM_ID, "adversaryChip"),
+    scale: game.settings?.get(SYSTEM_ID, "tokenChipScale"),
+    firstTokenWear: wear,
     stylesheetLoaded: [...document.styleSheets].some((s) => s.href?.includes("token.css")),
     host: layer?.parentElement
       ? `${layer.parentElement.tagName.toLowerCase()}#${layer.parentElement.id || "(no id)"}`

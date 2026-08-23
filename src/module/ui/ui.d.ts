@@ -501,6 +501,33 @@ declare module "*/ui/token.js" {
   /** Where every track starts, and how far it runs. Degrees. */
   export const ORIGIN: number;
   export const SWEEP: number;
+
+  /** What the token is wearing, as chipScale needs to be told it. */
+  export interface ChipWear {
+    /** This token draws a dynamic ring. */
+    ring?: boolean;
+    /** CONFIG.Token.ring.isGridFitMode. */
+    gridFit?: boolean;
+    /** token.document.ring.subject.scale. */
+    subject?: number;
+    /** The larger of the texture's two scales. */
+    art?: number;
+    /** The table's own multiplier. */
+    manual?: number;
+  }
+  /** The ring texture's own two radii, from Foundry's spritesheet. */
+  export const RING_HOLE: number;
+  export const RING_RIM: number;
+  /** Subject fit: how far past the cell the visible band reaches. */
+  export const RING_OUT: number;
+  /** Grid fit: how far short of the cell the subject stops. */
+  export const RING_IN: number;
+  /**
+   * The chip's two scales. `readout` is the three tracks, the Hope gems and
+   * the Difficulty, floored at the grid cell; `subject` is Vulnerable, which
+   * follows the creature inward and has no floor.
+   */
+  export function chipScale(t?: ChipWear): { readout: number; subject: number };
 }
 
 declare module "*/ui/ruler.js" {

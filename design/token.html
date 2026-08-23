@@ -58,6 +58,21 @@ select{background:#242931;border:0;box-shadow:inset 0 0 0 1px #343b45;color:#c3c
 
 .lad{display:grid;grid-template-columns:repeat(4,1fr)}
 .lad > div{position:relative;height:210px}
+/* Foundry's dynamic ring, stood up so the collision can be SEEN. A flat
+   annulus at the texture's own two radii rather than a picture of the
+   steel ring, because what this section is about is where the band
+   begins and ends and nothing else about it. */
+.fring{position:absolute;left:50%;top:50%;border-radius:50%;
+  transform:translate(-50%,-50%);pointer-events:none;z-index:1;
+  background:radial-gradient(closest-side,
+    transparent calc(100% * var(--hole) - 1px),
+    #55606e calc(100% * var(--hole)),#e8eef5 55%,#8f9aa8 calc(100% - 1px),
+    transparent 100%);
+  filter:drop-shadow(0 0 2px rgba(0,0,0,.85))}
+.rings{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.rings > div{position:relative;height:270px;overflow:hidden;background:#0a0c0f}
+.rings .rd{position:absolute;left:10px;bottom:9px;z-index:6;letter-spacing:.1em}
+
 .det{display:grid;grid-template-columns:repeat(3,1fr)}
 .det > div{position:relative;height:330px}
 .pl{position:absolute;left:10px;top:9px;z-index:6;
@@ -107,8 +122,8 @@ and the tracks are drawn, and neither is drawn over the other. Every earlier dra
 painting, which is an argument a 3px arc loses against a pale highlight however saturated it is.
 <b>Vulnerable is the exception</b> and stays inside, because it is not a track and not a reading off
 the creature — it is a claim <em>about</em> the creature, and the thing that is Vulnerable is the thing
-in the middle. The cost is a footprint: the outer edge is at 63.4 where the grid cell's is 50, so a
-chip reaches an eighth of a cell into each neighbour and two adjacent creatures' Armor arcs can cross.
+in the middle. The cost is a footprint: the outer edge is at 64.6 where the grid cell's is 50, so a
+chip reaches a seventh of a cell into each neighbour and two adjacent creatures' Armor arcs can cross.
 That is what buys the artwork back.</p>
 
 <div class="det" id="det"></div>
@@ -119,9 +134,15 @@ with a Difficulty in the opening instead of gems.</p>
 <h2><span>// ARMOR IS NOT A RING</span>The arc's length is the capacity</h2>
 <p class="note">Armor is two or three slots on most characters and can be six, and a circle divided into
 two is not a track, it is a pie chart. So Armor alone runs at a <b>fixed angular pitch</b> and stops
-when it runs out — three slots is 39° of arc, six is 78° — so the arc's own <b>length</b> is the
+when it runs out — three slots is 51° of arc, six is 102° — so the arc's own <b>length</b> is the
 capacity. A full ring normalises exactly that away, which is the one fact about armour anybody wants at
 a glance.</p>
+<p class="note">The pitch was 13° and the band was the narrowest of the three at 3.0px, and both had it
+backwards. <b>Armor is the outermost track</b>, so it is the only one drawn against the map rather than
+against another arc of ours; it is the only one that lights what is <em>left</em>, so a nearly-spent
+purse is a nearly-empty ring with nothing to hold the eye; and its slots are the shortest marks on the
+chip, because it alone stops. Three claims all pointing the same way, and the answer to every one of
+them is ink — 17° and 4.2px, the widest band rather than the narrowest.</p>
 <p class="note">It also reads <b>the other way round</b>, and it is the only track that does. Hit Points
 and Stress are things that happen <em>to</em> you: the mark is the damage, the lit run grows as the
 fight goes badly, and an empty ring is a creature that is fine. Armor is not damage — it is a purse,
@@ -152,6 +173,42 @@ most of the telling apart, then <b>Stress is scored</b> — fine hairlines acros
 frequency nothing else here has, the scratch's own character — and <b>Armor is plate</b>, the brightest
 of the three and the only one with a specular run down its outer edge. It is not the tear, the scratch
 and the chisel. It is a good deal more than three colours.</p>
+<p class="note">There used to be a fourth layer and it is gone: a bevel on the <b>channel</b>, a pale
+ramp at each track's outer edge. On the two inner tracks it was invisible under the lit run. On Armor,
+which is the outermost band and therefore the place the chip meets the map, it drew a <b>continuous
+pale ring all the way round the chip whether anything was marked or not</b> — light with no object
+under it, and the first thing anybody noticed about the component. The specular survives it and is the
+same technique, because it rides the <b>lit</b> run: it appears only where a slot is, and a highlight
+along the top of a filled slot is exactly what plate does.</p>
+
+<h2><span>// THE RING</span>The cell is not where the creature ends</h2>
+<p class="note">Every radius on this chip is written against one assumption — that the creature ends at
+the grid cell's own circle, radius 50 — and <b>three arrangements a table can be in break it</b>: a
+dynamic token ring in either of its fit modes, and a token whose artwork is scaled. When it breaks the
+chip is drawn <em>on the painting</em>, which is the one thing this component promised not to do.</p>
+<p class="note">The numbers are not measured and not guessed. Foundry publishes the ring texture's own
+proportions in the spritesheet beside the artwork — <b>startRadius 0.666</b>, the edge of the subject's
+hole, and <b>endRadius 0.7225</b>, where the visible band stops. <b>The two fit modes are two
+normalisations of that one texture</b>, which is why one constant answers both and they are reciprocals:
+fit the hole to the cell and the rim lands <b>1.0848</b> cells out, fit the rim to the cell and the hole
+stops at <b>0.9218</b> of it. The first is the collision. The second is the one arrangement where the
+creature is <em>smaller</em> than its cell, and where <b>Vulnerable</b> has to come in with it.</p>
+<div class="rings" id="rings"></div>
+<p class="cap">The pale annulus is Foundry's band at its own two radii. Press <em>before</em> to put the
+chip back where it was drawn: in subject fit the innermost track begins at 50.2 and the band's rim
+reaches 54.2, so the two are on top of each other.</p>
+<div class="ctl">
+  <div class="btns"><button id="was">before</button></div>
+  <label class="tg">dial <input type="range" id="dial" min="0.8" max="1.6" step="0.01" value="1"></label>
+  <span class="rd">multiplier <b id="dialv">1.00</b> · the table's own, and it moves every chip on the board</span>
+</div>
+<p class="note"><b>Radii only.</b> A band's width, a gem and a numeral keep their size at every setting.
+That is the range ruler's rule arriving here — the rings are geometry and scale with what they measure,
+the lettering is read and does not — and it is what stops the dial making one creature's Stress track
+fatter than its neighbour's. <b>The readout is floored at the cell</b> however small the art is:
+following a 0.6-scale sprite inward would draw its track at 0.6 the size of the creature beside it, and
+being countable across a whole fight at a glance is the entire job. Vulnerable has no floor, because it
+is a claim <em>about</em> the creature rather than a reading off it.</p>
 
 <h2><span>// THE BOARD</span>Drag the zoom. The ladder is the whole design.</h2>
 <div class="board big" id="board"><div class="tok-layer" id="layer"><div class="grid"></div></div></div>
@@ -366,3 +423,81 @@ camera(); visibility();
 </script>
 </body>
 </html>
+
+<script type="module">
+/* ── the ring panels ────────────────────────────────────
+   Four arrangements, one chip each, with Foundry's band stood up under
+   it at the texture's own radii. Its own module rather than a branch in
+   the page's main one, because nothing here shares a variable with the
+   board and a second import is cheaper than a shared scope. */
+import { TOKEN_CHIP, chipScale, RING_HOLE, RING_RIM } from '/design/token.js';
+
+const ST = { hp:{max:12,marked:5}, stress:{max:6,marked:2},
+             armor:{max:3,marked:1}, hope:{value:4,max:6}, vuln:true };
+
+const CASES = [
+  { n:'no ring',     t:{} },
+  { n:'subject fit', t:{ ring:true } },
+  { n:'grid fit',    t:{ ring:true, gridFit:true } },
+  { n:'art x 1.5',   t:{ art:1.5 } },
+];
+
+const host = document.getElementById('rings');
+const dial = document.getElementById('dial');
+const dialv = document.getElementById('dialv');
+const was = document.getElementById('was');
+let honest = true;
+
+/* The band, in the same 100-unit space every radius in token.css uses.
+   Its rim is 1.0848 cells in subject fit and exactly 1 in grid fit,
+   which is the whole of the difference between the two modes. */
+function band(t) {
+  if (!t.ring) return null;
+  const rim = (t.gridFit ? 1 : RING_RIM / RING_HOLE) / (t.subject ?? 1);
+  const el = document.createElement('div');
+  el.className = 'fring';
+  el.style.cssText =
+    `width:${100 * rim}px;height:${100 * rim}px;--hole:${RING_HOLE / RING_RIM}`;
+  return el;
+}
+
+function draw() {
+  const manual = +dial.value;
+  dialv.textContent = manual.toFixed(2);
+  host.innerHTML = '';
+  for (const c of CASES) {
+    const k = chipScale({ ...c.t, manual });
+    const cell = document.createElement('div');
+    const spr = document.createElement('div');
+    spr.className = 'spr pc';
+    spr.style.cssText =
+      'left:50%;top:50%;width:100px;height:100px;transform:translate(-50%,-50%) scale(1.55)';
+    /* The artwork itself, at whatever the token is wearing: grid fit
+       shrinks it into the ring, an art scale grows it past the cell.
+       Both are what the readout is being asked to clear. */
+    const artK = c.t.gridFit ? RING_HOLE / RING_RIM : (c.t.art ?? 1);
+    spr.innerHTML =
+      `<div class="art" style="transform:scale(${artK})${c.t.ring ? ';box-shadow:none' : ''}"></div>`
+      + TOKEN_CHIP(ST);
+    const chip = spr.querySelector('.tok');
+    chip.classList.add('vuln');
+    chip.style.setProperty('--tkr', honest ? k.readout : 1);
+    chip.style.setProperty('--tkv', honest ? k.subject : 1);
+    const b = band(c.t);
+    if (b) spr.insertBefore(b, spr.firstChild);
+    cell.appendChild(spr);
+    cell.insertAdjacentHTML('beforeend',
+      `<div class="pl">${c.n}</div><span class="rd">readout <b>${k.readout.toFixed(3)}</b>
+       &middot; subject <b>${k.subject.toFixed(3)}</b></span>`);
+    host.appendChild(cell);
+  }
+}
+
+dial.addEventListener('input', draw);
+was.addEventListener('click', () => {
+  honest = !honest;
+  was.textContent = honest ? 'before' : 'after';
+  draw();
+});
+draw();
+</script>
