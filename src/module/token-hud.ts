@@ -196,16 +196,32 @@ const shapeOf = (s: ChipState | null): string =>
    The tier is asked in *screen* pixels of footprint rather than in camera
    scale, because a 2x2 creature is legible at half the zoom a 1x1 one needs
    and one table then answers for both. */
-function place(chip: HTMLElement, token: any): void {
+function place(chip: HTMLElement, token: any, retier = true): void {
   const doc = token.document ?? token;
-  const w = token.w ?? doc.width * (canvas.grid?.size ?? 100);
-  const h = token.h ?? doc.height * (canvas.grid?.size ?? 100);
-  const st = chip.style;
-  st.left = `${token.x ?? doc.x}px`;
-  st.top = `${token.y ?? doc.y}px`;
-  st.width = `${w}px`;
-  st.height = `${h}px`;
-  setTier(chip, w * (canvas.stage?.scale?.x ?? 1));
+  const grid = canvas.grid?.size ?? 100;
+  const w = token.w ?? (doc.width ?? 1) * grid;
+  const h = token.h ?? (doc.height ?? 1) * grid;
+  /* `token.position`, not `token.document.x`. A Token is a PIXI container and
+     a move animates the *container* while the document already holds the
+     destination — so reading the document during a move puts the chip on the
+     square the creature has not arrived at yet, which is the drift you see
+     for exactly as long as the animation lasts. */
+  const x = token.position?.x ?? token.x ?? doc.x ?? 0;
+  const y = token.position?.y ?? token.y ?? doc.y ?? 0;
+
+  /* Written only when it moved. On a still board this is four number
+     comparisons per creature per frame and no style write at all. */
+  const key = `${x}/${y}/${w}/${h}`;
+  if (boxes.get(chip) !== key) {
+    boxes.set(chip, key);
+    const st = chip.style;
+    st.left = `${x}px`;
+    st.top = `${y}px`;
+    st.width = `${w}px`;
+    st.height = `${h}px`;
+  }
+
+  if (retier) setTier(chip, w * (canvas.stage?.scale?.x ?? 1));
 }
 
 /* A token nobody may see gets no chip at all rather than a hidden one: the
@@ -267,26 +283,104 @@ function redraw(): void {
   }
 }
 
-/* ── the transform ────────────────────────────────────────────────────
+/* ══ the transform ════════════════════════════════════════════════════
    Read off the stage rather than recomputed from pan and zoom, because the
-   stage is what actually drew the frame and anything derived alongside it
-   is a second opinion that can be one frame stale. `transform-origin:0 0`
-   is stated in the stylesheet; without it the matrix means something else
-   entirely, which is the bug the Hope gems already paid for once. */
+   stage is what actually drew the frame and anything derived alongside it is
+   a second opinion that can be a frame stale. `transform-origin:0 0` is
+   stated in the stylesheet; without it the matrix means something else
+   entirely, which is the bug the Hope gems already paid for once.
+
+   ── it is measured against the canvas, not assumed flush with it ────
+   `worldTransform` maps scene coordinates into the **canvas element's** own
+   pixel space, and our layer hangs on whatever wall `wall()` found — which
+   is a neighbour of that element and not guaranteed to share its origin.
+   Any difference is a constant offset, and a constant offset on a layer
+   whose contents scale is exactly the failure that looks like drift: at low
+   zoom the chips sit near their creatures and at high zoom they are inches
+   away, so it reads as tracking badly rather than as being shifted.
+
+   So the offset is measured once per build and added to the matrix's
+   translation. Two `getBoundingClientRect` calls, on a build and a resize,
+   and never in a frame — a layout forced per frame to place a decoration is
+   the cost `fit-cards.ts` exists to refuse. */
+let offX = 0;
+let offY = 0;
+
+function measureOffset(): void {
+  offX = offY = 0;
+  const host = layer?.parentElement;
+  const board: HTMLElement | null = (canvas as any)?.app?.view ?? document.querySelector("#board");
+  if (!host || !board?.getBoundingClientRect) return;
+  const a = board.getBoundingClientRect();
+  const b = host.getBoundingClientRect();
+  offX = a.left - b.left;
+  offY = a.top - b.top;
+}
+
 function syncTransform(): void {
   if (!layer) return;
   const t = canvas.stage?.worldTransform;
   if (!t) return;
-  layer.style.transform = `matrix(${t.a},${t.b},${t.c},${t.d},${t.tx},${t.ty})`;
+  layer.style.transform =
+    `matrix(${t.a},${t.b},${t.c},${t.d},${t.tx + offX},${t.ty + offY})`;
 }
 
-/** Zoom changed, so every chip re-asks the ladder. `setTier` no-ops on most. */
-function syncTiers(): void {
+/* ══ the frame ════════════════════════════════════════════════════════
+   `canvasPan` was the whole of this and it is not enough. It fires when
+   Foundry *decides* to pan, not on every frame of one — so an animated pan,
+   a zoom with easing, or the camera following a token leaves the layer on
+   last frame's matrix for the whole of the movement and snaps into place at
+   the end. That is the "moves about" half, and it is invisible at rest,
+   which is why it survived a static check.
+
+   The same is true of a token: `refreshToken` is reliable for a drag and is
+   not something to *rely* on for an animated move, because how many render
+   flags a move raises is Foundry's business and not ours.
+
+   So there is one ticker callback, at Foundry's own frame rate, and it is
+   built to be cheap rather than to be clever:
+
+     - the transform is one style write, unconditionally, because comparing
+       six matrix components costs about what writing them does;
+     - a chip's box is written ONLY when one of its four numbers changed,
+       which on a still board is never;
+     - the tier is asked only when the zoom actually moved.
+
+   Every number it reads is a property on a PIXI object or a plain field on a
+   document. Nothing here reads the DOM, so nothing here forces a layout. */
+let lastK = 0;
+
+const boxes = new WeakMap<HTMLElement, string>();
+
+function frame(): void {
+  if (!layer) return;
+  syncTransform();
+
   const k = canvas.stage?.scale?.x ?? 1;
+  const zoomed = k !== lastK;
+  if (zoomed) lastK = k;
+
   for (const token of canvas.tokens?.placeables ?? []) {
     const chip = chips.get(token.document?.id ?? token.id);
-    if (chip) setTier(chip, (token.w ?? 100) * k);
+    if (chip) place(chip, token, zoomed);
   }
+}
+
+/* The ticker we are attached to, rather than a boolean. A boolean is right
+   until the application is rebuilt underneath us, at which point it says we
+   are ticking on something that no longer ticks — which is the same shape as
+   the hook that had already fired, and would present the same way: nothing
+   moves and nothing says why. */
+let ticker: any = null;
+
+function startTicking(): void {
+  const t = (canvas as any)?.app?.ticker;
+  if (!t?.add || t === ticker) return;
+  ticker?.remove?.(frame);
+  /* Last in the frame, so the matrix we copy is the one the stage just drew
+     with rather than the one it is about to replace. */
+  t.add(frame, undefined, -100);
+  ticker = t;
 }
 
 /* ══ Foundry's bars ═══════════════════════════════════════════════════
@@ -344,8 +438,10 @@ function build(): void {
   layer.className = "dh tok-layer";
   host.appendChild(layer);
   chips.clear();
+  measureOffset();
   syncTransform();
   redraw();
+  startTicking();
 }
 
 /**
@@ -373,22 +469,21 @@ function build(): void {
 export function registerTokenChips(): void {
   Hooks.on("canvasReady", build);
 
-  /* Pan and zoom move the layer, not the chips. The tier pass rides along
-     because a zoom is the only thing that changes a chip's footprint in
-     screen pixels, and it costs a comparison per creature. */
-  Hooks.on("canvasPan", () => {
-    syncTransform();
-    syncTiers();
-  });
+  /* Pan and zoom are the ticker's, not this hook's — see the note on
+     `frame`. What is left for `canvasPan` is the thing a frame cannot
+     measure without forcing a layout: whether the canvas element has moved
+     relative to our wall, which happens when the sidebar collapses or the
+     window resizes and never mid-gesture. */
+  Hooks.on("canvasPan", measureOffset);
+  Hooks.on("collapseSidebar", measureOffset);
+  window.addEventListener("resize", measureOffset);
 
-  /* A token's own movement. `refreshToken` fires on every frame of a move
-     animation and on every drag, which is exactly the rate a chip has to
-     follow at — and `place` is four style writes, so following is cheap.
-     `sync` is not called here: nothing about the creature has changed. */
+  /* A token arriving. Movement is the ticker's, for `frame`'s reason: how
+     many render flags an animated move raises is Foundry's business and not
+     something to hang a position on. */
   Hooks.on("refreshToken", (token: any) => {
-    const chip = chips.get(token.document?.id ?? token.id);
-    if (chip) place(chip, token);
-    else if (layer) sync(token);
+    if (!layer) return;
+    if (!chips.has(token.document?.id ?? token.id)) sync(token);
   });
 
   Hooks.on("drawToken", (token: any) => sync(token));
@@ -440,6 +535,8 @@ export function reportTokenChips(): Record<string, unknown> {
       : "NONE — the layer was never hung",
     layerBox: layer ? layer.getBoundingClientRect().toJSON() : null,
     transform: t ? `matrix(${t.a},${t.b},${t.c},${t.d},${t.tx},${t.ty})` : "no stage",
+    offset: `${offX}, ${offY}  (wall to canvas element)`,
+    ticking: !!ticker,
     tokensOnScene: canvas?.tokens?.placeables?.length ?? 0,
     chipsDrawn: chips.size,
     walls: WALLS.map((w) => `${w}: ${document.querySelector(w) ? "found" : "absent"}`),
