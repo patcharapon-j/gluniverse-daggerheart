@@ -2,7 +2,7 @@
   "id": "gluniverse-daggerheart",
   "title": "GLUniverse — Daggerheart",
   "description": "An unofficial Foundry VTT game system for Daggerheart: duality dice, Hope and Fear, domain card loadouts, and a sheet built for the table rather than the rulebook.",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "compatibility": {
     "minimum": "13",
     "verified": "14"
@@ -152,7 +152,7 @@
   "secondaryTokenAttribute": "resources.stress",
   "url": "https://github.com/patcharapon-j/gluniverse-daggerheart",
   "manifest": "https://github.com/patcharapon-j/gluniverse-daggerheart/releases/latest/download/system.json",
-  "download": "https://github.com/patcharapon-j/gluniverse-daggerheart/releases/download/v1.7.3/system.zip",
+  "download": "https://github.com/patcharapon-j/gluniverse-daggerheart/releases/download/v1.8.0/system.zip",
   "readme": "https://github.com/patcharapon-j/gluniverse-daggerheart/blob/main/README.md",
   "bugs": "https://github.com/patcharapon-j/gluniverse-daggerheart/issues",
   "license": "https://github.com/patcharapon-j/gluniverse-daggerheart/blob/main/LICENSE"
