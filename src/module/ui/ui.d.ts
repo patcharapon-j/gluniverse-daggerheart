@@ -473,3 +473,26 @@ declare module "*/ui/swap.js" {
   /** The pointer half — the study page's drag. The sheet does not bind it. */
   export function swaps(root: Element, api: any): void;
 }
+
+declare module "*/ui/token.js" {
+  /** The chip's markup, rendered once. See design/token.css for the argument. */
+  export function TOKEN_CHIP(s?: any): string;
+  /**
+   * Write the ladder rung for a chip, given its footprint in *screen*
+   * pixels. Returns whether it changed, so a caller sweeping every creature
+   * on a zoom pays a comparison rather than an attribute write.
+   */
+  export function setTier(el: Element, footprintPx: number): boolean;
+  /**
+   * Diff a chip against a new state. Only what moved is redrawn, and only
+   * what moved plays an arrival — the contract setMarks, setPool and
+   * setChits keep on the sheet.
+   */
+  export function setChip(el: Element, s?: any): void;
+  /** The ladder's thresholds, in screen pixels of token footprint. */
+  export const TIER_PX: { near: number; mid: number; far: number };
+  export function tierFor(px: number): "near" | "mid" | "far" | "min";
+  /** Where every track starts, and how far it runs. Degrees. */
+  export const ORIGIN: number;
+  export const SWEEP: number;
+}

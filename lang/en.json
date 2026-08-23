@@ -44,11 +44,20 @@
       "DiceSoNiceHint": "Off by default — the chat card draws its own dice, and two answers to the same question is worse than either.",
       "ChangeLog": "Watch changes to characters",
       "ChangeLogHint": "Records one entry in the GM's activity log when a character's Hit Points, Stress, Armor Slots, Hope, counters or loadout settle. Coalesced, so applying damage is one entry rather than four, and a change taken straight back is not recorded at all. Nothing is posted to chat, and players see none of it. Rests and character creation post their own card and are left alone.",
-      "Activity": "Activity log"
+      "Activity": "Activity log",
+      "TokenChip": "Resources on tokens",
+      "TokenChipHint": "Draws each creature's Hit Points, Stress, Armor Slots and Hope on its own token, as arcs around it. Replaces Foundry's bars, which cannot say whether the next hit costs one box or four.",
+      "AdversaryChip": "What players see on adversary tokens",
+      "AdversaryChipHint": "A GM always sees everything. This is what everybody else sees on an adversary: nothing, the tracks without the numbers behind them, or the same chip the GM has. Vulnerable is shown either way — a creature that is easier to hit is a fact the table has already earned."
     },
     "Theme": {
       "Dark": "Dark",
       "Light": "Light"
+    },
+    "AdversaryChip": {
+      "None": "Nothing",
+      "Marks": "The tracks, but not the Difficulty",
+      "Full": "Everything the GM sees"
     },
     "Chat": {
       "Reroll": "Roll this die again. The face it showed stays on the card, struck through."

@@ -31,6 +31,7 @@ import { applyTheme, gainFear, getFear, registerSettings, setFear, spendFear } f
 import { openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
+import { registerTokenBars, registerTokenChips } from "./token-hud.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
 import { openActivity, registerActivityLog } from "./activity-log.ts";
 import { registerBrawler } from "./brawler.ts";
@@ -86,6 +87,10 @@ Hooks.once("init", () => {
   CONFIG.specialStatusEffects.DEFEATED = "dead";
 
   registerSettings();
+  /* The chip draws the tracks, so Foundry's two bars come off — and this has
+     to happen at `init`, because it swaps the Token class the canvas builds
+     its placeables from. */
+  registerTokenBars();
   registerDataModels();
   registerSheets();
   registerChat();
@@ -177,6 +182,7 @@ Hooks.once("ready", () => {
      Foundry's own chrome, and `#ui-top` does not exist until the game view
      has been drawn. */
   registerFearHud();
+  registerTokenChips();
 
   /** Public API for macros and modules: `game.daggerheart.rollTrait(actor, "agility")`. */
   (game as any).daggerheart = {

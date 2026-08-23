@@ -10,7 +10,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SEVERITY_COST, reduceSeverity, type Severity } from "../config.ts";
+import { SEVERITY_COST, SYSTEM_ID, reduceSeverity, type Severity } from "../config.ts";
+
+/**
+ * Marks the Vulnerable effect as one the Stress track applied, so that the
+ * track is allowed to take it back and a hand-applied one is not touched.
+ * See {@link DaggerheartActor.syncVulnerable}.
+ */
+const FROM_STRESS = "fromStress";
 
 /**
  * What is being spent against one hit, and how far it pushes the damage down.
@@ -36,6 +43,28 @@ export interface DamagePlan extends Required<DamageSpend> {
 }
 
 export class DaggerheartActor extends (Actor as any) {
+  /**
+   * What a new actor's token ships with.
+   *
+   * `displayBars: NONE` because the token chip draws the tracks and a bar
+   * beside it is a second answer in a borrowed grammar — see the argument in
+   * `token-hud.ts`. It is a **default and not a rule**: the attribute bars
+   * stay declared and a table that wants one can turn it back on.
+   *
+   * Only ever applied to a token being created, and only where nothing has
+   * said otherwise, so a duplicated actor keeps whatever its original had.
+   */
+  async _preCreate(data: any, options: any, user: any): Promise<any> {
+    const out = await super._preCreate(data, options, user);
+    if (out === false) return out;
+    if (data?.prototypeToken?.displayBars === undefined) {
+      this.updateSource({
+        "prototypeToken.displayBars": CONST.TOKEN_DISPLAY_MODES.NONE,
+      });
+    }
+    return out;
+  }
+
   /* ── tracks ───────────────────────────────────────────────────────────
      Every one of these clamps. A track that can go past its max or below
      zero produces a sheet that draws boxes that are not there, and the
@@ -182,13 +211,50 @@ export class DaggerheartActor extends (Actor as any) {
 
      Idempotent on purpose. It is called from an `updateActor` hook, so it
      runs on every write to this actor including its own; comparing before
-     toggling is what stops that being a loop. */
+     toggling is what stops that being a loop.
+
+     ── it may only take back what it put on ────────────────────────────
+     Vulnerable arrives two ways and this method knew about one of them. A
+     full Stress track is the derived route; the other is a hand — a card
+     that inflicts it, a GM ruling, a duration nothing here models — and
+     the printed condition is the same condition either way, so the two are
+     indistinguishable once applied.
+
+     The old test was a straight comparison, so *every* write to the actor
+     re-asserted the derived answer over the hand-applied one: a GM marks a
+     creature Vulnerable, the player marks a Hope, and the effect silently
+     disappears. It reads as the condition not sticking, which is the worst
+     shape of bug — the cause is a hook the reader has no reason to suspect
+     and the symptom appears on somebody else's screen.
+
+     So the effect this method creates is *flagged as its own*, and only a
+     flagged one is ever removed. That is `creation.granted`'s provenance
+     argument arriving at a condition, and it fails in the right direction:
+     the unknown case is an effect nobody claimed, and leaving it alone is
+     always recoverable while deleting it is not. */
 
   async syncVulnerable(): Promise<void> {
     const stress = this.system?.resources?.stress;
     const should = !!stress && stress.max > 0 && stress.marked >= stress.max;
-    if (this.statuses?.has("vulnerable") === should) return;
-    await this.toggleStatusEffect("vulnerable", { active: should });
+    if (!!this.statuses?.has("vulnerable") === should) return;
+
+    if (should) {
+      await this.toggleStatusEffect("vulnerable", { active: true });
+      /* Looked up rather than taken from the return value, because what
+         `toggleStatusEffect` hands back has changed shape across versions
+         and this needs the document either way. */
+      await this.vulnerableEffect()?.setFlag(SYSTEM_ID, FROM_STRESS, true);
+      return;
+    }
+
+    if (this.vulnerableEffect()?.getFlag?.(SYSTEM_ID, FROM_STRESS) === true) {
+      await this.toggleStatusEffect("vulnerable", { active: false });
+    }
+  }
+
+  /** The Vulnerable effect currently on this actor, whoever put it there. */
+  private vulnerableEffect(): any {
+    return this.effects?.find((e: any) => e.statuses?.has?.("vulnerable"));
   }
 
   /* ── rests ────────────────────────────────────────────────────────── */

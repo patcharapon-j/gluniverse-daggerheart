@@ -42,6 +42,7 @@ const MODULES = [
   "menu.js",
   "prep.js",
   "make.js",
+  "token.js",
 ];
 
 /**

@@ -1,0 +1,389 @@
+/* ══════════════════════════════════════════════════════════════════
+   THE TOKEN CHIP — a creature's tracks, on the creature.
+
+   Foundry draws a green bar and a blue bar under a token. Daggerheart
+   does not have a green bar: it has boxes you cross off, and a bar at 60%
+   says nothing about whether the next hit costs one box or four.
+
+   Two drafts got thrown away on the way here and both are worth keeping
+   as arguments. The first ported the sheet's row unchanged — twelve Hit
+   Points, six Stress, three Armor Slots and six Hope, **twenty-seven
+   objects at seven pixels** — which is texture, not a readout. What made
+   it so was the box that is *empty*: on the sheet an empty box is the
+   affordance, the thing you press, and nothing on a token is pressable.
+   Half the component was drawing the part of the sheet that only existed
+   to be clicked. The second took the empty boxes out and still lost, on
+   two counts: a centred row that fills from the left puts 5-of-12 visibly
+   off-centre, and the strip sat on the artwork anyway — the circle is
+   inscribed in the square, so the bottom band at *centre* is the painting
+   and only the corners are free.
+
+   ── the gauge ───────────────────────────────────────────────────
+   So the tracks go on the circumference, which is about three times the
+   width and is the shape a token actually is.
+
+   Every track shares one origin and one direction: they start at 210°,
+   lower-left, and run clockwise up over the top to lower-right. The 60°
+   left open at six o'clock is not waste — it is the slot where Hope sits
+   on a character and Difficulty on an adversary. The rings open for the
+   thing the creature spends.
+
+   Radially, outermost first: **Armor, then Hit Points, then Stress**.
+   That order is the rule rather than a layout: armour is what stands
+   between a hit and your Hit Points, so it stands outside them.
+
+   ── what a full ring cannot say ─────────────────────────────────
+   Armor is two or three slots on most characters and can be six, and a
+   circle divided into two is not a track, it is a pie chart. So Armor
+   alone runs at a **fixed angular pitch** and stops when it runs out —
+   three slots is 39° of arc and six is 78°, so the arc's own *length* is
+   the capacity. A full ring normalises that away.
+
+   ── material ────────────────────────────────────────────────────
+   Three layers per track, and each is a different claim rather than a
+   different opacity of one:
+
+     .ch   the channel — every slot the track HAS, recessed. This is what
+           says "fourteen" while only six are marked, and it is what lets
+           an unmarked slot be genuinely absent from .lit rather than a
+           washed-out copy of a marked one.
+     .lit  what is marked — except on Armor, which lights what is LEFT,
+           because Armor is a purse rather than a wound. Carries the glow,
+           and the scoring on Stress.
+     .fx   the landing, faded out on its own — which is how a conic
+           gradient gets setMarks' arrival back with no element per slot.
+
+   Substance is what the ring costs and this is how much of it comes
+   back. Hue and radius do most of the telling apart, and then Stress is
+   *scored* — fine hairlines across the annulus, the scratch's own
+   character — while Armor is *plate*, the brightest and the only one
+   with a specular edge. It is not the tear, the scratch and the chisel.
+   It is more than three colours.
+
+   ── Hope is gems ────────────────────────────────────────────────
+   Not a ring and not a variant of one. Hope is gold diamonds everywhere
+   else in this system and a token is not where that gets re-taught, so
+   it is gem.js's own GEM — placed by angle on the tracks' own circle and
+   tilting with it, in the 60° they leave open at six o'clock.
+
+   ── it scales with the scene ────────────────────────────────────
+   Part of the token, not chrome about it, so every measurement here is
+   in *scene* pixels — a 1x1 token is 100 of them. The ladder is what
+   keeps it legible:
+
+     data-t=near   110px or more on screen — everything
+     data-t=mid    55 to 110px — Armor, Hit Points, Stress
+     data-t=far    28 to 55px — Hit Points and Stress
+     data-t=min    below that — nothing but Vulnerable
+
+   data-t is written by JS because CSS cannot ask a range question about
+   a transformed size: a container query measures *layout*, and the
+   layout never changes, the parent's transform does. It is still nearly
+   free — the tier only changes at a crossing.
+
+   ── nothing here is pressable ───────────────────────────────────
+   pointer-events:none, no exceptions. pool.css argues the first half: a
+   readout that is also a control is a misclick, and here a misclick
+   costs somebody a Hit Point. The second is worse — the canvas owns
+   click, drag and box-select over exactly these pixels, and a chip that
+   swallows a dragstart is a token you cannot move.
+
+   ── naming ──────────────────────────────────────────────────────
+   Drawn on the board, outside every .dh root, so like the Fear strip it
+   is rewritten to a *compound* — the chip's class and the layer's each
+   gain a leading dh, rather than becoming descendants of one. Members are
+   tk-prefixed because .row, .hd, .n and .trk already belong to somebody.
+
+   The rewrite is a naive replaceAll over the whole file, comments
+   included, so this one may not spell its own selectors in prose: written
+   out, the sentence above would come back through the port carrying two
+   copies of the prefix and describing something that does not exist.
+
+   The word ring is tkwr and was `wr` for one run of tools/verify/, which
+   is where it was caught: roll.css has owned `.wr` since the roll panel was
+   drawn, both load into the same .dh root where scoping does nothing, and
+   the token's SVG would have arrived wearing a flex row's padding and
+   background. Sixth instance of the bug that renamed `.die.win` and
+   `.dfn .pl`, and the first one this system found before shipping it — the
+   study page loads three stylesheets and the game loads twenty-three, so
+   no study page could ever have shown it.
+   ══════════════════════════════════════════════════════════════════ */
+
+.tok-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none;
+  z-index:1;transform-origin:0 0}
+
+/* `inset:0` is load-bearing rather than tidy: a host that positions the
+   chip itself (the real layer does, in scene coordinates) overrides it,
+   and a host that wraps it is served by it. */
+.tok{position:absolute;inset:0;pointer-events:none;container-type:inline-size}
+.tok *{pointer-events:none}
+
+/* ── the three tracks ──────────────────────────────────────────────
+   The radii are the part of the geometry that does not move, so they
+   live here; the stop lists are the state, so they live in token.js.
+   One seam between the two files and it is a number of degrees.
+
+   Every layer is masked to its own annulus by the same rule, so the
+   channel, the marked run and the flash cannot drift apart. */
+.tok .tkarcs{position:absolute;inset:0}
+.tok .tkarc{position:absolute;border-radius:50%}
+.tok .tkarc > *{position:absolute;inset:0;border-radius:50%;
+  -webkit-mask:radial-gradient(closest-side,transparent calc(100% - var(--aw)),
+    #000 calc(100% - var(--aw)));
+  mask:radial-gradient(closest-side,transparent calc(100% - var(--aw)),
+    #000 calc(100% - var(--aw)))}
+
+/* ── thicker, further apart, and off the painting ──────────────────
+   The first pass put three arcs about 1.2px apart at 2.4-3.2px wide, ON
+   the sprite. Both halves of that were wrong. Three arcs that close is not
+   three tracks — it is one striped band you can see the hue change in and
+   cannot count — and a track below the width where its own slots separate
+   has stopped being a track. And every one of them was competing with
+   somebody's painting for the same pixels, which is an argument a 3px arc
+   loses against a pale highlight however saturated it is.
+
+   So the arcs are 3.0-3.8px, the gaps between them are 1.6px — over half
+   an arc, and the empty ring is what says there are three — and every
+   inset is NEGATIVE: the innermost track's inner edge is at radius 50.2,
+   which is the first tenth of a pixel outside the token's own circle. The
+   creature is drawn and the tracks are drawn, and neither is drawn over
+   the other.
+
+   Vulnerable is the exception and stays inside, because it is not a track
+   and because it is a claim about the creature rather than a reading off
+   it: the thing that is Vulnerable is the thing in the middle.
+
+   The cost is a footprint, and it is real. The outermost edge is at 63.4
+   where the grid cell's is 50, so a chip reaches about an eighth of a cell
+   into each neighbour and two adjacent creatures' Armor arcs can cross.
+   That is what buys the artwork back. */
+.tok .tkarc.armor {inset:-13.4%;--aw:3.0px}
+.tok .tkarc.hp    {inset:-8.8%;--aw:3.8px}
+.tok .tkarc.stress{inset:-3.4%;--aw:3.2px}
+
+/* The bevel rides on the channel rather than over the marked run, so a
+   lit slot keeps its own colour at full strength and the groove it sits
+   in is what carries the light. Outer edge only: that is where a real
+   channel catches it. */
+.tok .tkarc .ch::after{content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(closest-side,transparent 86%,
+    rgba(255,255,255,.09) 96%,transparent 100%)}
+
+/* ── it has to survive the artwork ─────────────────────────────────
+   Every other surface in this system draws on paper it owns. This one
+   draws on somebody else's painting, and a 3px arc over a pale highlight
+   is invisible however saturated it is. So each layer carries its own
+   dark contour, and it is a drop-shadow rather than a box-shadow for a
+   reason that is not taste: a mask clips a box shadow along with the box,
+   and every layer here is masked to its annulus. A drop-shadow is taken
+   from the *result*, so it traces the silhouette of the slots themselves.
+
+   Two of them on the marked run, and they are opposite claims. The tight
+   near-black one is the seat — the arc reads as sitting in a groove cut
+   through the sprite rather than floating over it. The wide coloured one
+   is the light coming off it, and it is what keeps the hue legible at the
+   distance where the arc itself is two pixels. */
+.tok .tkarc .ch{background-repeat:no-repeat;
+  filter:drop-shadow(0 0 1.1px rgba(0,0,0,.9))}
+.tok .tkarc .lit{filter:drop-shadow(0 0 .9px rgba(3,4,6,.95))
+                        drop-shadow(0 0 2.6px var(--gl))}
+.tok .tkarc.hp     .lit{--gl:color-mix(in srgb,var(--wound-gl) 78%,transparent)}
+.tok .tkarc.stress .lit{--gl:color-mix(in srgb,var(--strain) 60%,transparent)}
+.tok .tkarc.armor  .lit{--gl:color-mix(in srgb,var(--plate-fl) 62%,transparent)}
+
+/* Stress is scored. A second layer of fine hairlines across the annulus,
+   at a frequency nothing else here has, so the two damage tracks differ
+   by texture as well as by hue — which is as much of mark.css's argument
+   as a 2.4px band can hold, and it is more than a bar has. */
+.tok .tkarc.stress .lit::after{content:"";position:absolute;inset:0;
+  border-radius:50%;opacity:.5;
+  background:repeating-conic-gradient(from 210deg,
+    rgba(255,255,255,.52) 0 .55deg,transparent .55deg 2.4deg)}
+
+/* Armor is plate: the brightest of the three and the only one with a
+   specular run down its outer edge. */
+.tok .tkarc.armor .lit::after{content:"";position:absolute;inset:0;
+  border-radius:50%;
+  background:radial-gradient(closest-side,transparent 82%,
+    rgba(255,255,255,.32) 94%,transparent 100%)}
+
+/* ── the landing ───────────────────────────────────────────────────
+   What a conic gradient cannot do per slot, one wedge can do for the run
+   that moved. It is a flash and not a travel, for mark.css's reason: a
+   cut is not a gesture you watch happen, it is a thing that has
+   happened. */
+.tok .tkarc .fx{opacity:0}
+.tok .tkarc .fx.go{animation:tkLand .46s cubic-bezier(.2,.9,.3,1) both}
+@keyframes tkLand{
+  0%  {opacity:1;filter:brightness(2.4) saturate(.7)}
+  18% {opacity:1;filter:brightness(1.5)}
+  100%{opacity:0;filter:brightness(1)}}
+
+/* ── Hope, in the opening ──────────────────────────────────────────
+   gem.js's own gem at token scale, in a line, in the 60° the rings leave
+   open at six o'clock. Nothing is re-taught: gold diamonds are Hope on
+   the rail, in the rest dialog and here. */
+/* ── it curves with everything else ────────────────────────────────
+   A straight row of gems under a ring is a caption below a gauge, and
+   this is not a caption — it is the fourth thing the creature carries and
+   it belongs on the same circle the other three are on. So each gem is
+   placed by angle at the tracks' own radius and TILTS with the arc,
+   filling the 60° the rings leave open at six o'clock. `--a` is the gem's
+   own angle and is the only thing token.js has to say about it; the
+   radius lives here with the other radii.
+
+   Rotating the gem rather than counter-rotating it is deliberate. A
+   diamond is symmetric about both axes, so a tilt costs it no legibility
+   at all, and a row of upright gems on a curve reads as a row that has
+   been bent — which is the one thing it must not look like. */
+.tok .tkhope{position:absolute;inset:0}
+.tok .tkhope .gems{position:absolute;inset:0;display:block;--r:53.6px}
+/* `transform-origin:0 0` is the whole of this rule working, and leaving it
+   out is a bug that looks like a taste problem. `left/top:50%` puts the
+   gem's *top-left corner* on the token's centre, which is exactly what the
+   rotation needs to pivot about — but transform-origin defaults to the
+   box's own middle, half a gem away from that corner. So all six rotated
+   about a point that was not the centre, and the row came out as a curve
+   that drifted: measured, radii of 52.0, 52.8, 53.3, 53.8, 54.3, 54.6
+   where six identical numbers are the entire claim. It reads as gems that
+   very nearly follow the ring, which is worse than gems that plainly do
+   not — a straight row is a decision and a skewed arc is a mistake.
+
+   With the origin at the corner the order is: pivot about the token's
+   centre, walk out along the rotated axis, then centre the box on where
+   you landed. */
+.tok .tkhope .tkg{position:absolute;left:50%;top:50%;transform-origin:0 0;
+  transform:rotate(var(--a)) translateY(var(--r)) translate(-50%,-50%)}
+.tok .tkhope .gem{display:block}
+
+/* ── Difficulty, in the same opening ───────────────────────────────
+   The other occupant, and never both: a character spends Hope and an
+   adversary makes you beat a number. It is the one numeral on the whole
+   component and it earns it by having no units — Difficulty does not
+   move during a scene and there is nothing to cross off. */
+.tok .tkdiff{position:absolute;left:50%;bottom:1.5%;transform:translateX(-50%);
+  display:flex;align-items:baseline;gap:1.6px;padding:1px 3px 1.4px;
+  background:rgba(4,5,7,.88);
+  box-shadow:inset 0 0 0 .8px color-mix(in srgb,var(--ink) 26%,transparent);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%)}
+.tok .tkdiff i{font:600 4.2px/1 var(--f-mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);font-style:normal}
+.tok .tkdiff b{font:700 8px/1 var(--f-display);color:var(--ink);
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* ══ VULNERABLE ════════════════════════════════════════════════════
+   Not a fourth ring. Three concentric arcs already say "track", and a
+   condition drawn as a fourth would be a track you cannot count — so
+   this goes INWARD, where nothing else lives.
+
+   It is mark.js's own VULN_RUN bent round a circle. The sheet answers
+   this condition with a scrolling strip of terms because it is read at a
+   glance, out of the corner of an eye, while the GM is describing
+   something. A token has no room for the rules and every room for the
+   word, so the word repeats round the inside of the creature — the same
+   gesture at the same reading distance.
+
+   ── three loops, and none of them is a colour ───────────────────
+   pool.css took the one exception to gem.css's ban on idle motion, for
+   the Fear strip, because dread sitting in the room between the moments
+   anybody touches it is the whole claim. This is the second and the
+   reasoning is the same: a condition giving every roll against this
+   creature advantage is live for as long as it is on, and a ring that is
+   perfectly still is a border.
+
+     the vignette  breathes at 4.6s — the creature's own edge going dark
+     the words     turn clockwise at 46s, slow enough to read one
+     the sweep     runs anticlockwise at 7.5s, lighting the words it
+                   crosses
+
+   Deliberately incommensurate, and deliberately in two directions: a
+   sweep going the same way as the text is a highlight stuck to a word,
+   and the whole point is that it passes over them.
+
+   All three are cheap by construction and that is not incidental — this
+   can be on eight tokens at once where the Fear strip is on one. Both
+   turns are `transform` on a static gradient rather than an animated
+   gradient angle, so they composite and never repaint; the breath is an
+   opacity and a scale. Nothing interpolates a filter or mixes a colour
+   per frame.
+
+   The sweep is `plus-lighter` rather than a fourth coloured element: it
+   may only ever ADD, so it cannot dim a word it crosses and cannot dirty
+   the artwork under it. That is the same guarantee plate.css's facet
+   ring keeps by only ever darkening. */
+.tok .tkvuln{position:absolute;inset:0;opacity:0;
+  transition:opacity .42s ease}
+.tok.vuln .tkvuln{opacity:1}
+
+/* The creature's own edge going dark, from the inside. An inset shadow
+   on a circle is the one shape that follows the sprite exactly. */
+.tok .tkvuln .vig{position:absolute;inset:3%;border-radius:50%;
+  box-shadow:inset 0 0 9px 2.5px color-mix(in srgb,var(--fear) 62%,transparent),
+             inset 0 0 22px 6px color-mix(in srgb,var(--fear) 22%,transparent);
+  animation:tkBreathe 4.6s ease-in-out infinite}
+
+.tok .tkvuln .tkwr{position:absolute;inset:0;width:100%;height:100%;
+  overflow:visible;animation:tkTurn 46s linear infinite}
+.tok .tkvuln .tkwr text{font:700 4.1px/1 var(--f-mono),monospace;
+  letter-spacing:.3px;fill:var(--fear-tx);opacity:.82}
+
+.tok .tkvuln .sweep{position:absolute;inset:7%;border-radius:50%;
+  mix-blend-mode:plus-lighter;
+  background:conic-gradient(
+    transparent 0deg 286deg,
+    color-mix(in srgb,var(--fear-tx) 30%,transparent) 322deg,
+    color-mix(in srgb,var(--fear-tx) 52%,transparent) 342deg,
+    transparent 360deg);
+  -webkit-mask:radial-gradient(closest-side,transparent 66%,#000 80%,#000 100%);
+  mask:radial-gradient(closest-side,transparent 66%,#000 80%,#000 100%);
+  animation:tkTurn 7.5s linear infinite reverse}
+
+@keyframes tkTurn{to{transform:rotate(360deg)}}
+@keyframes tkBreathe{
+  0%,100%{opacity:.6}
+  50%    {opacity:1}}
+
+/* ── the ladder ────────────────────────────────────────────────────
+   Tracks leave from the outside in, which is the order they were argued
+   in: Armor is the thing you have two of and can read off the sheet,
+   Hit Points and Stress are the pair that moves. Nothing shrinks its way
+   out — an arc below the width where its slots separate is a coloured
+   smudge claiming to be a count, so it is removed.
+
+   Vulnerable outlives all of it. Below the cull there is no track left
+   and the vignette is still there, because "which of these is
+   Vulnerable" is a question asked while looking at the whole fight —
+   which is exactly the zoom where everything else has gone. The words go
+   with the tracks: at 30px they are not a word, they are a texture. */
+.tok[data-t="mid"] .tkhope,
+.tok[data-t="mid"] .tkdiff{display:none}
+.tok[data-t="far"] .tkarc.armor,
+.tok[data-t="far"] .tkhope,
+.tok[data-t="far"] .tkdiff{display:none}
+.tok[data-t="far"] .tkvuln .tkwr,
+.tok[data-t="min"] .tkvuln .tkwr,
+.tok[data-t="far"] .tkvuln .sweep,
+.tok[data-t="min"] .tkvuln .sweep{display:none}
+.tok[data-t="min"] .tkarcs,
+.tok[data-t="min"] .tkhope,
+.tok[data-t="min"] .tkdiff{display:none}
+/* With the words gone the vignette is the whole statement, so it stops
+   apologising for itself and burns at full strength. */
+.tok[data-t="min"] .tkvuln .vig{inset:0;
+  box-shadow:inset 0 0 7px 3px color-mix(in srgb,var(--fear) 80%,transparent),
+             inset 0 0 16px 7px color-mix(in srgb,var(--fear) 34%,transparent)}
+
+/* ── the states that belong to the token, not the actor ────────────
+   Defeated KEEPS its marks and dims: a corpse's slots are what the table
+   just spent the fight producing, and clearing them at the last one is
+   the record vanishing at the moment it meant the most. */
+.tok.hidden{opacity:.42}
+.tok.defeated{opacity:.5;filter:saturate(.45)}
+.tok.defeated .tkvuln .vig,
+.tok.defeated .tkvuln .tkwr,
+.tok.defeated .tkvuln .sweep{animation:none}
+
+@media (prefers-reduced-motion:reduce){
+  .tok .tkvuln .vig,.tok .tkvuln .tkwr,.tok .tkvuln .sweep{animation:none}
+  .tok .tkarc .fx.go{animation-duration:.01s}
+}

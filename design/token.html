@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · The token chip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/token.css">
+<style>
+/* ── the environment the component actually lives in ──────────────
+   A study page is authored as a whole document and this component owns a
+   subtree of Foundry's. make.html had to bring the `elements` layer; this
+   one has to bring the canvas — a dark board, a grid, and a camera you
+   can move. Everything below is the STAND-IN and none of it is ported. */
+.board{position:relative;overflow:hidden;background:#0a0c0f;
+  background-image:radial-gradient(130% 100% at 34% 8%,#1e242c 0%,#11141a 55%,#080a0d 100%);
+  box-shadow:inset 0 0 0 1px #23282f}
+.board.big{height:560px}
+.board .grid{position:absolute;left:-4000px;top:-4000px;width:9000px;height:9000px;
+  opacity:.4;background-image:
+    linear-gradient(#1c222b 1px,transparent 1px),
+    linear-gradient(90deg,#1c222b 1px,transparent 1px);
+  background-size:100px 100px}
+
+/* the token sprite — Foundry's, not ours. In the game this is a PIXI mesh
+   and only the chip is in the HTML layer; here both ride the same
+   transform, which is the honest simulation of the chip being locked to
+   the token at every camera position. */
+.spr{position:absolute}
+.spr .art{position:absolute;inset:2px;border-radius:50%;
+  background:var(--art,url("/design/assets/art-sample-01.png")) center/cover,#2a3039;
+  box-shadow:0 0 0 2px rgba(0,0,0,.6),0 0 0 3px var(--ring,#5c6672),
+    0 6px 18px rgba(0,0,0,.55)}
+.spr.pc  {--ring:#6f8ab5}
+.spr.adv {--ring:#96545b}
+.spr.min {--ring:#7d6e51}
+.spr.comp{--ring:#6d9c85}
+.spr .np{position:absolute;left:-40px;right:-40px;top:100%;text-align:center;
+  font:400 13px/1.2 "Signika",var(--f-ui);color:#e6e9ee;
+  text-shadow:0 0 4px #000,0 0 4px #000;margin-top:3px;white-space:nowrap}
+
+.ctl{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:center;padding:14px 0 0;
+  font:400 12px/1 var(--f-ui);color:#96a0ac}
+.rd{font:600 10px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:#7d8794}
+.rd b{color:var(--hope);font-weight:700}
+.btns{display:flex;gap:7px;flex-wrap:wrap}
+.btns button{border:0;cursor:pointer;background:#242931;box-shadow:inset 0 0 0 1px #343b45;
+  color:#c3cbd5;font:700 9.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  padding:10px 13px;transition:background .14s,color .14s,box-shadow .14s;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btns button:hover{background:var(--hope);color:#14161a;box-shadow:none}
+select{background:#242931;border:0;box-shadow:inset 0 0 0 1px #343b45;color:#c3cbd5;
+  font:600 10px/1 var(--f-mono);letter-spacing:.1em;padding:9px 10px}
+
+.lad{display:grid;grid-template-columns:repeat(4,1fr)}
+.lad > div{position:relative;height:210px}
+.det{display:grid;grid-template-columns:repeat(3,1fr)}
+.det > div{position:relative;height:330px}
+.pl{position:absolute;left:10px;top:9px;z-index:6;
+  font:600 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:#6d7681}
+.pl b{color:var(--hope);font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>the token chip</b>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/ledger.html">ledger</a>
+  <a href="/design/token.html" class="on">token</a>
+  <a href="/design/">sweep</a>
+  <label class="tg">zoom <input type="range" id="z" min="0.14" max="1.7" step="0.01" value="1.35"></label>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// TWO DRAFTS THROWN AWAY</span>The empty box was doing all the damage</h2>
+<p class="note">The first build ported the sheet's row unchanged: twelve Hit Points, six Stress, three
+Armor Slots and six Hope — <b>twenty-seven objects at seven pixels</b> on a 120px token. That is texture,
+not a readout, and the culprit was the box that is <i>empty</i>: on the sheet an empty box is the
+<b>affordance</b>, the thing you press, and nothing on a token is pressable. It carried no information
+the row's own length did not already carry and cost exactly as much ink as a mark. Half the component
+was drawing the part of the sheet that only existed to be clicked.</p>
+<p class="note">The second took the empty boxes out and still lost, on two counts. A centred row that
+fills from the left puts 5-of-12 <b>visibly off-centre</b> with a bare rule trailing right. And it sat
+on the artwork anyway — the circle is inscribed in the square, so the bottom band <i>at centre</i> is the
+painting, and only the corners are free.</p>
+
+<h2><span>// THE GAUGE</span>The circumference is three times the width</h2>
+<p class="note">Every track shares one origin and one direction: they start at <b>210°</b>, lower-left,
+and run clockwise up over the top to lower-right. The <b>60° left open at six o'clock</b> is not waste —
+it is the slot where Hope sits on a character and Difficulty on an adversary. The rings open for the
+thing the creature spends.</p>
+<p class="note">Radially, outermost first: <b>Armor, then Hit Points, then Stress</b>. That order is the
+rule rather than a layout — armour is what stands between a hit and your Hit Points, so it stands
+outside them.</p>
+<p class="note">And all three are <b>outside the sprite</b>. The innermost track's inner edge is at
+radius 50.2, which is the first tenth of a pixel past the token's own circle: the creature is drawn
+and the tracks are drawn, and neither is drawn over the other. Every earlier draft put them on the
+painting, which is an argument a 3px arc loses against a pale highlight however saturated it is.
+<b>Vulnerable is the exception</b> and stays inside, because it is not a track and not a reading off
+the creature — it is a claim <em>about</em> the creature, and the thing that is Vulnerable is the thing
+in the middle. The cost is a footprint: the outer edge is at 63.4 where the grid cell's is 50, so a
+chip reaches an eighth of a cell into each neighbour and two adjacent creatures' Armor arcs can cross.
+That is what buys the artwork back.</p>
+
+<div class="det" id="det"></div>
+<p class="cap">Left, a level-10 character: twelve Hit Points, six Stress, three Armor Slots, six Hope
+with one <em>scar</em>. Middle, the same creature <em>Vulnerable</em>. Right, a fourteen-box adversary
+with a Difficulty in the opening instead of gems.</p>
+
+<h2><span>// ARMOR IS NOT A RING</span>The arc's length is the capacity</h2>
+<p class="note">Armor is two or three slots on most characters and can be six, and a circle divided into
+two is not a track, it is a pie chart. So Armor alone runs at a <b>fixed angular pitch</b> and stops
+when it runs out — three slots is 39° of arc, six is 78° — so the arc's own <b>length</b> is the
+capacity. A full ring normalises exactly that away, which is the one fact about armour anybody wants at
+a glance.</p>
+<p class="note">It also reads <b>the other way round</b>, and it is the only track that does. Hit Points
+and Stress are things that happen <em>to</em> you: the mark is the damage, the lit run grows as the
+fight goes badly, and an empty ring is a creature that is fine. Armor is not damage — it is a purse,
+slots you still have to spend, which is the number anybody actually asks at the table and the number
+the damage dialog counts down while you decide. So Armor <b>lights what is left</b> and goes dark as it
+is spent. Drawn like the damage tracks it would put a bright band meaning nothing on a fresh character
+and nothing at all on a spent one, which is exactly backwards.</p>
+
+<h2><span>// HOPE CURVES</span>Not a caption under a gauge</h2>
+<p class="note">Hope is gold diamonds everywhere else in this system and a token is not where that gets
+re-taught, so it is <code>gem.js</code>'s own <code>GEM</code>. What changes is the placement: each gem
+is put down <b>by angle</b>, on the tracks' own circle, and <b>tilts with it</b> — filling the 60° the
+rings leave open at six o'clock. A straight row underneath would be a caption below a gauge, and Hope
+is not a caption; it is the fourth thing the creature carries. The row is centred on six o'clock and
+takes only the arc it needs, exactly as Armor takes only the arc its slots need.</p>
+<p class="note">The gems <em>rotate</em> rather than counter-rotate, which is deliberate: a diamond is
+symmetric about both axes, so a tilt costs it no legibility at all, while a row of upright gems on a
+curve reads as a row that has been bent — the one thing it must not look like.</p>
+
+<h2><span>// MATERIAL</span>Three layers, three claims, not three opacities</h2>
+<p class="note"><code>.ch</code> is the <b>channel</b> — every slot the track <i>has</i>, recessed. It is
+what says "fourteen" while only six are marked, and it is what lets an unmarked slot be genuinely absent
+from <code>.lit</code> rather than a washed-out copy of a marked one. <code>.lit</code> is what is
+marked, and carries the glow. <code>.fx</code> is the landing, faded out on its own — which is how a
+conic gradient gets <code>setMarks</code>' arrival back with no element per slot.</p>
+<p class="note">Substance is what the ring costs, and this is how much comes back. Hue and radius do
+most of the telling apart, then <b>Stress is scored</b> — fine hairlines across the annulus at a
+frequency nothing else here has, the scratch's own character — and <b>Armor is plate</b>, the brightest
+of the three and the only one with a specular run down its outer edge. It is not the tear, the scratch
+and the chisel. It is a good deal more than three colours.</p>
+
+<h2><span>// THE BOARD</span>Drag the zoom. The ladder is the whole design.</h2>
+<div class="board big" id="board"><div class="tok-layer" id="layer"><div class="grid"></div></div></div>
+
+<div class="ctl">
+  <span class="rd">1×1 <b id="px1">—</b> · <b id="t1">—</b></span>
+  <span class="rd">2×2 <b id="px2">—</b> · <b id="t2">—</b></span>
+  <div class="btns">
+    <button data-do="major">major · 2 hp</button>
+    <button data-do="severe">severe · 3 hp</button>
+    <button data-do="stress">mark stress</button>
+    <button data-do="armor">spend armor</button>
+    <button data-do="hope">spend hope</button>
+    <button data-do="clear">clear all</button>
+  </div>
+  <label class="tg"><input type="checkbox" id="vu"> vulnerable · ad hoc, on the ogre</label>
+  <label class="tg">players see adversaries
+    <select id="see"><option value="none">none</option><option value="marks">marks</option>
+      <option value="full">full</option></select></label>
+  <label class="tg"><input type="checkbox" id="gm" checked> viewing as GM</label>
+</div>
+
+<h2><span>// VULNERABLE</span>Inward, in words, in three loops</h2>
+<p class="note">Not a fourth ring. Three concentric arcs already say <i>track</i>, and a condition drawn
+as a fourth would be a track you cannot count — so this goes <b>inward</b>, where nothing else lives.
+It is <code>mark.js</code>'s own <code>VULN_RUN</code> bent round a circle: the sheet answers this
+condition with a scrolling strip of terms because it is read at a glance, out of the corner of an eye,
+while the GM is describing something. A token has no room for the rules and every room for the
+<b>word</b>.</p>
+<p class="note">Three loops, and none of them is a colour change. The <b>vignette</b> breathes at 4.6s —
+the creature's own edge going dark from the inside. The <b>words</b> turn clockwise at 46s, slow enough
+to read one. The <b>sweep</b> runs <i>anticlockwise</i> at 7.5s, lighting the words it crosses.
+Deliberately incommensurate and deliberately in two directions: a sweep going the same way as the text
+is a highlight stuck to a word, and the whole point is that it passes over them.</p>
+<p class="note">All three are cheap by construction, which is not incidental — this can be on eight
+tokens where the Fear strip is on one. Both turns are a <code>transform</code> on a <i>static</i>
+gradient rather than an animated gradient angle, so they composite and never repaint; the breath is an
+opacity. The sweep is <code>plus-lighter</code> rather than a fourth coloured element, so it may only
+ever <b>add</b> — it cannot dim a word it crosses or dirty the artwork beneath it, which is the same
+guarantee <code>plate.css</code>'s facet ring keeps by only ever darkening.</p>
+<p class="note">And <code>textLength</code> is what makes the word ring seamless. A repeated string
+almost never comes out to the exact circumference, and the leftover shows as a gap travelling round with
+the text; forcing the run to the path's own length with <code>lengthAdjust="spacing"</code> closes it
+without touching a glyph.</p>
+
+<h2><span>// THE LADDER</span>Tracks leave from the outside in</h2>
+<div class="lad" id="lad"></div>
+<p class="cap"><em>near</em> ≥110px — everything. <em>mid</em> 55–110 — the currencies go. <em>far</em>
+28–55 — Armor goes; Hit Points and Stress are the pair that moves. <em>min</em> below that — nothing but
+Vulnerable, and with the words gone the vignette stops apologising and burns at full strength.
+Thresholds are in <b>screen pixels of footprint</b> rather than camera scale, because a 2×2 token is
+legible at half the zoom of a 1×1. <code>data-t</code> is written by JS — a container query measures
+<i>layout</i>, and the layout never changes, the parent's transform does — but only at a
+<b>crossing</b>, so the per-frame cost of the whole layer stays one transform on one node.</p>
+
+<div style="height:70px"></div>
+</div>
+
+<script type="module">
+import { TOKEN_CHIP, setChip, setTier, tierFor, TIER_PX } from '/design/token.js';
+
+/* ── the cast ──────────────────────────────────────────────────────
+   Deliberately the awkward cases: a level-10 PC with twelve Hit Points
+   and a scar, a fourteen-slot 2x2 adversary, a Cutthroat already at full
+   Stress, a minion whose whole track is one slot, and a companion with
+   nothing but Stress. If it reads here it reads. */
+const CAST = [
+  { id:'pc',  cls:'pc',  name:'Aeliana',   x: 60, y:250, fp:1,
+    st:{ hp:{max:12,marked:5}, stress:{max:6,marked:2},
+         armor:{max:3,marked:1}, hope:{value:4,max:6}, scars:1 } },
+  { id:'ogre',cls:'adv', name:'Bladed Ogre', x:230, y:230, fp:2,
+    st:{ hp:{max:14,marked:6}, stress:{max:6,marked:3}, difficulty:16 } },
+  { id:'cut', cls:'adv', name:'Cutthroat', x:470, y:250, fp:1,
+    st:{ hp:{max:6,marked:4}, stress:{max:4,marked:4}, difficulty:14 } },
+  { id:'mob', cls:'min', name:'Jagged Knife Lackey', x:610, y:250, fp:1,
+    st:{ hp:{max:1,marked:0}, difficulty:9 } },
+  { id:'wolf',cls:'comp',name:'Sable',     x:750, y:250, fp:1,
+    st:{ stress:{max:3,marked:1} } },
+];
+
+const sprite = (c, style) => {
+  const s = document.createElement('div');
+  s.className = `spr ${c.cls}`;
+  s.style.cssText = style ?? `left:${c.x}px;top:${c.y}px;width:${c.fp*100}px;height:${c.fp*100}px`;
+  s.innerHTML = `<div class="art"></div>${TOKEN_CHIP(c.st)}` +
+                (c.name ? `<div class="np">${c.name}</div>` : '');
+  return s;
+};
+
+/* ── the detail panels ────────────────────────────────────────────
+   One token each, large enough to read the material rather than only the
+   silhouette — which the board at playing zoom deliberately is not. */
+const det = document.getElementById('det');
+const DETAIL = [
+  ['character', CAST[0].st],
+  ['vulnerable', { ...CAST[0].st, hp:{max:12,marked:8}, stress:{max:6,marked:6}, vuln:true }],
+  ['adversary', CAST[1].st],
+];
+for (const [label, st] of DETAIL) {
+  const cell = document.createElement('div');
+  cell.className = 'board';
+  cell.innerHTML = `<div class="grid" style="opacity:.28"></div><span class="pl">${label}</span>`;
+  cell.appendChild(sprite({ cls: label === 'adversary' ? 'adv' : 'pc', name:'', st },
+    'left:50%;top:52%;width:100px;height:100px;transform:translate(-50%,-50%) scale(2.4)'));
+  det.appendChild(cell);
+}
+
+/* ── the board ────────────────────────────────────────────────────
+   One transform on one node. Every chip is positioned in scene
+   coordinates and is never told where the camera is — which is the whole
+   reason this is affordable with thirty tokens out. The tier is the only
+   per-chip write and it happens at a crossing. */
+const state = Object.fromEntries(CAST.map(c => [c.id, structuredClone(c.st)]));
+const layer = document.getElementById('layer');
+const chips = {};
+for (const c of CAST) {
+  const s = sprite(c);
+  layer.appendChild(s);
+  chips[c.id] = { el: s.querySelector('.tok'), spec: c, st: state[c.id] };
+}
+
+const board = document.getElementById('board');
+let k = 1.35;
+function camera() {
+  const b = board.getBoundingClientRect();
+  const cx = 470, cy = 300;
+  layer.style.transform =
+    `translate(${b.width/2 - cx*k}px,${b.height/2 - cy*k}px) scale(${k})`;
+  for (const { el, spec } of Object.values(chips)) setTier(el, spec.fp * 100 * k);
+  const p1 = Math.round(100*k), p2 = Math.round(200*k);
+  px1.textContent = p1 + 'px'; px2.textContent = p2 + 'px';
+  t1.textContent = tierFor(p1); t2.textContent = tierFor(p2);
+}
+new ResizeObserver(camera).observe(board);
+document.getElementById('z').oninput = e => { k = +e.target.value; camera(); };
+
+/* ── the ladder ───────────────────────────────────────────────────
+   All four tiers at once, each drawn at the camera scale that puts a 1x1
+   token in the middle of its own band, so what is on screen is what that
+   band looks like. Vulnerable is on throughout, because the bottom rung
+   is otherwise correctly and unhelpfully empty. */
+const lad = document.getElementById('lad');
+for (const [name, px] of [['near',(TIER_PX.near+150)/2],['mid',(TIER_PX.mid+TIER_PX.near)/2],
+                          ['far',(TIER_PX.far+TIER_PX.mid)/2],['min',TIER_PX.far*0.7]]) {
+  const cell = document.createElement('div');
+  cell.className = 'board';
+  cell.innerHTML = `<div class="grid" style="opacity:.28"></div>
+    <span class="pl">${name} · <b>${Math.round(px)}px</b></span>`;
+  const s = sprite({ cls:'pc', name:'', st:{ hp:{max:8,marked:3}, stress:{max:6,marked:2},
+      armor:{max:3,marked:1}, hope:{value:3,max:6}, vuln:true } },
+    `left:50%;top:50%;width:100px;height:100px;transform:translate(-50%,-50%) scale(${(px/100).toFixed(3)})`);
+  s.querySelector('.tok').dataset.t = name;
+  cell.appendChild(s);
+  lad.appendChild(cell);
+}
+
+/* ── the controls ─────────────────────────────────────────────────
+   Every one goes through setChip. The point is not the state left
+   behind, it is watching a slot land at playing zoom. */
+const bump = (t,n) => { if (t) t.marked = Math.max(0, Math.min(t.max, (t.marked ?? 0) + n)); };
+const DO = {
+  major:  s => bump(s.hp, 2),
+  severe: s => bump(s.hp, 3),
+  stress: s => bump(s.stress, 1),
+  armor:  s => bump(s.armor, 1),
+  hope:   s => { if (s.hope) s.hope.value = Math.max(0, s.hope.value - 1); },
+  clear:  s => { bump(s.hp,-99); bump(s.stress,-99); bump(s.armor,-99);
+                 if (s.hope) s.hope.value = s.hope.max - (s.scars ?? 0); },
+};
+for (const b of document.querySelectorAll('.btns button'))
+  b.onclick = () => { for (const c of Object.values(chips)) { DO[b.dataset.do](c.st); paint(c); } };
+
+document.getElementById('vu').onchange = e => {
+  state.ogre.vuln = e.target.checked; paint(chips.ogre);
+};
+
+/* Who sees what. Vulnerable ignores all of it, so a Vulnerable adversary
+   under 'none' shows the vignette and nothing else: the player knows the
+   rule that affects their dice and not the GM's numbers. */
+const see = document.getElementById('see'), gmBox = document.getElementById('gm');
+function visibility() {
+  const gm = gmBox.checked, mode = see.value;
+  for (const c of Object.values(chips)) {
+    const adv = c.spec.cls === 'adv' || c.spec.cls === 'min';
+    const el = c.el;
+    el.classList.remove('seemarks','seenone');
+    el.style.removeProperty('display');
+    if (adv && !gm) {
+      if (mode === 'none') {
+        if (c.st.vuln) el.classList.add('seenone');
+        else el.style.display = 'none';
+      } else el.classList.toggle('seemarks', mode === 'marks');
+    }
+  }
+  paintAll();
+}
+see.onchange = gmBox.onchange = visibility;
+
+const extra = document.createElement('style');
+extra.textContent = `
+  .tok.seenone .tkarcs,.tok.seenone .tkdiff,.tok.seenone .tkhope,
+  .tok.seenone .tkvuln .tkwr,.tok.seemarks .tkdiff{display:none}`;
+document.head.appendChild(extra);
+
+function paint(c){ setChip(c.el, c.st); }
+function paintAll(){ for (const c of Object.values(chips)) paint(c); }
+
+document.getElementById('lt').onchange = e =>
+  document.documentElement.classList.toggle('light', e.target.checked);
+
+camera(); visibility();
+</script>
+</body>
+</html>
