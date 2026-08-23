@@ -1535,6 +1535,45 @@ setTimeout(async () => { try {
         Math.round(stepBox?.width ?? 0) === 20 && Math.round(stepBox?.height ?? 0) === 15,
         `${Math.round(stepBox?.width ?? 0)}×${Math.round(stepBox?.height ?? 0)}px`);
 
+  /* The view switch, which is a third control on this strip and pays the same
+     button floor — a 14px row is half of Foundry's 28, so left unreset it
+     doubles the height of the plinth it sits on and reads as merely roomy.
+
+     And the thing a stepper cannot test: this one carries a STATE, so the two
+     values have to be visibly different. `aria-pressed` is the whole of that
+     claim — it is the accessible name and the styling hook at once — so the
+     check flips the attribute and asserts the drawing actually followed. A
+     switch whose two states look identical is worse than no switch, because
+     pressing it appears to do nothing. */
+  const vis = hud?.querySelector('.vis button');
+  const visBox = vis?.getBoundingClientRect();
+  check('the view switch keeps its own metrics, not Foundry\'s 28px',
+        Math.round(visBox?.height ?? 0) === 14 &&
+        getComputedStyle(vis).borderRadius === '0px',
+        `${Math.round(visBox?.width ?? 0)}×${Math.round(visBox?.height ?? 0)}px · ` +
+        `radius ${getComputedStyle(vis)?.borderRadius}`);
+
+  const visPip = vis?.querySelector('i');
+  /* The transitions come off first, and that is the `--i` ramp's lesson in a
+     second place: both the pip and the word ease over .18s, so a value read on
+     the frame the attribute was set is the one the transition is currently AT
+     rather than the one it was asked for. Read live, this reports the two
+     states as identical — which is a check that fails on a control drawing
+     perfectly, and the first draft of it did exactly that. */
+  const litOf = v => {
+    vis.style.transition = 'none';
+    visPip.style.transition = 'none';
+    vis.setAttribute('aria-pressed', v);
+    return [getComputedStyle(visPip).backgroundColor, getComputedStyle(vis).color];
+  };
+  const [pipOn, txOn] = litOf('true');
+  const [pipOff, txOff] = litOf('false');
+  vis?.setAttribute('aria-pressed', 'true');
+  if (vis) { vis.style.transition = ''; visPip.style.transition = ''; }
+  check('the switch draws its two states differently',
+        !!vis && pipOn !== pipOff && txOn !== txOff,
+        `pip ${pipOff} → ${pipOn}`);
+
   /* And the numbers, pinned. Twelve pips at 24px on a 7px gap is 365px, which
      makes this the widest fixed object in the system by some way — wide enough
      that its width is a design decision rather than an outcome. A change to

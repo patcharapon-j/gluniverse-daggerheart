@@ -88,8 +88,34 @@ assert.match(gmHud, /data-refresh="scene"/);
 assert.match(gmHud, /data-refresh="session"/);
 assert.doesNotMatch(FEAR_HUD({ gm: false }), /data-refresh=/);
 
+/* The view switch, and what it asserts is the division rather than the markup.
+   The two refresh scopes reach every character at the table, so they are the
+   GM's; the switch is what THIS screen draws, backed by a client-scoped
+   setting, so it is on the players' strip too. Getting that backwards is not
+   a visible bug — a player simply never discovers the control exists and
+   assumes the rings are compulsory — so it is asserted rather than left to
+   whoever next edits the `gm` ternary they both sit near. */
+assert.match(FEAR_HUD({ gm: false }), /data-chip/, "players get the view switch");
+assert.match(gmHud, /data-chip/, "and so does the GM");
+
+/* It carries a state, and the state is `aria-pressed` in both directions —
+   the accessible name and the styling hook at once, which is only one source
+   of truth if the builder actually writes both values. */
+assert.match(FEAR_HUD({ chips: true }), /data-chip aria-pressed="true"/s);
+assert.match(FEAR_HUD({ chips: false }), /data-chip aria-pressed="false"/s);
+
 const poolCss = readFileSync(new URL("../styles/pool.css", import.meta.url), "utf8");
 assert.doesNotMatch(poolCss, /\.dh\.hud\.gm\{padding-bottom/);
 assert.match(poolCss, /\.dh\.hud \.cyc\{[^}]*bottom:-21px/s);
+/* Both plinths on the same line, and on opposite sides. They are two groups
+   telling the reader whose the controls are, which only works if they do not
+   drift apart or collide. */
+assert.match(poolCss, /\.dh\.hud \.vis\{[^}]*left:12px;bottom:-21px/s);
+assert.match(poolCss, /\.dh\.hud \.cyc\{[^}]*right:12px;bottom:-21px/s);
+/* And the button floor, which this strip has now paid for twice. */
+assert.match(poolCss, /\.dh\.hud \.vis button\{[^}]*min-height:14px/s);
 
-console.log("rest context: top-level cards, mitigation filters, refresh scopes and GM HUD controls covered");
+console.log(
+  "rest context: top-level cards, mitigation filters, refresh scopes, " +
+    "the view switch and GM HUD controls covered",
+);

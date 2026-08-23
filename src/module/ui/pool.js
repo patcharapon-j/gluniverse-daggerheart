@@ -46,12 +46,32 @@ export const POOL = ({
    the word and the rim. `gem.css` registers it and it inherits, so the
    gems below take the same number and each pip's own inline value — which
    `setPool` keeps current — wins where it is set. */
-export const FEAR_HUD = ({cur = 4, max = 12, gm = true}) => `
+/* The underside carries two groups and the split is whose they are: on the
+   left the switch for what THIS screen draws, on the right the two the whole
+   table feels. That is also why only one of them survives the players' build
+   — a scene ending is the GM's to declare, and what your own screen draws
+   never was.
+
+   `chips` is a state and the two on the right are acts, so the switch reads
+   its answer back rather than merely being pressable. It says so in
+   `aria-pressed`, which is the accessible name for exactly this and doubles as
+   the styling hook, so the lit state has one source of truth rather than a
+   class somebody has to remember to keep in step with it.
+
+   The mark is a rhombus lit like a pip, and that is a borrowing rather than a
+   coincidence: the row of fear gems is twenty pixels above it, so lit-versus-
+   socket is a vocabulary the eye has already learned on this exact strip. */
+const SWITCH = (on) => `
+  <div class="vis"><button data-chip aria-pressed="${on ? 'true' : 'false'}"
+    title="Show resource tracks on tokens (this screen only)"><i></i>tracks</button></div>`;
+
+export const FEAR_HUD = ({cur = 4, max = 12, gm = true, chips = true}) => `
 <div class="hud${gm ? ' gm' : ''}" style="--i:${intensity(cur, max).toFixed(3)}">
   <b class="hglow"></b>
   <b class="hface"></b>
   ${POOL({cur, max, tone: 'fear', dark: true, head: false, sz: 24, gap: 7})}
   <span class="tally">${cur}<s>/${max}</s></span>
   ${gm ? `<div class="stp"><button data-f="1">+</button><button data-f="-1">−</button></div>` : ''}
+  ${SWITCH(chips)}
   ${gm ? `<div class="cyc"><button data-refresh="scene" title="Refresh all once-per-scene counters and dice">scene</button><button data-refresh="session" title="Refresh all once-per-session counters and dice">session</button></div>` : ''}
 </div>`;

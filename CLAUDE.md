@@ -3032,6 +3032,50 @@ because there they are the only control; here there are dedicated steppers, and
 a readout that is also a control is a misclick swinging the pool six points
 mid-session.
 
+### The underside, which is not about Fear at all
+
+The strip is the only piece of this system's chrome that is always on screen,
+so it has become where the controls with nowhere else to go live. There are two
+plinths hanging under it and **the split is whose they are**: on the left the
+switch for what *this screen* draws, on the right the two acts that reach the
+whole table. Only the left one survives the players' build — a scene ending is
+the GM's to declare, and what your own screen draws never was.
+
+`scene` and `session` are the two refresh scopes nothing in Foundry can infer,
+and they are `endScene()`/`endSession()` with a button on them.
+
+**The view switch turns the token chips off**, and it is on the players' strip
+too — which is the one press here they may make. That follows from the setting
+rather than from generosity: `tokenChip` is **client**-scoped, a preference
+about one screen, so a player who finds the rings busy should not have to ask
+the GM about it. It never touches `adversaryChip`, which is world-scoped and
+stays a ruling about the table.
+
+None of that weakens `pool.css`'s refusal to hide the Fear pool from players.
+That claim is about the *pool*; a control that hides something else, on one
+screen, at its owner's request, is a different thing entirely.
+
+**It is a state and its neighbours are acts**, which is the whole of why it is
+not simply a third button in the same group. `scene` and `session` do something
+when pressed and say nothing standing still; a switch has to read as on or off
+before anybody touches it. So it carries a mark, and the mark is a rhombus lit
+like a pip against a socket — deliberately the vocabulary of the twelve fear
+gems twenty pixels above it rather than a new one. `aria-pressed` is where the
+state lives: the accessible name for exactly this and the styling hook at once,
+so there is no class to keep in step by hand.
+
+**The button is a reading of the setting and never a copy.** The press writes
+`tokenChip`, the setting's own `onChange` raises `daggerheart.tokenChipChanged`,
+and that hook is the only thing that ever moves the button — so the strip and
+the checkbox in Foundry's settings window cannot disagree, whichever one you
+used. `token-hud.ts` listens to the same hook to redraw the chips, and neither
+file knows the other is there.
+
+The chamfer stays on the **bottom-right** of both plinths although one of them
+is docked left. The family mark is not a decoration that mirrors with its
+container; it is the one corner this system always cuts, and two plinths
+cutting opposite corners would read as two different objects.
+
 ### It is the duality plate's header now
 
 The first build was honest and said nothing: a 9.5px mono caption reading FEAR,
@@ -3174,6 +3218,16 @@ only the absence of somebody else's.
 every button to 4px, and nothing in this system has a rounded corner — the
 family mark is a chamfer, a corner *cut off* rather than turned, and the two are
 opposite claims at the same size.
+
+The switch pays the same floor a stepper does, and `tools/verify/` asserts it
+alongside the thing a stepper has no equivalent of: **that the two states are
+drawn differently**, since a switch whose values look identical is worse than
+no switch — pressing it appears to do nothing. That check failed on its first
+run against a control drawing perfectly, which is the `--i` ramp's lesson in a
+second place: the pip and the word both ease over .18s, so a computed value
+read on the frame the attribute was set is the one the transition is currently
+*at*. The transitions come off before the reading, exactly as they do for the
+ramp.
 
 `tools/verify/` carries a stand-in `#ui-middle` and `#ui-top` beside its
 stand-in `elements` layer, for the reason it carries the layer at all: the

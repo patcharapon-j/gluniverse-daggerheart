@@ -105,7 +105,7 @@ declare module "*/ui/pool.js" {
    * The GM's strip. `gm:false` is the same strip without the steppers, which
    * is what every player at the table sees — see `fear-hud.ts`.
    */
-  export function FEAR_HUD(opts: { cur?: number; max?: number; gm?: boolean }): string;
+  export function FEAR_HUD(opts: { cur?: number; max?: number; gm?: boolean; chips?: boolean }): string;
 }
 
 declare module "*/ui/card.js" {

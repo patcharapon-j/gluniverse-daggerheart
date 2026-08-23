@@ -210,6 +210,50 @@
   color:#aaa1bb;font:700 8px/14px var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
 .hud .cyc button:hover{background:rgba(171,136,234,.2);color:#eee7fb}
 .hud .cyc button:disabled{opacity:.38;cursor:wait}
+
+/* ── the view switch ──────────────────────────────────────────────
+   Same plinth as the two on the right and deliberately not the same
+   control. Those are acts — press one and something happens to the whole
+   table — and this is a state, so it has to READ as on or off standing
+   still, before anybody touches it.
+
+   It sits on the left because of whose it is: what your own screen draws
+   is yours, and a scene ending is the table's. That division is what makes
+   the players' build coherent rather than lopsided — they get this group
+   and not the other one, and the empty right-hand side is the GM's absent
+   authority rather than a missing feature.
+
+   The chamfer stays on the bottom-RIGHT corner even though this group is
+   docked left. The family mark is not a decoration that should mirror with
+   its container; it is the one corner this system always cuts, and two
+   plinths cutting opposite corners would read as two different objects. */
+.hud .vis{position:absolute;z-index:3;left:12px;bottom:-21px;display:flex;
+  padding:3px 4px;background:rgba(11,13,17,.9);backdrop-filter:blur(10px);
+  box-shadow:inset 0 0 0 1px rgba(171,136,234,.13);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%)}
+
+/* Every metric stated, for the reason the steppers state theirs: Foundry's
+   `elements` layer sizes a button to `--button-size` WITH a matching
+   `min-height`, our sheets arrive unlayered so a bare `height` wins on its
+   own, and a floor with no competitor simply applies. Two of these at 28px
+   under a 51px strip is the failure that looks merely roomy. */
+.hud .vis button{display:flex;align-items:center;gap:5px;
+  width:auto;height:14px;min-height:14px;max-height:14px;
+  padding:0 6px;border:0;border-radius:0;cursor:pointer;
+  background:rgba(255,255,255,.055);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
+  color:#7b7488;font:700 8px/14px var(--f-mono);letter-spacing:.08em;
+  text-transform:uppercase;transition:color .18s,background .18s}
+
+/* The pip. A socket when off — the same near-black hole an unlit fear gem
+   sits in — and the strip's own hue when on, with the glow that says lit
+   rather than merely coloured. */
+.hud .vis button i{width:7px;height:7px;flex:0 0 auto;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  background:#241d2e;transition:background .18s,filter .18s}
+.hud .vis button[aria-pressed="true"]{color:#eee7fb;background:rgba(171,136,234,.16)}
+.hud .vis button[aria-pressed="true"] i{background:var(--fear-tx);
+  filter:drop-shadow(0 0 3px rgba(171,136,234,.7))}
+.hud .vis button:hover{background:rgba(171,136,234,.2);color:#eee7fb}
 /* The tally is the number even when the pips are not — a GM says "I have
    four Fear" out loud, and the HUD should not make them count pips.
 
