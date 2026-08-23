@@ -34,6 +34,7 @@ import { registerFearHud } from "./fear-hud.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
 import { openActivity, registerActivityLog } from "./activity-log.ts";
 import { registerBrawler } from "./brawler.ts";
+import { openTokenStudio } from "./token-studio.ts";
 import { clearMark, isMarkedCharacter, markedSpellcast, payUpkeep, registerMarked, rollOffMark } from "./marked.ts";
 
 /**
@@ -201,6 +202,15 @@ Hooks.once("ready", () => {
        who is handed the macro is told whose window it is rather than shown an
        empty one. */
     activity: openActivity,
+
+    /* `game.daggerheart.tokenStudio(actor)` — the same call the diorama's
+       Studio button and every actor sheet's header control make. A seam
+       rather than a surface, for `endScene`'s reason: the module publishes
+       no API of its own, so this is the one place in the world that knows
+       how to reach it, and a macro or another module asking for it should
+       not have to rediscover the import path. It refuses out loud when the
+       module is absent rather than opening nothing. */
+    tokenStudio: openTokenStudio,
 
     /* Two of the six refresh scopes have no automatic trigger, and these are
        not a placeholder for one. Foundry knows a rest happened because this

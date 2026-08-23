@@ -16,6 +16,7 @@
 
 import { mount, unmount, type Component } from "svelte";
 import { LOADOUT_LIMIT, TRANSFORMATION_LIMIT } from "../config.ts";
+import { tokenStudioHeaderControl } from "../token-studio.ts";
 import { SheetState } from "./sheet-state.svelte.ts";
 
 interface SvelteSheetOptions {
@@ -80,7 +81,31 @@ function svelteSheetMixin(Base: any, component: Component<any>, opts: SvelteShee
 }
 
 export function makeActorSheet(component: Component<any>, opts: SvelteSheetOptions = {}): any {
-  return svelteSheetMixin(foundry.applications.sheets.ActorSheetV2, component, opts);
+  const Sheet = svelteSheetMixin(foundry.applications.sheets.ActorSheetV2, component, opts);
+
+  /**
+   * Every actor sheet offers Token Studio from its window controls.
+   *
+   * Appended to `_getHeaderControls` rather than declared in
+   * `DEFAULT_OPTIONS.window.controls`, because `mergeObject` **replaces** an
+   * array rather than concatenating it: declaring the key would take
+   * ActorSheetV2's own four controls — Configure Token, Configure Prototype
+   * Token, Show Portrait Artwork, Show Token Artwork — off every sheet in
+   * the system in order to add one. Foundry builds its own the same way and
+   * fires the `getHeaderControls` hook over the result, so ours is visible
+   * to other modules exactly as theirs is to us.
+   *
+   * The entry hides itself when the module is absent, and Foundry's own
+   * ownership filter hides it from a non-owner — see
+   * `tokenStudioHeaderControl`.
+   */
+  return class extends Sheet {
+    _getHeaderControls(): any[] {
+      const controls = super._getHeaderControls();
+      controls.push(tokenStudioHeaderControl(this.document));
+      return controls;
+    }
+  };
 }
 
 export function makeItemSheet(component: Component<any>, opts: SvelteSheetOptions = {}): any {
