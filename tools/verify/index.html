@@ -44,6 +44,7 @@
      .dh root — so like the Fear strip it arrives as a compound, and whether
      that compound resolves the palette is exactly what this page is for. -->
 <link rel="stylesheet" href="/styles/token.css">
+<link rel="stylesheet" href="/styles/ruler.css">
 <!-- Last, exactly as system.json loads it: the Svelte components' own styles.
      Leaving it out is how the first pass missed that the sheet's stack is not
      the study page's stack. -->
@@ -254,6 +255,22 @@
        style="position:relative;height:170px;background:#0b0d10"></div>
 </section>
 
+<h2><span>// THE RULER</span>The range rings, which are the chip's environment and none of its arithmetic</h2>
+<!-- Not `.stage` for the chip's reason, and under the same band for the chip's
+     other one: the ruler covers a great deal more of the canvas than a chip
+     does, so "may never take pointer events back" matters more here, not less.
+
+     The band deliberately hosts BOTH layers, in the order `range-ruler.ts`
+     hangs them, because one of the checks below is that a ring cannot draw
+     over an arc — and that is a fact about two siblings rather than about
+     either one of them. -->
+<section id="rulerband" style="padding:0 26px;pointer-events:auto">
+  <div id="rulerstage" style="position:relative;height:300px;background:#0b0d10;overflow:hidden">
+    <div id="rulerlayer" class="dh ruler-layer" style="position:absolute;inset:0"></div>
+    <div id="rulerchips" class="dh tok-layer" style="position:absolute;inset:0"></div>
+  </div>
+</section>
+
 <pre id="ok"></pre>
 
 <script type="module">
@@ -272,6 +289,7 @@ import { ACTIVITY } from '/src/module/ui/activity.js';
 import { SPINE, TILE } from '/src/module/ui/tile.js';
 import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
 import { TOKEN_CHIP, setChip, setTier } from '/src/module/ui/token.js';
+import { RANGE_RULER, radiusOf, setRulerZoom } from '/src/module/ui/ruler.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
    two are genuinely different things — nine slugs against nine documents. */
 import { CLASSES as CLASS_SLUGS, KINDS, byslug, icon, glyph, clazz } from '/src/module/ui/domains.js';
@@ -2513,6 +2531,162 @@ setTimeout(async () => { try {
   check('a chip stays concentric with its token at every zoom',
         algDrift.length === 0,
         algDrift.length ? algDrift.join(' · ') : 'aligned at 0.35x, 1x and 2.4x');
+
+  /* ══ THE RULER ═════════════════════════════════════════════════════
+     Eight, and the interesting half are about arithmetic rather than about
+     paint — which is the difference between this component and the chip. A
+     chip is drawn wrong or right; a ruler can be drawn perfectly and be
+     *lying*, and nothing on screen says which.
+
+     Drawn at a 100px grid so a square is a square and every number below can
+     be read as one. */
+  const ruGrid = 100;
+  const ruSq = { melee: 1, veryClose: 2, close: 6, far: 12 };
+  const ruBands = Object.entries(ruSq).map(([key, sq]) => ({
+    key,
+    label: key === 'veryClose' ? 'Very Close' : key[0].toUpperCase() + key.slice(1),
+    dist: `${sq * 5} ft`,
+    r: radiusOf(sq, ruGrid, 50),
+  }));
+
+  const ruLayer = document.getElementById('rulerlayer');
+  const ruHost = document.createElement('div');
+  ruHost.innerHTML = RANGE_RULER(ruBands);
+  const ruEl = ruHost.firstElementChild;
+  Object.assign(ruEl.style, { left: '400px', top: '150px', width: '100px', height: '100px' });
+  ruLayer.appendChild(ruEl);
+  setRulerZoom(ruEl, 1);
+
+  /* 1. The compound. `.ruler` is rewritten to `.dh.ruler`, so the element
+        wears both classes while standing outside every `.dh` root. Read off
+        the lettering's font, because `--f-mono` is declared on `.dh` and is
+        the one palette value this component actually consumes — a failed
+        rewrite leaves the literal `var(--f-mono)` with nothing behind it. */
+  const ruText = ruEl.querySelector('.rngt text');
+  const ruFont = getComputedStyle(ruText).fontFamily;
+  check('the ruler resolves the palette outside every .dh root',
+        ruFont.includes('Google Sans Code'),
+        ruFont || 'no font at all');
+
+  /* 2. Nothing pressable, on a band that has pointer events ON. The chip's
+        rule under more pressure: this covers twelve squares of canvas, and
+        the canvas owns click, drag and box-select over every one of them. */
+  const ruLive = [ruEl, ...ruEl.querySelectorAll('*')]
+    .filter(el => getComputedStyle(el).pointerEvents !== 'none');
+  check('nothing in the ruler takes pointer events', ruLive.length === 0,
+        ruLive.length ? `${ruLive.length} live: ${ruLive[0].className}` : 'inert on a live band');
+
+  /* 3. The rings scale with the map and the type does not. `--k` is the
+        reciprocal of the camera scale, so doubling it must double the type's
+        size in SCENE pixels — which is what holds it still on screen. A study
+        page cannot see this: it has one zoom. */
+  const ruSize = () => parseFloat(getComputedStyle(ruEl.querySelector('.rngt text')).fontSize);
+  ruEl.style.setProperty('--k', '1');
+  const ruAt1 = ruSize();
+  ruEl.style.setProperty('--k', '2');
+  const ruAt2 = ruSize();
+  ruEl.style.setProperty('--k', '1');
+  check('the lettering counter-scales with the camera',
+        ruAt1 > 0 && Math.abs(ruAt2 - ruAt1 * 2) < 0.05,
+        `${ruAt1}px at 1x, ${ruAt2}px at 2x`);
+
+  /* 4. THE READABILITY, and it is the one thing that made this component
+        worth a second draft. One circular path puts the bottom third of
+        every ring upside down. Two half-arcs of opposite handedness do not —
+        so the check is that the two paths are genuinely opposite: the upper
+        one's midpoint is ABOVE the centre and the lower one's is BELOW, and
+        both run left to right. Sampled off the geometry rather than read off
+        the `d` attribute, because a sweep flag is easy to write and hard to
+        be sure of. */
+  const ruPaths = [...ruEl.querySelectorAll('.rngt')[0].querySelectorAll('defs path')];
+  const ruMid = p => p.getPointAtLength(p.getTotalLength() / 2);
+  const ruEnds = p => [p.getPointAtLength(0), p.getPointAtLength(p.getTotalLength())];
+  const ruTop = ruMid(ruPaths[0]);
+  const ruBot = ruMid(ruPaths[1]);
+  const [ruA, ruB] = ruEnds(ruPaths[0]);
+  const [ruC, ruD] = ruEnds(ruPaths[1]);
+  const ruCentre = ruBands[0].r;
+  check('the two lettering arcs are opposite-handed, both left to right',
+        ruTop.y < ruCentre - 1 && ruBot.y > ruCentre + 1 && ruB.x > ruA.x && ruD.x > ruC.x,
+        `top y=${ruTop.y.toFixed(0)}, bottom y=${ruBot.y.toFixed(0)}, centre ${ruCentre}`);
+
+  /* 5. THE ARITHMETIC. A ruler drawn beautifully on the wrong radius is the
+        failure this component can have that the chip cannot, and it has no
+        symptom — the rings look exactly as they should and the answer is
+        wrong. Melee is one square out from the token's EDGE, so its radius is
+        the token's own 50 plus one grid; Far is twelve. Measured off the
+        elements the browser actually laid out, not off the array. */
+  const ruBad = [];
+  for (const [i, band] of ruBands.entries()) {
+    const el = ruEl.querySelectorAll('.rngr')[i];
+    const want = 50 + ruSq[band.key] * ruGrid;
+    /* offsetWidth, and NOT a bounding rect. The rings are mid-arrival when
+       this runs, and a rect reports the box an animation is *drawing*
+       rather than the one the layout holds — so the first run of this
+       check reported every radius at exactly 0.55 of itself, which is the
+       opening scale of the arrival keyframe. It is the capture-before-the-
+       write lesson from token-hud.ts, arriving in a check rather than in a
+       FLIP — and here it fails
+       in the worst direction: a plausible wrong number on a component
+       whose whole job is to be a number you can trust. */
+    const got = el.offsetWidth / 2;
+    if (Math.abs(got - want) > 0.5) ruBad.push(`${band.key}: ${got.toFixed(1)} not ${want}`);
+  }
+  check('every ring is its own range out from the token edge',
+        ruBad.length === 0,
+        ruBad.length ? ruBad.join(' · ') : 'melee 150, very close 250, close 650, far 1250');
+
+  /* 6. The ladder, and it works the opposite way round from the chip's: a
+        chip culls from the OUTSIDE in as it shrinks, and this culls from the
+        inside, because the ring that stops meaning anything at a pulled-back
+        camera is the small one. The outermost legend is never dropped —
+        answering a wide shot with the word MELEE is the wrong survivor. */
+  setRulerZoom(ruEl, 0.08);
+  const ruSmall = [...ruEl.querySelectorAll('.rngr')].map(r => r.hasAttribute('data-lo'));
+  const ruWords = [...ruEl.querySelectorAll('.rngt')].map(t => t.hasAttribute('data-lo'));
+  setRulerZoom(ruEl, 1);
+  check('the ladder culls inward and never the outermost legend',
+        ruSmall[0] === true && ruSmall[3] === false && ruWords[3] === false,
+        `rings ${ruSmall.map(v => (v ? 'off' : 'on')).join('/')} · outer legend ${ruWords[3] ? 'DROPPED' : 'kept'}`);
+
+  /* 7. A ring may not draw over an arc. Two different kinds of claim about
+        one creature, and the readout wins — so the ruler's layer is below the
+        chip's. Stated in the stylesheet AND ordered in the DOM by
+        `range-ruler.ts`, because `#hud` is rebuilt and the layers can come
+        back in either order; this checks the half that survives that. */
+  const ruZ = getComputedStyle(ruLayer).zIndex;
+  const tkZ = getComputedStyle(document.getElementById('rulerchips')).zIndex;
+  check('the ruler layer sits under the chip layer',
+        Number(ruZ) < Number(tkZ),
+        `ruler z${ruZ} · chips z${tkZ}`);
+
+  /* 8. And the reach check, for the seventh block to pay for it. The names
+        wanted here were `.rr`, `.rl` and `.ln` and all three were taken —
+        by plate.css's die run, dlg.css's rules line and that line's own body.
+        design/ruler.html loads four stylesheets and the game loads
+        twenty-four, so no study page could ever have shown it. The root is
+        excluded for the chip's reason: it deliberately wears `.dh`. */
+  const ruOwn = [...ruEl.querySelectorAll('*')];
+  const ruReach = [];
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch { continue; }
+    const from = sheet.href?.split('/').pop() ?? 'page';
+    if (from === 'ruler.css') continue;
+    const walk = (rs) => { for (const r of rs) {
+      const sel = r.selectorText;
+      if (sel === undefined) { if (r.cssRules) walk(r.cssRules); continue; }
+      if (!/box-sizing/.test(r.style.cssText)) {
+        for (const el of ruOwn) {
+          let m = false; try { m = el.matches(sel); } catch {}
+          if (m) { ruReach.push(`${from} ${sel}`); break; }
+        }
+      }
+      if (r.cssRules?.length) walk(r.cssRules);
+    }};
+    walk(rules);
+  }
+  check('no other sheet reaches into the range ruler', ruReach.length === 0,
+        ruReach.length ? ruReach.slice(0, 4).join(' · ') : `${ruOwn.length} elements clean`);
 
   const forgeNames = ['fopt', 'fchip', 'fstep', 'fval', 'ftrt', 'ftray', 'fside', 'fgrid',
                       'fcls', 'fclsr', 'fsub', 'fcrd', 'fcards', 'fclass',

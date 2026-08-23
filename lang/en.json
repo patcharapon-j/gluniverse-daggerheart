@@ -47,6 +47,8 @@
       "Activity": "Activity log",
       "TokenChip": "Resources on tokens",
       "TokenChipHint": "Draws each creature's Hit Points, Stress, Armor Slots and Hope on its own token, as arcs around it. Replaces Foundry's bars, which cannot say whether the next hit costs one box or four.",
+      "RangeRuler": "Range rings on the selected token",
+      "RangeRulerHint": "Draws Melee, Very Close, Close and Far as rings around whichever token you have selected, measured from its edge and in the scene's own units. Yours only — a selection exists on one screen.",
       "AdversaryChip": "What players see on adversary tokens",
       "AdversaryChipHint": "A GM always sees everything. This is what everybody else sees on an adversary: nothing, the tracks without the numbers behind them, or the same chip the GM has. Vulnerable is shown either way — a creature that is easier to hit is a fact the table has already earned."
     },

@@ -43,6 +43,7 @@ const MODULES = [
   "prep.js",
   "make.js",
   "token.js",
+  "ruler.js",
 ];
 
 /**

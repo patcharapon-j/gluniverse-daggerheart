@@ -3647,6 +3647,223 @@ many creatures are on the board. It is the shape of cost the browse window's
 "what it costs to open" turned out to be about — invisible afterwards, because
 every chip is correct, and paid entirely in frames that were dropped.
 
+## The range ruler
+
+Daggerheart's ranges are fiction-first and the book says so out loud: Melee,
+Very Close, Close, Far and Very Far are agreements at the table, and the feet
+printed beside them in `config.ts`'s `RANGE_FEET` are the book's own
+approximations rather than a conversion. That is the *reason* to draw them
+rather than a reason not to — **an approximation nobody can see is not one
+agreement, it is four people holding four of them**, and the disagreement
+surfaces after somebody has already committed to a move.
+
+Select a token and four rings come out of it. `design/ruler.css` is the look,
+`design/ruler.js` the builder, `design/ruler.html` the study page, and
+`src/module/range-ruler.ts` the half a study page cannot have.
+
+**It is not a fourth arc on the chip.** The chip is a readout *of* a creature;
+this is a measurement *from* one, and the two differ in every dimension that
+matters — lifetime (a chip lives as long as the token, a ruler as long as the
+selection), size (0.63 of a grid cell against twelve of them) and subject. So
+it is its own layer, and it sits **under** the chips: two different kinds of
+claim about one creature, and the readout wins.
+
+**It rides the chip's arrangement rather than repeating it.** `token-hud.ts`
+cost three broken builds to learn where a layer over the board goes, and every
+one of those lessons applies here unchanged — child of `#hud`, positioned in
+raw scene coordinates, aligned by Foundry's own `Canvas#pan`, re-hung when
+`#hud`'s `_replaceHTML` sweeps it away. That file's long note is the argument;
+this one is a second caller of it.
+
+**The ruler has no hue, and that is a rule rather than a gap.** Every colour on
+a token in this system already means a resource: wound is Hit Points, strain is
+Stress, plate is Armor, gold is Hope, violet is Fear. A ruler measures the
+*ground*, so it is drawn in the map's own ink and buys its legibility with
+contrast and contour — the chip's own dark drop-shadow contour, for the chip's
+own reason. A saturated ruler would be a sixth meaning for a hue that has one,
+on the single surface where all five are already in play. Its ink is a literal
+rather than a palette token for the same reason: scene artwork has no theme and
+does not become parchment because a *sheet* went light.
+
+**Certainty is the line style.** Melee and Very Close are solid, because within
+arm's reach is a thing you can be sure of; Close and Far break into dashes,
+because those are the two the book leaves most to the table. The dash is an
+**arc length** and not an angle — a fixed angular period would make Far's
+dashes eight times longer than Melee's and the four rings would stop reading as
+one instrument.
+
+**A band is four layers and each is a claim**, which is `token.css`'s rule
+about the chip's arcs arriving somewhere with more room for it. A bevel — light
+bleeding inward off the line, shadow falling outward, one claim about one edge
+and therefore one gradient — makes the ring sit *in* the ground rather than on
+it. The line carries the certainty. A finer companion rule just outside it is
+how this design draws a border everywhere else, and it is what stops a single
+stroke reading as a fence. Then the lettering. **None of it is a fill**: a wash
+over the disc would tint the map, which is the thing the reader came for.
+
+**The light on the line is a second mask, not an overlay**, and that is not a
+preference. A conic alpha intersected with the annulus dims the ring toward the
+lower right so it reads as a solid thing lit from above. An overlay in
+`plus-lighter` doing the same job would brighten the *gaps* in a dashed ring as
+readily as the dashes, and there would be no dash left. Composited, the light
+can only ever take away — the same guarantee `plate.css`'s facet ring gives its
+numerals.
+
+### The name follows the ring
+
+Which is what makes a band identifiable from wherever the reader is looking at
+the board, rather than one they have to trace back to a tag somewhere on it. It
+is the chip's own gesture: `token.js` bends VULNERABLE round a circle for the
+same reason, that a token has no room for a caption and every room for a word.
+
+**Two half-arcs rather than one circle, and that is the whole of the
+readability.** A single circular path puts the bottom third of every ring
+upside down. An upper arc running left-to-right over the top and a lower arc
+running left-to-right *under* the bottom are both upright — the map-maker's
+answer to labelling a contour, and it costs one extra `<path>`. `paint-order`
+is the other half: stroking a dark halo first and filling over it knocks a
+channel out of the line behind every glyph, so the words read as cut *into* the
+ring. That is also why this needs no plinth — a box would be an object on the
+map.
+
+**Placed, not poured**, and this is where the chip's technique had to be
+abandoned rather than copied. The chip fills its circle exactly, with
+`textLength` forcing the repeat to the path's own length so no gap travels
+round with the words. Ask that of Far and it is about ninety repeats and a
+thousand glyphs; cap the repeat *while still forcing the length* and eleven
+letters spread over half a circle. Those are the same mechanism failing from
+either end. So the legends are placed — N per half arc, evenly spaced, each at
+its natural width, with N taken from the arc's length **on screen**. A ring
+gains more legends as the camera comes in rather than larger ones, and the
+lettering is rewritten only when N actually changes, which is `setTier`'s
+discipline rather than a similar one. The offsets are (m + ½)/N, a fence-post
+rule doing real work: it keeps every run clear of the two seams at three and
+nine o'clock, where the arcs meet and a run anchored to the end of one would
+hang off it.
+
+**The rings scale with the map and the type does not.** A ring is a distance on
+the ground, so it is a scene pixel and rides the camera exactly as the grid
+does; the lettering is chrome *about* a ring, so it counter-scales through
+`--k` and holds one size on screen at every zoom. A legend that shrinks with
+the map is a legend twice.
+
+**Two ladders, and they are different questions.** A ring below its floor is
+not a small ring, it is a dot inside the creature — its stroke wider than the
+gap to its neighbour — so it leaves, exactly as a track leaves the chip's. The
+lettering's is separate: two bands a hundred scene pixels apart stay a hundred
+apart on the ground forever, but on screen that gap shrinks with the camera
+while the type does not, so below some zoom Melee's words print through Very
+Close's however far apart the circles are. That is a middling-zoom failure,
+which is the worst kind — correct at the zoom anybody builds it at and wrong at
+the one they play at. Walked from the **outside in**, because the outermost
+band is the one still worth reading when the type is crowding, and keeping the
+innermost instead would answer a pulled-back camera with the word MELEE.
+
+**No idle motion.** `gem.css`'s ban has taken two exceptions — the Fear strip
+and Vulnerable — and both earned it the same way: each is a live threat sitting
+in the room between the moments anybody touches it. A ruler is not that. It is
+a measurement you take, read and stop looking at, and a ring turning slowly
+under a token somebody is trying to *move* is motion competing with the gesture
+it exists to serve. The rings arrive staggered outward at 62ms, one wave leaves
+the creature and is gone, a 240ms collapse says the measurement is over, and
+after that nothing on this layer moves until the selection does.
+
+### The arithmetic, which is the only thing here that can be silently wrong
+
+**Squares, not feet.** The obvious build divides `RANGE_FEET` by the scene's
+own `grid.distance`, which is right on every imperial table and quietly wrong
+on every other one — it reads a number labelled *metres* as though it were
+feet, and Melee lands at three and a third squares on a 1.5m grid. The squares
+are the invariant, so `rangeSquares` in `config.ts` is `RANGE_FEET / 5` — the
+book's own five feet to the square — the ring comes off the **grid**, and only
+the printed distance comes off `grid.distance` and its units. That paragraph in
+`config.ts` saying nothing here does arithmetic with the feet now has exactly
+one exception, and it does the arithmetic somewhere else.
+
+**Measured from the token's edge**, because reach is what the rule means: a
+three-by-three dragon threatens a square beyond its own body, and measuring
+from its centre would put half of Melee inside the dragon. It costs nothing on
+a one-by-one and is the difference between right and roughly right on
+everything larger — which is why a resize rebuilds rather than repositions.
+
+**Very Far is declined out loud.** Twenty-four squares is a ring 4,900 scene
+pixels across before the token is added, on a scene that is typically four
+thousand by three thousand. It stops being a measurement and becomes a claim
+that the answer is *everywhere*, and it drags the ladder out with it: at the
+zoom where it fits, Melee is nine pixels and has already been culled. `BANDS`
+is four, and the fifth is left out in `range-ruler.ts` rather than filtered out
+of `RANGES`, because the closed set is the rules' and this is a drawing
+decision.
+
+### One selection, one screen
+
+**One ruler at a time**, and only when exactly one token is controlled. With
+several selected you are moving them, not measuring, and four bands each on
+three creatures is several thousand pixels of overlapping circles with nothing
+to read in them.
+
+**`controlToken` is raised per token**, so a box-select over three creatures
+raises it three times and the set is a different size at each — one of which is
+a set of one. Answering each in turn builds a ruler on the first and takes it
+down on the second, which is a 240ms collapse playing over a gesture that never
+wanted one. So the answer is coalesced to the end of the batch, on a macrotask
+rather than a `requestAnimationFrame` — that is `swap.js`'s rule inverted: rAF
+is the right tool for *before the next paint* and the wrong one for *after the
+current batch*, and it does not fire at all in a tab that is not painting.
+
+**Nobody sees yours.** A selection only ever exists on one client, so there is
+no permission question here and therefore no world setting — which is also why
+this needed no `adversaryChip` of its own. The switch is the second on the Fear
+strip's left plinth, beside `tracks`, client-scoped for the chip switch's
+reason, and it is a *reading* of the setting rather than a copy: the press
+writes `rangeRuler`, the setting's own `onChange` raises the hook, and that
+hook is the only thing that ever moves either the button or the rings.
+
+### What its study page could not see
+
+`tools/verify/`'s **THE RULER** stage, eight checks, and the interesting half
+are about arithmetic rather than about paint — which is the difference between
+this component and the chip. **A chip is drawn wrong or right; a ruler can be
+drawn perfectly and be lying**, and nothing on screen says which. So one check
+measures every ring's radius against the range it claims, and it caught its own
+author first: written with `getBoundingClientRect` it reported every radius at
+exactly 0.55 of itself, because a rect reports the box an animation is
+*drawing* rather than the one the layout holds and 0.55 is the arrival's
+opening scale. `capture()`'s lesson from `token-hud.ts`, arriving in a check
+rather than in a FLIP, and failing in the worst direction — a plausible wrong
+number on the one component whose whole job is to be a number you can trust.
+
+The rest: that the compound resolves the palette outside every `.dh` root; that
+nothing takes pointer events on a band that has them, which matters *more* here
+than on a chip because this covers twelve squares of a canvas that owns click,
+drag and box-select; that the lettering counter-scales; that the two arcs are
+genuinely opposite-handed, sampled off the path geometry rather than read off a
+sweep flag; that the ladder culls inward and never the outermost legend; that
+the ruler's layer sits under the chip's; and that no other sheet reaches in.
+
+**Three names were wanted and all three were taken** — `.rr` is a die run in
+`plate.css`, `.rl` is the rules panel's line in `dlg.css` and `.ln` is that
+line's own body. `dlg.css` draws inside a `.dh` root, so `.dh .rl` would have
+matched a legend of ours the moment the two were on screen together. Seventh
+instance of the bug that renamed `.die.win`, and the second one caught before
+shipping — by grepping the ported stack rather than by a study page, which
+loads four stylesheets against the game's twenty-four.
+
+**And the root is spelled out rather than shortened, which is that lesson one
+step further.** `.rul` is the name it wants and the port forbids it: the class
+rewrites in `port-design-css.mjs` run over **every** ported sheet, and `.rul` is
+a substring of `card.css`'s own `.rules`. A three-letter root would have reached
+into a stylesheet this component has nothing to do with and renamed a class
+there. A root has to be unique against the whole stack, not merely against the
+selectors it shares a file with — and members still take a prefix that is *not*
+a continuation of the root's, which is the chip's `tok`/`tk` split followed
+rather than rediscovered.
+
+**Unprofiled, like the chip.** Four rings of masked gradients and up to twenty
+SVG legends, on one selected token. It is one object against the chip's N, so
+it is the smaller worry of the two — but it is the same shape of cost, and
+neither has been measured on a real board.
+
 ## The three dialogs
 
 This system went a long way without a modal, on purpose: a sheet you press
@@ -4418,6 +4635,15 @@ everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
   is what buys the tracks their way off the artwork. Two creatures on adjacent
   squares can therefore cross Armor arcs. It has not been seen at a real table
   yet and it is one number in `token.css` if it turns out to matter.
+- **The range ruler has never been profiled either**, and it shares the
+  chip's exact exposure: masked gradients and, at a close camera, up to twenty
+  SVG text runs. One object against the chip's N, so it is the smaller of the
+  two worries — and the same unmeasured one.
+- **A ruler is drawn for a selection and never for a target.** The reticle is
+  where "how far is that thing" is actually asked, and `apps/targets.ts`
+  already draws the line between the two: selection is what you are acting
+  *with*, targeting is what you are acting *on*. Rings under a target would be
+  a second answer in the same grammar and it is not obvious they should agree.
 - **The other fifteen conditions are not on the token.** Vulnerable is, because
   it is the one the sheet derives and the one the table meets most often;
   Cloaked, Hexed, Marked for Death and the rest wear Foundry's own status icons

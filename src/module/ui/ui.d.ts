@@ -105,7 +105,13 @@ declare module "*/ui/pool.js" {
    * The GM's strip. `gm:false` is the same strip without the steppers, which
    * is what every player at the table sees — see `fear-hud.ts`.
    */
-  export function FEAR_HUD(opts: { cur?: number; max?: number; gm?: boolean; chips?: boolean }): string;
+  export function FEAR_HUD(opts: {
+    cur?: number;
+    max?: number;
+    gm?: boolean;
+    chips?: boolean;
+    ruler?: boolean;
+  }): string;
 }
 
 declare module "*/ui/card.js" {
@@ -495,4 +501,28 @@ declare module "*/ui/token.js" {
   /** Where every track starts, and how far it runs. Degrees. */
   export const ORIGIN: number;
   export const SWEEP: number;
+}
+
+declare module "*/ui/ruler.js" {
+  /** One band, already resolved into scene pixels by the host. */
+  export interface RangeBand {
+    key: string;
+    label: string;
+    dist: string;
+    r: number;
+  }
+
+  /** Scene pixels, from the token's EDGE. Squares rather than feet — see `config.ts`. */
+  export function radiusOf(squares: number, gridPx: number, tokenR: number): number;
+
+  export function RANGE_RULER(rings: RangeBand[]): string;
+
+  /** Camera scale in, `true` when anything actually moved. */
+  export function setRulerZoom(el: HTMLElement, k: number): boolean;
+
+  /** Plays the collapse, then removes the element. */
+  export function closeRuler(el: HTMLElement | null, done?: () => void): void;
+
+  /** How long that collapse takes, stated once. */
+  export const TTL: number;
 }

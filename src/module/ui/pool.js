@@ -61,17 +61,19 @@ export const POOL = ({
    The mark is a rhombus lit like a pip, and that is a borrowing rather than a
    coincidence: the row of fear gems is twenty pixels above it, so lit-versus-
    socket is a vocabulary the eye has already learned on this exact strip. */
-const SWITCH = (on) => `
-  <div class="vis"><button data-chip aria-pressed="${on ? 'true' : 'false'}"
-    title="Show resource tracks on tokens (this screen only)"><i></i>tracks</button></div>`;
+const SWITCH = (chips, ruler) => `
+  <div class="vis"><button data-chip aria-pressed="${chips ? 'true' : 'false'}"
+    title="Show resource tracks on tokens (this screen only)"><i></i>tracks</button><button
+    data-ruler aria-pressed="${ruler ? 'true' : 'false'}"
+    title="Show range rings under the selected token (this screen only)"><i></i>range</button></div>`;
 
-export const FEAR_HUD = ({cur = 4, max = 12, gm = true, chips = true}) => `
+export const FEAR_HUD = ({cur = 4, max = 12, gm = true, chips = true, ruler = true}) => `
 <div class="hud${gm ? ' gm' : ''}" style="--i:${intensity(cur, max).toFixed(3)}">
   <b class="hglow"></b>
   <b class="hface"></b>
   ${POOL({cur, max, tone: 'fear', dark: true, head: false, sz: 24, gap: 7})}
   <span class="tally">${cur}<s>/${max}</s></span>
   ${gm ? `<div class="stp"><button data-f="1">+</button><button data-f="-1">−</button></div>` : ''}
-  ${SWITCH(chips)}
+  ${SWITCH(chips, ruler)}
   ${gm ? `<div class="cyc"><button data-refresh="scene" title="Refresh all once-per-scene counters and dice">scene</button><button data-refresh="session" title="Refresh all once-per-session counters and dice">session</button></div>` : ''}
 </div>`;

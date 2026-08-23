@@ -74,6 +74,22 @@ export function registerSettings(): void {
     onChange: () => Hooks.callAll("daggerheart.tokenChipChanged"),
   });
 
+  /* The range rings under the selected token, and it is client-scoped for
+     the reason the chip's switch is rather than a similar one: a selection
+     only ever exists on one screen, so a ruler is only ever drawn on the
+     screen of the person who made it. There is no permission question here
+     and therefore no world setting — which is also why this needed no
+     `adversaryChip` of its own. */
+  game.settings.register(SYSTEM_ID, "rangeRuler", {
+    name: "DAGGERHEART.Settings.RangeRuler",
+    hint: "DAGGERHEART.Settings.RangeRulerHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => Hooks.callAll("daggerheart.rangeRulerChanged"),
+  });
+
   /* What players see on an adversary, and it is world-scoped for the reason
      the change log is: it is a ruling about the table rather than a
      preference about a screen. A GM who has decided the party may not read

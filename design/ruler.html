@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · The range ruler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/token.css">
+<link rel="stylesheet" href="/design/ruler.css">
+<style>
+/* ── the environment the component actually lives in ──────────────
+   token.html's board, one step further: this component is measured in
+   thousands of scene pixels, so the camera has to go a long way out and
+   the stand-in has to pan as well as zoom. None of this is ported. */
+.board{position:relative;overflow:hidden;background:#0a0c0f;
+  background-image:radial-gradient(130% 100% at 34% 8%,#1e242c 0%,#11141a 55%,#080a0d 100%);
+  box-shadow:inset 0 0 0 1px #23282f;height:600px}
+.stage{position:absolute;left:0;top:0;transform-origin:0 0}
+.grid{position:absolute;left:0;top:0;width:6000px;height:6000px;opacity:.34;
+  background-image:
+    linear-gradient(#1c222b 1px,transparent 1px),
+    linear-gradient(90deg,#1c222b 1px,transparent 1px);
+  background-size:100px 100px}
+/* a heavier rule every five squares, so a reader can count distance off
+   the board itself and check the ruler against it */
+.grid::after{content:"";position:absolute;inset:0;opacity:.6;
+  background-image:
+    linear-gradient(#2b3541 1px,transparent 1px),
+    linear-gradient(90deg,#2b3541 1px,transparent 1px);
+  background-size:500px 500px}
+
+.spr{position:absolute}
+.spr .art{position:absolute;inset:2px;border-radius:50%;
+  background:var(--art,url("/design/assets/art-sample-01.png")) center/cover,#2a3039;
+  box-shadow:0 0 0 2px rgba(0,0,0,.6),0 0 0 3px #6f8ab5,0 6px 18px rgba(0,0,0,.55)}
+.spr.sel .art{box-shadow:0 0 0 2px rgba(0,0,0,.6),0 0 0 3px var(--hope),
+  0 0 14px rgba(212,167,44,.5),0 6px 18px rgba(0,0,0,.55)}
+/* three other creatures, so the cost of a large ruler over somebody
+   else's painting is visible rather than asserted */
+.spr.o .art{box-shadow:0 0 0 2px rgba(0,0,0,.6),0 0 0 3px #96545b,0 6px 18px rgba(0,0,0,.55);
+  background:#3a2b2f}
+
+.ctl{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;padding:14px 0 0;
+  font:400 12px/1 var(--f-ui);color:#96a0ac}
+.rd{font:600 10px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:#7d8794}
+.rd b{color:var(--hope);font-weight:700}
+.btns{display:flex;gap:7px;flex-wrap:wrap}
+.btns button{border:0;cursor:pointer;background:#242931;box-shadow:inset 0 0 0 1px #343b45;
+  color:#c3cbd5;font:700 9.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  padding:10px 13px;transition:background .14s,color .14s,box-shadow .14s;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btns button:hover{background:var(--hope);color:#14161a;box-shadow:none}
+.btns button.on{background:var(--hope);color:#14161a;box-shadow:none}
+select{background:#242931;border:0;box-shadow:inset 0 0 0 1px #343b45;color:#c3cbd5;
+  font:600 10px/1 var(--f-mono);letter-spacing:.1em;padding:9px 10px}
+table.t{width:100%;border-collapse:collapse;margin:14px 0 0;
+  font:400 12px/1.5 var(--f-ui);color:#aeb7c2}
+table.t th{font:600 9px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  color:#7d8794;text-align:left;padding:0 12px 8px 0}
+table.t td{padding:5px 12px 5px 0;border-top:1px solid #21262d}
+table.t td b{color:var(--hope);font-weight:700;font-family:var(--f-mono)}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>the range ruler</b>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/sheet.html">sheet</a>
+  <a href="/design/token.html">token</a>
+  <a href="/design/ruler.html" class="on">ruler</a>
+  <a href="/design/">sweep</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// AN AGREEMENT NOBODY CAN SEE IS FOUR AGREEMENTS</span>Fiction-first is not the same as unmeasured</h2>
+<p class="note">Daggerheart's ranges are agreements at the table and the book is explicit about it —
+the feet printed beside Melee, Very Close, Close, Far and Very Far are its own approximations rather
+than a conversion table. That is the <i>reason</i> to draw them, not a reason not to: an approximation
+nobody can see is not one agreement, it is four people holding four of them, and the disagreement
+surfaces after somebody has already committed to a move.</p>
+
+<div class="board" id="bd">
+  <div class="stage" id="st">
+    <div class="grid"></div>
+    <div class="ruler-layer" id="lay"></div>
+    <div class="spr o" style="left:1900px;top:640px;width:100px;height:100px"><div class="art"></div></div>
+    <div class="spr o" style="left:900px;top:1560px;width:200px;height:200px"><div class="art"></div></div>
+    <div class="spr o" style="left:2260px;top:1740px;width:100px;height:100px"><div class="art"></div></div>
+    <div class="spr sel" id="me" style="left:1450px;top:1200px;width:100px;height:100px"><div class="art"></div></div>
+  </div>
+</div>
+
+<div class="ctl">
+  <span class="rd">zoom <b id="zr">0.28</b></span>
+  <input type="range" id="z" min="0.06" max="1.6" step="0.005" value="0.28" style="width:230px">
+  <span class="rd">token</span>
+  <select id="sz">
+    <option value="1">1 × 1</option>
+    <option value="2">2 × 2 — large</option>
+    <option value="3">3 × 3 — huge</option>
+  </select>
+  <span class="rd">bands</span>
+  <select id="bn">
+    <option value="3">3 — very close, close, far</option>
+    <option value="4" selected>4 — + melee</option>
+    <option value="5">5 — + very far</option>
+  </select>
+  <div class="btns">
+    <button id="go">replay select</button>
+    <button id="off">deselect</button>
+  </div>
+</div>
+
+<p class="note" style="margin-top:16px">The board is a stand-in for Foundry's own: a grid at 100px to
+the square with a heavier rule every five, three other creatures to show what a large ruler costs when
+it crosses somebody else's painting, and a camera that pans as well as zooms — this component is
+measured in thousands of scene pixels and the token chip's board never had to go that far out.</p>
+
+<h2><span>// THE NUMBERS</span>What the rings actually are</h2>
+<p class="note">At the usual five feet to the square. The radius is measured from the token's
+<b>edge</b>, not its centre, because reach is what the rule means — a three-by-three dragon threatens
+a square beyond its own body, and measuring from its middle would put half of Melee inside the dragon.
+Switch the token to 3 × 3 above and the whole ruler steps outward with it.</p>
+
+<table class="t" id="nt"><thead><tr>
+  <th>band</th><th>feet</th><th>squares</th><th>radius</th><th>across</th><th>line</th>
+</tr></thead><tbody></tbody></table>
+
+<h2><span>// THE ONE THAT DOES NOT FIT</span>Very Far is the whole scene</h2>
+<p class="note">Very Far is 120 feet, which is twenty-four squares — a ring <b>4,900 pixels across</b>
+before the token is added. A default Foundry scene is four thousand by three thousand. Set the bands to
+5 above and the outermost ring is not a measurement, it is a claim that the answer is <i>everywhere</i>,
+and it drags the whole ladder out with it: at the zoom where Very Far fits on screen, Melee is nine
+pixels across and has already left. Four bands is the recommendation, and the fifth is declined out
+loud rather than quietly omitted.</p>
+
+<h2><span>// CERTAINTY IS THE LINE STYLE</span>The line says how much the line means</h2>
+<p class="note">A surveyor's convention doing real work here. Melee and Very Close are solid, because
+"within arm's reach" is a thing you can be sure of. Close and Far break into dashes, and the dash is an
+<b>arc length</b> rather than an angle — a fixed angular period would make Far's dashes eight times
+longer than Melee's and the four rings would stop reading as one instrument.</p>
+<p class="note">The ruler has <b>no hue</b>, and that is a rule rather than a gap. Every colour on a
+token in this system already means a resource: wound is Hit Points, strain is Stress, plate is Armor,
+gold is Hope, violet is Fear. A ruler measures the ground rather than the creature, so it is drawn in
+the map's own ink and buys its legibility with contrast and contour — the same dark drop-shadow contour
+the chip's arcs use, and for the same reason.</p>
+<p class="note">A band is four layers and each is a claim rather than a different opacity of one, which
+is <code>token.css</code>'s rule about the chip's arcs arriving somewhere with more room for it. The
+<b>bevel</b> is light bleeding inward off the line and shadow falling outward — one claim about one
+edge, so one gradient — and it is what makes the ring sit <i>in</i> the ground instead of on it. The
+<b>line</b> carries the certainty. A finer <b>companion rule</b> just outside it is how this design draws
+a border everywhere else, and it is what stops a single stroke reading as a fence. Then the lettering.
+None of it is a fill: a wash over the disc would tint the map.</p>
+<p class="note">The light on the line is a <b>second mask</b>, not an overlay, and that is not a
+preference. A conic alpha intersected with the annulus dims the ring toward the lower right, so it reads
+as a solid thing lit from above; an overlay in <code>plus-lighter</code> doing the same job would
+brighten the <i>gaps</i> in a dashed ring as readily as the dashes, and there would be no dash left.
+Composited, the light can only ever take away — the same guarantee the chip's facet ring gives its
+numerals.</p>
+
+<h2><span>// THE NAME FOLLOWS THE RING</span>Two arcs, because one puts a third of every ring upside down</h2>
+<p class="note">The name is <b>on</b> the band and repeats around it, which is what makes a ring
+identifiable from wherever you happen to be looking at the board rather than one you have to trace back
+to a tag somewhere on it. It is the chip's own gesture — <code>token.css</code> bends VULNERABLE round a
+circle for exactly this reason, that a token has no room for a caption and every room for a word.</p>
+<p class="note">Two half-arcs rather than one circle, and that is the whole of the readability. A single
+circular path puts the bottom third of every ring <i>upside down</i>; an upper arc running left-to-right
+over the top and a lower arc running left-to-right <i>under</i> the bottom are both upright. It is the
+map-maker's answer to labelling a contour and it costs one extra path. <code>paint-order</code> is the
+other half: stroking a dark halo first and filling over it knocks a channel out of the line behind every
+glyph, so the words read as cut <i>into</i> the ring rather than laid on top of it — which is also why
+this needs no plinth. A box would be an object on the map, and the map is what you came to look at.</p>
+
+<h2><span>// PLACED, NOT POURED</span>The chip's word ring does not survive being twelve squares across</h2>
+<p class="note">The chip fills its circle exactly, with <code>textLength</code> forcing the repeat to the
+path's own length so no gap travels round with the words. Ask that of Far and it is about ninety repeats
+and a thousand glyphs; cap the repeat <i>while</i> still forcing the length and eleven letters spread
+over half a circle. Those are the same mechanism failing from either end.</p>
+<p class="note">So the legends are <b>placed</b> — N per half arc, evenly spaced, each at its natural
+width, with the count taken from the arc's length <i>on screen</i>. Drag the zoom: a ring gains more
+legends as the camera comes in rather than larger ones, and it is rewritten only when that count
+actually changes, which is <code>setTier</code>'s discipline rather than a similar one. The offsets are
+(m + ½)/N, a fence-post rule doing real work — it keeps every run clear of the two seams at three and
+nine o'clock, where the arcs meet and a run anchored to the end of one would hang off it.</p>
+
+<h2><span>// THE RINGS SCALE AND THE TYPE DOES NOT</span>A legend that shrinks with the map is a legend twice</h2>
+<p class="note">A ring is a distance <i>on the ground</i>, so it is drawn in scene pixels and rides the
+camera exactly as the grid does. The lettering is chrome <i>about</i> a ring, so it counter-scales and
+holds one size on screen at every zoom. Run the zoom slider from end to end: the circles breathe with
+the map and the words never change size. Below the ladder's floor a ring is not a small ring — it is a
+dot inside the creature, its stroke wider than the gap to its neighbour — so it leaves, which is the
+chip's own ladder arriving at a component that measures the ground.</p>
+<p class="note">The lettering needs a ladder of its own and it is a <i>different</i> question. Two bands
+a hundred scene pixels apart stay a hundred pixels apart on the ground forever; on screen that gap
+shrinks with the camera while the type does not, so below some zoom Melee's words print through Very
+Close's however far apart the circles are. Walked from the <b>outside in</b>, which is the half that
+matters: the outermost band is the one still worth reading at the zoom where the type is crowding, and
+keeping the innermost instead would answer a pulled-back camera with the word MELEE. Take the zoom down
+to about 0.2 and watch Melee's name go while its ring stays.</p>
+
+<h2><span>// NO IDLE MOTION</span>Everything here is an arrival or a departure</h2>
+<p class="note">The ban in <code>gem.css</code> has taken two exceptions and both earned it the same
+way: the Fear strip and Vulnerable are each a live threat sitting in the room between the moments
+anybody touches them. A ruler is not that. It is a measurement you take, read, and stop looking at —
+and a ring turning slowly under a token somebody is trying to <i>move</i> is motion competing with the
+gesture it exists to serve. So the rings arrive staggered outward at 62ms, one wave leaves the creature
+and is gone, and after that nothing on this layer moves until the selection does.</p>
+
+</div>
+
+<script type="module">
+import {RANGE_RULER, radiusOf, setRulerZoom, closeRuler, TTL} from '/design/ruler.js';
+
+/* The closed set is the game's, not the component's — config.ts owns it
+   there and this page owns its own copy, which is the same seam the host
+   keeps: the builder is handed scene pixels and knows nothing about feet. */
+const RANGES = [
+  {key:'melee',     label:'Melee',      feet:5},
+  {key:'veryClose', label:'Very Close', feet:10},
+  {key:'close',     label:'Close',      feet:30},
+  {key:'far',       label:'Far',        feet:60},
+  {key:'veryFar',   label:'Very Far',   feet:120},
+];
+/* The book's own five feet to the square. The ring comes off SQUARES and
+   only the printed distance comes off the scene's units — see radiusOf. */
+const PER_SQ = 5, GRID = 100, DIST = 5, UNITS = 'ft';
+const squaresOf = r => r.feet / PER_SQ;
+
+const bd=document.getElementById('bd'), st=document.getElementById('st');
+const lay=document.getElementById('lay'), me=document.getElementById('me');
+const z=document.getElementById('z'), zr=document.getElementById('zr');
+const sz=document.getElementById('sz'), bn=document.getElementById('bn');
+
+let rul=null;
+
+const size = () => +sz.value * GRID;
+const box  = () => ({x:+me.style.left.replace('px',''), y:+me.style.top.replace('px',''),
+                     w:size(), h:size()});
+
+/* Four bands means melee..far; three drops melee, five adds very far. */
+function bands(){
+  const n=+bn.value;
+  const set = n===3 ? RANGES.slice(1,4) : RANGES.slice(0,n);
+  const tr = size()/2;
+  return set.map(r=>({...r, dist:`${squaresOf(r)*DIST} ${UNITS}`,
+                       r:radiusOf(squaresOf(r),GRID,tr)}));
+}
+
+function draw(){
+  rul?.remove();
+  const host=document.createElement('div');
+  host.innerHTML=RANGE_RULER(bands());
+  rul=host.firstElementChild;
+  const b=box();
+  Object.assign(rul.style,{left:b.x+'px',top:b.y+'px',width:b.w+'px',height:b.h+'px'});
+  lay.appendChild(rul);
+  setRulerZoom(rul, +z.value);
+}
+
+function drop(){ closeRuler(rul,()=>{}); rul=null; }
+
+/* The camera. Foundry aligns its own HUD and the chips ride it; here the
+   stage is that element, so the ruler rides the same transform and the
+   only thing the zoom costs us is `--k` and the ladder. */
+function camera(){
+  const k=+z.value, b=box();
+  st.style.transform=`translate(${(bd.clientWidth/2-(b.x+b.w/2)*k).toFixed(1)}px,`+
+    `${(300-(b.y+b.h/2)*k).toFixed(1)}px) scale(${k})`;
+  zr.textContent=k.toFixed(2);
+  if(rul) setRulerZoom(rul,k);
+}
+
+function sprite(){
+  const s=size();
+  me.style.width=s+'px'; me.style.height=s+'px';
+}
+
+function table(){
+  const k=+z.value;
+  document.querySelector('#nt tbody').innerHTML = RANGES.map((r,i)=>{
+    const rad=radiusOf(squaresOf(r),GRID,size()/2);
+    const style=['solid','solid','dashed 26/12','dashed 15/17','dashed 9/20'][i];
+    return `<tr><td>${r.label}</td><td>${squaresOf(r)*DIST} ${UNITS}</td><td>${squaresOf(r)}</td>`+
+      `<td><b>${rad}px</b></td><td>${(rad*2).toLocaleString()}px `+
+      `<i style="opacity:.6">(${Math.round(rad*2*k)} on screen)</i></td><td>${style}</td></tr>`;
+  }).join('');
+}
+
+z.oninput=()=>{camera();table();};
+sz.onchange=()=>{sprite();camera();draw();table();};
+bn.onchange=()=>draw();
+document.getElementById('go').onclick=()=>draw();
+document.getElementById('off').onclick=()=>drop();
+document.getElementById('lt').onchange=e=>
+  document.documentElement.classList.toggle('light',e.target.checked);
+
+sprite(); camera(); draw(); table();
+</script>
+</body>
+</html>

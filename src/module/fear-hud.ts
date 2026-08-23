@@ -109,6 +109,7 @@ export function registerFearHud(): void {
     max: FEAR_MAX,
     gm: !!game.user?.isGM,
     chips: chipsOn(),
+    ruler: rulerOn(),
   });
   strip = host.firstElementChild as HTMLElement | null;
   if (!strip) return;
@@ -129,15 +130,24 @@ export function registerFearHud(): void {
      you used. `token-hud.ts` is listening to the same hook for the same
      reason, and neither knows about the other. */
   Hooks.on("daggerheart.tokenChipChanged", showChips);
+  Hooks.on("daggerheart.rangeRulerChanged", showChips);
 }
 
 /** Whether this screen is drawing the token chips. Client-scoped: mine, not the table's. */
 const chipsOn = (): boolean => game.settings?.get(SYSTEM_ID, "tokenChip") !== false;
 
-/** Told what the switch now is, exactly as `show` is told what the pool now is. */
+/** And whether it is drawing the range rings. Client-scoped for the same reason. */
+const rulerOn = (): boolean => game.settings?.get(SYSTEM_ID, "rangeRuler") !== false;
+
+/**
+ * Told what the switches now are, exactly as `show` is told what the pool now
+ * is. Both are read here rather than one each, because a press only ever
+ * writes a *setting* — what the button says comes back through the setting's
+ * own `onChange`, so there is no state on this strip to keep in step.
+ */
 function showChips(): void {
-  const button = strip?.querySelector("[data-chip]");
-  button?.setAttribute("aria-pressed", chipsOn() ? "true" : "false");
+  strip?.querySelector("[data-chip]")?.setAttribute("aria-pressed", chipsOn() ? "true" : "false");
+  strip?.querySelector("[data-ruler]")?.setAttribute("aria-pressed", rulerOn() ? "true" : "false");
 }
 
 /**
@@ -154,9 +164,10 @@ async function onPress(event: Event): Promise<void> {
      ruling about the table — which is exactly why it is not gated on `isGM`
      the way everything else here is. It writes the setting and nothing else:
      the button's own state comes back through `showChips`. */
-  const chip = (event.target as HTMLElement).closest<HTMLElement>("[data-chip]");
-  if (chip) {
-    await game.settings?.set(SYSTEM_ID, "tokenChip", !chipsOn());
+  const view = (event.target as HTMLElement).closest<HTMLElement>("[data-chip],[data-ruler]");
+  if (view) {
+    const key = view.hasAttribute("data-chip") ? "tokenChip" : "rangeRuler";
+    await game.settings?.set(SYSTEM_ID, key, game.settings.get(SYSTEM_ID, key) === false);
     return;
   }
 

@@ -37,6 +37,7 @@ import {
   registerTokenChips,
   reportTokenChips,
 } from "./token-hud.ts";
+import { registerRangeRuler, reportRangeRuler } from "./range-ruler.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
 import { openActivity, registerActivityLog } from "./activity-log.ts";
 import { registerBrawler } from "./brawler.ts";
@@ -103,6 +104,9 @@ Hooks.once("init", () => {
      during `setupGame` — so a listener attached at `ready` is attached to an
      event that has already gone past. See the note on registerTokenChips. */
   registerTokenChips();
+  /* And the ruler, beside them and for the identical reason — it needs
+     `canvasReady`, which has already fired by the time `ready` runs. */
+  registerRangeRuler();
   registerDataModels();
   registerSheets();
   registerChat();
@@ -203,6 +207,11 @@ Hooks.once("ready", () => {
        transformed box — so the component answers questions as well as
        drawing. `game.daggerheart.tokenChips()` reports; `.rebuild()` fixes. */
     tokenChips: Object.assign(reportTokenChips, { rebuild: rebuildTokenChips }),
+    /* And one for the ruler, which needs it more: a component that only
+       exists while something is selected has no steady state to inspect,
+       so "it never appeared" and "it appeared and went" look the same
+       afterwards. `game.daggerheart.rangeRuler()`. */
+    rangeRuler: reportRangeRuler,
     rollAttack,
     rollWeaponDamage,
     rollAdversaryAttack,

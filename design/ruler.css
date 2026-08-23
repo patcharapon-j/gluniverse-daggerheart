@@ -1,0 +1,300 @@
+/* ══════════════════════════════════════════════════════════════════
+   THE RANGE RULER — how far is that, drawn on the map.
+
+   Daggerheart's ranges are fiction-first and the book says so out loud:
+   Melee, Very Close, Close, Far and Very Far are agreements at the
+   table, and the feet printed beside them are the book's own
+   approximations rather than a conversion. That is exactly why this is
+   worth drawing. An approximation nobody can see is not one agreement,
+   it is four people holding four of them, and the argument happens
+   after somebody has already committed to a move.
+
+   ── it is not a fourth arc on the chip ──────────────────────────
+   The chip is a readout OF a creature. This is a measurement FROM one,
+   and the two differ in every dimension that matters: lifetime (a chip
+   lives as long as the token, this lives as long as the selection),
+   size (0.63 of a grid cell against twelve of them) and subject. So it
+   is its own layer, under the chips, and a ring never crosses an arc.
+
+   ── the ruler has no hue ────────────────────────────────────────
+   Every colour on a token in this system means a resource: wound is
+   Hit Points, strain is Stress, plate is Armor, gold is Hope, violet
+   is Fear. A ruler measures the ground rather than the creature, so it
+   is drawn in the map's own ink and buys its legibility with contrast
+   and contour instead. A saturated ruler would be a sixth meaning for
+   a hue that already has one, on the single surface where all five are
+   already in play.
+
+   ── certainty is the line style ─────────────────────────────────
+   A surveyor's convention, and a real reading here rather than a
+   borrowed look: the near bands are solid because "within arm's reach"
+   is a thing you can be sure of, and the outer ones break into dashes
+   because Close and Far are the two the book leaves most to the table.
+   The line says how much the line means.
+
+   ── the name follows the ring ───────────────────────────────────
+   Which is what makes a band identifiable from wherever the reader is
+   looking at the board, rather than one they have to trace back to a
+   tag somewhere on it. It is the chip's own gesture: VULNERABLE is
+   bent round a circle for the same reason, that a token has no room
+   for a caption and every room for a word.
+
+   Two half-arcs rather than one circle, and that is the whole of the
+   readability. A single circular path puts the bottom third of every
+   ring upside down; an upper arc running left-to-right over the top
+   and a lower arc running left-to-right *under* the bottom are both
+   upright. It is the map-maker's answer to labelling a contour, and it
+   costs one extra path.
+
+   ── the rings scale with the map and the type does not ──────────
+   A ring is a distance ON the ground, so it is a scene pixel and rides
+   the camera exactly as the grid does. The lettering is chrome ABOUT a
+   ring — the distinction this system draws everywhere between an
+   object and its caption — so it counter-scales through `--k` and
+   holds one size on screen at every zoom. A legend that shrinks with
+   the map is a legend twice.
+
+   ── no idle motion ──────────────────────────────────────────────
+   gem.css bans it and has taken two exceptions, both earned the same
+   way: the Fear strip and Vulnerable are each a live threat sitting in
+   the room between the moments anybody touches them. A ruler is not
+   that. It is a measurement you take, read, and stop looking at, and a
+   ring turning slowly under a token somebody is trying to *move* is
+   motion competing with the gesture it is meant to serve. Everything
+   here is an arrival or a departure.
+
+   ── nothing here is pressable ───────────────────────────────────
+   The chip's rule, unchanged and for its two reasons: a readout that
+   is also a control is a misclick, and the canvas owns click, drag and
+   box-select over exactly these pixels. This one covers a great deal
+   more of them.
+
+   ── naming ──────────────────────────────────────────────────────
+   Drawn on the board, outside every .dh root, so the root and the
+   layer are rewritten to *compounds* exactly as the chip's are — the
+   seventh and eighth after the drag proxy, the context menu, the roll
+   popover, the rules panel's peek host, the Fear strip and the chip.
+   Members take an rng prefix and the rewrite is a naive replaceAll, so
+   a member beginning with the root's own letters would be rewritten
+   along with it and would then match nothing. This is the chip's
+   tok/tk split, followed rather than rediscovered.
+
+   The root itself was one letter shorter for an hour, and the port is
+   why it is not: a three-letter root is a substring of card.css's own
+   .rules, so the rewrite would have reached into a stylesheet this
+   component has nothing to do with and renamed a class there. The
+   rewrite list is global, so a root has to be unique against the whole
+   ported stack rather than merely against the selectors it shares a
+   file with.
+
+   Three names were wanted and all three were taken. `.rr` is a die run
+   in plate.css, `.rl` is the rules panel's line in dlg.css and `.ln`
+   is that line's own body — and dlg.css draws inside a .dh root, so
+   `.dh .rl` would have matched a legend of ours the moment the two
+   were on screen together. Seventh instance of the bug that renamed
+   `.die.win`, caught by grepping before it was written rather than by
+   a study page, which could never have shown it.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* The layer, and it is the chip's layer one z-index down. No clip, for
+   the reason stated at the head of token.css: the box is transformed by
+   an ancestor, so a clip on it would mean something other than it looks
+   like it means. */
+.ruler-layer{position:absolute;inset:0;pointer-events:none;
+  z-index:0;transform-origin:0 0}
+
+/* The host positions this at the token's own box, in scene coordinates,
+   exactly as it positions a chip. Everything inside is centred on it.
+
+   The ink is stated rather than taken from the palette, and that is the
+   one literal in this file worth defending. Every token in tokens.css
+   has a light value and a dark one, because every surface that reads
+   them is made of our own paper — and this one is not. It is drawn on
+   somebody's scene artwork, which has no theme and does not become
+   parchment when a reader switches to the light one. A ruler that went
+   dark on a night map because a *sheet* went light would be answering
+   a question nobody asked it. */
+.ruler{position:absolute;pointer-events:none;
+  --rk:#e2ecf5;
+  --seat:drop-shadow(0 0 1.3px rgba(0,0,0,.96)) drop-shadow(0 0 4px rgba(0,0,0,.5))}
+.ruler *{pointer-events:none}
+
+/* ── a ring ────────────────────────────────────────────────────────
+   Centred on the token's centre and sized from its own radius, which
+   the host measured from the token's EDGE — reach is what the rule
+   means, and a three-by-three dragon threatens a square beyond its own
+   body. */
+.ruler .rngr,.ruler .rngs,.ruler .rngw{position:absolute;left:50%;top:50%;
+  border-radius:50%;
+  width:calc(var(--r) * 2);height:calc(var(--r) * 2);
+  margin-left:calc(var(--r) * -1);margin-top:calc(var(--r) * -1)}
+.ruler .rngr > *{position:absolute;inset:0;border-radius:50%}
+
+/* The line. Its face is a flat colour or a repeating conic — the dash —
+   written inline, because the dash period is an arc *length* and only
+   the builder knows the radius. The mask is the chip's own annulus rule
+   and the contour is the chip's own answer to drawing over somebody
+   else's painting: a drop-shadow rather than a box-shadow, because a
+   mask clips a box shadow along with the box and a drop-shadow is taken
+   from the result.
+
+   Two masks, intersected, and the second is the light. A conic alpha
+   dims the line toward the lower-right so the ring reads as a solid
+   thing lit from above rather than as a drawn circle — and it has to be
+   a *mask* rather than an overlay, because an overlay in plus-lighter
+   would brighten the gaps in a dashed ring as readily as the dashes and
+   there would be no dash left. Composited, the light can only ever take
+   away, which is the same guarantee the chip's facet ring gives its
+   numerals. */
+.ruler .rngn{opacity:var(--a);filter:var(--seat);
+  --annulus:radial-gradient(closest-side,transparent calc(100% - var(--w)),
+    #000 calc(100% - var(--w)));
+  --lit:conic-gradient(from 200deg,rgba(0,0,0,.44) 0deg,#000 105deg,
+    #000 250deg,rgba(0,0,0,.44) 360deg);
+  -webkit-mask-image:var(--annulus),var(--lit);
+  -webkit-mask-composite:source-in;
+  mask-image:var(--annulus),var(--lit);
+  mask-composite:intersect}
+
+/* The bevel. Light bleeding INWARD off the line and shadow falling
+   outward, which is one claim about one edge and therefore one gradient
+   rather than two elements. It is what makes the ring sit in the ground
+   instead of on it, and it is deliberately not a fill: a wash over the
+   whole disc would tint the map, which is the thing the reader came to
+   look at. */
+.ruler .rngb{opacity:calc(var(--a) * .85);
+  background:radial-gradient(closest-side,
+    transparent calc(100% - 34px),
+    color-mix(in srgb,var(--rk) 24%,transparent) calc(100% - 2px),
+    rgba(0,0,0,.42) calc(100% + 1px),
+    transparent calc(100% + 14px))}
+
+/* A finer companion rule just outside the line. A doubled rule is how
+   this design draws a border everywhere else — the Fear die's three
+   concentric cuts, the chip's channel bevel — and it is what stops a
+   single stroke reading as a fence rather than as an instrument. It sits
+   OUTSIDE rather than inside because the bevel already occupies the
+   inner side, and a rule between the line and its own light would be
+   three edges where the eye can only read two. */
+.ruler .rngh{inset:-6px;opacity:calc(var(--a) * .34);background:var(--rk);
+  -webkit-mask:radial-gradient(closest-side,transparent calc(100% - 1px),#000 calc(100% - 1px));
+  mask:radial-gradient(closest-side,transparent calc(100% - 1px),#000 calc(100% - 1px));
+  filter:drop-shadow(0 0 1px rgba(0,0,0,.9))}
+
+/* ── the spokes ────────────────────────────────────────────────────
+   Four faint beams on the diagonals, from the innermost ring out to the
+   outermost, and they are the one thing that binds four circles into
+   one instrument. On the diagonals rather than the cardinals so they do
+   not lie along the grid, and tapering outward because they belong to
+   the token they leave from.
+
+   One element and one gradient. The mask takes absolute lengths off the
+   centre — `closest-side` makes 100% the radius — so the inner cut is
+   the first ring's own radius rather than a percentage somebody would
+   have to keep in step. */
+.ruler .rngs{--r:var(--far);opacity:.55;
+  background:repeating-conic-gradient(from 45deg,
+    rgba(255,255,255,.13) 0 .34deg,transparent .34deg 90deg);
+  -webkit-mask:radial-gradient(closest-side,transparent var(--r0),
+    #000 calc(var(--r0) + 70px),#000 calc(100% - 3px),transparent 100%);
+  mask:radial-gradient(closest-side,transparent var(--r0),
+    #000 calc(var(--r0) + 70px),#000 calc(100% - 3px),transparent 100%)}
+
+/* ── the lettering ─────────────────────────────────────────────────
+   The name follows the ring. That is what makes a band identifiable
+   from wherever the reader happens to be looking at the board, rather
+   than one they have to trace back to a tag somewhere on it — and it
+   is `token.css`'s own gesture: the chip bends VULNERABLE round a
+   circle for the same reason, that a token has no room for a caption
+   and every room for a word.
+
+   The viewBox is the ring's own diameter in scene pixels and the
+   element fills the ring exactly, so one SVG user unit is one scene
+   pixel. That is what lets the type be sized in CSS pixels and still
+   land where the arithmetic in ruler.js says it does.
+
+   Everything about the size counter-scales, which is the same claim
+   the fanned tags made before them: a ring is a distance on the ground
+   and the words about it are not. The stroke goes with the size, or
+   the halo would swallow the glyphs at one zoom and vanish at another.
+
+   `paint-order` is the whole of the legibility. Stroking first and
+   filling over it knocks a dark channel out of the line behind every
+   glyph, so the words read as cut INTO the ring rather than laid on
+   top of it — which is the map-maker's treatment of a contour label,
+   and the reason this needs no plinth. A box would be an object on the
+   map, and the map is what the reader came for. */
+.ruler .rngt{overflow:visible}
+.ruler .rngt text{
+  font-family:var(--f-mono);font-weight:700;
+  font-size:calc(9px * var(--k));letter-spacing:.17em;
+  fill:var(--rk);fill-opacity:calc(.34 + var(--a) * .62);
+  paint-order:stroke;stroke:rgba(4,6,10,.94);
+  stroke-width:calc(2.7px * var(--k));stroke-linejoin:round}
+
+/* ── the ladder ────────────────────────────────────────────────────
+   A ring below the floor is not a small ring, it is a dot inside the
+   creature: its stroke is wider than the gap to its neighbour, and it
+   says nothing the ring outside it does not say better. So it leaves,
+   which is the chip's ladder arriving at a component that measures the
+   ground rather than the creature — and the question is asked in camera
+   scale here rather than in footprint, because a range is the same
+   distance whatever is standing at the middle of it. */
+.ruler [data-lo]{display:none}
+
+/* ══ the arrival ═══════════════════════════════════════════════════
+   It comes out of the token rather than appearing over it, because the
+   thing being said is that these distances are measured FROM this
+   creature. Staggered outward at 62ms, which is slow enough to read as
+   one wave leaving and fast enough that the whole ruler has landed
+   before a hand has finished moving off the mouse.
+
+   Every keyframe ends on the element's own settled value, so a
+   superseded or cancelled run leaves the ruler where the layout already
+   put it — the swap's rule, and for its reason. */
+@keyframes rng-in{from{transform:scale(.55);opacity:0}
+  to{transform:scale(1);opacity:1}}
+@keyframes rng-lb{from{opacity:0}to{opacity:1}}
+
+.ruler .rngr{animation:rng-in .52s var(--d) both cubic-bezier(.17,.93,.28,1)}
+.ruler .rngs{animation:rng-lb .5s .1s both}
+/* The words land just after their own ring does, and it is the only
+   stagger left inside a band: the ring arriving and its name arriving
+   are two beats of one event, and a name already standing while its
+   circle is still travelling belongs to a circle that has not turned
+   up yet. */
+.ruler .rngt{animation:rng-lb .34s calc(var(--d) + 150ms) both}
+
+/* The wave. One ring travelling from the creature out past the last
+   band and gone — the half of the arrival that says the rings came from
+   *here*, which four independent expansions cannot say on their own. It
+   runs once and is not an idle loop; the ban above still holds. */
+.ruler .rngw{--r:var(--far);
+  background:radial-gradient(closest-side,transparent calc(100% - 5px),
+    var(--rk) calc(100% - 1px),transparent 100%);
+  animation:rng-wv .78s .04s both cubic-bezier(.22,.68,.3,1)}
+@keyframes rng-wv{
+  0%{transform:scale(.04);opacity:0}
+  14%{opacity:.5}
+  100%{transform:scale(1.02);opacity:0}}
+
+/* ══ the departure ═════════════════════════════════════════════════
+   Faster than the arrival and unstaggered, because a measurement ending
+   is not an event anybody is reading — what it has to say is only that
+   it is over. It collapses rather than fades: a ruler that simply stops
+   existing reads as a redraw. TTL in ruler.js is this duration, stated
+   once so the host and the stylesheet cannot disagree. */
+@keyframes rng-out{to{transform:scale(.82);opacity:0}}
+.ruler.out .rngr,.ruler.out .rngs{
+  animation:rng-out .24s both cubic-bezier(.4,0,.7,.2)}
+.ruler.out .rngw{display:none}
+
+/* Selecting a token has to answer, so the ruler still arrives — what
+   goes is the travel, not the reply. gem.css draws exactly this line
+   between an idle loop, which stops, and the answer to a press, which
+   may not. */
+@media (prefers-reduced-motion:reduce){
+  .ruler .rngr,.ruler .rngt,.ruler .rngs{animation:rng-lb .12s both}
+  .ruler .rngw{display:none}
+  .ruler.out .rngr,.ruler.out .rngs{animation:rng-out .12s both}
+}
