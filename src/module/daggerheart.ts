@@ -31,7 +31,12 @@ import { applyTheme, gainFear, getFear, registerSettings, setFear, spendFear } f
 import { openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
-import { registerTokenBars, registerTokenChips } from "./token-hud.ts";
+import {
+  rebuildTokenChips,
+  registerTokenBars,
+  registerTokenChips,
+  reportTokenChips,
+} from "./token-hud.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
 import { openActivity, registerActivityLog } from "./activity-log.ts";
 import { registerBrawler } from "./brawler.ts";
@@ -91,6 +96,13 @@ Hooks.once("init", () => {
      to happen at `init`, because it swaps the Token class the canvas builds
      its placeables from. */
   registerTokenBars();
+  /* And the chips themselves — here at `init` and deliberately NOT beside the
+     Fear strip at `ready`. The strip has to wait, because it writes into
+     `#ui-top` and that does not exist until the game view is drawn. This only
+     asks `Hooks.on`, and the hook it needs is `canvasReady`, which fires
+     during `setupGame` — so a listener attached at `ready` is attached to an
+     event that has already gone past. See the note on registerTokenChips. */
+  registerTokenChips();
   registerDataModels();
   registerSheets();
   registerChat();
@@ -182,11 +194,15 @@ Hooks.once("ready", () => {
      Foundry's own chrome, and `#ui-top` does not exist until the game view
      has been drawn. */
   registerFearHud();
-  registerTokenChips();
 
   /** Public API for macros and modules: `game.daggerheart.rollTrait(actor, "agility")`. */
   (game as any).daggerheart = {
     rollTrait,
+    /* A console for the token chips. Both bugs in the first build were
+       silent — a hook registered after it had fired, and a clip on a
+       transformed box — so the component answers questions as well as
+       drawing. `game.daggerheart.tokenChips()` reports; `.rebuild()` fixes. */
+    tokenChips: Object.assign(reportTokenChips, { rebuild: rebuildTokenChips }),
     rollAttack,
     rollWeaponDamage,
     rollAdversaryAttack,

@@ -111,7 +111,15 @@
    no study page could ever have shown it.
    ══════════════════════════════════════════════════════════════════ */
 
-.dh.tok-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none;
+/* No `overflow:hidden`, and that is a correction rather than an omission.
+   The layer carries the stage's own matrix, so its BOX is transformed along
+   with its contents — at zoom 2 an `inset:0` box covers a quarter of the
+   screen once the matrix has been applied, and a clip on it would cut off
+   every chip outside that quarter. Whatever the layer is hung on does the
+   clipping instead: Foundry's canvas region in the game, `.board` on the
+   study page. Both are untransformed, which is the property that makes a
+   clip mean what it looks like it means. */
+.dh.tok-layer{position:absolute;inset:0;pointer-events:none;
   z-index:1;transform-origin:0 0}
 
 /* `inset:0` is load-bearing rather than tidy: a host that positions the

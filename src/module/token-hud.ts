@@ -328,25 +328,50 @@ export function registerTokenBars(): void {
   CONFIG.Token.objectClass = DaggerheartToken;
 }
 
+/** Hang a fresh layer on the wall and fill it. Every scene change does this. */
+function build(): void {
+  layer?.remove();
+  const host = wall();
+  if (!host) {
+    console.error(
+      `${SYSTEM_ID} | nowhere to hang the token layer — tried ${WALLS.join(", ")}. ` +
+        `Foundry's canvas layout has changed and token-hud.ts needs a new wall.`,
+    );
+    layer = null;
+    return;
+  }
+  layer = document.createElement("div");
+  layer.className = "dh tok-layer";
+  host.appendChild(layer);
+  chips.clear();
+  syncTransform();
+  redraw();
+}
+
+/**
+ * Wire the chips up.
+ *
+ * **Called from `init`, and that is load-bearing rather than tidy.** The first
+ * build called this from `ready` — beside `registerFearHud`, which genuinely
+ * has to wait, because it writes into `#ui-top` and that does not exist until
+ * the game view is drawn. This does not: it only asks `Hooks.on`, and the one
+ * hook it cares about is `canvasReady`, which fires during `Game#setupGame`
+ * and therefore **before** `ready`. Registered at `ready` the listener was
+ * attached to an event that had already gone past, so the layer was never
+ * built and nothing was ever drawn.
+ *
+ * The failure is worth recording because of how it presents. Nothing throws,
+ * nothing logs, every check passes, the stylesheet is loaded and correct — and
+ * then the moment you change scenes the whole component appears and works
+ * perfectly, which makes it read as a caching problem rather than as a hook
+ * that fired three hundred milliseconds too early.
+ *
+ * `canvas?.ready` covers the other direction: a system reloaded into a world
+ * that is already up has missed the event for real, and the honest answer
+ * there is to build once immediately rather than to wait for a scene change.
+ */
 export function registerTokenChips(): void {
-  Hooks.on("canvasReady", () => {
-    layer?.remove();
-    const host = wall();
-    if (!host) {
-      console.error(
-        `${SYSTEM_ID} | nowhere to hang the token layer — tried ${WALLS.join(", ")}. ` +
-          `Foundry's canvas layout has changed and token-hud.ts needs a new wall.`,
-      );
-      layer = null;
-      return;
-    }
-    layer = document.createElement("div");
-    layer.className = "dh tok-layer";
-    host.appendChild(layer);
-    chips.clear();
-    syncTransform();
-    redraw();
-  });
+  Hooks.on("canvasReady", build);
 
   /* Pan and zoom move the layer, not the chips. The tier pass rides along
      because a zoom is the only thing that changes a chip's footprint in
@@ -389,6 +414,41 @@ export function registerTokenChips(): void {
 
   /* Sight recomputed — a creature stepping out of the fog, or into it. */
   Hooks.on("sightRefresh", () => redraw());
+
+  /* Already up. See the note above: this is the case `canvasReady` cannot
+     answer, because it has genuinely been and gone. */
+  if ((canvas as any)?.ready) build();
+}
+
+/**
+ * What the layer currently thinks, for a console.
+ *
+ * This exists because the two bugs that shipped in the first build were both
+ * *silent* — a hook registered after it had fired, and a clip on a
+ * transformed box — and neither threw, logged, or left anything on screen to
+ * look at. A component drawn over somebody else's canvas has no natural place
+ * to complain from, so it gets asked instead. `game.daggerheart.tokenChips()`.
+ */
+export function reportTokenChips(): Record<string, unknown> {
+  const t = canvas?.stage?.worldTransform;
+  return {
+    setting: game.settings?.get(SYSTEM_ID, "tokenChip"),
+    adversaries: game.settings?.get(SYSTEM_ID, "adversaryChip"),
+    stylesheetLoaded: [...document.styleSheets].some((s) => s.href?.includes("token.css")),
+    wall: layer?.parentElement
+      ? `${layer.parentElement.tagName.toLowerCase()}#${layer.parentElement.id || "(no id)"}`
+      : "NONE — the layer was never hung",
+    layerBox: layer ? layer.getBoundingClientRect().toJSON() : null,
+    transform: t ? `matrix(${t.a},${t.b},${t.c},${t.d},${t.tx},${t.ty})` : "no stage",
+    tokensOnScene: canvas?.tokens?.placeables?.length ?? 0,
+    chipsDrawn: chips.size,
+    walls: WALLS.map((w) => `${w}: ${document.querySelector(w) ? "found" : "absent"}`),
+  };
+}
+
+/** Throw the layer away and build it again. For a console, and for a fix. */
+export function rebuildTokenChips(): void {
+  build();
 }
 
 /** Every token standing for this actor, on this scene. */
