@@ -52,6 +52,27 @@
   color: var(--frame-tx);
 }
 
+/* Phil's Token Studio injects its own door, and we already drew one.
+ *
+ * Its `UniversalButtonInjector` watches `<body>` for any `.application` node
+ * and resolves the actor off the end of the element's id, which is exactly
+ * the shape DocumentSheetV2 gives ours — so it finds every sheet in this
+ * system, fails to find a portrait it recognises, and appends an
+ * `<a class="phils-token-studio-header-btn">` to the window header. What
+ * lands is a Foundry-chrome control in the middle of our own, beside the
+ * header control `svelte-sheets.ts` adds for the same module and the Studio
+ * button in the diorama's control row. Two doors to one room.
+ *
+ * Hidden rather than removed, and scoped to `.dh-sheet` rather than global:
+ * the module re-injects on a timer and on every mutation, so taking the node
+ * out is a race we would lose, and every sheet in the world that is not ours
+ * keeps its button. `display:none` on a node that keeps coming back costs
+ * nothing and cannot be out of step with the injector. See
+ * `src/module/token-studio.ts` for the whole argument. */
+.application.dh-sheet .phils-token-studio-header-btn {
+  display: none;
+}
+
 .application.dh-sheet .window-title {
   font: 600 12px/1 var(--f-mono), ui-monospace, monospace;
   letter-spacing: 0.14em;

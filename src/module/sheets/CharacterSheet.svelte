@@ -84,6 +84,7 @@
     type LiveResource,
   } from "../data/resources.ts";
   import { postCard } from "./post-card.ts";
+  import { openTokenStudio, tokenStudioActive } from "../token-studio.ts";
   import Chits from "./parts/Chits.svelte";
   import Keep from "./parts/Keep.svelte";
   import { liveDicePools, dicePoolsFor, type LiveDicePool } from "../data/dice-pools.ts";
@@ -116,6 +117,10 @@
   /* Not reactive, and does not need to be — nobody is promoted to GM with a
      character sheet open. It gates the adjust tab; see the tab strip. */
   const isGM = game.user?.isGM ?? false;
+
+  /* Same, and for the same reason: a module is not enabled without a reload.
+     It gates the diorama's Studio button — see `token-studio.ts`. */
+  const studio = tokenStudioActive();
 
   /* ── edit mode ─────────────────────────────────────────────────────
      Definition against use, and the whole sheet turns on which one you are
@@ -2192,6 +2197,16 @@
                  image at 100px seen from above, so Foundry keeps the token's
                  art apart from the actor's and so does this. -->
             <button type="button" class="ctl" onclick={() => pickImage("token")}>Token</button>
+            <!-- The third way to fill the same two slots, and the only one
+                 that makes a picture rather than choosing one. Beside Image
+                 and Token because that is what it writes — `actor.img` and
+                 `prototypeToken.texture.src`, the two fields those buttons
+                 already own — and drawn only when the module is there,
+                 because a control that opens nothing is worse than no
+                 control. -->
+            {#if studio}
+              <button type="button" class="ctl" onclick={() => openTokenStudio(doc)}>Studio</button>
+            {/if}
             <button type="button" class="ctl {framing ? 'on' : ''}" onclick={() => (framing = !framing)}>
               Frame
             </button>

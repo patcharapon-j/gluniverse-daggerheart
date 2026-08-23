@@ -3944,6 +3944,94 @@ sound, via `diceSoNiceMessagePreProcess` — the one hook whose context is still
 mutable. Scoped to our own messages: a system that switched off a user's dice
 everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
 
+## Phil's Token Studio
+
+A token and portrait editor — crop, frame, effects, a paint mask, and a Save
+that writes `actor.img` and `prototypeToken.texture.src`. Both of those are
+fields this sheet already owns a control for: the diorama's **Image** and
+**Token** buttons open a FilePicker at each. So the Studio is a **third way to
+fill the same two slots** rather than a new capability, and it belongs beside
+them rather than in a place of its own. `src/module/token-studio.ts` is the
+whole seam.
+
+**It publishes no API**, which is the first thing that shapes this.
+`QuickTokenStudio` is a plain `export` from `scripts/token-studio.js`; there is
+no `game.modules.get(…).api` and nothing on `globalThis`. So the class is
+reached by a dynamic `import()` of the module's own file, **at the press** and
+not at load — a system that imported it at module scope would fail to boot for
+every table that does not have the module, which is most of them. The path goes
+through `getRoute` for `assets.ts`'s reason, and carries `@vite-ignore` because
+it is a URL rather than a specifier and the bundler would otherwise try to
+resolve a module that is not in this repo and cannot be.
+
+**Three entry points, and they are three different questions.**
+
+- **The diorama's `Studio` button**, beside Image and Token, in **edit mode**.
+  Those two are the character's own definition and are locked with the rest of
+  it, and this writes the same two fields.
+- **A header control on every actor sheet**, gated on **ownership** rather than
+  on edit mode, in the window's control menu next to Foundry's own "Show
+  Portrait Artwork" and "Configure Prototype Token" — which is where somebody
+  who has never opened this sheet before goes looking for artwork. The
+  adversary, companion and environment sheets have no diorama, so for three of
+  the four subtypes this is the way in that always exists. It is **appended in
+  `_getHeaderControls`** and not declared in `DEFAULT_OPTIONS.window.controls`,
+  because `mergeObject` *replaces* an array rather than concatenating it:
+  declaring the key would take ActorSheetV2's own four controls off every sheet
+  in the system in order to add one.
+- **`ActorSheetHeader`'s `Studio` button**, beside its Image, for the same
+  three sheets while editing.
+
+Every one of them is drawn only when the module is active, because **a control
+that opens nothing is worse than no control** — and `openTokenStudio` refuses
+out loud rather than silently, since a button that does nothing is
+indistinguishable from a button nobody wired. That is the activity log's door
+again.
+
+**One window, because the module can only have one.**
+`QuickTokenStudio.DEFAULT_OPTIONS.id` is the fixed string
+`"phils-token-studio-app-v3"` rather than `"…-{id}"`, and ApplicationV2 keys
+`foundry.applications.instances` on that id at render and *deletes* the entry at
+close. A second Studio opened while a first is up therefore overwrites the
+registry entry, and closing either one unregisters the other: the loser is a
+window on screen Foundry no longer knows about. The module constructs a new one
+on every click and wears that. We do not — a press for the actor already being
+edited brings that window to the front, and a press for a different actor closes
+the first properly before opening the second. Kept on `rendered` rather than on
+being non-null, for `activity-log.ts`'s reason.
+
+**And the module injects its own door, which it turned out we could not talk
+our way out of.** The first draft of this file asserted that its
+`UniversalButtonInjector` could not find us — it matches `.daggerheart` /
+`.dh-style` and `game.system.id === "daggerheart"`, and this system is
+`gluniverse-daggerheart` inside a `.dh` root. That is true of three of its four
+paths and false of the one that matters. Its `MutationObserver` watches `<body>`
+for any node carrying **`.application`**, which every ApplicationV2 window does,
+and then resolves the actor by taking the last hyphen-separated chunk of the
+element's id — and `DocumentSheetV2` builds that id as
+`${constructor.name}-${uuid}`, so ours ends in the actor id and the lookup
+succeeds. `injectProfileButton` then finds nothing (it wants `.portrait`,
+`.profile-img`, `img[data-edit=img]` and six more; the diorama is a `div.img`
+inside `.dio`) and falls through to the header, landing an
+`<a class="phils-token-studio-header-btn">` in our `.window-header`.
+
+So `styles/frame.css` hides it, **inside `.dh-sheet` only**. Not a disagreement
+with the module: every sheet in the world that is not ours keeps its button, and
+it is hidden here precisely because we offer the same thing in the place this
+system puts things — a Foundry-chrome control in the middle of our own is the
+thing `browse.css` resets an input for. `display:none` rather than removing the
+node, because the injector re-runs on every mutation and on a 100ms timer, so
+taking it out is a race we would lose.
+
+The general lesson is the one about the study page arriving from a new
+direction: **a claim about somebody else's code is a measurement, not a
+reading.** Three of the four paths were correctly ruled out by reading; the
+fourth was ruled out by reading too, and was wrong, because `.application` is a
+class Foundry puts on the window and neither file says so.
+
+`game.daggerheart.tokenStudio(actor)` is the same call, for a macro — the one
+place in the world that knows the import path.
+
 ## Not done yet
 
 - Compendium content — character creation is covered: classes, subclasses,
