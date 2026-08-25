@@ -91,25 +91,27 @@
  * The result is two numbers rather than one, because there are two claims.
  * `--tkr` is the READOUT — three tracks, the gems, the Difficulty — which
  * is a reading *off* the creature and moves out to clear whatever it now
- * occupies. `--tkv` is VULNERABLE, which goes inward, on the creature, and
- * therefore follows the subject and may go *below* 1. Grid fit is exactly
- * the case that separates them: it shrinks the creature inside its cell,
- * so the readout needs no push and the word ring has to come in.
+ * occupies. The subject scale remains diagnostic evidence for dynamic-ring
+ * fit; the condition material is attached to the PIXI mesh and follows the
+ * subject without a second HTML transform.
  *
  * ── what it may say, and to whom ─────────────────────────────────────
  * A GM sees everything. Everybody else sees their own characters and their
  * companions in full, and sees an adversary according to one world setting —
- * nothing, the tracks without the Difficulty, or the lot. **Vulnerable is
- * exempt from all of it**, because a creature that is easier to hit is a
- * fact somebody at the table produced by hitting it, and hiding the
- * consequence of your own hit is the system taking back what the fiction
- * just gave you.
+ * nothing, the tracks without the Difficulty, or the lot. Explicit conditions
+ * are exempt from resource privacy because they are shared tactical facts;
+ * fog and token visibility still suppress the entire chip and material.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SYSTEM_ID } from "./config.ts";
+import { CONDITIONS, SYSTEM_ID } from "./config.ts";
 import { TOKEN_CHIP, chipScale, setChip, setTier } from "./ui/token.js";
+import {
+  clearTokenConditionMaterial,
+  registerTokenConditionMaterials,
+  syncTokenConditionMaterial,
+} from "./token-conditions.ts";
 
 /** What the chip is told about a creature. Mirrors token.js's `s`. */
 interface ChipState {
@@ -119,7 +121,8 @@ interface ChipState {
   hope?: { value: number; max: number };
   scars?: number;
   difficulty?: number | null;
-  vuln?: boolean;
+  conditions?: string[];
+  conditionIds?: string[];
   hidden?: boolean;
   defeated?: boolean;
 }
@@ -173,9 +176,9 @@ function reading(actor: any): "full" | "marks" | "none" {
 /**
  * The chip's state, or null for a creature this client draws nothing for.
  *
- * The Vulnerable exemption is the one thing here that survives a `none`, and
- * it is why this returns a state rather than bailing: a hidden adversary
- * that is Vulnerable still gets a chip, holding nothing but the word.
+ * Conditions are the one thing here that survives a `none`, and it is why this
+ * returns a state rather than bailing: a readable adversary with a condition
+ * still gets the joined sentence and material, but no private resources.
  */
 function stateOf(token: any): ChipState | null {
   const actor = token?.actor;
@@ -183,17 +186,20 @@ function stateOf(token: any): ChipState | null {
 
   const sys = actor.system ?? {};
   const res = sys.resources ?? {};
-  const vuln = !!actor.statuses?.has?.("vulnerable");
+  const active = CONDITIONS.filter((condition) => actor.statuses?.has?.(condition.id));
+  const conditionIds = active.map((condition) => condition.id);
+  const conditions = active.map((condition) => condition.name);
   const defeated = !!actor.statuses?.has?.(CONFIG.specialStatusEffects?.DEFEATED ?? "dead");
 
   const see = reading(actor);
-  if (see === "none") return vuln ? { vuln, defeated } : null;
+  if (see === "none") return conditions.length || defeated ? { conditions, conditionIds, defeated } : null;
 
   const state: ChipState = {
     hp: track(res.hitPoints),
     stress: track(res.stress),
     armor: track(res.armorSlots),
-    vuln,
+    conditions,
+    conditionIds,
     defeated,
   };
 
@@ -333,6 +339,9 @@ function sync(token: any): void {
   const state = enabled ? stateOf(token) : null;
   const gone = !state || (!token.isVisible && !isGM());
 
+  if (gone) clearTokenConditionMaterial(token);
+  else syncTokenConditionMaterial(token, state.conditionIds ?? [], !!state.defeated);
+
   let chip = chips.get(id);
   if (gone) {
     chip?.remove();
@@ -433,6 +442,17 @@ export function registerTokenBars(): void {
       if (OURS.has(this.actor?.type)) return;
       return super.drawBars?.(...args);
     }
+
+    /* Condition art is the token material now. Foundry's square effect icons
+       would be a second, lower-fidelity answer sitting on top of it, so our
+       actor types suppress the icon container at its source. This catches the
+       initial `_draw()` path as well as later effect refreshes. */
+    async _drawEffects(...args: any[]): Promise<any> {
+      if (!OURS.has(this.actor?.type)) return super._drawEffects?.(...args);
+      const children = this.effects?.removeChildren?.() ?? [];
+      for (const child of children) child.destroy?.({ children: true });
+      if (this.effects) this.effects.renderable = false;
+    }
   }
 
   CONFIG.Token.objectClass = DaggerheartToken;
@@ -496,6 +516,7 @@ function rehang(): void {
  * there is to build once immediately rather than to wait for a scene change.
  */
 export function registerTokenChips(): void {
+  registerTokenConditionMaterials();
   Hooks.on("canvasReady", build);
 
   /* Pan and zoom move nothing of ours — Foundry moves `#hud` and the chips
@@ -522,12 +543,12 @@ export function registerTokenChips(): void {
     const id = token.document?.id ?? token.id;
     chips.get(id)?.remove();
     chips.delete(id);
+    clearTokenConditionMaterial(token);
   });
 
   /* The state, from every direction it can move. An actor's tracks, a
-     token's own flags, and an effect arriving or leaving — which is how
-     Vulnerable gets here, and it is the reason `deleteActiveEffect` is on
-     this list at all. */
+     token's own flags, and an effect arriving or leaving — which is how every
+     condition gets here, and why `deleteActiveEffect` is on this list. */
   Hooks.on("updateActor", (actor: any) => forActor(actor));
   Hooks.on("updateToken", (doc: any) => doc.object && sync(doc.object));
   for (const hook of ["createActiveEffect", "deleteActiveEffect", "updateActiveEffect"]) {
@@ -589,7 +610,7 @@ export function reportTokenChips(): Record<string, unknown> {
     return (
       `ring ${w.ring ? (w.gridFit ? "grid fit" : "subject fit") : "off"}` +
       `, subject ${w.subject}, art ${w.art}, dial ${w.manual}` +
-      ` -> readout ${k.readout}, vulnerable ${k.subject}`
+      ` -> readout ${k.readout}, subject ${k.subject}`
     );
   })();
 

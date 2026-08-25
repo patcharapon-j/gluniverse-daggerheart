@@ -120,9 +120,9 @@ outside them.</p>
 radius 50.2, which is the first tenth of a pixel past the token's own circle: the creature is drawn
 and the tracks are drawn, and neither is drawn over the other. Every earlier draft put them on the
 painting, which is an argument a 3px arc loses against a pale highlight however saturated it is.
-<b>Vulnerable is the exception</b> and stays inside, because it is not a track and not a reading off
-the creature — it is a claim <em>about</em> the creature, and the thing that is Vulnerable is the thing
-in the middle. The cost is a footprint: the outer edge is at 64.6 where the grid cell's is 50, so a
+<b>Conditions are the exception</b>: their procedural material stays on the creature while their joined
+sentence sits almost flush to the rim. They are not tracks and never become another countable band.
+The cost is a footprint: the outer edge is at 64.6 where the grid cell's is 50, so a
 chip reaches a seventh of a cell into each neighbour and two adjacent creatures' Armor arcs can cross.
 That is what buys the artwork back.</p>
 
@@ -192,7 +192,7 @@ hole, and <b>endRadius 0.7225</b>, where the visible band stops. <b>The two fit 
 normalisations of that one texture</b>, which is why one constant answers both and they are reciprocals:
 fit the hole to the cell and the rim lands <b>1.0848</b> cells out, fit the rim to the cell and the hole
 stops at <b>0.9218</b> of it. The first is the collision. The second is the one arrangement where the
-creature is <em>smaller</em> than its cell, and where <b>Vulnerable</b> has to come in with it.</p>
+creature is <em>smaller</em> than its cell and the condition sentence still follows the visible rim.</p>
 <div class="rings" id="rings"></div>
 <p class="cap">The pale annulus is Foundry's band at its own two radii. Press <em>before</em> to put the
 chip back where it was drawn: in subject fit the innermost track begins at 50.2 and the band's rim
@@ -207,8 +207,8 @@ That is the range ruler's rule arriving here — the rings are geometry and scal
 the lettering is read and does not — and it is what stops the dial making one creature's Stress track
 fatter than its neighbour's. <b>The readout is floored at the cell</b> however small the art is:
 following a 0.6-scale sprite inward would draw its track at 0.6 the size of the creature beside it, and
-being countable across a whole fight at a glance is the entire job. Vulnerable has no floor, because it
-is a claim <em>about</em> the creature rather than a reading off it.</p>
+being countable across a whole fight at a glance is the entire job. The procedural condition material
+needs no radius calculation: it is a filter on the PIXI mesh and follows the creature by construction.</p>
 
 <h2><span>// THE BOARD</span>Drag the zoom. The ladder is the whole design.</h2>
 <div class="board big" id="board"><div class="tok-layer" id="layer"><div class="grid"></div></div></div>
@@ -231,24 +231,17 @@ is a claim <em>about</em> the creature rather than a reading off it.</p>
   <label class="tg"><input type="checkbox" id="gm" checked> viewing as GM</label>
 </div>
 
-<h2><span>// VULNERABLE</span>Inward, in words, in three loops</h2>
-<p class="note">Not a fourth ring. Three concentric arcs already say <i>track</i>, and a condition drawn
-as a fourth would be a track you cannot count — so this goes <b>inward</b>, where nothing else lives.
-It is <code>mark.js</code>'s own <code>VULN_RUN</code> bent round a circle: the sheet answers this
-condition with a scrolling strip of terms because it is read at a glance, out of the corner of an eye,
-while the GM is describing something. A token has no room for the rules and every room for the
-<b>word</b>.</p>
-<p class="note">Three loops, and none of them is a colour change. The <b>vignette</b> breathes at 4.6s —
-the creature's own edge going dark from the inside. The <b>words</b> turn clockwise at 46s, slow enough
-to read one. The <b>sweep</b> runs <i>anticlockwise</i> at 7.5s, lighting the words it crosses.
-Deliberately incommensurate and deliberately in two directions: a sweep going the same way as the text
-is a highlight stuck to a word, and the whole point is that it passes over them.</p>
-<p class="note">All three are cheap by construction, which is not incidental — this can be on eight
-tokens where the Fear strip is on one. Both turns are a <code>transform</code> on a <i>static</i>
-gradient rather than an animated gradient angle, so they composite and never repaint; the breath is an
-opacity. The sweep is <code>plus-lighter</code> rather than a fourth coloured element, so it may only
-ever <b>add</b> — it cannot dim a word it crosses or dirty the artwork beneath it, which is the same
-guarantee <code>plate.css</code>'s facet ring keeps by only ever darkening.</p>
+<h2><span>// CONDITIONS</span>One sentence outside, one material inside</h2>
+<p class="note">A condition is not a fourth track. Its recognition text sits almost flush to the token
+rim while a procedural material changes the portrait itself. The effect is circular, clipped by the
+mesh, and never sends particles or ornaments beyond the token.</p>
+<p class="note">Multiple conditions are composited <b>before</b> the portrait is tinted: red and blue
+make a saturated purple material instead of two translucent layers bleaching the face. Their names join
+the same sentence — <code>ABLAZE · VULNERABLE ·</code> — rather than becoming competing text rings.</p>
+<p class="note">Sixteen pattern families carry different motion, deformation and texture signatures.
+Reduced motion freezes time without removing the material. Defeated is terminal: it suppresses all live
+conditions and resources, freezes the shader, and separates the portrait into seven physical fragments
+with true void between them. There is no death icon.</p>
 <p class="note">And <code>textLength</code> is what makes the word ring seamless. A repeated string
 almost never comes out to the exact circumference, and the leftover shows as a gap travelling round with
 the text; forcing the run to the path's own length with <code>lengthAdjust="spacing"</code> closes it
@@ -257,8 +250,8 @@ without touching a glyph.</p>
 <h2><span>// THE LADDER</span>Tracks leave from the outside in</h2>
 <div class="lad" id="lad"></div>
 <p class="cap"><em>near</em> ≥110px — everything. <em>mid</em> 55–110 — the currencies go. <em>far</em>
-28–55 — Armor goes; Hit Points and Stress are the pair that moves. <em>min</em> below that — nothing but
-Vulnerable, and with the words gone the vignette stops apologising and burns at full strength.
+28–55 — Armor and the condition sentence go; Hit Points and Stress are the pair that moves. <em>min</em>
+below that — the HTML readout leaves while the token-contained condition material remains.
 Thresholds are in <b>screen pixels of footprint</b> rather than camera scale, because a 2×2 token is
 legible at half the zoom of a 1×1. <code>data-t</code> is written by JS — a container query measures
 <i>layout</i>, and the layout never changes, the parent's transform does — but only at a
@@ -304,7 +297,7 @@ const sprite = (c, style) => {
 const det = document.getElementById('det');
 const DETAIL = [
   ['character', CAST[0].st],
-  ['vulnerable', { ...CAST[0].st, hp:{max:12,marked:8}, stress:{max:6,marked:6}, vuln:true }],
+  ['vulnerable', { ...CAST[0].st, hp:{max:12,marked:8}, stress:{max:6,marked:6}, conditions:['Vulnerable'] }],
   ['adversary', CAST[1].st],
 ];
 for (const [label, st] of DETAIL) {
@@ -358,7 +351,7 @@ for (const [name, px] of [['near',(TIER_PX.near+150)/2],['mid',(TIER_PX.mid+TIER
   cell.innerHTML = `<div class="grid" style="opacity:.28"></div>
     <span class="pl">${name} · <b>${Math.round(px)}px</b></span>`;
   const s = sprite({ cls:'pc', name:'', st:{ hp:{max:8,marked:3}, stress:{max:6,marked:2},
-      armor:{max:3,marked:1}, hope:{value:3,max:6}, vuln:true } },
+      armor:{max:3,marked:1}, hope:{value:3,max:6}, conditions:['Vulnerable'] } },
     `left:50%;top:50%;width:100px;height:100px;transform:translate(-50%,-50%) scale(${(px/100).toFixed(3)})`);
   s.querySelector('.tok').dataset.t = name;
   cell.appendChild(s);
@@ -382,7 +375,7 @@ for (const b of document.querySelectorAll('.btns button'))
   b.onclick = () => { for (const c of Object.values(chips)) { DO[b.dataset.do](c.st); paint(c); } };
 
 document.getElementById('vu').onchange = e => {
-  state.ogre.vuln = e.target.checked; paint(chips.ogre);
+  state.ogre.conditions = e.target.checked ? ['Vulnerable'] : []; paint(chips.ogre);
 };
 
 /* Who sees what. Vulnerable ignores all of it, so a Vulnerable adversary
@@ -398,7 +391,7 @@ function visibility() {
     el.style.removeProperty('display');
     if (adv && !gm) {
       if (mode === 'none') {
-        if (c.st.vuln) el.classList.add('seenone');
+        if (c.st.conditions?.length) el.classList.add('seenone');
         else el.style.display = 'none';
       } else el.classList.toggle('seemarks', mode === 'marks');
     }
@@ -410,7 +403,7 @@ see.onchange = gmBox.onchange = visibility;
 const extra = document.createElement('style');
 extra.textContent = `
   .tok.seenone .tkarcs,.tok.seenone .tkdiff,.tok.seenone .tkhope,
-  .tok.seenone .tkvuln .tkwr,.tok.seemarks .tkdiff{display:none}`;
+  .tok.seemarks .tkdiff{display:none}`;
 document.head.appendChild(extra);
 
 function paint(c){ setChip(c.el, c.st); }
@@ -433,7 +426,7 @@ camera(); visibility();
 import { TOKEN_CHIP, chipScale, RING_HOLE, RING_RIM } from '/design/token.js';
 
 const ST = { hp:{max:12,marked:5}, stress:{max:6,marked:2},
-             armor:{max:3,marked:1}, hope:{value:4,max:6}, vuln:true };
+             armor:{max:3,marked:1}, hope:{value:4,max:6}, conditions:['Vulnerable'] };
 
 const CASES = [
   { n:'no ring',     t:{} },
@@ -480,7 +473,6 @@ function draw() {
       `<div class="art" style="transform:scale(${artK})${c.t.ring ? ';box-shadow:none' : ''}"></div>`
       + TOKEN_CHIP(ST);
     const chip = spr.querySelector('.tok');
-    chip.classList.add('vuln');
     chip.style.setProperty('--tkr', honest ? k.readout : 1);
     chip.style.setProperty('--tkv', honest ? k.subject : 1);
     const b = band(c.t);

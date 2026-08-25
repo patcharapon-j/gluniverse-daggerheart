@@ -94,8 +94,7 @@ import { GEM, setPool } from './gem.js';
      grid fit     the rim is matched to the cell, so the hole stops at
                   .666/.7225 = .9218 of it. Nothing of Foundry's reaches
                   past the cell, so the readout needs no push at all --
-                  and the creature is SMALLER than the cell, which is
-                  the one arrangement where Vulnerable has to come in.
+                  and the creature is SMALLER than the cell.
 
    ── what subject scale does ─────────────────────────
    A per-token dial on the token config, default 1, and it says how large
@@ -112,9 +111,8 @@ import { GEM, setPool } from './gem.js';
    is. Following a .6-scale sprite inward would draw its Stress track at
    .6 the size of the creature beside it, and the whole of what these
    tracks are for is being countable across a fight at a glance. The
-   creature gets a gap; the reading stays comparable. Vulnerable is the
-   exception and has no floor, because it is a claim about the creature
-   rather than a reading off it. */
+   creature gets a gap; the reading stays comparable. The condition material
+   follows the PIXI mesh instead of this HTML radius calculation. */
 
 /** The ring texture's own two radii, from Foundry's spritesheet. */
 export const RING_HOLE = 0.666;
@@ -280,41 +278,42 @@ const bottomOf = (s) => {
     : '';
 };
 
-/* ── Vulnerable ───────────────────────────────────────────────────
-   Not a fourth ring. Three concentric arcs already say "track", and a
-   condition drawn as a fourth one would be a track you cannot count —
-   so this goes INWARD instead, where nothing else lives.
+/* ── conditions ───────────────────────────────────────────────────
+   The material lives on the PIXI token; this layer carries the sentence.
+   It stays one sentence however many states are active, so two conditions
+   read "ABLAZE · VULNERABLE ·" rather than becoming two competing rings.
 
-   It is mark.js's own VULN_RUN, bent round a circle. The sheet answers
-   this condition with a scrolling strip of terms because it is read at a
-   glance, out of the corner of an eye, while the GM is describing
-   something; a token has no room for the rules but every room for the
-   word. Repeating it round the inside of the creature is the same
-   gesture at the same reading distance.
+   The path sits almost flush to the token rim and, unlike the old inward
+   Vulnerable treatment, follows the readout scale. That keeps it beside the
+   resource tracks when a dynamic token ring pushes those tracks outward.
 
-   `textLength` is what makes it seamless. A repeated string almost never
-   comes out to the exact circumference and the leftover shows as a gap
-   travelling round with the text; forcing the run to the path's own
-   length with `lengthAdjust="spacing"` closes it without touching a
-   glyph. The radius is stated twice — in the path data and in the
-   length — so both are derived from one constant here. */
-const VR = 37;                                   // the word ring's radius
-const RUN = 'VULNERABLE ◆ ';
+   `textLength` is what makes the repeat seamless. A run almost never lands
+   on the exact circumference by itself; spacing it to the path closes the
+   join without stretching the glyphs. */
+const CR = 51.8;
 let uid = 0;
 
-const vulnerable = () => {
-  const id = `tkv${++uid}`;
-  const len = (2 * Math.PI * VR).toFixed(2);
-  const reps = Math.max(3, Math.round(len / 46));
-  return `<div class="tkvuln">
-    <div class="vig"></div>
-    <svg class="tkwr" viewBox="0 0 100 100" aria-hidden="true">
+const safe = (value) => String(value)
+  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+
+export function conditionRun(names = []) {
+  const one = names.map((name) => String(name).trim().toUpperCase()).filter(Boolean).join(' · ');
+  if (!one) return '';
+  const unit = `${one} · `;
+  const reps = Math.max(1, Math.ceil(68 / unit.length));
+  return unit.repeat(reps);
+}
+
+const conditions = (names = []) => {
+  const id = `tkc${++uid}`;
+  const len = (2 * Math.PI * CR).toFixed(2);
+  return `<div class="tkcond">
+    <svg class="tkwr" viewBox="-6 -6 112 112" aria-hidden="true">
       <defs><path id="${id}" fill="none"
-        d="M50 ${50 - VR} a${VR} ${VR} 0 1 1 -.01 0"/></defs>
+        d="M50 ${50 - CR} a${CR} ${CR} 0 1 1 -.01 0"/></defs>
       <text><textPath href="#${id}" textLength="${len}"
-        lengthAdjust="spacing">${RUN.repeat(reps)}</textPath></text>
+        lengthAdjust="spacing">${safe(conditionRun(names))}</textPath></text>
     </svg>
-    <div class="sweep"></div>
   </div>`;
 };
 
@@ -323,12 +322,12 @@ const vulnerable = () => {
  *
  * `difficulty` is the GM's and is passed only when the GM is looking; it
  * is what the GM rolls against and the players are not supposed to have
- * it. Vulnerable is drawn always and revealed by a class, because
- * toggling it must not rebuild markup.
+ * it. The condition sentence is drawn once and diffed in place, because a
+ * status changing must not rebuild the resource tracks or cut off an arrival.
  */
 export const TOKEN_CHIP = (s = {}) =>
-  `<div class="dh tok${s.vuln ? ' vuln' : ''}" data-t="near">
-  ${vulnerable()}
+  `<div class="dh tok${s.conditions?.length && !s.defeated ? ' conditioned' : ''}${s.defeated ? ' defeated' : ''}" data-t="near">
+  ${conditions(s.defeated ? [] : s.conditions)}
   <div class="tkarcs">
     ${arcOf('armor', s.armor)}${arcOf('hp', s.hp)}${arcOf('stress', s.stress)}
   </div>
@@ -394,7 +393,16 @@ export function setChip(el, s = {}) {
     if (g) setPool(g, s.hope.value ?? 0);
   }
 
-  if ('vuln' in s) el.classList.toggle('vuln', !!s.vuln);
+  if ('conditions' in s) {
+    const names = Array.isArray(s.conditions) ? s.conditions : [];
+    const defeated = !!s.defeated;
+    el.classList.toggle('conditioned', names.length > 0 && !defeated);
+    const run = el.querySelector('.tkcond textPath');
+    if (run) run.textContent = conditionRun(names);
+  }
   if ('hidden' in s) el.classList.toggle('hidden', !!s.hidden);
-  if ('defeated' in s) el.classList.toggle('defeated', !!s.defeated);
+  if ('defeated' in s) {
+    el.classList.toggle('defeated', !!s.defeated);
+    if (s.defeated) el.classList.remove('conditioned');
+  }
 }
