@@ -39,6 +39,7 @@ const MARK = Symbol("daggerheartConditionMaterial");
 const filters = new Map<any, any>();
 let FilterClass: any;
 let registered = false;
+let warned = false;
 
 /** GLSL 1 so the same program runs on Foundry's PixiJS 7 WebGL pipeline. */
 export const TOKEN_CONDITION_FRAGMENT = `
@@ -349,7 +350,20 @@ export function syncTokenConditionMaterial(token: any, ids: readonly string[], d
 
   let filter = filters.get(token);
   if (!filter) {
-    filter = Klass.create();
+    /* `sync` is called straight out of `drawToken`. A shader that fails to
+       compile, or an `AbstractBaseFilter` that moves in a later Foundry,
+       would throw from here into the hook and take the token's draw — and
+       the canvas behind it — down with it. A condition material is worth
+       less than a canvas, so it fails alone and says so once. */
+    try {
+      filter = Klass.create();
+    } catch (error) {
+      if (!warned) {
+        warned = true;
+        console.error("Daggerheart | condition material unavailable; tokens render unfiltered", error);
+      }
+      return;
+    }
     filter[MARK] = true;
     filter.padding = 0;
     filter.autoFit = true;
@@ -368,9 +382,24 @@ export function syncTokenConditionMaterial(token: any, ids: readonly string[], d
   mesh.filters = [...others, filter];
 }
 
+/* Asked once. `matchMedia` allocates a MediaQueryList per call and `tick`
+   runs on every canvas frame, so the query is built here and only read
+   there; a MediaQueryList keeps itself current without being rebuilt. */
+const REDUCED = typeof matchMedia === "function"
+  ? matchMedia("(prefers-reduced-motion: reduce)")
+  : null;
+
+/* uTime is a float32 uniform. `performance.now()` climbs without bound, and
+   past roughly twelve hours the mantissa can no longer resolve a 16ms frame
+   step at that magnitude — every pattern here is a sin/fbm of t, so the
+   animation quantises into judder on a session somebody left open overnight.
+   Wrapping keeps the argument small. The seam is a phase reseat once an hour,
+   which is a moment against a night of stutter. */
+const CLOCK_WRAP = 3600;
+
 function tick(): void {
-  if (matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
-  const time = performance.now() / 1000;
+  if (REDUCED?.matches) return;
+  const time = (performance.now() / 1000) % CLOCK_WRAP;
   for (const filter of filters.values()) {
     if (filter.uniforms.uDead < .5) filter.uniforms.uTime = time;
   }
