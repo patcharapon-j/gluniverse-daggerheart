@@ -16,6 +16,8 @@ declare global {
   }
 
   const foundry: any;
+  /** Foundry ships PixiJS as a global; the canvas layers are built on it. */
+  const PIXI: any;
   const game: any;
   const ui: any;
   /** Null until a scene is active, which `apps/targets.ts` has to survive. */

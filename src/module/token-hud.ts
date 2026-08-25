@@ -446,12 +446,32 @@ export function registerTokenBars(): void {
     /* Condition art is the token material now. Foundry's square effect icons
        would be a second, lower-fidelity answer sitting on top of it, so our
        actor types suppress the icon container at its source. This catches the
-       initial `_draw()` path as well as later effect refreshes. */
+       initial `_draw()` path as well as later effect refreshes.
+
+       What this may NOT do is empty the container and walk away. Core's
+       `_drawEffects` leaves a contract behind it — `effects.bg` is a live
+       `PIXI.Graphics` and `effects.overlay` is null-or-icon — and core's
+       `_refreshEffects` reads `this.effects.bg.clear()` with no guard at all.
+       `drawEffects` raises `refreshEffects` the moment this returns, and
+       `refreshSize`/`refreshShape` propagate to it besides, so a destroyed
+       `bg` throws on the next move, resize or redraw and takes the token's
+       refresh — and the canvas behind it — down with it.
+
+       So we rebuild the contract and draw nothing into it. `renderable`
+       false is what suppresses the icons; the empty `bg` is what keeps
+       core's own refresh honest. */
     async _drawEffects(...args: any[]): Promise<any> {
       if (!OURS.has(this.actor?.type)) return super._drawEffects?.(...args);
-      const children = this.effects?.removeChildren?.() ?? [];
-      for (const child of children) child.destroy?.({ children: true });
-      if (this.effects) this.effects.renderable = false;
+      const effects = this.effects;
+      if (!effects) return;
+
+      effects.renderable = false;
+      for (const child of effects.removeChildren?.() ?? []) child.destroy?.({ children: true });
+
+      /* Mirrors core's own setup, minus every icon it would have added. */
+      effects.bg = effects.addChild(new PIXI.Graphics());
+      effects.bg.zIndex = -1;
+      effects.overlay = null;
     }
   }
 
