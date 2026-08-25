@@ -125,6 +125,12 @@ interface ChipState {
   conditionIds?: string[];
   hidden?: boolean;
   defeated?: boolean;
+  /* Obsidian orbit's tactical chrome. Selection goes outward as a crown,
+     targeting inward as a reticle, and `actor` only picks the identity
+     hairline's colour — it is never a permission. */
+  actor?: string;
+  selected?: boolean;
+  targeted?: boolean;
 }
 
 let layer: HTMLElement | null = null;
@@ -191,10 +197,25 @@ function stateOf(token: any): ChipState | null {
   const conditions = active.map((condition) => condition.name);
   const defeated = !!actor.statuses?.has?.(CONFIG.specialStatusEffects?.DEFEATED ?? "dead");
 
+  /* Read off the placeable, not the document: `controlled` is this
+     client's own selection and `targeted` is this client's own target
+     set, which is exactly what the crown and the reticle are claims
+     about. Neither is anybody else's business and neither is stored. */
+  const chrome = {
+    actor: actor.type,
+    selected: !!token?.controlled,
+    targeted: !!token?.isTargeted,
+  };
+
   const see = reading(actor);
-  if (see === "none") return conditions.length || defeated ? { conditions, conditionIds, defeated } : null;
+  if (see === "none") {
+    return conditions.length || defeated
+      ? { conditions, conditionIds, defeated, ...chrome }
+      : null;
+  }
 
   const state: ChipState = {
+    ...chrome,
     hp: track(res.hitPoints),
     stress: track(res.stress),
     armor: track(res.armorSlots),
@@ -569,6 +590,13 @@ export function registerTokenChips(): void {
   /* The state, from every direction it can move. An actor's tracks, a
      token's own flags, and an effect arriving or leaving — which is how every
      condition gets here, and why `deleteActiveEffect` is on this list. */
+  /* The crown and the reticle answer to this client alone. Neither
+     selecting nor targeting touches an Actor or a TokenDocument, so
+     nothing above would ever fire for them — they need their own two
+     hooks or the chrome simply never appears. */
+  Hooks.on("controlToken", (token: any) => sync(token));
+  Hooks.on("targetToken", (_user: any, token: any) => sync(token));
+
   Hooks.on("updateActor", (actor: any) => forActor(actor));
   Hooks.on("updateToken", (doc: any) => doc.object && sync(doc.object));
   for (const hook of ["createActiveEffect", "deleteActiveEffect", "updateActiveEffect"]) {

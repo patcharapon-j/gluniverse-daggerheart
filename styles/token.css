@@ -165,174 +165,149 @@
    Both scales are written by token-hud.ts, which is where the questions
    get asked -- a stylesheet cannot see a fit mode. */
 
-/* ── the three tracks ──────────────────────────────────────────────
-   The radii are the part of the geometry that does not move, so they
-   live here; the stop lists are the state, so they live in token.js.
-   One seam between the two files and it is a number of degrees.
+/* ══ OBSIDIAN ORBIT ════════════════════════════════════════════════
+   The locked concept from Preview Gate 01, and the one structural claim
+   it makes is about WHERE the readout lives.
 
-   Every layer is masked to its own annulus by the same rule, so the
-   channel, the marked run and the flash cannot drift apart. */
-.dh.tok .tkarcs{position:absolute;inset:0}
-.dh.tok .tkarc{position:absolute;border-radius:50%}
-.dh.tok .tkarc > *{position:absolute;inset:0;border-radius:50%;
-  -webkit-mask:radial-gradient(closest-side,transparent calc(100% - var(--aw)),
-    #000 calc(100% - var(--aw)));
-  mask:radial-gradient(closest-side,transparent calc(100% - var(--aw)),
-    #000 calc(100% - var(--aw)))}
+   The tracks used to hang outside the creature. That bought the artwork
+   back — a 3px arc loses an argument against a pale highlight — but it
+   cost a footprint: the outer edge sat at 64.6 where the grid cell's is
+   50, so a chip reached a seventh of a cell into each neighbour and two
+   adjacent Armor arcs could cross. Obsidian orbit brings the readout IN,
+   as rails inside the token's own circle. Nothing of a creature's numbers
+   now touches its neighbour's, and the price is paid on the portrait —
+   which is the trade the gate chose, with the material shader arriving in
+   the same breath to make the portrait carry meaning anyway.
 
-/* ── thicker, further apart, and off the painting ──────────────────
-   The first pass put three arcs about 1.2px apart at 2.4-3.2px wide, ON
-   the sprite. Both halves of that were wrong. Three arcs that close is not
-   three tracks — it is one striped band you can see the hue change in and
-   cannot count — and a track below the width where its own slots separate
-   has stopped being a track. And every one of them was competing with
-   somebody's painting for the same pixels, which is an argument a 3px arc
-   loses against a pale highlight however saturated it is.
+   Everything is clipped by `.er-shell` and nothing may cross the token
+   boundary except soft light. That is a rule from the brief, not a
+   detail: a board with eight creatures on it cannot afford ornaments
+   that reach.
 
-   So the arcs are 3.2-4.2px, the gaps between them are 1.6px — over half
-   an arc, and the empty ring is what says there are three — and every
-   inset is NEGATIVE: the innermost track's inner edge is at radius 50.2,
-   which is the first tenth of a pixel outside the token's own circle. The
-   creature is drawn and the tracks are drawn, and neither is drawn over
-   the other.
+   ── the five layers ───────────────────────────────────────────────
+   A rail is not a coloured arc. It is a machined instrument, and every
+   layer is a separate claim rather than another opacity:
 
-   Conditions are the exception: their text sits at the rim and their material
-   is rendered by the PIXI token rather than by this HTML track layer.
+     seat      the cut it sits in — near-black, a hair proud, so the rail
+               reads as recessed rather than bordered
+     channel   every slot the track HAS, in a recessed tint. This is what
+               says "fourteen" when only six are marked, and it is why an
+               unmarked slot on .fill can be fully transparent instead of
+               a washed-out copy of a marked one
+     fill      what is marked, carrying the glow
+     facet     one specular pass across the whole rail, so the segments
+               look turned rather than printed
+     anchors   a hairline every fifth slot
+     impact    the landing, covering only the slot that moved
 
-   Armor is the widest of the three at 4.2px and it used to be the
-   narrowest at 3.0, which had it exactly backwards. It is the outermost
-   band, so it is the one drawn against whatever is beyond the token
-   rather than against another arc of ours; it is the only track that
-   reads the other way round, lighting what is LEFT rather than what is
-   spent, so a nearly-spent purse is a nearly-empty ring with nothing to
-   hold the eye; and its slots are the shortest thing on the chip,
-   because it alone runs at a fixed pitch and stops. Three claims all
-   pointing the same way, and the answer to every one of them is ink.
+   Radii are percentages and rail widths are px, which is the range
+   ruler's rule arriving here: geometry scales with the creature, the
+   thing you COUNT keeps its size. A .6-scale sprite must not get a
+   .6-scale Stress rail or two creatures in one fight have their Stress
+   drawn at two widths for a reason that is about somebody's PNG. */
+.dh .er-bloom{position:absolute;inset:-3px;border-radius:50%;opacity:0;
+  box-shadow:0 0 13px color-mix(in srgb,var(--actor) 28%,transparent)}
+.dh.tok.is-selected .er-bloom{opacity:1;animation:tkCrown 4.2s cubic-bezier(.4,0,.2,1) infinite}
 
-   The cost is a footprint, and it is real. The outermost edge is at 64.6
-   where the grid cell's is 50, so a chip reaches about a seventh of a
-   cell into each neighbour and two adjacent creatures' Armor arcs can
-   cross. That is what buys the artwork back. */
-/* One number decides all three, and it is the innermost track's INNER
-   edge — which is the only radius here anybody has ever had a question
-   about. Everything else stacks outward from it at a fixed width and a
-   fixed gap, so a chip pushed clear of a dynamic token ring is the same
-   readout further out rather than a bigger one. See "the ring, and the
-   room it takes" below for who writes it. */
-.dh.tok .tkarc.stress{inset:calc((50 - (var(--tk0) + 3.2)) * 1%);--aw:3.2px}
-.dh.tok .tkarc.hp    {inset:calc((50 - (var(--tk0) + 8.6)) * 1%);--aw:3.8px}
-.dh.tok .tkarc.armor {inset:calc((50 - (var(--tk0) + 14.4)) * 1%);--aw:4.2px}
+/* The clip is the promise. Every rail, gem, badge and specular pass is
+   inside the creature; only .er-bloom and .tkcond are outside it. */
+.dh .er-shell{position:absolute;inset:0;clip-path:circle(49.2% at 50% 50%)}
 
-/* ── it has to survive the artwork ─────────────────────────────────
-   Every other surface in this system draws on paper it owns. This one
-   draws on somebody else's painting, and a 3px arc over a pale highlight
-   is invisible however saturated it is. So each layer carries its own
-   dark contour, and it is a drop-shadow rather than a box-shadow for a
-   reason that is not taste: a mask clips a box shadow along with the box,
-   and every layer here is masked to its annulus. A drop-shadow is taken
-   from the *result*, so it traces the silhouette of the slots themselves.
+/* Whose creature it is, as a hairline rather than a border: characters
+   blue-gold, companions teal, adversaries crimson. */
+.dh.tok{--actor:#62aef2}
+.dh.tok[data-actor="companion"]{--actor:#51cdbd}
+.dh.tok[data-actor="adversary"]{--actor:#df5966}
+.dh.tok[data-actor="environment"]{--actor:#8f9bab}
 
-   Two of them on the marked run, and they are opposite claims. The tight
-   near-black one is the seat — the arc reads as sitting in a groove cut
-   through the sprite rather than floating over it. The wide coloured one
-   is the light coming off it, and it is what keeps the hue legible at the
-   distance where the arc itself is two pixels. */
-.dh.tok .tkarc .ch{background-repeat:no-repeat;
-  filter:drop-shadow(0 0 1.1px rgba(0,0,0,.9))}
-.dh.tok .tkarc .lit{filter:drop-shadow(0 0 .9px rgba(3,4,6,.95))
-                        drop-shadow(0 0 2.6px var(--gl))}
-.dh.tok .tkarc.hp     .lit{--gl:color-mix(in srgb,var(--wound-gl) 78%,transparent)}
-.dh.tok .tkarc.stress .lit{--gl:color-mix(in srgb,var(--strain) 60%,transparent)}
-.dh.tok .tkarc.armor  .lit{--gl:color-mix(in srgb,var(--plate-fl) 78%,transparent)}
+.dh .er-identity{position:absolute;inset:.8px;border-radius:50%;opacity:.8;
+  background:conic-gradient(from 20deg,var(--actor),transparent 19%,
+    transparent 31%,#d7ad42 43%,transparent 51%,transparent 79%,var(--actor));
+  -webkit-mask:radial-gradient(circle,transparent calc(100% - .7px),#000 calc(100% - .6px));
+  mask:radial-gradient(circle,transparent calc(100% - .7px),#000 calc(100% - .6px))}
 
-/* Stress is scored. A second layer of fine hairlines across the annulus,
-   at a frequency nothing else here has, so the two damage tracks differ
-   by texture as well as by hue — which is as much of mark.css's argument
-   as a 2.4px band can hold, and it is more than a bar has. */
-.dh.tok .tkarc.stress .lit::after{content:"";position:absolute;inset:0;
-  border-radius:50%;opacity:.5;
-  background:repeating-conic-gradient(from 210deg,
-    rgba(255,255,255,.52) 0 .55deg,transparent .55deg 2.4deg)}
+.dh .er-ring{position:absolute;border-radius:50%}
+.dh .er-ring.armor {inset:2%;   --rail:2.8px;--gl:rgba(230,237,244,.38)}
+.dh .er-ring.hp    {inset:5.9%; --rail:4.3px;--gl:rgba(239,73,86,.52)}
+.dh .er-ring.stress{inset:11.3%;--rail:2.9px;--gl:rgba(98,213,231,.42)}
 
-/* Armor is plate: the brightest of the three and the only one with a
-   specular run down its outer edge. It survived the cull that took the
-   channel bevel out and it is the same technique, which is worth saying
-   out loud. The difference is what it is ON: this rides the LIT run, so
-   it only ever appears where a slot is, and a highlight along the top of
-   a filled slot is what plate does. The bevel rode the CHANNEL, so it
-   drew a continuous pale ring all the way round the outside of the chip
-   whether anything was marked or not — light with no object under it,
-   and on the outermost band, which is where the chip meets the map. */
-.dh.tok .tkarc.armor .lit::after{content:"";position:absolute;inset:0;
-  border-radius:50%;
-  background:radial-gradient(closest-side,transparent 80%,
-    rgba(255,255,255,.4) 93%,transparent 100%)}
+.dh .er-ring > i{position:absolute;inset:0;display:block;border-radius:50%;
+  -webkit-mask:radial-gradient(closest-side,transparent calc(100% - var(--rail)),#000 calc(100% - var(--rail) + .3px));
+  mask:radial-gradient(closest-side,transparent calc(100% - var(--rail)),#000 calc(100% - var(--rail) + .3px))}
 
-/* ── the landing ───────────────────────────────────────────────────
-   What a conic gradient cannot do per slot, one wedge can do for the run
-   that moved. It is a flash and not a travel, for mark.css's reason: a
-   cut is not a gesture you watch happen, it is a thing that has
-   happened. */
-.dh.tok .tkarc .fx{opacity:0}
-.dh.tok .tkarc .fx.go{animation:tkLand .46s cubic-bezier(.2,.9,.3,1) both}
-@keyframes tkLand{
-  0%  {opacity:1;filter:brightness(2.4) saturate(.7)}
-  18% {opacity:1;filter:brightness(1.5)}
-  100%{opacity:0;filter:brightness(1)}}
+.dh .er-ring .seat{transform:scale(1.012);filter:drop-shadow(0 0 1px rgba(0,0,0,.95))}
+.dh .er-ring .channel{filter:drop-shadow(0 0 1px rgba(0,0,0,.9))}
+.dh .er-ring .fill{filter:drop-shadow(0 0 2.4px var(--gl))}
+.dh .er-ring .facet{opacity:.55;
+  background:radial-gradient(closest-side,transparent 87%,rgba(255,255,255,.38) 94%,transparent 100%)}
+.dh .er-ring .anchors{opacity:.72}
 
-/* ── Hope, in the opening ──────────────────────────────────────────
-   gem.js's own gem at token scale, in a line, in the 60° the rings leave
-   open at six o'clock. Nothing is re-taught: gold diamonds are Hope on
-   the rail, in the rest dialog and here. */
-/* ── it curves with everything else ────────────────────────────────
-   A straight row of gems under a ring is a caption below a gauge, and
-   this is not a caption — it is the fourth thing the creature carries and
-   it belongs on the same circle the other three are on. So each gem is
-   placed by angle at the tracks' own radius and TILTS with the arc,
-   filling the 60° the rings leave open at six o'clock. `--a` is the gem's
-   own angle and is the only thing token.js has to say about it; the
-   radius lives here with the other radii.
+/* The landing, and nothing animates when nothing moved. A chip being
+   merely re-read does not flash: `.go` is added by the driver only for
+   a rail whose mark actually changed. */
+.dh .er-ring .impact{opacity:0;transform-origin:center}
+.dh .er-ring.go .impact{animation:tkImpact .56s cubic-bezier(.16,1,.3,1) both}
+.dh .er-ring.go .fill{animation:tkSettle .42s cubic-bezier(.2,.8,.2,1) both}
 
-   Rotating the gem rather than counter-rotating it is deliberate. A
-   diamond is symmetric about both axes, so a tilt costs it no legibility
-   at all, and a row of upright gems on a curve reads as a row that has
-   been bent — which is the one thing it must not look like. */
-.dh.tok .tkhope{position:absolute;inset:0}
-.dh.tok .tkhope .gems{position:absolute;inset:0;display:block;
-  --r:calc((var(--tk0) + 3.4) * 1px)}
-/* `transform-origin:0 0` is the whole of this rule working, and leaving it
-   out is a bug that looks like a taste problem. `left/top:50%` puts the
-   gem's *top-left corner* on the token's centre, which is exactly what the
-   rotation needs to pivot about — but transform-origin defaults to the
-   box's own middle, half a gem away from that corner. So all six rotated
-   about a point that was not the centre, and the row came out as a curve
-   that drifted: measured, radii of 52.0, 52.8, 53.3, 53.8, 54.3, 54.6
-   where six identical numbers are the entire claim. It reads as gems that
-   very nearly follow the ring, which is worse than gems that plainly do
-   not — a straight row is a decision and a skewed arc is a mistake.
+/* ── the opening at six o'clock ────────────────────────────────────
+   Hope and Difficulty share it and never both appear. Inside the circle
+   now, with the rails. */
+.dh .er-hope{position:absolute;left:50%;bottom:3px;display:flex;gap:2.2px;
+  transform:translateX(-50%);transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
+.dh .er-hope i{width:5.6px;height:5.6px;display:block;transform:rotate(45deg);
+  background:#080b10;box-shadow:inset 0 0 0 .7px rgba(212,167,44,.35)}
+.dh .er-hope i.on{background:linear-gradient(135deg,#ffe38b,#d4a72c 55%,#76500c);
+  box-shadow:inset 0 0 0 .6px rgba(255,235,159,.55),0 0 4px rgba(212,167,44,.48)}
+.dh .er-hope i.scar{background:#1a0d10;
+  box-shadow:inset 0 0 0 .7px color-mix(in srgb,var(--wound,#e2545e) 52%,transparent)}
 
-   With the origin at the corner the order is: pivot about the token's
-   centre, walk out along the rotated axis, then centre the box on where
-   you landed. */
-.dh.tok .tkhope .tkg{position:absolute;left:50%;top:50%;transform-origin:0 0;
-  transform:rotate(var(--a)) translateY(var(--r)) translate(-50%,-50%)}
-.dh.tok .tkhope .gem{display:block}
+.dh .er-diff{position:absolute;left:50%;bottom:1px;min-width:20px;padding:2px 4px;
+  transform:translateX(-50%);color:#f4e7c1;
+  background:linear-gradient(155deg,#17130c,#08090c);
+  box-shadow:inset 0 1px rgba(255,232,164,.22),0 0 6px rgba(0,0,0,.7);
+  clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);
+  font:760 7px/1 var(--f-mono),monospace;text-align:center;
+  font-variant-numeric:tabular-nums}
 
-/* ── Difficulty, in the same opening ───────────────────────────────
-   The other occupant, and never both: a character spends Hope and an
-   adversary makes you beat a number. It is the one numeral on the whole
-   component and it earns it by having no units — Difficulty does not
-   move during a scene and there is nothing to cross off. */
-.dh.tok .tkdiff{position:absolute;left:50%;
-  bottom:calc((50 - (var(--tk0) - 1.7)) * 1%);transform:translateX(-50%);
-  display:flex;align-items:baseline;gap:1.6px;padding:1px 3px 1.4px;
-  background:rgba(4,5,7,.88);
-  box-shadow:inset 0 0 0 .8px color-mix(in srgb,var(--ink) 26%,transparent);
-  clip-path:polygon(0 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%)}
-.dh.tok .tkdiff i{font:600 4.2px/1 var(--f-mono);letter-spacing:.12em;
-  text-transform:uppercase;color:var(--ink-3);font-style:normal}
-.dh.tok .tkdiff b{font:700 8px/1 var(--f-display);color:var(--ink);
-  letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+/* ── the two pieces of tactical chrome ─────────────────────────────
+   Selection goes OUTWARD and targeting goes INWARD, which is the whole
+   reason they cannot be confused at a glance: one is a crown sitting on
+   the creature you are driving, the other is a reticle closing on the
+   creature you are about to hit. They are allowed to coexist, because
+   you can target the token you have selected. */
+.dh .er-crown,.dh .er-reticle{position:absolute;border-radius:50%;opacity:0}
+
+.dh .er-crown{inset:1px;transform:scale(.94);
+  background:conic-gradient(from 11deg,var(--actor) 0 18deg,transparent 18deg 72deg,
+    var(--actor) 72deg 90deg,transparent 90deg 162deg,var(--actor) 162deg 180deg,
+    transparent 180deg 252deg,var(--actor) 252deg 270deg,transparent 270deg);
+  -webkit-mask:radial-gradient(circle,transparent 94%,#000 95%);
+  mask:radial-gradient(circle,transparent 94%,#000 95%);
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--actor) 58%,transparent));
+  transition:opacity .19s cubic-bezier(.2,.8,.2,1),transform .19s cubic-bezier(.16,1,.3,1)}
+
+.dh .er-reticle{inset:30%;transform:scale(1.1);
+  background:conic-gradient(from 37deg,#ff6777 0 14deg,transparent 14deg 76deg,
+    #ff6777 76deg 104deg,transparent 104deg 166deg,#ff6777 166deg 194deg,
+    transparent 194deg 256deg,#ff6777 256deg 284deg,transparent 284deg);
+  -webkit-mask:radial-gradient(circle,transparent 72%,#000 74%);
+  mask:radial-gradient(circle,transparent 72%,#000 74%);
+  filter:drop-shadow(0 0 2px rgba(255,79,98,.7));
+  transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.16,1,.3,1)}
+
+.dh.tok.is-selected .er-crown{opacity:.92;transform:scale(1);
+  animation:tkCrown 4.2s cubic-bezier(.4,0,.2,1) .19s infinite}
+.dh.tok.is-targeted .er-reticle{opacity:.95;transform:scale(1);
+  animation:tkTarget 3.6s cubic-bezier(.4,0,.2,1) .18s infinite}
+
+@keyframes tkImpact{
+  0%  {opacity:0;transform:scale(.985)}
+  10% {opacity:1}
+  34% {opacity:.92;transform:scale(1.018)}
+  100%{opacity:0;transform:scale(1.028)}}
+@keyframes tkSettle{0%,100%{opacity:1}28%{opacity:.76}}
+@keyframes tkCrown{0%,100%{opacity:.72}50%{opacity:1}}
+@keyframes tkTarget{0%,100%{opacity:.72;transform:scale(1)}50%{opacity:1;transform:scale(.94)}}
 
 /* ══ CONDITIONS ════════════════════════════════════════════════════
    One rotating sentence sits almost flush to the rim. The animated texture
@@ -359,27 +334,49 @@
    The PIXI material outlives this ladder. The sentence leaves with the tracks:
    at 30px it is no longer language, while the circular material remains a
    strong silhouette-level state cue. */
-.dh.tok[data-t="mid"] .tkhope,
-.dh.tok[data-t="mid"] .tkdiff{display:none}
-.dh.tok[data-t="far"] .tkarc.armor,
-.dh.tok[data-t="far"] .tkhope,
-.dh.tok[data-t="far"] .tkdiff{display:none}
-.dh.tok[data-t="far"] .tkcond,
-.dh.tok[data-t="min"] .tkcond{display:none}
-.dh.tok[data-t="min"] .tkarcs,
-.dh.tok[data-t="min"] .tkhope,
-.dh.tok[data-t="min"] .tkdiff{display:none}
+/* ── the ladder ────────────────────────────────────────────────────
+   Obsidian orbit's own thresholds, and they run further down the zoom
+   than the old ones did: a rail inside the creature is not competing
+   with a neighbour for the same pixels, so it stays legible smaller.
+   Things leave in the order they were argued for — the currencies
+   first, then Armor, then the rest — and each leaves at the width where
+   it stops being countable rather than at the width where it stops
+   being visible. A rail below the width where its slots separate is a
+   coloured smudge claiming to be a count.
+
+   The PIXI condition material outlives all of it. The sentence goes with
+   the rails: at 36px it is no longer language. */
+.dh.tok[data-lod="mid"] .er-ring .facet{opacity:.3}
+.dh.tok[data-lod="far"] .er-ring .facet,
+.dh.tok[data-lod="far"] .er-ring .anchors{opacity:0}
+.dh.tok[data-lod="far"] .er-ring.armor,
+.dh.tok[data-lod="far"] .er-hope,
+.dh.tok[data-lod="far"] .er-diff{opacity:0;transform:scale(.94)}
+.dh.tok[data-lod="far"] .er-ring.stress{opacity:.62}
+.dh.tok[data-lod="far"] .tkcond,
+.dh.tok[data-lod="min"] .tkcond{display:none}
+.dh.tok[data-lod="min"] .er-ring,
+.dh.tok[data-lod="min"] .er-hope,
+.dh.tok[data-lod="min"] .er-diff,
+.dh.tok[data-lod="min"] .er-identity{opacity:0;transform:scale(.86)}
+
 /* ── the states that belong to the token, not the actor ────────────
    Defeated is terminal. The WebGL pass physically separates the portrait;
-   every live track and every condition sentence leaves so the corpse cannot
-   be mistaken for a living token that happens to have one more condition. */
+   every live rail and every condition sentence leaves so the corpse cannot
+   be mistaken for a living token that happens to have one more condition.
+   Selection and targeting survive it, because you can still click a body. */
 .dh.tok.hidden{opacity:.42}
 .dh.tok.defeated .tkcond,
-.dh.tok.defeated .tkarcs,
-.dh.tok.defeated .tkhope,
-.dh.tok.defeated .tkdiff{display:none}
+.dh.tok.defeated .er-shell > .er-ring,
+.dh.tok.defeated .er-hope,
+.dh.tok.defeated .er-diff,
+.dh.tok.defeated .er-identity{display:none}
 
 @media (prefers-reduced-motion:reduce){
-  .dh.tok .tkcond .tkwr{animation:none}
-  .dh.tok .tkarc .fx.go{animation-duration:.01s}
+  .dh.tok .tkcond .tkwr,
+  .dh.tok.is-selected .er-bloom,
+  .dh.tok.is-selected .er-crown,
+  .dh.tok.is-targeted .er-reticle{animation:none}
+  .dh.tok .er-ring.go .impact,
+  .dh.tok .er-ring.go .fill{animation-duration:.01s}
 }

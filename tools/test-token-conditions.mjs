@@ -37,8 +37,10 @@ assert.equal((TOKEN_CONDITION_FRAGMENT.match(/texture2D\(/g) ?? []).length, 1,
 
 const css = readFileSync(new URL("../styles/token.css", import.meta.url), "utf8");
 assert.match(css, /\.dh\.tok\.defeated \.tkcond/);
-assert.match(css, /\.dh\.tok\.defeated \.tkarcs/);
+assert.match(css, /\.dh\.tok\.defeated \.er-shell > \.er-ring/);
 assert.match(css, /\.dh\.tok \.tkcond\{[^}]*pointer-events:none/s);
 assert.doesNotMatch(css, /\.tkvuln/);
+assert.doesNotMatch(css, /\.tkarc|\.tkhope|\.tkdiff/,
+  "Obsidian orbit replaced the outboard tracks; no legacy selector may survive");
 
 console.log("token conditions: 16 materials, joined sentence, icon-free terminal override");
