@@ -307,15 +307,72 @@ const ringOf = (kind, t) => {
    neither belongs on a rail.
 
    Obsidian orbit seats both INSIDE the circle with the rails, so the
-   whole readout is now contained by the creature. */
+   whole readout is now contained by the creature.
+
+   ── Hope is on the circle, not under it ─────────────────────────
+   The first port of this concept laid the gems out as a flat row across
+   the bottom, and a flat row is the one thing the 60° opening is not.
+   Everything else on this chip is polar — three rails, a crown, a
+   reticle, a sentence — so a straight strip of six diamonds reads as a
+   different component that happens to be nearby, and worse, its ends
+   drift INWARD off the rails' own circle exactly where they meet the
+   rail terminals they are supposed to continue.
+
+   So the gems are placed by angle on that circle and tilt with it, which
+   is what makes the opening read as part of the gauge rather than a hole
+   in it. It is also what the component was specified to do before the
+   concept port flattened it.
+
+   The pitch is FIXED, which is Armor's argument arriving at the gems: a
+   character with three Hope and one with six must have their Hope drawn
+   at the same spacing or the two are not comparable, and the arc's own
+   length is then the capacity. It only compresses when a max large
+   enough to overrun the opening asks it to — the opening is a hard
+   boundary because the rails own the degrees on either side of it. */
+const HOPE_R = 43.4;      // cqw — between the Hit Points rail and Stress
+const HOPE_PITCH = 10;    // degrees between gems, held for every character
+const HOPE_SPAN = 51;     // of the 60° opening, leaving the rail ends clear
+const HOPE_W = 4.6;       // px across the flats
+const HOPE_GAP = 1.1;     // px of arc that must survive between neighbours
+
+/* Gem 0 sits at the lower-LEFT end of the opening, so Hope fills the way
+   the rails run and the way the sentence above it reads. A positive CSS
+   rotation takes the six-o'clock vector clockwise, which is leftward.
+
+   The size is solved WITH the pitch rather than set beside it, and the
+   reason is that a diamond is not as wide as its box: the gem is a square
+   turned 45° and turned again with the arc, so what it actually occupies
+   along the circle is its diagonal, √2 times the number in the
+   stylesheet. Six 5.6px gems at the first pitch this was written with
+   needed 47px of arc and had 38 — they fused into a gold band with a
+   scalloped edge, which is one Hope drawn six times.
+
+   So: hold the pitch, and if the pitch has had to compress to fit a max
+   the opening cannot hold at full spacing, let the gems come down with
+   it. A smaller gem is still a count. Overlapping gems are not. */
+const hopeGeometry = (n) => {
+  const pitch = n > 1 ? Math.min(HOPE_PITCH, HOPE_SPAN / (n - 1)) : 0;
+  const arc = pitch * (Math.PI / 180) * HOPE_R;
+  const width = n > 1 ? Math.min(HOPE_W, (arc - HOPE_GAP) / Math.SQRT2) : HOPE_W;
+  return {
+    width: Math.max(2.4, width),
+    angles: Array.from({ length: n }, (_, i) => (((n - 1) / 2) - i) * pitch),
+  };
+};
+
 const bottomOf = (s) => {
   if (s.hope?.max) {
     const n = s.hope.max;
     const scars = s.scars ?? 0;
-    return `<div class="er-hope">${
+    const { width, angles } = hopeGeometry(n);
+    /* Radius and width are written here rather than in the stylesheet so
+       the circle, the gems on it and the spacing between them cannot drift
+       apart — they are one solution, not three settings. */
+    return `<div class="er-hope" style="--hope-r:${HOPE_R}cqw;--hope-w:${width.toFixed(2)}px">${
       Array.from({ length: n }, (_, i) => {
         const scar = i >= n - scars;
-        return `<i class="${i < (s.hope.value ?? 0) && !scar ? 'on' : ''}${scar ? ' scar' : ''}"></i>`;
+        return `<i class="${i < (s.hope.value ?? 0) && !scar ? 'on' : ''}${scar ? ' scar' : ''}"`
+          + ` style="--a:${angles[i].toFixed(2)}deg"></i>`;
       }).join('')
     }</div>`;
   }
@@ -348,6 +405,21 @@ export function conditionRun(names = []) {
   return unit.repeat(reps);
 }
 
+/* The sentence is lettering ON somebody's artwork, and the artwork is
+   arbitrary: a pale robe and a dark cloak are the same component's
+   background. So readability is built rather than assumed — a dark stroke
+   under the glyphs via paint-order, then a tight black shadow for contact
+   and a wider tinted one for lift.
+
+   The tint is the ACTIVE condition's own material colour, which is the
+   same number the PIXI filter is running on the mesh underneath. That is
+   the point of carrying it: the sentence and the texture it is describing
+   are then visibly the same statement, and a token wearing two conditions
+   is not a white sentence over a purple creature for no reason. Only a
+   hex is accepted, because this is interpolated into a style attribute. */
+const TINT = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+export const tintOf = (value) => (TINT.test(String(value ?? '')) ? String(value) : '');
+
 const conditions = (names = []) => {
   const id = `tkc${++uid}`;
   const len = (2 * Math.PI * CR).toFixed(2);
@@ -371,7 +443,8 @@ const conditions = (names = []) => {
  */
 export const TOKEN_CHIP = (s = {}) =>
   `<div class="dh tok${s.conditions?.length && !s.defeated ? ' conditioned' : ''}${s.defeated ? ' defeated' : ''}${
-    s.selected ? ' is-selected' : ''}${s.targeted ? ' is-targeted' : ''}" data-t="near" data-lod="close" data-actor="${s.actor ?? 'character'}">
+    s.selected ? ' is-selected' : ''}${s.targeted ? ' is-targeted' : ''}" data-t="near" data-lod="close" data-actor="${
+    s.actor ?? 'character'}"${tintOf(s.tint) ? ` style="--tkc:${tintOf(s.tint)}"` : ''}>
   ${conditions(s.defeated ? [] : s.conditions)}
   <div class="er-bloom"></div>
   <div class="er-shell">
@@ -441,13 +514,31 @@ export function setChip(el, s = {}) {
     ring.classList.toggle('max', active >= t.max);
   }
 
+  /* Hope arrives and leaves one gem at a time and both readings matter, so
+     each is given its own direction rather than a shared blink: spending
+     throws light OUTWARD off the gem, gaining draws it INWARD onto it.
+     That is the crown-and-reticle grammar from the chrome above, reused
+     here because it already means "yours" versus "spent" on this chip.
+
+     The same restart discipline as the rails, and the same flush: a Rest
+     hands back four Hope at once, and four separate reflows for one event
+     is the thing `flushed` exists to stop. A gem that did not change is
+     not touched, so re-reading a chip never sparkles. */
   if (s.hope?.max) {
     const gems = el.querySelectorAll('.er-hope i');
     const scars = s.scars ?? 0;
+    const value = s.hope.value ?? 0;
     gems.forEach((gem, i) => {
       const scar = i >= gems.length - scars;
+      const on = i < value && !scar;
+      const was = gem.classList.contains('on');
       gem.classList.toggle('scar', scar);
-      gem.classList.toggle('on', i < (s.hope.value ?? 0) && !scar);
+      gem.classList.toggle('on', on);
+      if (on === was) return;
+
+      gem.classList.remove('gain', 'spend');
+      if (!flushed) { void el.offsetWidth; flushed = true; }
+      gem.classList.add(on ? 'gain' : 'spend');
     });
   }
 
@@ -457,6 +548,11 @@ export function setChip(el, s = {}) {
     el.classList.toggle('conditioned', names.length > 0 && !defeated);
     const run = el.querySelector('.tkcond textPath');
     if (run) run.textContent = conditionRun(names);
+  }
+  if ('tint' in s) {
+    const tint = tintOf(s.tint);
+    if (tint) el.style.setProperty('--tkc', tint);
+    else el.style.removeProperty('--tkc');
   }
   if ('selected' in s) el.classList.toggle('is-selected', !!s.selected);
   if ('targeted' in s) el.classList.toggle('is-targeted', !!s.targeted);

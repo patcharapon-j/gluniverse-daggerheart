@@ -109,6 +109,7 @@ import { CONDITIONS, SYSTEM_ID } from "./config.ts";
 import { TOKEN_CHIP, chipScale, setChip, setTier } from "./ui/token.js";
 import {
   clearTokenConditionMaterial,
+  conditionTint,
   registerTokenConditionMaterials,
   syncTokenConditionMaterial,
 } from "./token-conditions.ts";
@@ -123,6 +124,8 @@ interface ChipState {
   difficulty?: number | null;
   conditions?: string[];
   conditionIds?: string[];
+  /** The first active condition's material colour, for the sentence. */
+  tint?: string;
   hidden?: boolean;
   defeated?: boolean;
   /* Obsidian orbit's tactical chrome. Selection goes outward as a crown,
@@ -195,6 +198,14 @@ function stateOf(token: any): ChipState | null {
   const active = CONDITIONS.filter((condition) => actor.statuses?.has?.(condition.id));
   const conditionIds = active.map((condition) => condition.id);
   const conditions = active.map((condition) => condition.name);
+
+  /* One tint for a sentence that may name three conditions, and it is the
+     FIRST — which is CONDITIONS' own order, so the same pair of statuses
+     always tints the same way on every token at the table. Averaging the
+     active colours was tried and is worse: two conditions whose hues are
+     opposite average to a grey that names neither, and the material under
+     the sentence does not average either. */
+  const tint = conditionTint(conditionIds[0]);
   const defeated = !!actor.statuses?.has?.(CONFIG.specialStatusEffects?.DEFEATED ?? "dead");
 
   /* Read off the placeable, not the document: `controlled` is this
@@ -210,7 +221,7 @@ function stateOf(token: any): ChipState | null {
   const see = reading(actor);
   if (see === "none") {
     return conditions.length || defeated
-      ? { conditions, conditionIds, defeated, ...chrome }
+      ? { conditions, conditionIds, tint, defeated, ...chrome }
       : null;
   }
 
@@ -221,6 +232,7 @@ function stateOf(token: any): ChipState | null {
     armor: track(res.armorSlots),
     conditions,
     conditionIds,
+    tint,
     defeated,
   };
 

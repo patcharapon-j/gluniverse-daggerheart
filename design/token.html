@@ -222,6 +222,7 @@ needs no radius calculation: it is a filter on the PIXI mesh and follows the cre
     <button data-do="stress">mark stress</button>
     <button data-do="armor">spend armor</button>
     <button data-do="hope">spend hope</button>
+    <button data-do="gain">gain hope</button>
     <button data-do="clear">clear all</button>
   </div>
   <label class="tg"><input type="checkbox" id="vu"> vulnerable · ad hoc, on the ogre</label>
@@ -297,7 +298,7 @@ const sprite = (c, style) => {
 const det = document.getElementById('det');
 const DETAIL = [
   ['character', CAST[0].st],
-  ['vulnerable', { ...CAST[0].st, hp:{max:12,marked:8}, stress:{max:6,marked:6}, conditions:['Vulnerable'] }],
+  ['vulnerable', { ...CAST[0].st, hp:{max:12,marked:8}, stress:{max:6,marked:6}, conditions:['Vulnerable'], tint:'#9b72e4' }],
   ['adversary', CAST[1].st],
 ];
 for (const [label, st] of DETAIL) {
@@ -368,6 +369,7 @@ const DO = {
   stress: s => bump(s.stress, 1),
   armor:  s => bump(s.armor, 1),
   hope:   s => { if (s.hope) s.hope.value = Math.max(0, s.hope.value - 1); },
+  gain:   s => { if (s.hope) s.hope.value = Math.min(s.hope.max - (s.scars ?? 0), s.hope.value + 1); },
   clear:  s => { bump(s.hp,-99); bump(s.stress,-99); bump(s.armor,-99);
                  if (s.hope) s.hope.value = s.hope.max - (s.scars ?? 0); },
 };
@@ -375,7 +377,9 @@ for (const b of document.querySelectorAll('.btns button'))
   b.onclick = () => { for (const c of Object.values(chips)) { DO[b.dataset.do](c.st); paint(c); } };
 
 document.getElementById('vu').onchange = e => {
-  state.ogre.conditions = e.target.checked ? ['Vulnerable'] : []; paint(chips.ogre);
+  state.ogre.conditions = e.target.checked ? ['Vulnerable'] : [];
+  state.ogre.tint = e.target.checked ? '#9b72e4' : '';
+  paint(chips.ogre);
 };
 
 /* Who sees what. Vulnerable ignores all of it, so a Vulnerable adversary
@@ -402,8 +406,8 @@ see.onchange = gmBox.onchange = visibility;
 
 const extra = document.createElement('style');
 extra.textContent = `
-  .tok.seenone .tkarcs,.tok.seenone .tkdiff,.tok.seenone .tkhope,
-  .tok.seemarks .tkdiff{display:none}`;
+  .tok.seenone .er-ring,.tok.seenone .er-diff,.tok.seenone .er-hope,
+  .tok.seemarks .er-diff{display:none}`;
 document.head.appendChild(extra);
 
 function paint(c){ setChip(c.el, c.st); }
@@ -426,7 +430,7 @@ camera(); visibility();
 import { TOKEN_CHIP, chipScale, RING_HOLE, RING_RIM } from '/design/token.js';
 
 const ST = { hp:{max:12,marked:5}, stress:{max:6,marked:2},
-             armor:{max:3,marked:1}, hope:{value:4,max:6}, conditions:['Vulnerable'] };
+             armor:{max:3,marked:1}, hope:{value:4,max:6}, conditions:['Vulnerable'], tint:'#9b72e4' };
 
 const CASES = [
   { n:'no ring',     t:{} },

@@ -9,7 +9,7 @@
     "build": "vite build && npm run build:packs && npm run link:dev",
     "watch": "vite build --watch",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "typecheck": "tsc --noEmit && npm run check && npm run items:check && npm run actors:check && npm run stat-blocks:check && npm run marks:check && npm run counters:check && npm run restarts:check && npm run chip-scale:check && npm run conditions:check && npm run effects:check && npm run chat-actions:check && npm run rest-context:check && npm run adversary-roll:check && npm run activity:check && npm run i18n:check",
+    "typecheck": "tsc --noEmit && npm run check && npm run items:check && npm run actors:check && npm run stat-blocks:check && npm run marks:check && npm run counters:check && npm run restarts:check && npm run chip-scale:check && npm run conditions:check && npm run effects:check && npm run hope-arc:check && npm run chat-actions:check && npm run rest-context:check && npm run adversary-roll:check && npm run activity:check && npm run i18n:check",
     "link:dev": "node scripts/link-dev-build.mjs",
     "link:dev:check": "node tools/test-link-dev-build.mjs",
     "preview": "node tools/preview-server.js",
@@ -35,7 +35,8 @@
     "restarts:check": "node tools/test-mark-restarts.mjs",
     "chip-scale:check": "node tools/test-token-chip-scale.mjs",
     "conditions:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-token-conditions.mjs",
-    "effects:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-token-effects-contract.mjs"
+    "effects:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-token-effects-contract.mjs",
+    "hope-arc:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-token-hope-arc.mjs"
   },
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^3.0.4",

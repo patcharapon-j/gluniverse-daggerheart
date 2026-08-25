@@ -15,6 +15,8 @@ import { CONDITIONS } from "./config.ts";
 export interface ConditionMaterialDef {
   id: string;
   color: readonly [number, number, number];
+  /** The same colour as CSS, for the HUD sentence that names this condition. */
+  hex: string;
 }
 
 const rgb = (hex: string): readonly [number, number, number] => {
@@ -32,7 +34,21 @@ const PALETTE = [
 export const CONDITION_MATERIALS: readonly ConditionMaterialDef[] = CONDITIONS.map((condition, i) => ({
   id: condition.id,
   color: rgb(PALETTE[i] ?? "#d8e2ec"),
+  hex: PALETTE[i] ?? "#d8e2ec",
 }));
+
+/**
+ * The material colour a condition is drawn in, for the HUD.
+ *
+ * The sentence on the chip and the texture on the mesh are one statement
+ * about one creature, so they are one number. Exported from here rather
+ * than duplicated in the stylesheet for the ordinary reason: a palette
+ * kept in two places is a palette that disagrees with itself the first
+ * time somebody adds a condition.
+ */
+export function conditionTint(id: string | undefined): string | undefined {
+  return id ? BY_ID.get(id)?.hex : undefined;
+}
 
 const BY_ID = new Map(CONDITION_MATERIALS.map((material, index) => [material.id, { ...material, index }]));
 const MARK = Symbol("daggerheartConditionMaterial");
