@@ -49,6 +49,9 @@ uniform sampler2D uSampler;
 uniform float uTime;
 uniform float uCount;
 uniform float uDead;
+uniform vec4 inputSize;    // xy = pooled texture size, zw = 1/size
+uniform vec4 outputFrame;  // xy = frame origin, zw = frame size in screen px
+uniform vec4 inputClamp;   // xy = min uv, zw = max uv, both in texture space
 uniform float uId0; uniform float uId1; uniform float uId2; uniform float uId3; uniform float uId4;
 uniform vec3 uColor0; uniform vec3 uColor1; uniform vec3 uColor2; uniform vec3 uColor3; uniform vec3 uColor4;
 
@@ -251,6 +254,30 @@ float shardAngle(float id) {
 }
 vec2 turn(vec2 p,float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c)*p;}
 
+/* -- token space, not filter space --------------------------------
+   PIXI does NOT hand a filter a 0..1 coordinate over its object. Its
+   vertex shader writes
+
+       vTextureCoord = aVertexPosition * (outputFrame.zw * inputSize.zw)
+
+   so the coordinate spans only outputFrame/inputSize of a POOLED texture.
+   outputFrame.zw is the token's size in screen pixels and moves with the
+   camera; inputSize.xy comes from a pool that snaps to discrete sizes. The
+   ratio therefore changes as you zoom -- and reading vTextureCoord * 2 - 1
+   as if it were the token would rescale every frequency below with it,
+   which is a texture that swims under the creature instead of belonging
+   to it.
+
+   tokenUv divides that ratio back out, so 0..1 is the token at every zoom;
+   sampleArt is its inverse and clamps to the frame, because sampling past
+   inputClamp reads whatever else the pool is holding. */
+vec2 tokenUv(vec2 tex){ return tex * inputSize.xy / outputFrame.zw; }
+
+vec4 sampleArt(vec2 local){
+  vec2 tex = clamp(local, 0.0, 1.0) * outputFrame.zw * inputSize.zw;
+  return texture2D(uSampler, clamp(tex, inputClamp.xy, inputClamp.zw));
+}
+
 vec4 shattered(vec2 uv, vec2 p) {
   float first=99.0; float second=99.0; float sid=0.0;
   for(int i=0;i<7;i++){
@@ -264,7 +291,7 @@ vec4 shattered(vec2 uv, vec2 p) {
   vec2 source=turn(p-shardOffset(sid),-shardAngle(sid));
   float circle=1.0-smoothstep(.93,.985,length(source));
   vec2 suv=source*.5+.5;
-  vec4 art=texture2D(uSampler,clamp(suv,0.0,1.0));
+  vec4 art=sampleArt(suv);
   float lum=dot(art.rgb,vec3(.2126,.7152,.0722));
   float grain=noise2(source*92.0)-.5;
   float innerEdge=band(seam,.128,.022);
@@ -276,11 +303,11 @@ vec4 shattered(vec2 uv, vec2 p) {
 }
 
 void main() {
-  vec2 uv=vTextureCoord;
+  vec2 uv=tokenUv(vTextureCoord);
   vec2 p=uv*2.0-1.0;
   if(uDead>.5){gl_FragColor=shattered(uv,p);return;}
 
-  vec4 original=texture2D(uSampler,uv);
+  vec4 original=sampleArt(uv);
   float circle=1.0-smoothstep(.94,1.0,length(p));
   vec3 colorSum=vec3(0.0); vec3 accentSum=vec3(0.0); vec2 warp=vec2(0.0);
   float survival=1.0; float peak=0.0; float darkness=0.0;
@@ -300,7 +327,7 @@ void main() {
     material=clamp(mix(material,chroma,.68),0.0,1.0);
   }
   float field=clamp(1.0-survival,0.0,1.0); warp/=count;
-  vec4 warped=texture2D(uSampler,clamp(uv+warp,0.0,1.0));
+  vec4 warped=sampleArt(uv+warp);
   vec3 accent=uCount>1.0?material:accentSum/count;
   float luminance=dot(warped.rgb,vec3(.2126,.7152,.0722));
   vec3 colorized=accent*(.16+luminance*1.24);
@@ -366,7 +393,10 @@ export function syncTokenConditionMaterial(token: any, ids: readonly string[], d
     }
     filter[MARK] = true;
     filter.padding = 0;
-    filter.autoFit = true;
+    /* autoFit shrinks outputFrame to the visible intersection, which would
+       move token space the moment a creature touches the viewport edge. The
+       frame has to stay the object's own bounds for `tokenUv` to be stable. */
+    filter.autoFit = false;
     filters.set(token, filter);
   }
 

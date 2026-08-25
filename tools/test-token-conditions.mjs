@@ -26,6 +26,15 @@ assert.match(TOKEN_CONDITION_FRAGMENT, /if\(uDead>\.5\)/);
 assert.match(TOKEN_CONDITION_FRAGMENT, /material=clamp\(mix\(material,chroma,\.68\)/);
 assert.match(TOKEN_CONDITION_FRAGMENT, /mix\(original\.rgb,color,circle\)/);
 
+/* Token space, not filter space. PIXI's vTextureCoord spans outputFrame/inputSize
+   of a pooled texture, a ratio that moves with the camera, so a shader that reads
+   it as 0..1 rescales every frequency when you zoom. Every sample must go through
+   sampleArt, and nothing may touch texture2D directly. */
+assert.match(TOKEN_CONDITION_FRAGMENT, /vec2 tokenUv\(vec2 tex\)\{ return tex \* inputSize\.xy \/ outputFrame\.zw; \}/);
+assert.match(TOKEN_CONDITION_FRAGMENT, /uv=tokenUv\(vTextureCoord\)/);
+assert.equal((TOKEN_CONDITION_FRAGMENT.match(/texture2D\(/g) ?? []).length, 1,
+  "every art read goes through sampleArt, which clamps to inputClamp");
+
 const css = readFileSync(new URL("../styles/token.css", import.meta.url), "utf8");
 assert.match(css, /\.dh\.tok\.defeated \.tkcond/);
 assert.match(css, /\.dh\.tok\.defeated \.tkarcs/);

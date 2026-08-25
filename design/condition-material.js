@@ -30,7 +30,15 @@ async function boot(canvas,state){
   const portrait=document.createElement('canvas');portrait.width=256;portrait.height=256;
   portrait.getContext('2d').drawImage(art,art.width*.313,art.height*.16,art.width*.334,art.height*.483,0,0,256,256);
   const texture=gl.createTexture();gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,portrait);
-  const uniform=(name)=>gl.getUniformLocation(program,name);gl.uniform1i(uniform('uSampler'),0);gl.uniform1f(uniform('uCount'),state.ids.length);gl.uniform1f(uniform('uDead'),state.dead?1:0);
+  const uniform=(name)=>gl.getUniformLocation(program,name);gl.uniform1i(uniform('uSampler'),0);
+  /* A live token gets these from PIXI. Here the quad IS the texture, so the
+     frame and the texture are the same square and tokenUv() is the identity —
+     which is the point: the harness must feed the shader the same contract
+     Foundry does, or it verifies a program the canvas never runs. */
+  gl.uniform4f(uniform('inputSize'),canvas.width,canvas.height,1/canvas.width,1/canvas.height);
+  gl.uniform4f(uniform('outputFrame'),0,0,canvas.width,canvas.height);
+  gl.uniform4f(uniform('inputClamp'),0,0,1,1);
+  gl.uniform1f(uniform('uCount'),state.ids.length);gl.uniform1f(uniform('uDead'),state.dead?1:0);
   state.ids.slice(0,5).forEach((id,index)=>{const m=materialById.get(id);gl.uniform1f(uniform(`uId${index}`),m.index);gl.uniform3fv(uniform(`uColor${index}`),m.color);});
   const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
   const paint=(now)=>{gl.uniform1f(uniform('uTime'),state.dead||reduced?2.35:now/1000);gl.drawArrays(gl.TRIANGLES,0,6);if(!reduced&&!state.dead)requestAnimationFrame(paint);};requestAnimationFrame(paint);
