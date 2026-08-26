@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>QA · Hope on the circle, and a sentence you can read</title>
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/token.css">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#070a0e;color:#e7eef6;
+  font:600 13px/1.5 var(--f-ui,system-ui),sans-serif}
+body{padding:26px 30px 60px}
+h1{font:800 17px/1.2 var(--f-ui,system-ui),sans-serif;margin:0 0 4px}
+p.n{margin:0 0 22px;max-width:760px;color:#8794a3;font-weight:450;font-size:12px}
+h2{font:700 9px/1 var(--f-mono,monospace);letter-spacing:.16em;text-transform:uppercase;
+  color:#6c7a8a;margin:26px 0 12px}
+.row{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
+.cell{width:212px}
+.stage{position:relative;width:212px;height:212px;border-radius:14px;overflow:hidden;
+  background-image:linear-gradient(rgba(105,128,150,.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(105,128,150,.07) 1px,transparent 1px);
+  background-size:53px 53px;display:grid;place-items:center}
+.spr{position:relative;width:100px;height:100px;transform:scale(2)}
+.spr .art{position:absolute;inset:2px;border-radius:50%;
+  background:var(--art,url("/design/assets/art-sample-01.png")) center/cover,#2a3039}
+.cap{margin-top:9px;color:#7b8896;font:600 10px/1.4 var(--f-mono,monospace);
+  letter-spacing:.05em}
+.cap b{display:block;color:#dbe4ee;font-size:11px;letter-spacing:.02em;margin-bottom:2px}
+.btns{display:flex;gap:8px;margin:16px 0 0;flex-wrap:wrap}
+button{border:0;border-radius:7px;padding:7px 12px;cursor:pointer;
+  background:#18202b;color:#cfdae6;font:700 10px/1 var(--f-mono,monospace);
+  letter-spacing:.08em;text-transform:uppercase}
+button:hover{background:#e0b647;color:#12161b}
+</style></head>
+<body>
+<h1>Hope on the circle, and a sentence you can read</h1>
+<p class="n">Three claims under test. <b>One:</b> the gems sit on the rails' own circle at a
+fixed angular pitch and tilt with it, so the 60&deg; opening reads as part of the gauge.
+<b>Two:</b> gaining throws light inward onto a gem and spending throws it outward off one, which
+is the crown-and-reticle grammar already on this chip. <b>Three:</b> the condition sentence
+carries its condition's own material colour and still clears the artwork underneath &mdash;
+the pale row is the case that decides it.</p>
+
+<h2>The opening, at three capacities</h2>
+<div class="row" id="pitch"></div>
+
+<h2>The sentence, over four backgrounds</h2>
+<div class="row" id="read"></div>
+<div class="btns">
+  <button data-do="spend">spend hope</button>
+  <button data-do="gain">gain hope</button>
+  <button data-do="rest">full rest</button>
+</div>
+
+<script type="module">
+import { TOKEN_CHIP, setChip } from '/design/token.js';
+
+const BASE = { hp:{max:12,marked:5}, stress:{max:6,marked:2}, armor:{max:3,marked:1} };
+const cell = (host, caption, st, art) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'cell';
+  wrap.innerHTML = `<div class="stage"><div class="spr"${art ? ` style="--art:${art}"` : ''}>`
+    + `<div class="art"></div>${TOKEN_CHIP(st)}</div></div>`
+    + `<div class="cap">${caption}</div>`;
+  host.appendChild(wrap);
+  return { el: wrap.querySelector('.tok'), st };
+};
+
+const pitch = document.getElementById('pitch');
+cell(pitch, '<b>Hope 2 / 2</b>a two-Hope companion', { ...BASE, hope:{value:2,max:2} });
+cell(pitch, '<b>Hope 4 / 6, one scar</b>the ordinary character', { ...BASE, hope:{value:4,max:6}, scars:1 });
+cell(pitch, '<b>Hope 7 / 12</b>past the opening, so the pitch compresses', { ...BASE, hope:{value:7,max:12} });
+cell(pitch, '<b>Difficulty 16</b>the other occupant of the same slot', { ...BASE, actor:'adversary', difficulty:16 });
+
+const ARTS = [
+  ['dark portrait', null, '#9b72e4', ['Vulnerable']],
+  ['near-white', 'linear-gradient(150deg,#fdfdfb,#e4e9ef)', '#f0783f', ['Ablaze']],
+  ['mid grey', 'linear-gradient(150deg,#8d939b,#6d747d)', '#76d8d1', ['Stunned','Hexed']],
+  ['saturated', 'linear-gradient(150deg,#1d6fd8,#d8341d)', '#9bc45b', ['Corroded','Drained','Silenced']],
+];
+const read = document.getElementById('read');
+const live = [];
+for (const [name, art, tint, conditions] of ARTS)
+  live.push(cell(read, `<b>${name}</b>${conditions.join(' + ')}`,
+    { ...BASE, hope:{value:4,max:6}, scars:1, conditions, tint }, art));
+
+const DO = {
+  spend: s => { s.hope.value = Math.max(0, s.hope.value - 1); },
+  gain:  s => { s.hope.value = Math.min(s.hope.max - (s.scars ?? 0), s.hope.value + 1); },
+  rest:  s => { s.hope.value = s.hope.max - (s.scars ?? 0); },
+};
+for (const b of document.querySelectorAll('button'))
+  b.onclick = () => { for (const c of live) { DO[b.dataset.do](c.st); setChip(c.el, c.st); } };
+</script>
+</body></html>
