@@ -375,6 +375,41 @@ const PILES = {
       said: "It can be recharged for free on your next rest",
     }),
   ],
+
+  /* ── the variant tables ─────────────────────────────────────────────
+     One reading, printed on four documents, because the Western revolver
+     runs a tier ladder and a ladder is four weapons. They are listed
+     separately rather than folded together for the reason `PAINFUL_W` and
+     `PAINFUL_A` stay two constants: a key here names a *document*, and four
+     documents is four keys even when the sentence is the same.
+
+     `refresh: "manual"` is the load-bearing part and the whole reason this
+     needed reading rather than sweeping. Every other budget in this file
+     comes back when a scope comes round; Ammo comes back when you **mark a
+     Stress**, which is a price rather than a scope, and there is no refresh
+     kind for it. Handing it `rest` would refill six shots on a short rest
+     that the card says cost a Stress each — generous, invisible, and wrong
+     in the direction nobody checks. So the pool is manual and the sentence
+     under it is what tells you how to fill it.
+
+     It arrives **full**, which is `once()`'s own split: the card says
+     *place* six, and a revolver you have just picked up is loaded. */
+  ...Object.fromEntries(
+    ["Revolver", "Improved Revolver", "Advanced Revolver", "Legendary Revolver"].map((name) => [
+      `weapon:${name}`,
+      [
+        res({
+          name: "Ammo",
+          value: 6,
+          max: fixed(6),
+          refresh: "manual",
+          onRefresh: "fill",
+          feature: "Six Shot",
+          said: "Place 6 Ammo tokens on your character sheet.",
+        }),
+      ],
+    ]),
+  ),
 };
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -497,6 +532,17 @@ const BUDGETS = {
   "domainCard:Siphon Essence": [once("longRest")],
   "domainCard:Shared Trauma": [once("rest")],
   "domainCard:Dread-Touched": [once("rest")],
+
+  /* Two gates the System Reference Document 2.0 added, and the only budgets in
+     this block whose `said` is not on a card somebody else printed — Dread is
+     transcribed from *Hope and Fear* and the erratum is edited into
+     `dread-cards.mjs` in place, since there is no generated file for an overlay
+     to sit on top of. The reading is the same one either way: "Once per scene"
+     is a use limit and not a duration, so it is a budget of one that comes back
+     with the scene. `once("scene")` derives the phrase from the scope, which is
+     what keeps the drift check honest about a card we typed in ourselves. */
+  "domainCard:Summon Horror": [once("scene")],
+  "domainCard:Darkfire": [once("scene")],
 
   /* ── equipment ──────────────────────────────────────────────────────
      The half of this that had nowhere to go at all. Armour and weapons

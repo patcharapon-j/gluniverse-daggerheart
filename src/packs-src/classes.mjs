@@ -912,7 +912,7 @@ const wingedSentinel = subclassCards({
       feat(
         "Power of the Gods",
         `
-        While flying, you deal an extra **1d12** damage instead of 1d8 with your “Wings of Light”
+        While flying, you deal an extra **1d12** damage instead of 1d8 from your “Wings of Light”
         feature.`,
       ),
     ],

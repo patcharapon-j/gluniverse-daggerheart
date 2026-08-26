@@ -44,8 +44,18 @@ const art = (name) =>
   "systems/gluniverse-daggerheart/assets/cards/domains/dread/" +
   `${name.toLowerCase().replace(/['’ʼ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.webp`;
 
-/** One card. `type` is the word under the title: every Dread card is a Spell
-    except Dread-Touched, which is an Ability. */
+/** One card. `type` is the word under the title, and the deck is mostly Spells:
+    eighteen of the twenty-one. Dread-Touched has always been an Ability, and the
+    System Reference Document 2.0 makes two more — *Savor the Anguish* and
+    *Invoke Torment*, both of which are things that happen when an adversary does
+    something rather than things you cast, which is what the word means.
+
+    Worth recording that this file used to assert the split was one card against
+    twenty. It was true of the book and is not true of the game, and a comment
+    stating a rule that has since gained exceptions is worse than one stating a
+    count — the count only goes stale, while the rule tells the next reader not
+    to look. There is no upstream to check this against (see above), so the
+    honest form is the tally and the three names. */
 const card = (name, level, type, recall, text) => ({
   name,
   domain: "dread",
@@ -157,7 +167,9 @@ export default [
     "Summon Horror",
     4,
     2,
-    "**Mark a Stress** to summon an otherworldly creature that deals **d8+1** magic damage " +
+    /* SRD 2.0 gates it. Every other summon in the corpus that deals flat dice
+       for one Stress is once per something, and this was the exception. */
+    "**Once per scene**, mark a Stress to summon an otherworldly creature that deals **d8+1** magic damage " +
       "using your Spellcast trait to a target within Far range. If the target marks any Hit " +
       "Points from this attack, they must succeed on a **Reaction Roll (12)** to steel " +
       "themselves against the horror or mark an equal number of Stress.\n" +
@@ -192,7 +204,9 @@ export default [
     "Darkfire",
     6,
     2,
-    "Spend any number of Hope to target an equal number of adversaries within Close range. " +
+    /* SRD 2.0 gates it, for Summon Horror's reason: a card whose only cost is
+       Hope you were going to bank anyway is a card you cast every round. */
+    "**Once per scene**, spend any number of Hope to target an equal number of adversaries within Close range. " +
       "Each target makes a **Reaction Roll (15)**. Targets who fail take **d8+6** magic damage " +
       "using your Spellcast trait as they are engulfed in dark fire. Targets who succeed take " +
       "half damage.",
@@ -267,7 +281,10 @@ export default [
       "must **mark a Stress**.",
   ),
 
-  spell(
+  /* An Ability in SRD 2.0, not a Spell. Nothing is cast: it fires when an
+     adversary near you takes Severe damage, which is a reaction to the table
+     rather than a thing you do. */
+  ability(
     "Savor the Anguish",
     9,
     1,
@@ -288,7 +305,9 @@ export default [
       "normal form.",
   ),
 
-  spell(
+  /* An Ability in SRD 2.0, for Savor the Anguish's reason: both halves are
+     standing rules about damage you were already dealing, with nothing to cast. */
+  ability(
     "Invoke Torment",
     10,
     2,

@@ -12,6 +12,16 @@
  * This module is the thin part either way: it decides what a card *is* as a
  * document, and nothing about what it says.
  *
+ * The one exception is `withErrata`, and it is an exception on purpose. The
+ * System Reference Document 2.0 changes four of the fetched cards, and a
+ * correction written into the generated module is a correction the next
+ * `node tools/fetch-cards.mjs` silently reverts. So it is an overlay applied
+ * here, in the idiom `withDice` and `withDamage` already use — with the
+ * difference that it runs on the *source* card rather than on the built
+ * document, because what it corrects is the card's own markdown and not an
+ * annotation about it. `card-errata.mjs`'s header has the argument, including
+ * the one candidate erratum it declines.
+ *
  * Both sources already arrive in deck order — by level, then alphabetical
  * within a level — so this concatenates and stops. Dread goes last because it
  * is a later book rather than a tenth entry in the corebook's own sequence,
@@ -25,6 +35,7 @@ import MARKED from "./marked-cards.mjs";
 import { domainCardItem } from "./_helpers.mjs";
 import { withDice } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
+import { withErrata } from "./card-errata.mjs";
 
 /**
  * Root and Void go last, after Dread, for the reason Dread goes after the nine.
@@ -41,4 +52,6 @@ import { withDamage } from "./card-damage.mjs";
  * on all 231 documents that 189 of them can never answer.
  * `tools/check-marked.mjs` is the only thing that reads it.
  */
-export default withDamage(withDice([...CARDS, ...DREAD, ...MARKED].map(domainCardItem)));
+export default withDamage(
+  withDice([...withErrata(CARDS), ...DREAD, ...MARKED].map(domainCardItem)),
+);

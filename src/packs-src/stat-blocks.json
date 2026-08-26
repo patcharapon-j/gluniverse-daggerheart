@@ -942,7 +942,7 @@
      "img": "systems/gluniverse-daggerheart/assets/types/gear.svg",
      "system": {
       "kind": "passive",
-      "description": "<p>On a successful attack within Melee range against the Snake, the attacker must mark an Armor Slot without receiving its benefits (they can still use armor to reduce the damage). If they can’t mark an Armor Slot, they must mark an additional HP.</p>",
+      "description": "<p>After a successful attack against the Snake within Melee range, the attacker must mark an Armor Slot. If they can’t mark an Armor Slot, they must mark an HP.</p>",
       "fearCost": 0,
       "stressCost": 0,
       "origin": "Glass Snake",
@@ -4928,7 +4928,7 @@
      "img": "systems/gluniverse-daggerheart/assets/types/gear.svg",
      "system": {
       "kind": "passive",
-      "description": "<p>The Box can be spotlighted up to two times times per GM turn. Spend Fear as usual to spotlight them.</p>",
+      "description": "<p>The Box can be spotlighted up to two times per GM turn. Spend Fear as usual to spotlight them.</p>",
       "fearCost": 0,
       "stressCost": 0,
       "origin": "Battle Box",
@@ -20075,7 +20075,7 @@
      "img": "systems/gluniverse-daggerheart/assets/types/gear.svg",
      "system": {
       "kind": "action",
-      "description": "<p>Spend 2 Fear to have the Cryptimoth unleash a burst of psychic energy that causes each PC within Far range to suffer visions of their horrifying fate. Each target must make an Insight Reaction Roll (16). Targets who fail take 3d8 direct magic damage and become Vulnerable until their next rest. Targets who succeed must mark a Stress or take half damage.</p>",
+      "description": "<p>Spend 2 Fear to have the Cryptimoth unleash a burst of psychic energy that causes each PC within Far range to suffer visions of their horrifying fate. Each target must make an Instinct Reaction Roll (16). Targets who fail take 3d8 direct magic damage and become Vulnerable until their next rest. Targets who succeed must mark a Stress or take half damage.</p>",
       "fearCost": 2,
       "stressCost": 1,
       "origin": "Cryptimoth",
@@ -20101,7 +20101,7 @@
      "img": "systems/gluniverse-daggerheart/assets/types/gear.svg",
      "system": {
       "kind": "action",
-      "description": "<p>Spend a Fear to have the Cryptimoth gaze into the eyes of a PC within Close range and make them Paranoid. While Paranoid, the PC is suspicious of other PCs and can’t Help an Ally or take part in Tag Team Rolls. To clear this condition, the PC must succeed on an Insight Roll (16) or participate in the Prepare downtime move with one or more members of their party during a rest.</p>",
+      "description": "<p>Spend a Fear to have the Cryptimoth gaze into the eyes of a PC within Close range and make them Paranoid. While Paranoid, the PC is suspicious of other PCs and can’t Help an Ally or take part in Tag Team Rolls. To clear this condition, the PC must succeed on an Instinct Roll (16) or participate in the Prepare downtime move with one or more members of their party during a rest.</p>",
       "fearCost": 1,
       "stressCost": 0,
       "origin": "Cryptimoth",
@@ -22840,7 +22840,7 @@
      "img": "systems/gluniverse-daggerheart/assets/types/gear.svg",
      "system": {
       "kind": "action",
-      "description": "<p>Spend a Fear to have the Wyvern let out a spine-chilling screech. All creatures within Far range are Terrified until they succeed on a Presence Roll (18) to clear the condition or the Wyvern is defeated. While Terrified, a PC doesn’t gain a Hope when they roll with Hope.</p>",
+      "description": "<p>Spend a Fear to have the Wyvern let out a spine-chilling screech. All PCs within Far range are Terrified until they succeed on a Presence Roll (18) to clear the condition or the Wyvern is defeated. While Terrified, a PC doesn’t gain a Hope when they roll with Hope.</p>",
       "fearCost": 1,
       "stressCost": 0,
       "origin": "Wyvern",
@@ -23502,7 +23502,7 @@
      "img": "systems/gluniverse-daggerheart/assets/types/gear.svg",
      "system": {
       "kind": "action",
-      "description": "<p>Spend a Fear to summon 1d4 Outer Realms Abominations, which appear within Far range, then choose one to immediately spotlight. “It’s Here…” - Evolution: When the Titan has marked half its HP, they manifests in their full form, clearing all HP and losing the “Merely a Projection” feature. While the Titan is in this form, a creature who marks HP from the Titan’s standard attack must mark an additional HP.</p>",
+      "description": "<p>Spend a Fear to summon 1d4 Cephilith Abominations, which appear within Far range, then choose one to immediately spotlight. “It’s Here…” - Evolution: When the Titan has marked half their HP, they manifest in their full form, clearing all HP and losing the “Merely a Projection” feature. While the Titan is in this form, a creature who marks HP from the Titan’s standard attack must mark an additional HP.</p>",
       "fearCost": 1,
       "stressCost": 0,
       "origin": "Cephilith Titan",
@@ -28627,7 +28627,7 @@
      "img": "systems/gluniverse-daggerheart/assets/types/gear.svg",
      "system": {
       "kind": "action",
-      "description": "<p>Pick a point within the grove. All targets within Very Close range of that point must succeed on an Agility Reaction Roll or take 1d8+3 physical damage and become Restrained by barbed vines. Restrained creatures until they’re freed with a successful Finesse or Strength roll or by dealing at least 6 damage to the vines. How many vines are there? Where do they grab you? Do they pull you down or lift you off the ground?</p>",
+      "description": "<p>Pick a point within the grove. All targets within Very Close range of that point must succeed on an Agility Reaction Roll or take 1d8+3 physical damage and become Restrained by barbed vines. Restrained lasts until they’re freed with a successful Finesse or Strength roll or by dealing at least 6 damage to the vines. How many vines are there? Where do they grab you? Do they pull you down or lift you off the ground?</p>",
       "fearCost": 0,
       "stressCost": 0,
       "origin": "Abandoned Grove",
@@ -29466,7 +29466,7 @@
      "img": "systems/gluniverse-daggerheart/assets/types/gear.svg",
      "system": {
       "kind": "reaction",
-      "description": "<p>Countdown (Loop ). When the PCs enter the Burning Heart of the Woods, activate the countdown. When it triggers, all characters must make a Strength or Instinct Reaction Roll. Targets who fail take 4d6+5 direct physical damage. Targes who succeed take half damage. Protective masks or clothes give advantage on the reaction roll. What hallucinations does the ash induce? What incongruous taste does it possess?</p>",
+      "description": "<p>Countdown (Loop ). When the PCs enter the Burning Heart of the Woods, activate the countdown. When it triggers, all characters must make a Strength or Instinct Reaction Roll. Targets who fail take 4d6+5 direct physical damage. Targets who succeed take half damage. Protective masks or clothes give advantage on the reaction roll. What hallucinations does the ash induce? What incongruous taste does it possess?</p>",
       "fearCost": 0,
       "stressCost": 0,
       "origin": "Burning Heart of the Woods",
