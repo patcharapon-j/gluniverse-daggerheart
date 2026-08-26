@@ -423,7 +423,7 @@ async function boot() {
   const cache = new Map();
   const uniformsFor = (program) => {
     if (!cache.has(program)) {
-      const names = ['uSampler','inputSize','outputFrame','inputClamp','uCount','uDead','uTime',
+      const names = ['uSampler','inputSize','outputFrame','inputClamp','uCount','uDead','uTime','uSubject',
         'uId0','uId1','uId2','uId3','uId4','uColor0','uColor1','uColor2','uColor3','uColor4'];
       const map = {};
       for (const n of names) map[n] = gl.getUniformLocation(program, n);
@@ -449,6 +449,11 @@ async function boot() {
     gl.uniform4f(u.inputSize, frame, frame, 1 / frame, 1 / frame);
     gl.uniform4f(u.outputFrame, 0, 0, frame, frame);
     gl.uniform4f(u.inputClamp, 0, 0, 1, 1);
+    /* One tile is one token and the creature fills it, so the creature ends
+       at the frame — which is the plain-token case and the shader's own
+       default. The gate is not where a ringed token is studied; the live
+       value is measured off the mesh in token-hud.ts. */
+    gl.uniform1f(u.uSubject, 1);
     const x = slot * TILE;
     const y = canvas.height - (row + 1) * TILE;
     gl.viewport(x, y, TILE, TILE);

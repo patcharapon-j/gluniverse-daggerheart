@@ -1,5 +1,13 @@
 /* Vendored from design/token.js by scripts/port-design-js.mjs — do not edit here.
    Edit design/token.js and re-run `node scripts/port-design-js.mjs`. */
+/* Hope is gem.js's GEM, and this file draws none of it. The comment at the
+   Hope block below has said so since the component was specified and it was
+   not true: what shipped was a bare <i> with its face on a ::before and its
+   gain and spend on a ::after, hand-written in token.css. It looked right,
+   because at six pixels a gold diamond looks like a gold diamond, which is
+   the whole reason nothing caught it. */
+import { GEM, setPool } from './gem.js';
+
 // The token chip — a creature's tracks, on the creature.
 //
 // Three readings were drawn and one won. `marks` — the sheet's row with
@@ -334,30 +342,33 @@ const ringOf = (kind, t) => {
 const HOPE_R = 43.4;      // cqw — between the Hit Points rail and Stress
 const HOPE_PITCH = 10;    // degrees between gems, held for every character
 const HOPE_SPAN = 51;     // of the 60° opening, leaving the rail ends clear
-const HOPE_W = 4.6;       // px across the flats
+const HOPE_W = 6.5;       // px across the gem's own box
 const HOPE_GAP = 1.1;     // px of arc that must survive between neighbours
 
 /* Gem 0 sits at the lower-LEFT end of the opening, so Hope fills the way
    the rails run and the way the sentence above it reads. A positive CSS
    rotation takes the six-o'clock vector clockwise, which is leftward.
 
-   The size is solved WITH the pitch rather than set beside it, and the
-   reason is that a diamond is not as wide as its box: the gem is a square
-   turned 45° and turned again with the arc, so what it actually occupies
-   along the circle is its diagonal, √2 times the number in the
-   stylesheet. Six 5.6px gems at the first pitch this was written with
-   needed 47px of arc and had 38 — they fused into a gold band with a
-   scalloped edge, which is one Hope drawn six times.
+   The size is solved WITH the pitch rather than set beside it, because a
+   gem that overlaps its neighbour is one Hope drawn twice: six of them at
+   the first pitch this was written with fused into a gold band with a
+   scalloped edge. So hold the pitch, and if the pitch has had to compress
+   to fit a max the opening cannot hold at full spacing, let the gems come
+   down with it. A smaller gem is still a count.
 
-   So: hold the pitch, and if the pitch has had to compress to fit a max
-   the opening cannot hold at full spacing, let the gems come down with
-   it. A smaller gem is still a count. Overlapping gems are not. */
+   The sqrt(2) is GONE, and that is the one arithmetic consequence of the
+   gems becoming GEMs. The old <i> was a SQUARE turned 45 degrees, so what
+   it occupied along the circle was its diagonal and the box had to be
+   divided by sqrt(2) to fit. A GEM is a diamond CLIPPED OUT of an upright
+   box, so the box is what sits on the arc and there is nothing to divide.
+   Same ink on screen at the same spacing — 6.5 is 4.6 * sqrt(2) — arrived
+   at by inscribing the shape rather than circumscribing it. */
 const hopeGeometry = (n) => {
   const pitch = n > 1 ? Math.min(HOPE_PITCH, HOPE_SPAN / (n - 1)) : 0;
   const arc = pitch * (Math.PI / 180) * HOPE_R;
-  const width = n > 1 ? Math.min(HOPE_W, (arc - HOPE_GAP) / Math.SQRT2) : HOPE_W;
+  const width = n > 1 ? Math.min(HOPE_W, arc - HOPE_GAP) : HOPE_W;
   return {
-    width: Math.max(2.4, width),
+    width: Math.max(3.4, width),
     angles: Array.from({ length: n }, (_, i) => (((n - 1) / 2) - i) * pitch),
   };
 };
@@ -369,12 +380,22 @@ const bottomOf = (s) => {
     const { width, angles } = hopeGeometry(n);
     /* Radius and width are written here rather than in the stylesheet so
        the circle, the gems on it and the spacing between them cannot drift
-       apart — they are one solution, not three settings. */
-    return `<div class="er-hope" style="--hope-r:${HOPE_R}cqw;--hope-w:${width.toFixed(2)}px">${
+       apart — they are one solution, not three settings. `--sz` is set on
+       the ROW rather than passed to each GEM, because the width is one
+       answer for the whole run and gem.css reads it as an inherited custom
+       property; six copies of it would be six chances to disagree.
+
+       The placement is on a wrapper and never on the gem. `.er-gem` owns
+       the polar transform — which is where every other polar thing on this
+       chip already lives — and GEM owns the drawing, exactly as `.fcls`
+       wraps `.fclsr` and `.abl .a` wraps `.abl .ap`. It is also the only
+       way to hand a gem its own angle: GEM writes its own style attribute
+       and takes no arbitrary one. */
+    return `<div class="er-hope" style="--hope-r:calc(${HOPE_R}cqw * var(--tkv,1));--sz:${width.toFixed(2)}px">${
       Array.from({ length: n }, (_, i) => {
         const scar = i >= n - scars;
-        return `<i class="${i < (s.hope.value ?? 0) && !scar ? 'on' : ''}${scar ? ' scar' : ''}"`
-          + ` style="--a:${angles[i].toFixed(2)}deg"></i>`;
+        return `<i class="er-gem" style="--a:${angles[i].toFixed(2)}deg">${
+          GEM({ on: i < (s.hope.value ?? 0) && !scar, scar })}</i>`;
       }).join('')
     }</div>`;
   }
@@ -571,32 +592,26 @@ export function setChip(el, s = {}) {
     ring.classList.toggle('max', active >= t.max);
   }
 
-  /* Hope arrives and leaves one gem at a time and both readings matter, so
-     each is given its own direction rather than a shared blink: spending
-     throws light OUTWARD off the gem, gaining draws it INWARD onto it.
-     That is the crown-and-reticle grammar from the chrome above, reused
-     here because it already means "yours" versus "spent" on this chip.
+  /* Hope is driven by gem.js's own setPool, which is the whole of what
+     changed here. The hand-written loop this replaces did the same diff and
+     the same restart, and then drew a gain and a spend that exist nowhere
+     else in the system — so a player who had learned what a Hope gain looks
+     like on the rail, in the rest dialog and in the change log met a fourth
+     thing on the token. One driver, one grammar, and a fix to any of it
+     lands on all four at once.
 
-     The same restart discipline as the rails, and the same flush: a Rest
-     hands back four Hope at once, and four separate reflows for one event
-     is the thing `flushed` exists to stop. A gem that did not change is
-     not touched, so re-reading a chip never sparkles. */
+     Scars are not toggled here and do not need to be: `scars` is part of
+     shapeOf's signature, so a scar arriving rebuilds the markup and `setPool`
+     — which skips a `.scar` and never writes one — is handed a row that is
+     already correct.
+
+     One cost, stated rather than hidden: `setPool` does its own forced flush,
+     so a Rest that hands back Hope AND clears a rail pays two layouts on this
+     chip instead of the one `flushed` buys. That is the price of the driver
+     being shared, and the shared driver is worth more than the layout. */
   if (s.hope?.max) {
-    const gems = el.querySelectorAll('.er-hope i');
-    const scars = s.scars ?? 0;
-    const value = s.hope.value ?? 0;
-    gems.forEach((gem, i) => {
-      const scar = i >= gems.length - scars;
-      const on = i < value && !scar;
-      const was = gem.classList.contains('on');
-      gem.classList.toggle('scar', scar);
-      gem.classList.toggle('on', on);
-      if (on === was) return;
-
-      gem.classList.remove('gain', 'spend');
-      if (!flushed) { void el.offsetWidth; flushed = true; }
-      gem.classList.add(on ? 'gain' : 'spend');
-    });
+    const row = el.querySelector('.er-hope');
+    if (row) setPool(row, s.hope.value ?? 0, { max: s.hope.max });
   }
 
   if ('conditions' in s) {

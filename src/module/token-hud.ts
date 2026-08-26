@@ -96,12 +96,25 @@
  *
  * plus `tokenChipScale`, ours, world-scoped, a multiplier over the lot.
  *
- * The result is two numbers rather than one, because there are two claims.
- * `--tkr` is the READOUT — three tracks, the gems, the Difficulty — which
- * is a reading *off* the creature and moves out to clear whatever it now
- * occupies. The subject scale remains diagnostic evidence for dynamic-ring
- * fit; the condition material is attached to the PIXI mesh and follows the
- * subject without a second HTML transform.
+ * The result is two numbers rather than one, because there are two claims —
+ * and Obsidian orbit moved which of them most of this component makes.
+ * `--tkr` is OUTWARD CLEARANCE and is floored at 1; `--tkv` is THE SUBJECT,
+ * where the artwork itself ends, and is not floored.
+ *
+ * The rails used to hang outside the creature and wanted the first. They are
+ * inside it now — under `.er-shell`'s clip — and want the second, and nobody
+ * moved them when they moved. So `--tkr` went on being written on every chip
+ * and read by one element, `--tkv` went on being written and read by **none**,
+ * and every rail sat at a fixed percentage of the grid **cell** — which is the
+ * assumption this section opens by disavowing. It fails in the direction that
+ * lasts: every arc is drawn perfectly, around a creature that is not there.
+ * `design/token.css` carries the correction and the arithmetic.
+ *
+ * The condition material is the same finding on the other side of the fence.
+ * It is a PIXI filter on the token **mesh**, and the mesh is not the creature:
+ * a dynamic ring's texture is half again the cell in subject fit, so the
+ * shader was dressing a quad. `subjectInFrame` below is the one place the
+ * chip's cells and the shader's frame meet.
  *
  * ── what it may say, and to whom ─────────────────────────────────────
  * A GM sees everything. Everybody else sees their own characters and their
@@ -340,6 +353,40 @@ function wearOf(token: any): Record<string, unknown> {
   };
 }
 
+/**
+ * Where the creature ends, as a fraction of the condition filter's frame.
+ *
+ * The chip answers this in CELLS and the shader needs it in FRAME units, so
+ * this is the one place the two coordinate systems meet — and each half comes
+ * from the source that owns it. How many cells the frame spans is Foundry's
+ * to say, so it is MEASURED off the mesh rather than derived from the ring
+ * arithmetic; where the creature ends inside those cells is already argued in
+ * `chipScale`, so it is reused rather than restated. Getting that split wrong
+ * is what the three drifting chip builds were: a second opinion about a number
+ * somebody else had already published.
+ *
+ * The dial comes with it, and that is worth stating because it reads at first
+ * like it should not. `tokenChipScale` was written when the readout hung
+ * OUTSIDE the creature, so it was a clearance correction — push the tracks out
+ * past whatever the derivation could not see. Obsidian orbit put the readout on
+ * the creature, and that leaves the dial saying one thing only: *this is where
+ * the creature actually ends*. A table that has had to correct that has
+ * corrected it for the rails and the material alike, and a dial that moved one
+ * and not the other would put the two objects on the same creature in two
+ * places.
+ *
+ * Falls back to 1 rather than guessing, which is the plain-token answer and
+ * the one that was in force before this existed.
+ */
+function subjectInFrame(token: any): number {
+  const cell = Math.max(Number(token?.w) || 0, Number(token?.h) || 0);
+  const mesh = token?.mesh;
+  const frame = Math.max(Math.abs(Number(mesh?.width) || 0), Math.abs(Number(mesh?.height) || 0));
+  if (!(cell > 0) || !(frame > 0)) return 1;
+  const cells = frame / cell;
+  return Math.min(1, Math.max(0.2, chipScale(wearOf(token) as any).subject / cells));
+}
+
 /* Written only when one of the two actually moves. Both are inherited by
    every radius in the stylesheet, so a write here invalidates the chip's
    whole layout — and `refreshToken` fires for a dozen reasons that are not
@@ -380,6 +427,100 @@ function place(chip: HTMLElement, token: any): void {
   setTier(chip, w * (canvas.stage?.scale?.x ?? 1));
 }
 
+/* ══ arriving and leaving ═══════════════════════════════════════════
+   The animation is token.css's; what belongs here is when it is allowed to
+   play and what happens to the element afterwards.
+
+   Three things remove a chip and only two of them are departures. A token
+   going out of view or off the board is a creature leaving, and that plays.
+   A chip whose SHAPE changed — a levelled character, a scar, an adversary
+   becoming visible — is torn down and rebuilt in the same call, and that is
+   one object being re-drawn rather than two objects swapping: animating it
+   would be the readout blinking every time a maximum moved.
+
+   So `fresh` is threaded through rather than inferred, because "there was
+   no chip a moment ago" is true of both and only one of them means it. */
+
+/* ── settle, and why this one is a deadline and nothing else ──────
+   settle.js's arithmetic — read the end off the animations themselves, so
+   it is exactly as long as the motion declares and stays correct when a
+   duration changes in the CSS — without settle.js's event path.
+
+   Both departures from it are forced by what a chip is.
+
+   It skips a non-finite animation rather than substituting a floor for it.
+   settle.js treats "will not say when it ends" as 1.2 seconds, which is
+   right when the caller is waiting to take a class off a gem. A chip is a
+   creature that is very often selected, conditioned, or both, and `tkCrown`
+   and the Vulnerable marquee never end — so the floor would become the
+   answer every time and a departure would sit invisible for a second and a
+   fifth instead of its own 170ms. Skipping them leaves the longest FINITE
+   animation, which is the one that was asked about.
+
+   And there is no `animationend` race, which is the part worth stating
+   because settle.js argues hard for one. That argument is about being
+   PROMPT: a spent gem may not keep `on` a moment longer than it must.
+   Nothing waits on this. What it gates is taking a cosmetic class off a
+   settled chip and removing an element that is already at opacity zero, so
+   a hundred and twenty milliseconds of slack costs nothing — and the event
+   path here would be actively wrong, because `animationend` bubbles: the
+   root's own 300ms arrival would fire first and cancel the Armor rail 160ms
+   into a 460ms stagger, which is a visible snap. Counting the events
+   instead is the trap above wearing a hat, since the indefinite ones never
+   fire at all. */
+const GRACE = 120;
+
+function after(chip: HTMLElement, run: () => void): void {
+  let deadline = 0;
+  for (const a of chip.getAnimations?.({ subtree: true }) ?? []) {
+    /* Animations only, which settle.js also insists on. `getAnimations`
+       hands back every CSSTransition in the subtree too, and a chip has
+       several standing ones — the condition sentence fades over .28s and
+       the crown over .19s — so a departure measured against those would
+       wait 280ms for its own 170ms of motion. */
+    if (typeof CSSAnimation !== "undefined" && !(a instanceof CSSAnimation)) continue;
+    const t = Number(a.effect?.getComputedTiming?.().endTime ?? 0);
+    if (Number.isFinite(t)) deadline = Math.max(deadline, t);
+  }
+  window.setTimeout(run, deadline + GRACE);
+}
+
+/** Chips playing their departure. Out of `chips`, still in the document. */
+const leaving = new Map<string, HTMLElement>();
+
+/** Take a chip off the board, with the animation if this is a departure. */
+function retire(id: string, chip: HTMLElement, played: boolean): void {
+  chips.delete(id);
+  if (!played) {
+    chip.remove();
+    return;
+  }
+  leaving.get(id)?.remove();
+  leaving.set(id, chip);
+  chip.classList.remove("arrive");
+  chip.classList.add("leaving");
+  after(chip, () => {
+    /* Only if it is still the chip that was leaving. A creature that came
+       back inside those 170ms has had this element handed back to it by
+       `reclaim`, and removing it then would delete the live chip. */
+    if (leaving.get(id) !== chip) return;
+    leaving.delete(id);
+    chip.remove();
+  });
+}
+
+/* A departure interrupted is a departure that did not happen. Handing the
+   element back is `capture()`'s rule about a travel still in flight: the
+   alternative is a second chip fading in over the first, at the same
+   coordinates, for as long as the first has left to run. */
+function reclaim(id: string): HTMLElement | undefined {
+  const chip = leaving.get(id);
+  if (!chip) return undefined;
+  leaving.delete(id);
+  chip.classList.remove("leaving");
+  return chip;
+}
+
 /* A token nobody may see gets no chip at all rather than a hidden one: the
    fog is a fact about what this client knows, and an element carrying a
    creature's Stress is the wrong thing to leave in the DOM of somebody who
@@ -396,19 +537,23 @@ function sync(token: any): void {
   const gone = !state || (!token.isVisible && !isGM());
 
   if (gone) clearTokenConditionMaterial(token);
-  else syncTokenConditionMaterial(token, state.conditionIds ?? [], !!state.defeated);
+  else syncTokenConditionMaterial(token, state.conditionIds ?? [], !!state.defeated,
+    subjectInFrame(token));
 
   let chip = chips.get(id);
   if (gone) {
-    chip?.remove();
-    chips.delete(id);
+    if (chip) retire(id, chip, true);
     return;
   }
 
+  /* Before anything is built: a creature that is back inside its own
+     departure keeps the element it already had. */
+  let fresh = false;
+  if (!chip) chip = reclaim(id);
+
   const shape = shapeOf(state);
   if (chip && chip.dataset.shape !== shape) {
-    chip.remove();
-    chips.delete(id);
+    retire(id, chip, false);
     chip = undefined;
   }
 
@@ -420,10 +565,23 @@ function sync(token: any): void {
     chip.dataset.shape = shape;
     chips.set(id, chip);
     layer?.appendChild(chip);
+    fresh = true;
+  } else {
+    chips.set(id, chip);
   }
 
   place(chip, token);
   setChip(chip, { ...state, hidden: !visible(token) });
+
+  /* After `place`, and that ordering is the whole of it: the arrival is a
+     scale about the chip's own centre, and a chip that has not been placed
+     yet is a 0x0 box at the top-left of the scene. It would grow there and
+     jump. */
+  if (fresh) {
+    const el = chip;
+    el.classList.add("arrive");
+    after(el, () => el.classList.remove("arrive"));
+  }
 }
 
 /** Every token on the board, from scratch. */
@@ -434,11 +592,8 @@ function redraw(): void {
     live.add(token.document?.id ?? token.id);
     sync(token);
   }
-  for (const [id, chip] of chips) {
-    if (!live.has(id)) {
-      chip.remove();
-      chips.delete(id);
-    }
+  for (const [id, chip] of [...chips]) {
+    if (!live.has(id)) retire(id, chip, true);
   }
 }
 
@@ -696,7 +851,8 @@ export function reportTokenChips(): Record<string, unknown> {
     return (
       `ring ${w.ring ? (w.gridFit ? "grid fit" : "subject fit") : "off"}` +
       `, subject ${w.subject}, art ${w.art}, dial ${w.manual}` +
-      ` -> readout ${k.readout}, subject ${k.subject}`
+      ` -> readout ${k.readout}, subject ${k.subject}` +
+      `, material ${subjectInFrame(token).toFixed(4)} of the filter frame`
     );
   })();
 

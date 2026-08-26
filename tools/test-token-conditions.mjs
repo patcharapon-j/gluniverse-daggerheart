@@ -115,11 +115,37 @@ assert.match(TOKEN_CONDITION_FRAGMENT, /if\(uDead>\.5\)/);
 /* Detail is bought with pixels, and outputFrame.z is the only place in this
    shader allowed to know about the camera. If a frequency ever stops being
    gated on it, small tokens get a crawling shimmer that nobody reproduces on
-   a design page, because a design page is 160 pixels wide. */
+   a design page, because a design page is 160 pixels wide.
+
+   Times uSubject, because the question is how many pixels the thing being
+   DRESSED has got and the thing being dressed is the creature. A ringed
+   token's frame is half again its cell, so the budget was claiming detail
+   the creature could not resolve — which is the frequency that crawls. */
 const code = TOKEN_CONDITION_FRAGMENT.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-assert.match(code, /float detail = smoothstep\(44\.0, 104\.0, outputFrame\.z\);/);
+assert.match(code, /float detail = smoothstep\(44\.0, 104\.0, outputFrame\.z \* uSubject\);/);
 assert.equal((code.match(/outputFrame\.z[^w]/g) ?? []).length, 1,
   "only the detail budget may read the token's size on screen");
+
+/* ── the material sits on the creature, not on the quad ───────────────
+   The filter is on the token MESH, and the mesh is not the creature: a
+   dynamic ring's texture is half again the cell in subject fit, so every
+   pattern here, the rim roll-off and the break's shard cuts were drawn to a
+   quad the creature only sometimes fills. uSubject is where the creature
+   ends as a fraction of the frame, and dividing p by it once at the top is
+   the whole of respecting token scale.
+
+   uv must NOT be divided, and that is the half worth a check of its own: uv
+   is where the artwork is sampled from, so scaling it drags the creature's
+   own picture around underneath the material. The material moves onto the
+   creature; the creature stays where it is. */
+assert.match(code, /uniform float uSubject;/,
+  "the shader has to be told where the creature ends");
+assert.match(code, /vec2 p=\(uv\*2\.0-1\.0\)\/max\(uSubject,\.05\);/,
+  "p is the creature's own space, so it is divided by uSubject exactly once");
+assert.match(code, /vec2 uv=tokenUv\(vTextureCoord\);/,
+  "uv is the artwork's space and must not be scaled — that moves the picture");
+assert.equal((code.match(/uSubject/g) ?? []).length, 3,
+  "uSubject is read where p is built, where detail is budgeted, and declared");
 
 /* Every condition has to move. Restrained shipped once with no time in it at
    all and survived two review passes, because a still texture looks correct in
