@@ -20,6 +20,7 @@ import {
   DEFAULT_STRESS_MAX,
   DOMAINS,
   ENVIRONMENT_TYPES,
+  FOCUS_MAX,
   LOADOUT_LIMIT,
   MAX_LEVEL,
   RANGES,
@@ -80,11 +81,55 @@ export class CharacterData extends (TypeDataModel() as any) {
         ),
       ),
 
+      /* Four printed tracks and a fifth that belongs to one subclass.
+
+         Focus is a **pool** and not a mark track, which is the same split
+         `markTrack` and `pool` are named for: you cross a Hit Point off and
+         you *spend* a Focus. "Clear your Focus track, then roll… and gain
+         Focus equal to the highest result" is Hope's shape exactly — held,
+         spent down one at a time, given back in a lump — and what the sheet
+         has to draw is how many you are holding rather than which boxes have
+         been crossed. Storing it as marks would mean the refill wrote
+         `marked = max - highest`, which is arithmetic nobody at the table
+         performs.
+
+         Its maximum is the printed six and nothing moves it: no advancement
+         option, no armour, no scar. So unlike Hope's — which shrinks by one
+         per scar and is therefore recomputed every pass — it is stored once
+         from `FOCUS_MAX` and never derived.
+
+         ── it is here for every character, and that is the argument ──────
+         Only a Martial Artist can hold Focus, so the obvious build is to give
+         the pool to the subclass and read it back off "the resource named
+         Focus on the Item named Martial Artist". That is precisely what
+         `mark` and `surging` two fields down decline to do, and for the same
+         reason: `spendFocus` and `refocus` on the Actor have to *read* this
+         number, and reading it off a named resource on a named Item is
+         string-matching two documents a player may rename — and a stance card
+         that says "spend a Focus" would then be spending something that
+         depends on nobody having retitled their subclass.
+
+         The cost of always-present is one integer pair on twelve other
+         classes that stays at zero and says nothing, which is what a subclass
+         nobody at this table has taken should look like. The *sheet* is where
+         the gate lives instead: `CharacterSheet.svelte` draws the pool only
+         for a Martial Artist, because a permanently empty row of diamonds is
+         a control that means nothing. A field costs nothing to carry; a
+         control costs a reader.
+
+         No migration. A schema field with an `initial` is filled by Foundry's
+         own `DataModel` clean on the way in, so a character written before
+         this existed reads `focus: {value: 0, max: 6}` from the first render
+         and persists it on the first write that touches the actor. That is
+         the same free ride `mark`, `surging`, `loadoutLimit` and `levelCards`
+         all took — `migration/index.ts` says in its own header that it exists
+         for *content that was copied*, which nothing here is. */
       resources: schema({
         hitPoints: markTrack(6),
         stress: markTrack(DEFAULT_STRESS_MAX),
         armorSlots: markTrack(0),
         hope: pool(DEFAULT_HOPE_MAX),
+        focus: pool(FOCUS_MAX),
       }),
 
       /* Evasion and Armor Score are two numbers, not one. Armor Score is also
