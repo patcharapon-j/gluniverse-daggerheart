@@ -52,7 +52,12 @@
       "RangeRuler": "Range rings on the selected token",
       "RangeRulerHint": "Draws Melee, Very Close, Close and Far as rings around whichever token you have selected, measured from its edge and in the scene's own units. Yours only — a selection exists on one screen.",
       "AdversaryChip": "What players see on adversary tokens",
-      "AdversaryChipHint": "A GM always sees everything. This is what everybody else sees on an adversary: nothing, the tracks without the numbers behind them, or the same chip the GM has. Vulnerable is shown either way — a creature that is easier to hit is a fact the table has already earned."
+      "AdversaryChipHint": "A GM always sees everything. This is what everybody else sees on an adversary: nothing, the tracks without the numbers behind them, or the same chip the GM has. Vulnerable is shown either way — a creature that is easier to hit is a fact the table has already earned.",
+      "DataVersion": "World data version",
+      "MassiveDamage": "Massive Damage (optional rule)",
+      "MassiveDamageHint": "Damage at or above twice your Severe threshold marks 4 Hit Points rather than 3. The SRD prints this as optional; this system has always applied it, so it is on by default — turning it off changes what a hit costs at your table.",
+      "DefinedRanges": "Defined Ranges (optional rule)",
+      "DefinedRangesHint": "Measures the range rings in the squares the SRD prints for grid play — Melee 1, Very Close 3, Close 6, Far 12 — rather than converting the book’s approximate distances. It moves one band: Very Close goes from 2 squares to 3."
     },
     "Theme": {
       "Dark": "Dark",
@@ -197,6 +202,40 @@
       "Placeholder": "Waterlogged",
       "Apply": "Apply",
       "Clear": "clear"
+    },
+    "Migration": {
+      "Done": "Daggerheart: brought {n} document(s) up to date with SRD 2.0.",
+      "Skipped": "Daggerheart: left {n} edited document(s) alone. See the console for which.",
+      "Failed": "Daggerheart: {n} migration step(s) failed. Nothing was marked as migrated — see the console, and report this before playing."
+    },
+    "Variant": {
+      "EverydayHero": "Everyday Hero starting equipment",
+      "EverydayHeroHint": "A full alternate tier-1 equipment table for characters with no access to standard weapons and armor — cleavers, pitchforks, enchanted broomsticks. Adds 36 documents and offers them at character creation.",
+      "Feasts": "Feasts",
+      "FeastsHint": "Harvest ingredients from defeated creatures and the landscape, then cook them during downtime. Adds the six flavors, the ingredient and meal tables, and the harvesting rules.",
+      "Grimdark": "Grimdark campaigns",
+      "GrimdarkHint": "A corrupting Shadow and the Sacred Bonfires that hold it off. Adds the Shadow-Touched adversary feature and the frame’s rules.",
+      "Tech": "Tech-Based campaigns",
+      "TechHint": "Technology in place of magic. Adds Iconic Weapons and their upgrades, the scrap and parts tables, and credits in place of gold.",
+      "Western": "Western campaigns",
+      "WesternHint": "Adds the frame’s equipment, the Roped condition and its duel rules.",
+      "Colossal": "Colossal Adversaries",
+      "ColossalHint": "Creatures fought a limb at a time. Adds the Broken and Destroyed states and the rules for building one.",
+      "MagicSchool": "Floating Magic School campaigns",
+      "MagicSchoolHint": "Flight as a trait-driven skill. Adds the frame’s rules and its trait table.",
+      "FairyTale": "Fairy Tale campaigns",
+      "FairyTaleHint": "Adds the Cursed condition and the frame’s bargain and boon rules.",
+      "MonsterHunting": "Monster Hunting campaigns",
+      "MonsterHuntingHint": "Adds the hunter’s equipment table, its warded armor, and the rules for tracking and taking a contract.",
+      "HexCrawl": "Hex Crawl campaigns",
+      "HexCrawlHint": "Adds the Blighted adversary feature, the Frostbitten and Nauseated conditions, and the habitat, terrain and encounter tables."
+    },
+    "Focus": {
+      "RollFlavor": "Refocus — {n}{die}, keep the highest",
+      "Refocus": "Refocus",
+      "Once": "once per rest",
+      "Rule": "Clear your Focus, roll a d6 per point of Instinct, and gain Focus equal to the highest result.",
+      "NoDice": "Refocus rolls a d6 per point of Instinct — at {mod} there is nothing to roll, so the pool is left where it is."
     }
   }
 }

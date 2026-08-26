@@ -355,6 +355,225 @@ and names all 234 of them. It is committed because the cards are drawn with it
 — unlike `docs/`, which nothing reads — but if this history goes public, that
 folder is the first thing to move into `.gitignore`.
 
+## SRD 2.0, and what a second source costs
+
+The *Daggerheart System Reference Document 2.0* (2026-08-25) carries errata for
+both the corebook and *Hope and Fear*, which makes it the third upstream this
+repo answers to — beside the Card Creator's snapshot and chapter 2, which is
+typed in. A full mechanical diff against it found the corpus overwhelmingly
+correct: all 13 classes' domains, Evasion and Hit Points; every class,
+subclass, ancestry, community and transformation feature name; all 210 printed
+domain cards at the right level, domain and Recall Cost; 69 armour rows, 311
+weapon rows, 222 loot rows; 246 adversaries and 44 environments matching on
+Difficulty, thresholds, HP, Stress and attack. Fifteen things were wrong, and
+they are worth reading as three different kinds of wrong.
+
+**Four are the corebook's own corrections and live in an overlay.**
+Whirlwind gains a sentence, Unleash Chaos gains an article that turns out to
+be load-bearing, Book of Vagras loses a garbled clause and Book of Grynn gains
+the word *temporary*. Those four cards are **generated** from
+`official-cards.json`, so correcting them in `domain-cards.mjs` is a
+correction the next `cards:fetch` silently reverts. `src/packs-src/card-errata.mjs`
+is therefore a third `with*` wrapper beside `withDice` and `withDamage`,
+applied at `domains.mjs`'s own `export default`, and it **throws** when a card
+it names no longer says what it expects — because upstream adopting an
+erratum and upstream rewriting the card around it look identical from here.
+
+Unleash Chaos is the one worth keeping. "Mark Stress" → "Mark **a** Stress" is
+a word, and it is what makes `priceClause` match — the card has always charged
+a Stress and printed no amount, so the sheet was charging nothing. The
+ratchet in `check-cards.mjs` fired on it, which is the ratchet doing exactly
+its job.
+
+**Two are Dread cards changing what they are.** Savor the Anguish and Invoke
+Torment stopped being Spells and became Abilities, which retired
+`dread-cards.mjs`'s own header claim that "every Dread card is a Spell except
+Dread-Touched". Dread is transcribed rather than fetched, so those are edited
+in place. Summon Horror and Darkfire both gained "Once per scene", which is
+not prose — it is a **budget**, so both gained an annotation in
+`card-resources.mjs` and `check-resources.mjs`'s coverage ratchet is what
+would have caught their absence.
+
+**Nine are transcription defects in the stat blocks**, found by the same
+diff and fixed against it: the Glass Snake's Armor-Shredding Shards rewritten
+short, the Wyvern terrifying *PCs* rather than *creatures*, the Cryptimoth
+rolling **Instinct** where the repo had typed "Insight" — a trait this game
+does not have — and five smaller slips including a doubled word and two
+straightforward typos.
+
+**One candidate was refused, and the refusal is the finding.** The repo spells
+Outer Realms Corrupt**e**r in five places and Corrupt**o**r in two, which reads
+as an obvious normalisation. The SRD spells it both ways too — "Corrupter" in
+the statblock and its own feature, "Corruptor" in the index and the Chaos
+Realm environment — and the repo mirrors that split exactly, statblock for
+statblock and environment for environment. Normalising would have made the
+text *less* faithful, and it would have moved an adversary's `_id`, which is
+derived from `pack:type:name` and is what keeps a dragged copy linked. The
+inconsistency is upstream's and it stays.
+
+**A tenth was refused for a different reason and is worth knowing about.** The
+SRD 2.0 appendix omits Notorious's "This card doesn't count against your
+loadout's domain card maximum of 5" sentence. The Card Creator still prints
+it. An omission in a reprint's appendix is not an erratum, and removing a rule
+from a card somebody is holding is the worst direction to be wrong in. The
+decision is recorded in `card-errata.mjs` so the next reader does not
+re-litigate it.
+
+## Migrating a world
+
+Almost nothing in this system has ever needed migrating, and the reason is
+architectural rather than lucky: everything derives. `advancementTally`
+recomputes from the marks, `resourceMax` recomputes from the source, and the
+two `migrateData` implementations in `data/items.ts` fix a *shape* on the way
+in, per document, forever, for free. Whenever old data can be *read* as new
+data, that is the tool.
+
+`src/module/migration/` is for the case it cannot: **content that was
+copied.** A domain card on a character sheet is not a view of the compendium,
+it is a duplicate made months ago. Rebuilding the pack does not touch it and
+nothing can derive it back — the player may have renamed it, and matching a
+card by name to a pack it was never linked to is a guess. So the four card
+errata above have to be *applied*, once, to the copies, and something has to
+remember that they have been.
+
+**The record is a counter, not a version.** `dataVersion` is a world setting
+holding a plain integer, and the obvious build — stamp `game.system.version`,
+gate each step on `isNewerVersion` — is quietly broken here.
+`.github/workflows/release.yml` lets a human choose hotfix, minor or major at
+release time, so the version a step ships in is *unknown when the step is
+written*. Guess 1.11.0, have the release come out as 1.10.2, and the step
+runs, stamps 1.10.2, and is still newer than the stamp on the next launch — so
+it runs again, every launch, forever. A counter has no such coupling.
+
+**The active GM writes**, which is `applyFear`'s and `syncVulnerable`'s
+arrangement a fourth time: `ready` fires on every connected client, and four
+clients agreeing to rewrite the same forty cards is four writes and a race.
+
+**It fails in the direction that keeps data.** A step that throws leaves the
+stamp where it was, so the next launch retries rather than being silently
+half-done. That is only safe because every step is idempotent *and gated on
+the old shape*, and a step that cannot be written that way does not belong in
+the file.
+
+**Matching on the old text is the whole safety argument.** Every fix is gated
+on the superseded text still being present, so a GM who rewrote Whirlwind for
+their table keeps their rewrite — their document no longer contains the
+fragment and is skipped, counted, and **named** in the report, because "we
+skipped 3" is not something a GM can act on and "we skipped Whirlwind on Bex"
+is. There is no provenance field on an Item to consult; the text itself is the
+evidence that nobody has touched it. This is `creation.granted`'s argument
+arriving somewhere with nothing to record provenance in, and it fails in the
+recoverable direction: a migration that skips a card is a message, and one
+that clobbers somebody's homebrew is not undoable.
+
+**Compendium packs are deliberately not touched.** Ours are rebuilt by the
+build and are locked; an unlocked pack in somebody's world is *their* copy,
+made deliberately, and a system rewriting it is `cascadeOf`'s overreach in a
+new place.
+
+**Three populations, and the third gets forgotten.** World Items, Items
+embedded on Actors, and Items on **unlinked tokens** — which are a separate
+Actor each, living in a scene's `actorDelta`, invisible to `game.actors`. A
+linked token is skipped precisely because its Actor was already walked.
+
+**Arrays are rebuilt whole and never addressed by index.** Foundry reads a
+dotted index in an update key as a path into an *object* — the trap the adjust
+tab learned about Experiences and `moveResource` learned about pools — and
+rules text lives in `classFeatures[]` and `features[]` as readily as in
+`description`. The walk emits only top-level `system` keys, so an array lands
+as one value.
+
+### The two forms of one erratum, and the ratchet between them
+
+`src/packs-src/card-errata.mjs` holds the corrections in the cards' own
+**markdown**, applied before `rt()`. `src/module/migration/errata.ts` holds
+the same corrections against `rt()`'s **output** — `<b>Mark a Stress</b>` and
+not `**Mark a Stress**` — because that is what a copied document actually
+stores. Two readings of one change, and the thing that stops them drifting is
+`tools/check-migration-errata.mjs`, which builds the pack and asserts that
+every `replace` is now present in the built document and every `find` is
+absent.
+
+It earned itself on its first run. Whirlwind's erratum *appends* a sentence,
+so its unanchored fragment was a **prefix of its own replacement** — it would
+have matched the corrected card as readily as the old one, and a second run
+would have appended the sentence twice. The check now refuses that shape
+outright rather than leaving it to the corpus to notice, because the corpus
+reports it as "the pack was never corrected", which sends the reader to the
+wrong file entirely.
+
+`tools/test-migration.mjs` is the behaviour half, in `test-activity-log.mjs`'s
+idiom — a stub Foundry in the shape these functions actually use. It ratchets
+the eight things that fail silently: that a player's client and a second GM
+write nothing, that running twice is indistinguishable from running once, that
+an edited document is skipped and named while an already-corrected one is
+neither, that no update key ever addresses an array by index, that all three
+populations are reached and a linked token is not double-written, that a
+failed write does not move the stamp, and that an empty world is stamped
+rather than walked.
+
+Both run in CI: `migration:check` joins `build:packs`, `migration:test` joins
+`typecheck`.
+
+`game.daggerheart.migrate()` is the console, for the reason the token chip and
+the ruler both have one — a thing that runs once, silently, at load has no
+steady state to inspect, so "it never ran" and "it ran and found nothing" look
+identical afterwards. `{dryRun:true}` reports without writing; `{force:true}`
+ignores the stamp, which is what a GM wants after restoring a character from a
+backup made before the errata landed.
+
+## The two optional rules
+
+SRD 2.0 prints both of these as optional, and this system had one of them
+switched on with no switch and the other quietly disagreeing with the book.
+
+**Massive Damage** — twice your Severe threshold marks four Hit Points rather
+than three — has been applied unconditionally since the damage band was drawn.
+It is a world setting now and it **defaults on**, which is a migration
+decision rather than a reading of the book: defaulting it off would silently
+change what a hit costs at every table that upgrades, and a rules change
+nobody asked for is worse than a default that disagrees with the book's own
+suggestion.
+
+What it gates is `severityFor`'s top rung and the band's fifth zone
+*together*, and the two must agree or the dialog offers a zone the document
+will never return. That was already half-wrong: `apps/damage.ts` hardcoded
+`massive: true` while the character sheet's own rail band passed nothing, so
+the dialog drew a fifth zone the rail did not. Both read the setting now.
+
+The rung ceiling — `SEVERITY.indexOf(actor.severityFor(n))` — is correct
+without changing, and it is correct **because `massive` is last in the closed
+set**. The setting stops `severityFor` returning the rung; it does not shorten
+the array, so no lower rung's index moves. Had the optional rung been anywhere
+but last, that line would have gone wrong for every hit on the ladder at once.
+
+**Defined Ranges** is the opposite default. The ranges are fiction-first and
+say so out loud; the printed squares are for a table that has decided to play
+on a grid. It is off, and world-scoped, because it is the table's agreement
+about what Close means — a per-client switch would put two people at one map
+measuring the same reach differently, which is the exact disagreement the
+ruler was drawn to surface.
+
+One band moves. `RANGE_FEET` divided by five gives Very Close **2** squares
+and the printed optional rule says **3**; Close and Far already agree at 6 and
+12, which is what says the derivation was right about everything it could see.
+`RANGE_SQUARES_DEFINED` is the printed table and `rangeSquares(r, defined)`
+takes the choice as an argument, because `config.ts` is imported by every
+card-drawing surface in the system and must not need a live `game` to answer a
+question about geometry.
+
+**And the ruler was not rebuilding.** The hook was wired and would have read
+as working — `sync()`'s fast path returns early when the subject and its
+footprint are unchanged, which is exactly true when a *setting* changed, so a
+GM flipping the rule mid-session would have watched the ruler visibly
+reposition and go on measuring the old table. That is this component's own
+named failure — drawn perfectly and lying — arriving through a fast path built
+for a different question. The ruler now remembers which table it was built
+under, as a **string** rather than a boolean, so "never built" stays
+distinguishable from "built under the derived table";
+`game.daggerheart.rangeRuler()` reports both that and each band's radius in
+squares.
+
 ## Root and Void — a campaign frame's two domains
 
 *The Twilight Marked* adds two decks nobody's class carries. `config.ts` has
@@ -534,6 +753,88 @@ character's Spellcast trait at the moment of granting, which is the first moment
 the answer exists. Not a seventh trait: "Spellcast" is a pointer to one of the
 six, and adding it to `TRAITS` would reach the roll engine, the sheet's six
 plates and every closed-set check in the system to serve one item.
+
+## The supplemental campaign variants
+
+SRD 2.0 prints sixteen pages of optional mechanics — an alternate starting
+equipment table for characters with no access to weapons, a cooking economy,
+and eight campaign frames from Grimdark to Hex Crawl. Every one of them is
+explicitly *supplemental*, so none of it may simply be switched on.
+`src/module/variants.ts` is the switch, and the content is two packs.
+
+**Ten booleans and not one dropdown.** The obvious build is a setting naming
+"the campaign you are running", and it is wrong on the chapter's own terms:
+these are not exclusive. A Hex Crawl through a Grimdark world is two of them,
+Monster Hunting brings an equipment table and touches nothing else, and Feasts
+is a downtime economy belonging to no frame at all. A dropdown would be this
+system inventing an exclusivity the book does not have.
+
+A multi-select was the second candidate and was declined for a duller reason:
+it renders through Foundry's own `SetField` form group, which is a claim about
+a version of the settings window this repo cannot test against. Ten booleans
+render the same way on v13 and v14, each carries its own hint, and each is
+findable by somebody searching the settings pane for the word "Grimdark".
+
+Every one is **world**-scoped, which is the change log's argument rather than
+the token chip's: a variant is the table's agreement about what game is being
+played, and one player opting out of Feasts is not a thing that can mean
+anything.
+
+**A switch gates availability, never enforcement.** Turning Grimdark on does
+not make anything Shadow-Touched; it puts the frame's gear and rules where a
+GM can reach them. That is `apps/rules.ts`'s standing position — print the
+rule verbatim rather than parsing English into behaviour, because parsing is
+how a system starts quietly getting rules wrong — and a supplemental frame is
+the last place to start.
+
+**Two packs, because they hold two different kinds of thing.** `variants` is
+Items a character equips and is filed beside the other Items; `variant-rules`
+is JournalEntries, which is what a virtual tabletop has for rules text nobody
+equips. `variant-rules` is the first JournalEntry pack in this system, and
+`build-packs.mjs`'s `PACKS` list grew a `collection: "journal"` entry for it.
+
+**Kept out of `equipment`, deliberately.** Everyday Hero alone is 36 more
+documents on a table not running it, and the compendium browser answers "every
+weapon in the world" — a Pitchfork arriving in a search for tier-1 primaries
+is a variant leaking into a game nobody switched on. A pack is the coarsest
+gate this system has and it is the right grain here, because the chapter is
+optional together.
+
+The browser reads that gate in `ourPacks()`, matched on the **pack's name**
+rather than on anything a document carries: a longsword has no field saying
+which optional chapter printed it, and inventing one would put it on all 633
+equipment documents to serve 60. Nothing is hidden from anybody — the pack is
+still in the compendium sidebar and a GM who wants a Pitchfork can open it.
+What the switch buys is that a search for "axe" in an ordinary game answers
+with the axes that game has. Flipping a switch drops the browser's per-pack
+cache and closes the window rather than refreshing it, because a rail whose
+counts changed under the reader is a window that has quietly become about a
+different question.
+
+**Everyday Hero is a one-for-one reskin of the core tier-1 tables** — Cleaver
+for Broadsword, Butcher's Axe for Warhammer, Quilted Clothing for Gambeson —
+which is what made its column alignment independently checkable during
+transcription, and is why it is tagged tier 1 throughout.
+
+**Two of the new items land on gaps this repo already records.** The Enchanted
+Kite's *Versatile* is the second-stat-line problem — `WeaponData.damage` is
+one stat line rather than a list of them — and it is carried as printed text
+with nothing structural, exactly as the seven core Versatile weapons are.
+Monster Hunting's *Warded* ("reduce incoming magic damage by your Armor Score
+**before** applying to thresholds") is a per-armour exception to the printed
+damage rule that `apps/damage.ts` deliberately does not implement; the text is
+carried and no modifier half-implements it.
+
+**The extraction is evidenced, and one table is a reading.** The SRD's tables
+do not survive `pdftotext`'s default or `-layout` modes — the first emits each
+column as a separate block and the second interleaves them with a half-row
+offset. `pdftotext -table` (Xpdf 4) reconstructs the grid correctly and is
+what every row here came through, cross-checked against the block-order
+extraction. The Tech-Based **Scrap Table** is the exception: the PDF's content
+stream genuinely holds only 8 tokens for a 10-column row, so the column spans
+were inferred from measured character offsets. The journal page says so on its
+face, because a table that silently presents an inference as a transcription
+is the failure this repo's `said`-provenance tables exist to prevent.
 
 ## The Brawler has no gear, and needed a weapon anyway
 
@@ -4474,6 +4775,86 @@ reopens all six traits. `system.tiersEntered` records which have been paid
 out, because a level typed down to 4 and back up to 5 has not reached tier 3
 twice and should not collect a second Experience for a typo.
 
+## The Martial Artist's Focus
+
+The sixteen Martial Stances have been in this system since *Hope and Fear*
+arrived — sixteen `feature` Items wearing `origin: "Martial Stance · Tier N"`
+— and the currency every one of them spends was not. Half of them read "spend
+a Focus" against a pool that did not exist, which is `brawler.ts`'s finding in
+a new place: the sentence shipped and the thing it hangs off did not.
+
+**It is a pool, not a mark track.** "Clear your Focus track, then roll a
+number of d6s equal to your Instinct and gain Focus equal to the highest
+result" is Hope's shape — held, spent one at a time, given back in a lump.
+Stored as marks, the refill would have to write `marked = max − highest`,
+which is arithmetic nobody at a table performs. `max` is a stored six and is
+never derived, because unlike Hope's — which shrinks one per scar — nothing
+printed moves it.
+
+**The field is on every character and the control is not**, which is
+`system.mark` and `system.surging`'s arrangement. `spendFocus` and `refocus`
+have to *read* the number, and reading it off "the resource named Focus on the
+Item named Martial Artist" is string-matching two documents a player can
+rename. So the schema carries one integer pair sitting at zero for twelve
+subclasses that say nothing about it, and the **sheet** is where the gate
+lives: a field costs nothing to carry and a control costs a reader. The rail
+draws the row only for a character holding a subclass whose `subclassName` is
+`FOCUS_SUBCLASS`, matched on that rather than on the Item's name because a
+Martial Artist holds one to three differently-*named* cards.
+
+No world migration was needed and that is worth stating rather than assuming:
+a schema field with an `initial` is filled by Foundry's own `DataModel` clean
+on the way in, so an existing character reads `focus: {value: 0, max: 6}` from
+the first render. `mark`, `surging`, `loadoutLimit` and `levelCards` all took
+the same free ride. `migration/` exists for content that was *copied*, and a
+schema addition is not that.
+
+**Refocusing rolls a real `Roll`.** `dice/reroll.ts`'s opening promise — the
+dice log, seeded randomness and any 3D-dice module stay honest — is not one a
+refill may quietly drop by writing a number into a field. It is `NdN` keep-
+highest, so the total *is* the highest and Foundry's own tooltip already draws
+the discarded dice struck out, and the roll is posted **before** the pool
+moves, so the dice reach the table before the number changes under them. It
+posts Foundry's own roll card rather than a plate, deliberately: the three
+plates here each exist because the dice mean something a total cannot say, and
+`frame.css` leaves Foundry's own frame standing around anything that is not
+one of our finished objects.
+
+**At Instinct +0 or lower it refuses and writes nothing.** Read literally the
+move still happens — the track clears, no dice, gain nothing — which is a rule
+that charges your whole pool for zero, once per rest, on a press you cannot
+undo. It returns `null` rather than `false`, so a caller can tell a refusal
+from a result, and the answer is the Focus row flinching rather than a dialog,
+which is this system's answer to a refusal everywhere else.
+
+**And `refusePool` was taking the first pool it found.** It read
+`querySelector(".rail .pool")`, which was unambiguous while Hope was the only
+one; with two rows of gold diamonds on one rail, a Focus refusal would have
+shaken the Hope gems. Both rows carry `data-p` now and the flinch is asked for
+by name.
+
+Both pools being gold is a **deferral and not a decision**: `--tone` is
+declared on `.gem` itself in `design/gem.css`, so a third hue means a modifier
+class beside `.gem.fear`, which is the design system's call rather than a
+sheet's. Size (22 against Hope's 32) and the heading are what tell them apart
+meanwhile.
+
+**This is the currency and not the stances.** There is no `shiftStance`,
+nothing drops you out of one on Severe damage, and the sixteen stance Items
+are untouched — a stance is a state with three different exits printed on
+three different cards, which is exactly the shape this system declines to
+guess at.
+
+`tools/check-focus.mjs` is the ratchet, and it exists because
+`check-actor-sheets.mjs` covers only the three non-character sheets — the
+character schema had none, and Focus is the field where that bites, since
+twelve of thirteen subclasses are a control group who will never report it
+missing. Six assertions: the field is a pool and not a mark track, the sheet
+writes its value, the gate is `FOCUS_SUBCLASS` and never the literal string,
+`refocus` builds a real `Roll` with `kh` and does not reach for `Math.random`,
+every rail pool carries `data-p`, and the press states all three of its
+heights. Negative-controlled.
+
 ## Conditions
 
 `CONDITIONS` in `config.ts` registers the three the **core rules** name —
@@ -4801,9 +5182,54 @@ place in the world that knows the import path.
 ## Not done yet
 
 - Compendium content — character creation is covered: classes, subclasses,
-  ancestries, communities, the domain decks and now all four tiers of
-  equipment. The adversary roster is still to come, as is everything from
-  *Hope and Fear*.
+  ancestries, communities, the domain decks and all four tiers of equipment,
+  and the adversary roster and *Hope and Fear* have both landed. SRD 2.0's
+  supplemental chapter is in as two packs behind ten switches. What is left is
+  below.
+- **The campaign variants ship as content and a switch, and enforce nothing.**
+  That is the design — `variants.ts` argues it — but the specific gaps are
+  worth naming, because a table switching Grimdark on is entitled to know what
+  it is and is not getting. Grimdark's **Shadow-Touched** and Hex Crawl's
+  **Blighted** are the same one-field mechanic (an adversary that crits on
+  19–20 or 18–20) and neither reaches the roll engine. Six new conditions
+  arrive with concrete effects — Roped, Frostbitten, Nauseated, Cursed, and
+  the Colossus's Broken and Destroyed — and none is in `CONDITIONS`, which
+  would need six marks in `assets/conditions/` before it could be. Feasts is a
+  downtime economy the rest dialog has never heard of. Four variants want a
+  **countdown attached to a character or a faction**, which is the single
+  most-asked-for missing primitive in the chapter and is the GM screen's gap
+  under another name.
+- **Two sections of that chapter have no home at all.** Faction Tracking
+  (p. 190) and Building Villains Collaboratively (p. 200) belong to no variant
+  — they are chapter-level GM procedure — so there is no id in `VARIANTS` to
+  file them under and no eleventh folder was invented for them. An eleventh
+  entry needs an eleventh variant id first, and that is a decision rather than
+  an oversight.
+- **Tech-Based ships no gear, and that is a finding.** Its weapon is the
+  Iconic Weapon, and the SRD prints three of its five columns as *player
+  choices* — "make selections about trait, range, and damage" — with the stat
+  line recorded on the character's own sheet. A row missing one cell is the
+  arcane-frame wheelchair; a row missing three is not a row. The Upgrade list
+  is not in the SRD at all; it lives on a downloadable sheet.
+- **The Beastform list now has an upstream and still is not in.** SRD 2.0
+  prints all 22 categories across four tiers, each with a trait bonus, an
+  attack line, an Evasion bonus and its features — so what was "content with
+  no upstream to check it against" is now content somebody can transcribe
+  against a source, which is a different and much smaller job. The Druid's
+  core feature and three subclass features still point at a list that does not
+  exist.
+- **Four SRD 2.0 rules are read and not implemented**, all of them out of
+  scope for the pass that brought the errata in. *Downtime consequences* — the
+  GM gains 1d4 Fear on a short rest and 1d4 plus the number of PCs on a long
+  one — is pure wiring, since `setFear` and the HUD both exist and
+  `apps/rest.ts` mentions Fear nowhere. *Gold rollover* (10 handfuls to a bag,
+  10 bags to a chest, carrying and clearing) is three independent counters in
+  `data/actors.ts` today. The *multiclass domain-card ceiling* — cards at or
+  below half your level, rounded up, from the second class's domain — is
+  stated twice in the SRD and appears nowhere in `apps/domain-cards.ts`, which
+  offers every domain at full level. And the *Martial Artist's stances* are
+  sixteen Items with a currency now and still no shifting, dropping out, or
+  one-active-at-a-time.
 - **Equipment artwork.** None, and it is blocked rather than skipped — see the
   equipment tables section. If stable asset URLs ever appear, the fetch is one
   tool and `img` is already per document.
@@ -4864,12 +5290,6 @@ place in the world that knows the import path.
   dice with the losers crossed off; nothing lets a second player contribute one.
 - Countdowns.
 - The companion sheet exists with a `partner` uuid nothing sets.
-- **The Beastform list is not content that exists.** The Druid's core feature
-  says "a creature of your tier or lower from the Beastform list" and there is
-  no such list anywhere in `src/packs-src/`; three subclass features build on
-  it. It has no upstream — the Card Creator publishes cards and a Beastform is
-  a stat block — so it is `equipment-tables.mjs`'s problem again, typed in by
-  hand and checked by its own regularities.
 - **An effect held on exactly one target has nowhere to record which.** Marked
   for Death, Twilight Toll, the Sigil, Invisibility, Shield Aura, Midnight
   Spirit, the Book of Sitil's Parallela and the Wayfinder's Focus each say

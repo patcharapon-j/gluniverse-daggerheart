@@ -2620,6 +2620,31 @@ setTimeout(async () => { try {
      Drawn at a 100px grid so a square is a square and every number below can
      be read as one. */
   const ruGrid = 100;
+  /* The DERIVED table — the book's feet over five — and the page stands up
+     this one only. There are two now: the SRD's *Defined Ranges* optional
+     rule prints Very Close at 3 squares where the derivation gives 2, and
+     `range-ruler.ts` reads a world setting to choose between them.
+
+     Standing up the second here would prove nothing this does not. What
+     check 5 asserts is that a ring of N squares is laid out at N squares out
+     from the token's edge, which is a claim about `radiusOf` and the
+     stylesheet and is true of any N — swapping 2 for 3 tests the same
+     arithmetic with a different literal. What it *cannot* reach is which N
+     `bandsFor` chose, because that answer comes from `game.settings` and
+     this page has no `game`. So the choosing is checked where it is made and
+     evidenced where a reader can see it: `game.daggerheart.rangeRuler()`
+     prints the table in force beside the table the rings on screen were
+     actually built under, and the two disagreeing is the one failure the
+     component's reposition-and-leave fast path can produce.
+
+     Two literals here rather than one imported set for the same reason the
+     numbers are hand-written at all: `rangeSquares` is TypeScript in
+     `config.ts` and this page loads the vendored `.js` only. A second copy
+     maintained by hand is the thing this repo refuses everywhere — which is
+     precisely why this copy is deliberately NOT a copy of the closed set. It
+     is four numbers chosen to make the layout arithmetic readable at a 100px
+     grid, and if the printed ranges ever change it is under no obligation to
+     follow them. */
   const ruSq = { melee: 1, veryClose: 2, close: 6, far: 12 };
   const ruBands = Object.entries(ruSq).map(([key, sq]) => ({
     key,

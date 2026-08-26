@@ -4,7 +4,10 @@
  *     node tools/check-cards.mjs          # report, exit 1 on any finding
  *     node tools/check-cards.mjs --full   # print the full text of each finding
  *
- * `domain-cards.mjs` is generated and cannot drift. Everything else here is
+ * `domain-cards.mjs` is generated and cannot drift — except where
+ * `card-errata.mjs` deliberately corrects it, which this reads and applies to
+ * the *official* side before comparing, so a card carrying an erratum is still
+ * audited against everything else upstream says about it. Everything else here is
  * hand-authored — ancestries, communities, and the eighteen subclasses — and
  * this is what stops it drifting: it re-derives what each entry *should* say
  * from `official-cards.json` and complains when it doesn't.
@@ -14,6 +17,11 @@
  * is always a difference in wording, a missing feature, or a card that exists
  * on one side and not the other. That is deliberate: this should be quiet
  * enough that its output is worth reading.
+ *
+ * The snapshot stops being the authority the moment somebody publishes a
+ * correction to it. `ERRATA` below is the list of sentences the System
+ * Reference Document prints differently from the Card Creator's copy, each
+ * with the reason and each a ratchet — see the block for the argument.
  *
  * The one thing it checks that is *not* wording: class flavour. There is no
  * official class card, so nothing can validate a class description — but the
@@ -32,6 +40,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { splitFeatures } from "./fetch-cards.mjs";
+import CARD_ERRATA from "../src/packs-src/card-errata.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 /** The route Foundry mounts this folder at, which is what every `img` is
@@ -84,10 +93,72 @@ const norm = (s) =>
 const findings = [];
 const fail = (where, what, ours, theirs) => findings.push({ where, what, ours, theirs });
 
+/* ── errata newer than the snapshot ───────────────────────────────────
+   The snapshot is the authority for wording right up to the moment
+   somebody publishes a correction to it, and then it is a photograph of
+   what the card *used to say*. The System Reference Document 2.0 of
+   2026-08-25 is that case: two of the cards it prints differ from the
+   Card Creator's copy, and the pack now carries the SRD's wording — so
+   without this block the check would be holding the compendium to a
+   version the rules have moved past.
+
+   It is `fetch-cards.mjs`'s `TYPOS` in a second place and deliberately
+   the same shape: keyed `<where>` — the string this file already builds
+   for a card — with `find` matched literally, once, against the official
+   side before the comparison. And it is a ratchet in the same way. A
+   `find` that stops matching **fails**, because upstream having adopted
+   the erratum and upstream having rewritten the card around it look
+   identical from here and only one of them means this entry can go. So
+   a re-fetch that catches up with the SRD sends somebody to delete the
+   line rather than leaving a substitution nobody can still justify.
+
+   Two entries, and neither is a preference: each is a printed sentence
+   in a document newer than the one being compared against. */
+const ERRATA = [
+  {
+    at: "community/Seaborne",
+    find: "place a token on this card",
+    to: "place a token on your community card",
+    why: "SRD 2.0 names the card, because a community feature that says " +
+      "'this card' is ambiguous the moment it is read off anything else.",
+  },
+  {
+    at: "subclass/Winged Sentinel: Mastery",
+    find: "1d8 with your",
+    to: "1d8 from your",
+    why: "SRD 2.0. The damage comes from the other feature; it is not " +
+      "dealt alongside it.",
+  },
+];
+
+/**
+ * Bring the official side up to the newest printed wording.
+ *
+ * Two sources, and the split between them is whether the pack has to *carry*
+ * the correction. `ERRATA` above is wording the compendium already has right —
+ * the entries are hand-authored, somebody typed the SRD's sentence, and all
+ * this needs is to stop calling it a difference. `src/packs-src/card-errata.mjs`
+ * is the other case: those cards are **generated** from the snapshot, so the
+ * pack cannot simply have them right, and there is a live overlay shipping the
+ * SRD's wording into the built documents. Reading that overlay here rather than
+ * copying its four sentences into the table above is the whole point — a second
+ * copy maintained by hand is exactly what the two files would drift on, and it
+ * would drift into this check quietly agreeing with a pack that had changed.
+ */
+function errata(where, theirs) {
+  let out = String(theirs ?? "");
+  for (const e of ERRATA) {
+    if (e.at !== where || !out.includes(e.find)) continue;
+    out = out.replace(e.find, e.to);
+    e.applied = true;
+  }
+  return packErrata(where, out);
+}
+
 /** Compare two pieces of prose; report the first word that differs. */
 function same(where, what, ours, theirs) {
   const a = norm(ours);
-  const b = norm(theirs);
+  const b = norm(errata(where, theirs));
   if (a === b) return true;
   const A = a.split(" ");
   const B = b.split(" ");
@@ -237,6 +308,57 @@ const index = (arr) => new Map(arr.map((x) => [key(x.name), x]));
   }
   for (const name of off.keys())
     if (!seen.has(key(name))) fail(`subclass/${name}`, "official card is not in the pack", "—", name);
+}
+
+/**
+ * The pack's own errata overlay, applied to the official side.
+ *
+ * `src/packs-src/card-errata.mjs` corrects four *generated* cards against the
+ * SRD, so those four deliberately no longer say what the snapshot says. There
+ * were three ways to keep this check quiet about that and two of them are worse.
+ * Skipping an errata'd card altogether would take *everything else* the audit
+ * says about it with it — its domain, its level, its Recall Cost and the whole
+ * rest of its prose stop being compared, on exactly the four cards somebody has
+ * most recently had their hands on. Loosening the comparison would do the same
+ * thing less visibly. So the patch is applied to the official side instead: the
+ * card is audited against upstream-plus-the-erratum, which is what we actually
+ * claim it should say, and any *other* difference still fails.
+ *
+ * `where` is the string this file already builds for a card — `domain/Whirlwind`
+ * — and the overlay is keyed `domainCard:Whirlwind`, the `type:name` its three
+ * sibling annotation files use. The translation lives here rather than in either
+ * table, because both keys are right in their own file and neither is a fact
+ * about the other.
+ *
+ * The substitution runs on `norm`ed text rather than on the raw content, and
+ * that is not laziness — the overlay's `find` is written against the generated
+ * corpus, which has been through `tidy()`, while the content here is what the
+ * API sent: typewriter apostrophes, upstream's own whitespace, and in one case a
+ * `TYPOS` fix that has not been applied yet. `norm` is the one form in which the
+ * two are the same words, and it is what both sides get compared through anyway.
+ * It is idempotent, so `same` norming the result again costs nothing.
+ *
+ * A patch whose `find` is not there **fails** rather than being skipped, which
+ * is `ERRATA`'s own ratchet and `withErrata`'s own throw arriving a third time:
+ * an overlay correcting a sentence the official card no longer contains is a
+ * reading that has stopped being true, and every copy of that claim has to go
+ * stale together.
+ */
+function packErrata(where, content) {
+  const [kind, ...rest] = String(where).split("/");
+  if (kind !== "domain") return content;
+  const patches = CARD_ERRATA[`domainCard:${rest.join("/")}`];
+  if (!patches) return content;
+  let t = norm(content);
+  for (const p of patches) {
+    const from = norm(p.find);
+    if (!t.includes(from)) {
+      fail(where, "card-errata corrects a sentence the official card does not have", p.find, "—");
+      continue;
+    }
+    t = t.replace(from, norm(p.to));
+  }
+  return t;
 }
 
 /* domain cards — generated, so this only guards the mapping into documents */
@@ -678,6 +800,11 @@ const PRICED = {
   "domainCard:Towering Stalk": [{ feature: "", stress: "Mark a Stress" }],
   "domainCard:Transcendent Union": [{ feature: "", hope: "spend 5 Hope" }],
   "domainCard:Umbral Veil": [{ feature: "", stress: "you can mark a Stress" }],
+  /* New with the SRD 2.0 errata, and it is the ratchet doing exactly its job.
+     The card has always charged a Stress to replenish its tokens; it printed no
+     *amount*, and `priceClause` requires one, so the sheet charged nothing at
+     all. Adding "a" to the card added the price rather than inventing it. */
+  "domainCard:Unleash Chaos": [{ feature: "", stress: "Mark a Stress" }],
   "domainCard:Uncanny Disguise": [{ feature: "", stress: "you can mark a Stress" }],
   "domainCard:Vanishing Dodge": [{ feature: "", hope: "you can spend a Hope" }],
   "domainCard:Vector": [{ feature: "", hope: "Spend a Hope" }],
@@ -1025,6 +1152,14 @@ async function checkArtResolves() {
   return seen.size;
 }
 const artPaths = await checkArtResolves();
+
+/* The errata ratchet. An entry that matched nothing this run is one whose
+   sentence has left the snapshot, and the two ways that happens — upstream
+   adopted the correction, or upstream rewrote the card — are indistinguishable
+   from here. Say so rather than going on quietly substituting. */
+for (const e of ERRATA)
+  if (!e.applied)
+    fail(e.at, "errata entry no longer matches the snapshot", e.find, "not on the official card");
 
 /* ── report ───────────────────────────────────────────────────────────── */
 

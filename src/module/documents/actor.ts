@@ -10,7 +10,15 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SEVERITY_COST, SYSTEM_ID, reduceSeverity, type Severity } from "../config.ts";
+import {
+  FOCUS_DIE,
+  FOCUS_TRAIT,
+  SEVERITY_COST,
+  SYSTEM_ID,
+  reduceSeverity,
+  type Severity,
+} from "../config.ts";
+import { massiveDamage } from "../settings.ts";
 
 /**
  * Marks the Vulnerable effect as one the Stress track applied, so that the
@@ -40,6 +48,30 @@ export interface DamagePlan extends Required<DamageSpend> {
   severity: Severity;
   /** Hit Points marked — the *actual* count, which a full track can shorten. */
   marked: number;
+}
+
+/**
+ * What a refocus did, which is not what it was asked for.
+ *
+ * `DamagePlan`'s discipline: the caller asked for one thing and the document
+ * clamped it, so what comes back is the record rather than the request.
+ * `highest` is what the dice said and `value` is what the track now holds —
+ * they differ only when the printed six is reached, and keeping both is what
+ * lets a caller say "you rolled a 6 and were already at 6" honestly. `cleared`
+ * is what the move cost, and it is the number nothing else can recover once
+ * the write has landed.
+ */
+export interface RefocusResult {
+  /** How many d6 were thrown — your Instinct, which is the whole of the roll. */
+  dice: number;
+  /** The highest face rolled, before the cap. */
+  highest: number;
+  /** What the track held before it was cleared. */
+  cleared: number;
+  /** What it holds now. */
+  value: number;
+  /** The evaluated roll, already posted. */
+  roll: any;
 }
 
 export class DaggerheartActor extends (Actor as any) {
@@ -105,6 +137,109 @@ export class DaggerheartActor extends (Actor as any) {
     return true;
   }
 
+  /* ── focus ────────────────────────────────────────────────────────────
+     The Martial Artist's pool, and the only currency in this game that
+     belongs to one subclass.
+
+     **This is the currency and not the thing it buys.** Sixteen Martial
+     Stances are `feature` Items in the compendium and shifting into one is
+     "spend a Focus" — but *which* stance you are in, whether you may hold
+     more than one, and what dropping out of one costs are rules about the
+     stance sheet rather than about the pool, and none of them is implemented
+     here or anywhere. What a reader will look for below and not find is
+     `shiftStance`. `spendFocus` is what a stance would call when somebody
+     builds it, which is why the refusal is a boolean rather than a throw. */
+
+  /**
+   * Spend Focus. Nothing is written when the purse is short.
+   *
+   * `spendHope`'s shape exactly, including the refusal: **the pool is what
+   * cannot pay, so the pool is what says no**. There is no dialog and no
+   * notification, because the number that refused is already on screen —
+   * `refusePool` in `CharacterSheet.svelte` flinches the row, the same answer
+   * the Stress track gives a recall it cannot afford.
+   *
+   * @returns false when the character could not afford it — nothing is spent.
+   */
+  async spendFocus(amount = 1): Promise<boolean> {
+    const focus = this.system?.resources?.focus;
+    if (!focus || amount <= 0 || focus.value < amount) return false;
+    await this.update({ "system.resources.focus.value": focus.value - amount });
+    return true;
+  }
+
+  /**
+   * The refill: clear the track, roll Instinct d6s, take the highest.
+   *
+   * **It rolls a real `Roll` and posts it**, which is `dice/reroll.ts`'s rule
+   * and not politeness. Writing `Math.max(...)` of some `Math.random()` calls
+   * into a field would produce the right number and quietly drop all three of
+   * the things a roll is: the dice log, Foundry's seeded randomness, and
+   * whatever 3D-dice module the table paid for. A pool that refills without
+   * dice on the table is a pool nobody watched refill.
+   *
+   * **`Nd6kh` rather than N separate d6s.** Keep-highest is Foundry's own
+   * modifier, so the total *is* the highest face and the tooltip already draws
+   * exactly the reading the card asks for — every die that was thrown, with
+   * the ones that did not count struck out. That is the same `dim` claim the
+   * chat plate makes about a discarded advantage die, arriving for free.
+   *
+   * **It posts Foundry's own roll card rather than a plate**, and that is a
+   * boundary rather than a shortcut. The three plates in this system —
+   * duality, damage, adversary — each exist because the dice mean something a
+   * total cannot say. A refocus is a keep-highest and nothing else, and
+   * `styles/frame.css` deliberately leaves Foundry's message frame standing
+   * around anything that is not one of our finished objects. A fourth plate
+   * with one caller would be a card grammar the table meets once a rest and
+   * nowhere else.
+   *
+   * **The roll is posted before the pool moves.** The dice are the reason the
+   * number is what it is, so they reach the table first; the rest dialog buys
+   * the same beat with `RESOLVE_MS`, and here the message doing the arriving
+   * is the beat.
+   *
+   * ── Instinct at +0 or lower ─────────────────────────────────────────
+   * The SRD's own note about a Spellcast trait is "if it is +0 or lower, you
+   * don't roll anything", and read literally the move would still happen: the
+   * track clears, no dice are thrown, and you gain nothing. That is a rule
+   * that charges you your whole pool for nothing, once per rest, on a press
+   * that cannot be taken back.
+   *
+   * So it **refuses instead, and writes nothing.** Clearing is the cost half
+   * of one act whose benefit half is arithmetically zero, and this system's
+   * standing answer to a move that cannot pay off is the surface flinching
+   * rather than the document being spent — see `spendFocus` above. A Brawler
+   * who has genuinely put a −1 in Instinct is not being told a rule; they are
+   * being stopped from throwing away four Focus for it. `null` and not
+   * `false`, so a caller can tell "refused" from a result, and the sheet says
+   * why in the press's own title rather than in a notification.
+   *
+   * @returns null when there was nothing to roll — nothing is written.
+   */
+  async refocus(): Promise<RefocusResult | null> {
+    const focus = this.system?.resources?.focus;
+    if (!focus) return null;
+
+    const dice = this.traitMod(FOCUS_TRAIT);
+    if (dice <= 0) return null;
+
+    const roll = new Roll(`${dice}${FOCUS_DIE}kh`);
+    await roll.evaluate();
+    await roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: game.i18n.format("DAGGERHEART.Focus.RollFlavor", {
+        n: dice,
+        die: FOCUS_DIE,
+      }),
+    });
+
+    const highest = Math.max(0, Number(roll.total ?? 0));
+    const cleared = focus.value;
+    const value = Math.clamp(highest, 0, focus.max);
+    await this.update({ "system.resources.focus.value": value });
+    return { dice, highest, cleared, value, roll };
+  }
+
   /* ── damage ───────────────────────────────────────────────────────── */
 
   /**
@@ -115,12 +250,20 @@ export class DaggerheartActor extends (Actor as any) {
    * Point — which is why the absent case is checked before the numbers.
    * A stat block printing "4/None" has a Major rung and no Severe one, so
    * the top two rungs are skipped rather than measured against a zero.
+   *
+   * **Massive is the SRD's optional rule and is asked for rather than
+   * assumed.** It has been applied unconditionally since the damage band was
+   * drawn, which is why the setting defaults on — see `settings.ts`. The
+   * important part is that this is the *only* place the rung is decided:
+   * the dialog reads its ceiling off this method and the band draws its
+   * fifth zone from the same switch, so the two cannot offer a zone the
+   * document will never return.
    */
   severityFor(amount: number): Severity {
     if (amount <= 0) return "none";
     const t = this.system?.thresholds;
     if (!t || t.none) return "minor";
-    if (!t.severeNone && amount >= t.severe * 2) return "massive";
+    if (!t.severeNone && massiveDamage() && amount >= t.severe * 2) return "massive";
     if (!t.severeNone && amount >= t.severe) return "severe";
     if (amount >= t.major) return "major";
     return "minor";

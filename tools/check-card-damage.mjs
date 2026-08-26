@@ -72,7 +72,7 @@ const mod = async (f) => await import(pathToFileURL(join(SRC, f)).href);
    environment packs are Actors and their dice are a stat line — the reading
    `DECLINED` already names for Versatile and for Devastating, one document
    type along. */
-const PACKS = ["classes.mjs", "heritage.mjs", "domains.mjs", "equipment.mjs"];
+const PACKS = ["classes.mjs", "heritage.mjs", "domains.mjs", "equipment.mjs", "variants.mjs"];
 
 /* The closed sets, restated rather than imported. Reaching `config.ts` would
    mean running TypeScript in a plain node script; these are eight words and a

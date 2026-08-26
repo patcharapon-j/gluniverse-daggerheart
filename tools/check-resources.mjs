@@ -45,7 +45,7 @@ const SRC = join(ROOT, "src", "packs-src");
 const load = async (f) => (await import(pathToFileURL(join(SRC, f)).href)).default;
 const mod = async (f) => await import(pathToFileURL(join(SRC, f)).href);
 
-const PACKS = ["classes.mjs", "heritage.mjs", "domains.mjs", "equipment.mjs"];
+const PACKS = ["classes.mjs", "heritage.mjs", "domains.mjs", "equipment.mjs", "variants.mjs"];
 
 /** Rules text with markup and entities flattened, the way a reader sees it. */
 const plain = (s) =>

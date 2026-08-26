@@ -56,6 +56,7 @@ import {
   TRAIT_LABELS,
   WEAPON_SLOTS,
 } from "../config.ts";
+import { activeVariants } from "../variants.ts";
 import { SUBCLASS_RANKS } from "../data/items.ts";
 import { plain } from "../sheets/cards.ts";
 
@@ -420,12 +421,43 @@ export function dropPack(pack?: string): void {
   else cache.clear();
 }
 
-/** Packs this window is willing to read. */
+/**
+ * The one pack this window reads conditionally, and the reason it is by name.
+ *
+ * `variants` holds the supplemental campaign chapter's gear — 36 Everyday
+ * Hero documents alone — and a table not running any of it should not meet a
+ * Pitchfork while searching tier-1 primaries. That is a claim about *this
+ * pack* rather than about a property its documents carry, so it is matched on
+ * the pack's own name: a document has no field saying which optional chapter
+ * printed it, and inventing one would put it on all 633 equipment documents
+ * to serve 60.
+ *
+ * A world compendium of somebody's own is unaffected — this only ever
+ * suppresses the pack this system ships.
+ */
+const VARIANT_PACK = `${SYSTEM_ID}.variants`;
+
+/**
+ * Packs this window is willing to read.
+ *
+ * Deliberately wider than the eight this system ships: a world with a
+ * homebrew domain pack has those cards in the collection the sheet drags
+ * from, and a browser that showed only ours would be wrong about the one
+ * thing it exists to answer. `metadata.system` is what says a pack is ours.
+ *
+ * The variant gear is the single exception, and it is a **content gate rather
+ * than a permission**: nothing is hidden from anybody, the pack is still in
+ * the compendium sidebar, and a GM who wants a Pitchfork can open it. What
+ * the switch buys is that a search for "axe" in a game nobody switched a
+ * variant on for answers with the axes that game has.
+ */
 export function ourPacks(): any[] {
+  const variants = activeVariants().length > 0;
   return [...(game.packs ?? [])].filter(
     (p: any) =>
       p.metadata?.system === SYSTEM_ID &&
-      (p.metadata?.type === "Item" || p.metadata?.type === "Actor"),
+      (p.metadata?.type === "Item" || p.metadata?.type === "Actor") &&
+      (variants || p.collection !== VARIANT_PACK),
   );
 }
 

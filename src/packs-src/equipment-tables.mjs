@@ -68,7 +68,7 @@ const RETURNING = f(
   "When this weapon is thrown within its range, it appears in your hand immediately after the attack.",
 );
 const SCARY = f("Scary", "On a successful attack, the target must mark a Stress.");
-const TIMEBENDING = f("Timebending", "You choose the target of your attack after making your attack roll.");
+const TIMEBENDING = f("Timebending", "You can choose the target of your attack after making your attack roll.");
 
 /* The ones whose number changes by tier. */
 const versatile = (stats) => f("Versatile", `This weapon can also be used with these statistics—${stats}`);
@@ -416,7 +416,7 @@ export const SECONDARY = {
       f("Hooked", "On a successful attack, you can pull the target into Melee range.")),
     w("Advanced Hand Crossbow", "finesse", "far", "d6+5", "oneHanded"),
     w("Buckler", "agility", "melee", "d4+4", "oneHanded",
-      f("Deflecting", "When you are attacked, you can mark an Armor Slot to gain a bonus to your Evasion equal to your available Armor Slots against the attack.")),
+      f("Deflecting", "When you are attacked, you can mark an Armor Slot to gain a bonus to your Evasion equal to your available Armor Score against the attack.")),
     w("Powered Gauntlet", "knowledge", "close", "d6+4", "oneHanded",
       f("Charged", "Mark a Stress to gain a +1 bonus to your Proficiency on a primary weapon attack.")),
     w("Hand Sling", "finesse", "veryFar", "d6+4", "oneHanded", versatile("Finesse, Close, d8+4.")),

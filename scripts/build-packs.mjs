@@ -74,6 +74,34 @@ export const PACKS = [
     collection: "actors",
     docType: "Actor",
   },
+
+  /* The supplemental campaign variants, in two packs because they hold two
+     different kinds of thing. Gear is Items a character equips and belongs
+     beside the other Items; a frame is rules text nobody equips, and a
+     JournalEntry is what a virtual tabletop has for that.
+
+     Kept OUT of the equipment pack, deliberately. Everyday Hero alone is 36
+     more documents on a table that is not running it, and the compendium
+     browser answers "every weapon in the world" — a Pitchfork arriving in a
+     search for tier-1 primaries is a variant leaking into a game nobody
+     switched on. A pack is the coarsest gate this system has and it is the
+     right grain here, because the whole chapter is optional together. See
+     `src/module/variants.ts` for the switch that decides which of them the
+     browser and the creation window will offer. */
+  {
+    name: "variants",
+    module: "variants.mjs",
+    label: "Variant Equipment",
+    collection: "items",
+    docType: "Item",
+  },
+  {
+    name: "variant-rules",
+    module: "variant-rules.mjs",
+    label: "Variant Rules",
+    collection: "journal",
+    docType: "JournalEntry",
+  },
 ];
 
 /**
@@ -102,9 +130,64 @@ function embeddedItem(pack, actorId, entry, index) {
   };
 }
 
-/** The Foundry envelope around a normalized Item or Actor entry. */
+/**
+ * A page of a journal entry.
+ *
+ * `embeddedItem`'s argument and its failure mode, one document type along: the
+ * CLI walks a document's hierarchy — `pages` for a JournalEntry exactly as
+ * `items` is for an Actor — and writes each embedded document under its own
+ * LevelDB key. A page arriving without a `_key` throws `Key cannot be null or
+ * undefined`, which is the same error `embeddedItem` was written for.
+ *
+ * The silent half is worse and is what this function exists to prevent. The
+ * envelope below picks its fields **explicitly**, so a document kind whose
+ * content lives somewhere the list does not name is compiled without it and
+ * reported at its full count: ten journal entries, ten folders, and every one
+ * of them empty. Nothing errors and the summary line looks right.
+ */
+function embeddedPage(pack, entryId, page, index) {
+  const id = stableId(`${pack.name}:${entryId}:page:${index}:${page.name}`);
+  return {
+    _id: id,
+    _key: `!${pack.collection}.pages!${entryId}.${id}`,
+    name: page.name,
+    type: page.type ?? "text",
+    title: page.title ?? { show: true, level: 1 },
+    text: page.text,
+    sort: (index + 1) * 1000,
+    // -1 is INHERIT: a page takes the entry's own ownership rather than
+    // asserting one of its own, which is what makes the pack's `ownership`
+    // in `system.json` the single place a reader's access is decided.
+    ownership: { default: -1 },
+    flags: {},
+  };
+}
+
+/** The Foundry envelope around a normalized Item, Actor or JournalEntry. */
 function documentDoc(pack, entry, folderId) {
-  const id = stableId(`${pack.name}:${entry.type}:${entry.sourceKey ?? entry.name}`);
+  /* A JournalEntry has no subtype, so the `type` slot in the id key is
+     `undefined` for every one of them — deterministic, and stable, but
+     meaningless. It is spelled out rather than left to interpolation, because
+     an id is what keeps a link alive and `variant-rules:undefined:feasts` is
+     the kind of string somebody tidies up later without realising it moves
+     every id in the pack. `sourceKey` is the variant id here, so a GM
+     retitling an entry does not orphan it. */
+  const kind = pack.docType === "JournalEntry" ? "journal" : entry.type;
+  const id = stableId(`${pack.name}:${kind}:${entry.sourceKey ?? entry.name}`);
+
+  if (pack.docType === "JournalEntry") {
+    return {
+      _id: id,
+      _key: `!${pack.collection}!${id}`,
+      name: entry.name,
+      pages: (entry.pages ?? []).map((page, index) => embeddedPage(pack, id, page, index)),
+      folder: folderId,
+      sort: entry.sort ?? 0,
+      ownership: { default: 0 },
+      flags: {},
+    };
+  }
+
   const embedded = (entry.items ?? []).map((item, index) =>
     embeddedItem(pack, id, item, index),
   );
@@ -159,6 +242,11 @@ async function main() {
     const folders = new Map();
     const seen = new Map();
     let sort = 0;
+    /* Counted and printed, because the failure the JournalEntry branch was
+       added for was SILENT: ten entries in ten folders, reported at their full
+       count, every one of them empty. A document count cannot see inside a
+       document, so the summary says how much is inside one. */
+    let embedded = 0;
 
     for (const entry of entries) {
       let folderId = null;
@@ -179,12 +267,18 @@ async function main() {
         );
       }
       seen.set(doc._id, entry.name);
+      embedded += (doc.pages?.length ?? 0) + (doc.items?.length ?? 0);
       writeFileSync(join(stage, `${doc._id}.json`), JSON.stringify(doc, null, 2));
     }
 
     await compilePack(stage, join(OUT, pack.name), { log: false });
     rmSync(stage, { recursive: true, force: true });
-    summary.push(`  ${pack.name.padEnd(14)} ${String(seen.size).padStart(4)} docs  ${folders.size} folders`);
+    const inside = embedded
+      ? `  ${embedded} ${pack.docType === "JournalEntry" ? "pages" : "features"}`
+      : "";
+    summary.push(
+      `  ${pack.name.padEnd(14)} ${String(seen.size).padStart(4)} docs  ${folders.size} folders${inside}`,
+    );
   }
 
   console.log("Compiled compendium packs:");

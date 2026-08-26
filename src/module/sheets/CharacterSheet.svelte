@@ -19,6 +19,9 @@
     ADVANCEMENT,
     BURDEN_LABELS,
     FEATURE_KIND_LABELS,
+    FOCUS_MAX,
+    FOCUS_SUBCLASS,
+    FOCUS_TRAIT,
     LOADOUT_LIMIT,
     TRAITS,
     TRAIT_VERBS,
@@ -29,6 +32,7 @@
     traitLabel,
     type Trait,
   } from "../config.ts";
+  import { massiveDamage } from "../settings.ts";
   import type { ItemSnapshot, SheetState } from "../apps/sheet-state.svelte.ts";
   import { handleActorDrop } from "../apps/svelte-sheets.ts";
   import {
@@ -977,6 +981,38 @@
     return { name: f.name || "Hope Feature", cost: hopeCost(f), text: text ? rich(text) : "" };
   });
 
+  /* ── Focus, which only one subclass has ────────────────────────────
+     The schema carries the pool on every character and says why; this is the
+     other half of that argument. A row of six diamonds that can never hold
+     anything is not a readout, it is a control that means nothing — and
+     twelve of the thirteen subclasses in this system would draw one. So the
+     *field* is unconditional and the *drawing* is gated, which is the cheap
+     half being cheap and the expensive half being paid only where it buys
+     something.
+
+     Matched on `subclassName` rather than on the Item's own name, because a
+     Martial Artist is holding one to three cards — Foundation, Specialization,
+     Mastery — each of which is a separate document called something else.
+     `subclassName` is the field that says which subclass all three are, and it
+     is authored in the pack rather than typed by the player.
+
+     `some` and not `find`: whether the pool exists is a yes-or-no, and nothing
+     below this line wants the card. */
+  const martialArtist = $derived(
+    snap.of("subclass").some((s) => s.system?.subclassName === FOCUS_SUBCLASS),
+  );
+
+  const focus = $derived(sys.resources?.focus?.value ?? 0);
+  const focusMax = $derived(sys.resources?.focus?.max ?? FOCUS_MAX);
+
+  /* How many d6 the refill throws, which is Instinct and may be nothing.
+     `total` rather than `value` because a passive that moves Instinct moves
+     the roll with it — the card says "equal to your Instinct" and the number
+     on the trait plate is the one the player will count. */
+  const focusDice = $derived(
+    Number(sys.traits?.[FOCUS_TRAIT]?.total ?? sys.traits?.[FOCUS_TRAIT]?.value ?? 0),
+  );
+
   /* ── the feature list ──────────────────────────────────────────────
      What a class *is*, and it stopped being a card to say it.
 
@@ -1146,14 +1182,37 @@
 
   /* The pool is what cannot pay, so the pool is what flinches — the same
      refusal the Stress track gives a recall it cannot afford, and no
-     dialog, because the number saying no is already on screen. */
-  function refusePool() {
-    const el = winEl?.querySelector(".rail .pool");
+     dialog, because the number saying no is already on screen.
+
+     Named, since there are two pools on this rail now. `querySelector` takes
+     the first match, so a Focus refusal would have shaken the Hope gems —
+     which is the worst shape this bug could have: a correct refusal pointing
+     at the wrong number, on a sheet where both are gold diamonds. `data-p`
+     rather than a second class, because the two rows are the same object and
+     what differs is only which pool they are of. */
+  function refusePool(which: "hope" | "focus" = "hope") {
+    const el = winEl?.querySelector(`.rail .pool[data-p="${which}"]`);
     if (!el) return;
     el.classList.remove("deny");
     void (el as HTMLElement).offsetWidth;
     el.classList.add("deny");
     setTimeout(() => el.classList.remove("deny"), 600);
+  }
+
+  /* The refill, and the one press on this rail that is neither a roll nor a
+     record. `refocus` on the document does all of it — clears, rolls, posts,
+     writes — because a chat card and a sheet pressing the same move have to
+     produce the same result, which is what every method on the Actor is for.
+
+     What is here is the refusal. `refocus` answers null when Instinct is +0 or
+     lower and writes nothing, and this is where that becomes visible: the
+     Focus row flinches, exactly as the Hope gems do when the purse is short.
+     No notification, for the reason there is none anywhere else on this
+     sheet — the number that said no is six pixels above the press, and the
+     title on the press has said so since before it was pressed. */
+  async function doRefocus() {
+    if (!ed) return;
+    if ((await doc.refocus()) === null) refusePool("focus");
   }
 
   async function useHopeAction() {
@@ -2345,11 +2404,11 @@
              same question asked twice, and a divider between them claims
              otherwise while costing 28px of a rail that has none to spare. -->
         <div class="sec">
-          {#key `${sys.thresholds?.major}/${sys.thresholds?.severe}/${sys.resources?.hitPoints?.max}/${vitSpan}`}
+          {#key `${sys.thresholds?.major}/${sys.thresholds?.severe}/${massiveDamage()}/${sys.resources?.hitPoints?.max}/${vitSpan}`}
             <Marks
               kind="hp"
               label="Damage"
-              damage={{ major: sys.thresholds?.major ?? 1, severe: sys.thresholds?.severe ?? 2 }}
+              damage={{ major: sys.thresholds?.major ?? 1, severe: sys.thresholds?.severe ?? 2, massive: massiveDamage() }}
               total={sys.resources?.hitPoints?.max ?? 6}
               marked={sys.resources?.hitPoints?.marked ?? 0}
               span={vitSpan}
@@ -2396,7 +2455,7 @@
 
         <!-- hope -->
         <div class="sec">
-          <div class="pool">
+          <div class="pool" data-p="hope">
             <div class="hd">
               <span class="k">Hope</span>
               <span class="n"
@@ -2447,6 +2506,77 @@
             {/if}
           </div>
         </div>
+
+        <!-- focus. The Martial Artist's pool, drawn nowhere else, because a
+             row of six diamonds that can never hold anything is a control
+             that means nothing on the other twelve subclasses.
+
+             Under Hope and not beside it: they are the same kind of object —
+             a pool you hold and spend a point of at a time — and the rail is
+             a column you read down. Beside it would make them a pair of
+             matched numbers, which they are not; one is on every character
+             and the other is on one.
+
+             **They are both gold, and that is a deferral rather than a
+             choice.** A diamond is the mark of a spendable pool here and it
+             has exactly two hues: gold for the pool you hold, violet for the
+             pool the GM holds. Focus is the first, so it is gold. A third
+             hue is a claim `design/gem.css` makes — `--tone` is declared on
+             `.gem` itself, so it cannot be overridden from a sheet without
+             adding a modifier class beside `.gem.fear` — and a hue invented
+             in a Svelte style block is a hue the study pages do not know
+             about. What tells the two rows apart until then is the heading
+             directly above each and the size: these are 22px against Hope's
+             32, which is also the honest ranking of a subclass pool against
+             one every character has. -->
+        {#if martialArtist}
+          <div class="sec">
+            <div class="pool" data-p="focus">
+              <div class="hd">
+                <span class="k">Focus</span>
+                <span class="n">{focus}<s> / {focusMax}</s></span>
+              </div>
+              <!-- No `{#key}`. Hope's is there because a scar shrinks its row
+                   and the markup has to be rebuilt when the *shape* changes;
+                   Focus is a hard six the card prints and nothing moves, so
+                   the row is built once and driven for the life of the sheet,
+                   which is what `setPool` is for. -->
+              <Gems
+                value={focus}
+                max={focusMax}
+                size={22}
+                gap={8}
+                ground="paper"
+                editable={ed}
+                onset={(n) => set("system.resources.focus.value", n)}
+              />
+              <!-- `.hact` and not a look of its own. That class is named for
+                   its first caller and drawn as what it actually is: the
+                   rail's move row — a press carrying a name, a caption and
+                   the rule it performs. The only Hope-specific thing in it is
+                   the run of cost pips, which a refocus has none of because
+                   it is paid for with a rest rather than with a currency. A
+                   second stylesheet block making the same object again would
+                   be two looks to keep in step; the rename lives in
+                   `design/sheet.css` and is not this sheet's to make. -->
+              <button
+                type="button"
+                class="hact rfc"
+                class:no={focusDice <= 0}
+                title={focusDice <= 0
+                  ? game.i18n.format("DAGGERHEART.Focus.NoDice", { mod: sign(focusDice) })
+                  : `Clear your Focus and roll ${focusDice}d6, keeping the highest.`}
+                onclick={doRefocus}
+              >
+                <span class="hd">
+                  <b>{game.i18n.localize("DAGGERHEART.Focus.Refocus")}</b>
+                  <s>{focusDice > 0 ? `${focusDice}d6` : "—"}</s>
+                </span>
+                <p>{game.i18n.localize("DAGGERHEART.Focus.Rule")}</p>
+              </button>
+            </div>
+          </div>
+        {/if}
 
         <!-- experience -->
         <div class="sec">
@@ -3737,6 +3867,29 @@
     min-height: 0;
     line-height: normal;
     border-radius: 0;
+  }
+  /* The refocus press states all three, and the third is why it is here at
+     all rather than left to the list above.
+
+     `.rfc` wears `.hact`, so it already takes that list's `height:auto` and
+     `min-height:0` — and the list names neither `max-height` nor the two
+     floors' interaction, which is the trap this repo has now met four times:
+     `min-height` is the half with no competitor. Foundry's `elements` layer
+     gives every `<button>` a fixed 28px *and* a matching floor, and a floor
+     with nothing of ours to beat simply applies. The row is a two-line flex
+     column — a name over its rule — so left alone it would stand at whatever
+     the taller of 28px and its own content is, and at Instinct +0 the rule
+     is one line and 28px wins: the disabled state would be a *different
+     height* from the enabled one, on a control whose whole job is to look
+     the same until you press it.
+
+     Stated rather than zeroed. `auto` is a measurement — the content's — and
+     `none` is the absence of somebody else's ceiling; a `0` here would be
+     this sheet inventing a number for a row whose height is its own text. */
+  .rfc {
+    height: auto;
+    min-height: 0;
+    max-height: none;
   }
   /* The remove button is the one the design *does* size, to a 24px square,
      so `height:auto` would collapse it to its own glyph. Only the floor and

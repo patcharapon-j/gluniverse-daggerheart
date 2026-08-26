@@ -44,6 +44,7 @@ import { openActivity, registerActivityLog } from "./activity-log.ts";
 import { registerBrawler } from "./brawler.ts";
 import { openTokenStudio } from "./token-studio.ts";
 import { clearMark, isMarkedCharacter, markedSpellcast, payUpkeep, registerMarked, rollOffMark } from "./marked.ts";
+import { migrateOnReady, migrateWorld } from "./migration/index.ts";
 
 /**
  * The design is set in Google Sans, which is not bundled — it is not ours to
@@ -280,7 +281,22 @@ Hooks.once("ready", () => {
       upkeep: payUpkeep,
       clear: clearMark,
     },
+
+    /* The migration, by hand. It runs itself on `ready` for the active GM and
+       says nothing when there was nothing to do, which is the right default
+       and leaves a GM with no way to ask. So it is here as well:
+       `migrate({dryRun:true})` reports what *would* change without writing,
+       and `migrate({force:true})` re-runs every step over a world whose stamp
+       says it is current — which is what a GM wants after re-importing a
+       character from a backup made before the errata landed. */
+    migrate: migrateWorld,
   };
+
+  /* Last, and after the API is published, so a step that goes wrong leaves a
+     usable console rather than a half-built `game.daggerheart`. Not awaited:
+     `ready` is not a place to hold the world open, and the migration reports
+     itself when it finishes. */
+  void migrateOnReady();
 
   console.log(`${SYSTEM_ID} | Ready (v${game.system?.version ?? "unknown"})`);
 });

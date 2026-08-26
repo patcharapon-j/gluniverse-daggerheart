@@ -332,7 +332,43 @@ export const RANGE_FEET: Record<string, number> = {
  */
 export const FEET_PER_SQUARE = 5;
 
-export const rangeSquares = (r: string): number => (RANGE_FEET[r] ?? 0) / FEET_PER_SQUARE;
+/**
+ * The SRD's own *Defined Ranges* optional rule, printed as squares.
+ *
+ * This is a second table rather than a correction to the arithmetic above,
+ * because the two disagree in exactly one place and the disagreement is the
+ * rules' rather than ours: dividing the feet gives Very Close **2** squares
+ * and the printed optional rule says **3**. Close and Far already agree at 6
+ * and 12, which is what says the derivation was right about everything it
+ * could see — the book simply rounds the one band it drew a picture of.
+ *
+ * Very Far is 13+ in print, which is not a radius. It is stated here as the
+ * band's own floor so nothing has to invent one, and the ruler declines to
+ * draw Very Far at all for its own reasons — see `range-ruler.ts`.
+ *
+ * Optional, and therefore a setting rather than a replacement. A table
+ * running theatre-of-the-mind is using the feet as a description and a table
+ * on a battle map is using the squares as a rule, and neither is the other's
+ * approximation.
+ */
+export const RANGE_SQUARES_DEFINED: Record<string, number> = {
+  melee: 1,
+  veryClose: 3,
+  close: 6,
+  far: 12,
+  veryFar: 13,
+};
+
+/**
+ * How many squares a range covers. `defined` selects the printed optional
+ * table over the derivation; the caller reads the setting, because this
+ * module is imported by every card-drawing surface in the system and must
+ * not need a live `game` to answer a question about geometry.
+ */
+export const rangeSquares = (r: string, defined = false): number =>
+  defined
+    ? (RANGE_SQUARES_DEFINED[r] ?? 0)
+    : (RANGE_FEET[r] ?? 0) / FEET_PER_SQUARE;
 
 /* ── damage ──────────────────────────────────────────────────────────── */
 
@@ -1051,6 +1087,32 @@ export const STARTING_HOPE = 2;
 
 /** Experiences start at +2 and are bought up from there. */
 export const STARTING_EXPERIENCE_MODIFIER = 2;
+
+/**
+ * The Martial Artist's Focus, which is the fourth printed pool and the only
+ * one that belongs to a single subclass.
+ *
+ * "You can hold a maximum of 6 Focus." It is a **pool** and not a mark track,
+ * for Hope's reason and against Stress's: you spend it downward and it is
+ * given back in a lump, so what the sheet has to draw is how many you are
+ * holding rather than which boxes are crossed off.
+ *
+ * `FOCUS_TRAIT` is what the refill rolls against — "roll a number of d6s
+ * equal to your Instinct and gain Focus equal to the highest result rolled" —
+ * and it is named here rather than written into the roll, because it is the
+ * kind of number a subclass card or a campaign frame moves and a literal
+ * buried in a dice expression is one nobody can find.
+ *
+ * `FOCUS_SUBCLASS` is the name the sheet matches on, and matching a *name* is
+ * the established idiom for this — `legacyFeatureModifiers` is an exact-name
+ * registry and `resourcesFor` binds a pool the same way. It is a subclass and
+ * therefore a printed document nobody renames, unlike the Item a player may
+ * call whatever they like.
+ */
+export const FOCUS_MAX = 6;
+export const FOCUS_DIE = "d6";
+export const FOCUS_TRAIT = "instinct";
+export const FOCUS_SUBCLASS = "Martial Artist";
 
 /** Two Experiences at creation, two level-1 domain cards, one handful of gold. */
 export const STARTING_EXPERIENCES = 2;

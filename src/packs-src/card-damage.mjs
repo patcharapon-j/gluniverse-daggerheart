@@ -336,6 +336,28 @@ const PRINTED = {
     }),
   ],
 
+  /* Western's dynamite, and the first annotation from the supplemental
+     chapter. Its expression is complete and unconditional, which is all this
+     shape needs; the two things the card says *around* it are not carried and
+     both are the established reading.
+
+     "Targets who succeed must mark a Stress" is not save-for-half — it is a
+     different consequence rather than a fraction of this one — and either way
+     what happens to a target after the dice land belongs with `apps/damage.ts`
+     and the targeting question, not on the caster's expression.
+
+     "Dynamite deals double damage to inanimate objects or structures" is a
+     multiplier conditioned on what you threw it at, which nothing in this
+     shape can hold and nothing on the sheet knows. A card that doubled on
+     every press would be wrong most of the time; the sentence is printed on
+     the card and the table reads it. */
+  "consumable:Dynamite": [
+    dmg({
+      count: 1, dice: "d20", bonus: 5, type: "physical",
+      said: "Targets who fail take 1d20+5 physical damage.",
+    }),
+  ],
+
   /* The one `direct` in the corpus. Direct damage is not reduced by armour
      and the card says the word, so the flag is a transcription here rather
      than a reading — which is exactly why it is a flag and not a sniff for
@@ -791,7 +813,7 @@ export const DECLINED = {
   ],
   "subclass:Winged Sentinel: Mastery": [
     {
-      said: "While flying, you deal an extra 1d12 damage instead of 1d8 with your “Wings of Light” feature.",
+      said: "While flying, you deal an extra 1d12 damage instead of 1d8 from your “Wings of Light” feature.",
       why:
         "Restates the declined Wings of Light rider, with two dice named in one replacement " +
         "clause and no printed damage type.",
