@@ -384,26 +384,81 @@ const bottomOf = (s) => {
    It stays one sentence however many states are active, so two conditions
    read "ABLAZE · VULNERABLE ·" rather than becoming two competing rings.
 
-   The path sits almost flush to the token rim and, unlike the old inward
-   Vulnerable treatment, follows the readout scale. That keeps it beside the
-   resource tracks when a dynamic token ring pushes those tracks outward.
+   The path sits against the token rim and, unlike the old inward Vulnerable
+   treatment, follows the readout scale. That keeps it beside the resource
+   tracks when a dynamic token ring pushes those tracks outward.
+
+   ── where 50.2 comes from ─────────────────────────────────────────
+   Text on a circular path grows OUTWARD from its baseline: the arc is
+   drawn clockwise from twelve o'clock, so a glyph's ascent points away
+   from the centre. The creature ends at `.er-shell`'s clip, radius 49.2,
+   and the outermost rail is inside that. So a baseline at 51.8 was not
+   almost flush, it was a two-and-a-half unit moat with the whole of the
+   type on the far side of it, and the way to close a moat is to bring the
+   BASELINE in — which costs the artwork nothing, because everything above
+   it was already outside the creature. 50.2 leaves the round dot of the
+   separator sitting on the rim and puts the type immediately outside it.
+
+   Bringing the radius in and the size up at the same time is not a
+   coincidence either. The circumference falls by 3% and the run grows by
+   12%, and both of those close the same gap: at 4.3px on a 51.8 circle a
+   sixty-eight character sentence covered barely half the path and arrived
+   as widely spaced debris rather than as a band of lettering.
 
    `textLength` is what makes the repeat seamless. A run almost never lands
    on the exact circumference by itself; spacing it to the path closes the
    join without stretching the glyphs. */
-const CR = 51.8;
+const CR = 50.2;
 let uid = 0;
 
 const safe = (value) => String(value)
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
+/** How many repeats of `unit` it takes to cover the path. */
+const repeatsFor = (length) => Math.max(1, Math.ceil(68 / length));
+
 export function conditionRun(names = []) {
   const one = names.map((name) => String(name).trim().toUpperCase()).filter(Boolean).join(' · ');
   if (!one) return '';
   const unit = `${one} · `;
-  const reps = Math.max(1, Math.ceil(68 / unit.length));
-  return unit.repeat(reps);
+  return unit.repeat(repeatsFor(unit.length));
 }
+
+/**
+ * The same sentence, cut into pieces that can each carry a colour.
+ *
+ * A token wearing two conditions used to get one hue for the whole run —
+ * the first condition's, chosen because averaging two opposite hues gives a
+ * grey that names neither and because the material under the sentence does
+ * not average either. Both of those are still true; what was wrong was
+ * treating "cannot be averaged" as "must be one of them". Naming each
+ * condition in its own colour says the same thing the material says, once
+ * per condition, and costs a tspan.
+ *
+ * `tints` is parallel to `names`. A missing or malformed one falls through
+ * to `--tkc` in the stylesheet, which is the sentence's own key colour, so
+ * a caller that knows the names and not the colours still gets a sentence.
+ */
+export function conditionSegments(names = [], tints = []) {
+  const words = names
+    .map((name, i) => [String(name).trim().toUpperCase(), tintOf(tints[i])])
+    .filter(([word]) => word);
+  if (!words.length) return [];
+  const unit = words.flatMap(([word, tint]) => [[word, tint], [' · ', '']]);
+  const length = words.reduce((n, [word]) => n + word.length + 3, 0);
+  const out = [];
+  for (let i = repeatsFor(length); i > 0; i--) out.push(...unit);
+  return out;
+}
+
+/* Only a word that has a colour of its own gets the class, so the
+   separators keep inheriting `text`'s fill and there is exactly one place
+   that decides what an uncoloured sentence looks like. */
+const runMarkup = (segments) => segments
+  .map(([text, tint]) => (tint
+    ? `<tspan class="tkw" style="--tkw:${tint}">${safe(text)}</tspan>`
+    : `<tspan>${safe(text)}</tspan>`))
+  .join('');
 
 /* The sentence is lettering ON somebody's artwork, and the artwork is
    arbitrary: a pale robe and a dark cloak are the same component's
@@ -420,7 +475,7 @@ export function conditionRun(names = []) {
 const TINT = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 export const tintOf = (value) => (TINT.test(String(value ?? '')) ? String(value) : '');
 
-const conditions = (names = []) => {
+const conditions = (names = [], tints = []) => {
   const id = `tkc${++uid}`;
   const len = (2 * Math.PI * CR).toFixed(2);
   return `<div class="tkcond">
@@ -428,7 +483,7 @@ const conditions = (names = []) => {
       <defs><path id="${id}" fill="none"
         d="M50 ${50 - CR} a${CR} ${CR} 0 1 1 -.01 0"/></defs>
       <text><textPath href="#${id}" textLength="${len}"
-        lengthAdjust="spacing">${safe(conditionRun(names))}</textPath></text>
+        lengthAdjust="spacing">${runMarkup(conditionSegments(names, tints))}</textPath></text>
     </svg>
   </div>`;
 };
@@ -445,7 +500,7 @@ export const TOKEN_CHIP = (s = {}) =>
   `<div class="dh tok${s.conditions?.length && !s.defeated ? ' conditioned' : ''}${s.defeated ? ' defeated' : ''}${
     s.selected ? ' is-selected' : ''}${s.targeted ? ' is-targeted' : ''}" data-t="near" data-lod="close" data-actor="${
     s.actor ?? 'character'}"${tintOf(s.tint) ? ` style="--tkc:${tintOf(s.tint)}"` : ''}>
-  ${conditions(s.defeated ? [] : s.conditions)}
+  ${conditions(s.defeated ? [] : s.conditions, s.defeated ? [] : s.tints)}
   <div class="er-bloom"></div>
   <div class="er-shell">
     <i class="er-identity"></i>
@@ -544,10 +599,14 @@ export function setChip(el, s = {}) {
 
   if ('conditions' in s) {
     const names = Array.isArray(s.conditions) ? s.conditions : [];
+    const tints = Array.isArray(s.tints) ? s.tints : [];
     const defeated = !!s.defeated;
     el.classList.toggle('conditioned', names.length > 0 && !defeated);
     const run = el.querySelector('.tkcond textPath');
-    if (run) run.textContent = conditionRun(names);
+    /* Was `textContent`, which a coloured sentence cannot be: the colours
+       are per word and a word is an element. Still the same diff-in-place
+       as before — the chip is not rebuilt, only the run inside it. */
+    if (run) run.innerHTML = runMarkup(conditionSegments(names, tints));
   }
   if ('tint' in s) {
     const tint = tintOf(s.tint);

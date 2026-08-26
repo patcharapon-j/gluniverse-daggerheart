@@ -133,6 +133,7 @@ interface ChipState {
   difficulty?: number | null;
   conditions?: string[];
   conditionIds?: string[];
+  tints?: string[];
   /** The first active condition's material colour, for the sentence. */
   tint?: string;
   hidden?: boolean;
@@ -205,12 +206,18 @@ function stateOf(token: any): ChipState | null {
   const conditionIds = active.map((condition) => condition.id);
   const conditions = active.map((condition) => condition.name);
 
-  /* One tint for a sentence that may name three conditions, and it is the
-     FIRST — which is CONDITIONS' own order, so the same pair of statuses
-     always tints the same way on every token at the table. Averaging the
-     active colours was tried and is worse: two conditions whose hues are
-     opposite average to a grey that names neither, and the material under
-     the sentence does not average either. */
+  /* Each condition names itself in its own colour, and `tint` is the key
+     the rest of the sentence is set in — the FIRST condition's, which is
+     CONDITIONS' own order, so the same pair of statuses reads the same way
+     on every token at the table.
+
+     Averaging the active colours was tried and is worse, and that has not
+     changed: two conditions whose hues are opposite average to a grey that
+     names neither, and the material under the sentence does not average
+     either. What did change is the conclusion drawn from it. "These cannot
+     be averaged" is not "one of them has to win" — the sentence has a word
+     per condition and each word can carry its own. */
+  const tints = conditionIds.map((id) => conditionTint(id) ?? "");
   const tint = conditionTint(conditionIds[0]);
   const defeated = !!actor.statuses?.has?.(CONFIG.specialStatusEffects?.DEFEATED ?? "dead");
 
@@ -227,7 +234,7 @@ function stateOf(token: any): ChipState | null {
   const see = reading(actor);
   if (see === "none") {
     return conditions.length || defeated
-      ? { conditions, conditionIds, tint, defeated, ...chrome }
+      ? { conditions, conditionIds, tints, tint, defeated, ...chrome }
       : null;
   }
 
@@ -238,6 +245,7 @@ function stateOf(token: any): ChipState | null {
     armor: track(res.armorSlots),
     conditions,
     conditionIds,
+    tints,
     tint,
     defeated,
   };
