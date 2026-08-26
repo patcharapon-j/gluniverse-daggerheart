@@ -21,8 +21,33 @@ assert.doesNotMatch(dead, /ABLAZE/);
 assert.doesNotMatch(dead, /<img|death-glyph|skull/);
 
 assert.match(TOKEN_CONDITION_FRAGMENT, /vec4 shattered\(/);
-assert.match(TOKEN_CONDITION_FRAGMENT, /for\(int i=0;i<7;i\+\+\)/);
+assert.match(TOKEN_CONDITION_FRAGMENT, /for \(int i = 0; i < 9; i\+\+\)/);
 assert.match(TOKEN_CONDITION_FRAGMENT, /if\(uDead>\.5\)/);
+
+/* Detail is bought with pixels, and outputFrame.z is the only place in this
+   shader allowed to know about the camera. If a frequency ever stops being
+   gated on it, small tokens get a crawling shimmer that nobody reproduces on
+   a design page, because a design page is 160 pixels wide. */
+const code = TOKEN_CONDITION_FRAGMENT.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+assert.match(code, /float detail = smoothstep\(44\.0, 104\.0, outputFrame\.z\);/);
+assert.equal((code.match(/outputFrame\.z[^w]/g) ?? []).length, 1,
+  "only the detail budget may read the token's size on screen");
+
+/* Every condition has to move. Restrained shipped once with no time in it at
+   all and survived two review passes, because a still texture looks correct in
+   a screenshot and only looks wrong on a table. */
+const patterns = code.slice(code.indexOf("vec2 conditionPattern"),
+                            code.indexOf("vec2 conditionWarp"));
+const cuts = [...patterns.matchAll(/if \(id < [\d.]+\) \{/g)].map((m) => m.index);
+const tailAt = patterns.lastIndexOf("\n  }\n") + 4;
+const branches = [...cuts.map((cut, i) => patterns.slice(cut, cuts[i + 1] ?? tailAt)),
+                  patterns.slice(tailAt)];
+assert.equal(branches.length, CONDITION_MATERIALS.length,
+  "one pattern branch per registered condition");
+branches.forEach((branch, i) => {
+  assert.match(branch, /[^A-Za-z0-9_]t[^A-Za-z0-9_]/,
+    `${CONDITION_MATERIALS[i].id} has no time in it, so it is a decal`);
+});
 assert.match(TOKEN_CONDITION_FRAGMENT, /material=clamp\(mix\(material,chroma,\.68\)/);
 assert.match(TOKEN_CONDITION_FRAGMENT, /mix\(original\.rgb,color,circle\)/);
 
@@ -43,4 +68,5 @@ assert.doesNotMatch(css, /\.tkvuln/);
 assert.doesNotMatch(css, /\.tkarc|\.tkhope|\.tkdiff/,
   "Obsidian orbit replaced the outboard tracks; no legacy selector may survive");
 
-console.log("token conditions: 16 materials, joined sentence, icon-free terminal override");
+console.log("token conditions: 16 materials, all animated, nine-shard break, "
+  + "joined sentence, icon-free terminal override");

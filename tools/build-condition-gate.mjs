@@ -15,7 +15,8 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { TOKEN_CONDITION_FRAGMENT } from "../src/module/token-conditions.ts";
-import { CONDITION_MATERIAL_REFINED, CONDITIONS, DEAD, PALETTE } from "../design/qa/condition-fidelity/material.js";
+import { CONDITIONS, DEAD, PALETTE } from "../design/qa/condition-fidelity/material.js";
+import { CONDITION_MATERIAL_BASELINE } from "../design/qa/condition-fidelity/baseline.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const out = process.argv[2] ?? join(root, "design/qa/condition-fidelity/sixteen-materials.html");
@@ -44,9 +45,9 @@ rmSync(crop, { force: true });
 
    The last branch has no `if` of its own — it is the fall-through — which
    is why the tail after the final match is counted as one. */
-const patterns = CONDITION_MATERIAL_REFINED.slice(
-  CONDITION_MATERIAL_REFINED.indexOf("vec2 conditionPattern"),
-  CONDITION_MATERIAL_REFINED.indexOf("vec2 conditionWarp"));
+const patterns = TOKEN_CONDITION_FRAGMENT.slice(
+  TOKEN_CONDITION_FRAGMENT.indexOf("vec2 conditionPattern"),
+  TOKEN_CONDITION_FRAGMENT.indexOf("vec2 conditionWarp"));
 const cuts = [...patterns.matchAll(/if \(id < [\d.]+\) \{/g)].map((m) => m.index);
 const tailAt = patterns.lastIndexOf("\n  }\n") + 4;
 const branches = [...cuts.map((cut, i) => patterns.slice(cut, cuts[i + 1] ?? tailAt)),
@@ -181,16 +182,18 @@ code{font-family:var(--mono);font-weight:500;font-size:11.5px;color:#bed0e3;
 </style>
 
 <div class="page">
-<p class="eyebrow">Design gate &middot; not in production</p>
+<p class="eyebrow">Design gate &middot; accepted and shipped</p>
 <h1>The same shader, with something to look at</h1>
 <p class="lede">This is not the material-model rewrite. That proposal replaced the composite with
 absorb, emit and a key light, and it was rejected on sight, correctly &mdash; it darkened the portrait
 and embossed everything, trading the shipped shader's best quality, which is that the material reads as
 <em>fused into</em> the artwork rather than laid over it. <strong>The composite is kept.</strong> Every
 difference on this page comes from the pattern functions and one roll-off.</p>
-<p class="lede">Left column is what ships today; centre is the proposal; right is the centre column at a
-40&nbsp;pixel token, which is the case that decides how much detail is safe to add at all.</p>
-<p class="lede">Second revision. The first fixed the resolution and left two things unfixed: the patterns
+<p class="lede">Left column is what this replaced, frozen at the commit before the port; centre is what
+ships now; right is the centre column at a 40&nbsp;pixel token, which is the case that decided how much
+detail was safe to add at all. The centre and right columns are the live program read straight out of
+<code>src</code>, not a copy of it, so this page cannot fall out of date with the game.</p>
+<p class="lede">Accepted at the second revision. The first fixed the resolution and left two things unfixed: the patterns
 were still written at the wrong <em>size</em>, and half of them barely moved. Both are addressed below,
 along with a rework of Invisible, the removal of Enraptured's motes, and the break a dead token
 leaves behind.</p>
@@ -201,9 +204,9 @@ leaves behind.</p>
 </div>
 
 <div class="heads">
-  <span>shipped</span>
-  <span class="new">proposed<i>full detail</i></span>
-  <span class="new">proposed<i>40px token</i></span>
+  <span>before</span>
+  <span class="new">shipped<i>full detail</i></span>
+  <span class="new">shipped<i>40px token</i></span>
 </div>
 <div class="ledger"><canvas id="gl"></canvas><div id="table"></div></div>
 
@@ -334,8 +337,8 @@ const ROWS = ${j(rows)};
 const IDS = ${j(CONDITIONS.map(([id]) => id))};
 const PALETTE = ${j(PALETTE)};
 const PORTRAIT = ${j(portrait)};
-const SHIPPED = ${j(TOKEN_CONDITION_FRAGMENT)};
-const REFINED = ${j(CONDITION_MATERIAL_REFINED)};
+const SHIPPED = ${j(CONDITION_MATERIAL_BASELINE)};
+const REFINED = ${j(TOKEN_CONDITION_FRAGMENT)};
 
 const table = document.getElementById('table');
 table.innerHTML = ROWS.map((r) =>

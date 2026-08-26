@@ -57,10 +57,32 @@ let FilterClass: any;
 let registered = false;
 let warned = false;
 
-/** GLSL 1 so the same program runs on Foundry's PixiJS 7 WebGL pipeline. */
+/**
+ * GLSL 1 so the same program runs on Foundry's PixiJS 7 WebGL pipeline.
+ *
+ * Three properties are load-bearing and none of them is obvious from the code:
+ *
+ *   Detail is bought with pixels. Every fine octave is scaled by the token's
+ *   width on screen, because a frequency that cannot be resolved does not
+ *   arrive as detail, it arrives as a crawling shimmer on a small token and as
+ *   a uniform lift on a still one. The governing size is 40 pixels, not the
+ *   one on a design page.
+ *
+ *   The field does two jobs. It is both how much material is present and how
+ *   brightly that material burns, so a condition covering area with dark
+ *   matter has to claim a LOW field and put its light in the second component.
+ *   Getting this backwards is what turns iron bands into white tape.
+ *
+ *   Every branch moves. A material that holds still is a sticker on the token
+ *   no matter how good the texture is. Checked by tools/build-condition-gate.
+ *
+ * design/qa/condition-fidelity/ holds the gate this was accepted through and
+ * a frozen copy of the shader it replaced.
+ */
 export const TOKEN_CONDITION_FRAGMENT = `
 precision highp float;
 varying vec2 vTextureCoord;
+
 uniform sampler2D uSampler;
 uniform float uTime;
 uniform float uCount;
@@ -79,43 +101,73 @@ float hash21(vec2 p) {
   return fract(p.x * p.y);
 }
 
-float noise2(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash21(i), hash21(i + vec2(1.0,0.0)), f.x),
-             mix(hash21(i + vec2(0.0,1.0)), hash21(i + vec2(1.0,1.0)), f.x), f.y);
+/* -- noise -------------------------------------------------------
+   Gradient noise in place of the bilinear value noise this shader was
+   written on. The scale factor is not a taste dial: value noise is uniform
+   on [0,1] with standard deviation .289 and gradient noise is bell-shaped
+   with about .22, so an unscaled swap would quietly flatten every
+   smoothstep already tuned against the old field. 1.3 matches the two
+   distributions, which is what lets this be a fidelity change rather than
+   a retune of sixteen conditions. */
+vec2 hash22(vec2 p) {
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453) * 2.0 - 1.0;
 }
 
-float fbm(vec2 p) {
+float gnoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  return mix(mix(dot(hash22(i),             f),
+                 dot(hash22(i + vec2(1,0)), f - vec2(1,0)), u.x),
+             mix(dot(hash22(i + vec2(0,1)), f - vec2(0,1)),
+                 dot(hash22(i + vec2(1,1)), f - vec2(1,1)), u.x), u.y);
+}
+
+float noise2(vec2 p) { return clamp(gnoise(p) * 1.3 + 0.5, 0.0, 1.0); }
+
+/* Two octaves past where the shipped fbm stops, and both are bought with
+   pixels rather than spent unconditionally. The first five accumulate
+   exactly as before, so at a small token this is the old field. */
+float fbmD(vec2 p, float detail) {
   float value = 0.0;
   float amp = .5;
   mat2 turn = mat2(.8, -.6, .6, .8);
-  for (int i = 0; i < 5; i++) {
-    value += amp * noise2(p);
+  for (int i = 0; i < 7; i++) {
+    float w = (i >= 5) ? detail : 1.0;
+    value += amp * w * noise2(p);
     p = turn * p * 2.03 + 17.17;
     amp *= .5;
   }
   return value;
 }
 
-float voronoiEdge(vec2 x) {
+float fbm(vec2 p) { return fbmD(p, 0.0); }
+
+/* F1 and the seam, because a cell's INSIDE and a cell's EDGE are two
+   different subjects and the shipped helper only ever offered the edge.
+   Pits are interiors; crazing and crust are edges. Asking for a dot and
+   being handed a web is how Enraptured ended up drawing Corroded. */
+vec3 voronoi3(vec2 x) {
   vec2 n = floor(x);
   vec2 f = fract(x);
   float first = 8.0;
   float second = 8.0;
+  float cell = 0.0;
   for (int j = -1; j <= 1; j++) {
     for (int i = -1; i <= 1; i++) {
       vec2 g = vec2(float(i), float(j));
       vec2 o = vec2(hash21(n + g), hash21(n + g + 31.7));
       vec2 r = g + .16 + .68 * o - f;
       float d = dot(r, r);
-      if (d < first) { second = first; first = d; }
+      if (d < first) { second = first; first = d; cell = hash21(n + g + 7.13); }
       else if (d < second) { second = d; }
     }
   }
-  return sqrt(second) - sqrt(first);
+  return vec3(sqrt(first), sqrt(second) - sqrt(first), cell);
 }
+
+float voronoiEdge(vec2 x) { return voronoi3(x).y; }
+float voronoiCell(vec2 x) { return voronoi3(x).x; }
 
 float band(float value, float center, float width) {
   return 1.0 - smoothstep(width, width * 1.8, abs(value - center));
@@ -131,116 +183,374 @@ vec3 colorAt(int i) {
   if (i == 3) return uColor3; return uColor4;
 }
 
-float conditionPattern(float id, vec2 p, float t) {
+/* x = the material field, exactly the quantity the shipped shader
+   composited on. y = the incandescent part of it, always a SUBSET of x
+   rather than a layer over it — that is what keeps a hot core inside its
+   own effect instead of floating on top of it.
+
+   ── what changed, and why it is not a redesign ──────────────────
+   Every condition keeps the primitive it shipped with. What they did not
+   have was SCALE HIERARCHY or a COMPOSITION, and without those a pattern
+   is a texture: one frequency, spread evenly, radially symmetric, filling
+   the disc. Sixteen textures at one frequency are sixteen hazes, and the
+   only thing separating them is hue — which is the actual complaint.
+
+   So each one now has a large structure, a medium one, and a fine register
+   that only exists when there are pixels for it, and each has somewhere it
+   comes FROM. Vulnerable breaks from a point off centre rather than
+   cracking uniformly. Charged branches from a source rather than radiating.
+   Corroded eats in patches rather than everywhere at once. Restrained is
+   angled bands rather than a fourth set of concentric rings — it shared
+   that primitive with Silenced, Stunned and Marked for Death, and four
+   conditions drawing rings is four conditions nobody can tell apart.
+
+   ── and what pass three changed on top of that ──────────────────
+   Size and motion, on every branch. The governing number is the 40px
+   column: a feature thinner than a fortieth of the token cannot be drawn,
+   so it lands as a uniform lift, and a uniform lift is the wash. Every
+   frequency here is now chosen so the LARGEST structure survives at that
+   size and the rest is detail on top of it. And every branch has a loop
+   with a period between about one and four seconds, because a material
+   that never changes is a sticker on the token no matter how good the
+   texture is. */
+vec2 conditionPattern(float id, vec2 p, float t, float d) {
   float r = length(p);
   float a = atan(p.y, p.x);
-  float n = fbm(p * 3.0 + vec2(t * .07, -t * .05));
+  float n = fbmD(p * 2.2 + vec2(t * .14, -t * .10), d);
+
+  /* Vulnerable — it broke from somewhere. Shards are voronoi in the
+     impact's own polar frame, so they radiate the way glass actually
+     fails, and the crazing is gated on nearness to a real seam instead of
+     sprinkled over the whole face. The stress front is what makes it an
+     event rather than a result: the seams light in a wave running outward
+     from the impact, so you are watching the break travel. */
   if (id < .5) {
-    float cracks = 1.0 - smoothstep(.018, .095, voronoiEdge(p * 4.3 + vec2(sin(t*.21),cos(t*.17))*.12));
-    return clamp(cracks * (.58 + .42 * noise2(p * 12.0)) + band(r,.67+.035*sin(t*1.3),.045)*.52,0.0,1.0);
+    vec2 q = p - vec2(-.26, -.18);
+    float rr = length(q), qa = atan(q.y, q.x);
+    float seam = voronoiEdge(vec2(qa * 1.15, rr * 1.9) * 1.05);
+    float shard = 1.0 - smoothstep(.028, .175, seam);
+    float craze = (1.0 - smoothstep(.04, .19, voronoiEdge(p * 8.5))) * d
+                * smoothstep(.42, .0, seam);
+    float splits = pow(max(0.0, cos(qa * 5.0 + rr * 2.2)), 18.0) * smoothstep(1.9, .06, rr);
+    float front = band(fract(rr * .55 - t * .34), .5, .13);
+    return vec2(clamp(shard * .95 + craze * .60 + splits * .80, 0.0, 1.0),
+                (1.0 - smoothstep(.0, .048, seam)) * (.35 + .85 * front)
+                + splits * .55 * (.40 + .60 * front));
   }
+
+  /* Hidden — three smoke registers and a tide. It engulfs from below
+     rather than hanging as fog, which is the difference between a
+     creature hiding and a creature behind a filter. The tide line itself
+     now rises and falls, so the concealment is something the creature is
+     doing rather than a level somebody set. */
   if (id < 1.5) {
-    float smoke = smoothstep(.38,.75,fbm(p*2.4+vec2(t*.11,-t*.06)));
-    float veil = smoothstep(-.7,.55,p.y+.22*sin(p.x*4.0+t*.35));
-    return clamp(smoke*.78+veil*.28,0.0,1.0);
+    float base = fbmD(p * 1.15 + vec2(t * .105, -t * .075), d);
+    float mid  = fbmD(p * 2.60 - vec2(t * .200,  t * .130) + 11.0, d);
+    float fine = fbmD(p * 5.60 + vec2(-t * .330, t * .190) + 27.0, d) * d;
+    float tide = smoothstep(.95 + .34 * sin(t * .42), -.62, p.y);
+    return vec2(clamp(smoothstep(.44, .70, base * .62 + mid * .30 + fine * .22 + tide * .44),
+                      0.0, 1.0), 0.0);
   }
+
+  /* Restrained — angled bands, hard-edged, with lashings across them.
+     A knot is where a lashing crosses a band, and a knot catches light.
+
+     This branch had no t in it anywhere, which made it the only material
+     in the set that was genuinely a decal: rope printed onto the token. A
+     binding is a thing under tension, so it hauls — the bands narrow and
+     widen on a cinch, the lashings work against them, and a strain
+     highlight travels the length of the binding. Half as many bands as
+     before and each nearly twice as wide, because at 40px the old pitch
+     was four grey lines. */
   if (id < 2.5) {
-    float rings = pow(.5+.5*cos((r*8.0-t*.22)*PI*2.0),13.0);
-    float brush = pow(.5+.5*sin(a*46.0+n*4.0),18.0);
-    return clamp(rings*.76+brush*.38,0.0,1.0);
+    float cinch = .5 + .5 * sin(t * .62);
+    float axis = p.y * 1.9 + p.x * .78;
+    float u = abs(fract(axis * .82 + .5) - .5);
+    float bands = 1.0 - smoothstep(.175 - .030 * cinch, .255 - .030 * cinch, u);
+    float lash = pow(max(0.0, sin((p.x * 2.4 - p.y * 1.1) * 4.4 + .35 * sin(t * .50))), 20.0);
+    float along = p.x * 1.9 - p.y * .78;
+    float strain = band(fract(along * .55 - t * .30), .5, .075);
+    float rivet = (1.0 - smoothstep(.08, .26, voronoiEdge(vec2(axis * 1.5, p.x * 2.3) * 1.25)))
+                * d * bands;
+    return vec2(clamp(bands * .44 + lash * .18 + rivet * .30 + bands * strain * .30, 0.0, 1.0),
+                bands * lash * (.55 + .55 * cinch) + rivet * .35 + bands * strain * .75);
   }
+
+  /* Cloaked — dazzle. Flat panels at three values with hard boundaries
+     between them, which is what actually defeats a silhouette: an outline
+     drawn on a shape still shows the shape. The first version of this drew
+     glowing cell seams and was indistinguishable from Vulnerable, because
+     it was the same primitive pointed at the same subject. Two conditions
+     may not share a primitive; that is most of what uniqueness is here.
+
+     And it re-deals. The reason dazzle works is that the panels stop
+     agreeing with the shape from one moment to the next, so the value
+     assignment steps on a beat instead of drifting — drifting is a
+     pattern sliding across a face, which reads as a texture bug. */
   if (id < 3.5) {
-    vec2 q=p; q.x += .2*sin(q.y*4.7+t*.42);
-    float folds=pow(.5+.5*sin(q.x*12.0+fbm(q*2.0)*7.0),8.0);
-    return clamp(folds*.62+band(fbm(q*2.7+t*.03),.54,.08)*.52,0.0,1.0);
+    float beat = fract(floor(t * 1.7) * .618);
+    vec3 v = voronoi3(p * 1.45 + vec2(sin(t * .11), cos(t * .09)) * .16);
+    float panels = floor(fract(v.z * 7.13 + beat * 3.0) * 3.0) * .5;
+    float seam = 1.0 - smoothstep(.030, .105, v.y);
+    float grain = smoothstep(.42, .08, voronoiCell(p * 4.8)) * d;
+    return vec2(clamp(panels * .62 + seam * .18 + grain * .18, 0.0, 1.0),
+                seam * (.10 + .30 * beat));
   }
+
+  /* Marked for Death — a reticle, which is mechanical and sparse. It is
+     the one condition on the token that somebody else put there, so it is
+     also the one that should behave like equipment: the ticks orbit, the
+     range sweep runs, and the whole mark pulses on a lock rhythm. */
   if (id < 4.5) {
-    float lock=pow(max(0.0,cos(a*4.0)),22.0)*band(r,.66,.08);
-    return clamp(lock+band(r,.38+.13*sin(t*1.4),.035)*.72,0.0,1.0);
+    float spin = t * .55;
+    float pulse = .45 + .55 * pow(.5 + .5 * sin(t * 3.2), 3.0);
+    float ring = band(r, .70, .028);
+    float outer = band(r, .82, .012);
+    float cross = (band(abs(p.x), 0.0, .016) + band(abs(p.y), 0.0, .016))
+                * smoothstep(.20, .40, r) * smoothstep(1.02, .84, r);
+    float ticks = pow(max(0.0, cos((a + spin) * 8.0)), 26.0) * band(r, .76, .085);
+    float sweep = band(r, .18 + .58 * fract(t * .42), .026);
+    float lock = pow(max(0.0, cos((a - spin * .40) * 4.0)), 10.0) * band(r, .70, .155);
+    return vec2(clamp(ring * .95 + outer * .70 + cross * .85 + ticks * .80
+                      + sweep * .75 + lock * .55, 0.0, 1.0),
+                (ring * .90 + cross * .70 + sweep * 1.0 + ticks * .80) * pulse);
   }
+
+  /* Spectral — one bright band sweeping down through standing scan lines,
+     so the motion has a direction instead of shimmering in place. The
+     lines were at 54 per token width, which is finer than a 40px token can
+     draw: they aliased into grey. At 30 they are lines. */
   if (id < 5.5) {
-    float scan=pow(.5+.5*sin((p.y+n*.12-t*.16)*72.0),14.0);
-    return clamp(scan*.36+smoothstep(.48,.75,fbm(p*3.1+vec2(t*.08,0.0)))*.88,0.0,1.0);
+    float drift = p.y + n * .18 - t * .42;
+    float scan = pow(.5 + .5 * sin(drift * 30.0), 7.0);
+    float fine = pow(.5 + .5 * sin(drift * 88.0), 7.0) * d;
+    float fog = smoothstep(.44, .76, fbmD(p * 1.9 + vec2(t * .13, 0.0), d));
+    float sweep = band(fract(drift * .38), .5, .045);
+    return vec2(clamp(scan * .56 + fine * .26 + fog * .44 + sweep * .62, 0.0, 1.0),
+                sweep * (.35 + .65 * fog) * 1.1 + scan * sweep * .70);
   }
+
+  /* Hexed — two lattices turning against each other. The script is the
+     moire where they interfere, which is a place rather than a texture, so
+     it moves without either lattice moving much. Coarser and much faster:
+     interference between two slow fine gratings is a shimmer, while
+     between two quick coarse ones it is a figure crawling over the
+     creature, and the figure is the subject. */
   if (id < 6.5) {
-    float sigil=pow(max(0.0,cos(a*6.0+r*19.0-t*.43)),15.0);
-    return clamp(sigil*.8+band(fract(r*4.5-t*.04),.5,.055)*.48,0.0,1.0);
+    float l1 = pow(max(0.0, cos(a * 5.0 + r * 11.0 - t * .95)), 7.0);
+    float l2 = pow(max(0.0, cos(a * 8.0 - r *  8.0 + t * .68)), 8.0);
+    float rings = band(fract(r * 2.2 - t * .22), .5, .085) * .55;
+    return vec2(clamp(l1 * .72 + l2 * .62 + rings, 0.0, 1.0), l1 * l2 * 3.0);
   }
+
+  /* Invisible — reworked, because caustics are a description of water and
+     the subject is a creature you cannot see. Nothing drawn ON a token can
+     read as invisibility; a texture over the face is the opposite of the
+     claim. What reads is the artwork being carried away, and the only
+     thing left being the disturbance where it used to be.
+
+     So the field is close to nothing across the body — which is the point,
+     because the field is what drives the tint, and a tinted body is a
+     visible body — and the whole budget goes to the edge: a refracting
+     shell at the silhouette, a bloom running round it, and one wipe
+     travelling down that briefly hands the outline back. The warp for this
+     id is the largest in the set and is deliberately not gated on the
+     value, so the body smears whether or not anything is lit on it.
+
+     Two earlier attempts got this wrong the same way and the reason is
+     worth keeping: this composite turns the field into BOTH the tint and
+     the glow, so a condition that fills the disc with a high value is a
+     condition that lights the whole token up. A veil over the body drew a
+     glowing bubble. Invisible cannot afford a full-disc field at all, and
+     everything it has to say has to be said at the silhouette. */
   if (id < 7.5) {
-    float caustic=pow(1.0-abs(sin((n*2.2+r*5.0-t*.12)*PI*2.0)),5.0);
-    float prism=pow(.5+.5*sin(a*3.0+p.x*8.0-t*.31),12.0);
-    return clamp(caustic*.86+prism*.42,0.0,1.0);
+    float shell = band(r, .94, .022);
+    float ripple = pow(.5 + .5 * sin((r * 5.0 - t * 1.35) * PI), 6.0) * smoothstep(1.0, .35, r);
+    float wipe = band(fract(p.y * .42 - t * .26), .5, .060);
+    float veil = .26 + smoothstep(.34, .70, fbmD(p * 1.6 + vec2(-t * .14, t * .10), d)) * .30;
+    return vec2(clamp(veil + shell * .70 + wipe * .30 + ripple * .24, 0.0, 1.0),
+                shell * .55 + wipe * ripple * 1.6);
   }
+
+  /* Enraptured — the motes are gone. They were voronoi cell interiors,
+     which are round, evenly spaced and all one size, and a field of those
+     does not read as anything drifting: it reads as polka dots on a face.
+     The subject is rising light, so it is drawn as rising light — lanes
+     that are uneven along x, a climbing phase, and a fade as they go —
+     under a bloom that opens and closes and ribbons that turn through it. */
   if (id < 8.5) {
-    float fibers=pow(.5+.5*cos(a*34.0+n*5.0),14.0);
-    return clamp(fibers*(1.0-r*.35)*.74+band(r,.44+.035*sin(t*.85),.09)*.66,0.0,1.0);
+    float bloom = band(r, .34 + .12 * sin(t * .80), .30);
+    float petals = pow(max(0.0, cos(a * 5.0 + t * .50)), 8.0) * band(r, .52, .34);
+    float swirl = pow(.5 + .5 * cos(a * 3.0 - r * 4.5 + t * .95), 10.0) * smoothstep(1.05, .20, r);
+    float lane = pow(.5 + .5 * sin(p.x * 6.0 + n * 3.0), 20.0);
+    float climb = fract(-p.y * .60 + t * .30 + noise2(vec2(p.x * 3.0, 0.0)));
+    float sparks = lane * band(climb, .5, .14) * smoothstep(1.0, .10, r) * (.45 + .55 * d);
+    return vec2(clamp(bloom * .58 + petals * .34 + swirl * .32 + sparks * .62, 0.0, 1.0),
+                sparks * sparks * 1.20 + petals * bloom * .55);
   }
+
+  /* Corroded — it eats in PATCHES. Corrosion everywhere at once is a
+     colour; corrosion with clean metal beside it is a material. And it has
+     to creep: corrosion that holds its outline is a stain, so the
+     threshold is walked rather than fixed and the boundary is somewhere it
+     was not a moment ago. */
   if (id < 9.5) {
-    float cells=smoothstep(.54,.71,fbm(p*5.6+vec2(t*.035,0.0)));
-    float pits=1.0-smoothstep(.04,.13,voronoiEdge(p*7.0));
-    return clamp(cells*.72+pits*.48,0.0,1.0);
+    float eat = .57 - .09 * sin(t * .30);
+    float patch = smoothstep(eat, eat + .17, fbmD(p * 1.5 + vec2(t * .085, -t * .050), d));
+    float e = voronoiEdge(p * 4.0);
+    float pits = smoothstep(.50, .12, voronoiCell(p * 4.0));
+    float crust = band(e, .30, .105);
+    float fine = (1.0 - smoothstep(.05, .19, voronoiEdge(p * 9.0))) * d;
+    float bloom = band(fract(length(p - vec2(.20, .30)) * .80 - t * .16), .5, .16);
+    return vec2(clamp(patch * (pits * .88 + crust * .55 + fine * .35), 0.0, 1.0),
+                patch * crust * (.55 + .85 * bloom));
   }
+
+  /* Stunned — a front, expanding and dying, with chips off the spokes. Two
+     of them now, half a period apart, because with one there is a dead
+     beat every cycle where the token is only spokes, and a dead beat is
+     where the eye decides nothing is happening. */
   if (id < 10.5) {
-    float shock=band(r,fract(t*.28)*.95,.045);
-    float spokes=pow(max(0.0,cos(a*12.0)),26.0)*(1.0-r*.35);
-    return clamp(shock*.82+spokes*.68,0.0,1.0);
+    float ph1 = fract(t * .46);
+    float ph2 = fract(t * .46 + .5);
+    float ring1 = band(r, ph1 * 1.15, .080) * (1.0 - ph1 * .55);
+    float ring2 = band(r, ph2 * 1.15, .060) * (1.0 - ph2 * .70);
+    float front = band(r, ph1 * 1.15, .016) * (1.0 - ph1);
+    float bearing = cos(a * 5.0 + .55 * sin(t * .90));
+    float spokes = pow(max(0.0, bearing), 9.0) * smoothstep(1.05, .10, r);
+    float chips = pow(max(0.0, bearing), 50.0) * smoothstep(1.05, .10, r) * d;
+    return vec2(clamp(ring1 * .85 + ring2 * .55 + spokes * .62 + chips * .50, 0.0, 1.0),
+                front * 1.7 + chips * .70 + spokes * spokes * .30);
   }
+
+  /* Charged — the one that came back as too small to see, and the cause is
+     a modelling mistake rather than a tuning one. The arc was drawn as
+     pow(1 - |curve|, 14), which is a filament: at 160px it is a hairline
+     and at 40px it is nothing, so all it ever contributed was a faint even
+     lift. A bolt at reading distance is a THICK bright channel with a
+     filament inside it, so the channel is now drawn wide at a low power,
+     the filament rides the same curve at a high one, and there are about
+     three of them across the token instead of a hedge of thin ones.
+
+     Then it strikes. A discharge you can watch continuously is a neon
+     sign; gating the whole thing on a beat is what makes it electrical. */
   if (id < 11.5) {
-    float arcNoise=fbm(vec2(a*2.7,r*8.0-t*.8));
-    float arcs=pow(1.0-abs(sin(a*5.0+arcNoise*7.0)),16.0);
-    float flash=pow(.5+.5*sin(t*4.2+n*8.0),18.0);
-    return clamp(arcs*.88+flash*.48,0.0,1.0);
+    vec2 q = p - vec2(.34, -.52);
+    float qa = atan(q.y, q.x), rr = length(q);
+    float branch = fbmD(vec2(qa * 1.3, rr * 2.6 - t * 1.6), d);
+    float curve = sin(qa * 2.1 + branch * 5.0);
+    float reach = smoothstep(2.1, .04, rr);
+    float channel = pow(1.0 - abs(curve), 5.0) * reach;
+    float fil = pow(1.0 - abs(curve), 26.0) * reach;
+    float beat = pow(.5 + .5 * sin(t * 2.70), 3.0);
+    float strike = pow(.5 + .5 * sin(t * 5.30 + branch * 4.0), 8.0);
+    float halo = smoothstep(.95, .0, rr) * (.25 + .75 * beat);
+    return vec2(clamp(channel * (.55 + .85 * beat) + halo * .40, 0.0, 1.0),
+                fil * (.50 + 1.30 * strike) + channel * channel * 1.1 * beat + halo * halo * .50);
   }
+
+  /* Drained — it runs downward and it has a leading edge. The level it
+     runs to now falls over the loop, so the creature is being emptied
+     rather than standing in a puddle at a fixed height. */
   if (id < 12.5) {
-    float sink=smoothstep(-.6,.82,-p.y+.16*sin(p.x*5.0+t*.3));
-    float trails=pow(.5+.5*sin(p.x*38.0+n*3.0),18.0);
-    return clamp(sink*.64+trails*.28,0.0,1.0);
+    float level = .18 * sin(p.x * 2.6 + t * .40) + .26 * sin(t * .33);
+    float sink = smoothstep(-.62, .92, -p.y + level);
+    float trails = pow(.5 + .5 * sin(p.x * 14.0 + n * 3.0), 8.0);
+    float runs = pow(.5 + .5 * sin(p.x * 38.0 + n * 4.5), 14.0) * d;
+    float drop = band(fract(-p.y * 1.05 + t * .62 + noise2(vec2(p.x * 4.0, 0.0)) * .90), .5, .085)
+               * trails;
+    return vec2(clamp(sink * .76 + trails * sink * .46 + runs * sink * .30 + drop * .60, 0.0, 1.0),
+                drop * 1.0 + trails * sink * .20);
   }
+
+  /* Horrified — the edge advances on a breath, and the front of it is lit.
+     A deeper breath over a wider reach, because the old amplitude moved
+     the boundary by about a twentieth of the token, which at any playable
+     size is a tremble rather than an advance. */
   if (id < 13.5) {
-    float tendrils=pow(.5+.5*cos(a*17.0+n*7.0-t*.34),9.0);
-    float clench=smoothstep(.86,.3,r+.09*sin(a*9.0+t));
-    return clamp(tendrils*clench*.76+band(r,.7,.06)*.42,0.0,1.0);
+    float breath = .5 + .5 * sin(t * .95);
+    float reach = .40 + .26 * breath;
+    float tend = fbmD(vec2(a * 1.8, r * 2.0 - t * .38), d);
+    float mask = smoothstep(reach, 1.10, r + (tend - .5) * .80);
+    float hairs = pow(.5 + .5 * cos(a * 14.0 + tend * 7.0 - t * .55), 7.0) * mask;
+    return vec2(clamp(mask * .96 + hairs * .44, 0.0, 1.0),
+                band(mask, .20, .13) * (.50 + .35 * breath));
   }
+
+  /* Silenced — two waves of equal frequency travelling opposite ways. The
+     bright rings are the nodes where both peak at once, which is what a
+     standing wave is and is why they do not travel. Which is also the
+     problem: a standing wave is by definition stationary, so the node
+     SPACING breathes instead, and the pattern expands and contracts
+     without either wave stopping being what it is. */
   if (id < 14.5) {
-    float wave=pow(.5+.5*cos((r*8.0+t*.35)*PI*2.0),18.0);
-    return clamp(wave*smoothstep(1.0,.1,r)*(.55+.45*n),0.0,1.0);
+    float k = 4.4 + .55 * sin(t * .38);
+    float w1 = pow(.5 + .5 * cos((r * k + t * .55) * PI * 2.0), 8.0);
+    float w2 = pow(.5 + .5 * cos((r * k - t * .55) * PI * 2.0), 8.0);
+    float fine = pow(.5 + .5 * cos(r * 11.0 * PI * 2.0), 12.0) * d;
+    float fall = smoothstep(1.08, .04, r);
+    return vec2(clamp((w1 + w2) * .5 * fall * 1.05 + fine * fall * .35, 0.0, 1.0),
+                w1 * w2 * fall * 2.6);
   }
-  vec2 flameP=vec2(p.x*2.5,p.y*2.8-t*.65);
-  float flameNoise=fbm(flameP+vec2(0.0,sin(p.x*5.0+t)*.22));
-  float flame=smoothstep(.36,.78,flameNoise+(p.y+1.0)*.27);
-  return clamp(flame*.84+pow(.5+.5*sin(p.x*18.0+flameNoise*10.0),10.0)*flame*.42,0.0,1.0);
+
+  /* Ablaze — the domain warp is what makes a flame turn over itself
+     instead of scrolling upward as a sheet, and fire is the subject where
+     the extra octaves matter most, because fire is all detail. Larger
+     tongues and a faster rise: at 40px a fire is a SHAPE before it is a
+     texture, and the shape is the part that has to survive. */
+  vec2 flameP = vec2(p.x * 1.70, p.y * 1.90 - t * 1.05);
+  vec2 curl = vec2(gnoise(flameP * .55 + t * .55), gnoise(flameP * .55 + 7.0 - t * .42))
+            * .72 * (.35 + .65 * d);
+  float flameNoise = fbmD(flameP + vec2(0.0, sin(p.x * 3.0 + t * 1.30) * .30) + curl, d);
+  float lift = flameNoise + (p.y + 1.0) * .30;
+  float flame = smoothstep(.38, .78, lift);
+  float tongues = pow(.5 + .5 * sin(p.x * 8.0 + flameNoise * 7.0 + t * .50), 6.0) * flame;
+  return vec2(clamp(flame * .90 + tongues * .34, 0.0, 1.0), smoothstep(.80, 1.08, lift) * .82);
 }
 
 vec2 conditionWarp(float id, vec2 p, float t, float value) {
   float r=length(p); float a=atan(p.y,p.x); vec2 radial=r>.001?p/r:vec2(0.0);
-  if(id<.5)return vec2(sin(p.y*31.0+t),cos(p.x*27.0-t*.7))*value*.009;
-  if(id<1.5)return vec2(fbm(p*2.1+t*.05)-.5,fbm(p*2.3-t*.04+9.0)-.5)*.022;
-  if(id<2.5)return -radial*value*.018;
-  if(id<3.5)return vec2(sin(p.y*8.0+t*.6),cos(p.x*5.0-t*.3))*.014;
-  if(id<4.5)return radial*sin(t*1.6+r*12.0)*value*.012;
-  if(id<5.5)return vec2(.018*sin(t*.7),-.01*cos(t*.5))*value;
-  if(id<6.5)return vec2(-p.y,p.x)*value*.012;
-  if(id<7.5)return vec2(sin((p.y+value)*19.0+t),cos((p.x-value)*17.0-t))*.019;
-  if(id<8.5)return -radial*value*.014;
-  if(id<9.5)return radial*(fbm(p*6.0+t*.03)-.5)*.024;
-  if(id<10.5)return radial*sin(r*27.0-t*2.4)*value*.018;
-  if(id<11.5)return vec2(sin(a*9.0+t*4.0),cos(a*7.0-t*3.0))*value*.014;
-  if(id<12.5)return vec2(0.0,value*.025);
-  if(id<13.5)return -radial*value*.021;
-  if(id<14.5)return radial*sin(r*34.0+t*1.3)*value*.013;
-  return vec2(sin(p.y*13.0+t*2.0),value*-.8)*value*.015;
+  if(id<.5)return vec2(sin(p.y*18.0+t*1.4),cos(p.x*16.0-t*1.1))*value*.014;
+  if(id<1.5)return vec2(fbm(p*2.1+t*.11)-.5,fbm(p*2.3-t*.09+9.0)-.5)*.030;
+  if(id<2.5)return -radial*value*.024;
+  if(id<3.5)return vec2(sin(p.y*5.0+t*1.1),cos(p.x*4.0-t*.8))*.020;
+  if(id<4.5)return radial*sin(t*2.2+r*8.0)*value*.016;
+  if(id<5.5)return vec2(.024*sin(t*1.1),-.014*cos(t*.8))*value;
+  if(id<6.5)return vec2(-p.y,p.x)*value*.020;
+  /* The largest displacement in the set, and the only one not multiplied
+     by its own value. Invisible spends nothing on colouring the body, so
+     on the body the warp IS the condition: the artwork has to be carried
+     away whether or not anything is lit over it. */
+  if(id<7.5)return (vec2(sin(p.y*6.5+t*1.10),cos(p.x*5.5-t*.85))*.055-radial*.036)
+                   *(.55+.45*sin(t*.70));
+  if(id<8.5)return -radial*value*.020;
+  if(id<9.5)return radial*(fbm(p*4.0+t*.09)-.5)*.030;
+  if(id<10.5)return radial*sin(r*16.0-t*3.2)*value*.024;
+  if(id<11.5)return vec2(sin(a*6.0+t*5.0),cos(a*5.0-t*4.0))*value*.020;
+  if(id<12.5)return vec2(0.0,value*.032);
+  if(id<13.5)return -radial*value*.028;
+  if(id<14.5)return radial*sin(r*20.0+t*2.0)*value*.017;
+  return vec2(sin(p.y*9.0+t*2.6),value*-.8)*value*.020;
 }
 
 vec3 conditionAccent(float id, vec3 base, vec2 p, float t, float value) {
   float r=length(p); float a=atan(p.y,p.x);
   if(id<.5)return mix(base,vec3(.92,.82,1.0),value*.7);
   if(id<1.5)return mix(vec3(.025,.045,.065),base,.42+value*.25);
-  if(id<2.5)return mix(vec3(.16,.2,.25),vec3(.92,.96,1.0),value*.78);
-  if(id<3.5)return mix(base*.42,vec3(.78,.88,1.0),value*.62);
+  /* The old ramp went to near-white across the whole of its range, which
+     was right for a hairline ring and turns a thick band into white tape.
+     Cubing it keeps the band dark iron and spends the brightness only on
+     its lit edge. */
+  if(id<2.5)return mix(vec3(.075,.085,.11),vec3(.44,.50,.60),pow(value,2.0));
+  if(id<3.5)return mix(base*.26,base*1.35,value);
   if(id<4.5)return mix(vec3(.34,.015,.035),vec3(1.0,.52,.58),value*.76);
   if(id<5.5)return mix(base,vec3(.76,1.0,.96),value*.7);
   if(id<6.5)return mix(vec3(.22,.015,.32),vec3(.94,.51,1.0),value*.82);
-  if(id<7.5)return .58+.42*cos(vec3(0.0,2.1,4.2)+a*2.0+r*12.0-t*.7);
+  /* Invisible: neutral cold glass in the body so the tint has nothing to
+     say there, and the chromatic split kept for the rim only, which is
+     exactly where a refracting edge would show one. */
+  if(id<7.5)return mix(vec3(.44,.50,.57),.62+.38*cos(vec3(0.0,2.1,4.2)+r*9.0-t*.9),
+                       smoothstep(.80,.97,r)*pow(value,1.5));
   if(id<8.5)return mix(vec3(.38,.02,.16),vec3(1.0,.78,.88),value*.76);
   if(id<9.5)return mix(vec3(.1,.2,.025),vec3(.82,1.0,.34),value*.78);
   if(id<10.5)return mix(base,vec3(1.0,.96,.58),value*.82);
@@ -251,42 +561,21 @@ vec3 conditionAccent(float id, vec3 base, vec2 p, float t, float value) {
   return mix(vec3(.62,.045,.008),vec3(1.0,.86,.27),clamp(value+p.y*.16,0.0,1.0));
 }
 
-vec2 shardCenter(float id) {
-  if(id<.5)return vec2(-.52,-.58); if(id<1.5)return vec2(.34,-.60);
-  if(id<2.5)return vec2(-.68,-.04); if(id<3.5)return vec2(-.10,-.13);
-  if(id<4.5)return vec2(.56,-.01); if(id<5.5)return vec2(-.43,.55);
-  return vec2(.33,.58);
-}
-vec2 shardOffset(float id) {
-  if(id<.5)return vec2(-.112,-.082); if(id<1.5)return vec2(-.018,-.114);
-  if(id<2.5)return vec2(.112,-.069); if(id<3.5)return vec2(-.123,.018);
-  if(id<4.5)return vec2(-.012,.009); if(id<5.5)return vec2(.124,.039);
-  return vec2(.027,.123);
-}
-float shardAngle(float id) {
-  if(id<.5)return -.065; if(id<1.5)return .035; if(id<2.5)return .082;
-  if(id<3.5)return .055; if(id<4.5)return -.025; if(id<5.5)return -.072;
-  return .047;
-}
 vec2 turn(vec2 p,float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c)*p;}
 
-/* -- token space, not filter space --------------------------------
-   PIXI does NOT hand a filter a 0..1 coordinate over its object. Its
-   vertex shader writes
+/* Nine sites on a golden-angle spiral rather than seven placed by hand.
+   The spiral is not decoration: hand-placed sites drift into pairs, and a
+   pair of close sites makes a long thin sliver, which is the one shard
+   shape that reads as a mistake rather than as glass. The spiral cannot
+   produce one, and it stays deterministic, so the break is the same break
+   every time a token dies. */
+vec2 shardSite(float i) {
+  float a = i * 2.39996 + .70;
+  return vec2(cos(a), sin(a)) * (.14 + .30 * sqrt(i));
+}
+float shardSpin(float i) { return (hash21(vec2(i, 5.51)) - .5) * .17; }
+float shardPush(float i) { return .030 + .055 * hash21(vec2(i, 17.3)); }
 
-       vTextureCoord = aVertexPosition * (outputFrame.zw * inputSize.zw)
-
-   so the coordinate spans only outputFrame/inputSize of a POOLED texture.
-   outputFrame.zw is the token's size in screen pixels and moves with the
-   camera; inputSize.xy comes from a pool that snaps to discrete sizes. The
-   ratio therefore changes as you zoom -- and reading vTextureCoord * 2 - 1
-   as if it were the token would rescale every frequency below with it,
-   which is a texture that swims under the creature instead of belonging
-   to it.
-
-   tokenUv divides that ratio back out, so 0..1 is the token at every zoom;
-   sampleArt is its inverse and clamps to the frame, because sampling past
-   inputClamp reads whatever else the pool is holding. */
 vec2 tokenUv(vec2 tex){ return tex * inputSize.xy / outputFrame.zw; }
 
 vec4 sampleArt(vec2 local){
@@ -294,45 +583,113 @@ vec4 sampleArt(vec2 local){
   return texture2D(uSampler, clamp(tex, inputClamp.xy, inputClamp.zw));
 }
 
-vec4 shattered(vec2 uv, vec2 p) {
-  float first=99.0; float second=99.0; float sid=0.0;
-  for(int i=0;i<7;i++){
-    float fi=float(i);
-    float rough=(noise2(p*4.0+vec2(fi*7.1,fi*3.3))-.5)*.09;
-    float d=distance(p,shardCenter(fi))+rough;
-    if(d<first){second=first;first=d;sid=fi;} else if(d<second){second=d;}
+/* -- the break ---------------------------------------------------------
+   Dead is the only state in this shader that REPLACES the creature rather
+   than dressing it, so it is the one that has to hold up as a picture on
+   its own terms. Three things it did not have:
+
+   SEPARATION. The pieces used to be re-cut in place: each shard sampled
+   the artwork from a hand-written offset, and the gap between shards was a
+   constant. Each shard now carries its art along its own escape vector,
+   outward from the centre, and the gap opens on a long settle — so the
+   token is a thing that came apart, and is still coming apart while you
+   look at it.
+
+   THICKNESS. Glass has an edge, and an edge has a side facing the light
+   and a side facing away. The direction across a seam is the vector
+   between the two nearest sites, so one dot product against a fixed key
+   gives every shard a lit lip on one side and a shadowed one on the other.
+   That single term is most of the difference between cut paper and a
+   broken pane.
+
+   A WORLD. Dust falls through it and a cold glint crosses the faces on a
+   twenty-second loop, so a dead token is still an object in a scene rather
+   than a decal of one. The loop is deliberately far slower than anything a
+   living condition does: it should register as stillness that happens to
+   be lit, not as an effect running. */
+vec4 shattered(vec2 uv, vec2 p, float t, float d) {
+  float first = 99.0, second = 99.0, sid = 0.0;
+  vec2 nearSite = vec2(0.0), nextSite = vec2(0.0);
+  for (int i = 0; i < 9; i++) {
+    float fi = float(i);
+    vec2 site = shardSite(fi);
+    float rough = (noise2(p * 3.2 + vec2(fi * 7.1, fi * 3.3)) - .5) * .11;
+    float dist = distance(p, site) + rough;
+    if (dist < first) {
+      second = first; nextSite = nearSite;
+      first = dist; nearSite = site; sid = fi;
+    } else if (dist < second) { second = dist; nextSite = site; }
   }
-  float seam=second-first;
-  float solid=smoothstep(.052,.112,seam);
-  vec2 source=turn(p-shardOffset(sid),-shardAngle(sid));
-  float circle=1.0-smoothstep(.93,.985,length(source));
-  vec2 suv=source*.5+.5;
-  vec4 art=sampleArt(suv);
-  float lum=dot(art.rgb,vec3(.2126,.7152,.0722));
-  float grain=noise2(source*92.0)-.5;
-  float innerEdge=band(seam,.128,.022);
-  float rim=band(length(source),.91,.022);
-  vec3 cold=vec3(lum*.72+grain*.045);
-  cold=mix(cold,vec3(.76,.81,.84),innerEdge*.42+rim*.36);
-  cold*=.7+.3*smoothstep(-.9,.8,-source.y);
-  return vec4(clamp(cold,0.0,1.0),art.a*solid*circle);
+  float seam = second - first;
+
+  float settle = .5 + .5 * sin(t * .16);
+  float solid = smoothstep(.026 + .024 * settle, .094 + .024 * settle, seam);
+
+  vec2 escape = normalize(nearSite + vec2(.0001));
+  vec2 source = turn(p - escape * shardPush(sid) * (.55 + .45 * settle), -shardSpin(sid));
+  float circle = 1.0 - smoothstep(.93, .995, length(source));
+  vec4 art = sampleArt(source * .5 + .5);
+  float lum = dot(art.rgb, vec3(.2126, .7152, .0722));
+
+  vec2 across = normalize(nextSite - nearSite + vec2(.0001));
+  float bevel = (1.0 - smoothstep(.0, .085, seam)) * dot(across, normalize(vec2(-.45, -.89)));
+
+  float craze = (1.0 - smoothstep(.02, .10, voronoiEdge(p * 7.5)))
+              * smoothstep(.07, .26, seam) * d;
+  float grain = noise2(source * 82.0) - .5;
+  float glint = band(fract(p.x * .62 + p.y * .38 - t * .052), .5, .075);
+  float dust = smoothstep(.10, .015, voronoiCell(vec2(p.x * 5.5 + sin(t * .20),
+                                                      p.y * 5.5 + t * .16)));
+
+  vec3 cold = mix(vec3(lum), vec3(.62, .72, .88) * lum, .62);
+  cold *= .66 + .34 * smoothstep(-.95, .85, -source.y);
+  cold += vec3(.80, .86, .94) * max(bevel, 0.0) * (.34 + .58 * glint);
+  cold *= 1.0 - max(-bevel, 0.0) * .55;
+  cold += vec3(.70, .78, .90) * craze * .30;
+  cold += vec3(.66, .74, .86) * dust * .22;
+  cold += grain * .05;
+  return vec4(clamp(cold, 0.0, 1.0), art.a * solid * circle);
 }
 
 void main() {
   vec2 uv=tokenUv(vTextureCoord);
   vec2 p=uv*2.0-1.0;
-  if(uDead>.5){gl_FragColor=shattered(uv,p);return;}
+
+  /* Detail is bought with pixels. outputFrame.z is the token's width on
+     screen, so a creature filling the viewport gets its second register of
+     structure and one at 40px never renders the frequencies that would
+     crawl. Nothing else in this shader is allowed to know about the
+     camera — see tokenUv — and this is the deliberate exception, because
+     the question "how much detail can be resolved" is a question about
+     pixels by definition. */
+  float detail = smoothstep(44.0, 104.0, outputFrame.z);
+
+  if(uDead>.5){gl_FragColor=shattered(uv,p,uTime,detail);return;}
 
   vec4 original=sampleArt(uv);
   float circle=1.0-smoothstep(.94,1.0,length(p));
   vec3 colorSum=vec3(0.0); vec3 accentSum=vec3(0.0); vec2 warp=vec2(0.0);
-  float survival=1.0; float peak=0.0; float darkness=0.0;
+  float survival=1.0; float peak=0.0; float hot=0.0; float darkness=0.0;
   for(int i=0;i<5;i++){
     if(float(i)>=uCount)break;
     float id=idAt(i); float localTime=uTime+float(i)*1.73;
-    float value=conditionPattern(id,p,localTime);
+    vec2 field=conditionPattern(id,p,localTime,detail);
+
+    /* One contrast curve over every condition's field, and it is the single
+       cheapest thing on this page that makes a material read as bold rather
+       than as a wash. The shipped patterns spend most of their area in the
+       middle of the range, which is exactly where a tint applied over a
+       portrait disappears into it: a value of .45 across half the token is
+       a haze, and two hazes of different hues are the same haze. The gain
+       widens the range first and the smoothstep curve then fixes both ends
+       and pushes everything between them outward, so a condition has
+       places it IS and places it is not. Applied here rather than in
+       sixteen branches because it is one claim about all of them. */
+    float value=clamp(field.x*1.16-.055,0.0,1.0);
+    value=value*value*(3.0-2.0*value);
     colorSum+=colorAt(i); accentSum+=conditionAccent(id,colorAt(i),p,localTime,value);
-    warp+=conditionWarp(id,p,localTime,value); survival*=1.0-value*.72; peak=max(peak,value);
+    warp+=conditionWarp(id,p,localTime,value); survival*=1.0-value*.72;
+    peak=max(peak,value); hot=max(hot,clamp(field.y,0.0,1.0));
     if((id>.5&&id<1.5)||(id>11.5&&id<13.5))darkness+=value;
   }
   float count=max(uCount,1.0);
@@ -347,15 +704,30 @@ void main() {
   vec3 accent=uCount>1.0?material:accentSum/count;
   float luminance=dot(warped.rgb,vec3(.2126,.7152,.0722));
   vec3 colorized=accent*(.16+luminance*1.24);
-  float tint=clamp(.18+field*.44+min(uCount-1.0,2.0)*.015,.18,.59);
+  float tint=clamp(.20+field*.56+min(uCount-1.0,2.0)*.020,.20,.70);
   vec3 color=mix(warped.rgb,colorized,tint);
   color*=1.0-clamp(darkness/count,0.0,1.0)*.38;
+
+  /* Everything added to the picture is gathered first and rolled off
+     together. Adding each term straight onto that accumulator and clamping
+     at the end is what turns a bright effect white: the clamp maps every
+     value above 1 to the same place, so a hot core and a merely bright glow
+     arrive at the screen identical. */
   float edge=smoothstep(.48,.98,length(p));
   float glass=pow(max(0.0,1.0-distance(uv,vec2(.36,.27))*1.9),6.0);
   vec3 emissive=mix(accent,vec3(1.0),.52);
-  color+=emissive*pow(peak,3.4)*.3+material*edge*.12+vec3(.72,.83,1.0)*glass*.1;
+  /* The rim is doing a job the rest cannot: at 40px a token is a disc with
+     a colour, and the ring of material around its edge is the only part of
+     any of this that still reads. It is worth more than the interior at
+     that size, so it is weighted for that size rather than for this page. */
+  vec3 glow = emissive*pow(peak,3.4)*.42
+            + material*edge*.30
+            + vec3(.72,.83,1.0)*glass*.1
+            + mix(accent,vec3(1.0),.72)*pow(hot,1.6)*.80;
+  color += glow / (1.0 + glow * .68);
+
   color+=(noise2(uv*118.0+uTime*.03)-.5)*.035*(field+.18);
-  color=clamp((color-.5)*1.08+.5,0.0,1.0);
+  color=clamp((color-.5)*1.14+.5,0.0,1.0);
   gl_FragColor=vec4(mix(original.rgb,color,circle),original.a);
 }`;
 
@@ -446,9 +818,13 @@ const CLOCK_WRAP = 3600;
 function tick(): void {
   if (REDUCED?.matches) return;
   const time = (performance.now() / 1000) % CLOCK_WRAP;
-  for (const filter of filters.values()) {
-    if (filter.uniforms.uDead < .5) filter.uniforms.uTime = time;
-  }
+  /* The break used to be held at a fixed time because it was a still image
+     and advancing it would only have burned a uniform write. It is not still
+     any more: the shards separate on a settle, dust falls through the gaps and
+     a glint crosses the faces on a twenty-second loop, all of them far slower
+     than any living condition so a corpse reads as stillness that happens to
+     be lit rather than as an effect running. */
+  for (const filter of filters.values()) filter.uniforms.uTime = time;
 }
 
 export function registerTokenConditionMaterials(): void {
