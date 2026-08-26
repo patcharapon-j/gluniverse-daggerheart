@@ -60,6 +60,18 @@ assert.match(TOKEN_CONDITION_FRAGMENT, /uv=tokenUv\(vTextureCoord\)/);
 assert.equal((TOKEN_CONDITION_FRAGMENT.match(/texture2D\(/g) ?? []).length, 1,
   "every art read goes through sampleArt, which clamps to inputClamp");
 
+/* Both board layers hang in a stack of ours rather than in `#hud` itself.
+   A layer that is a direct child of `#hud` competes with Foundry's own
+   furniture — the Token HUD's buttons, #measurement, the chat bubbles —
+   none of which carries a z-index, so any positive one of ours wins and a
+   chip draws over the buttons you opened to act on that creature. */
+for (const file of ["token-hud.ts", "range-ruler.ts"]) {
+  const source = readFileSync(new URL(`../src/module/${file}`, import.meta.url), "utf8");
+  assert.match(source, /boardStack\(\)/, `${file} must hang its layer in the board stack`);
+  assert.doesNotMatch(source, /^\s*(?:const|let)\s+host\s*=\s*hudElement\(\)/m,
+    `${file} may not hang a layer directly on #hud`);
+}
+
 const css = readFileSync(new URL("../styles/token.css", import.meta.url), "utf8");
 assert.match(css, /\.dh\.tok\.defeated \.tkcond/);
 assert.match(css, /\.dh\.tok\.defeated \.er-shell > \.er-ring/);

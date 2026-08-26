@@ -124,6 +124,14 @@
    stage, so it inherits the alignment rather than computing one — see the
    long note at the head of `src/module/token-hud.ts` for why three earlier
    builds hung it beside that element instead and drifted. */
+/* The z-index is a claim about the ruler's layer and about nothing else.
+   It used to be made among `#hud`'s own children, where the other tenants
+   are Foundry's — the Token HUD's buttons, `#measurement`, chat bubbles —
+   and none of them carries a z-index at all, so a `1` here beat every one
+   of them and a chip drew over the buttons you opened to act on the
+   creature it describes. Both layers are inside a stack of our own now and
+   the pair is settled there; `src/module/board-layers.ts` is the element
+   and the argument. */
 .dh.tok-layer{position:absolute;inset:0;pointer-events:none;
   z-index:1;transform-origin:0 0}
 
