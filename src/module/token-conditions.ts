@@ -31,11 +31,32 @@ const PALETTE = [
   "#7785a1", "#8d55b8", "#86a7c9", "#f0783f",
 ] as const;
 
-export const CONDITION_MATERIALS: readonly ConditionMaterialDef[] = CONDITIONS.map((condition, i) => ({
-  id: condition.id,
-  color: rgb(PALETTE[i] ?? "#d8e2ec"),
-  hex: PALETTE[i] ?? "#d8e2ec",
-}));
+/**
+ * The material every condition this system does not name is drawn in.
+ *
+ * A GM can type a condition. There is exactly one material for all of them
+ * and there deliberately is not one each: the sixteen are drawn as what they
+ * ARE, and nothing here knows what "Waterlogged" is. Giving a typed name a
+ * texture picked by hashing it would be this shader inventing a subject,
+ * which is worse than admitting it has none — a creature would be wearing
+ * fire because of how its condition happened to spell.
+ *
+ * It is still a material rather than nothing, and the reason is the ladder
+ * in `token.css`: the sentence naming the condition leaves at 36px and the
+ * material outlives it. A condition whose only expression is the sentence
+ * stops existing the moment you zoom out to look at the fight.
+ */
+export const ADHOC_CONDITION_ID = "adhoc";
+const ADHOC_HEX = "#c8b39a";
+
+export const CONDITION_MATERIALS: readonly ConditionMaterialDef[] = [
+  ...CONDITIONS.map((condition, i) => ({
+    id: condition.id,
+    color: rgb(PALETTE[i] ?? "#d8e2ec"),
+    hex: PALETTE[i] ?? "#d8e2ec",
+  })),
+  { id: ADHOC_CONDITION_ID, color: rgb(ADHOC_HEX), hex: ADHOC_HEX },
+];
 
 /**
  * The material colour a condition is drawn in, for the HUD.
@@ -51,6 +72,38 @@ export function conditionTint(id: string | undefined): string | undefined {
 }
 
 const BY_ID = new Map(CONDITION_MATERIALS.map((material, index) => [material.id, { ...material, index }]));
+
+/** As many as the composite has slots for. */
+export const CONDITION_SLOTS = 5;
+
+/**
+ * The materials a set of active status ids is drawn with.
+ *
+ * Total by construction: an id this file does not know is a condition
+ * somebody typed, and every one of those shares the unnamed material. That
+ * rule lives here rather than at the call site so a caller cannot silently
+ * lose a condition by handing over an id that is not one of the sixteen —
+ * the old `map(get).filter(Boolean)` did exactly that, and did it invisibly.
+ *
+ * Deduped for a reason the sixteen never needed. Five typed conditions are
+ * one texture, and without this they would take every slot the composite has
+ * to say the same thing five times over.
+ */
+export function conditionMaterialsFor(
+  ids: readonly string[],
+): Array<ConditionMaterialDef & { index: number }> {
+  const seen = new Set<string>();
+  const out: Array<ConditionMaterialDef & { index: number }> = [];
+  for (const id of ids) {
+    const key = BY_ID.has(id) ? id : ADHOC_CONDITION_ID;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const material = BY_ID.get(key);
+    if (material) out.push(material);
+    if (out.length === CONDITION_SLOTS) break;
+  }
+  return out;
+}
 const MARK = Symbol("daggerheartConditionMaterial");
 const filters = new Map<any, any>();
 let FilterClass: any;
@@ -538,15 +591,63 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      instead of scrolling upward as a sheet, and fire is the subject where
      the extra octaves matter most, because fire is all detail. Larger
      tongues and a faster rise: at 40px a fire is a SHAPE before it is a
-     texture, and the shape is the part that has to survive. */
-  vec2 flameP = vec2(p.x * 1.70, p.y * 1.90 - t * 1.05);
-  vec2 curl = vec2(gnoise(flameP * .55 + t * .55), gnoise(flameP * .55 + 7.0 - t * .42))
-            * .72 * (.35 + .65 * d);
-  float flameNoise = fbmD(flameP + vec2(0.0, sin(p.x * 3.0 + t * 1.30) * .30) + curl, d);
-  float lift = flameNoise + (p.y + 1.0) * .30;
-  float flame = smoothstep(.38, .78, lift);
-  float tongues = pow(.5 + .5 * sin(p.x * 8.0 + flameNoise * 7.0 + t * .50), 6.0) * flame;
-  return vec2(clamp(flame * .90 + tongues * .34, 0.0, 1.0), smoothstep(.80, 1.08, lift) * .82);
+     texture, and the shape is the part that has to survive.
+
+     It used to be the fall-through and is an explicit branch now, because
+     the fall-through has a better tenant: whatever this shader was handed
+     that it does not recognise. */
+  if (id < 15.5) {
+    vec2 flameP = vec2(p.x * 1.70, p.y * 1.90 - t * 1.05);
+    vec2 curl = vec2(gnoise(flameP * .55 + t * .55), gnoise(flameP * .55 + 7.0 - t * .42))
+              * .72 * (.35 + .65 * d);
+    float flameNoise = fbmD(flameP + vec2(0.0, sin(p.x * 3.0 + t * 1.30) * .30) + curl, d);
+    float lift = flameNoise + (p.y + 1.0) * .30;
+    float flame = smoothstep(.38, .78, lift);
+    float tongues = pow(.5 + .5 * sin(p.x * 8.0 + flameNoise * 7.0 + t * .50), 6.0) * flame;
+    return vec2(clamp(flame * .90 + tongues * .34, 0.0, 1.0), smoothstep(.80, 1.08, lift) * .82);
+  }
+
+  /* The seventeenth, and the only one whose subject is unknown: a condition
+     a GM typed the name of. Everything above draws a THING — fire, rot,
+     rope, a lattice — and this one may not, because it has not been told
+     what is happening. Inventing a subject would be worse than having
+     none: a creature the GM has marked Waterlogged should not be wearing
+     the texture of something else.
+
+     What it does have to say is that the creature is marked at all, and it
+     has to say it at 40px, where the sentence naming the thing is already
+     gone and this is the whole of what is left. So: a ring of marks
+     turning at the rim, which is where a small token has any pixels to
+     spend, over a wash that breathes. Nothing else in the set turns
+     steadily, so it does not read as any of them, and a mark is the one
+     shape that means "noted" without meaning anything in particular.
+
+     It is a sash across the body rather than a ring at the rim, and that is
+     not a style choice. The rim already has a tenant: the chip's rotating
+     sentence is a band of lettering at exactly that radius, and the sixteen
+     that live out there — the reticle, the standing waves — are named
+     things the sentence is naming with them. A seventeenth ring competing
+     with the words for the same pixels would read as a rendering fault. */
+  float across = p.x * .78 + p.y * .62;
+  float along = p.x * .62 - p.y * .78;
+  float drift = .11 * sin(t * .42);
+  float ribbon = band(across, drift, .26);
+  float hem = band(abs(across - drift), .26, .040);
+  /* Tally marks, going along it. A blank sash is a colour swatch; the marks
+     are what make it a thing somebody wrote on, and they are the part that
+     tells you it is the same condition you saw last round. */
+  float tally = pow(max(0.0, sin(along * 8.5 + t * .60)), 10.0) * ribbon;
+  float wash = (.24 + .32 * smoothstep(.30, .82, fbmD(p * 1.2 + vec2(t * .06, -t * .05), d)))
+             * smoothstep(1.05, .14, r);
+  float breath = .5 + .5 * sin(t * .90);
+  float fade = smoothstep(1.02, .26, r);
+  /* The hems carry most of the field and little of the heat. They were the
+     other way round for a build and the sash arrived as two white tapes:
+     hot is near-white by construction, so anything long and thin given a
+     high one stops being the colour it was drawn in. */
+  return vec2(clamp(wash * .42 + ribbon * fade * .72 + hem * fade * .92 + tally * fade * .60,
+                    0.0, 1.0),
+              hem * fade * (.20 + .30 * breath) + tally * fade * .58);
 }
 
 vec2 conditionWarp(float id, vec2 p, float t, float value) {
@@ -578,7 +679,11 @@ vec2 conditionWarp(float id, vec2 p, float t, float value) {
   if(id<12.5)return vec2(0.0,value*.032);
   if(id<13.5)return -radial*value*.028;
   if(id<14.5)return radial*sin(r*20.0+t*2.0)*value*.017;
-  return vec2(sin(p.y*9.0+t*2.6),value*-.8)*value*.020;
+  if(id<15.5)return vec2(sin(p.y*9.0+t*2.6),value*-.8)*value*.020;
+  /* The unnamed one barely moves the artwork. It is a mark ON a creature
+     rather than something happening TO one, and a displacement is the most
+     literal claim in this shader about a subject it has not been told. */
+  return radial*sin(t*.80)*value*.010;
 }
 
 vec3 conditionAccent(float id, vec3 base, vec2 p, float t, float value) {
@@ -606,7 +711,10 @@ vec3 conditionAccent(float id, vec3 base, vec2 p, float t, float value) {
   if(id<12.5)return mix(vec3(.025,.035,.065),base*.72,value*.35);
   if(id<13.5)return mix(vec3(.035,.005,.055),vec3(.68,.23,.82),value*.7);
   if(id<14.5)return mix(vec3(.1,.2,.31),vec3(.78,.91,1.0),value*.72);
-  return mix(vec3(.62,.045,.008),vec3(1.0,.86,.27),clamp(value+p.y*.16,0.0,1.0));
+  if(id<15.5)return mix(vec3(.62,.045,.008),vec3(1.0,.86,.27),clamp(value+p.y*.16,0.0,1.0));
+  /* Parchment, and deliberately the only warm neutral in the set. Every
+     other ramp names a substance; this one names a note somebody wrote. */
+  return mix(vec3(.13,.11,.09),vec3(.96,.89,.76),value*.80);
 }
 
 vec2 turn(vec2 p,float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c)*p;}
@@ -873,7 +981,7 @@ export function syncTokenConditionMaterial(token: any, ids: readonly string[], d
     filters.set(token, filter);
   }
 
-  const materials = ids.map((id) => BY_ID.get(id)).filter(Boolean).slice(0, 5) as Array<ConditionMaterialDef & { index: number }>;
+  const materials = conditionMaterialsFor(ids);
   filter.uniforms.uCount = dead ? 0 : materials.length;
   filter.uniforms.uDead = dead ? 1 : 0;
   materials.forEach((material, i) => {

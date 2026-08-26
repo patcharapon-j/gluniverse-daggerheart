@@ -111,9 +111,13 @@ export const PALETTE = [
   '#ef4c5c', '#76d8d1', '#c467e8', '#a8dbe7',
   '#e78ba7', '#9bc45b', '#f2c85c', '#55bff5',
   '#7785a1', '#8d55b8', '#86a7c9', '#f0783f',
+  /* The seventeenth, and the only warm neutral: whatever the GM typed. */
+  '#c8b39a',
 ];
 
-/** id, label, and what this pass changed. Order IS the shader branch order. */
+/** id, label, and what this pass changed. Order IS the shader branch order.
+    The last entry is the shader's fall-through and is not in CONDITIONS in
+    `config.ts`: it is the material for every condition a GM types. */
 export const CONDITIONS = [
   ['vulnerable',    'Vulnerable',      'Bigger shards, and a stress front running out from the impact, so the fracture is something that happened rather than something that is.'],
   ['hidden',        'Hidden',          'Three smoke registers at roughly double the speed, over a tide that surges instead of sitting at a fixed line.'],
@@ -130,7 +134,8 @@ export const CONDITIONS = [
   ['drained',       'Drained',         'Wider runs, a level that actually falls over the loop, and drops at nearly double the rate.'],
   ['horrified',     'Horrified',       'A deeper breath over a wider reach, so the edge advances across a real distance rather than trembling in place.'],
   ['silenced',      'Silenced',        'Rings half as frequent and twice as thick, with the node spacing itself breathing so a standing wave still has somewhere to go.'],
-  ['ablaze',        'Ablaze',          'Larger tongues, a faster rise, and a stronger curl, because a fire at 40px is a shape before it is a texture.'],
+  ['ablaze',        'Ablaze',          'Larger tongues, a faster rise, and a stronger curl, because a fire at 40px is a shape before it is a texture. No longer the fall-through, because the fall-through has a better tenant.'],
+  ['adhoc',         'Named by the GM', 'The one whose subject is unknown. Everything above draws a thing; this cannot, because nobody told it what is happening, and inventing a subject would put the texture of something else on the creature. A ring of marks turning at the rim over a wash that breathes: it says the creature is noted, at the size where the sentence naming it has already gone.'],
 ];
 
 /** Not a condition: a separate branch of the shader, and its own row. */

@@ -113,10 +113,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { adhocConditions } from "./adhoc-conditions.ts";
 import { boardStack, boardStackHosted } from "./board-layers.ts";
 import { CONDITIONS, SYSTEM_ID } from "./config.ts";
 import { TOKEN_CHIP, chipScale, setChip, setTier } from "./ui/token.js";
 import {
+  ADHOC_CONDITION_ID,
   clearTokenConditionMaterial,
   conditionTint,
   registerTokenConditionMaterials,
@@ -202,9 +204,16 @@ function stateOf(token: any): ChipState | null {
 
   const sys = actor.system ?? {};
   const res = sys.resources ?? {};
+  /* The sixteen first, in CONDITIONS' own order, then whatever the GM typed
+     in the order they typed it. Two lists rather than one sorted list, and
+     the split is deliberate: the named conditions read the same way on every
+     token at the table because their order is a constant, and an ad-hoc one
+     has no place in that order to be given. */
   const active = CONDITIONS.filter((condition) => actor.statuses?.has?.(condition.id));
-  const conditionIds = active.map((condition) => condition.id);
-  const conditions = active.map((condition) => condition.name);
+  const adhoc = adhocConditions(actor);
+  const adhocTint = conditionTint(ADHOC_CONDITION_ID) ?? "";
+  const conditionIds = [...active.map((c) => c.id), ...adhoc.map((c) => c.id)];
+  const conditions = [...active.map((c) => c.name), ...adhoc.map((c) => c.name)];
 
   /* Each condition names itself in its own colour, and `tint` is the key
      the rest of the sentence is set in — the FIRST condition's, which is
@@ -217,8 +226,8 @@ function stateOf(token: any): ChipState | null {
      either. What did change is the conclusion drawn from it. "These cannot
      be averaged" is not "one of them has to win" — the sentence has a word
      per condition and each word can carry its own. */
-  const tints = conditionIds.map((id) => conditionTint(id) ?? "");
-  const tint = conditionTint(conditionIds[0]);
+  const tints = [...active.map((c) => conditionTint(c.id) ?? ""), ...adhoc.map(() => adhocTint)];
+  const tint = tints[0] || undefined;
   const defeated = !!actor.statuses?.has?.(CONFIG.specialStatusEffects?.DEFEATED ?? "dead");
 
   /* Read off the placeable, not the document: `controlled` is this

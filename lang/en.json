@@ -190,6 +190,13 @@
       "EmptyNote": "Changes to a character's tracks, counters and loadout land here as they settle.",
       "GMOnly": "The activity log is the GM's record of the table.",
       "Failed": "The activity log could not be opened — see the console."
+    },
+    "Condition": {
+      "Title": "Name a condition",
+      "Hint": "Daggerheart names sixteen conditions. This is for the ones it does not: what you tell the table is happening to this creature.",
+      "Placeholder": "Waterlogged",
+      "Apply": "Apply",
+      "Clear": "clear"
     }
   }
 }
