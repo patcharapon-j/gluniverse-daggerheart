@@ -80,6 +80,30 @@
  *   Dead is the one state that replaces the creature rather than dressing
  *   it, so it is the one that has to hold up as a picture on its own. It
  *   gets separation, thickness and a world — see `shattered`.
+ *
+ * ── PASS FOUR ─────────────────────────────────────────────────────────
+ * Four rows came back and none of the four was a tuning note.
+ *
+ *   Dead was drawing OUTSIDE the creature. The shard edge test was on the
+ *   displaced coordinate and only on that, which is p pulled inward by the
+ *   escape push — so a fragment a push outside the token read as inside the
+ *   artwork and drew, and the only thing out there to stop it was the
+ *   filter's own square frame. A disc inflated until it met four straight
+ *   edges. The creature's circle is a fact about p and is now asked as one.
+ *
+ *   Corroded had its weights inverted. Its accent ramps dark green to acid
+ *   green with the field, so whatever holds the high value is what turns
+ *   bright, and the pit interiors held it: a photograph of rust with the
+ *   exposure reversed, which arrives as an even wash and reads as nothing.
+ *
+ *   Charged was still a stripe. pow 5 is about a fortieth of the token
+ *   across, which is one pixel at the size that matters, and a smooth
+ *   stripe is not electricity at any width. It gets a thicker channel,
+ *   forks that come and go along it, and charge that travels.
+ *
+ *   Invisible was displacing the face by nearly a tenth of the creature.
+ *   What reads as invisible is something you can still identify, seen
+ *   through something else; past that it is a thing melting.
  */
 
 export const PALETTE = [
@@ -98,11 +122,11 @@ export const CONDITIONS = [
   ['markedForDeath','Marked for Death','The reticle turns, the sweep runs twice as fast, and the whole mark pulses on a lock rhythm.'],
   ['spectral',      'Spectral',        'Scan lines a third as fine, so they survive 40px as lines rather than aliasing into grey, and the sweep moves twice as fast through them.'],
   ['hexed',         'Hexed',           'Coarser lattices counter-rotating at nearly double the rate. The moire is now the fastest thing on the token.'],
-  ['invisible',     'Invisible',       'Reworked. The body is left almost untinted and heavily displaced; the whole budget goes to the refracting shell and a wipe that hands the outline back.'],
+  ['invisible',     'Invisible',       'The budget still goes to the refracting shell and the wipe that hands the outline back. The displacement is a third of what it was: at the old amplitude the creature stopped being identifiable, and a creature you cannot identify is not invisible, it is melting.'],
   ['enraptured',    'Enraptured',      'The motes are gone. Round, evenly spaced, identical dots read as polka dots on a face. This is rising light, drawn as rising light.'],
-  ['corroded',      'Corroded',        'Patches nearly twice the size, and the threshold is walked rather than fixed, so the boundary is somewhere it was not a moment ago.'],
+  ['corroded',      'Corroded',        'The weights are the other way round. Corroded ramps dark green to acid green with the field, so whatever holds the high value is what turns bright, and the pit interiors held it: corrosion with the exposure inverted. The seam network is the bright part of rust and now takes it.'],
   ['stunned',       'Stunned',         'Two fronts half a period apart so there is always one crossing, over five thick spokes instead of seven thin ones.'],
-  ['charged',       'Charged',         'The one called out for being too small. A thick channel with the filament inside it, three bolts instead of a hedge, gated on a discharge beat.'],
+  ['charged',       'Charged',         'Half the exponent again, so the channel is thick enough to survive 40px, with forks that come and go along it and charge that crawls rather than pulsing in place. A smooth stripe is not electricity whatever colour it is.'],
   ['drained',       'Drained',         'Wider runs, a level that actually falls over the loop, and drops at nearly double the rate.'],
   ['horrified',     'Horrified',       'A deeper breath over a wider reach, so the edge advances across a real distance rather than trembling in place.'],
   ['silenced',      'Silenced',        'Rings half as frequent and twice as thick, with the node spacing itself breathing so a standing wave still has somewhere to go.'],
@@ -111,4 +135,4 @@ export const CONDITIONS = [
 
 /** Not a condition: a separate branch of the shader, and its own row. */
 export const DEAD = ['dead', 'Dead',
-  'Nine shards on a spiral, opening on a settle, each with a lit lip and a shadowed one. Dust falls through it and a cold glint crosses it on a twenty-second loop.'];
+  'Nine shards on a spiral, opening on a settle, each with a lit lip and a shadowed one. Dust falls through it and a cold glint crosses it on a twenty-second loop. Clipped to the creature\'s own circle: the shard edge test was on the displaced coordinate alone, so a fragment a push outside the token still drew, and what it drew was the filter\'s square frame.'];

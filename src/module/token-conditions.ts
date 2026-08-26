@@ -393,17 +393,38 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      colour; corrosion with clean metal beside it is a material. And it has
      to creep: corrosion that holds its outline is a stain, so the
      threshold is walked rather than fixed and the boundary is somewhere it
-     was not a moment ago. */
+     was not a moment ago.
+
+     It came back as almost invisible, and the cause is contrast rather
+     than amount. Every term was gated on patch and then summed, so the
+     eaten area arrived as one even value — and the composite turns an even
+     value into an even tint, which over a portrait is a wash you have to
+     be told about. Rust is not even: there is a dark eaten floor, a pale
+     raised rim standing around every pit, and clean metal beside it. The
+     rim is the term that was missing and it is now the one worth the most.
+
+     The frequency also came down. Pitting at 4.0 is a feature about a
+     thirtieth of the token across, which at 40px is the wash again by
+     another route. */
   if (id < 9.5) {
-    float eat = .57 - .09 * sin(t * .30);
-    float patch = smoothstep(eat, eat + .17, fbmD(p * 1.5 + vec2(t * .085, -t * .050), d));
-    float e = voronoiEdge(p * 4.0);
-    float pits = smoothstep(.50, .12, voronoiCell(p * 4.0));
-    float crust = band(e, .30, .105);
-    float fine = (1.0 - smoothstep(.05, .19, voronoiEdge(p * 9.0))) * d;
+    float eat = .50 - .12 * sin(t * .30);
+    float patch = smoothstep(eat, eat + .13, fbmD(p * 1.5 + vec2(t * .085, -t * .050), d));
+    float e = voronoiEdge(p * 3.2);
+    float pits = smoothstep(.46, .07, voronoiCell(p * 3.2));
+    float rim = 1.0 - smoothstep(.03, .15, e);
+    float lip = 1.0 - smoothstep(.008, .055, e);
+    float fine = smoothstep(.26, .05, voronoiCell(p * 7.4)) * (.40 + .60 * d);
     float bloom = band(fract(length(p - vec2(.20, .30)) * .80 - t * .16), .5, .16);
-    return vec2(clamp(patch * (pits * .88 + crust * .55 + fine * .35), 0.0, 1.0),
-                patch * crust * (.55 + .85 * bloom));
+    /* The weights are the whole of it, and they are the opposite way round
+       from how this shipped. Corroded's accent ramps dark green to acid
+       green with the field, so whatever is given the HIGH value is what
+       turns bright — and the pit interiors had it. That is a photograph of
+       corrosion with the exposure inverted: bright holes in dull metal.
+       The rim is the bright part of rust and the floor of a pit is the dark
+       part, so the seam network takes the value and the interiors keep just
+       enough to stay green rather than going to bare artwork. */
+    return vec2(clamp(patch * (rim * .82 + lip * .34 + fine * .34 + pits * .26), 0.0, 1.0),
+                patch * lip * (.34 + .62 * bloom));
   }
 
   /* Stunned — a front, expanding and dying, with chips off the spokes. Two
@@ -440,13 +461,33 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
     float branch = fbmD(vec2(qa * 1.3, rr * 2.6 - t * 1.6), d);
     float curve = sin(qa * 2.1 + branch * 5.0);
     float reach = smoothstep(2.1, .04, rr);
-    float channel = pow(1.0 - abs(curve), 5.0) * reach;
-    float fil = pow(1.0 - abs(curve), 26.0) * reach;
+    /* Half the exponent again. pow 5 was still a stripe about a fortieth of
+       the token across, which is one pixel at the size this has to survive,
+       and the filament at 26 was a hairline at any size at all. A bolt is
+       thick where the current is and thin only at its own core, so the
+       channel is drawn wide and the filament rides inside it. */
+    float channel = pow(1.0 - abs(curve), 2.6) * reach;
+    float fil = pow(1.0 - abs(curve), 11.0) * reach;
+    /* Forks, and the reason they are worth their four lines: a single
+       smooth channel reads as a painted stripe whatever it is coloured,
+       because nothing in the world is a smooth stripe. Electricity is a
+       path that keeps splitting and most of the splits going nowhere. The
+       fbm gate is what makes them come and go along the bolt rather than
+       standing there as a second bolt. */
+    float fq = sin(qa * 5.3 - branch * 3.4 + 1.7);
+    float fork = pow(1.0 - abs(fq), 6.0) * smoothstep(1.5, .16, rr)
+               * smoothstep(.18, .58, branch);
+    /* And it crawls. Charge on a conductor travels along it; a bolt whose
+       brightness only pulses in place is a neon tube of the same shape. */
+    float crawl = pow(.5 + .5 * sin(rr * 19.0 - t * 8.5 + branch * 6.0), 3.0);
     float beat = pow(.5 + .5 * sin(t * 2.70), 3.0);
     float strike = pow(.5 + .5 * sin(t * 5.30 + branch * 4.0), 8.0);
     float halo = smoothstep(.95, .0, rr) * (.25 + .75 * beat);
-    return vec2(clamp(channel * (.55 + .85 * beat) + halo * .40, 0.0, 1.0),
-                fil * (.50 + 1.30 * strike) + channel * channel * 1.1 * beat + halo * halo * .50);
+    float live = .42 + .58 * beat;
+    return vec2(clamp(channel * live * 1.05 + fork * live * .62 + halo * .34, 0.0, 1.0),
+                fil * live * (.45 + .95 * crawl) * (.55 + 1.05 * strike)
+              + fork * fork * live * .55
+              + channel * channel * 1.15 * beat + halo * halo * .45);
   }
 
   /* Drained — it runs downward and it has a leading edge. The level it
@@ -520,9 +561,16 @@ vec2 conditionWarp(float id, vec2 p, float t, float value) {
   /* The largest displacement in the set, and the only one not multiplied
      by its own value. Invisible spends nothing on colouring the body, so
      on the body the warp IS the condition: the artwork has to be carried
-     away whether or not anything is lit over it. */
-  if(id<7.5)return (vec2(sin(p.y*6.5+t*1.10),cos(p.x*5.5-t*.85))*.055-radial*.036)
-                   *(.55+.45*sin(t*.70));
+     away whether or not anything is lit over it.
+
+     Down by two thirds from where it shipped, and the swing narrowed with
+     it. At .055 plus a .036 pull the face was displaced by nearly a tenth
+     of the creature and the whole of it moved on one slow breath, which
+     stopped being a thing refracting and became a thing melting. What
+     reads as invisible is a creature you can still identify, seen through
+     something. Ungated by value still, for the reason above. */
+  if(id<7.5)return (vec2(sin(p.y*6.5+t*1.10),cos(p.x*5.5-t*.85))*.019-radial*.012)
+                   *(.62+.38*sin(t*.70));
   if(id<8.5)return -radial*value*.020;
   if(id<9.5)return radial*(fbm(p*4.0+t*.09)-.5)*.030;
   if(id<10.5)return radial*sin(r*16.0-t*3.2)*value*.024;
@@ -627,7 +675,23 @@ vec4 shattered(vec2 uv, vec2 p, float t, float d) {
 
   vec2 escape = normalize(nearSite + vec2(.0001));
   vec2 source = turn(p - escape * shardPush(sid) * (.55 + .45 * settle), -shardSpin(sid));
+  /* Two circles, and shipping only the first is what let the break grow out
+     of the token into a square.
+
+     circle is the edge of the ARTWORK, and it has to be measured on
+     source, because a shard that has travelled carries its own edge with
+     it and clipping its art on p would shave the piece rather than move it.
+     But source is p pulled back INWARD by the escape push, so a fragment
+     sitting a full push outside the creature reads as inside the art and
+     draws — and since the only thing out there to stop it is the filter's
+     own frame, what it drew was the frame: a disc inflated until it met
+     four straight edges and four cut corners.
+
+     cell is the creature's own circle, which is a fact about p and about
+     nothing the shards do. It is the same threshold the living branch
+     uses, so a corpse ends exactly where the creature it replaces did. */
   float circle = 1.0 - smoothstep(.93, .995, length(source));
+  float cell = 1.0 - smoothstep(.94, 1.0, length(p));
   vec4 art = sampleArt(source * .5 + .5);
   float lum = dot(art.rgb, vec3(.2126, .7152, .0722));
 
@@ -648,7 +712,7 @@ vec4 shattered(vec2 uv, vec2 p, float t, float d) {
   cold += vec3(.70, .78, .90) * craze * .30;
   cold += vec3(.66, .74, .86) * dust * .22;
   cold += grain * .05;
-  return vec4(clamp(cold, 0.0, 1.0), art.a * solid * circle);
+  return vec4(clamp(cold, 0.0, 1.0), art.a * solid * circle * cell);
 }
 
 void main() {

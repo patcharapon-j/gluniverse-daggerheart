@@ -86,6 +86,18 @@ assert.match(TOKEN_CONDITION_FRAGMENT, /uv=tokenUv\(vTextureCoord\)/);
 assert.equal((TOKEN_CONDITION_FRAGMENT.match(/texture2D\(/g) ?? []).length, 1,
   "every art read goes through sampleArt, which clamps to inputClamp");
 
+/* The break may not leave the creature's own circle. It shipped clipped on
+   `source` alone, which is p pulled inward by the shard's escape push, so a
+   fragment a push outside the token still read as inside the artwork and
+   drew — and the only thing out there to stop it was the filter's square
+   frame, which is what the break grew into. The cell test is on p and there
+   is nothing clever about it; the bug was that it was missing. */
+const shatter = code.slice(code.indexOf("vec4 shattered("), code.indexOf("void main()"));
+assert.match(shatter, /float cell = 1\.0 - smoothstep\(\.94, 1\.0, length\(p\)\);/,
+  "the break needs the creature's own circle, measured on p");
+assert.match(shatter, /art\.a \* solid \* circle \* cell/,
+  "and it has to reach the alpha, or it is a local nobody reads");
+
 /* Both board layers hang in a stack of ours rather than in `#hud` itself.
    A layer that is a direct child of `#hud` competes with Foundry's own
    furniture — the Token HUD's buttons, #measurement, the chat bubbles —
@@ -106,5 +118,5 @@ assert.doesNotMatch(css, /\.tkvuln/);
 assert.doesNotMatch(css, /\.tkarc|\.tkhope|\.tkdiff/,
   "Obsidian orbit replaced the outboard tracks; no legacy selector may survive");
 
-console.log("token conditions: 16 materials, all animated, nine-shard break, "
-  + "joined sentence, icon-free terminal override");
+console.log("token conditions: 16 materials, all animated, nine-shard break clipped to the "
+  + "cell, a colour per condition in one sentence, icon-free terminal override");
