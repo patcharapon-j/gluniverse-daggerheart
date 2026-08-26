@@ -33,11 +33,19 @@
  * element positioned at `bounds.x`/`bounds.y` — **raw scene coordinates, with
  * no transform of its own at all**.
  *
- * So a chip is exactly what Foundry's Token HUD is: a child of `#hud` at the
- * token's scene x and y. There is no matrix here, no offset and no ticker,
- * because there is nothing left for this file to get wrong — the layer is
- * aligned by the same call, on the same element, as everything else Foundry
- * draws over the board.
+ * So a chip is exactly what Foundry's Token HUD is: a descendant of `#hud`
+ * at the token's scene x and y. There is no matrix here, no offset and no
+ * ticker, because there is nothing left for this file to get wrong — the
+ * layer is aligned by the same call, on the same element, as everything else
+ * Foundry draws over the board.
+ *
+ * Descendant rather than child, and only for the last step of it: the layer
+ * hangs in a stack of ours that is itself the first child of `#hud`, because
+ * a layer that IS a child of `#hud` is a sibling of Foundry's own Token HUD
+ * and won that argument on a z-index. `board-layers.ts` is the element and
+ * the whole of the reasoning. The coordinate system is untouched — the stack
+ * is `inset:0` inside the element Foundry aligns, so scene (0,0) is still
+ * scene (0,0).
  *
  * The one thing that buys has a price, and it is the activity log's: `#hud` is
  * an ApplicationV2 whose `_replaceHTML` assigns `innerHTML`, so every render of
@@ -105,9 +113,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { adhocConditions } from "./adhoc-conditions.ts";
+import { boardStack, boardStackHosted } from "./board-layers.ts";
 import { CONDITIONS, SYSTEM_ID } from "./config.ts";
 import { TOKEN_CHIP, chipScale, setChip, setTier } from "./ui/token.js";
 import {
+  ADHOC_CONDITION_ID,
   clearTokenConditionMaterial,
   conditionTint,
   registerTokenConditionMaterials,
@@ -124,6 +135,7 @@ interface ChipState {
   difficulty?: number | null;
   conditions?: string[];
   conditionIds?: string[];
+  tints?: string[];
   /** The first active condition's material colour, for the sentence. */
   tint?: string;
   hidden?: boolean;
@@ -147,12 +159,9 @@ const chips = new Map<string, HTMLElement>();
    coordinate system that has to be aligned by hand. Which is what the
    three drifting builds were.
 
-   Asked of `canvas.hud` first, because that is the API and it is what will
-   still answer if Foundry moves the element or renames the id. */
-function hudElement(): HTMLElement | null {
-  const el = (canvas as any)?.hud?.element ?? document.querySelector("#hud");
-  return el instanceof HTMLElement ? el : null;
-}
+   Both halves now live in `board-layers.ts`, because the ruler needs the
+   same element for the same reason and the two of them also have to be
+   ordered against each other once they are inside it. */
 
 /* ── reading a creature ───────────────────────────────────────────────
    Off the *document*, never off a copy. `ledger.ts` states the general
@@ -195,17 +204,30 @@ function stateOf(token: any): ChipState | null {
 
   const sys = actor.system ?? {};
   const res = sys.resources ?? {};
+  /* The sixteen first, in CONDITIONS' own order, then whatever the GM typed
+     in the order they typed it. Two lists rather than one sorted list, and
+     the split is deliberate: the named conditions read the same way on every
+     token at the table because their order is a constant, and an ad-hoc one
+     has no place in that order to be given. */
   const active = CONDITIONS.filter((condition) => actor.statuses?.has?.(condition.id));
-  const conditionIds = active.map((condition) => condition.id);
-  const conditions = active.map((condition) => condition.name);
+  const adhoc = adhocConditions(actor);
+  const adhocTint = conditionTint(ADHOC_CONDITION_ID) ?? "";
+  const conditionIds = [...active.map((c) => c.id), ...adhoc.map((c) => c.id)];
+  const conditions = [...active.map((c) => c.name), ...adhoc.map((c) => c.name)];
 
-  /* One tint for a sentence that may name three conditions, and it is the
-     FIRST — which is CONDITIONS' own order, so the same pair of statuses
-     always tints the same way on every token at the table. Averaging the
-     active colours was tried and is worse: two conditions whose hues are
-     opposite average to a grey that names neither, and the material under
-     the sentence does not average either. */
-  const tint = conditionTint(conditionIds[0]);
+  /* Each condition names itself in its own colour, and `tint` is the key
+     the rest of the sentence is set in — the FIRST condition's, which is
+     CONDITIONS' own order, so the same pair of statuses reads the same way
+     on every token at the table.
+
+     Averaging the active colours was tried and is worse, and that has not
+     changed: two conditions whose hues are opposite average to a grey that
+     names neither, and the material under the sentence does not average
+     either. What did change is the conclusion drawn from it. "These cannot
+     be averaged" is not "one of them has to win" — the sentence has a word
+     per condition and each word can carry its own. */
+  const tints = [...active.map((c) => conditionTint(c.id) ?? ""), ...adhoc.map(() => adhocTint)];
+  const tint = tints[0] || undefined;
   const defeated = !!actor.statuses?.has?.(CONFIG.specialStatusEffects?.DEFEATED ?? "dead");
 
   /* Read off the placeable, not the document: `controlled` is this
@@ -221,7 +243,7 @@ function stateOf(token: any): ChipState | null {
   const see = reading(actor);
   if (see === "none") {
     return conditions.length || defeated
-      ? { conditions, conditionIds, tint, defeated, ...chrome }
+      ? { conditions, conditionIds, tints, tint, defeated, ...chrome }
       : null;
   }
 
@@ -232,6 +254,7 @@ function stateOf(token: any): ChipState | null {
     armor: track(res.armorSlots),
     conditions,
     conditionIds,
+    tints,
     tint,
     defeated,
   };
@@ -511,10 +534,10 @@ export function registerTokenBars(): void {
   CONFIG.Token.objectClass = DaggerheartToken;
 }
 
-/** Hang a fresh layer inside `#hud` and fill it. Every scene change does this. */
+/** Hang a fresh layer in the board stack and fill it. Every scene change does this. */
 function build(): void {
   layer?.remove();
-  const host = hudElement();
+  const host = boardStack();
   if (!host) {
     console.error(
       `${SYSTEM_ID} | nowhere to hang the token layer — canvas.hud has no element ` +
@@ -525,6 +548,9 @@ function build(): void {
   }
   layer = document.createElement("div");
   layer.className = "dh tok-layer";
+  /* Appended, so the ruler's layer — which prepends — stays behind it in DOM
+     order as well as in `z-index`. See `board-layers.ts` for why neither of
+     those two statements is allowed to be the only one. */
   host.appendChild(layer);
   chips.clear();
   lastK = canvas.stage?.scale?.x ?? 1;
@@ -541,7 +567,7 @@ function build(): void {
    every chip's arrival mid-play. */
 function rehang(): void {
   if (!layer) return;
-  const host = hudElement();
+  const host = boardStack();
   if (!host || layer.parentElement === host) return;
   host.appendChild(layer);
 }
@@ -683,7 +709,7 @@ export function reportTokenChips(): Record<string, unknown> {
     host: layer?.parentElement
       ? `${layer.parentElement.tagName.toLowerCase()}#${layer.parentElement.id || "(no id)"}`
       : "NONE — the layer was never hung",
-    hosted: layer?.parentElement === hudElement(),
+    hosted: boardStackHosted(layer),
     misalignment: off,
     tokensOnScene: canvas?.tokens?.placeables?.length ?? 0,
     chipsDrawn: chips.size,

@@ -37,6 +37,7 @@ import {
   registerTokenChips,
   reportTokenChips,
 } from "./token-hud.ts";
+import { registerAdhocConditions } from "./adhoc-conditions.ts";
 import { registerRangeRuler, reportRangeRuler } from "./range-ruler.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
 import { openActivity, registerActivityLog } from "./activity-log.ts";
@@ -108,6 +109,10 @@ Hooks.once("init", () => {
   /* And the ruler, beside them and for the identical reason — it needs
      `canvasReady`, which has already fired by the time `ready` runs. */
   registerRangeRuler();
+  /* And the seventeenth condition, which is however many the GM types. This
+     one only asks `Hooks.on("renderTokenHUD")` and could wait, but it is the
+     other half of `CONFIG.statusEffects` above and belongs beside it. */
+  registerAdhocConditions();
   registerDataModels();
   registerSheets();
   registerChat();

@@ -122,6 +122,14 @@
    stage, so it inherits the alignment rather than computing one — see the
    long note at the head of `src/module/token-hud.ts` for why three earlier
    builds hung it beside that element instead and drifted. */
+/* The z-index is a claim about the ruler's layer and about nothing else.
+   It used to be made among `#hud`'s own children, where the other tenants
+   are Foundry's — the Token HUD's buttons, `#measurement`, chat bubbles —
+   and none of them carries a z-index at all, so a `1` here beat every one
+   of them and a chip drew over the buttons you opened to act on the
+   creature it describes. Both layers are inside a stack of our own now and
+   the pair is settled there; `src/module/board-layers.ts` is the element
+   and the argument. */
 .tok-layer{position:absolute;inset:0;pointer-events:none;
   z-index:1;transform-origin:0 0}
 
@@ -346,7 +354,11 @@
   46%{opacity:1;transform:scale(1.05)}100%{opacity:0;transform:scale(.8)}}
 
 /* ══ CONDITIONS ════════════════════════════════════════════════════
-   One rotating sentence sits almost flush to the rim. The animated texture
+   One rotating sentence, set against the rim rather than floating outside
+   it. The path radius is in `token.js` beside the arithmetic that puts it
+   there; what matters here is that the glyphs grow OUTWARD from their
+   baseline, so the baseline is what has to come in to close the gap and the
+   type gets bigger without eating into the creature. The animated texture
    itself is a PIXI filter on the token mesh, not an HTML overlay. */
 .tok .tkcond{position:absolute;inset:-6%;opacity:0;pointer-events:none;
   transform:scale(var(--tkr));transition:opacity .28s ease}
@@ -356,17 +368,31 @@
    whatever the portrait is doing under it, the tight black shadow puts the
    sentence in contact with the token, and the tinted one lifts it off.
    `paint-order:stroke` is what makes the stroke a backing instead of a
-   4.3px letter with half its weight eaten from the inside. */
+   4.8px letter with half its weight eaten from the inside.
+
+   The three alphas are a third down from where they shipped. At the old
+   weights the sentence carried a permanent dark halo that read as a
+   smudge on the artwork at any zoom where the words were legible. */
 .tok .tkcond .tkwr{position:absolute;inset:0;width:100%;height:100%;
-  overflow:visible;filter:drop-shadow(0 0 1.4px rgba(0,0,0,1))
-    drop-shadow(0 .4px .8px rgba(0,0,0,.92))
-    drop-shadow(0 0 3.2px color-mix(in srgb,var(--tkc,var(--fear-tx)) 78%,transparent));
+  overflow:visible;filter:drop-shadow(0 0 1.4px rgba(0,0,0,.67))
+    drop-shadow(0 .4px .8px rgba(0,0,0,.61))
+    drop-shadow(0 0 3.2px color-mix(in srgb,var(--tkc,var(--fear-tx)) 52%,transparent));
   animation:tkTurn 46s linear infinite}
-.tok .tkcond .tkwr text{font:790 4.3px/1 var(--f-mono),monospace;
+.tok .tkcond .tkwr text{font:790 4.8px/1 var(--f-mono),monospace;
   letter-spacing:.18px;opacity:1;
   fill:color-mix(in srgb,var(--tkc,#dbe6f4) 46%,#ffffff);
   stroke:rgba(2,4,7,.94);stroke-width:1.15px;stroke-linejoin:round;
   paint-order:stroke fill}
+/* Each condition keeps its own colour. The `text` rule above is still the
+   one that fills the sentence — it is what a lone condition and the
+   separators between two get — and this only overrides the word itself,
+   with the same 46% walk toward white, because the mixing rule is about
+   legibility on somebody's artwork and is the same rule whichever hue is
+   going into it. A token wearing Ablaze and Corroded should not have to
+   pick one of them to be, and averaging them was already rejected upstream
+   for naming neither. */
+.tok .tkcond .tkwr tspan.tkw{
+  fill:color-mix(in srgb,var(--tkw,var(--tkc,#dbe6f4)) 46%,#ffffff)}
 
 @keyframes tkTurn{to{transform:rotate(360deg)}}
 

@@ -8,7 +8,7 @@
  * ── it rides the chip's arrangement rather than repeating it ─────────
  * `token-hud.ts` cost three broken builds to learn where a layer over the
  * board goes, and every one of those lessons applies here unchanged: the
- * layer is a child of `#hud`, the element is positioned in raw scene
+ * layer hangs inside `#hud`, the element is positioned in raw scene
  * coordinates, Foundry's own `Canvas#pan` does the alignment, and `#hud`'s
  * `_replaceHTML` will sweep the layer away on every render of it. So this
  * file looks like that one on purpose. The differences are the interesting
@@ -26,7 +26,10 @@
  *
  * **It is under the chips.** `z-index` 0 against the chip layer's 1, so a
  * ring never crosses an arc. Those are two different kinds of claim about
- * one creature and the readout wins.
+ * one creature and the readout wins. That pair of numbers is stated inside
+ * the board stack rather than among `#hud`'s own children — see
+ * `board-layers.ts` — because among those children it was also a claim
+ * about Foundry's Token HUD, and it beat that too.
  *
  * ── the scene's grid, not the book's feet ────────────────────────────
  * `RANGE_FEET` is the book's approximation and `rangeSquares` is that
@@ -56,6 +59,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { boardStack, boardStackHosted } from "./board-layers.ts";
 import { RANGES, RANGE_LABELS, SYSTEM_ID, rangeSquares } from "./config.ts";
 import type { RangeBand } from "./ui/ruler.js";
 import { RANGE_RULER, TTL, closeRuler, radiusOf, setRulerZoom } from "./ui/ruler.js";
@@ -71,15 +75,6 @@ let subject: any = null;
    ring rather than only the box they are centred in — which `place` alone
    cannot answer. This is `shapeOf`'s job on the chip, one field wide. */
 let footprint = "";
-
-/* Asked of `canvas.hud` first, because that is the API and it is what will
-   still answer if Foundry moves the element or renames the id. The chip's
-   note on why a fallback would be wrong applies word for word: this element
-   is not a backdrop, it is the coordinate system. */
-function hudElement(): HTMLElement | null {
-  const el = (canvas as any)?.hud?.element ?? document.querySelector("#hud");
-  return el instanceof HTMLElement ? el : null;
-}
 
 const on = (): boolean => game.settings?.get(SYSTEM_ID, "rangeRuler") !== false;
 
@@ -215,14 +210,14 @@ function retier(): void {
   if (ruler) setRulerZoom(ruler, canvas.stage?.scale?.x ?? 1);
 }
 
-/** Hang a fresh layer inside `#hud`. Every scene change does this. */
+/** Hang a fresh layer in the board stack. Every scene change does this. */
 function build(): void {
   ruler?.remove();
   ruler = null;
   subject = null;
   layer?.remove();
 
-  const host = hudElement();
+  const host = boardStack();
   if (!host) {
     console.error(
       `${SYSTEM_ID} | nowhere to hang the range ruler — canvas.hud has no element ` +
@@ -237,7 +232,10 @@ function build(): void {
      `prepend` rather than a z-index race: both layers are children of an
      element Foundry rebuilds, and source order is the thing that survives
      that. The stylesheet states the z-index as well, because the layers can
-     be re-hung in either order after an eviction. */
+     be re-hung in either order after an eviction. Both statements are now
+     made INSIDE the board stack rather than inside `#hud`, which is what
+     keeps them a claim about our two layers instead of a claim about
+     Foundry's Token HUD — see `board-layers.ts`. */
   host.prepend(layer);
   sync();
 }
@@ -248,7 +246,7 @@ function build(): void {
    system — see the long note at the head of `token-hud.ts`. */
 function rehang(): void {
   if (!layer) return;
-  const host = hudElement();
+  const host = boardStack();
   if (!host || layer.parentElement === host) return;
   host.prepend(layer);
 }
@@ -319,7 +317,7 @@ export function reportRangeRuler(): Record<string, unknown> {
     host: layer?.parentElement
       ? `${layer.parentElement.tagName.toLowerCase()}#${layer.parentElement.id || "(no id)"}`
       : "NONE — the layer was never hung",
-    hosted: layer?.parentElement === hudElement(),
+    hosted: boardStackHosted(layer),
     underTheChips: layer?.nextElementSibling?.className ?? "(nothing after the ruler layer)",
     controlled: held.length,
     drawn: !!ruler,
