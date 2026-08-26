@@ -327,8 +327,14 @@ const foe = {
 };
 const foeMiss = {...foe, d20:[7], total:9, hit:false};
 
+/* A framed portrait, built by the builder rather than dressed by the check.
+   The three numbers are what a player set while looking at this panel, and
+   the builder is where they are spent — see `POR` in design/plate.js. It goes
+   last so nothing above it moves. */
+const framed = {...duality, frame:{x:-25, y:6, scale:1.4}};
+
 document.getElementById('plates').innerHTML =
-  [A(duality), A(crit), A(fear), A(upgraded), DMG(damage), FOE(foe), FOE(foeMiss)]
+  [A(duality), A(crit), A(fear), A(upgraded), DMG(damage), FOE(foe), FOE(foeMiss), A(framed)]
     .map(wrap).join('');
 
 /* ── the envelope ──────────────────────────────────────────────────────
@@ -1223,12 +1229,18 @@ for(const el of document.querySelectorAll('.pl')) play(el);
 /* setTimeout rather than requestAnimationFrame: rAF does not fire in a window
    that is not painting, and a verification page is very often screenshotted
    from a background tab. Same reason the plate's own tumble is on a timer. */
+/* `lines` lives outside the try because a throw used to take every result
+   with it. One stale selector in a stage near the bottom — a check naming a
+   class a redesign retired — and the page reported a single THREW for all
+   two hundred assertions above it, including whichever one somebody had just
+   added. The failure is still loud; what changed is that it no longer hides
+   the work that had already been done. */
+const lines = [];
 setTimeout(async () => { try {
   // The deck fetches its sigils, so it may still be building.
   await deckReady;
   const inside = getComputedStyle(document.querySelector('.dh'));
   const outside = getComputedStyle(document.body);
-  const lines = [];
   const check = (label, pass, detail) =>
     lines.push(`${pass ? '<b>PASS</b>' : '<em>FAIL</em>'}  ${label}${detail ? '  — ' + detail : ''}`);
 
@@ -1275,17 +1287,32 @@ setTimeout(async () => { try {
      mis-place the picture — it takes `background` down to nothing, and a card
      with no portrait reads as an actor who never had one. So: one percent of
      the panel, measured, and the image still there afterwards. */
-  const por = document.querySelector('#plates .por');
+  const plateEls = [...document.querySelectorAll('#plates > .dh')];
+  const por = plateEls[0]?.querySelector('.por');
   const pu = por?.querySelector('u');
   const panBase = pu && getComputedStyle(pu).backgroundPosition;
-  por?.style.setProperty('--fdx', '-25');
-  const pan = pu ? getComputedStyle(pu).backgroundPosition : '';
-  const art = pu && getComputedStyle(pu).backgroundImage;
-  por?.style.removeProperty('--fdx');
-  // `calc(50% - 52.5px)` — the sign is a separate token from the number.
+
+  /* The framed one, and it is framed *by the builder*. Setting `--fdx` here by
+     hand tested the stylesheet and let the two plate builders drift apart
+     underneath it — `src/module/dice/plate.ts` wrote the framing into `.por`
+     and `design/plate.js` did not, so the surface this page draws was the one
+     that could never show a crop. Same shape as `sq` against `shapeOf`: right
+     in the game, wrong on the page, and only a check that asks the builder can
+     tell the two apart. */
+  const fpor = plateEls.at(-1)?.querySelector('.por');
+  const fpu = fpor?.querySelector('u');
+  check('the plate builder writes the framing it was given',
+        /--fdx:\s*-25/.test(fpor?.getAttribute('style') ?? ''),
+        fpor?.getAttribute('style') ?? 'no portrait');
+
+  const pan = fpu ? getComputedStyle(fpu).backgroundPosition : '';
+  const art = fpu && getComputedStyle(fpu).backgroundImage;
+  // `calc(50% - 37.5px)` — the sign is a separate token from the number, and
+  // the offset is divided by the zoom so a stored pan is worth the same screen
+  // distance at any scale.
   const m = pan.match(/calc\(\s*50%\s*([+-])\s*([\d.]+)px\s*\)/);
   const px = m ? (m[1] === '-' ? -1 : 1) * parseFloat(m[2]) : NaN;
-  const want = por ? -0.25 * por.getBoundingClientRect().width : NaN;
+  const want = fpor ? (-25 / 1.4 / 100) * fpor.getBoundingClientRect().width : NaN;
   check('a framed portrait pans by a percent of its own panel',
         Math.abs(px - want) < 0.5 && art !== 'none',
         `${panBase} → ${pan} (want ${want.toFixed(1)}px)`);
@@ -2816,7 +2843,8 @@ setTimeout(async () => { try {
      the text. */
   console.error(err);
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  document.getElementById('ok').innerHTML = `<em>THREW</em>  ${esc(err.message)}`;
+  document.getElementById('ok').innerHTML =
+    [...lines, `<em>THREW</em>  ${esc(err.message)}`].join('\n');
 } }, 700);
 </script>
 </body>

@@ -1973,6 +1973,66 @@ reverse so the two read as one band going round. `--strain` and not `--hope`,
 because gold is Hope's currency everywhere else and a second meaning for it is
 a second thing to decode.
 
+## One picture, two frames
+
+`system.portrait` is `{sheet, plate}`, three numbers each, and the schema's own
+first line is the whole design: **one picture, two frames.** The diorama is a
+wide band across the top of the rail and the roll plate's portrait is a
+narrower panel behind the verdict, so a crop judged in one is a chin in the
+other — but there is only ever one photograph underneath both, and every
+argument in `frame()` and in the drag rests on that.
+
+**The premise broke and nothing on either side looked wrong.** The sheet's
+framing preview drew `actor.img`; `portraitOf` in `dice/rolls.ts` posted the
+card with the *token* art, on its own reasoning that the token is what the
+table is looking at. So a character with token art — which is most of them,
+and the diorama has a Token button for it — framed a face against one picture
+and got a different one on the card, wearing offsets judged for a face that is
+not in it. From the sheet that reads as the framing not saving, and it works
+perfectly for anybody who never set token art, which is why it lasted.
+
+Two things about the shape of it are worth keeping. It is **invisible by
+construction**: each half is correct about the field it names, so a reader
+checking the schema, the drag, the write and the CSS finds four correct
+answers and no bug. And the machinery a reader would go and check first —
+`writeFrame`, the `sheet`/`plate` key, the `--fdx`/`--fdy`/`--fz` on `.por` —
+is entirely present and entirely working, exactly as the price parser was
+before `PAYER` widened it.
+
+**The picture is the actor's own now, with the token art as the fallback.**
+That is the diorama's own argument run the other way: a token is drawn to be
+read at 100px from above, and this panel is a head-and-shoulders wash with a
+name and a 48px numeral on it. The fallback stays because a creature built
+token-first — most of the adversary roster — has nothing else to show, and it
+also makes a plate agree with the sheet header every actor already has, which
+draws `actor.img` for all four subtypes.
+
+And the agreement is **structural rather than checked**: `portraitOf` is
+exported and the sheet's preview calls it. A second copy of "which picture
+does this actor's card draw" is a second copy that can disagree, which is the
+whole of the bug, reached from the other side.
+
+`design/plate.js`'s `POR` had drifted too — it wrote `--pic` and no framing at
+all, so a framed portrait was a thing no study page could show and
+`tools/verify/` had to fake by setting `--fdx` by hand. Same finding as `sq`
+against `shapeOf`: right in the game, wrong on the page. Both builders write
+it now and the check asks the builder rather than dressing its output.
+
+`tools/check-portrait-framing.mjs` is the ratchet, in `check-focus.mjs`'s
+idiom, and it runs in `typecheck`.
+
+**One thing was investigated and is not the cause**, which is worth recording
+because it is the explanation this file's own notes point at. `dice/chat.ts`
+redraws a posted `.dh-card` from its flag partly because "Foundry's sanitiser
+drops a `style` carrying a `url()`", and a plate is *not* redrawn — so the
+obvious reading is that `--pic` and the framing beside it are lost on the way
+into the database. Measured against the installed Foundry rather than read:
+chat content goes through `sanitizeHTMLField` → `cleanHTML` → `sanitize-html`
+with `ALLOWED_HTML_ATTRIBUTES`, `style` is allowed globally for every tag, and
+`allowedStyles` is never set. The whole attribute survives, `url()` and all.
+What the sanitiser genuinely takes is `<svg>`, which is why the card is
+redrawn and why the change log is built out of `<i>`/`<b>` and holes.
+
 ## Gear on the sheet
 
 `design/tile.css` is entirely `cqw`, so one component is proportionally
