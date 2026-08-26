@@ -40,6 +40,32 @@
  * a number labelled *metres* as though it were feet — Melee would come out
  * at three and a third squares on a 1.5m grid.
  *
+ * ── which table, and why it is read here ─────────────────────────────
+ * The SRD prints a second set of numbers under *Defined Ranges*, and the two
+ * disagree in exactly one place: derived, Very Close is **2** squares;
+ * printed, it is **3**. Close and Far already agree. So the setting moves one
+ * ring, and it moves it by half again — which is a table's agreement about
+ * what "very close" means changing under a picture of it, and therefore
+ * exactly the thing this component exists to make visible.
+ *
+ * It is read **at the moment the bands are built** and never cached. That is
+ * this repo's standing rule about a setting — the setting is the record, so
+ * read the record, the same arrangement the Fear strip and the token-chip
+ * switch keep — and `config.ts` cannot read it for us on purpose: that module
+ * is imported by every card-drawing surface in the system and must answer a
+ * question about geometry without a live `game`. So `rangeSquares` takes the
+ * answer as an argument and this file is the one that knows it.
+ *
+ * Which then has a consequence the on/off switch did not have. Flipping the
+ * ruler off and on again is a ruler that goes and comes back; flipping *this*
+ * has to move rings that are already on screen, under a token still selected.
+ * `sync`'s fast path returns early for exactly that case — same token, same
+ * footprint, reposition and leave — so the table in force is carried beside
+ * the footprint as a second thing the current bands were measured under. Two
+ * fields rather than one composite key, because they are checked in two
+ * places: a resize is a `refreshToken` and asks only about the creature, and
+ * a rule change is a settings hook and asks only about the table.
+ *
  * ── Very Far is declined ─────────────────────────────────────────────
  * Twenty-four squares is a ring 4,900 scene pixels across before the token
  * is added, on a scene that is typically four thousand by three thousand. It
@@ -61,6 +87,7 @@
 
 import { boardStack, boardStackHosted } from "./board-layers.ts";
 import { RANGES, RANGE_LABELS, SYSTEM_ID, rangeSquares } from "./config.ts";
+import { definedRanges } from "./settings.ts";
 import type { RangeBand } from "./ui/ruler.js";
 import { RANGE_RULER, TTL, closeRuler, radiusOf, setRulerZoom } from "./ui/ruler.js";
 
@@ -75,8 +102,18 @@ let subject: any = null;
    ring rather than only the box they are centred in — which `place` alone
    cannot answer. This is `shapeOf`'s job on the chip, one field wide. */
 let footprint = "";
+/* Which range table the current bands were measured under — the other half of
+   "what were these built from". A string rather than the setting's own
+   boolean, so "never built" is a value of its own exactly as `footprint`'s
+   empty string is; `false` would be indistinguishable from a ruler built under
+   the derived table, and the first flip of the rule after a reload would find
+   nothing to disagree with. */
+let table = "";
 
 const on = (): boolean => game.settings?.get(SYSTEM_ID, "rangeRuler") !== false;
+
+/** Which of the two range tables is in force, as a key. */
+const tableNow = (): string => (definedRanges() ? "defined" : "derived");
 
 /**
  * What the bands are on this scene.
@@ -85,6 +122,11 @@ const on = (): boolean => game.settings?.get(SYSTEM_ID, "rangeRuler") !== false;
  * metres gets rings on the right squares and a legend that says so. The
  * radius is measured from the token's EDGE — reach is what the rule means,
  * and a three-by-three dragon threatens a square beyond its own body.
+ *
+ * The setting is read **once, here**, rather than per band: four calls would
+ * be four chances for the rule to change between Melee and Far, which is a
+ * ruler drawn half under each table and a state nothing on screen could
+ * explain. One reading is what makes the four rings one instrument.
  */
 function bandsFor(token: any): RangeBand[] {
   const grid = canvas.grid?.size ?? 100;
@@ -92,9 +134,10 @@ function bandsFor(token: any): RangeBand[] {
   const per = Number(scene.distance) || 5;
   const units = String(scene.units ?? "").trim();
   const tokenR = Math.min(token.w ?? grid, token.h ?? grid) / 2;
+  const defined = definedRanges();
 
   return BANDS.map((key) => {
-    const squares = rangeSquares(key);
+    const squares = rangeSquares(key, defined);
     const away = +(squares * per).toFixed(2);
     return {
       key,
@@ -144,6 +187,7 @@ function drop(): void {
   ruler = null;
   subject = null;
   footprint = "";
+  table = "";
   if (going) closeRuler(going, undefined);
 }
 
@@ -178,11 +222,21 @@ function sync(): void {
   const token = on() && held.length === 1 ? held[0] : null;
 
   if (!token) return drop();
-  if (subject === token && ruler && sizeOf(token) === footprint) return place();
+  /* The fast path, and what it may skip. Same creature, same size, same rule
+     in force: nothing about the rings has changed, so the answer is where the
+     token now is and no more. Every one of those three is a thing the bands
+     were measured from, which is why the table is tested here beside the
+     footprint — without it a rule flipped mid-session under a token that is
+     still selected would reposition rings drawn to the other table, and the
+     component would go on being drawn perfectly and be lying. */
+  if (subject === token && ruler && sizeOf(token) === footprint && tableNow() === table) {
+    return place();
+  }
 
   drop();
   subject = token;
   footprint = sizeOf(token);
+  table = tableNow();
 
   const host = document.createElement("div");
   host.innerHTML = RANGE_RULER(bandsFor(token));
@@ -291,7 +345,16 @@ export function registerRangeRuler(): void {
 
   /* The switch on the Fear strip, and Foundry's own settings window, are the
      same press: both write the setting, the setting raises this, and this is
-     the only thing that ever turns the ruler on or off. */
+     the only thing that ever turns the ruler on or off.
+
+     Two settings raise it now — `rangeRuler`, which says whether there is a
+     ruler, and `definedRanges`, which says what one measures — and one hook
+     serves both because `sync` reads the world rather than the event. It
+     answers the first by finding the ruler switched off and dropping, and the
+     second by finding the table changed and rebuilding; neither has to be
+     told which of them fired. `definedRanges` is world-scoped, so this
+     arrives on every client at the table and every ruler on the board moves
+     together, which is the point of it being the table's agreement. */
   Hooks.on("daggerheart.rangeRulerChanged", () => ask());
 
   /* Already up — the case `canvasReady` cannot answer, because for a system
@@ -307,12 +370,29 @@ export function registerRangeRuler(): void {
  * that only exists while something is selected has no steady state to look
  * at, so "it did not appear" and "it appeared and went" are indistinguishable
  * afterwards. `game.daggerheart.rangeRuler()`.
+ *
+ * **And it says which table, in squares.** CLAUDE.md's line about this
+ * component is that a chip is drawn wrong or right while a ruler can be drawn
+ * perfectly and be *lying*, and *Defined Ranges* is that hazard with a switch
+ * on it: the rule moves one ring by half again, silently, from a world
+ * setting, and a circle at six squares looks exactly as correct as a circle
+ * at four. So the report prints the table in force and every band's radius in
+ * the unit the ring is actually built from — `squares` beside `builtUnder`,
+ * which is what the rings on screen *were* built under. The two disagreeing
+ * is the one failure this component's fast path can produce, and it is
+ * therefore the one thing worth being able to read off a console.
  */
 export function reportRangeRuler(): Record<string, unknown> {
   const held = canvas?.tokens?.controlled ?? [];
   const scene = (canvas as any)?.scene?.grid ?? {};
+  const defined = definedRanges();
   return {
     setting: game.settings?.get(SYSTEM_ID, "rangeRuler"),
+    ranges: defined
+      ? "defined — the SRD's optional printed table"
+      : "derived — the book's feet divided by five",
+    builtUnder: table || "(nothing drawn)",
+    squares: Object.fromEntries(BANDS.map((k) => [k, rangeSquares(k, defined)])),
     stylesheetLoaded: [...document.styleSheets].some((s) => s.href?.includes("ruler.css")),
     host: layer?.parentElement
       ? `${layer.parentElement.tagName.toLowerCase()}#${layer.parentElement.id || "(no id)"}`

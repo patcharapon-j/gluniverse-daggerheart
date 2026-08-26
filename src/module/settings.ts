@@ -9,6 +9,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID } from "./config.ts";
+import { registerVariantSettings } from "./variants.ts";
 
 /** The Fear pool caps at twelve. */
 export const FEAR_MAX = 12;
@@ -22,6 +23,82 @@ export function registerSettings(): void {
     default: 0,
     onChange: () => Hooks.callAll("daggerheart.fearChanged", getFear()),
   });
+
+  /* How far this world's *data* has been brought up to date — a plain
+     counter, and deliberately **not** the system version.
+
+     The obvious build stamps `game.system.version` and gates each step on
+     `isNewerVersion`, and it is quietly broken here: `.github/workflows/release.yml`
+     lets a human pick hotfix, minor or major at release time, so the version
+     a step ships in is not known when the step is written. Guess 1.11.0,
+     have the release come out as 1.10.2, and the step runs, stamps 1.10.2,
+     and is still newer than the stamp on the next launch — so it runs again,
+     every launch, forever.
+
+     A counter has no such coupling. A step declares the number it brings the
+     world *to*, the stamp is the highest number that has run, and nothing
+     about it moves when somebody picks a different release kind. Zero is a
+     world that has never been migrated, which is every world that predates
+     this file. See `migration/index.ts`.
+
+     `config:false` because it is a record rather than a dial, and
+     world-scoped because a migration happens once to the world and not once
+     per person who logs into it. */
+  game.settings.register(SYSTEM_ID, "dataVersion", {
+    name: "DAGGERHEART.Settings.DataVersion",
+    scope: "world",
+    config: false,
+    type: Number,
+    default: 0,
+  });
+
+  /* The SRD's *Massive Damage* optional rule — twice your Severe threshold
+     marks four Hit Points rather than three.
+
+     **Default on, and that is a migration decision rather than a reading of
+     the book.** The rule is printed as optional and a fresh table might
+     reasonably expect it off; this system has applied it unconditionally
+     since the damage band was drawn, so defaulting it off would silently
+     change what damage does at every table that upgrades. A rules change
+     nobody asked for is worse than a default that disagrees with the
+     book's own suggestion, and the switch is right here either way.
+
+     What it gates is `severityFor`'s top rung and the band's fifth zone
+     together — the two must agree, or the dialog offers a zone the document
+     will never return. */
+  game.settings.register(SYSTEM_ID, "massiveDamage", {
+    name: "DAGGERHEART.Settings.MassiveDamage",
+    hint: "DAGGERHEART.Settings.MassiveDamageHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
+  /* The SRD's *Defined Ranges* optional rule. Off by default, because this
+     one genuinely is the book's exception rather than its rule — the ranges
+     are fiction-first and say so out loud, and the printed squares are for a
+     table that has decided to play on a grid.
+
+     World-scoped, because it is the table's agreement about what Close
+     means. A per-client switch would put two people at one map measuring the
+     same reach differently, which is the exact disagreement the ruler was
+     drawn to surface. */
+  game.settings.register(SYSTEM_ID, "definedRanges", {
+    name: "DAGGERHEART.Settings.DefinedRanges",
+    hint: "DAGGERHEART.Settings.DefinedRangesHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => Hooks.callAll("daggerheart.rangeRulerChanged"),
+  });
+
+  /* And the ten supplemental campaign variants, which are content gates
+     rather than rules and are registered together in their own module —
+     ten near-identical registrations inlined here would bury the four
+     settings above them that each say something different. */
+  registerVariantSettings();
 
   game.settings.register(SYSTEM_ID, "theme", {
     name: "DAGGERHEART.Settings.Theme",
@@ -175,6 +252,39 @@ export function registerSettings(): void {
 }
 
 export const getFear = (): number => Number(game.settings.get(SYSTEM_ID, "fear") ?? 0);
+
+/**
+ * The two optional rules, read rather than cached.
+ *
+ * Both are asked on every damage dialog and every ruler build, which is often
+ * enough to be tempted to hold a copy and not often enough for it to matter —
+ * and a copy is the bug the Fear strip and the token chip's switch both
+ * argue against: the setting is the record, so read the record, and the two
+ * cannot disagree whichever surface changed it.
+ *
+ * Both tolerate being called before `registerSettings` has run. `game.settings.get`
+ * throws on an unregistered key, and the token chip's own report and a macro
+ * can both reach these early; a rule that is off because the world has not
+ * finished loading is a better answer than a stack trace.
+ */
+const flag = (key: string, fallback: boolean): boolean => {
+  try {
+    return Boolean(game.settings?.get(SYSTEM_ID, key) ?? fallback);
+  } catch {
+    return fallback;
+  }
+};
+
+export const massiveDamage = (): boolean => flag("massiveDamage", true);
+export const definedRanges = (): boolean => flag("definedRanges", false);
+
+/** The high water mark of the migrations that have run in this world. */
+export const getDataVersion = (): number =>
+  Number(game.settings.get(SYSTEM_ID, "dataVersion") ?? 0);
+
+export const setDataVersion = async (n: number): Promise<void> => {
+  await game.settings.set(SYSTEM_ID, "dataVersion", n);
+};
 
 /**
  * Only a GM may write the pool; a player card's "GM gains a Fear" button

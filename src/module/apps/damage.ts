@@ -54,6 +54,22 @@
  *
  * And the cards that might change any of it are drawn as cards. See
  * `rule-cards.ts`.
+ *
+ * ── the ladder has an optional top rung ───────────────────────────────
+ * *Massive Damage* — twice the Severe threshold marks four Hit Points — is
+ * printed as optional, and this dialog drew it unconditionally because for as
+ * long as the band existed there was nothing to ask. There is now, and the
+ * dialog reads it in exactly one place: the band's fifth zone. Everything
+ * else here that touches severity was already asking the **document** rather
+ * than assuming a shape, and that is why one line was the whole change —
+ * `maxRungs` reads a rung off `severityFor`, the zone match is keyed on the
+ * cost both sides agree on, and every label comes from a severity the
+ * document handed over. See the notes on each.
+ *
+ * The setting is read at the moment the band is built rather than held, for
+ * the reason everything else in this system reads a setting live: the setting
+ * is the record. It costs nothing here — the band is built once per dialog,
+ * and a dialog is not open across a rules change.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -62,6 +78,7 @@ import { SEVERITY, SEVERITY_COST, type Severity } from "../config.ts";
 import type { DamagePlan, DamageSpend } from "../documents/actor.ts";
 import { DAMAGE, XMARK } from "../ui/mark.js";
 import { REDUCE_RX, rulesAbout, rulesAtTopLevel } from "./rules.ts";
+import { massiveDamage } from "../settings.ts";
 import { ruleCardsPanel, wireRulePeeks } from "./rule-cards.ts";
 import { dhDialog } from "./dialog.ts";
 
@@ -136,10 +153,23 @@ export async function takeDamage(
             severe: t.severe ?? 2,
             hp: hp.max,
             marked: hp.marked,
-            // The 2× rule, always drawn here. On the rail it is optional
-            // because it costs a zone's width in a 236px column; this dialog
-            // has room, and a Massive hit is exactly the one you want it for.
-            massive: true,
+            /* The 2× rule, drawn here whenever the table is playing it.
+               It used to be `true` unconditionally, and the argument for that
+               was about *width*: the rail makes the fifth zone optional
+               because it costs a column 236px wide a zone it cannot spare,
+               this dialog has room, and a Massive hit is exactly the one you
+               want the band for. That argument is still right and it was
+               answering the wrong question — width says whether there is room
+               to draw the zone, not whether the zone exists.
+
+               Now that the rule is optional, drawing it unconditionally is
+               the band offering a rung the document will never return:
+               `severityFor` stops at Severe with the setting off, so the
+               fifth zone could be lit by nothing, reached by nothing, and
+               would still print a breakpoint at 2× Severe telling the reader
+               that a hit that large costs four Hit Points. A picture of a
+               rule the table is not playing is worse than no picture. */
+            massive: massiveDamage(),
             label: "Damage",
           }),
         );
@@ -254,7 +284,24 @@ export async function takeDamage(
       let n = amount;
       const spend: Required<DamageSpend> = { rungs: 0, armor: 0, stress: 0, hope: 0 };
 
-      /** The furthest the damage can fall: all the way off the bottom. */
+      /**
+       * The furthest the damage can fall: all the way off the bottom.
+       *
+       * A count of rungs read as a position on the ladder, which works because
+       * `none` is index 0 and a real rung rather than an absence of one — so
+       * the distance from wherever this hit landed down to nothing *is* its
+       * index. Severe is 3 and takes three slots to erase.
+       *
+       * **And it survives Massive Damage being switched off**, which is the
+       * thing worth stating rather than assuming. `SEVERITY` is a closed set
+       * ordered from the bottom up with `massive` at the **end**, and the
+       * setting takes the top rung out of play by stopping `severityFor` from
+       * ever returning it — it does not shorten the array. So no lower rung's
+       * index moves, the ceiling for a Severe hit is three either way, and
+       * the only thing that changes is that four stops being reachable. Had
+       * the optional rung been anywhere but last, this line would have gone
+       * quietly wrong for every hit on the ladder at once.
+       */
       const maxRungs = () => SEVERITY.indexOf(actor.severityFor(n));
 
       const draw = () => {
@@ -273,7 +320,18 @@ export async function takeDamage(
            `data-hp` is the zone's cost in Hit Points, and a severity's cost
            and its position on the ladder are the same number — so the zone
            for a severity is the one whose cost equals it, with no second
-           table to keep in step. */
+           table to keep in step.
+
+           That is also what makes the optional 2× rule cost this loop nothing.
+           Both sides are keyed on the cost rather than on a position in a
+           list: with the rule off the band simply has no zone worth 4 and the
+           document simply never returns a severity worth 4, so the match is
+           over a set neither side can step outside. The `escaped` half below
+           is the same lookup against `plan.base`, which comes from the same
+           `severityFor`, so it cannot name a rung the band is missing either.
+           `none` is excluded by hand because it is the one severity with no
+           zone of its own at any setting — falling off the bottom of the
+           ladder lands nowhere, which is what the walk-back draws. */
         const costOf = (s: Severity) => SEVERITY_COST[s] ?? 0;
         let landed: HTMLElement | null = null;
         let escaped: HTMLElement | null = null;
