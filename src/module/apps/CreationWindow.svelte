@@ -35,6 +35,8 @@
     equippedArmor,
     equippedPrimary,
     equippedSecondary,
+    PACK,
+    equipmentOffer,
     fromPack,
     namedExperiences,
     setFinished,
@@ -115,7 +117,7 @@
       fromPack("classes"),
       fromPack("heritage"),
       fromPack("domains", "domainCard"),
-      fromPack("equipment"),
+      equipmentOffer(),
       loadSigils(),
     ]);
     classes = cls.filter((d: any) => d.type === "class").sort(byName);
@@ -675,27 +677,53 @@
 
   type GearGroup = { key: string; label: string; rows: any[] };
 
+  /* Which book a row came out of, and it is empty for the corebook.
+     A supplemental table is a *different table*, not more rows in the
+     printed one — Everyday Hero is what you take when you have no access to
+     standard weapons, so a Cleaver sitting unlabelled between a Broadsword
+     and a Dagger is the window asserting they are alternatives in the same
+     list. The name comes off the compendium **folder** rather than off a
+     field, because `weaponItem` has no `source` and inventing one would put
+     it on all 324 core weapons to caption 30. `build-packs.mjs` materialises
+     those folders by name and `VARIANT_FOLDERS` is where the names are
+     declared, so the caption is the variant's own. */
+  const bookOf = (w: any): string =>
+    w?.pack === PACK.variants ? (w.folder?.name ?? "Variant") : "";
+
   const groupsOf = (list: any[], split: boolean): GearGroup[] => {
     const tiers = [...new Set(list.map((w: any) => w.system?.tier ?? 1))].sort(
       (a: number, b: number) => a - b,
     );
     const many = tiers.length > 1;
+    /* Corebook first, then each variant's table in a stable order — the
+       window must not reshuffle its own groups because a filter changed. */
+    const books = [...new Set(list.map(bookOf))].sort();
     const out: GearGroup[] = [];
     for (const t of tiers) {
-      const here = list.filter((w: any) => (w.system?.tier ?? 1) === t);
-      const parts: [string, any[]][] = split
-        ? [
-            ["Physical", here.filter((w: any) => !w.system?.magical)],
-            ["Magic", here.filter((w: any) => !!w.system?.magical)],
-          ]
-        : [["", here]];
-      for (const [kind, rows] of parts) {
-        if (!rows.length) continue;
-        out.push({
-          key: `${t}:${kind}`,
-          label: many ? (kind ? `Tier ${t} · ${kind}` : `Tier ${t}`) : kind,
-          rows,
-        });
+      for (const book of books) {
+        const here = list.filter(
+          (w: any) => (w.system?.tier ?? 1) === t && bookOf(w) === book,
+        );
+        if (!here.length) continue;
+        const parts: [string, any[]][] = split
+          ? [
+              ["Physical", here.filter((w: any) => !w.system?.magical)],
+              ["Magic", here.filter((w: any) => !!w.system?.magical)],
+            ]
+          : [["", here]];
+        for (const [kind, rows] of parts) {
+          if (!rows.length) continue;
+          /* The tier joins the caption only when more than one is on screen,
+             and the book only when it is not the corebook's — same rule and
+             the same reason: a caption that is true of everything on screen
+             is a caption answering a question nobody asked. */
+          const bits = [
+            many ? `Tier ${t}` : "",
+            book,
+            kind,
+          ].filter(Boolean);
+          out.push({ key: `${t}:${book}:${kind}`, label: bits.join(" · "), rows });
+        }
       }
     }
     return out;

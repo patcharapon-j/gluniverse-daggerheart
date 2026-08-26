@@ -150,4 +150,21 @@ export function registerBrowser(): void {
       if (doc?.pack) dropPack(doc.pack);
     });
   }
+
+  /* Switching a campaign variant on changes which packs `ourPacks` is willing
+     to read, which changes the kind counts on the rail — so the survey has to
+     be taken again rather than the window merely re-rendered. `dropPack()`
+     with no argument is the whole of it: the cache is keyed per pack and the
+     variant pack's entry is the only one that can be newly wanted, but
+     clearing all of them costs one re-read of packs that are almost certainly
+     still in memory and saves this from having to know which pack a variant
+     lives in — which is `browse-index.ts`'s knowledge and not this file's.
+
+     Closed rather than refreshed if the window is open: a rail whose counts
+     changed under the reader is a window that has quietly become about a
+     different question. */
+  Hooks.on("daggerheart.variantsChanged", () => {
+    dropPack();
+    if (open?.rendered) void open.close();
+  });
 }

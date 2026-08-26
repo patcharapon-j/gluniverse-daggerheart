@@ -116,6 +116,28 @@
         "PLAYER": "OBSERVER",
         "ASSISTANT": "OWNER"
       }
+    },
+    {
+      "name": "variants",
+      "label": "Variant Equipment",
+      "path": "packs/variants",
+      "type": "Item",
+      "system": "gluniverse-daggerheart",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "variant-rules",
+      "label": "Variant Rules",
+      "path": "packs/variant-rules",
+      "type": "JournalEntry",
+      "system": "gluniverse-daggerheart",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
     }
   ],
   "documentTypes": {

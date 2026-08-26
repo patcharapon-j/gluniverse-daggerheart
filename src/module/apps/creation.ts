@@ -44,6 +44,7 @@ import {
   TRAITS,
   type CreationStep,
 } from "../config.ts";
+import { variantEnabled } from "../variants.ts";
 
 /* ══════════════════════════════════════════════════════════════════════
    THE COMPENDIUMS
@@ -60,6 +61,9 @@ export const PACK = {
   heritage: `${SYSTEM_ID}.heritage`,
   domains: `${SYSTEM_ID}.domains`,
   equipment: `${SYSTEM_ID}.equipment`,
+  /* The supplemental chapter's gear. Read only when a variant that supplies
+     starting equipment is switched on — see `variantEquipment` below. */
+  variants: `${SYSTEM_ID}.variants`,
 } as const;
 
 /**
@@ -75,6 +79,56 @@ export async function fromPack(key: keyof typeof PACK, type?: string): Promise<a
   if (!pack) return [];
   const docs = await pack.getDocuments();
   return type ? docs.filter((d: any) => d.type === type) : [...docs];
+}
+
+/**
+ * The variants that put *starting equipment* on this step, and nothing else.
+ *
+ * Not every switched-on variant belongs here. Grimdark changes what
+ * adversaries do and Hex Crawl changes what a map is; neither hands a level-1
+ * character a weapon, so neither has any business widening the one step whose
+ * whole job is "what are you holding when you walk in". Three do — Everyday
+ * Hero says so in its own name, and Western and Monster Hunting each print a
+ * starting table — and they are named rather than derived, because "does this
+ * variant supply starting gear" is a reading of the chapter and not a
+ * property any document carries.
+ *
+ * Tech-Based is deliberately absent. Its Iconic Weapon is not a row you pick
+ * off a table; it is a weapon the player *designs*, which is a step this
+ * window does not have and would be inventing.
+ */
+const EQUIPMENT_VARIANTS = ["everydayHero", "western", "monsterHunting"] as const;
+
+/**
+ * Whether the equipment step should read the variant pack at all.
+ *
+ * A whole extra `getDocuments()` on a pack nobody switched on is the browse
+ * window's own lesson — the cost of opening is paid by everybody and the
+ * benefit by nobody — so the pack is not read unless one of the three is on.
+ */
+export const usesVariantEquipment = (): boolean =>
+  EQUIPMENT_VARIANTS.some((v) => variantEnabled(v));
+
+/**
+ * Everything the equipment step may offer: the corebook's tables, plus the
+ * gear of whichever variants are switched on.
+ *
+ * Concatenated rather than substituted, and that is the reading that matters.
+ * "PCs **without access to** standard weapons and armor can choose from the
+ * following tables" is a fact about a character, not a switch on the world —
+ * one player is the blacksmith's apprentice with a cleaver and the other
+ * walked out of the guard barracks with a longsword. Replacing the core
+ * tables would make the frame decide something the frame explicitly leaves to
+ * the character.
+ *
+ * Each group's own caption is what keeps them apart on screen; see the
+ * equipment table block in `design/make.css`.
+ */
+export async function equipmentOffer(): Promise<any[]> {
+  const core = await fromPack("equipment");
+  if (!usesVariantEquipment()) return core;
+  const extra = await fromPack("variants");
+  return [...core, ...extra];
 }
 
 /* ══════════════════════════════════════════════════════════════════════
