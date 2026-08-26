@@ -2487,7 +2487,7 @@ setTimeout(async () => { try {
         very nearly follow the ring, which is worse than gems that plainly do
         not: a straight row is a decision and a skewed arc is a mistake. */
   const tkBox = tkPC.getBoundingClientRect();
-  const tkR = [...tkPC.querySelectorAll('.tkhope .tkg')].map(g => {
+  const tkR = [...tkPC.querySelectorAll('.er-hope .er-gem')].map(g => {
     const r = g.getBoundingClientRect();
     return Math.hypot(r.left + r.width / 2 - tkBox.left - tkBox.width / 2,
                       r.top + r.height / 2 - tkBox.top - tkBox.height / 2);
@@ -2515,15 +2515,22 @@ setTimeout(async () => { try {
         twenty-three, and this component's members are tk-prefixed precisely
         because `.row`, `.hd`, `.n` and `.trk` already belong to somebody.
         Two exclusions and both are hosted components rather than leniency.
-        `.gems` and everything under it is `gem.js`'s row, drawn here on
-        purpose, so every rule `gem.css` writes for it is somebody else's by
-        design — the browser's check excludes `.card` for that reason and
-        this is the same claim. And the chip's **root** is excluded because
-        it deliberately wears `.dh`: that is where the palette comes from,
-        and a check that called `tokens.css .dh` a trespass would be calling
-        the compound itself the bug. What is under test is the members. */
+        `gem.js`'s gem is drawn here on purpose, so every rule `gem.css`
+        writes for it is somebody else's by design — the browser's check
+        excludes `.card` for that reason and this is the same claim. And the
+        chip's **root** is excluded because it deliberately wears `.dh`:
+        that is where the palette comes from, and a check that called
+        `tokens.css .dh` a trespass would be calling the compound itself the
+        bug. What is under test is the members.
+
+        `.gem` is named beside `.gems` and that is not belt and braces. The
+        Hope gems used to arrive through `GEMS()`, inside a `.gems` row; the
+        chip solves its own angles, so it calls `GEM` directly and there is
+        no row. Excluding only the container would have made every rule in
+        `gem.css` a trespass on the frame this component started hosting the
+        real component — the check going red on the fix. */
   const tkOwn = [...tkLayer.querySelectorAll('.tok *')]
-    .filter(el => !el.closest('.gems'));
+    .filter(el => !el.closest('.gems, .gem'));
   const tkReach = [];
   for (const sheet of document.styleSheets) {
     let rules; try { rules = sheet.cssRules; } catch { continue; }

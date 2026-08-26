@@ -32,7 +32,6 @@
     traitLabel,
     type Trait,
   } from "../config.ts";
-  import { massiveDamage } from "../settings.ts";
   import type { ItemSnapshot, SheetState } from "../apps/sheet-state.svelte.ts";
   import { handleActorDrop } from "../apps/svelte-sheets.ts";
   import {
@@ -2404,11 +2403,27 @@
              same question asked twice, and a divider between them claims
              otherwise while costing 28px of a rail that has none to spare. -->
         <div class="sec">
-          {#key `${sys.thresholds?.major}/${sys.thresholds?.severe}/${massiveDamage()}/${sys.resources?.hitPoints?.max}/${vitSpan}`}
+          <!-- No `massive`, and that is true whether or not the optional rule
+               is switched on. The band on the rail is a readout of the two
+               thresholds this character has, and Massive is not a third one —
+               it is a rule about what happens above the second. Drawn as a
+               fourth zone it puts a number on the sheet the sheet does not
+               carry, and it closes the Severe zone, which is the one thing
+               this band is honest about: `open` means "and everything above
+               this", and there is no width that says that truthfully.
+
+               The dialog keeps the rung, and the two are not in disagreement.
+               A hit is *measured* there — the number is known, the ladder is
+               the subject, and `severityFor` can still return `massive`. Here
+               the number is not known yet. What the sheet loses is the band's
+               press for four Hit Points, which is the right thing to lose:
+               pressing Severe means "three and up", and how far up is exactly
+               the question the damage dialog exists to ask. -->
+          {#key `${sys.thresholds?.major}/${sys.thresholds?.severe}/${sys.resources?.hitPoints?.max}/${vitSpan}`}
             <Marks
               kind="hp"
               label="Damage"
-              damage={{ major: sys.thresholds?.major ?? 1, severe: sys.thresholds?.severe ?? 2, massive: massiveDamage() }}
+              damage={{ major: sys.thresholds?.major ?? 1, severe: sys.thresholds?.severe ?? 2 }}
               total={sys.resources?.hitPoints?.max ?? 6}
               marked={sys.resources?.hitPoints?.marked ?? 0}
               span={vitSpan}

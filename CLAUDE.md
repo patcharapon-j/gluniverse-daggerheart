@@ -535,11 +535,25 @@ change what a hit costs at every table that upgrades, and a rules change
 nobody asked for is worse than a default that disagrees with the book's own
 suggestion.
 
-What it gates is `severityFor`'s top rung and the band's fifth zone
-*together*, and the two must agree or the dialog offers a zone the document
-will never return. That was already half-wrong: `apps/damage.ts` hardcoded
-`massive: true` while the character sheet's own rail band passed nothing, so
-the dialog drew a fifth zone the rail did not. Both read the setting now.
+What it gates is `severityFor`'s top rung and the **damage dialog's** fifth
+zone *together*, and those two must agree or the dialog offers a zone the
+document will never return. `apps/damage.ts` hardcoded `massive: true`, so it
+was already agreeing with the setting by accident; it reads it now.
+
+**The character sheet's rail band draws no fifth zone at all, switch or no
+switch**, and that is not the same file disagreeing with itself. The dialog is
+where a hit is *measured* — the number is known, the ladder is the subject, and
+the choice in it is how far down you will pay to fall. The rail band is a
+**readout of the two thresholds this character has**, and Massive is not a
+third one: it is a rule about what happens above the second. Drawn as a fourth
+zone it puts a number on the sheet that the sheet does not carry, and it closes
+the Severe zone — which is the one thing that band is honest about, because
+`open` means "and everything above this" and there is no width that says that
+truthfully.
+
+What the sheet gives up is the band's press for four Hit Points, and that is
+the right thing to give up. Pressing Severe means "three and up"; how far up is
+exactly the question the damage dialog exists to ask.
 
 The rung ceiling — `SEVERITY.indexOf(actor.severityFor(n))` — is correct
 without changing, and it is correct **because `massive` is last in the closed
@@ -3658,15 +3672,97 @@ gems rotate rather than counter-rotate, because a diamond is symmetric about
 both axes so a tilt costs it no legibility, while a row of upright gems on a
 curve reads as a row that has been bent.
 
-`transform-origin:0 0` is the entire rule working. `left/top:50%` puts a gem's
-*top-left corner* on the token's centre, which is what the rotation needs to
-pivot about — but the origin defaults to the box's own middle, half a gem away.
-Without it all six pivot about the wrong point and the row comes out as an arc
-that **drifts**: measured, radii of 52.0 through 54.6 where six identical
-numbers are the whole claim. That is a bug worth naming because it does not
-look like one — gems that plainly ignore the ring read as a decision, and gems
-that *very nearly* follow it read as sloppiness with nothing on screen to say
-which. `tools/verify/` measures the spread rather than trusting the rule.
+**That paragraph was false for as long as the chip existed, and this file said
+it anyway.** What shipped was a hand-written diamond: a square turned 45°, the
+gold on a `::before` so the state change could be an opacity, and a gain and a
+spend of its own in `token.css`. Every part of it was reasonable, and the sum
+was a **fourth Hope** — one a player had to learn separately, because it did
+not move like the one on their sheet, in the rest dialog or in the log. Nothing
+could catch it: at six pixels a gold diamond looks like a gold diamond, and the
+study page and this file both asserted the wrong answer in prose. It is
+`GEM` now, driven by `setPool`, and `tools/test-token-hope-arc.mjs` asserts
+the members — `.lamp`, `.pit`, `.edge`, `.rim`, `.fx` — rather than the look.
+
+Two consequences worth keeping. **The placement is a wrapper**: `.er-gem` owns
+the polar transform and `GEM` owns the drawing, which is `.fcls`/`.fclsr` and
+`.abl .a`/`.abl .ap` a third time, and it is also the only way to hand a gem
+its own angle, since `GEM` writes its own style attribute and takes no
+arbitrary one. And **the √2 is gone**: the old square sat on the arc by its
+*diagonal*, so its box had to be divided; a `GEM` is a diamond clipped out of
+an upright box, so the box is what sits on the arc and there is nothing to
+divide. Same ink at the same spacing — 6.5 is 4.6 × √2 — arrived at by
+inscribing the shape rather than circumscribing it.
+
+**`gem.css` is proportional in everything but three lengths**, and the chip is
+the first caller at a fifth of the size those were written for, so all three
+bind at once: a 1px blur on the refraction band, a 1px socket line and a 1.6px
+scar stroke are a smudge, a border and a cross that has eaten the shape at
+6.5px. They are restated in `token.css` rather than fixed upstream, because
+each is correct at the size it was written for and the value that would serve
+both is the proportional one — which would move the Fear strip's 24px pips by a
+fraction nobody asked for. The socket line is stated against `:not(.on)` rather
+than against `.pit`, or it would outweigh `gem.css` taking the shadow *off* a
+lit face and put a border back on the gems that are supposed to be glass.
+
+Both gems lie on one circle, which is the bug this component was measured for
+once already: placed by angle from the token's centre, a gem that pivots about
+its own middle instead comes out as an arc that **drifts** — radii of 52.0
+through 54.6 where six identical numbers are the whole claim. Gems that plainly
+ignore the ring read as a decision; gems that *very nearly* follow it read as
+sloppiness with nothing on screen to say which. `tools/verify/` measures the
+spread rather than trusting the rule.
+
+### Arriving and leaving
+
+A chip had neither, and that is the third thing on this component that was
+invisible because it was an absence. It was `appendChild` and `remove`, so a
+creature dragged onto the board, a token coming out of fog, a scene loading and
+a corpse being deleted all happened between one frame and the next — on the one
+surface in this system drawn over somebody else's artwork and therefore with
+nothing to establish it. A readout that pops reads as a rendering fault: the
+token was there, and now there is also a gauge, and nothing said the gauge is
+*of* the token.
+
+So it **assembles**. The chip rises out of the creature — .9 to 1, small on
+purpose, because the thing it is growing out of is directly underneath it and a
+large scale would read as the token itself moving — and the three rails follow
+**inside out**, Stress then Hit Points then Armor. That is the ladder run
+backwards, and it is the ladder's own argument: things leave in the order they
+were argued for, so a chip assembling arrives in the reverse of the order it
+will cull in. Leaving is one move, no stagger, at half the length — an arrival
+is *read*, and nobody studies a gauge that is going. Same asymmetry `gem.css`
+draws between a gain and a spend.
+
+**The root takes opacity and a scale; the rails take a scale only**, and that
+is the ladder again rather than economy: `data-lod` drives every rail's
+opacity, so an arrival that also wrote opacity would spend 340ms overruling it,
+and a chip arriving at a pulled-back camera would show an Armor rail the zoom
+had already culled. A transform cannot collide with it. Filling the root
+*forwards* is the matching trap in the other direction — it would pin opacity
+at 1 and beat `.tok.hidden`, which is a GM-invisible token quietly becoming
+visible on the frame its chip finished arriving.
+
+**Three things remove a chip and only two of them are departures.** A token
+going out of view or off the board is a creature leaving, and that plays. A
+chip whose *shape* changed — a levelled character, a scar, an adversary
+becoming visible — is torn down and rebuilt in the same call, which is one
+object being redrawn rather than two objects swapping, and animating it would
+be the readout blinking every time a maximum moved. So `fresh` is threaded
+through rather than inferred, because "there was no chip a moment ago" is true
+of both and only one of them means it. A departure interrupted is a departure
+that did not happen: the element is handed back rather than left to fade under
+its own replacement, which is `capture()`'s rule about a travel still in flight.
+
+**`after()` is settle.js's arithmetic without settle.js's event path**, and both
+departures are forced by what a chip is. It *skips* a non-finite animation
+rather than substituting a floor for one, because a chip is very often selected
+or conditioned and `tkCrown` and the Vulnerable marquee never end — the 1.2s
+floor would become the answer every time, and a departure would sit invisible
+for a second and a fifth instead of its own 170ms. And there is no
+`animationend` race, because that argument is about being *prompt* — a spent
+gem may not keep `on` a moment longer than it must — and nothing waits on this;
+worse, `animationend` bubbles, so the root's own 300ms arrival would fire first
+and cancel the Armor rail 160ms into a 460ms stagger, which is a visible snap.
 
 **Difficulty is the other occupant of that opening and never both.** A character
 spends Hope; an adversary makes you beat a number. It is the one numeral on the
@@ -3749,13 +3845,68 @@ Foundry's reaches past the cell — and is instead the one arrangement where the
 *creature* is smaller than its cell.
 
 **So there are two scales rather than one, because there are two claims.**
-`--tkr` is the **readout** — three tracks, the Hope gems, the Difficulty —
-which is a reading *off* the creature and moves out to clear whatever it now
-occupies. `--tkv` is **Vulnerable**, which goes inward, on the creature,
-because the thing that is Vulnerable is the thing in the middle — so it follows
-the *subject* and may go below 1. Grid fit is exactly what separates them, and
-a build that collapsed the two into one number would pass every other check and
-draw VULNERABLE across the tracks on every ringed token at the table.
+`--tkr` is **outward clearance** — a reading that sits *outside* the creature
+has to clear whatever the creature now occupies, and it is floored at 1, since
+a small sprite must not get a small readout. `--tkv` is **the subject** — where
+the artwork itself ends, which grid fit puts at .9218 of the cell and a
+.6-scale sprite at .6 — and it is *not* floored, because a thing drawn **on**
+the creature has to be on it. Grid fit is exactly what separates them, and a
+build that collapsed the two into one number would pass every other check.
+
+**Which of the two the rails want changed, and nobody moved them.** They used
+to hang outside the creature, so clearing it was the whole question; the
+Obsidian-orbit redesign put them *inside*, under `.er-shell`'s clip, and a
+track resting on the artwork follows the artwork. So `--tkr` went on being
+written on every chip and read by **one** element, `--tkv` went on being
+written and read by **none**, and all three rails, the Hope arc, the clip and
+the identity hairline sat at fixed percentages of the grid **cell** — which is
+the assumption the section above opens by disavowing. It fails in the direction
+that lasts: at grid fit the rails are 8% outside a creature that stopped at
+92%, and on a .6-scale sprite they are a gauge floating around a creature that
+is nowhere near them, drawn perfectly, every time.
+
+Everything under `.er-shell` reads `--tkv` now, and `--tkr` is left to the one
+thing still outside the creature — the condition sentence, which sits against
+the rim and is a caption *about* the creature rather than a reading off it.
+Two scales, two claims, and each has a consumer again. `--tk0` is gone: it
+described where the innermost track sat when the tracks were outside, and it
+had been declared and read by nothing since they moved.
+
+**Radii scale as radii and not as insets**, which is the one piece of
+arithmetic here worth reading twice. An inset is measured from the edge and a
+radius from the centre, so halving a 2% inset does not halve anything — it
+moves the rail 1% further *out*. What has to shrink is `50% − inset`, so every
+one is written `calc(50% - (50% - <inset>) * var(--tkv))`.
+
+**And the condition material is the same finding on the other side of the
+fence.** It is a PIXI filter on the token **mesh**, and the mesh is not the
+creature: a dynamic ring's texture is half again the cell in subject fit, so
+every pattern, the rim roll-off and the break's shard cuts were drawn to a quad
+the creature only sometimes fills. The shader takes a `uSubject` uniform — where
+the creature ends as a fraction of the filter frame — and dividing `p` by it
+once at the top of `main()` is the whole of respecting token scale, because
+every pattern in that file is written in `p`. **`uv` is deliberately not
+divided**: `uv` is where the artwork is sampled from, so scaling it would drag
+the creature's own picture around underneath the material. The material moves
+onto the creature; the creature stays where it is. The detail budget takes the
+same correction, since "how many pixels has the thing being dressed got" is a
+question about the creature rather than about the quad.
+
+`subjectInFrame` in `token-hud.ts` is where the two coordinate systems meet,
+and each half comes from whoever owns it: **how many cells the frame spans is
+measured** off the mesh, because that is Foundry's to say, and **where the
+creature ends inside those cells is `chipScale`'s**, already argued. Getting
+that split wrong is what the three drifting chip builds were — a second opinion
+about a number somebody else had already published. It is clamped at 1, since
+above that the material would be asked to cover more than the frame holds.
+
+**The dial comes with it**, and that reads at first like it should not.
+`tokenChipScale` was written when the readout hung outside the creature, so it
+was a clearance correction; with the readout on the creature it says one thing
+only — *this is where the creature actually ends*. A table that has had to
+correct that has corrected it for the rails and the material alike, and a dial
+that moved one and not the other would put two objects on one creature in two
+places.
 
 **Radii only.** A band's width, a gem and a numeral keep their size at every
 setting. That is the range ruler's own rule arriving here — the rings are
@@ -4038,6 +4189,23 @@ the six Hope gems lie on **one** circle, which is
 the `transform-origin` bug measured rather than trusted; that the bottom rung
 culls to Vulnerable alone; that no other sheet in the ported stack reaches into
 a chip; and **that a chip stays concentric with its token at every zoom**.
+
+**Two exclusions in the reach check, and the second is new.** The chip's root
+deliberately wears `.dh`, so a check calling `tokens.css .dh` a trespass would
+be calling the compound itself the bug; and `gem.js`'s gem is hosted here on
+purpose, so every rule `gem.css` writes for it is somebody else's by design.
+That second one used to name only `.gems` — the row `GEMS()` builds — and the
+chip solves its own angles, so it calls `GEM` directly and there is no row.
+Naming only the container would have made every rule in `gem.css` a trespass
+on the frame this component started hosting the real component, which is a
+check going red on the fix.
+
+**And two of that stage's checks still name selectors the Obsidian-orbit
+redesign retired** — `.tkarcs` and `.tkvuln`, from when Vulnerable was an HTML
+ring rather than a material on the mesh. They are stale rather than wrong about
+anything, and re-deriving what the ladder now culls to is its own piece of work
+with its own judgement; naming it here beats leaving a reader to find a check
+that reports on nothing.
 
 That last one is the alignment, and it is the check three broken builds needed
 and did not have. It stands up Foundry's own two functions rather than

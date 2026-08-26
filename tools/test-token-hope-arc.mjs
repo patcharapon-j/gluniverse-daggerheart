@@ -1,13 +1,20 @@
 /**
- * Hope sits on the rails' circle, and the sentence stays readable on it.
+ * Hope sits on the rails' circle, is gem.js's own gem, and the sentence
+ * stays readable on it.
  *
- * Both of these have already been lost once. The gems were specified as
- * "placed by angle on the tracks' own circle and tilting with it" and the
- * concept port quietly shipped them as a flex row, which nothing caught
- * because a flex row of six diamonds still looks like six diamonds in a
- * screenshot. So the geometry is asserted here rather than described: the
- * opening is a hard boundary the rails own the far side of, and two gems
- * that overlap are one Hope drawn twice.
+ * All three have been lost once, and the third is why this file grew. The
+ * gems were specified as "placed by angle on the tracks' own circle and
+ * tilting with it" and the concept port quietly shipped them as a flex
+ * row. And they were specified as GEMs — by name, in this component's own
+ * comments and in CLAUDE.md — and shipped as a hand-written diamond with
+ * its own gain and its own spend, for as long as the chip has existed.
+ *
+ * Neither is visible in a screenshot. A flex row of six diamonds still
+ * looks like six diamonds, and at six pixels a gold diamond looks like a
+ * gold diamond however it was built. So the geometry is asserted here
+ * rather than described, and so is the OBJECT: a claim a component makes
+ * about which component it is using is a claim something has to check,
+ * because the failure is a second Hope nobody can see is second.
  */
 
 import assert from "node:assert/strict";
@@ -18,12 +25,22 @@ import { TOKEN_CHIP } from "../src/module/ui/token.js";
 const chip = (max, value = 0, extra = {}) =>
   TOKEN_CHIP({ hp: { max: 6, marked: 0 }, hope: { value, max }, ...extra });
 
-const gemsOf = (html) => [...html.matchAll(/<i class="[^"]*" style="--a:(-?[\d.]+)deg"><\/i>/g)]
+const gemsOf = (html) => [...html.matchAll(/<i class="er-gem" style="--a:(-?[\d.]+)deg">/g)]
   .map((m) => Number(m[1]));
 
 const varOf = (html, name) => {
   const m = html.match(new RegExp(`--${name}:([^;"]+)`));
   return m ? m[1] : null;
+};
+
+/* The first number in a property value. --hope-r is a calc() now, because
+   it scales with the subject, and Number.parseFloat("calc(43.4cqw...") is
+   NaN — which the geometry check reported as "the chip carries no
+   geometry", a true-sounding message about the wrong thing. */
+const numOf = (html, name) => {
+  const raw = varOf(html, name);
+  const m = raw?.match(/-?\d+(?:\.\d+)?/);
+  return m ? Number(m[0]) : Number.NaN;
 };
 
 /* ── the opening ──────────────────────────────────────────────────
@@ -56,15 +73,20 @@ for (const max of [1, 2, 3, 4, 5, 6, 7, 9, 12]) {
     assert.ok(angles[i] < angles[i - 1], `${max} Hope: gems are out of order`);
 
   /* And they must not touch. What a gem occupies along the circle is its
-     DIAGONAL — it is a square turned 45° and turned again with the arc —
-     so the check is against width * sqrt(2), not width. */
+     own BOX, and that is the one arithmetic consequence of these becoming
+     GEMs: the old <i> was a square turned 45 degrees, so its DIAGONAL sat
+     on the arc and the box had to be divided by sqrt(2) to fit. A GEM is a
+     diamond clipped out of an upright box, so there is nothing to divide.
+     Keeping the sqrt(2) would go on passing while reserving 41% more arc
+     than a gem occupies, which is a check that has stopped measuring the
+     thing it names. */
   if (max > 1) {
-    const r = Number.parseFloat(varOf(html, "hope-r"));
-    const w = Number.parseFloat(varOf(html, "hope-w"));
+    const r = numOf(html, "hope-r");
+    const w = numOf(html, "sz");
     assert.ok(r > 0 && w > 0, `${max} Hope: the chip must carry its own geometry`);
     const step = Math.abs(angles[1] - angles[0]) * (Math.PI / 180) * r;
-    assert.ok(step > w * Math.SQRT2,
-      `${max} Hope: gems overlap — ${step.toFixed(2)}px of arc for a ${(w * Math.SQRT2).toFixed(2)}px diamond`);
+    assert.ok(step > w,
+      `${max} Hope: gems overlap — ${step.toFixed(2)}px of arc for a ${w.toFixed(2)}px gem`);
   }
 }
 
@@ -84,16 +106,97 @@ assert.doesNotMatch(TOKEN_CHIP({ conditions: ["Ablaze"], tint: 'red" onload="x' 
 assert.doesNotMatch(TOKEN_CHIP({ conditions: ["Ablaze"] }), /--tkc/,
   "no condition colour, no custom property");
 
+/* ── it is the gem, not a picture of one ──────────────────────────
+   The assertion this file did not have. Every member below is one GEM()
+   emits and token.css draws none of: the bloom's own wrapper, the clipped
+   face, the refraction band, the rim, and the transient layer the gain
+   ring and the spend streak ride. A chip that has gone back to drawing its
+   own diamond fails here rather than in somebody's session. */
+const one = chip(6, 4, { scars: 1 });
+for (const part of ["gem", "lamp", "pit", "edge", "rim", "fx"])
+  assert.match(one, new RegExp(`class="[^"]*\\b${part}\\b`),
+    `the Hope gems must be gem.js's GEM — no .${part} in the markup`);
+assert.match(one, /class="gem scar"/, "a scarred slot is GEM's own scar, not a recolour");
+
+/* ── the readout sits on the creature ────────────────────────────
+   Obsidian orbit moved the rails INSIDE the creature, which swapped which
+   scale they belong to, and nobody moved them: --tkr went on being written
+   and read by one element, --tkv written and read by none, and every rail
+   sat at a fixed percentage of the grid CELL. Grid fit stops the subject at
+   .9218 of the cell and a .6-scale sprite at .6, so the gauge floated
+   around a creature that was nowhere near it — drawn perfectly, every
+   time. */
+assert.match(one, /--hope-r:calc\([\d.]+cqw \* var\(--tkv/,
+  "the Hope arc's radius must follow the subject, not the grid cell");
+
 const css = readFileSync(new URL("../styles/token.css", import.meta.url), "utf8");
-assert.match(css, /\.er-hope i\{[^}]*transform:rotate\(var\(--a,0deg\)\) translateY\(var\(--hope-r\)\) rotate\(45deg\)/s,
+for (const rail of ["armor", "hp", "stress"])
+  assert.match(css, new RegExp(`\\.er-ring\\.${rail}\\s*\\{inset:calc\\(50% - [\\d.]+%\\s*\\*\\s*var\\(--tkv`),
+    `the ${rail} rail must follow the subject, not the grid cell`);
+assert.match(css, /\.er-shell\{[^}]*clip-path:circle\(calc\([\d.]+%\s*\*\s*var\(--tkv/s,
+  "the clip is a promise about the creature, so it follows the subject too");
+/* Radii only. A band's width is a thing you count and keeps its size at
+   every setting — the range ruler's rule arriving here. An inset is
+   measured from the EDGE and a radius from the centre, which is why every
+   one of those is written 50% minus a scaled radius rather than a scaled
+   inset: scaling the inset moves a rail the wrong way. */
+assert.doesNotMatch(css, /--rail:calc\(/,
+  "a rail's WIDTH must not scale — only its radius");
+assert.doesNotMatch(css, /\.er-hope\{[^}]*--sz:calc\(/s,
+  "a gem is a thing you count and keeps its size at every setting");
+assert.match(css, /\.er-hope \.er-gem\{[^}]*transform:rotate\(var\(--a,0deg\)\) translateY\(var\(--hope-r\)\)/s,
   "the gems are placed by angle on the circle, not laid out in a row");
 assert.doesNotMatch(css, /\.er-hope\{[^}]*display:flex/s,
   "a flex row is the one thing the 60 degree opening is not");
-assert.match(css, /\.er-hope i\.spend::after\{animation:tkHopeOut/);
-assert.match(css, /\.er-hope i\.gain::after\{animation:tkHopeIn/);
+/* The placement carries the gem and must not turn it. A GEM is already a
+   diamond; the trailing rotate(45deg) is what the old square needed, and
+   it would now put the scar's two strokes and the spend's streak on the
+   diagonal — a shape that still reads as a gem and no longer reads as
+   crossed out. */
+assert.doesNotMatch(css, /\.er-hope \.er-gem\{[^}]*rotate\(45deg\)/s,
+  "a GEM is already a diamond and must not be turned again");
+assert.doesNotMatch(css, /tkHopeIn|tkHopeOut/,
+  "the hand-written gain and spend belong to gem.js now");
+
+/* ── arriving and leaving ─────────────────────────────────────────
+   A chip had neither: appendChild and remove, so a creature arriving on
+   the board and a corpse being deleted both happened between one frame and
+   the next, on the one surface in this system drawn over somebody's
+   artwork and therefore with nothing to establish it.
+
+   The stagger is asserted as an ORDER and not as three numbers, because
+   what it means is the ladder run backwards — the rails cull outside-in,
+   so they assemble inside-out — and three numbers would go on passing
+   while somebody retuned them into the wrong sequence. */
+const delayOf = (name) => {
+  const m = css.match(new RegExp(`\\.er-ring\\.${name}\\{animation:tkRingIn[^}]*\\}`));
+  assert.ok(m, `the ${name} rail has no arrival`);
+  const delay = m[0].match(/\)\s+([\d.]+)s\s+backwards/);
+  return delay ? Number.parseFloat(delay[1]) : 0;
+};
+const [stress, hp, armor] = ["stress", "hp", "armor"].map(delayOf);
+assert.ok(stress < hp && hp < armor,
+  `the rails assemble inside-out — got stress ${stress}, hp ${hp}, armor ${armor}`);
+assert.match(css, /\.tok\.arrive\{animation:tkChipIn/, "a chip with no arrival pops onto the board");
+assert.match(css, /\.tok\.leaving\{animation:tkChipOut/, "a chip with no departure vanishes");
+
+/* An arrival that wrote opacity on a rail would spend its whole length
+   overruling data-lod, and a chip arriving at a pulled-back camera would
+   show the Armor rail the zoom had already culled. Transforms only. */
+assert.doesNotMatch(css, /@keyframes tkRingIn\{[^}]*opacity/s,
+  "the rails' arrival must not touch opacity — the ladder owns it");
+
+/* Filling the root forwards would pin opacity at 1 and beat .tok.hidden,
+   which is a GM-invisible token quietly becoming visible on the frame its
+   chip finished arriving. */
+assert.doesNotMatch(css, /\.tok\.arrive\{animation:tkChipIn[^}]*(forwards|both)/,
+  "the chip's arrival must not fill forwards — .tok.hidden has to win afterwards");
 assert.match(css, /\.dh\.tok \.tkcond \.tkwr text\{[^}]*paint-order:stroke fill/s,
   "the sentence needs its stroke painted UNDER the fill or it loses half its weight");
 assert.match(css, /\.dh\.tok \.tkcond \.tkwr text\{[^}]*fill:color-mix\(in srgb,var\(--tkc/s,
   "the sentence carries the condition's own material colour");
 
-console.log("token hope: gems on the circle at a fixed pitch, no overlap, sentence armoured and tinted");
+console.log(
+  "token hope: real GEMs on the circle at a fixed pitch, no overlap, " +
+  "chip arrives inside-out and leaves, sentence armoured and tinted",
+);

@@ -140,6 +140,12 @@ uniform sampler2D uSampler;
 uniform float uTime;
 uniform float uCount;
 uniform float uDead;
+/* Where the creature ENDS, as a fraction of the filter frame. 1.0 means the
+   frame is the creature, which is the plain-token case and the default. It
+   is not derived in here on purpose: what the frame contains is a question
+   about Foundry's mesh, and this shader is deliberately blind to everything
+   but its own two frames. See subjectInFrame in token-hud.ts. */
+uniform float uSubject;
 uniform vec4 inputSize;    // xy = pooled texture size, zw = 1/size
 uniform vec4 outputFrame;  // xy = frame origin, zw = frame size in screen px
 uniform vec4 inputClamp;   // xy = min uv, zw = max uv, both in texture space
@@ -840,7 +846,23 @@ vec4 shattered(vec2 uv, vec2 p, float t, float d) {
 
 void main() {
   vec2 uv=tokenUv(vTextureCoord);
-  vec2 p=uv*2.0-1.0;
+  /* ── the material sits on the creature, not on the quad ────────────
+     One division, and it is the whole of respecting token scale.
+
+     Every pattern in this file, the rim, the edge roll-off and the break's
+     shard cuts are written in p, where length(p) == 1 is "the edge". That
+     was the mesh's own edge, which is the creature only when the mesh
+     holds nothing else. It very often does: a dynamic ring's texture is
+     half again the cell in subject fit, so a ringed creature had its
+     material drawn a comfortable margin outside itself, over the ring and
+     onto the map. A sprite scaled down inside its square is the same
+     failure with a different cause.
+
+     uv is NOT divided, and that is the half that matters. uv is where the
+     artwork is sampled from; moving it would drag the creature's own
+     picture around under the material. The material scales onto the
+     creature and the creature stays where it is. */
+  vec2 p=(uv*2.0-1.0)/max(uSubject,.05);
 
   /* Detail is bought with pixels. outputFrame.z is the token's width on
      screen, so a creature filling the viewport gets its second register of
@@ -849,7 +871,12 @@ void main() {
      camera — see tokenUv — and this is the deliberate exception, because
      the question "how much detail can be resolved" is a question about
      pixels by definition. */
-  float detail = smoothstep(44.0, 104.0, outputFrame.z);
+  /* Scaled by uSubject for the same reason the question is asked at all:
+       this is "how many pixels has the thing being dressed got", and the
+       thing being dressed is the creature rather than the quad around it.
+       A ringed token at 60px was claiming half again the detail it could
+       resolve, which is the frequency that crawls. */
+  float detail = smoothstep(44.0, 104.0, outputFrame.z * uSubject);
 
   if(uDead>.5){gl_FragColor=shattered(uv,p,uTime,detail);return;}
 
@@ -930,7 +957,7 @@ function getFilterClass(): any {
   if (!Base) return null;
   FilterClass = class DaggerheartConditionFilter extends Base {
     static defaultUniforms = {
-      uTime: 1.75, uCount: 0, uDead: 0,
+      uTime: 1.75, uCount: 0, uDead: 0, uSubject: 1,
       uId0: 0, uId1: 0, uId2: 0, uId3: 0, uId4: 0,
       uColor0: [0,0,0], uColor1: [0,0,0], uColor2: [0,0,0],
       uColor3: [0,0,0], uColor4: [0,0,0],
@@ -950,7 +977,17 @@ function detach(token: any): void {
 
 export function clearTokenConditionMaterial(token: any): void { detach(token); }
 
-export function syncTokenConditionMaterial(token: any, ids: readonly string[], dead = false): void {
+/**
+ * @param subject where the creature ends as a fraction of the filter frame;
+ *   1 is a plain token, and the caller measures it because the answer is a
+ *   fact about Foundry's mesh rather than about conditions.
+ */
+export function syncTokenConditionMaterial(
+  token: any,
+  ids: readonly string[],
+  dead = false,
+  subject = 1,
+): void {
   const mesh = token?.mesh;
   if (!mesh || (!dead && ids.length === 0)) { detach(token); return; }
   const Klass = getFilterClass();
@@ -982,6 +1019,11 @@ export function syncTokenConditionMaterial(token: any, ids: readonly string[], d
   }
 
   const materials = conditionMaterialsFor(ids);
+  /* Clamped rather than trusted. Above 1 the material would be asked to
+     cover more than the frame holds, which it cannot — there is nothing
+     out there to sample — and a bad read collapsing it to a dot is the
+     one failure that would look deliberate. */
+  filter.uniforms.uSubject = Math.min(1, Math.max(0.2, Number(subject) || 1));
   filter.uniforms.uCount = dead ? 0 : materials.length;
   filter.uniforms.uDead = dead ? 1 : 0;
   materials.forEach((material, i) => {
