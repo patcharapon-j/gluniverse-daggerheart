@@ -124,9 +124,26 @@ const META = r => `
 /* The portrait, and nothing at all when there is not one. Plenty of
    actors have no art, and a card that reserves space for a missing image
    is worse than a card that never mentions it — so this returns an empty
-   string and the layout is byte-for-byte what it was before. */
-const POR = r => r.img
-  ? `<span class="por" style="--pic:url('${r.img}')"><i><u></u><b></b></i></span>` : '';
+   string and the layout is byte-for-byte what it was before.
+
+   The framing travels with it, because the player set those three numbers
+   while looking at this exact panel's proportions. They are written
+   unitless: `plate.css` spends them as `cqw`/`cqh` — one percent of the
+   panel — rather than as a translation of the layer, and a percentage where
+   a number is expected is invalid at computed-value time, which does not
+   mis-pan the picture but takes the whole `background` down with it.
+
+   This builder went without them for a while and `src/module/dice/plate.ts`
+   did not, which is the drift `tools/verify/` exists to catch: it draws the
+   *design* plate, so a framed portrait was a thing the study page could not
+   show and the check had to fake by setting `--fdx` by hand. Same finding as
+   `sq` against `shapeOf` — right in the game, wrong on the page. */
+const POR = r => {
+  if ( !r.img ) return '';
+  const f = r.frame;
+  const vars = f ? `;--fdx:${f.x};--fdy:${f.y};--fz:${f.scale}` : '';
+  return `<span class="por" style="--pic:url('${r.img}')${vars}"><i><u></u><b></b></i></span>`;
+};
 
 /* Name first, then the roll. `//` is the system's own separator and it
    is the one part of this line that may fade. */

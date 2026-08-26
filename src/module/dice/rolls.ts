@@ -361,13 +361,43 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
 /* ── posting ─────────────────────────────────────────────────────────── */
 
 /**
- * The portrait, preferring the token art the table is actually looking at.
- * Returns undefined rather than a placeholder: a card that reserves space
- * for a missing image is worse than one that never mentions it.
+ * The portrait, which is the actor's own picture and not the token's.
+ *
+ * This preferred the token art for a long time, on the reasoning that it is
+ * what the table is actually looking at. That reasoning is about the *board*,
+ * and it broke the one promise the framing control makes.
+ *
+ * `system.portrait` is three numbers per surface and its schema says why in
+ * its first line: **one picture, two frames.** The diorama drew `actor.img`,
+ * the sheet's plate preview drew `actor.img`, and this drew whatever was on
+ * the token — so a character with token art (which is most of them, and the
+ * diorama has a button for it) framed a face against one image and got a
+ * different one on the card, wearing offsets judged for a picture it is not.
+ * The framing saved perfectly and landed on the wrong subject, which reads
+ * from the sheet as the framing not saving at all.
+ *
+ * It is also the wrong picture on its own merits, by the diorama's own
+ * argument: a token is drawn to be read at 100px from above, and this panel
+ * is a head-and-shoulders wash 210px wide with a name and a 48px numeral
+ * sitting on it.
+ *
+ * The token art stays as the fallback rather than being dropped, because a
+ * creature built token-first — most of the adversary roster — has nothing
+ * else to show, and a card that reserves space for a missing image is worse
+ * than one that never mentions it. `mystery-man.svg` is Foundry's placeholder
+ * at both ends and counts as nothing at either.
+ *
+ * Exported because the character sheet's framing preview has to draw exactly
+ * this picture, and a second copy of the rule over there is a second copy that
+ * can disagree — which is the whole of the bug above, reached from the other
+ * side. One answer, two callers.
  */
-function portraitOf(actor: any): string | undefined {
-  const img = actor?.token?.texture?.src || actor?.prototypeToken?.texture?.src || actor?.img;
-  return img && !img.endsWith("mystery-man.svg") ? absolute(img) : undefined;
+export function portraitOf(actor: any): string | undefined {
+  const own = (src: string | undefined): string | undefined =>
+    src && !src.endsWith("mystery-man.svg") ? src : undefined;
+  const img =
+    own(actor?.img) ?? own(actor?.token?.texture?.src) ?? own(actor?.prototypeToken?.texture?.src);
+  return img ? absolute(img) : undefined;
 }
 
 /**

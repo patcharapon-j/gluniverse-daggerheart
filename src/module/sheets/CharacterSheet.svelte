@@ -46,7 +46,7 @@
   import { addDomainCard } from "../apps/domain-cards.ts";
   import { takeDamage } from "../apps/damage.ts";
   import { rest } from "../apps/rest.ts";
-  import { absolute, cssUrl } from "../assets.ts";
+  import { cssUrl } from "../assets.ts";
   import { rollAttack, rollTrait, rollWeaponDamage } from "../dice/actions.ts";
   import {
     modifierTotal,
@@ -54,6 +54,10 @@
     weaponModifierTerms,
   } from "../data/modifiers.ts";
   import { platePortrait } from "../dice/plate.ts";
+  /* The one answer to "which picture does this actor's card draw" — see
+     `portraitOf`. Imported rather than restated, because the framing is
+     only worth anything if the preview and the card agree. */
+  import { portraitOf } from "../dice/rolls.ts";
   import { SPINE, TILE } from "../ui/tile.js";
   import { XBOX, XMARK } from "../ui/mark.js";
   import { CARD, rich } from "../ui/card.js";
@@ -323,13 +327,30 @@
   /* Built by the card's own builder, so the preview cannot drift from the
      card — see `platePortrait`. The roll it shows is a fixed sample: what
      is being judged is where the face sits under the name and the numeral,
-     and those are in the same place on every duality roll ever made. */
+     and those are in the same place on every duality roll ever made.
+
+     And the *picture* comes from the poster's own `portraitOf` rather than
+     being resolved a second time here. That is what this preview got wrong
+     for as long as it has existed: it drew `actor.img` and the card drew
+     whatever was on the token, so a character with token art framed one
+     picture and got another, wearing offsets judged for a face that is not
+     in it. Neither half looked wrong on its own — each is correct about the
+     field it names — and from the sheet it reads as the framing not saving.
+     `rev` is the dependency rather than `snap.img`, because the answer can
+     be on the prototype token — which the snapshot does not carry and which
+     the diorama's own Token button writes. `rev` is bumped by every sync,
+     so the preview follows either picture changing. */
+  const portraitSrc = $derived.by(() => {
+    void snap.rev;
+    return portraitOf(doc);
+  });
+
   const preview = $derived(
     platePortrait({
       who: snap.name,
       label: "agility",
       kind: "duality roll",
-      img: snap.img ? absolute(snap.img) : undefined,
+      img: portraitSrc,
       frame: stored("plate"),
       h: 9,
       f: 7,
