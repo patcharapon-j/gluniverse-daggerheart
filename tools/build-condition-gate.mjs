@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { TOKEN_CONDITION_FRAGMENT } from "../src/module/token-conditions.ts";
-import { CONDITION_MATERIAL_REFINED, CONDITIONS, PALETTE } from "../design/qa/condition-fidelity/material.js";
+import { CONDITION_MATERIAL_REFINED, CONDITIONS, DEAD, PALETTE } from "../design/qa/condition-fidelity/material.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const out = process.argv[2] ?? join(root, "design/qa/condition-fidelity/sixteen-materials.html");
@@ -33,6 +33,32 @@ execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", source, "-vf",
 const portrait = `data:image/jpeg;base64,${readFileSync(crop).toString("base64")}`;
 rmSync(crop, { force: true });
 
+/* Every condition has to move.
+
+   That was the whole of one note back, and it is exactly the kind of
+   requirement that is quietly lost the next time somebody tunes a single
+   branch: Restrained shipped with no `t` in it at all and nobody noticed
+   for two passes, because a still texture looks fine in a screenshot and
+   only looks wrong on a table. A screenshot cannot catch this and neither
+   can a reviewer, so the build does.
+
+   The last branch has no `if` of its own — it is the fall-through — which
+   is why the tail after the final match is counted as one. */
+const patterns = CONDITION_MATERIAL_REFINED.slice(
+  CONDITION_MATERIAL_REFINED.indexOf("vec2 conditionPattern"),
+  CONDITION_MATERIAL_REFINED.indexOf("vec2 conditionWarp"));
+const cuts = [...patterns.matchAll(/if \(id < [\d.]+\) \{/g)].map((m) => m.index);
+const tailAt = patterns.lastIndexOf("\n  }\n") + 4;
+const branches = [...cuts.map((cut, i) => patterns.slice(cut, cuts[i + 1] ?? tailAt)),
+                  patterns.slice(tailAt)];
+if (branches.length !== CONDITIONS.length)
+  throw new Error(`gate: ${branches.length} shader branches for ${CONDITIONS.length} conditions`);
+branches.forEach((branch, i) => {
+  /* `t` as a whole identifier, so `.34` and `smoothstep` do not count. */
+  if (!/[^A-Za-z0-9_]t[^A-Za-z0-9_]/.test(branch.replace(/\/\*[\s\S]*?\*\//g, "")))
+    throw new Error(`gate: ${CONDITIONS[i][1]} has no time in it, so it is a decal`);
+});
+
 const COMPOSITES = [
   [["vulnerable", "ablaze"], "Vulnerable + Ablaze",
     "Two conditions whose hot cores are different temperatures, and both survive the roll-off."],
@@ -44,8 +70,13 @@ const COMPOSITES = [
     "The two most transparent materials in the set, layered."],
 ];
 
+/* Dead is not a condition and is not in CONDITIONS, because CONDITIONS is
+   also the id-to-branch table and the shader reaches the break through
+   uDead rather than through an id. It is still a material the same eyes
+   have to accept, so it gets a row. */
 const rows = [
   ...CONDITIONS.map(([id, label, copy], i) => ({ ids: [id], label, copy, tint: PALETTE[i] })),
+  { ids: [], label: DEAD[1], copy: DEAD[2], tint: null, dead: true },
   ...COMPOSITES.map(([ids, label, copy]) => ({ ids, label, copy, tint: null, composite: true })),
 ];
 
@@ -134,6 +165,7 @@ h2{margin:0 0 18px;font-family:var(--mono);font-weight:700;font-size:10px;
 .cols p em{color:var(--ink);font-style:normal;font-weight:500}
 code{font-family:var(--mono);font-weight:500;font-size:11.5px;color:#bed0e3;
   background:var(--sunk);padding:2px 6px;border-radius:4px}
+.note-inline{border-left:2px solid var(--line);padding-left:14px;color:var(--dim)}
 .note{margin-top:18px;padding:18px 20px;border-radius:10px;background:var(--sunk);
   border:1px solid var(--rule)}
 .note h3{margin:0 0 10px;font-family:var(--mono);font-weight:700;font-size:9.5px;
@@ -158,6 +190,10 @@ and embossed everything, trading the shipped shader's best quality, which is tha
 difference on this page comes from the pattern functions and one roll-off.</p>
 <p class="lede">Left column is what ships today; centre is the proposal; right is the centre column at a
 40&nbsp;pixel token, which is the case that decides how much detail is safe to add at all.</p>
+<p class="lede">Second revision. The first fixed the resolution and left two things unfixed: the patterns
+were still written at the wrong <em>size</em>, and half of them barely moved. Both are addressed below,
+along with a rework of Invisible, the removal of Enraptured's motes, and the break a dead token
+leaves behind.</p>
 
 <div class="bar">
   <button id="pause" type="button">pause</button>
@@ -170,6 +206,58 @@ difference on this page comes from the pattern functions and one roll-off.</p>
   <span class="new">proposed<i>40px token</i></span>
 </div>
 <div class="ledger"><canvas id="gl"></canvas><div id="table"></div></div>
+
+<div class="section">
+<h2>Size, and whether anything is happening</h2>
+<div class="cols">
+<div>
+<p><strong>The number that governs every frequency here is 40, not 160.</strong> A feature narrower than
+about a fortieth of the token cannot be drawn at that size at all, so it does not arrive as detail; it
+arrives as a slight uniform lift across the disc. That lift is the wash, and the wash is what made
+sixteen conditions look like one. Almost every frequency on this page has come down, most by about a
+third, chosen so the <em>largest</em> structure survives at 40&nbsp;pixels and everything else is detail
+on top of something that already reads.</p>
+<p><strong>Charged was the clearest case</strong> and was named directly. It drew its arcs as
+<code>pow(1 - |curve|, 14)</code>, which is a filament: a hairline at 160&nbsp;pixels and nothing at all
+at 40, so its entire contribution was a faint even glow. A bolt at reading distance is a thick bright
+channel with a filament inside it, so the channel is drawn wide at a low power, the filament rides the
+same curve at a high one, and there are about three of them across the token instead of a hedge of thin
+ones. Then it strikes on a beat, because a discharge you can watch continuously is a neon sign.</p>
+<p><strong>Every condition now has a loop you can watch.</strong> Restrained had no <code>t</code> in it
+anywhere &mdash; it was a decal of rope, printed on. Corroded and Cloaked drifted at .03 and .09, which
+over a turn of play is static. A material that holds still reads as a sticker on the token no matter how
+good the texture is, and the fix costs almost nothing: Restrained cinches on a haul with a strain
+highlight running its length, Corroded walks its threshold so the boundary is somewhere it was not a
+moment ago, and Cloaked re-deals its panels on a beat rather than sliding them across the face.</p>
+<p class="note-inline">That last requirement is now checked at build time rather than remembered. A
+still texture looks fine in a screenshot and only looks wrong on a table, so the build refuses to
+produce this page if any branch has no time in it.</p>
+</div>
+<div>
+<p><strong>Invisible is reworked outright.</strong> It was drawing caustics, which are a description of
+water, and the subject is a creature you cannot see. Nothing drawn <em>on</em> a token reads as
+invisibility; a texture over a face is the opposite of the claim.</p>
+<p>Two attempts got it wrong the same way, and the reason is worth stating because it constrains
+everything else here: this composite turns the field into <em>both</em> the tint and the glow, so a
+condition that fills the disc with a high value is a condition that lights the whole token up. A veil
+over the body drew a glowing bubble. What works is a low, even field with a colourless accent, so the
+portrait loses its colour rather than gaining one, a thin refracting shell at the silhouette, a wipe
+travelling down that briefly hands the outline back, and the largest displacement in the set carrying
+the artwork away underneath &mdash; the only warp here not gated on its own value.</p>
+<p><strong>Enraptured's motes are gone.</strong> They were voronoi cell interiors: round, evenly spaced
+and all one size. A field of those does not read as anything drifting, it reads as polka dots on a face.
+The subject is rising light, so it is drawn as rising light &mdash; lanes uneven along x, a climbing
+phase, a fade as they go &mdash; under a bloom that opens and closes.</p>
+<p><strong>Dead is the one state that replaces the creature</strong> rather than dressing it, so it is
+the one that has to hold up as a picture on its own. It has its own row now. The pieces used to be
+re-cut in place; each shard carries its artwork along its own escape vector now, and the gap opens on a
+long settle. Each seam has a lit lip on one side and a shadowed one on the other, from a single dot
+product between the light and the vector across the seam, which is most of the difference between cut
+paper and a broken pane. Dust falls through it and a cold glint crosses the faces on a twenty-second
+loop &mdash; deliberately far slower than anything a living condition does.</p>
+</div>
+</div>
+</div>
 
 <div class="section">
 <h2>Why sixteen conditions looked like one</h2>
@@ -330,7 +418,7 @@ async function boot() {
 
   let clock = 2.4;
 
-  const drawTile = (slot, row, list) => {
+  const drawTile = (slot, row, list, dead) => {
     const [program, frame] = COLUMNS[slot];
     gl.useProgram(program);
     const u = uniformsFor(program);
@@ -338,7 +426,7 @@ async function boot() {
     gl.vertexAttribPointer(u.aPosition, 2, gl.FLOAT, false, 0, 0);
     gl.uniform1i(u.uSampler, 0);
     /* One tile is one token, so the frame IS the tile and tokenUv is the
-       identity — the same contract PIXI hands the live filter. Setting both
+       identity, the same contract PIXI hands the live filter. Setting both
        inputSize and outputFrame to the same number keeps that identity while
        telling the shader how many pixels it is being drawn at. */
     gl.uniform4f(u.inputSize, frame, frame, 1 / frame, 1 / frame);
@@ -349,7 +437,7 @@ async function boot() {
     gl.viewport(x, y, TILE, TILE);
     gl.scissor(x, y, TILE, TILE);
     gl.uniform1f(u.uCount, list.length);
-    gl.uniform1f(u.uDead, 0);
+    gl.uniform1f(u.uDead, dead ? 1 : 0);
     list.slice(0, 5).forEach((id, i) => {
       const index = IDS.indexOf(id);
       gl.uniform1f(u['uId' + i], index);
@@ -367,7 +455,8 @@ async function boot() {
   const frame = () => {
     if (running) clock = 2.4 + (performance.now() - start) / 1000;
     for (let i = 0; i < ROWS.length; i++)
-      for (let slot = 0; slot < COLUMNS.length; slot++) drawTile(slot, i, ROWS[i].ids);
+      for (let slot = 0; slot < COLUMNS.length; slot++)
+        drawTile(slot, i, ROWS[i].ids, ROWS[i].dead);
     if (running) requestAnimationFrame(frame);
   };
   frame();
@@ -382,7 +471,7 @@ async function boot() {
 }
 
 boot().then((renderer) => {
-  status.textContent = 'both shaders live \\u00b7 ' + renderer + ' \\u00b7 16 materials + 4 composites';
+  status.textContent = 'both shaders live \\u00b7 ' + renderer + ' \\u00b7 16 materials + dead + 4 composites';
 }).catch((error) => {
   status.textContent = 'failed \\u00b7 ' + error.message;
   console.error(error);
