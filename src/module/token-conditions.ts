@@ -712,7 +712,22 @@ vec4 shattered(vec2 uv, vec2 p, float t, float d) {
   cold += vec3(.70, .78, .90) * craze * .30;
   cold += vec3(.66, .74, .86) * dust * .22;
   cold += grain * .05;
-  return vec4(clamp(cold, 0.0, 1.0), art.a * solid * circle * cell);
+  /* PREMULTIPLIED, and the clipping above is worth nothing without it.
+     PIXI composites a filter's output with ONE / ONE_MINUS_SRC_ALPHA, which
+     adds the colour at full strength whatever the alpha says — so a fragment
+     that returns a lit shard face and an alpha of zero draws the lit shard
+     face. That is what the square was: not a clipping failure at all, but
+     every clipped fragment painting its colour anyway, out to the edges of
+     the filter's own frame, in whatever the artwork was there. On a dark
+     portrait it read as a slightly wrong edge; on a pale one it was a
+     bright square around the corpse.
+
+     Three passes of the design gate could not show it, because that page
+     asked for premultipliedAlpha:false and drew with blending off, where an
+     alpha of zero really does mean nothing appears. It composites the way
+     PIXI does now. */
+  float alpha = art.a * solid * circle * cell;
+  return vec4(clamp(cold, 0.0, 1.0) * alpha, alpha);
 }
 
 void main() {
@@ -792,7 +807,13 @@ void main() {
 
   color+=(noise2(uv*118.0+uTime*.03)-.5)*.035*(field+.18);
   color=clamp((color-.5)*1.14+.5,0.0,1.0);
-  gl_FragColor=vec4(mix(original.rgb,color,circle),original.a);
+  /* The material is premultiplied by the artwork's own alpha for the reason
+     the break is: PIXI adds a filter's colour at full strength whatever the
+     alpha channel says, so a glow written over a transparent part of a
+     token's texture is a glow drawn on the map. The artwork term is left
+     alone because it arrives premultiplied already, and where the art is
+     opaque this is multiplying by one and changes nothing at all. */
+  gl_FragColor=vec4(mix(original.rgb,color*original.a,circle),original.a);
 }`;
 
 function getFilterClass(): any {

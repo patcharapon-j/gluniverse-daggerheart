@@ -75,7 +75,16 @@ branches.forEach((branch, i) => {
     `${CONDITION_MATERIALS[i].id} has no time in it, so it is a decal`);
 });
 assert.match(TOKEN_CONDITION_FRAGMENT, /material=clamp\(mix\(material,chroma,\.68\)/);
-assert.match(TOKEN_CONDITION_FRAGMENT, /mix\(original\.rgb,color,circle\)/);
+/* PREMULTIPLIED, both branches. PIXI composites a filter's output with
+   ONE / ONE_MINUS_SRC_ALPHA, which adds the colour at full strength whatever
+   the alpha channel says — so a fragment that clips itself to zero alpha and
+   returns a colour anyway draws that colour, out to the edges of the filter's
+   own square frame. That is what put a square around a dead token, and it
+   survived three passes of the design gate because that page asked for
+   premultipliedAlpha:false, where an alpha of zero really does mean nothing
+   appears. Neither of these is decoration. */
+assert.match(code, /mix\(original\.rgb,color\*original\.a,circle\)/,
+  "the living material has to be premultiplied by the artwork's own alpha");
 
 /* Token space, not filter space. PIXI's vTextureCoord spans outputFrame/inputSize
    of a pooled texture, a ratio that moves with the camera, so a shader that reads
@@ -98,6 +107,16 @@ assert.match(shatter, /float cell = 1\.0 - smoothstep\(\.94, 1\.0, length\(p\)\)
 assert.match(shatter, /art\.a \* solid \* circle \* cell/,
   "and it has to reach the alpha, or it is a local nobody reads");
 
+assert.match(shatter, /return vec4\(clamp\(cold, 0\.0, 1\.0\) \* alpha, alpha\);/,
+  "and the colour has to be premultiplied by it, or the clipping does nothing");
+
+/* The gate has to composite the way PIXI does, or it cannot show either of
+   the two above going wrong. It could not, for three passes. */
+const gate = readFileSync(new URL("../tools/build-condition-gate.mjs", import.meta.url), "utf8");
+assert.match(gate, /premultipliedAlpha: true/);
+assert.match(gate, /gl\.blendFunc\(gl\.ONE, gl\.ONE_MINUS_SRC_ALPHA\)/);
+assert.match(gate, /UNPACK_PREMULTIPLY_ALPHA_WEBGL/);
+
 /* Both board layers hang in a stack of ours rather than in `#hud` itself.
    A layer that is a direct child of `#hud` competes with Foundry's own
    furniture — the Token HUD's buttons, #measurement, the chat bubbles —
@@ -118,5 +137,5 @@ assert.doesNotMatch(css, /\.tkvuln/);
 assert.doesNotMatch(css, /\.tkarc|\.tkhope|\.tkdiff/,
   "Obsidian orbit replaced the outboard tracks; no legacy selector may survive");
 
-console.log("token conditions: 16 materials, all animated, nine-shard break clipped to the "
-  + "cell, a colour per condition in one sentence, icon-free terminal override");
+console.log("token conditions: 16 materials, all animated, a premultiplied break clipped "
+  + "to the cell, a colour per condition in one sentence, icon-free terminal override");

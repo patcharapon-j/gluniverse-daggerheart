@@ -375,7 +375,15 @@ function link(gl, fragment) {
 }
 
 async function boot() {
-  const gl = canvas.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: false });
+  /* PREMULTIPLIED, and this is not a detail. The gate ran for three passes
+     with premultipliedAlpha:false and no blending, which means a fragment
+     that returned alpha 0 simply did not appear, so a shader that writes
+     colour where it writes no alpha looked perfect here and drew that colour
+     over the whole square frame in the game. PIXI composites premultiplied
+     with ONE / ONE_MINUS_SRC_ALPHA, so the gate does too, and a page that
+     cannot reproduce the pipeline's own blending is a page that can only
+     confirm what it was built to confirm. */
+  const gl = canvas.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: true });
   if (!gl) throw new Error('WebGL unavailable in this browser');
 
   const shipped = link(gl, SHIPPED);
@@ -402,9 +410,15 @@ async function boot() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  /* Premultiplied on upload, because that is what PIXI does to a token's
+     texture and every read of uSampler in this shader is written against it. */
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, art);
 
   gl.enable(gl.SCISSOR_TEST);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.clearColor(0, 0, 0, 0);
 
   const cache = new Map();
   const uniformsFor = (program) => {
@@ -439,6 +453,10 @@ async function boot() {
     const y = canvas.height - (row + 1) * TILE;
     gl.viewport(x, y, TILE, TILE);
     gl.scissor(x, y, TILE, TILE);
+    /* Blending is on now, so a tile has to be cleared before it is drawn or
+       every frame composites onto the last one. The scissor is already the
+       tile, so this clears exactly it. */
+    gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform1f(u.uCount, list.length);
     gl.uniform1f(u.uDead, dead ? 1 : 0);
     list.slice(0, 5).forEach((id, i) => {
@@ -474,7 +492,8 @@ async function boot() {
 }
 
 boot().then((renderer) => {
-  status.textContent = 'both shaders live \\u00b7 ' + renderer + ' \\u00b7 16 materials + dead + 4 composites';
+  status.textContent = 'both shaders live \\u00b7 ' + renderer + ' \\u00b7 16 named + 1 typed + dead + 4 composites'
+    + ' \\u00b7 premultiplied, as PIXI composites';
 }).catch((error) => {
   status.textContent = 'failed \\u00b7 ' + error.message;
   console.error(error);
@@ -489,8 +508,23 @@ boot().then((renderer) => {
    script is already ASCII by way of j(), and the stylesheet is left alone
    because an entity is not a thing CSS parses. */
 const prose = [html.indexOf("</style>"), html.indexOf("<script>")];
-writeFileSync(out,
-  html.slice(0, prose[0])
+const page = html.slice(0, prose[0])
   + html.slice(prose[0], prose[1]).replace(/[\u0080-\uffff]/g, (c) => `&#${c.charCodeAt(0)};`)
-  + html.slice(prose[1]));
+  + html.slice(prose[1]);
+
+/* The encoder above covers the PROSE, and twice now something has arrived as
+   mojibake from outside it: an em-dash in a JS comment inside the script
+   region, which is not prose and is not escaped by `j()` either because it was
+   never JSON. The page has no head of its own when it is opened off disk or a
+   plain dev server, so there is nothing to declare a charset and the bytes are
+   read as latin-1. Checked rather than encoded, because the fix is to write
+   ASCII in the first place and an encoder that silently repairs it would just
+   let the next one through. */
+const stray = page.match(/[^\x09\x0a\x0d\x20-\x7e]/);
+if (stray) {
+  const at = page.indexOf(stray[0]);
+  throw new Error(`gate: non-ASCII ${JSON.stringify(stray[0])} in the generated page, near `
+    + JSON.stringify(page.slice(Math.max(0, at - 60), at + 20)));
+}
+writeFileSync(out, page);
 console.log(`condition gate: ${out} · ${(html.length / 1024).toFixed(0)}KB · ${rows.length} rows`);
