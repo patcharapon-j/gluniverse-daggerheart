@@ -1,0 +1,114 @@
+/**
+ * CONDITION MATERIAL — the notes behind what now ships.
+ *
+ * The shader itself is src/module/token-conditions.ts and is imported from
+ * there by the gate, not copied. What is left here is the row copy the gate
+ * page is built from and the reasoning that produced it, which is worth
+ * keeping and is not worth carrying inside a fragment shader.
+ *
+ * baseline.js holds the shader this replaced, frozen, as the comparison.
+ *
+ * This is NOT a redesign. An earlier proposal replaced the composite with a
+ * physical material model — absorb, emit, relief, a key light — and it was
+ * rejected on sight, correctly: it darkened the portrait, embossed
+ * everything, and traded the shipped shader's best quality, which is that
+ * the material reads as FUSED INTO the artwork rather than laid over it,
+ * for something that looked like plastic wrap. The composite is right. It
+ * stays exactly as it is.
+ *
+ * What is actually limiting the shipped shader is resolution, in three
+ * specific ways, and none of them is the composite:
+ *
+ *   1. VALUE NOISE. `hash21` interpolated bilinearly is blobby and carries
+ *      a visible axis-aligned lattice. Every fbm-driven condition inherits
+ *      it — smoke, fire, corrosion and fog most of all, because those are
+ *      exactly the subjects where a grid reads as wrong. Gradient noise
+ *      costs one dot product more per corner and removes it. The output is
+ *      rescaled to value noise's own standard deviation so every threshold
+ *      already tuned against it stays tuned.
+ *
+ *   2. NO DETAIL BUDGET. The patterns are written at one frequency band and
+ *      that band is chosen for a token at playing zoom. Zoom in and there is
+ *      nothing more to see; the material gets bigger rather than sharper.
+ *      Adding octaves unconditionally is worse, not better — the extra
+ *      frequencies alias into a crawling shimmer the moment the token is
+ *      small. So detail is BOUGHT WITH PIXELS: `outputFrame.z` is the
+ *      token's size on screen, and every fine octave and every high
+ *      frequency below is scaled by it. A zoomed-in creature gains a second
+ *      register of structure; a creature at 40px loses it before it can
+ *      alias.
+ *
+ *   3. NO HOT CORE. The shipped emissive is `pow(peak, 3.4) * .3` over the
+ *      whole pattern, which lifts everything a little and nothing a lot.
+ *      Bright things in the world are not uniformly bright: fire has a
+ *      white base, an arc has a filament inside its glow, a crossing of two
+ *      lattices is brighter than either. So each condition now returns a
+ *      second, much narrower field — the part of itself that is genuinely
+ *      incandescent — and that gets its own near-white additive pass. It is
+ *      the cheapest thing on this page and it does the most.
+ *
+ * The additive total is soft-clipped rather than clamped. A clamp maps
+ * everything above 1 to the same white, so the hottest part of any effect
+ * loses its colour precisely where the effect is most itself.
+ *
+ * ── PASS THREE ────────────────────────────────────────────────────────
+ * The first pass fixed the fidelity. What it did not fix, and what the
+ * note back was about, is that the patterns were still written at the
+ * wrong SIZE and half of them barely moved:
+ *
+ *   FEATURE SIZE. Almost every frequency here has come down, most by
+ *   about a third. The test that matters is not this page at 160px, it is
+ *   the 40px column: a feature narrower than about a fortieth of the
+ *   token cannot be drawn at all, so it contributes nothing but a slight
+ *   uniform lift — which is exactly the wash that made sixteen conditions
+ *   look like one. Charged was the worst of these and was called out by
+ *   name: an arc drawn as pow(curve, 14) is a filament one pixel wide at
+ *   any size you would actually play at. Bolts are now a thick channel
+ *   with a filament riding inside it.
+ *
+ *   MOTION. Every condition now has a loop you can watch, and several had
+ *   none. Restrained had no `t` in it anywhere — it was a decal of rope,
+ *   printed on. Corroded and Cloaked drifted at .03 and .09, which over a
+ *   turn of play is indistinguishable from static. A material that holds
+ *   still reads as a sticker on the token; a material that changes reads
+ *   as something happening to the creature, and that difference costs
+ *   almost nothing to buy.
+ *
+ *   Invisible is reworked outright and Enraptured's motes are gone. Both
+ *   were drawing the wrong subject; the reasons are at their branches.
+ *
+ *   Dead is the one state that replaces the creature rather than dressing
+ *   it, so it is the one that has to hold up as a picture on its own. It
+ *   gets separation, thickness and a world — see `shattered`.
+ */
+
+export const PALETTE = [
+  '#9b72e4', '#7590a6', '#aeb8c4', '#7388aa',
+  '#ef4c5c', '#76d8d1', '#c467e8', '#a8dbe7',
+  '#e78ba7', '#9bc45b', '#f2c85c', '#55bff5',
+  '#7785a1', '#8d55b8', '#86a7c9', '#f0783f',
+];
+
+/** id, label, and what this pass changed. Order IS the shader branch order. */
+export const CONDITIONS = [
+  ['vulnerable',    'Vulnerable',      'Bigger shards, and a stress front running out from the impact, so the fracture is something that happened rather than something that is.'],
+  ['hidden',        'Hidden',          'Three smoke registers at roughly double the speed, over a tide that surges instead of sitting at a fixed line.'],
+  ['restrained',    'Restrained',      'It had no time in it at all. The bands now cinch on a haul and a strain highlight runs their length.'],
+  ['cloaked',       'Cloaked',         'The dazzle re-deals on a beat. Camouflage that holds still is a paint job.'],
+  ['markedForDeath','Marked for Death','The reticle turns, the sweep runs twice as fast, and the whole mark pulses on a lock rhythm.'],
+  ['spectral',      'Spectral',        'Scan lines a third as fine, so they survive 40px as lines rather than aliasing into grey, and the sweep moves twice as fast through them.'],
+  ['hexed',         'Hexed',           'Coarser lattices counter-rotating at nearly double the rate. The moire is now the fastest thing on the token.'],
+  ['invisible',     'Invisible',       'Reworked. The body is left almost untinted and heavily displaced; the whole budget goes to the refracting shell and a wipe that hands the outline back.'],
+  ['enraptured',    'Enraptured',      'The motes are gone. Round, evenly spaced, identical dots read as polka dots on a face. This is rising light, drawn as rising light.'],
+  ['corroded',      'Corroded',        'Patches nearly twice the size, and the threshold is walked rather than fixed, so the boundary is somewhere it was not a moment ago.'],
+  ['stunned',       'Stunned',         'Two fronts half a period apart so there is always one crossing, over five thick spokes instead of seven thin ones.'],
+  ['charged',       'Charged',         'The one called out for being too small. A thick channel with the filament inside it, three bolts instead of a hedge, gated on a discharge beat.'],
+  ['drained',       'Drained',         'Wider runs, a level that actually falls over the loop, and drops at nearly double the rate.'],
+  ['horrified',     'Horrified',       'A deeper breath over a wider reach, so the edge advances across a real distance rather than trembling in place.'],
+  ['silenced',      'Silenced',        'Rings half as frequent and twice as thick, with the node spacing itself breathing so a standing wave still has somewhere to go.'],
+  ['ablaze',        'Ablaze',          'Larger tongues, a faster rise, and a stronger curl, because a fire at 40px is a shape before it is a texture.'],
+];
+
+/** Not a condition: a separate branch of the shader, and its own row. */
+export const DEAD = ['dead', 'Dead',
+  'Nine shards on a spiral, opening on a settle, each with a lit lip and a shadowed one. Dust falls through it and a cold glint crosses it on a twenty-second loop.'];
