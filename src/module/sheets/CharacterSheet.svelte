@@ -2807,7 +2807,23 @@
                here is a record you edit. This is a button you press, and it
                does the two sums players actually get wrong. -->
           <div class="pnl">
-            <div class="k">Attack<s>proficiency {sys.proficiency}</s></div>
+            <!-- The pair with nothing attached to it. On the heading rather
+                 than in a row of its own: it is the least-reached-for control
+                 in this panel and a `.wr` is 48px of a tab that had just given
+                 back 60, so it goes on a line the sheet already has. The two
+                 diamonds are the mark, because at 9px a heading has room for a
+                 mark and a verb and not for a sentence. -->
+            <div class="k">
+              Attack<s>proficiency {sys.proficiency}</s>
+              <button
+                class="duo"
+                type="button"
+                title="Roll 2d12 Hope and Fear with no trait — your modifier, advantage and Experiences"
+                onclick={askDuality}
+              >
+                <i class="h"></i><i class="f"></i>duality
+              </button>
+            </div>
             <div class="atk">
               {#each [["primary", "Primary", primary], ["secondary", "Secondary", secondary]] as [key, label, w]}
                 {#if w}
@@ -2867,30 +2883,6 @@
                   </div>
                 {/if}
               {/each}
-              <!-- The pair on its own. It sits under the two weapons because
-                   it is the same gesture as the two above it — press, compose
-                   the sentence, roll — and because this is where somebody
-                   already is when the GM asks for a roll that is not an
-                   attack. `.free` is only a hue: the row is a `.wr` because it
-                   is one, and inventing a second row shape for a roll that has
-                   no weapon in it would say it was a different kind of act. -->
-              <div class="wr free">
-                <span class="sl">Duality</span>
-                <div class="id">
-                  <b>Duality Roll</b>
-                  <span>no trait · <em>your modifier</em></span>
-                </div>
-                <button
-                  class="go"
-                  type="button"
-                  title="2d12 Hope and Fear, with whatever you compose — no trait"
-                  onclick={askDuality}
-                >
-                  <span class="dd"><i class="h"></i><i class="f"></i></span>
-                  <em>2d12</em>
-                  <s>roll</s>
-                </button>
-              </div>
               <div class="rd"></div>
             </div>
           </div>

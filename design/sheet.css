@@ -628,6 +628,65 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 .pnl > .k s + .nw{margin-left:0}
 .pnl > .k .nw:hover{color:var(--hope-tx)}
 
+/* ── the pair, as a press on a heading ─────────────────────────────
+   A duality roll with nothing attached to it — the GM asks for one, a card
+   is improvised, a house rule wants 2d12 and a number somebody agreed on out
+   loud. Every other roll on this sheet is *about* something and brings a
+   number with it; this one brings none, so the popover opens at zero and
+   whatever the player types is the whole modifier.
+
+   It was a third row in the attack bar, which is the wrong size for it by an
+   order of magnitude: a `.wr` is 48px of sheet, the tab it sits on had just
+   given back 60, and a row that shape claims to be a third weapon. It is the
+   least-reached-for control in the panel and it needs one line of the sheet,
+   so it goes on a line the sheet already has. The heading is the panel's own
+   furniture and already carries a press slot — this is `+ card`'s position
+   with a different verb in it.
+
+   The two diamonds and not the word "duality": the same rhombus the Hope
+   gems, the roll button's own pair and the plate about to be posted are made
+   of, in the two colours that say which is which. At 9px a heading has room
+   for a mark and a verb and not for a sentence, and the mark is the half a
+   reader already knows.
+
+   Every metric stated, height included, for `.nw`'s reason one rule above —
+   Foundry's `elements` layer sizes every <button> to 28px, and this one is a
+   9px mono press sitting in a 9px heading row. */
+/* `align-self:center` and not the row's baseline. `.pnl > .k` aligns on
+   baselines so the heading and its meta sit on one line, and an inline-flex
+   box takes its baseline from its *first* flex item — which here is a 6px
+   pip with no text in it. So the chip hangs off the line by the depth of a
+   diamond and takes the heading row down with it: 14px of press in a 21px
+   row, which is the whole saving this position was chosen for, spent. It
+   measures right on a study page and wrong in the game, because Foundry's
+   `elements` layer is what supplies the line-height the baseline is computed
+   against — see `tools/verify/`, which carries the layer and caught it. */
+.pnl > .k .duo{display:inline-flex;align-items:center;align-self:center;
+  gap:4px;margin-left:auto;
+  height:auto;min-height:0;max-height:none;
+  padding:2px 6px 3px;border:0;border-radius:0;cursor:pointer;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--ink-3);
+  transition:color .12s,background .12s,box-shadow .12s}
+/* `.nw`'s pattern exactly, and for its reason: the press takes the free
+   space when it is the only thing on the right of the heading, and sits
+   beside the meta when there is one. Stated as `auto` plus an override on
+   the adjacency rather than the other way round — `:only-of-type` was the
+   first attempt and it out-specifies the adjacency rule, so the meta was
+   left stranded in the middle of the heading. */
+.pnl > .k s + .duo{margin-left:9px}
+.pnl > .k .duo:hover{color:var(--hope-tx);background:var(--sunk-2);
+  box-shadow:inset 0 0 0 1px var(--line-2)}
+/* A 6px box turned 45° draws 8.5px across, so it overhangs its own layout
+   box by 1.2px on each side — which is why the pair reads as touching the
+   word at the gap that looks right between two boxes. The pips stay close
+   to each other, because they are one mark rather than two, and the mark is
+   held off the label by the difference. */
+.pnl > .k .duo i{flex:none;width:6px;height:6px;transform:rotate(45deg)}
+.pnl > .k .duo i.f{margin-right:3px}
+.pnl > .k .duo i.h{background:var(--hope)}
+.pnl > .k .duo i.f{background:var(--fear)}
+
 /* "There is nothing here." Seven panels say it and only the one inside the
    advancement tab was ever styled, so the other six were browser default
    serif in the middle of a sheet that has no serif anywhere.

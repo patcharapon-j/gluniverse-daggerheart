@@ -2720,12 +2720,40 @@ brings a number with it. A great deal of what a table actually rolls is
 neither: "roll me a duality and tell me how the night goes", a card being
 improvised, a house rule that wants 2d12 and a modifier somebody agreed on out
 loud. The only way to do that was to press a trait and subtract its modifier in
-your head, which puts a number on the card nobody rolled. `rollFree` is a third
-row at the foot of the attack bar, and it is a `.wr` because it is the same
-gesture as the two above it — press, compose the sentence, roll. What tells it
-apart is the one thing true of it and of neither weapon: it is only the pair,
-so the left edge carries Hope over Fear, the two colours the button's own
-diamonds and the plate it is about to post are made of.
+your head, which puts a number on the card nobody rolled. `rollFree` is that
+roll, and `.duo` is the press.
+
+**It is a mark on the Attack panel's heading, and that is a correction.** It
+was a third `.wr` at the foot of the attack bar, on the reading that it is the
+same gesture as the two rows above it — press, compose the sentence, roll —
+and that is true and is not what decides the size of a control. A `.wr` is
+**48px** of sheet, on the tab the density scale had just recovered 60 from,
+and a row that shape claims to be a third weapon. This is the least
+reached-for control in the panel and it needs one line, so it goes on a line
+the panel already has: `.pnl > .k` carries a press slot, which is `+ card`'s
+own position with a different verb in it. Measured, the heading goes 9px to
+14px — the whole feature costs **5px** rather than 48.
+
+The mark is the two diamonds rather than the word "duality" doing the work
+alone: the same rhombus the Hope gems, the roll button's own pair and the
+plate about to be posted are made of, in the two colours that say which is
+which. At 9px a heading has room for a mark and a verb and not for a sentence.
+`margin-left:auto` with an override on `s + .duo` is `.nw`'s pattern exactly,
+and stated in that order for a reason — `:only-of-type` was the first attempt
+and it out-specifies the adjacency rule, so "proficiency 2" was left stranded
+in the middle of the heading.
+
+**And it takes `align-self:center` rather than the row's baseline**, which is
+this file's own recurring lesson arriving on a control that is a *box* rather
+than a word. `.pnl > .k` aligns on baselines so the heading and its meta sit
+on one line, and an inline-flex box takes its baseline from its **first flex
+item** — which here is a 6px pip with no text in it. So the chip hung off the
+line by the depth of a diamond and took the heading row with it: 14px of press
+in a 21px row, which is the whole five-pixel saving the position was chosen
+for, spent. It measures 14 in a 14 on a study page and 14 in a 21 in the game,
+because Foundry's `elements` layer is what supplies the line-height the
+baseline is computed against. `tools/verify/` carries the layer and is what
+caught it, on the run that added the check.
 
 **It contributes nothing, and that is the claim.** No trait term, and no
 passive `actionRoll` modifiers either — a free roll is not necessarily an

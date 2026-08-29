@@ -584,6 +584,10 @@ document.getElementById('panel').innerHTML = `
     <div class="lbl">PANEL HEADING · a press that is part of the label</div>
     <div class="pnl" style="border-top:0">
       <div class="k">Vault<s>7 stored</s><button type="button" class="nw">+ card</button></div>
+    </div>
+    <div class="lbl" style="margin-top:14px">HEADING PRESS · the pair, on a line the panel already has</div>
+    <div class="pnl" style="border-top:0">
+      <div class="k">Attack<s>proficiency 2</s><button type="button" class="duo"><i class="h"></i><i class="f"></i>duality</button></div>
       <p class="ach">Nothing here yet — <button type="button" class="nw">take one</button>.</p>
     </div>
     <div class="lbl" style="margin-top:14px">ADVANCEMENT ROW · a press that is a press</div>
@@ -1722,6 +1726,27 @@ setTimeout(async () => { try {
   const kH = Math.round(nw.parentElement.getBoundingClientRect().height);
   check('a heading press is type, not a 28px control', nwH < 16 && kH < 16,
         `press ${nwH}px in a ${kH}px heading`);
+
+  /* The duality press is the same rule on a control that is a *box* rather
+     than a word: it states its own three heights, so unreset it takes a 9px
+     heading row to 28 — the exact failure that put it on the heading in the
+     first place, since the whole argument for the position is that it costs
+     five pixels rather than forty-eight. The heading it sits in is checked
+     beside it, because a press that is the right size in a row that is not
+     has cost the sheet the saving anyway. */
+  const duo = document.querySelector('#panel .duo');
+  const duoH = Math.round(duo.getBoundingClientRect().height);
+  const duoRow = Math.round(duo.parentElement.getBoundingClientRect().height);
+  check('the duality press is a chip, not a 28px control', duoH < 20 && duoRow < 20,
+        `${duoH}px in a ${duoRow}px heading`);
+
+  /* And its two pips are the pair, in the two colours that say which is
+     which. A mark that lost one of them would be a press with a decoration
+     on it rather than the roll it is about to make. */
+  const pipH = getComputedStyle(duo.querySelector('i.h')).backgroundColor;
+  const pipF = getComputedStyle(duo.querySelector('i.f')).backgroundColor;
+  check('the duality press keeps Hope and Fear apart', pipH !== pipF,
+        `${pipH} / ${pipF}`);
 
   const tk = document.querySelector('#panel .adv .tk');
   const tkH = Math.round(tk.getBoundingClientRect().height);
