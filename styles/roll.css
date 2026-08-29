@@ -14,9 +14,12 @@
    largest, because those are the two facts you are reaching for.
    ══════════════════════════════════════════════════════════════════ */
 
-.dh .atk{display:flex;flex-direction:column;gap:6px}
+/* On the sheet's density scale — see the head of `sheet.css`. The row is
+   the pane's most-repeated object, so a pixel here is paid five times on
+   a character with a primary, a secondary and three adversary rows. */
+.dh .atk{display:flex;flex-direction:column;gap:5px}
 
-.dh .wr{display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--sunk);
+.dh .wr{display:flex;align-items:center;gap:11px;padding:var(--row, 7px) 11px;background:var(--sunk);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
   transition:background .16s}
 .dh .wr:hover{background:var(--sunk-2)}
@@ -25,6 +28,32 @@
 .dh .wr.off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line);
   clip-path:none}
 .dh .wr.off .id b{color:var(--ink-3)}
+/* ── the pair on its own ───────────────────────────────────────────
+   A duality roll with no trait and no weapon behind it: the GM asks for one,
+   a table rule wants 2d12 and a number somebody agreed on out loud, a card
+   is being improvised. It is a `.wr` and not a row of its own because it is
+   the same gesture as the two above it — press, compose the sentence, roll —
+   and a second row shape would say it was a different kind of act.
+
+   What tells it apart is the one thing that is true of it and of neither
+   weapon: it is *only* the pair. So the left edge carries Hope over Fear,
+   the same two colours the button's own diamonds and the plate about to be
+   posted are made of, and nothing else changes. Not a fill and not a border:
+   an inset shadow, exactly as `.abl .a.paid` marks a row that charges, so
+   the row keeps its own ground and its own chamfer.
+
+   The slot label is the row's subject rather than a slot — there is no
+   third hand — which is why it reads "Duality" where the others read
+   "Primary" and "Secondary". */
+.dh .wr.free{position:relative}
+/* A gradient and not two inset shadows: `box-shadow` takes no percentage, so
+   the obvious "gold for the top half, violet for the bottom" is a declaration
+   the browser drops entirely — and a dropped shadow leaves a row that looks
+   deliberate and says nothing. The bar is clipped by the row's own chamfer
+   because it is inside it. */
+.dh .wr.free::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,var(--hope) 0 50%,var(--fear) 50% 100%)}
+.dh .wr.free .id span em{color:var(--ink-3)}
 
 .dh .wr > .sl{flex:none;width:58px;font:700 7.5px/1.35 var(--f-mono);letter-spacing:.14em;
   text-transform:uppercase;color:var(--ink-3)}
@@ -44,7 +73,7 @@
    between them. */
 .dh .wr .go{flex:none;border:0;cursor:pointer;position:relative;
   display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:7px 11px 6px;min-width:70px;
+  padding:6px 11px 5px;min-width:70px;
   background:var(--raise);box-shadow:inset 0 0 0 1px var(--line-2);color:var(--ink);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
   transition:background .14s,box-shadow .14s,transform .1s}
@@ -72,7 +101,7 @@
    a permanent empty strip under the weapons would read as a broken
    component every time the sheet is opened. */
 .dh .rd{display:none}
-.dh .rd.on{display:flex;align-items:center;gap:12px;padding:11px 12px;margin-top:2px;
+.dh .rd.on{display:flex;align-items:center;gap:12px;padding:9px 12px;margin-top:2px;
   background:var(--sunk-2);
   box-shadow:inset 2px 0 0 var(--edge,var(--line-2));
   clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);

@@ -69,9 +69,33 @@ const ROW = (s) => {
   </div>`;
 };
 
+/* ── the pair on its own ──────────────────────────────────────────
+   The two rows above are *about* a weapon and bring a number with them. A
+   great deal of what a table actually rolls is neither — "roll me a duality
+   and tell me how the night goes", a card being improvised, a house rule
+   that wants 2d12 and a modifier somebody agreed on out loud. Pressing a
+   trait and subtracting its modifier in your head puts a number on the card
+   that nobody rolled, so the pair gets a row of its own.
+
+   Under the weapons rather than above them, because it is the least often
+   pressed of the three and the bar is ordered by how often each is reached
+   for — the rail's own rule. It contributes nothing: the popover opens at
+   zero and whatever is typed into it is the whole modifier. */
+const FREE = () => `
+  <div class="wr free">
+    <span class="sl">Duality</span>
+    <div class="id"><b>Duality Roll</b>
+      <span>no trait · <em>your modifier</em></span></div>
+    <button class="go" data-free="1" title="2d12 Hope and Fear, with whatever you compose — no trait">
+      <span class="dd"><i class="h"></i><i class="f"></i></span>
+      <em>2d12</em><s>roll</s>
+    </button>
+  </div>`;
+
 export const ATTACK = (slots) => `
 <div class="atk">
   ${slots.map(ROW).join('')}
+  ${FREE()}
   <div class="rd"></div>
 </div>`;
 

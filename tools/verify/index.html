@@ -597,6 +597,11 @@ document.getElementById('panel').innerHTML = `
         <span class="lb">Level 2<s class="got">Whirlwind</s></span>
       </div>
     </div>
+    <div class="lbl" style="margin-top:14px">DENSITY · the scale, and the fallback for a panel with no sheet over it</div>
+    <div class="win" id="dens" style="--w:auto;box-shadow:none;clip-path:none;display:block">
+      <div class="pnl" style="border-top:0"><div class="k">On the scale</div>
+        <p class="ach">A panel inside a sheet root reads the scale, not a literal.</p></div>
+    </div>
     <div class="lbl" style="margin-top:14px">LIST EDITOR · the two presses that were missed</div>
     <div class="pnl" style="border-top:0">
       <div class="lst" id="lsted">
@@ -1743,6 +1748,47 @@ setTimeout(async () => { try {
   const ladd = document.querySelector('#panel .lst .add');
   const laddH = Math.round(ladd.getBoundingClientRect().height);
   check('a list add is type, not a 28px control', laddH < 16, `${laddH}px`);
+
+  /* ── the density scale ────────────────────────────────────────────
+     Three things, and the third is the one with no symptom.
+
+     That a panel inside a sheet root takes its padding *from the scale* and
+     not from a literal somebody put back: the check moves `--sec` and asserts
+     the padding moves with it, which is the Fear strip's ramp check pointed at
+     a different property. A literal padding passes every other assertion on
+     this page and quietly stops obeying the one decision the scale exists to
+     be.
+
+     And that a panel with **no sheet over it** still has padding. An unset
+     custom property inside a shorthand is invalid at computed-value time,
+     which falls back to the property's *initial* value rather than to the
+     previous declaration — so a `.pnl` in a bare `.dh`, which is what a dialog
+     borrowing this vocabulary is, would not be slightly wrong, it would have
+     no padding at all. That is why every use site carries its own fallback,
+     and the fallback has to be the scale's own number or the two readings of
+     one decision have quietly become two decisions.
+
+     The transition is not a factor here — nothing on `.pnl` eases — so unlike
+     the `--i` ramp this can be read on the frame it is set. */
+  const densPnl = document.querySelector('#dens .pnl');
+  const densRoot = document.getElementById('dens');
+  const padOf = el => {
+    const c = getComputedStyle(el);
+    return `${c.paddingTop}/${c.paddingRight}/${c.paddingBottom}`;
+  };
+  const atScale = padOf(densPnl);
+  densRoot.style.setProperty('--sec', '30px');
+  densRoot.style.setProperty('--pnl-x', '40px');
+  const moved = padOf(densPnl);
+  densRoot.style.removeProperty('--sec');
+  densRoot.style.removeProperty('--pnl-x');
+  check('a panel inside a sheet reads the density scale',
+        atScale === '10px/14px/11px' && moved === '30px/40px/31px',
+        `${atScale} → ${moved}`);
+
+  const bare = padOf(document.querySelector('#panel > .dh > .pnl'));
+  check('a panel with no sheet over it falls back to the scale, not to zero',
+        bare === atScale, `${bare} outside, ${atScale} inside`);
 
   /* The tick, and three things about it. Its *size* is ours rather than the
      20px Foundry's glyph makes — measured on the unchecked one, since that is

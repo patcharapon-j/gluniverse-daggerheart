@@ -2033,6 +2033,53 @@ with `ALLOWED_HTML_ATTRIBUTES`, `style` is allowed globally for every tag, and
 What the sanitiser genuinely takes is `<svg>`, which is why the card is
 redrawn and why the change log is built out of `<i>`/`<b>` and holes.
 
+## The density scale
+
+Every sheet this system draws — character, adversary, companion, environment,
+item — has **`.win` at its root**, so density is one decision rather than sixty
+numbers spread across four stylesheets and two Svelte style blocks. Five
+properties are published there and `design/sheet.css` opens with the argument:
+`--sec` a section's own vertical padding, `--run` the space between blocks
+inside one, `--row` a pressable row's own padding, `--pnl-x` a pane section's
+side padding, `--dio` the portrait diorama.
+
+**What is on the scale and what is not is the whole of it.** Structural space
+is; nothing that makes an object what it is — type size, colour, silhouette,
+the tile's and spine's `cqw` proportions, a mark's geometry, a gem's metrics —
+because a sheet that got smaller by shrinking its type is the gear tile's own
+failure chosen deliberately: large pictures and caption-sized data. The values
+are the old ones less the slack, which had been tuned on a study page, where a
+document is as tall as it likes; a Foundry window is 860px with a scrollbar.
+Measured: the rail gives back 92px, the advancement tab 130, the item sheet 88,
+and nothing on any of them reads differently.
+
+**Every use site carries its own fallback**, and that is not belt and braces.
+An unset custom property inside a `calc()` or a shorthand is invalid at
+computed-value time, which does not fall back to the previous declaration — it
+falls back to the property's *initial* value. So a `.pnl` drawn outside a
+`.win`, which is what a dialog borrowing this vocabulary is, would not be
+slightly wrong; it would have no padding at all. `tools/verify/`'s panel stage
+carries both readings and asserts both: that a panel inside a sheet root *moves
+when the scale moves* — the Fear strip's ramp check pointed at a property — and
+that a panel with no sheet over it lands on the scale's own numbers anyway. A
+literal padding put back by hand passes every other assertion on that page.
+
+`styles/actor-sheets.css` is hand-authored and takes the scale rather than
+restating one: its `.pnl` override was 10/14/11, which is exactly what the
+scale now says, so the override was a second copy of one number rather than a
+decision and is gone. The three restated paddings in `CharacterSheet.svelte`
+are the one place a value is genuinely duplicated, and they have to be — the
+button reset there zeroes the padding to get three controls out of Foundry's
+28px, and a `padding:0` in the same rule beats the design's from the `system`
+layer.
+
+**One thing was fixed on the way past.** Those three sheets' tab strips printed
+the chosen tab's label in `--paper` on a `--frame-2` strip, which in the default
+dark theme is `#171a1f` on `#101317`: the label was not dim, it was gone. It was
+a straight copy of `.tabs button.on`'s *background* into its `color`. The
+character sheet's own strip is the pattern — the chosen tab takes the pane's
+ground and its label takes the pane's ink.
+
 ## Gear on the sheet
 
 `design/tile.css` is entirely `cqw`, so one component is proportionally
@@ -2666,6 +2713,27 @@ somebody to want. Everything else here is deliberately unbounded. The engine
 takes `hopeDie`/`fearDie` as notation and re-renders the number rather than
 trusting the string, because a ruling belongs to the table and a `Roll` formula
 belongs to Foundry, and only one of those two will throw.
+
+**And the pair rolls for its own sake.** Every other duality roll here is
+*about* something — a trait, a weapon, a card that asked for one — and each
+brings a number with it. A great deal of what a table actually rolls is
+neither: "roll me a duality and tell me how the night goes", a card being
+improvised, a house rule that wants 2d12 and a modifier somebody agreed on out
+loud. The only way to do that was to press a trait and subtract its modifier in
+your head, which puts a number on the card nobody rolled. `rollFree` is a third
+row at the foot of the attack bar, and it is a `.wr` because it is the same
+gesture as the two above it — press, compose the sentence, roll. What tells it
+apart is the one thing true of it and of neither weapon: it is only the pair,
+so the left edge carries Hope over Fear, the two colours the button's own
+diamonds and the plate it is about to post are made of.
+
+**It contributes nothing, and that is the claim.** No trait term, and no
+passive `actionRoll` modifiers either — a free roll is not necessarily an
+action roll, and a bonus the sheet added silently is a total the player cannot
+reconcile with what they typed. The popover opens at `base: 0`, so what goes in
+is what the player put in and the card's arithmetic strip adds up to exactly
+what was on screen. Experiences still cost a Hope, through the same `payFor`
+every other roll uses.
 
 Both dice move, though nothing printed moves Fear. A GM ruling is the only
 thing that ever will, and there is nowhere else in the system to say it.

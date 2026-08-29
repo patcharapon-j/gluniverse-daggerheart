@@ -363,6 +363,16 @@ function rollDmg(key){
   const w = eq(key);
   if(w) showRoll($('.atk .rd'), damage(PC.prof, w.die, w.bonus), `${w.name} · damage`);
 }
+/* The pair with nothing attached — no trait, no weapon, and therefore a
+   modifier of zero here. It still pays out Hope on a Hope and a critical,
+   because that is the duality's own rule and has nothing to do with what
+   the roll was about. */
+function rollFree(){
+  const r = duality(0);
+  showRoll($('.atk .rd'), r, 'duality roll');
+  if(r.out === 'hope') setHope(PC.hope + 1);
+  if(r.out === 'crit'){ setHope(PC.hope + 1); setStress(PC.stressMarked - 1); }
+}
 
 /* Equipping repaints, because it changes the thresholds, the Armor Score,
    the slot count and both attack rows at once — there is no partial update
@@ -399,6 +409,7 @@ lay.addEventListener('click', e => {
   if(atk){ rollAtk(atk.dataset.atk); return; }
   const dmg = e.target.closest('[data-dmg]');
   if(dmg){ rollDmg(dmg.dataset.dmg); return; }
+  if(e.target.closest('[data-free]')){ rollFree(); return; }
 
   const un = e.target.closest('[data-un]');
   if(un){ PC.equip[un.dataset.un] = null; paint(); return; }

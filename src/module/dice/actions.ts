@@ -92,6 +92,50 @@ export async function rollTrait(actor: any, trait: Trait, opts: Common & { react
   });
 }
 
+/* ── a duality roll with nothing attached ────────────────────────────── */
+
+/**
+ * The pair, rolled for its own sake.
+ *
+ * Every other duality roll in this system is *about* something — a trait, a
+ * weapon, a card that asked for one — and each of those brings a number with
+ * it. A great deal of what happens at a Daggerheart table is neither: the GM
+ * says "roll me a duality and tell me how the night goes", a card is
+ * improvised, a table rule wants 2d12 and a modifier somebody agreed on out
+ * loud. The only way to do that here was to press a trait and then subtract
+ * its modifier in your head, which puts a number on the card that nobody
+ * rolled.
+ *
+ * **Nothing is derived, and that is the whole of it.** No trait term, and no
+ * passive `actionRoll` modifiers either — a free roll is not necessarily an
+ * action roll, and a bonus the sheet added silently is a total the player
+ * cannot reconcile with what they typed into the popover. What goes in is
+ * what the player put in: the flat modifier, the advantage, and the
+ * Experiences they paid a Hope for. So the popover opens at `base: 0` and the
+ * card's arithmetic strip adds up to exactly what is on screen.
+ *
+ * The Experiences are still charged, through the same `payFor` every other
+ * roll uses — bringing one in costs a Hope whatever the roll is about.
+ */
+export async function rollFree(actor: any, opts: Common & { reaction?: boolean } = {}) {
+  if (!(await payFor(actor, opts.experiences))) return null;
+  const mods: Term[] = [
+    ...experienceTerms(opts.experiences),
+    ...(opts.extra ?? []),
+  ];
+  return rollDuality({
+    actor,
+    label: "Duality Roll",
+    kind: opts.reaction ? "reaction roll" : "duality roll",
+    mods,
+    advantage: opts.advantage,
+    hopeDie: opts.hopeDie,
+    fearDie: opts.fearDie,
+    dc: opts.dc ?? null,
+    reaction: opts.reaction,
+  });
+}
+
 /* ── an attack ───────────────────────────────────────────────────────── */
 
 /**
