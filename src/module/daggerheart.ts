@@ -21,6 +21,7 @@ import {
 import { registerDataModels } from "./data/index.ts";
 import { DaggerheartActor } from "./documents/actor.ts";
 import { DaggerheartItem, refreshDicePools, refreshResources } from "./documents/item.ts";
+import { expireEffects } from "./effects.ts";
 import { registerSheets } from "./sheets/register.ts";
 import { registerChat } from "./dice/chat.ts";
 import { registerMessageHeaders } from "./message-header.ts";
@@ -188,6 +189,11 @@ async function refreshScope(scope: "scene" | "session", actor?: any): Promise<nu
   for (const a of targets) {
     moved += (await withoutLedger(a, () => refreshResources(a, [scope]))).length;
     moved += (await withoutLedger(a, () => refreshDicePools(a, [scope]))).length;
+    /* And the effects whose duration this scope ends — see `effects.ts`. Out
+       of the change log with the rest of it, for the same reason: a scene
+       ending is bookkeeping across the whole table, and the notification below
+       is the record of it. */
+    moved += (await withoutLedger(a, () => expireEffects(a, [scope]))).length;
   }
 
   if (moved) {

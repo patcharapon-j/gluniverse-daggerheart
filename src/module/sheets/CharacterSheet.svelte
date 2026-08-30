@@ -1076,6 +1076,15 @@
     name: string;
     /** Marked up by the cards' own renderer, so it reads as it will in chat. */
     text: string;
+    /**
+     * Which feature block on the Item this row is, by its printed name.
+     *
+     * Already what `resourcesFor` and `dicePoolsFor` bind on, and now what the
+     * posted card's authored actions bind on too — a class carries several
+     * rules and only one of them has the press. Blank means the Item's own
+     * rules text, which is what a domain card is.
+     */
+    bind: string;
     /** What using it costs, read off the rule. Most cost nothing. */
     price: Price;
     /** That price as a phrase, or nothing when it is free. */
@@ -1130,6 +1139,7 @@
         origin: o.origin,
         name: f.name || "Feature",
         text: text ? rich(text) : "",
+        bind: o.bind ?? f.name ?? "",
         price,
         cost: priceLabel(price),
         res: resourcesFor(it, o.bind ?? f.name ?? "", doc),
@@ -1262,6 +1272,10 @@
     if (!ed) return;
     if (a.card) {
       await postCard(a.card, doc, {
+        /* Which rule this row is, so the posted card carries that rule's
+           authored actions and not the whole document's. A class row for
+           Cloaked must not arrive with Sneak Attack's press on it. */
+        feature: a.bind,
         price: isFree(a.price) ? undefined : a.price,
         resourceIndexes: a.res.map((r) => r.i),
         damageRoll: /\bdamage roll\b/i.test(a.text),

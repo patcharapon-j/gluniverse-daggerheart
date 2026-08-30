@@ -4,6 +4,7 @@
 
 import { isBrawlerStrike } from "../brawler.ts";
 import { TRAITS, type Trait } from "../config.ts";
+import { temporaryModifiers } from "../effects.ts";
 
 export interface PassiveModifier {
   target: string;
@@ -158,6 +159,23 @@ const conditionMet = (actor: any, item: any, m: PassiveModifier): boolean => {
 
 export function activeModifiers(actor: any): ActiveModifier[] {
   const out: ActiveModifier[] = [];
+
+  /* Temporary effects first, and they are a genuinely different population
+     from everything below: an Item is a passive because you are *holding* it,
+     and an effect is a passive because somebody granted it and it has not
+     expired yet. `grant-effect` is what creates them and `effects.ts` is what
+     sweeps them at the rest and scene seams.
+
+     They carry our own `modifiers` rather than Foundry `changes`, and the
+     reason is the `condition` field: half the interesting passives in this
+     corpus are gated on loadout composition or a track's state, and an AE
+     change is unconditional by construction. An always-on version of "while
+     you have 4+ Grace cards in your loadout" is silently wrong exactly where
+     the rule is most specific. */
+  for (const m of temporaryModifiers(actor)) {
+    if (conditionMet(actor, m.item, m)) out.push(m as ActiveModifier);
+  }
+
   for (const item of [...(actor?.items ?? [])]) {
     if (!passiveItemActive(item)) continue;
     const own = item.system?.modifiers?.length
