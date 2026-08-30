@@ -1466,11 +1466,16 @@
 </div>
 
 <style>
+  /* On the density scale published on `.win` in `design/sheet.css`. This
+     sheet is where it is worth the most: an Item with four features and two
+     counters is a dozen named blocks in a 660px window, and the blocks are
+     what a homebrewer is scrolling. Nothing about the type or the accent
+     moves — the header still sets an 18px name over an 8.5px eyebrow. */
   .it-hd {
     display: flex;
-    gap: 13px;
+    gap: 12px;
     align-items: center;
-    padding: 15px 18px;
+    padding: 11px 16px;
     background: var(--sunk);
     border-bottom: 1px solid var(--line);
     box-shadow: inset 3px 0 0 var(--accent);
@@ -1481,8 +1486,8 @@
      picture you press, and a picture is as tall as the picture. */
   .it-hd .pic {
     flex: none;
-    width: 52px;
-    height: 52px;
+    width: 46px;
+    height: 46px;
     min-height: 0;
     max-height: none;
     padding: 0;
@@ -1514,7 +1519,7 @@
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--ink-3);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .it-hd .nm {
     width: 100%;
@@ -1528,13 +1533,13 @@
   .fields {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 9px;
+    gap: var(--run, 8px);
   }
   /* One field whose content is a sentence, so it takes the row rather than a
      150px cell it would immediately scroll inside. */
   .fields.wide {
     grid-template-columns: 1fr;
-    margin-top: 9px;
+    margin-top: var(--run, 8px);
   }
   .fields label {
     display: block;
@@ -1545,7 +1550,7 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-3);
-    margin-bottom: 5px;
+    margin-bottom: 4px;
   }
   .fields input,
   .fields select,
@@ -1556,7 +1561,7 @@
     box-shadow: inset 0 0 0 1px var(--line);
     color: var(--ink);
     font: 500 12px/1 var(--f-ui);
-    padding: 7px 8px;
+    padding: 6px 8px;
   }
   .fields input:focus,
   .fields select:focus,
@@ -1570,19 +1575,19 @@
      happens to be typed into. */
   .fnm {
     font: 600 12.5px/1.3 var(--f-ui);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
 
   /* One named block — a feature, or a counter and everything about it. The
      tint is what says the run is made of repeated things rather than of one
      long panel. */
   .blk {
-    padding: 10px 11px 11px;
+    padding: var(--row, 7px) 11px calc(var(--row, 7px) + 1px);
     background: var(--sunk);
     box-shadow: inset 0 0 0 1px var(--line);
   }
   .blk + .blk {
-    margin-top: 9px;
+    margin-top: var(--run, 8px);
   }
   .blk .bh {
     display: flex;
@@ -1595,10 +1600,10 @@
     margin-bottom: 0;
   }
   .blk .fields {
-    margin-top: 9px;
+    margin-top: var(--run, 8px);
   }
   .blk .ach {
-    margin-top: 8px;
+    margin-top: 6px;
   }
 
   /* The two row controls, and both state all three heights: Foundry's
@@ -1645,7 +1650,7 @@
   }
   .sws,
   .fields + .sw {
-    margin-top: 11px;
+    margin-top: var(--run, 8px);
   }
   .sw {
     display: flex;

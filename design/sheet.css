@@ -62,6 +62,52 @@ input[type=checkbox]:focus-visible,input[type=radio]:focus-visible{
   outline:1px solid var(--hope);outline-offset:3px}
 input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 
+/* ── the density scale ─────────────────────────────────────────────
+   Every one of the five sheets this system draws — character, adversary,
+   companion, environment, item — has `.win` at its root, so density is one
+   decision rather than sixty numbers scattered across four stylesheets and
+   two Svelte style blocks.
+
+   What is on the scale and what is not is the whole of the argument.
+   **Structural space is on it**: a section's own padding, the run between
+   blocks inside one, the padding inside a pressable row. **Nothing that
+   makes an object what it is** — type size, colour, silhouette, the tile's
+   and spine's `cqw` proportions, a mark's geometry, a gem's metrics — is,
+   because a sheet that got smaller by shrinking its type is the gear tile's
+   own failure chosen deliberately: large pictures and caption-sized data.
+   So the sheet reads exactly as it did and simply holds more of itself at
+   once, which is what a fixed-height Foundry window is short of.
+
+   The numbers were arrived at by measuring rather than by taste. The rail's
+   six sections and the pane's four panels were each paying 5–6px of padding
+   nothing was using — that space had been tuned on a study page, where a
+   document is as tall as it likes, and a Foundry window is 860px with a
+   scrollbar. Every value here is the old one less the slack, floored at the
+   point where two adjacent things stop reading as two things.
+
+   Set on `.win` rather than on `.dh`: `.dh` is also worn by the chat card,
+   the token chip, the roll popover and the drag proxy, and none of those is
+   a sheet. A dialog that hosts a sheet's vocabulary picks the scale up by
+   being inside one, which is right — it is the same furniture.
+
+   **Every use site carries its own fallback**, and that is not belt and
+   braces. An unset custom property inside a `calc()` or a shorthand is
+   invalid at computed-value time, which does not fall back to the previous
+   declaration — it falls back to the property's *initial* value. So a `.pnl`
+   drawn outside a `.win` would not be slightly wrong, it would have no
+   padding at all, and `tools/verify/`'s own panel stage is exactly that
+   element: a sheet panel in a bare `.dh`, which is also what a dialog
+   borrowing this vocabulary is. The fallback is the value on the scale, so
+   the two can only differ by somebody editing one and not the other — which
+   is what the density check in `tools/verify/` is for. */
+.win{
+  --sec:10px;    /* a section's own vertical padding — was 13/14 and 15/16 */
+  --run:8px;     /* between blocks inside a section — was 11 to 14         */
+  --row:7px;     /* a pressable row's vertical padding — was 9 to 11       */
+  --pnl-x:14px;  /* a pane section's side padding — was 16                 */
+  --dio:150px;   /* the diorama — was 180                                  */
+}
+
 /* ── the Foundry window ────────────────────────────────────────────
    position:relative because the peek layer is its child. That is not a
    detail — it is the fix for a card being clipped by the tab pane's
@@ -106,12 +152,13 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    was being accused of. It was not a value that needed tuning; the rule was
    never applying. Descendant now, and :first-child rather than
    :first-of-type because the scroller's children are all sections. */
-.rail .sec{--pad:18px;padding:13px var(--pad) 15px;border-top:1px solid var(--line)}
+.rail .sec{--pad:18px;padding:var(--sec, 10px) var(--pad) calc(var(--sec, 10px) + 2px);
+  border-top:1px solid var(--line)}
 .rail .sec:first-child{border-top:0}
-.rail .scr{padding-bottom:12px}
+.rail .scr{padding-bottom:var(--run, 8px)}
 /* two tracks in one section: closer than two sections would be, further
    apart than two rows of the same track */
-.rail .sec > .mk + .mk{margin-top:14px}
+.rail .sec > .mk + .mk{margin-top:var(--run, 8px)}
 
 /* ── the diorama ───────────────────────────────────────────────────
    The portrait is the one thing on a character sheet that is not
@@ -123,7 +170,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    The scrim is two stops, not one: a short hard fade under the text so
    the name always has ink beneath it, and a long soft one above so the
    image does not appear to end. */
-.dio{position:relative;flex:none;height:var(--dio,180px);overflow:hidden;background:#20242b;
+.dio{position:relative;flex:none;height:var(--dio,150px);overflow:hidden;background:#20242b;
   /* the frame the framing is measured in — see `.dio .img` below */
   container-type:size}
 /* The framing lives in three variables so it can be set from one inline
@@ -331,8 +378,8 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    paper fill, its inset hairline and its 9px corner cut. Two short names
    for two different plates is a study-page luxury; the shapes here are
    heraldry, and heraldry has its own word. */
-.dfn{display:flex;gap:13px;align-items:flex-start}
-.dfn .crest{position:relative;flex:none;width:58px;height:64px;
+.dfn{display:flex;gap:11px;align-items:flex-start}
+.dfn .crest{position:relative;flex:none;width:54px;height:58px;
   display:grid;place-items:center}
 .dfn .crest svg{position:absolute;inset:0;width:100%;height:100%}
 .dfn .crest .sil{fill:var(--sunk);stroke:var(--ink-2);stroke-width:1.6}
@@ -350,7 +397,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 .dfn .side{flex:1 1 auto;min-width:0;padding-top:2px}
 .dfn .k{display:block;font:700 8.5px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-3);text-align:center}
-.dfn .crest + .k,.dfn .cap{margin-top:7px}
+.dfn .crest + .k,.dfn .cap{margin-top:5px}
 
 /* ── things that happen to you ─────────────────────────────────────
    Three verbs, under the two tracks they all write to.
@@ -370,9 +417,10 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    three times, so they carry no fill until the pointer is on them — the
    rail's loudest object should go on being the Hope you are deciding
    whether to spend. */
-.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:11px;
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:var(--run, 8px);
   background:var(--line)}
-.acts button{border:0;cursor:pointer;padding:8px 4px 9px;background:var(--sunk);
+.acts button{border:0;cursor:pointer;background:var(--sunk);
+  padding:calc(var(--row, 7px) - 1px) 4px var(--row, 7px);
   color:var(--ink-3);font:700 8px/1.35 var(--f-mono);letter-spacing:.13em;
   text-transform:uppercase;transition:background .12s,color .12s}
 .acts button:hover{background:var(--sunk-2);color:var(--hope-tx)}
@@ -411,8 +459,9 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    Still one button. The header and the paragraph are not a control with a
    caption under it — the whole block is the move, and splitting the press
    off from the text would invent a second object where the sheet has one. */
-.hact{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:100%;
-  margin-top:12px;padding:8px 10px 9px;border:0;cursor:pointer;text-align:left;
+.hact{display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;
+  margin-top:var(--run, 8px);padding:var(--row, 7px) 10px calc(var(--row, 7px) + 1px);
+  border:0;cursor:pointer;text-align:left;
   background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%);
   transition:background .14s,box-shadow .14s,transform .14s}
@@ -479,7 +528,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    read straight down however tall the phrase beside one gets. On the
    ordinary one-line row it lands where centring already put it, so the
    common case is unmoved. */
-.xp .r{display:flex;align-items:baseline;gap:10px;padding:5px 9px;background:var(--sunk);
+.xp .r{display:flex;align-items:baseline;gap:10px;padding:4px 9px;background:var(--sunk);
   cursor:pointer;transition:background .14s,transform .14s}
 .xp .r:hover{background:var(--sunk-2);transform:translateX(2px)}
 .xp .r b{font:600 12px/1.25 var(--f-ui);color:var(--ink);min-width:0;
@@ -498,7 +547,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    metal, so it gets a rim, an inner ring and a single specular arc, and it
    tilts under the cursor. That contrast is doing work — it is how you know
    at a glance that one of these is a resource and the other is a mood. */
-.gld .rows{display:flex;flex-direction:column;gap:9px}
+.gld .rows{display:flex;flex-direction:column;gap:6px}
 .gld .ln{display:flex;align-items:center;gap:11px}
 .gld .ln > .k{flex:none;width:48px;font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;
   text-transform:uppercase;color:var(--ink-3)}
@@ -549,9 +598,9 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
   100%{transform:scale(1)   translateY(0)}}
 
 /* ── generic panel ─────────────────────────────────────────────────*/
-.pnl{padding:14px 16px 16px;border-top:1px solid var(--line)}
+.pnl{padding:var(--sec, 10px) var(--pnl-x, 14px) calc(var(--sec, 10px) + 1px);border-top:1px solid var(--line)}
 .pnl:first-child{border-top:0}
-.pnl > .k{display:flex;align-items:baseline;gap:8px;margin-bottom:11px;
+.pnl > .k{display:flex;align-items:baseline;gap:8px;margin-bottom:var(--run, 8px);
   font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
 .pnl > .k s{margin-left:auto;text-decoration:none;font-size:9px;color:var(--hope-tx)}
 /* A panel heading's one action, if it has one. It inherits the heading's
@@ -578,6 +627,65 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
   transition:color .12s}
 .pnl > .k s + .nw{margin-left:0}
 .pnl > .k .nw:hover{color:var(--hope-tx)}
+
+/* ── the pair, as a press on a heading ─────────────────────────────
+   A duality roll with nothing attached to it — the GM asks for one, a card
+   is improvised, a house rule wants 2d12 and a number somebody agreed on out
+   loud. Every other roll on this sheet is *about* something and brings a
+   number with it; this one brings none, so the popover opens at zero and
+   whatever the player types is the whole modifier.
+
+   It was a third row in the attack bar, which is the wrong size for it by an
+   order of magnitude: a `.wr` is 48px of sheet, the tab it sits on had just
+   given back 60, and a row that shape claims to be a third weapon. It is the
+   least-reached-for control in the panel and it needs one line of the sheet,
+   so it goes on a line the sheet already has. The heading is the panel's own
+   furniture and already carries a press slot — this is `+ card`'s position
+   with a different verb in it.
+
+   The two diamonds and not the word "duality": the same rhombus the Hope
+   gems, the roll button's own pair and the plate about to be posted are made
+   of, in the two colours that say which is which. At 9px a heading has room
+   for a mark and a verb and not for a sentence, and the mark is the half a
+   reader already knows.
+
+   Every metric stated, height included, for `.nw`'s reason one rule above —
+   Foundry's `elements` layer sizes every <button> to 28px, and this one is a
+   9px mono press sitting in a 9px heading row. */
+/* `align-self:center` and not the row's baseline. `.pnl > .k` aligns on
+   baselines so the heading and its meta sit on one line, and an inline-flex
+   box takes its baseline from its *first* flex item — which here is a 6px
+   pip with no text in it. So the chip hangs off the line by the depth of a
+   diamond and takes the heading row down with it: 14px of press in a 21px
+   row, which is the whole saving this position was chosen for, spent. It
+   measures right on a study page and wrong in the game, because Foundry's
+   `elements` layer is what supplies the line-height the baseline is computed
+   against — see `tools/verify/`, which carries the layer and caught it. */
+.pnl > .k .duo{display:inline-flex;align-items:center;align-self:center;
+  gap:4px;margin-left:auto;
+  height:auto;min-height:0;max-height:none;
+  padding:2px 6px 3px;border:0;border-radius:0;cursor:pointer;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--ink-3);
+  transition:color .12s,background .12s,box-shadow .12s}
+/* `.nw`'s pattern exactly, and for its reason: the press takes the free
+   space when it is the only thing on the right of the heading, and sits
+   beside the meta when there is one. Stated as `auto` plus an override on
+   the adjacency rather than the other way round — `:only-of-type` was the
+   first attempt and it out-specifies the adjacency rule, so the meta was
+   left stranded in the middle of the heading. */
+.pnl > .k s + .duo{margin-left:9px}
+.pnl > .k .duo:hover{color:var(--hope-tx);background:var(--sunk-2);
+  box-shadow:inset 0 0 0 1px var(--line-2)}
+/* A 6px box turned 45° draws 8.5px across, so it overhangs its own layout
+   box by 1.2px on each side — which is why the pair reads as touching the
+   word at the gap that looks right between two boxes. The pips stay close
+   to each other, because they are one mark rather than two, and the mark is
+   held off the label by the difference. */
+.pnl > .k .duo i{flex:none;width:6px;height:6px;transform:rotate(45deg)}
+.pnl > .k .duo i.f{margin-right:3px}
+.pnl > .k .duo i.h{background:var(--hope)}
+.pnl > .k .duo i.f{background:var(--fear)}
 
 /* "There is nothing here." Seven panels say it and only the one inside the
    advancement tab was ever styled, so the other six were browser default
@@ -650,8 +758,8 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    own. Nothing here is a breakpoint, so there is no width at which it is
    wrong. */
 .abl{display:flex;flex-direction:column;gap:8px}
-.abl .cols{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-start}
-.abl .runs{flex:1 1 268px;min-width:0;display:flex;flex-direction:column;gap:7px}
+.abl .cols{display:flex;flex-wrap:wrap;gap:var(--run, 8px) 12px;align-items:flex-start}
+.abl .runs{flex:1 1 268px;min-width:0;display:flex;flex-direction:column;gap:6px}
 /* A grid inside the column, not a second flex row, and `auto-fill` is the
    whole reason. Beside the rules the column is ~257px and holds one tile
    per line; wrapped underneath them it is the panel's full width and holds
@@ -691,14 +799,14 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    *height*, because `elements` sizes every `<button>` to one 28px line and
    a class feature is a paragraph — the fourth time this file has had to say
    so, after the panel heading, the empty state and the slot header. */
-.abl .a{display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;
-  padding:9px 12px 11px;
+.abl .a{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;
+  padding:var(--row, 7px) 12px calc(var(--row, 7px) + 2px);
   background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
   transition:background .14s,box-shadow .14s,transform .14s}
 .abl .a:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
   transform:translateX(2px)}
-.abl .ap{display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;
+.abl .ap{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;
   padding:0;margin:0;border:0;border-radius:0;background:none;color:inherit;
   cursor:pointer;text-align:left;
   height:auto;min-height:0;max-height:none}
@@ -906,7 +1014,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    ratio is the only thing telling you which label owns which box. At 12px
    against 8px the row read as eight independent objects — label, number,
    label, number — and you had to work out the pairing from the words. */
-.cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px 24px}
+.cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:var(--run, 8px) 24px}
 .cfg .f{display:flex;align-items:center;gap:9px;min-width:0}
 .cfg .f > span{flex:1 1 auto;min-width:0;font:400 11.5px/1.3 var(--f-ui);color:var(--ink-2)}
 .cfg .f input{flex:none;width:62px;padding:5px 7px;border:0;
@@ -976,7 +1084,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 
 /* ── traits ────────────────────────────────────────────────────────*/
 .trs{display:flex;gap:1px;background:var(--line);flex:none}
-.trs .tr{position:relative;flex:1 1 0;min-width:0;background:var(--paper);padding:9px 4px 10px;
+.trs .tr{position:relative;flex:1 1 0;min-width:0;background:var(--paper);padding:7px 4px 8px;
   display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;
   transition:background .14s}
 .trs .tr:hover{background:var(--raise)}
@@ -1092,7 +1200,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:none;border:0;cursor:pointer;background:transparent;color:var(--frame-tx-2);
   position:relative;font:700 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
-  padding:11px 12px 10px;transition:color .14s,background .14s}
+  padding:9px 12px 8px;transition:color .14s,background .14s}
 .tabs button:hover{color:var(--frame-tx)}
 .tabs button.on{color:var(--ink);background:var(--paper)}
 .tabs button.on::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
@@ -1143,7 +1251,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 
    A tier you have not reached is dimmed rather than hidden. Seeing what
    level 5 offers is most of why anyone opens this tab. */
-.adv .ach{font:400 11.5px/1.5 var(--f-ui);color:var(--ink-3);margin:0 0 11px;
+.adv .ach{font:400 11.5px/1.5 var(--f-ui);color:var(--ink-3);margin:0 0 var(--run, 8px);
   padding-left:9px;border-left:2px solid var(--line)}
 
 /* ── the budget ────────────────────────────────────────────────────
@@ -1163,7 +1271,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    wound's red means the sheet has more marked than the rules grant, which
    is either a GM's deliberate gift or a miscount and is not this panel's
    business to decide. */
-.adv .bal{display:flex;align-items:center;gap:10px;margin:0 0 11px;padding:6px 10px;
+.adv .bal{display:flex;align-items:center;gap:10px;margin:0 0 var(--run, 8px);padding:5px 10px;
   background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
 .adv .bal .n{flex:none;font:700 12px/1 var(--f-mono);letter-spacing:.02em;
@@ -1173,7 +1281,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 .adv .bal.owed .n{color:var(--hope-tx)}
 .adv .bal.over{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--wound) 52%,var(--line))}
 .adv .bal.over .n{color:var(--wound)}
-.adv .row{display:flex;align-items:flex-start;gap:11px;padding:4px 0}
+.adv .row{display:flex;align-items:flex-start;gap:11px;padding:3px 0}
 .adv .row .lb{font:400 11.5px/1.36 var(--f-ui);color:var(--ink-2);min-width:0}
 /* exhausted: every slot marked, so the option is spent for this tier */
 .adv .row.done .lb{color:var(--ink-3)}
@@ -1279,7 +1387,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 .adv.shut .slots > i{pointer-events:none}
 
 /* ── proficiency ───────────────────────────────────────────────────*/
-.prof{display:flex;align-items:center;gap:14px;margin-bottom:13px}
+.prof{display:flex;align-items:center;gap:14px;margin-bottom:10px}
 .prof .set{display:flex;gap:6px}
 .prof .set i{width:15px;height:15px;border-radius:50%;background:var(--sunk);
   box-shadow:inset 0 0 0 1.5px var(--line)}
@@ -1410,9 +1518,9 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    study, where the panel was 368px. Two up puts it back at ~290px, which is
    the width it was actually designed for. This is the cq architecture doing
    its job: the fix is the column count, not an override. */
-.win .stack{display:flex;flex-direction:column;gap:6px}
-.win .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:10px}
-.win .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.win .stack{display:flex;flex-direction:column;gap:5px}
+.win .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:var(--run, 8px)}
+.win .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:var(--run, 8px)}
 
 /* ── gear slots ────────────────────────────────────────────────────
    Three slots, drawn as three slots. An empty one keeps its frame and its
@@ -1420,8 +1528,8 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    sheet should enforce silently and explain loudly — the alternative is an
    argument at the table in session four. */
 .slots3{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));
-  gap:12px;align-items:start}
-.slot .sh{display:flex;align-items:baseline;gap:8px;margin-bottom:7px;
+  gap:10px;align-items:start}
+.slot .sh{display:flex;align-items:baseline;gap:8px;margin-bottom:5px;
   font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
   color:var(--ink-3)}
 /* Height stated, for `.pnl > .k .nw`'s reason: an 11px control in a slot
@@ -1431,8 +1539,8 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
   font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-3);transition:color .14s}
 .slot .sh button:hover{color:var(--hope-tx)}
-.slot .ph{display:flex;flex-direction:column;justify-content:center;gap:6px;
-  padding:20px 15px;min-height:104px;background:var(--sunk);
+.slot .ph{display:flex;flex-direction:column;justify-content:center;gap:5px;
+  padding:14px 15px;min-height:82px;background:var(--sunk);
   box-shadow:inset 0 0 0 1.5px var(--line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
 .slot .ph b{font:600 12.5px/1 var(--f-ui);color:var(--ink-2)}

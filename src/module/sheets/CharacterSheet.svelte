@@ -47,7 +47,7 @@
   import { takeDamage } from "../apps/damage.ts";
   import { rest } from "../apps/rest.ts";
   import { cssUrl } from "../assets.ts";
-  import { rollAttack, rollTrait, rollWeaponDamage } from "../dice/actions.ts";
+  import { rollAttack, rollFree, rollTrait, rollWeaponDamage } from "../dice/actions.ts";
   import {
     modifierTotal,
     rollModifierTerms,
@@ -1322,6 +1322,32 @@
     });
     if (!o) return;
     await rollTrait(doc, trait, {
+      advantage: o.advantage,
+      experiences: o.experiences,
+      extra: o.extra,
+      reaction: o.reaction,
+      hopeDie: o.hope,
+      fearDie: o.fear,
+    });
+  }
+
+  /* The pair with nothing attached to it.
+     `base: 0` is the claim: the popover opens at zero because the sheet is
+     contributing nothing, so whatever the player types is the whole modifier
+     and the card's arithmetic adds up to what was on screen. Everything else
+     is the trait cell's own call, Experiences and their Hope included — this
+     is the same sentence being composed, with the first clause left out. */
+  async function askDuality(event: MouseEvent) {
+    const o = await prep(event.currentTarget as Element, {
+      kind: "duality roll",
+      label: "Duality Roll",
+      base: 0,
+      experiences: xpList,
+      purse,
+      reaction: true,
+    });
+    if (!o) return;
+    await rollFree(doc, {
       advantage: o.advantage,
       experiences: o.experiences,
       extra: o.extra,
@@ -2781,7 +2807,23 @@
                here is a record you edit. This is a button you press, and it
                does the two sums players actually get wrong. -->
           <div class="pnl">
-            <div class="k">Attack<s>proficiency {sys.proficiency}</s></div>
+            <!-- The pair with nothing attached to it. On the heading rather
+                 than in a row of its own: it is the least-reached-for control
+                 in this panel and a `.wr` is 48px of a tab that had just given
+                 back 60, so it goes on a line the sheet already has. The two
+                 diamonds are the mark, because at 9px a heading has room for a
+                 mark and a verb and not for a sentence. -->
+            <div class="k">
+              Attack<s>proficiency {sys.proficiency}</s>
+              <button
+                class="duo"
+                type="button"
+                title="Roll 2d12 Hope and Fear with no trait — your modifier, advantage and Experiences"
+                onclick={askDuality}
+              >
+                <i class="h"></i><i class="f"></i>duality
+              </button>
+            </div>
             <div class="atk">
               {#each [["primary", "Primary", primary], ["secondary", "Secondary", secondary]] as [key, label, w]}
                 {#if w}
@@ -3763,7 +3805,7 @@
      row was a bare number with no label and no mark, and why the attack
      button was a sliver. One rule, two symptoms.
 
-     `padding:0` matters for its own reason: the arch is a 58×64 grid with the
+     `padding:0` matters for its own reason: the arch is a 54×58 grid with the
      numeral placed inside it, and a user-agent 1px 6px would shift that
      numeral off its own optical centre. */
   .trs .tr,
@@ -3781,7 +3823,7 @@
   /* The arch is the one that must *not* take `height:auto`, and it took it
      for a while — which is why Evasion came back at half size. The three
      above have no height of their own and size to their content, so `auto`
-     is what releases them from Foundry's 28px. This one is a fixed 58×64
+     is what releases them from Foundry's 28px. This one is a fixed 54×58
      grid with an SVG absolutely positioned inside it: nothing in it has
      height, so `auto` collapses the box to the numeral and the arch is
      drawn into a 30px slot. `min-height` alone is what was needed. */
@@ -3934,14 +3976,19 @@
     min-height: 0;
     border-radius: 0;
   }
-  /* ...except the three the design gives an explicit padding of its own. */
+  /* ...except the three the design gives an explicit padding of its own.
+     These are a second copy of a value `sheet.css` and `roll.css` already
+     state, and they have to be: the reset above zeroes the padding to get
+     the three controls out of Foundry's 28px, and a `padding:0` in the same
+     rule beats the design's from the `system` layer. So they are restated
+     here at the density scale's own numbers — change one and change both. */
   .trs .tr {
-    padding: 9px 4px 10px;
+    padding: 7px 4px 8px;
   }
   .xp .r {
-    padding: 5px 9px;
+    padding: 4px 9px;
   }
   .wr .go {
-    padding: 7px 11px 6px;
+    padding: 6px 11px 5px;
   }
 </style>

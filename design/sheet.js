@@ -727,7 +727,10 @@ const BODY = (tab, D) => ({
      class and heritage cards are read carefully once and then almost never
      — so they are last, where their height costs nothing. */
   loadout: `
-    <div class="pnl"><div class="k">Attack<s>proficiency ${PC.prof}</s></div>
+    <div class="pnl"><div class="k">Attack<s>proficiency ${PC.prof}</s>
+      <button class="duo" data-free="1"
+        title="Roll 2d12 Hope and Fear with no trait — your modifier, advantage and Experiences"
+        ><i class="h"></i><i class="f"></i>duality</button></div>
       ${ATTACK(atkSlots())}</div>
     <!-- Empty slots show here too. Under five you are carrying less than the
          rules allow, and the main tab is where you would notice — the fix is
