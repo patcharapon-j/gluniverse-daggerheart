@@ -96,10 +96,10 @@
  *
  * plus `tokenChipScale`, ours, world-scoped, a multiplier over the lot.
  *
- * The result is two numbers rather than one, because there are two claims —
- * and Obsidian orbit moved which of them most of this component makes.
- * `--tkr` is OUTWARD CLEARANCE and is floored at 1; `--tkv` is THE SUBJECT,
- * where the artwork itself ends, and is not floored.
+ * `chipScale` answers in two numbers, because there were two claims — and
+ * Obsidian orbit ended with only one of them drawing anything. `readout` is
+ * OUTWARD CLEARANCE and is floored at 1; `subject` is where the artwork itself
+ * ends, and is not floored. Only the second is written to a chip, as `--tkv`.
  *
  * The rails used to hang outside the creature and wanted the first. They are
  * inside it now — under `.er-shell`'s clip — and want the second, and nobody
@@ -108,6 +108,16 @@
  * and every rail sat at a fixed percentage of the grid **cell** — which is the
  * assumption this section opens by disavowing. It fails in the direction that
  * lasts: every arc is drawn perfectly, around a creature that is not there.
+ *
+ * The one element still reading the clearance was the condition sentence, and
+ * it is the same finding wearing the other hat: a caption set against the rim
+ * stood 1.0848 cells out at Foundry's default fit while the rails it captions
+ * had come in onto the artwork, and further out again on a subject scale under
+ * 1, where the clearance divides. It follows `--tkv` now, which leaves `--tkr`
+ * with no consumer and retires it exactly as `--tk0` was retired. The number
+ * survives in `chipScale` because it is what the fit modes' reciprocal
+ * arithmetic is checked against and what `tokenChips()` prints, and a number
+ * that is reported is not a number that is read.
  * `design/token.css` carries the correction and the arithmetic.
  *
  * The condition material is the same finding on the other side of the fence.
@@ -387,18 +397,17 @@ function subjectInFrame(token: any): number {
   return Math.min(1, Math.max(0.2, chipScale(wearOf(token) as any).subject / cells));
 }
 
-/* Written only when one of the two actually moves. Both are inherited by
-   every radius in the stylesheet, so a write here invalidates the chip's
-   whole layout — and `refreshToken` fires for a dozen reasons that are not
-   a scale change. Two comparisons against two style writes. */
+/* Written only when it actually moves. It is inherited by every radius in
+   the stylesheet, so a write here invalidates the chip's whole layout — and
+   `refreshToken` fires for a dozen reasons that are not a scale change. One
+   comparison against one style write. */
 const scales = new WeakMap<HTMLElement, string>();
 
 function rescale(chip: HTMLElement, token: any): void {
   const k = chipScale(wearOf(token) as any);
-  const key = `${k.readout}/${k.subject}`;
+  const key = String(k.subject);
   if (scales.get(chip) === key) return;
   scales.set(chip, key);
-  chip.style.setProperty("--tkr", String(k.readout));
   chip.style.setProperty("--tkv", String(k.subject));
 }
 
@@ -851,7 +860,7 @@ export function reportTokenChips(): Record<string, unknown> {
     return (
       `ring ${w.ring ? (w.gridFit ? "grid fit" : "subject fit") : "off"}` +
       `, subject ${w.subject}, art ${w.art}, dial ${w.manual}` +
-      ` -> readout ${k.readout}, subject ${k.subject}` +
+      ` -> subject ${k.subject} (drawn), clearance ${k.readout} (retired)` +
       `, material ${subjectInFrame(token).toFixed(4)} of the filter frame`
     );
   })();

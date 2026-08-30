@@ -4021,12 +4021,39 @@ that lasts: at grid fit the rails are 8% outside a creature that stopped at
 92%, and on a .6-scale sprite they are a gauge floating around a creature that
 is nowhere near them, drawn perfectly, every time.
 
-Everything under `.er-shell` reads `--tkv` now, and `--tkr` is left to the one
-thing still outside the creature — the condition sentence, which sits against
-the rim and is a caption *about* the creature rather than a reading off it.
-Two scales, two claims, and each has a consumer again. `--tk0` is gone: it
-described where the innermost track sat when the tracks were outside, and it
-had been declared and read by nothing since they moved.
+Everything under `.er-shell` reads `--tkv` now. `--tk0` is gone: it described
+where the innermost track sat when the tracks were outside, and it had been
+declared and read by nothing since they moved.
+
+**The condition sentence was the last thing reading the clearance, and it was
+the same finding wearing the other hat.** A caption set against the rim belongs
+to the rim, and at Foundry's default fit it stood 1.0848 cells out while the
+rails it captions had come in onto the artwork — further out again on a subject
+scale under 1, where the clearance *divides*, so the moat widened as the
+creature shrank. What a table reports is the words orbiting nothing, and every
+glyph is drawn perfectly. It follows `--tkv` now, so the sentence, the rails and
+the PIXI material are three readings of one creature rather than two, and its
+baseline is the rim itself — **49.2**, `.er-shell`'s own clip radius, down from
+50.2 and 51.8 before it, because text on a circular path grows *outward* from
+its baseline and the only unit left to give is the one between the lettering and
+the Armor rail. Any further in sets the sentence across the track it captions.
+
+**What that gives up is stated rather than discovered.** On a ringed token at
+subject fit, Foundry's band runs from the cell out to 1.0848 of it and the
+sentence is now inside that — lettering over the ring rather than beyond it.
+It is the trade the rails already made at Obsidian orbit, it is why the
+sentence carries a stroke and two shadows, and a table that wants the whole
+readout clear of the band has `tokenChipScale`, which moves the sentence, the
+rails and the material together.
+
+That leaves `--tkr` with no consumer at all, and it goes the way `--tk0` went
+rather than being left declared for the next reader to trace. `chipScale` still
+computes the clearance, because the two fit modes' reciprocal arithmetic is
+stated and checked there and `game.daggerheart.tokenChips()` prints it — a
+number that is reported is not a number that is read.
+`tools/test-token-hope-arc.mjs` is the ratchet on both halves: the sentence
+must scale on the subject, the baseline must sit between the Armor rail and the
+rim, and no rule in the ported stylesheet may read `--tkr` again.
 
 **Radii scale as radii and not as insets**, which is the one piece of
 arithmetic here worth reading twice. An inset is measured from the edge and a

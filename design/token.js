@@ -111,13 +111,17 @@ import { GEM, setPool } from './gem.js';
    taken here. If it is backwards at a real table the dial is the answer,
    which is a good part of why the dial exists.
 
-   ── the floor ────────────────────────────────────
-   The readout never comes inside the grid cell, however small the art
-   is. Following a .6-scale sprite inward would draw its Stress track at
-   .6 the size of the creature beside it, and the whole of what these
-   tracks are for is being countable across a fight at a glance. The
-   creature gets a gap; the reading stays comparable. The condition material
-   follows the PIXI mesh instead of this HTML radius calculation. */
+   ── the floor, and what is left of it ─────────────
+   The clearance never comes inside the grid cell, however small the art
+   is: a reading hung OUTSIDE a .6-scale sprite would be drawn at .6 the
+   size of the creature beside it, and the whole of what these tracks are
+   for is being countable across a fight at a glance. Obsidian orbit put
+   every one of them on the creature instead, and the condition sentence
+   — the last thing outside it — came with them, so nothing is drawn
+   against `readout` any more. It stays because the two fit modes are one
+   texture read from either end and this is where that arithmetic is
+   stated and checked; the condition material, meanwhile, follows the
+   PIXI mesh rather than either of these radii. */
 
 /** The ring texture's own two radii, from Foundry's spritesheet. */
 export const RING_HOLE = 0.666;
@@ -130,6 +134,11 @@ export const RING_IN = RING_HOLE / RING_RIM;
 
 /**
  * The chip's two scales, from what the token is actually wearing.
+ *
+ * `subject` is the one a chip is drawn against — see `--tkv` in
+ * `token.css`. `readout` is the outward clearance, floored at the cell,
+ * and nothing has been drawn against it since the readout moved onto the
+ * creature; it is reported rather than read.
  *
  * @param {object} [t]
  * @param {boolean} [t.ring]     this token draws a dynamic ring
@@ -405,31 +414,36 @@ const bottomOf = (s) => {
    It stays one sentence however many states are active, so two conditions
    read "ABLAZE · VULNERABLE ·" rather than becoming two competing rings.
 
-   The path sits against the token rim and, unlike the old inward Vulnerable
-   treatment, follows the readout scale. That keeps it beside the resource
-   tracks when a dynamic token ring pushes those tracks outward.
+   The path sits against the token rim and follows THE SUBJECT — the same
+   `--tkv` the rails, the clip and the shader's frame correction are read
+   against, so the sentence lands on the creature's own edge whatever the
+   fit mode, the subject scale and the texture scale are doing. It used to
+   follow the outward clearance, which is floored at 1 and divides by the
+   subject scale, and that is the moat a table sees: the words orbiting a
+   creature at their own radius while the tracks they caption sit on it.
+   See THE RING in `token.css` for the argument.
 
-   ── where 50.2 comes from ─────────────────────────────────────────
+   ── where 49.2 comes from ─────────────────────────────────────────
    Text on a circular path grows OUTWARD from its baseline: the arc is
    drawn clockwise from twelve o'clock, so a glyph's ascent points away
    from the centre. The creature ends at `.er-shell`'s clip, radius 49.2,
-   and the outermost rail is inside that. So a baseline at 51.8 was not
-   almost flush, it was a two-and-a-half unit moat with the whole of the
-   type on the far side of it, and the way to close a moat is to bring the
-   BASELINE in — which costs the artwork nothing, because everything above
-   it was already outside the creature. 50.2 leaves the round dot of the
-   separator sitting on the rim and puts the type immediately outside it.
+   and the outermost rail — Armor, 2.8px inside radius 48 — is inside
+   that. So the baseline IS the rim: everything the reader sees stands
+   outside the creature and costs the artwork nothing, and what closes the
+   gap between the lettering and the Armor rail is the only unit left to
+   give, since a baseline any further in would set the sentence across the
+   track it captions.
 
-   Bringing the radius in and the size up at the same time is not a
-   coincidence either. The circumference falls by 3% and the run grows by
-   12%, and both of those close the same gap: at 4.3px on a 51.8 circle a
+   51.8 was the first number and 50.2 the second, each of them a moat with
+   the whole of the type on the far side of it. Bringing the radius in and
+   the size up together is the same move twice: at 4.3px on a 51.8 circle a
    sixty-eight character sentence covered barely half the path and arrived
    as widely spaced debris rather than as a band of lettering.
 
    `textLength` is what makes the repeat seamless. A run almost never lands
    on the exact circumference by itself; spacing it to the path closes the
    join without stretching the glyphs. */
-const CR = 50.2;
+const CR = 49.2;
 let uid = 0;
 
 const safe = (value) => String(value)
