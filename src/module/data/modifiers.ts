@@ -6,6 +6,43 @@ import { isBrawlerStrike } from "../brawler.ts";
 import { TRAITS, type Trait } from "../config.ts";
 import { temporaryModifiers } from "../effects.ts";
 
+/* ── the closed sets, stated ──────────────────────────────────────────────
+   These three lived only as `switch` cases — `modifierValue`'s sources,
+   `conditionMet`'s conditions, and the targets every consumer greps for. That
+   was fine while nothing but the compendium wrote a modifier, and it stopped
+   being fine the moment the item sheet grew a control: a dropdown cannot be
+   built from a switch statement, and a hand-maintained copy of one is the
+   second list that disagrees the first time somebody adds a case.
+
+   So they are named here, beside the code that answers them, and both the
+   editor and `check-passives.mjs` read these rather than a copy.
+
+   `MODIFIER_TARGETS` is the one that is not exhaustively enforced anywhere:
+   a target is a string a *reader* looks up, and `modifierTotal` answers zero
+   for a name nothing reads. Listing it is what makes the editor offer the
+   ones that do something rather than a free text field. */
+
+export const MODIFIER_TARGETS = [
+  "evasion", "armorScore", "thresholds", "severeThreshold", "majorThreshold",
+  "hitPoints", "stress", "hope", "proficiency", "damageProficiency", "bareBones",
+  "trait", "loadoutLimit",
+  "actionRoll", "reactionRoll", "attackRoll", "damageRoll", "spellcastRoll",
+  "ownAttack", "ownDamage", "primaryAttack", "primaryDamage",
+] as const;
+
+/** Every `source` `modifierValue` knows how to resolve. */
+export const MODIFIER_SOURCES = [
+  "fixed", "proficiency", "tier", "level", "markedStress",
+  "trait", "spellcastTrait", "maxAgilityFinesse",
+] as const;
+
+/** Every gate `conditionMet` and `weaponCondition` between them answer. */
+export const MODIFIER_CONDITIONS = [
+  "always", "armor", "noArmor", "noPrimary", "noWeapons",
+  "hope", "stressFull", "domain",
+  "weapon", "physicalWeapon", "meleeWeapon", "veryCloseWeapon",
+] as const;
+
 export interface PassiveModifier {
   target: string;
   value?: number;

@@ -64,6 +64,8 @@
   import { damageDice } from "../data/damage.ts";
   import type { SheetState } from "../apps/sheet-state.svelte.ts";
   import Prose from "./parts/Prose.svelte";
+  import Automation from "./parts/Automation.svelte";
+  import { suggestActions } from "./suggest.ts";
 
   interface Props {
     doc: any;
@@ -173,6 +175,42 @@
     rows[i] = v;
     writeRows(key, rows);
   };
+
+  /* ── automation, on three kinds of block ───────────────────────────────
+     A rule can be reached three ways here — the document's own text, a
+     single block (`hopeFeature`, `topFeature`, a weapon's `feature`), and one
+     entry of a run (`classFeatures[i]`) — and only the third is dangerous.
+     A run is an ArrayField and Foundry reads a dotted index in an update key
+     as a path into an *object*, which is the trap the adjust tab learned
+     about Experiences and `moveResource` learned about pools. So a run
+     entry's actions are written by rebuilding the whole array; a single's are
+     a plain path, because a SchemaField is not an array. */
+
+  /** Pool, die and damage names this document carries, for the pickers. */
+  const carries = $derived({
+    resources: (sys.resources ?? []).map((r: any) => r.name),
+    dice: (sys.dice ?? []).map((r: any) => r.name),
+    damage: (sys.cardDamage ?? []).map((d: any) => d.name ?? ""),
+  });
+
+  /** Write a run entry's list field without ever naming an index in the key. */
+  const writeInRow = (key: string, i: number, field: string, v: unknown) => {
+    const list = rowsOf(key);
+    if (!list[i]) return;
+    list[i][field] = v;
+    writeRows(key, list);
+  };
+
+  /**
+   * Fill a block's actions from what the prose appears to ask for.
+   *
+   * Appends rather than replaces, and that is deliberate: somebody pressing
+   * this on a block they have already edited means "and what else did you
+   * see", not "throw mine away". Duplicates are one click to delete and a lost
+   * hand-written action is not recoverable at all.
+   */
+  const suggestInto = (text: string, current: any[], put: (rows: any[]) => void) =>
+    put([...(current ?? []), ...suggestActions(text ?? "", sys, carries)]);
 
   const blankFeature = () => ({ name: "", description: "" });
   const blankResource = () => ({
@@ -936,6 +974,27 @@
               />
             </div>
 
+            <!-- The document's own rules text is a rule like any other, and on
+                 a domain card, a consumable or a piece of loot it is the ONLY
+                 one — those subtypes have no feature block to nest in, which
+                 is why `actions` exists at document level as well as inside
+                 `featureField`. -->
+            <Automation
+              actions={sys.actions ?? []}
+              write={(a) => set("system.actions", a)}
+              modifiers={sys.modifiers ?? []}
+              writeModifiers={(m) => set("system.modifiers", m)}
+              editable={ed}
+              resources={carries.resources}
+              dice={carries.dice}
+              damage={carries.damage}
+              suggestable={!!(sys.description ?? "").trim()}
+              suggest={() =>
+                suggestInto(sys.description ?? "", sys.actions ?? [], (a) =>
+                  set("system.actions", a),
+                )}
+            />
+
             {#each singles as f (f.key)}
               <div class="pnl">
                 <div class="k">{f.label}<s>{f.note ?? ""}</s></div>
@@ -952,6 +1011,23 @@
                   value={sys[f.key]?.description ?? ""}
                   editable={ed}
                   height={150}
+                />
+                <!-- A single block is a SchemaField, so its actions are a
+                     plain path. The run below is not, and cannot be. -->
+                <Automation
+                  actions={sys[f.key]?.actions ?? []}
+                  write={(a) => set(`system.${f.key}.actions`, a)}
+                  modifiers={sys[f.key]?.modifiers ?? []}
+                  writeModifiers={(m) => set(`system.${f.key}.modifiers`, m)}
+                  editable={ed}
+                  resources={carries.resources}
+                  dice={carries.dice}
+                  damage={carries.damage}
+                  suggestable={!!(sys[f.key]?.description ?? "").trim()}
+                  suggest={() =>
+                    suggestInto(sys[f.key]?.description ?? "", sys[f.key]?.actions ?? [], (a) =>
+                      set(`system.${f.key}.actions`, a),
+                    )}
                 />
               </div>
             {/each}
@@ -1007,12 +1083,144 @@
                       height={140}
                       onsave={(v) => editRow(run.key, i, "description", v)}
                     />
+                    <!-- The whole array is rewritten for every change here.
+                         `system.classFeatures.0.actions` would be read as a
+                         path into an object, which is the ArrayField trap this
+                         file already documents twice. -->
+                    <Automation
+                      actions={f.actions ?? []}
+                      write={(a) => writeInRow(run.key, i, "actions", a)}
+                      modifiers={f.modifiers ?? []}
+                      writeModifiers={(m) => writeInRow(run.key, i, "modifiers", m)}
+                      editable={ed}
+                      resources={carries.resources}
+                      dice={carries.dice}
+                      damage={carries.damage}
+                      suggestable={!!(f.description ?? "").trim()}
+                      suggest={() =>
+                        suggestInto(f.description ?? "", f.actions ?? [], (a) =>
+                          writeInRow(run.key, i, "actions", a),
+                        )}
+                    />
                   </div>
                 {:else}
                   <p class="ach">No features yet.</p>
                 {/each}
               </div>
             {/if}
+
+            <!-- ── printed damage ─────────────────────────────────────────
+                 `cardDamage` is what a card's own rules text prints — "they
+                 take 2d8+4 magic damage" — as against a weapon's `damage`,
+                 which is its stat line. The compendium has written this since
+                 it existed and there has never been a control for it, so a GM
+                 could read a card's damage and not edit it, and could not add
+                 one to a homebrew card at all.
+
+                 It is here rather than in Details because it is a reading of
+                 the rules text three inches above it, and `roll-card-damage`
+                 in the Automation panel names these by their mode. -->
+            <div class="pnl">
+              <div class="k">
+                Printed damage
+                <s>expressions this card's own text rolls</s>
+                {#if ed}
+                  <button
+                    type="button"
+                    class="nw"
+                    onclick={() =>
+                      addRow("cardDamage", {
+                        name: "",
+                        count: 1,
+                        dice: "d6",
+                        bonus: 0,
+                        extra: [],
+                        proficiency: false,
+                        type: "physical",
+                        direct: false,
+                      })}>+ expression</button
+                  >
+                {/if}
+              </div>
+              {#each sys.cardDamage ?? [] as d, i (i)}
+                <div class="blk">
+                  <div class="bh">
+                    <input
+                      class="fnm"
+                      placeholder="Mode — blank when the card prints only one"
+                      value={d.name ?? ""}
+                      disabled={!ed}
+                      onchange={(e) => editRow("cardDamage", i, "name", txt(e))}
+                    />
+                    {#if ed}
+                      <button type="button" class="x" title="Remove" onclick={() => dropRow("cardDamage", i)}>×</button>
+                    {/if}
+                  </div>
+                  <div class="rw">
+                    <label class="lb"
+                      >Count
+                      <input
+                        type="number"
+                        min="0"
+                        value={d.count ?? 1}
+                        disabled={!ed}
+                        onchange={(e) => editRow("cardDamage", i, "count", num(e))}
+                      />
+                    </label>
+                    <label class="lb"
+                      >Die
+                      <input
+                        value={d.dice ?? "d6"}
+                        disabled={!ed}
+                        onchange={(e) => editRow("cardDamage", i, "dice", txt(e))}
+                      />
+                    </label>
+                    <label class="lb"
+                      >Bonus
+                      <input
+                        type="number"
+                        value={d.bonus ?? 0}
+                        disabled={!ed}
+                        onchange={(e) => editRow("cardDamage", i, "bonus", num(e))}
+                      />
+                    </label>
+                    <label class="lb"
+                      >Type
+                      <select
+                        disabled={!ed}
+                        value={d.type ?? "physical"}
+                        onchange={(e) => editRow("cardDamage", i, "type", txt(e))}
+                      >
+                        {#each DAMAGE_TYPES as t}
+                          <option value={t}>{t}</option>
+                        {/each}
+                      </select>
+                    </label>
+                    <label class="lb ck"
+                      ><input
+                        type="checkbox"
+                        checked={!!d.proficiency}
+                        disabled={!ed}
+                        onchange={(e) => editRow("cardDamage", i, "proficiency", chk(e))}
+                      /> Scales with Proficiency
+                    </label>
+                    <label class="lb ck"
+                      ><input
+                        type="checkbox"
+                        checked={!!d.direct}
+                        disabled={!ed}
+                        onchange={(e) => editRow("cardDamage", i, "direct", chk(e))}
+                      /> Direct
+                    </label>
+                  </div>
+                </div>
+              {:else}
+                <p class="ach">
+                  Nothing. Most cards that mention damage are describing a bonus
+                  to the weapon in your hand rather than rolling any themselves.
+                </p>
+              {/each}
+            </div>
 
             {#if snap.type === "class"}
               <!-- The longer form of the same fact. `description` is held to
