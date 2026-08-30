@@ -17,6 +17,7 @@ import { payMark } from "../marked.ts";
 import { fitSoon } from "../apps/fit-cards.ts";
 import { loadSigils } from "../sheets/cards.ts";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
+import { refreshedValue } from "../data/resources.ts";
 import { rollWeaponDamage } from "./actions.ts";
 import { canReroll, rerollDie } from "./reroll.ts";
 import { rollDamage } from "./rolls.ts";
@@ -597,13 +598,20 @@ async function runEffect(action: CardAction, ctx: ActionContext): Promise<boolea
       return !!(await item.placeDie(at));
     }
 
+    /* Through `refreshedValue`, not by filling. A refresh is not always a
+       refill: a card that says "place tokens" *clears* on one and the
+       Vampire's Feed removes exactly one, which is what `onRefresh` records
+       and what `refreshResources` already honours on a rest. Filling all three
+       here would have been a second, wrong answer to a question this system
+       had already settled — and wrong in the direction that hands somebody a
+       full pool the card never gives back. */
     case "refresh": {
       if (!item) return true;
       const at = poolNamed(item.system?.resources ?? [], action.resource);
       if (at < 0) return true;
       const pools = [...(item.system?.resources ?? [])];
       const live = item.liveResources?.[at];
-      pools[at] = { ...pools[at], value: live?.max ?? Number(pools[at].value ?? 0) };
+      pools[at] = { ...pools[at], value: refreshedValue(pools[at], live?.max ?? null) };
       await item.update({ "system.resources": pools });
       return true;
     }
