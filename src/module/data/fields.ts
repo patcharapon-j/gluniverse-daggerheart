@@ -8,8 +8,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
+  ACTION_DURATIONS,
+  ACTION_KINDS,
+  ACTION_SUBJECTS,
   DIE_MODES,
   DIE_ON_REFRESH,
+  DIE_POOL_OPS,
   RESOURCE_MAX,
   RESOURCE_ON_REFRESH,
   RESOURCE_REFRESH,
@@ -20,6 +24,8 @@ import {
    `fillCardDamage` for why the table has to be readable at runtime at all. */
 // @ts-expect-error - content module, deliberately untyped
 import CARD_DAMAGE from "../../packs-src/card-damage.mjs";
+// @ts-expect-error - content module, deliberately untyped
+import CARD_ACTIONS from "../../packs-src/card-actions.mjs";
 
 const F = () => foundry.data.fields;
 
@@ -141,6 +147,125 @@ export const modifierField = (): any =>
     minimum: int(0, { min: 0 }),
   });
 
+/* ── an authored action ──────────────────────────────────────────────────
+   What a rules block asks you to do, written down rather than read off the
+   prose at render time. See `ACTION_KINDS` in `config.ts` for the argument;
+   this is the shape.
+
+   Four things about it are decisions rather than convenience.
+
+   **`said` is on every action, and it is the most valuable field here.** It
+   is the words the action was read from, quoted off the card. That is what
+   makes nine hundred and ninety machine-assisted readings reviewable by a
+   human at all; it is what `tools/check-actions.mjs` fails the build on when
+   upstream rewrites a card around its cost, because upstream fixing a typo
+   and upstream changing what a card does look identical from here; and it is
+   what a GM reads on the item sheet to understand why a button exists. It is
+   `card-resources.mjs`'s provenance, promoted from a checker's table into the
+   data itself.
+
+   **`when` is printed and never read.** Ninety-eight rule units say "on a
+   success", and a great many more say "if the target is Vulnerable" or "while
+   in Beastform". None of it is enforced, because a posted card has no honest
+   link to the roll that resolved it — which is exactly why `roll-card-damage`
+   reads no critical. So the condition rides on the label, the table reads it,
+   and the press does what it says. `onEmpty` and `grow` are both already this
+   shape: the card's own sentence, carried and shown, never parsed.
+
+   **`steps` is one level deep, structurally.** A step is `stepField()`, which
+   is this schema minus `steps` and minus `said`, so a chain of chains is not
+   expressible rather than merely discouraged. One level is what "Spend a Hope
+   **and** make an attack" needs, and it needs it: two buttons for one sentence
+   lets somebody take the second without paying for the first, which is the
+   failure `payFor` was written to prevent. A chain charges before it rolls and
+   **aborts whole** if any step refuses. A card wanting depth two is a
+   `DECLINED` entry, not a deeper array.
+
+   **The field set is wide and every kind uses a few of it.** `damageField`
+   and `resourceField` are the same shape for the same reason: the alternative
+   is an untyped blob, and a blob cannot be drawn by the Automation editor,
+   validated by the schema, or checked by a ratchet. A blank field is a field
+   this kind does not use.
+   ─────────────────────────────────────────────────────────────────────── */
+
+/** The five currencies a press can move, in one block. See `ACTION_AMOUNTS`. */
+const amountField = (): any =>
+  schema({
+    hope: int(0, { min: 0 }),
+    stress: int(0, { min: 0 }),
+    hitPoints: int(0, { min: 0 }),
+    armorSlots: int(0, { min: 0 }),
+    fear: int(0, { min: 0 }),
+  });
+
+/** Everything an action is, except the two things a *step* may not have. */
+const actionCore = (): Record<string, any> => ({
+  kind: choice(ACTION_KINDS, "pay"),
+  /** Overrides the label derived from the kind. Blank is the common case. */
+  label: str(),
+  /** Who it lands on — see `ACTION_SUBJECTS`. */
+  subject: choice(ACTION_SUBJECTS, "self"),
+
+  /** `pay` / `gain` / `clear`. */
+  amount: amountField(),
+
+  /** `move-resource` / `die-pool` / `refresh`: the pool's own `name`. */
+  resource: str(),
+  /** `move-resource`: signed, because spending and marking are one field. */
+  by: int(0),
+  /** `die-pool`: what the press does to the tray. */
+  op: choice(DIE_POOL_OPS, "place"),
+
+  /**
+   * `roll-trait`: one of the six, or `spellcast` — which is a *pointer*
+   * resolved against the character at the press, exactly as a counter's
+   * ceiling is, and overridden on a Root or Void card by the frame's own
+   * table. Blank means the author could not name one, which emits no button.
+   */
+  trait: maybeChoice(RESOURCE_TRAITS),
+  /**
+   * A Difficulty the card **printed**, and zero for none.
+   *
+   * Zero rather than null because a target number is the GM's everywhere else
+   * in this system and the popover declines to offer one; "Make a Spellcast
+   * Roll (15)" is the single case where the table can already read it off the
+   * object in front of them, so it travels only when it was printed.
+   */
+  dc: int(0, { min: 0 }),
+
+  /** `roll-card-damage`: which `cardDamage` mode, by its `name`. */
+  damageName: str(),
+  /** `roll-dice`: a Foundry formula. Never damage — that is the kind above. */
+  formula: str(),
+
+  /** `apply-condition`: an id out of `CONDITIONS`. */
+  condition: str(),
+
+  /** `grant-effect`: what it is called, what it changes, how long it lasts. */
+  effect: schema({
+    name: str(),
+    duration: choice(ACTION_DURATIONS, "temporary"),
+    modifiers: arr(modifierField()),
+  }),
+
+  /** `mark-use`: 1, or 3 on the two level 10 cards. */
+  mark: int(1, { min: 0 }),
+});
+
+/** One link of a chain: an action with nothing that could make it a chain. */
+export const stepField = (): any => schema(actionCore());
+
+export const actionField = (): any =>
+  schema({
+    ...actionCore(),
+    /** The words this was read from. See above — this is the load-bearing one. */
+    said: str(),
+    /** A printed precondition, shown on the label and never enforced. */
+    when: str(),
+    /** Further links, run in order, aborted whole if one refuses. */
+    steps: arr(stepField()),
+  });
+
 /**
  * A named block of rules text. Ancestries, communities, classes, subclasses
  * and stat blocks are all mostly made of these, and none of them are worth
@@ -151,6 +276,19 @@ export const featureField = (): any =>
     name: str(),
     description: html(),
     modifiers: arr(modifierField()),
+    /**
+     * What this block asks you to *do* — see `actionField`.
+     *
+     * Nested in the block rather than flat on the document with a name
+     * binding, which is `modifiers`' arrangement and not `resources`'. The two
+     * are chosen for opposite reasons and both are right: a player *adds* a
+     * counter after embedding, so it belongs to the document and names its
+     * rule; an action is **printed on the rule** and has to travel with it.
+     * Mixed ancestry is what settles it — creation copies one ancestry's
+     * bottom feature onto another document, and a flat `feature: "Surefooted"`
+     * string would arrive on a document that has no such block.
+     */
+    actions: arr(actionField()),
   });
 
 /**
@@ -413,3 +551,104 @@ export const fillCardDamage = (system: any, type?: string, name?: string): void 
     ...d,
   }));
 };
+
+/**
+ * The actions a document's rules text asks for, arriving on a copy somebody
+ * is already holding.
+ *
+ * `fillCardDamage`'s argument in full, and it is worth restating rather than
+ * cross-referencing because this is the field it matters most for. A domain
+ * card on a character sheet is **not a view of the compendium** — it is a
+ * duplicate made when it was dragged in, months ago. Rebuilding the packs
+ * puts these on every future drag and on none of the copies already sitting
+ * in a loadout, and nothing can derive them back.
+ *
+ * So the same table serves twice: `withActions()` in `src/packs-src/` writes
+ * it into the built document, and this writes it onto every construction of
+ * an embedded copy. One reading, two deliveries, and no migration — which
+ * matters because `src/module/migration/` exists for content that was copied
+ * and this would otherwise have been its largest ever entry.
+ *
+ * It is `prepareBaseData` rather than `migrateData` for the reason stated
+ * there: Foundry hands `migrateData` the `system` object alone, so the
+ * document's own `name` and `type` are unreachable from it, and a table keyed
+ * by name cannot be read without them.
+ *
+ * **The guard is per array, not per document**, and that is the one place
+ * this differs from the damage fill. Actions live in two places — on the
+ * document and inside each feature block — and a class whose Hope feature
+ * somebody hand-authored must still receive the annotation for its three
+ * class features. A non-empty array is somebody's own and always wins; an
+ * empty one is indistinguishable from one that was never filled, so the
+ * annotation comes back. Renaming the card is what says "this is not that
+ * card", which is the answer `build-packs.mjs` already gives about a stable
+ * `_id`.
+ */
+export const fillCardActions = (system: any, type?: string, name?: string): void => {
+  if (!type || !name) return;
+  /* Optional on the table rather than on the lookup, exactly as the damage
+     fill is: this runs on the construction of every Item in the world, so a
+     malformed content module has to fail as a card with no buttons rather
+     than as a world that will not open. */
+  const entry = (CARD_ACTIONS as Record<string, any> | undefined)?.[`${type}:${name}`];
+  if (!entry) return;
+
+  if (entry.actions?.length && !system.actions?.length) {
+    system.actions = entry.actions.map(completeAction);
+  }
+
+  /* The blocks, by their printed name. `featureBlocks` is deliberately not
+     imported from `data/modifiers.ts` — that one answers "what carries a
+     passive", which is a question about the owning subtype, and this one has
+     to reach every block on every subtype including the ones that carry no
+     passives at all. */
+  for (const [feature, actions] of Object.entries(entry.features ?? {})) {
+    for (const block of blocksNamed(system, feature)) {
+      if (block.actions?.length) continue;
+      block.actions = (actions as any[]).map(completeAction);
+    }
+  }
+};
+
+/** Every feature block on this system object answering to a printed name. */
+const blocksNamed = (system: any, name: string): any[] =>
+  [
+    ...(system.classFeatures ?? []),
+    system.hopeFeature,
+    ...(system.features ?? []),
+    system.topFeature,
+    system.bottomFeature,
+    system.feature,
+  ].filter((b: any) => b && b.name === name);
+
+/**
+ * An annotation completed against the schema's own defaults, and copied.
+ *
+ * Two characters holding the same card must not hold the same object, and a
+ * consumer reading `subject` off an entry that did not bother to state it
+ * should read `"self"` rather than `undefined`. `steps` recurses exactly one
+ * level, because that is all the schema can hold.
+ */
+const completeAction = (a: any): any => ({
+  kind: "pay",
+  label: "",
+  subject: "self",
+  amount: { hope: 0, stress: 0, hitPoints: 0, armorSlots: 0, fear: 0, ...(a.amount ?? {}) },
+  resource: "",
+  by: 0,
+  op: "place",
+  trait: "",
+  dc: 0,
+  damageName: "",
+  formula: "",
+  condition: "",
+  effect: { name: "", duration: "temporary", modifiers: [], ...(a.effect ?? {}) },
+  mark: 1,
+  said: "",
+  when: "",
+  ...a,
+  steps: (a.steps ?? []).map((s: any) => {
+    const { said: _s, when: _w, steps: _st, ...step } = completeAction(s);
+    return step;
+  }),
+});

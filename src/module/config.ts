@@ -683,6 +683,178 @@ export const DIE_ON_REFRESH_LABELS: Record<string, string> = {
   reroll: "Fill it and roll them",
 };
 
+/* ── what a card asks you to do ──────────────────────────────────────────
+   The closed set of presses a rules block can offer, and the reason it is
+   closed is the whole of why this exists.
+
+   Until now a card's buttons were **read out of its prose at render time**.
+   `featurePrice` swept a paragraph for "spend a Hope", `rollCall` swept it
+   for "make a Spellcast Roll", and a third pattern sniffed the literal words
+   "damage roll". Every one of them was carefully bounded and every one of
+   them was wrong somewhere nobody could see: three weapons named Scary
+   charged the wielder the Stress their *target* marks, four suits of Banded
+   Armor charged Severe damage's Armor Slot on a press rather than on the
+   damage, and Unleash Chaos charged nothing at all for two years because it
+   printed "Mark Stress" and the pattern wanted "Mark a Stress".
+
+   None of those looks wrong afterwards. That is the point: a card with a
+   button too many and a card with a button too few both render perfectly,
+   and the only witness is the player who paid.
+
+   So the buttons are **authored** now — read once, by somebody, with the
+   words they were read from recorded beside them — and this is the vocabulary
+   they are authored in. What makes it safe is not that the set is small but
+   that it is *closed*: a rule this cannot express gets no button and a
+   `DECLINED` entry naming the reading that disqualified it, which is a fact
+   somebody can act on. A scripting hatch would have taken the same rule and
+   produced a button nobody can review.
+
+   Fifteen members, and every one is backed by at least thirty distinct rule
+   units in the corpus. They fall in five families:
+
+   **Currency.** `pay`, `gain` and `clear` are one verb each over the same
+   `amount` block — spend/mark, gain, and give back. Three kinds rather than
+   one signed kind because the sign is not the difference: paying can be
+   *refused* when the purse is short, gaining cannot, and clearing is capped
+   by what is marked rather than by what is left.
+
+   **A document's own counters.** `move-resource`, `die-pool` and `refresh`
+   act on the `resources` and `dice` arrays the card already carries. They
+   name the pool rather than indexing it, which retires the last of the small
+   parsers: `actionsFor` used to decide whether a counter was *spent* or
+   *marked* by testing its name against `/^uses?$/i`.
+
+   **Rolls.** `roll-trait` opens the roll popover, because a card asking for a
+   Spellcast Roll is the start of a sentence you are still composing and a
+   button that rolled raw would be the one roll surface here where you cannot
+   bring an Experience. `roll-damage` throws the equipped weapon's,
+   `roll-card-damage` throws the expression printed on the card itself, and
+   `roll-dice` throws a formula that is neither — fifty rule units roll a die
+   that is not damage ("roll a d4; on a 4…") and not one of them has ever had
+   a button.
+
+   **The table's state.** `apply-condition` puts one of the registered
+   conditions on somebody, and `grant-effect` creates a real ActiveEffect
+   carrying modifiers and a duration.
+
+   **The two that already existed** and keep their behaviour exactly:
+   `use-item` spends a consumable's quantity, `mark-use` is *The Twilight
+   Marked*'s toll.
+   ─────────────────────────────────────────────────────────────────────── */
+
+export const ACTION_KINDS = [
+  "pay",
+  "gain",
+  "clear",
+  "move-resource",
+  "die-pool",
+  "refresh",
+  "roll-trait",
+  "roll-damage",
+  "roll-card-damage",
+  "roll-dice",
+  "apply-condition",
+  "grant-effect",
+  "use-item",
+  "mark-use",
+] as const;
+export type ActionKind = (typeof ACTION_KINDS)[number];
+
+/** What the Automation editor calls each of them. */
+export const ACTION_KIND_LABELS: Record<string, string> = {
+  pay: "Pay a cost",
+  gain: "Gain Hope or Fear",
+  clear: "Clear marks",
+  "move-resource": "Move one of this card's counters",
+  "die-pool": "Act on one of this card's die pools",
+  refresh: "Refill a counter or pool",
+  "roll-trait": "Ask for a trait roll",
+  "roll-damage": "Roll the equipped weapon's damage",
+  "roll-card-damage": "Roll damage this card prints",
+  "roll-dice": "Roll a formula that is not damage",
+  "apply-condition": "Apply a condition",
+  "grant-effect": "Grant a temporary effect",
+  "use-item": "Spend one of this item",
+  "mark-use": "Take the Marked deck's toll",
+};
+
+/**
+ * The five things a press can move, in one block, shared by three verbs.
+ *
+ * Several at once is the common case rather than an edge — the corpus is full
+ * of "Spend a Hope and mark a Stress", which is one act at the table and must
+ * be one press, refused whole if either half cannot be paid.
+ *
+ * `hitPoints` is on the block although only `clear` and `pay` reach it, and
+ * `fear` is on it although only the GM can move it. A currency the block
+ * could not name would be a currency the author has to work around, and both
+ * of those are printed on cards.
+ */
+export const ACTION_AMOUNTS = ["hope", "stress", "hitPoints", "armorSlots", "fear"] as const;
+export type ActionAmount = (typeof ACTION_AMOUNTS)[number];
+
+/** What a `die-pool` press does to the tray it names. */
+export const DIE_POOL_OPS = ["place", "roll", "spend", "step", "clear"] as const;
+export type DiePoolOp = (typeof DIE_POOL_OPS)[number];
+
+export const DIE_POOL_OP_LABELS: Record<string, string> = {
+  place: "Place a die",
+  roll: "Roll a die onto the card",
+  spend: "Spend a die",
+  step: "Step the climbing die up",
+  clear: "Clear the tray",
+};
+
+/**
+ * How long a granted effect lasts.
+ *
+ * Deliberately {@link RESOURCE_REFRESH}'s members with `manual` replaced by
+ * `temporary`, and the swap is the honest name rather than a rename: for a
+ * counter, `manual` means *you* refill it; for an effect, **"temporarily" is
+ * the rules' own keyword** for a state a roll clears. Thirty-seven of the
+ * eighty-seven temporary rules in the corpus say only that word, and putting
+ * a timer on them would be this system inventing a rule — so `temporary` is
+ * a real, visible, hand-dismissable effect with no expiry at all.
+ *
+ * Everything else is swept at the four call sites that already reach
+ * `refreshResources`: both rests, `endScene()` and `endSession()`. Foundry's
+ * own `duration` is not used and cannot be — it counts seconds, rounds and
+ * turns, and Daggerheart has none of the three.
+ */
+export const ACTION_DURATIONS = [
+  "shortRest",
+  "longRest",
+  "rest",
+  "scene",
+  "session",
+  "temporary",
+] as const;
+export type ActionDuration = (typeof ACTION_DURATIONS)[number];
+
+export const ACTION_DURATION_LABELS: Record<string, string> = {
+  shortRest: "Until your next short rest",
+  longRest: "Until your next long rest",
+  rest: "Until your next rest",
+  scene: "Until the end of the scene",
+  session: "Until the end of the session",
+  temporary: "Temporarily",
+};
+
+/**
+ * Who a press lands on.
+ *
+ * `self` is the character who owns the card. `targets` is
+ * `apps/targets.ts`'s existing rule and not a second one: a GM means the
+ * tokens they have **selected**, a player means their own character. That is
+ * what makes one button correct on both sides of the screen — a GM selects
+ * the ogre and presses *Restrained*, a player presses *Cloaked* and becomes
+ * Cloaked — and it is why nothing here is ever applied automatically. A card
+ * that put a condition on somebody without a press would be this system
+ * adjudicating, which is the GM's.
+ */
+export const ACTION_SUBJECTS = ["self", "targets"] as const;
+export type ActionSubject = (typeof ACTION_SUBJECTS)[number];
+
 /* ── conditions ──────────────────────────────────────────────────────────
    The three the *core rules* name, plus thirteen the cards do.
 

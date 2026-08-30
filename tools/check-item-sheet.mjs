@@ -79,33 +79,73 @@ function decomment(src) {
   return out;
 }
 
-/** Top-level keys of the object literal a `defineSchema` returns. */
+/**
+ * Top-level keys of the object literal a `defineSchema` returns.
+ *
+ * **The bracket counter has to run after the flush, not before it**, and that
+ * ordering was a live bug rather than a nicety. `...tracked()` is a token at
+ * depth zero followed immediately by `(` — and incrementing on the paren
+ * first meant the very next branch was the depth-above-zero one, which resets
+ * the token. So the spread was never recognised, `keys.push("resources")` was
+ * unreachable, and every field the spread carries — `resources`, `dice`,
+ * `cardDamage`, `modifiers` — has been invisible to this tool for as long as
+ * it has existed.
+ *
+ * That is exactly the failure this file was written to prevent, in this file:
+ * a check reporting "every field reachable" while not looking at four of
+ * them. It reported the same sentence before and after the spread was taught
+ * to it, which is why nothing caught it.
+ */
 function schemaKeys(body) {
   const keys = [];
   let depth = 0;
   let token = "";
   for (let i = 0; i < body.length; i++) {
     const c = body[i];
-    if (c === "{" || c === "(" || c === "[") depth++;
-    else if (c === "}" || c === ")" || c === "]") depth--;
-
     if (depth === 0) {
-      if (/[\w.]/.test(c)) token += c;
-      else if (c === ":" && token) {
-        keys.push(token);
-        token = "";
-      } else if (token) {
-        // `...tracked()` is the resources spread — one field, on every
-        // subtype, and the reason it is a spread rather than a base class is
-        // that a reader should not go up an inheritance chain to find it.
-        if (token === "...tracked") keys.push("resources");
+      if (/[\w.]/.test(c)) {
+        token += c;
+      } else {
+        if (c === ":" && token) keys.push(token);
+        else if (token === "...tracked") keys.push(...trackedKeys());
         token = "";
       }
     } else {
       token = "";
     }
+    if (c === "{" || c === "(" || c === "[") depth++;
+    else if (c === "}" || c === ")" || c === "]") depth--;
   }
   return keys;
+}
+
+/**
+ * The members of `tracked()`, read out of its own arrow body.
+ *
+ * Cached because every subtype spreads it and the answer cannot change
+ * within one run.
+ */
+let trackedCache = null;
+function trackedKeys() {
+  if (trackedCache) return trackedCache;
+  const src = decomment(ITEMS);
+  const at = src.indexOf("const tracked = () => ({");
+  if (at < 0) {
+    throw new Error(
+      "check-item-sheet: `tracked()` is not where this tool expects it in data/items.ts.\n" +
+        "  Rename it back or teach this function the new shape — a silent zero here\n" +
+        "  would report every spread field reachable without checking one of them.",
+    );
+  }
+  const open = src.indexOf("{", src.indexOf("({", at));
+  let depth = 0;
+  let end = open;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === "{") depth++;
+    else if (src[i] === "}" && --depth === 0) { end = i; break; }
+  }
+  trackedCache = [...src.slice(open + 1, end).matchAll(/^\s{2}([A-Za-z][\w]*):/gm)].map((m) => m[1]);
+  return trackedCache;
 }
 
 /** The body of the object literal in `return { … };`, balanced. */
