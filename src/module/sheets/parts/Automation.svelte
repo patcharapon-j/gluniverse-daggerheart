@@ -239,24 +239,24 @@
   </div>
 
   {#each actions ?? [] as a, i (i)}
-    <div class="blk act">
-      <div class="bh">
+    <div class="auto">
+      <div class="auhd">
         <select disabled={!editable} value={a.kind} onchange={(e) => edit(i, "kind", txt(e))}>
           {#each ACTION_KINDS as k}
             <option value={k}>{ACTION_KIND_LABELS[k] ?? k}</option>
           {/each}
         </select>
         <input
-          class="fnm"
+          class="aunm"
           placeholder="Label (blank = derived from the kind)"
           value={a.label ?? ""}
           disabled={!editable}
           onchange={(e) => edit(i, "label", txt(e))}
         />
         {#if editable}
-          <button type="button" class="mv" title="Move up" disabled={i === 0} onclick={() => move(i, -1)}>↑</button>
-          <button type="button" class="mv" title="Move down" disabled={i === (actions ?? []).length - 1} onclick={() => move(i, 1)}>↓</button>
-          <button type="button" class="x" title="Remove" onclick={() => drop(i)}>×</button>
+          <button type="button" class="aumv" title="Move up" disabled={i === 0} onclick={() => move(i, -1)}>↑</button>
+          <button type="button" class="aumv" title="Move down" disabled={i === (actions ?? []).length - 1} onclick={() => move(i, 1)}>↓</button>
+          <button type="button" class="audl" title="Remove" onclick={() => drop(i)}>×</button>
         {/if}
       </div>
 
@@ -440,7 +440,7 @@
             {/each}
           </select>
           <input
-            class="fnm"
+            class="aunm"
             placeholder="Label"
             value={st.label ?? ""}
             disabled={!editable}
@@ -469,7 +469,7 @@
             </select>
           {/if}
           {#if editable}
-            <button type="button" class="x" title="Remove step" onclick={() => dropStep(i, j)}>×</button>
+            <button type="button" class="audl" title="Remove step" onclick={() => dropStep(i, j)}>×</button>
           {/if}
         </div>
       {/each}
@@ -497,7 +497,7 @@
     </div>
 
     {#each modifiers ?? [] as m, i (i)}
-      <div class="blk act">
+      <div class="auto">
         <div class="af">
           <label class="an wide"
             >Changes
@@ -565,7 +565,7 @@
             </label>
           {/if}
           {#if editable}
-            <button type="button" class="x" title="Remove" onclick={() => dropMod(i)}>×</button>
+            <button type="button" class="audl" title="Remove" onclick={() => dropMod(i)}>×</button>
           {/if}
         </div>
       </div>
@@ -586,9 +586,79 @@
      This block is the fourth surface in this system to pay that toll, after
      `make.css`, `pool.css` and `browse.css`. The lesson keeps arriving because
      the environment is part of the component and a study page never carries it. */
-  .act {
+  /* ── the members this component owns ─────────────────────────────────
+     `.pnl`, `.k`, `.nw` and `.ach` come from the ported `sheet.css` and reach
+     any component inside a `.dh` root, so they are used as-is. Everything else
+     the item sheet's rows are made of — `.blk`, `.bh`, `.fnm`, `.mv`, `.x` —
+     is scoped to `ItemSheet.svelte` and does **not** reach a child component,
+     which is Svelte's rule and not a bug in it.
+
+     So these are `au`-prefixed and styled here rather than borrowed. Borrowing
+     the names and letting them fall through unstyled would have been this
+     repo's own recurring failure — drawn perfectly and lying — with the worst
+     of it on `.x` and `.mv`, which are `<button>`s: unstyled, Foundry's
+     `elements` layer takes both to 28px in a 24px row, and the panel reads as
+     roomy rather than as broken. That is exactly what `.lst .r .x` shipped as
+     until somebody measured it. */
+  .auto {
     display: grid;
     gap: 5px;
+    padding: 8px 0 9px;
+    border-top: 1px solid var(--line);
+  }
+
+  .auto:first-of-type {
+    border-top: 0;
+  }
+
+  .auhd {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .aunm {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    border-radius: 0;
+    font: 400 11px/1 var(--f-ui, sans-serif);
+    padding: 0 5px;
+    background: var(--sunk);
+    color: var(--ink);
+    border: 1px solid var(--edge);
+  }
+
+  /* All three metrics, not just `height`. Foundry gives a button a height AND
+     a matching `min-height`, and a floor with no competitor simply applies —
+     the bug that stood two Fear-strip steppers 59px tall in a 51px strip. */
+  .aumv,
+  .audl {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    padding: 0;
+    border: 1px solid var(--edge);
+    border-radius: 0;
+    background: none;
+    color: var(--ink-3);
+    font: 500 11px/1 var(--f-ui, sans-serif);
+    cursor: pointer;
+  }
+
+  .aumv:hover:not(:disabled),
+  .audl:hover {
+    color: var(--ink);
+    border-color: var(--ink-3);
+  }
+
+  .aumv:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
 
   .af {
@@ -601,7 +671,7 @@
   .an {
     display: grid;
     gap: 2px;
-    font: 500 7.5px/1 var(--mono, monospace);
+    font: 500 7.5px/1 var(--f-mono, monospace);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-3);
@@ -622,19 +692,19 @@
 
   .an input,
   .an select,
-  .act > .bh select {
+  .auto > .auhd select {
     height: 20px;
     min-height: 20px;
     max-height: 20px;
     border-radius: 0;
-    font: 400 10px/1 var(--ui, sans-serif);
+    font: 400 10px/1 var(--f-ui, sans-serif);
     padding: 0 4px;
     background: var(--sunk);
     color: var(--ink);
     border: 1px solid var(--edge);
   }
 
-  .act > .bh select {
+  .auto > .auhd select {
     flex: 0 0 148px;
   }
 
@@ -656,7 +726,7 @@
     min-height: 20px;
     max-height: 20px;
     border-radius: 0;
-    font: 400 10px/1 var(--ui, sans-serif);
+    font: 400 10px/1 var(--f-ui, sans-serif);
     padding: 0 4px;
     background: var(--sunk);
     color: var(--ink);
@@ -664,7 +734,7 @@
   }
 
   .ar {
-    font: 500 7.5px/20px var(--mono, monospace);
+    font: 500 7.5px/20px var(--f-mono, monospace);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--ink-3);
