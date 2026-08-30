@@ -1,5 +1,26 @@
 /* Regression coverage for posted-card actions. This drives the real
- * postCard() boundary and inspects the message flags consumed by chat.ts. */
+ * postCard() boundary and inspects the message flags consumed by chat.ts.
+ *
+ * ── what this file used to be
+ *
+ * Every assertion here was a *parse* assertion: hand a card the prose
+ * "**Spend 2 Hope** to use this feature" and check that a Hope cost came back.
+ * That is how the buttons were decided, so that is what had to be covered —
+ * and the coverage was per-subtype because ancestry had once diverged from the
+ * others by carrying its rules in two blocks rather than one.
+ *
+ * The prose is not read any more. Costs, rolls and damage are authored per
+ * document in `src/packs-src/card-actions.mjs`, and `test-authored-actions.mjs`
+ * is what ratchets that path. So the subtype sweep is rebuilt on authored
+ * input — the divergence it was written for is a property of the *shape* of a
+ * document, not of how its buttons were derived, and it is still worth
+ * covering.
+ *
+ * What survives unchanged is everything that was never a parse: the Marked
+ * deck's toll, a consumable's quantity, a weapon's damage, and the `feature`
+ * subtype's own `stressCost`/`fearCost` — which are authored fields somebody
+ * typed into the item sheet and are the one cost that predates `actions`.
+ */
 
 globalThis.CONST = { CHAT_MESSAGE_STYLES: { OTHER: 0 } };
 globalThis.ChatMessage = {
@@ -40,7 +61,27 @@ const actionsFor = async (card, held) => {
 const hasCost = (actions, field, amount) =>
   actions.some((action) => action.kind === "pay-cost" && action[field] === amount);
 
-const elf = item("elf", "ancestry");
+/** One authored `pay`, in the shape the compendium stores. */
+const pays = (amount, said) => ({ kind: "pay", amount, said });
+
+/* ── every feature-bearing full-card shape ────────────────────────────────
+   Two blocks on purpose: that is the shape which caused ancestry to diverge,
+   and it is also the shape that makes a per-block binding matter — an action
+   on one rule must not arrive on the other's row.
+
+   `feats` on the card and `topFeature`/`bottomFeature` on the Item are the
+   two halves of the same document. The card is what gets drawn; the Item is
+   where the actions live, because an action is printed on a rule and travels
+   with it. */
+
+const elf = item("elf", "ancestry", {
+  topFeature: {
+    name: "Quick Reactions",
+    description: "**Mark a Stress** to gain advantage on a reaction roll.",
+    actions: [pays({ stress: 1 }, "Mark a Stress")],
+  },
+  bottomFeature: { name: "Celestial Trance", description: "During a rest, choose an additional downtime move.", actions: [] },
+});
 const ancestryActions = await actionsFor({
   id: elf.id,
   type: "ANCESTRY",
@@ -53,12 +94,23 @@ const ancestryActions = await actionsFor({
 if (!hasCost(ancestryActions, "stress", 1)) {
   throw new Error(`Elf ancestry has no Stress action: ${JSON.stringify(ancestryActions)}`);
 }
+if (ancestryActions.length !== 1) {
+  throw new Error(`the free feature must contribute nothing: ${JSON.stringify(ancestryActions)}`);
+}
 
-/* Cover every feature-bearing full-card shape. Multiple feature blocks are
- * deliberate: that is the shape which caused ancestry to diverge. */
 for (const type of ["CLASS", "SUBCLASS", "COMMUNITY", "TRANSFORMATION"]) {
   const id = type.toLowerCase();
-  const held = item(id, id === "community" ? "community" : id);
+  const kind = id === "community" ? "community" : id;
+  /* Where a subtype keeps its rules differs — a class has `classFeatures`, a
+     subclass and a transformation have `features`, a community has one
+     `feature` — and `authoredBlocks` has to reach all of them. A subtype it
+     could not walk would be a document whose buttons silently never appear. */
+  const paid = { name: "Paid", description: "**Spend 2 Hope** to use this feature.", actions: [pays({ hope: 2 }, "Spend 2 Hope")] };
+  const free = { name: "Free", description: "This feature has no cost.", actions: [] };
+  const system = kind === "class" ? { classFeatures: [free, paid] }
+    : kind === "community" ? { feature: paid }
+    : { features: [free, paid] };
+  const held = item(id, kind, system);
   const actions = await actionsFor({
     id,
     type,
@@ -73,7 +125,9 @@ for (const type of ["CLASS", "SUBCLASS", "COMMUNITY", "TRANSFORMATION"]) {
   }
 }
 
-const domainCard = item("domain", "domainCard");
+const domainCard = item("domain", "domainCard", {
+  actions: [pays({ armorSlots: 1 }, "Mark an Armor Slot")],
+});
 const domainActions = await actionsFor({
   id: domainCard.id,
   type: "DOMAIN CARD",
@@ -84,6 +138,9 @@ if (!hasCost(domainActions, "armor", 1)) {
   throw new Error(`Domain card has no Armor action: ${JSON.stringify(domainActions)}`);
 }
 
+/* The one cost that predates `actions` and is not a parse: somebody typed it
+   into the item sheet. A homebrew feature built through those two fields has
+   to go on charging what it was told to. */
 const feature = item("feature", "feature", { stressCost: 2 });
 const featureActions = await actionsFor({
   id: feature.id,
@@ -99,6 +156,7 @@ const weapon = item("weapon", "weapon", {
   equipped: true,
   slot: "primary",
   damage: { dice: "d8", count: 1, bonus: 0, type: "physical" },
+  actions: [{ kind: "roll-damage", said: "A weapon." }],
 });
 const weaponActions = await actionsFor({
   id: weapon.id,
@@ -110,7 +168,9 @@ if (!weaponActions.some((action) => action.kind === "roll-damage" && action.weap
   throw new Error(`Weapon has no damage roll: ${JSON.stringify(weaponActions)}`);
 }
 
-const armor = item("armor", "armor");
+const armor = item("armor", "armor", {
+  feature: { name: "Warded", description: "**Spend a Hope** to activate this armor.", actions: [pays({ hope: 1 }, "Spend a Hope")] },
+});
 const armorActions = await actionsFor({
   id: armor.id,
   type: "ARMOR",
@@ -129,16 +189,32 @@ for (const type of ["consumable", "loot"]) {
   }
 }
 
+/* A counter no longer produces a button on its own, and that is the change
+   rather than a gap. `actionsFor` used to add one per counter and decide
+   spend-versus-mark by testing the counter's *name* against `/^uses?$/i` — a
+   guess about English on data whose author already knew the answer. An
+   authored `move-resource` states the sign and names the pool. */
 const counterCard = item("counter", "domainCard", {
   resources: [
     { name: "Uses", value: 1, max: { kind: "fixed", n: 1, floor: 0 } },
     { name: "Tokens", value: 0, max: { kind: "fixed", n: 3, floor: 0 } },
+  ],
+  actions: [
+    { kind: "move-resource", resource: "Uses", by: -1, said: "spend a use" },
+    { kind: "move-resource", resource: "Tokens", by: 1, said: "place a token" },
   ],
 });
 const counterActions = await actionsFor({ id: counterCard.id, type: "DOMAIN CARD", name: "Counters" }, [counterCard]);
 if (!counterActions.some((action) => action.kind === "move-resource" && action.by === -1) ||
     !counterActions.some((action) => action.kind === "move-resource" && action.by === 1)) {
   throw new Error(`Counter spend/mark actions incomplete: ${JSON.stringify(counterActions)}`);
+}
+const unnamed = item("unnamed", "domainCard", {
+  resources: [{ name: "Tokens", value: 0, max: { kind: "fixed", n: 3, floor: 0 } }],
+});
+const unnamedActions = await actionsFor({ id: unnamed.id, type: "DOMAIN CARD", name: "Unnamed" }, [unnamed]);
+if (unnamedActions.some((a) => a.kind === "move-resource")) {
+  throw new Error(`a counter nobody authored a press for must draw none: ${JSON.stringify(unnamedActions)}`);
 }
 
 /* *The Twilight Marked*. Three things worth asserting and each has a way of
@@ -153,8 +229,13 @@ if (!counterActions.some((action) => action.kind === "move-resource" && action.b
    optional ones reads as the least important thing on the row.
 
    And that the two level 10 cards cost 3, read off the words the frame uses
-   rather than off a list of their names. */
-const markedCard = item("marked", "domainCard", { domain: "void" });
+   rather than off a list of their names. That last one is the single prose
+   read left in `post-card.ts`, and it survives because its subject is the
+   frame rather than the card. */
+const markedCard = item("marked", "domainCard", {
+  domain: "void",
+  actions: [pays({ stress: 1 }, "mark a Stress")],
+});
 const markedActions = await actionsFor({
   id: markedCard.id,
   type: "DOMAIN CARD",
@@ -186,5 +267,6 @@ if (plainActions.some((a) => a.kind === "mark-use")) {
 }
 
 console.log(
-  "chat card actions: all 11 Item subtypes plus costs, counters, quantities, damage and the Mark toll covered",
+  "chat card actions: all 11 Item subtypes reached by the block walk, plus authored costs, "
+    + "counters, quantities, damage, the feature subtype's own cost fields and the Mark toll",
 );

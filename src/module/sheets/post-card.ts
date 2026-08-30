@@ -19,7 +19,7 @@ import {
   CONDITIONS, SYSTEM_ID, TRAITS, isMarkedDomain, markedSpellcast, traitLabel, type Trait,
 } from "../config.ts";
 import { CARD } from "../ui/card.js";
-import { featurePrice, isFree, plain, type CardOptions, type Price } from "./cards.ts";
+import { isFree, type CardOptions, type Price } from "./cards.ts";
 
 export interface CardAction {
   kind:
@@ -99,8 +99,6 @@ export interface PostCardOptions {
   price?: Price;
   /** Only the counters owned by the posted feature. Omit for the whole Item. */
   resourceIndexes?: number[];
-  /** A rule which explicitly calls for a Damage Roll. */
-  damageRoll?: boolean;
 }
 
 /**
@@ -170,69 +168,14 @@ const blocks = (card: CardOptions): { n: string; t: string }[] => {
   ];
 };
 
-/* ── "Make a Spellcast Roll" ───────────────────────────────────────────
-   The second parse of English rules text in this system, and it has to argue
-   for itself the way the first one does. `featurePrice` is the other, and its
-   whole discipline is that a pattern over rules text is only allowed where the
-   book writes the thing in one shape, on purpose, every time.
-
-   A roll is written that way. Daggerheart asks for one in the imperative and
-   in one shape — "Make a Spellcast Roll", "make an Instinct Roll (12)" — and
-   everything else that puts a trait next to the word *Roll* is describing a
-   bonus to a roll rather than asking for one:
-
-       Channeling — "+1 to Spellcast Rolls"
-       Not Good Enough — "you gain a +1 bonus to your next Knowledge Roll"
-       Deadly Focus — "+10 bonus to your damage rolls"
-
-   None of those says *make*, and that verb is the whole of what a button
-   needs. So it is required, and required to be *imperative* — which is
-   `featurePrice`'s own
-   discriminator arriving at a different question. There it is "who is paying";
-   here it is "who is being told to roll", and the shape of the answer is the
-   same: the clause head, or an offer. What precedes `make` is the whole test.
-
-       "When you would make a Spellcast Roll, you can spend a Hope…"
-       "Additionally, before you make a Spellcast Roll while within…"
-
-   Both name a roll being made somewhere else and neither is a call to roll
-   now; "would" and "you" are not in the caller set, so neither is reached. A
-   card saying "by making an additional Spellcast Roll" is out on the verb
-   alone.
-
-   Two more things fall out of the shape rather than needing a rule of their
-   own, and both are worth stating because they look like omissions:
-
-   - **No Reaction Rolls.** The trait word has to sit immediately against
-     `Roll`, so "make an Agility Reaction Roll" and "must succeed on a Reaction
-     Roll (16)" are both unreachable. That is also what keeps the *target's*
-     rolls off this card: in this game the thing a target is forced to make is
-     always a Reaction Roll, which is why `to` is safe in the caller set even
-     though it is the word a coercion is written with.
-   - **"make the … Roll" is given up**, deliberately, as `featurePrice` gives
-     up "must". Two cards phrase it that way and nothing in the sentence tells
-     the definite article apart from a reference back to a roll already named.
-
-   A printed Difficulty rides along in the same match, because the book prints
-   it in the same breath — "Make a Spellcast Roll (15)". An *unprinted* one
-   does not and must not: a target number is the GM's everywhere else in this
-   system, and the popover deliberately declines to offer one. */
-
-const ROLL_MK = "[\\s*_]";
-const ROLL_CALLER =
-  "(?:^|<br>|•|[.!?:;,]|\\band\\b|\\bthen\\b|\\byou can\\b|\\byou may\\b|\\bto\\b)";
-const ROLL_WORDS = [...TRAITS, "spellcast"].join("|");
-const ROLL_RX = new RegExp(
-  `${ROLL_CALLER}${ROLL_MK}*make${ROLL_MK}+an?${ROLL_MK}+(${ROLL_WORDS})` +
-    `${ROLL_MK}+roll\\b${ROLL_MK}*(?:\\(${ROLL_MK}*(\\d+)${ROLL_MK}*\\))?`,
-  "i",
-);
-
-/** The first roll a block asks for, and only the first — see `actionsFor`. */
-const rollCall = (text: string): { word: string; dc: number | null } | null => {
-  const m = ROLL_RX.exec(text);
-  return m ? { word: String(m[1]).toLowerCase(), dc: m[2] ? Number(m[2]) : null } : null;
-};
+/* ── the roll a card asks for ──────────────────────────────────────────
+   The pattern that found one has moved to `sheets/suggest.ts`; what stays here
+   is the half that cannot: resolving `spellcast` against a character, which is
+   the one place the campaign frame's own override is honest. A button on the
+   card is the object naming the trait being the object pressed, and the player
+   is looking straight at it — reading `spellcastTrait` anywhere else would be
+   a campaign rule reaching into the roll engine with nothing on screen to say
+   why. See "A card that asks for a roll" in CLAUDE.md. */
 
 /**
  * Which of the six a call resolves to, or nothing at all.
@@ -646,105 +589,37 @@ function actionsFor(card: CardOptions, actor: any, options: PostCardOptions): Ca
     }
   };
 
-  if (options.price) {
-    addPrice(options.price);
-  } else {
-    const authored = item?.type === "feature" ? item.system : undefined;
-    if (card.text) addPrice(featurePrice({ description: card.text }, authored));
-    for (const feature of card.feats ?? []) {
-      addPrice(
-        featurePrice({ description: feature.t }),
-        card.feats && card.feats.length > 1 ? feature.n : "",
-      );
-    }
+  /* ── the parse path is gone ────────────────────────────────────────────
+     Three patterns used to run here: a price swept out of the prose, a roll
+     read off "make a … Roll", and a sniff for the literal words "damage roll".
+     Every rule unit in the packs is read now — `tools/check-actions.mjs` will
+     not let one through unannotated and undeclined — so a document reaching
+     this point has genuinely nothing authored, and the honest answer is the
+     two structural presses and no more.
+
+     They are not deleted: `sheets/suggest.ts` is the same three patterns
+     behind the item sheet's "suggest" press, where their guess arrives as
+     editable rows somebody looks at before it can charge anybody anything.
+
+     `options.price` still travels, and it is not a leftover. The Hope action
+     is not an Item and has no block to author against — it is assembled from
+     the class's `hopeFeature` by `hopeCard`, and `hopeCost` reads its price
+     off that block's own authored actions. One caller, one explicit price. */
+  if (options.price) addPrice(options.price);
+
+  /* The `feature` subtype's own `stressCost`/`fearCost`, which survive the
+     retirement because they were never a parse: somebody typed them into the
+     item sheet deliberately, and they are the one authored cost that predates
+     `actions`. A homebrew feature built through those two fields goes on
+     charging what it was told to. */
+  // Unconditional: the branch above returned, so nothing here is annotated.
+  if (item?.type === "feature") {
+    const stress = Number(item.system?.stressCost) || 0;
+    const fear = Number(item.system?.fearCost) || 0;
+    if (stress || fear) addPrice({ hope: 0, armor: 0, stress, fear });
   }
 
-  const resources: any[] = item?.system?.resources ?? [];
-  const indexes = options.resourceIndexes ?? resources.map((_r, i) => i);
-  for (const i of indexes) {
-    const res = resources[i];
-    if (!res) continue;
-    const budget = /^uses?$/i.test(String(res.name ?? ""));
-    const name = String(res.name || "Counter").replace(/s$/i, "");
-    out.push({
-      kind: "move-resource",
-      label: budget ? `Spend ${name}` : `Mark ${name}`,
-      itemId: item.id,
-      resourceIndex: i,
-      by: budget ? -1 : 1,
-    });
-  }
-
-  /* The two structural presses, shared with the authored path above rather
-     than restated here — see `appendStructural`. The Marked toll goes to the
-     head of the row because it is the one action there that is not optional:
-     using a Root or Void card gains a Mark whether you like it or not, and a
-     press rather than something the post applies because posting a card is
-     how you show it as often as how you play it. */
   appendStructural(out, item, card);
-
-  /* The row reads in the order the card's sentence does — pay, roll, damage —
-     which is what puts this after every price above it and before both damage
-     blocks below. A card that asks for a Stress, a roll and then some dice is
-     a card whose buttons are pressed left to right.
-
-     **One button per block, and the first invocation only.** A block that
-     calls for two rolls is calling for the second *because of* how the first
-     went ("on a success, make a Presence Roll"), so a row offering both up
-     front would be offering a roll nobody has earned yet. The reader can press
-     the trait plate on their own sheet for the second, which is what they did
-     before this button existed.
-
-     **Repeatable, and therefore no claim.** Every other action in this row
-     spends something once — a Hope leaves a purse, a use leaves a counter —
-     and a row of live buttons three hours later is an invitation to collect it
-     twice. A roll spends nothing. You will genuinely roll the same card again
-     next round, and burning the button on the first press would send you back
-     to the sheet for every press after it. Ownership is the whole gate. */
-  for (const b of blocks(card)) {
-    const call = rollCall(b.t);
-    if (!call) continue;
-    const trait = traitOf(call.word, actor, item);
-    if (!trait) continue;
-    out.push({
-      kind: "roll-trait",
-      label: `${b.n ? `${b.n} · ` : ""}${rollLabel(call.word)}`,
-      trait,
-      dc: call.dc,
-    });
-  }
-
-  /* The card's own dice, which is a different button from the one below it.
-     Two, never one, and the corpus is what settles it: seventy-seven entries
-     print a complete damage expression, the "damage roll" sniff below matches
-     fifty of which thirty-four print no dice at all, and *not one* card with a
-     complete expression says the phrase. The two are not two readings of one
-     thing — "add a d6 to your damage roll" is a clause about the weapon in
-     your hand, and "they take 2d8+4 magic damage" is the card rolling.
-
-     So the label **prints the dice**. A row carrying two buttons both reading
-     "Roll damage" is precisely the ambiguity this exists to remove, and the
-     expression is the one thing that can never be true of both.
-
-     `proficiency` is resolved *here* rather than at the press, unlike the
-     weapon below, and the reason is the label: a button reading "Roll 3d8+2"
-     that rolled a different number of dice would be worse than no label at
-     all. The Proficiency in it is the one this character had when the card was
-     posted, which is what the card said when it was posted.
-
-     **No critical.** A weapon's damage button is reached from an attack plate
-     and reads the crit off the message that hit; a posted card is a card, and
-     there is no honest link from it to a roll that critted — the player may
-     have posted it before rolling, after rolling, or to argue about what it
-     says. Guessing would double dice on a hit that never happened. */
-  for (const d of (item?.system?.cardDamage ?? []) as any[]) {
-    out.push(cardDamageAction(d, actor, card));
-  }
-
-  const saysDamageRoll = blocks(card).some((b) => /\bdamage roll\b/i.test(plain(b.t)));
-  if (item?.type === "weapon" || options.damageRoll || saysDamageRoll) {
-    out.push({ kind: "roll-damage", label: "Roll damage", weaponId: equippedWeapon(actor, item)?.id });
-  }
   return out;
 }
 

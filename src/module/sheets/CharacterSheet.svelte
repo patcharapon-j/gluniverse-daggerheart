@@ -73,11 +73,10 @@
   import {
     cardOf,
     featureCard,
-    featurePrice,
+    authoredPrice,
     hasDomainHue,
     hopeCard,
     hopeCost,
-    isFree,
     loadSigils,
     plain,
     priceLabel,
@@ -1132,7 +1131,10 @@
     ) => {
       if (!f?.name && !f?.description) return;
       const text = plain(f.description);
-      const price = featurePrice(f, o.system);
+      /* Off the block's authored actions rather than out of its prose. The
+         row prints what the card will charge, and the card charges what
+         somebody read — one answer, not two that can disagree. */
+      const price = authoredPrice(f?.actions);
       out.push({
         pk: it.id,
         key: `${it.id}:${o.slot}`,
@@ -1274,11 +1276,13 @@
       await postCard(a.card, doc, {
         /* Which rule this row is, so the posted card carries that rule's
            authored actions and not the whole document's. A class row for
-           Cloaked must not arrive with Sneak Attack's press on it. */
+           Cloaked must not arrive with Sneak Attack's press on it.
+
+           And that is the *only* thing passed now. `price` and `damageRoll`
+           both told `postCard` what the prose seemed to say, which is a
+           question the document answers for itself since it was read. */
         feature: a.bind,
-        price: isFree(a.price) ? undefined : a.price,
         resourceIndexes: a.res.map((r) => r.i),
-        damageRoll: /\bdamage roll\b/i.test(a.text),
       });
     }
   }

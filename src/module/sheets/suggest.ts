@@ -27,7 +27,89 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { TRAITS } from "../config.ts";
-import { featurePrice, isFree, plain } from "./cards.ts";
+import { isFree, plain, type Price } from "./cards.ts";
+
+/* ── the price parse, moved here whole ────────────────────────────────────
+   This lived in `sheets/cards.ts` and decided what every feature on the
+   character sheet charged. It decides nothing now — `authoredPrice` reads the
+   answer off the document — and it is here rather than deleted because it is
+   still the best first guess anybody has about a sentence nobody has read yet.
+
+   Its own argument is preserved below unedited, because the reasoning is what
+   makes the suggestion trustworthy enough to offer: the discriminator is *who
+   is paying*, an offer or a bare imperative at the head of a clause, and
+   everything else in the paragraph belongs to somebody else. Ranger's Focus is
+   still the case that settles it.
+
+   What changed is only the consequence of being wrong. An over-match used to
+   take a Stress off somebody; it now puts a row on a form that a GM deletes. */
+
+const AMOUNTS: Record<string, number> = {
+  a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+};
+
+const amount = (w: string): number => AMOUNTS[w.toLowerCase()] ?? (Number(w) || 0);
+
+/**
+ * Emphasis and whitespace, together, anywhere the two can meet.
+ *
+ * `plain` leaves markdown behind rather than markup — a card that prints
+ * "you can **mark a Stress**" arrives with the asterisks still in it, and
+ * they land in the middle of the phrase rather than around it. Every junction
+ * in the pattern therefore has to allow them.
+ */
+const MK = "[\\s*]";
+
+/**
+ * What may stand immediately before the verb: a clause head, or an offer.
+ *
+ * These are the two ways the holder's own price is written. Everything else
+ * that could precede "mark a Stress" — "must", "would", "they", "the target",
+ * a bare "when you" — is a consequence or somebody else's bill, and is left
+ * unreachable on purpose. See the argument above.
+ *
+ * `•` is here because `plain` renders a list item as one, so a bulleted price
+ * is a price at the head of a clause with no punctuation in front of it.
+ */
+const PAYER = "(?:^|<br>|•|[.!?:;,]|\\band\\b|\\bthen\\b|\\byou can\\b|\\byou may\\b)";
+
+/**
+ * The clause itself, kept separate from the number so the ratchet can quote it.
+ *
+ * `tools/check-cards.mjs` cannot import this — it is a `.mjs` tool and this is
+ * TypeScript — so it lifts these three declarations out of the file as *text*,
+ * which is `check-item-sheet.mjs`'s move for the same reason. That is what
+ * keeps there from being a second copy of the pattern maintained by hand, and
+ * it is why the three are named constants rather than one inlined literal.
+ */
+const priceClause = (text: string, unit: string): RegExpExecArray | null =>
+  new RegExp(
+    `${PAYER}${MK}*(?:spend|mark|pay)${MK}+(a|an|one|two|three|four|five|six|\\d+)${MK}+${unit}\\b`,
+    "i",
+  ).exec(text);
+
+/** The first clause in which *you* are asked to pay this currency, if any. */
+const priceOf = (text: string, unit: string): number => {
+  const m = priceClause(text, unit);
+  return m ? amount(m[1] as string) : 0;
+};
+
+/**
+ * What the pattern reads out of a block's prose.
+ *
+ * @param system the Item's own `system`, when the block *is* the Item — an
+ * authored `stressCost`/`fearCost` outranks the text, because somebody typed
+ * it deliberately.
+ */
+export function featurePrice(feature: any, system?: any): Price {
+  const text = plain(feature?.description).replace(/<br>/g, " ");
+  return {
+    hope: priceOf(text, "hope"),
+    stress: Number(system?.stressCost) || priceOf(text, "stress"),
+    fear: Number(system?.fearCost) || priceOf(text, "fear"),
+    armor: Math.max(priceOf(text, "armor slot"), priceOf(text, "armor slots")),
+  };
+}
 
 /* ── the roll call ────────────────────────────────────────────────────────
    Lifted here from `post-card.ts` when the runtime stopped using it. The

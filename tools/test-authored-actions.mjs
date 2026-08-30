@@ -92,16 +92,22 @@ assert.equal(authored[0].kind, "pay-cost");
 assert.equal(authored[0].stress, 1);
 assert.equal(authored[0].said, "Mark a Stress", "said travels onto the message");
 
-/* And the same card with no reading still gets the parse, because the
-   readings land population by population and a card nobody has reached yet
-   must not lose its buttons in the meantime. */
+/* And a card with no reading gets NOTHING, which is the posture now that
+   every rule unit in the packs is read: `check-actions.mjs` will not let one
+   through unannotated and undeclined, so a document reaching this point has
+   genuinely nothing authored. A guess here would be the retired parser back
+   under another name, and the failure it made — charging a Stress nobody owes
+   — is the one this whole change exists to make impossible.
+
+   The GM's route is the item sheet's "suggest" press, where the same patterns
+   produce editable rows somebody looks at first. */
 const bare = item("bare", "domainCard");
 const parsed = await actionsOf(
   { id: "bare", type: "DOMAIN CARD", name: "Rune Ward", text: "**Mark a Stress** to ward an ally." },
   [bare],
 );
-assert.ok(parsed.some((a) => a.kind === "pay-cost" && a.stress === 1),
-  "an unannotated card still gets the parse until the readings land");
+assert.equal(parsed.length, 0,
+  "an unannotated card gets no automation at all — the runtime never guesses");
 
 /* ── the structural two survive the authored path ─────────────────────── */
 
