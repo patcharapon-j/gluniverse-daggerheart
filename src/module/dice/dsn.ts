@@ -24,10 +24,11 @@
  * surface. Their numerals are white on both, because a numeral in a *third*
  * colour is a third thing to decode on a die whose entire job is to be one of
  * two, and white is the only value that reads at the same weight on gold and
- * on violet. They are the two sets with `emissiveLabels`, which lights the
- * label texture and nothing else: the number glows faintly from inside the
- * casting, which is exactly what you want to find when the die is face-down in
- * shadow behind another one.
+ * on violet. Their number and cut glow faintly from inside the casting, which
+ * is exactly what you want to find when the die is face-down in shadow behind
+ * another one. The light is applied in the material shader rather than through
+ * Dice So Nice's global bloom compositor; that distinction is the performance
+ * argument below.
  *
  * **The advantage pair is read as a number**, so it is opaque. `velvet` —
  * matte, with a soft sheen along the edge as the die turns — because a
@@ -96,27 +97,19 @@
  * else (`createTextMaterial`, `DiceFactory.js:1453` and `:1699`). So out of
  * the box, a glowing die means a glowing *number*.
  *
- * **And we were not even getting that.** `emissiveLabels` is read off
- * `DiceColors.getColorSet(appearance.colorset)` at `DiceFactory.js:2286` —
- * and when a colorset arrives the way ours does, `appearance.colorset` is
- * `undefined` by then. `getAppearanceForDice` honours `term.options.colorset`
- * first, as it should, but it does so by replacing the whole appearance with
- * the colorset record: `appearance = colorsetData` (`:2052`). That record
- * carries `name` and `id` and every colour, and no key called `colorset` —
- * so the lookup at `:2286` falls through to `COLORSETS['custom']`, which has
- * no `emissiveLabels`, and the flag is quietly dropped. It is the *only*
- * colorset property lost that way: the colours, texture, material and font
- * are all read off `appearance` directly and survive, which is exactly why
- * nothing looked broken. The dice have been correct in every respect except
- * the one that was never firing.
+ * **That built-in switch is too expensive for two small illuminated areas.**
+ * Dice So Nice 6.2.9 treats any visible non-black emissive material as a reason
+ * to enable its full-screen bloom compositor. During every animation frame it
+ * traverses the scene, darkens non-bloom meshes, renders the bloom composer,
+ * traverses again to restore materials, and renders the final composer. The
+ * custom dice used to opt into all of that through `emissiveLabels: true`.
  *
- * The fix is to say it twice. `paint()` writes `options.colorset` **and**
- * `options.appearance.colorset`, because `options.appearance` is merged back
- * over the replaced appearance immediately afterwards (`:2077`) and putting
- * the key back is all `:2286` needs. It costs one string in the message's
- * stored options and it is also, incidentally, the module's own priority-3
- * route (`:2040`), so if the first ever stops working the second still names
- * the right theme.
+ * We still use the module's exact emissive atlas. The material-ready hook sets
+ * the public emissive colour to black so Dice So Nice keeps its one-pass render,
+ * then its `onBeforeCompile` wrapper seeds `totalEmissiveRadiance` immediately
+ * before Three.js applies that same atlas. The label and cut pixels, intensity,
+ * frosted material, bump, transmission mask, colours and textures are unchanged;
+ * only the scene-wide post-process around them is removed.
  *
  * **The surface glow is composited, and here is why it is not a preset.**
  * The one genuine emission-*map* path in the module is `addDicePreset`, which
@@ -153,7 +146,7 @@
  * blow both to white. `lighten` takes the larger, so nothing can out-glow the
  * number.
  *
- * The intensity goes to 1 from the module's 0.7, and the colour stays white.
+ * The intensity is 1 and the local shader light stays white.
  * A gold emissive on Hope would light its numeral gold too, and the numerals
  * are white on both on purpose — see above.
  *
@@ -288,9 +281,7 @@ const TEXTURES = [
  *
  * Keyed by texture id, because that is what the finished material carries and
  * therefore the only thing the hook can recognise itself by. Only the two
- * `frosted` sets have one: `velvet` takes no `emissiveLabels`, so its material
- * ends up with a black emissive colour and a glow map would be multiplied by
- * nothing (`DiceFactory.js:1237`).
+ * `frosted` roles have one. The `velvet` pair remains wholly unlit.
  */
 const GLOW: Record<string, string> = Object.fromEntries(
   SHAPES.flatMap((shape) => [
@@ -302,8 +293,11 @@ const GLOW: Record<string, string> = Object.fromEntries(
 /** Loaded once, on registration. Absent means the glow is simply not applied. */
 const glowImages = new Map<string, HTMLImageElement>();
 
-/** Above the module's own 0.7 for a lit label, and no further. */
+/** The existing finish's white light level, now applied locally. */
 const GLOW_INTENSITY = 1;
+
+/** Unique enough not to collide with Dice So Nice or another material hook. */
+const LOCAL_GLOW_UNIFORM = "dhLocalEmissiveIntensity";
 
 /** One atlas tile, which is the unit the module draws a texture in. */
 const TILE = 256;
@@ -331,7 +325,6 @@ const ROLES = [
     outline: "#5f4405",
     edge: "#eccb63",
     material: "frosted",
-    emissiveLabels: true,
     cut: "hope" as const,
   },
   {
@@ -342,7 +335,6 @@ const ROLES = [
     outline: "#241043",
     edge: "#b498f0",
     material: "frosted",
-    emissiveLabels: true,
     cut: "fear" as const,
   },
   /* The advantage d6 and its negative, straight off `.die.a` and `.die.a.neg`
@@ -403,7 +395,6 @@ const COLORSETS = ROLES.flatMap((r) =>
     material: r.material,
     font: FONT,
     visibility: shape === DEFAULT_SHAPE[r.role] ? "visible" : "hidden",
-    ...(r.emissiveLabels ? { emissiveLabels: true } : {}),
   })),
 );
 
@@ -429,15 +420,10 @@ function shapeOf(term: any, role: string): Shape {
  * the caller thinks — `rollDuality` builds the advantage term only when there
  * is advantage, so `dice[2]` is very often nothing at all.
  *
- * **It is said twice, and the second one is not redundant.** `options.colorset`
- * is what the module checks first and what makes the theme win outright over
- * the user's preferences. But honouring it replaces the whole appearance
- * record with the colorset's own (`DiceFactory.js:2052`), and that record has
- * no key named `colorset` — so the later lookup that reads `emissiveLabels`
- * back off the theme (`:2286`) finds nothing and the glow is dropped. Merging
- * `options.appearance` happens in between (`:2077`), so writing the name there
- * as well puts the key back. Everything else about the theme comes through the
- * appearance directly and never needed it, which is why this was invisible.
+ * **It is said twice for compatibility.** `options.colorset` is the module's
+ * priority route and makes the theme win over the user's general preference;
+ * `options.appearance.colorset` is its documented appearance route. Keeping
+ * both means either Dice So Nice parsing path still identifies the same finish.
  *
  * `mergeObject`-free on purpose: `options.appearance` may already carry a
  * caller's own keys and only this one is ours to set.
@@ -459,10 +445,9 @@ export function paint(term: any, role: string): void {
  * count are never sampled, and the two leading tiles that carry the die's edge
  * already take the colour texture for the same reason (`DiceFactory.js:1163`).
  *
- * Everything is guarded and nothing throws. The failure mode is a die whose
- * numeral glows and whose cut does not, which is what the module gives anyone
- * whose "realistic lighting" is off in any case — there is no emissive map at
- * all in that branch, and `mat.emissiveMap` is simply absent.
+ * Everything is guarded and nothing throws. The failure mode is an unlit die,
+ * which is what the module gives anyone whose "realistic lighting" is off in
+ * any case — there is no emissive map at all in that branch.
  */
 function applyGlow(mat: any): void {
   const name = mat?.userData?.materialData?.texture?.name;
@@ -486,7 +471,34 @@ function applyGlow(mat: any): void {
   ctx.restore();
 
   mat.emissiveMap.needsUpdate = true;
-  mat.emissiveIntensity = GLOW_INTENSITY;
+
+  /* Dice So Nice 6.2.9 turns on a full-screen bloom compositor whenever any
+     visible material exposes a non-black emissive colour. That means two small
+     glowing cuts otherwise force extra scene traversals and render passes for
+     every frame of the roll.
+
+     Keep the exact atlas and light level, but seed Three's existing emissive
+     chunk locally. The chunk still samples `mat.emissiveMap`; only the white
+     multiplier moves from the public material colour into this shader uniform.
+     Dice So Nice therefore sees black and keeps its normal one-pass renderer. */
+  if (typeof mat.emissive?.setHex === "function") mat.emissive.setHex(0x000000);
+  else mat.emissive?.set?.(0x000000);
+
+  const baseShader = mat.onBeforeCompile;
+  mat.onBeforeCompile = function (this: any, shader: any, renderer: any): void {
+    baseShader?.call(this, shader, renderer);
+
+    const chunk = "#include <emissivemap_fragment>";
+    if (!shader.fragmentShader?.includes(chunk)) return;
+
+    shader.uniforms[LOCAL_GLOW_UNIFORM] = { value: GLOW_INTENSITY };
+    shader.fragmentShader = shader.fragmentShader
+      .replace("void main() {", `uniform float ${LOCAL_GLOW_UNIFORM};\nvoid main() {`)
+      .replace(
+        chunk,
+        `totalEmissiveRadiance = vec3(${LOCAL_GLOW_UNIFORM});\n${chunk}`,
+      );
+  };
   mat.needsUpdate = true;
 }
 
