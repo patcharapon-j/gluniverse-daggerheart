@@ -139,7 +139,7 @@
    chip itself (the real layer does, in scene coordinates) overrides it,
    and a host that wraps it is served by it. */
 .dh.tok{position:absolute;inset:0;pointer-events:none;container-type:inline-size;
-  --tkr:1;--tkv:1}
+  --tkv:1}
 .dh.tok *{pointer-events:none}
 
 /* == THE RING, AND THE ROOM IT TAKES ===============================
@@ -149,20 +149,18 @@
    and in all three the chip lands ON the artwork it was drawn to stay
    off, which is the one thing this component promised.
 
-   So there are two scales rather than one, because there are two claims
-   -- and Obsidian orbit moved which of them most of this component makes.
+   There were two scales rather than one, because there were two claims
+   -- and Obsidian orbit ended with only one of them drawing anything.
 
-   --tkr  OUTWARD CLEARANCE. A reading that sits outside the creature has
-          to clear whatever the creature now occupies, so this is floored
-          at 1: a small sprite does not get a small readout, or two
-          creatures in one fight would have their tracks drawn at two
-          sizes for a reason that is about somebody's PNG.
    --tkv  THE SUBJECT. Where the artwork itself ends, which may be well
           inside the cell -- grid fit stops the subject at .9218 of it,
           and a .6-scale sprite at .6 -- and which is NOT floored,
           because a thing drawn ON the creature has to be on it.
+   --tkr  OUTWARD CLEARANCE, floored at 1, for a reading that hung
+          outside the creature and had to clear whatever the creature
+          now occupies. Retired -- see two paragraphs down.
 
-   For a long time the rails wanted the first. They hung outside the
+   For a long time the rails wanted the second. They hung outside the
    creature, so clearing it was the whole question. Obsidian orbit put
    them INSIDE, under .er-shell's clip, and that quietly swapped which
    scale they belong to: a track resting on the artwork follows the
@@ -176,18 +174,43 @@
    and on a scaled-down sprite they are a gauge floating around a
    creature that is nowhere near them. Every arc is drawn perfectly.
 
-   So everything under .er-shell reads --tkv, and --tkr is left to the
-   one thing still outside the creature: the condition sentence, which
-   sits against the rim and is a caption ABOUT the creature rather than a
-   reading off it. Two scales, two claims, and now each has a consumer.
+   The condition sentence was that one remaining element, and it is the
+   same finding wearing the other hat. A caption set against the rim
+   belongs to the rim: at subject fit it stood 1.0848 cells out while the
+   rails it captions had come in onto the artwork, and on a subject scale
+   under 1 the clearance DIVIDES, so the moat widened as the creature
+   shrank -- which is the picture a table reports as the words orbiting
+   nothing. It reads --tkv now, so the sentence, the rails and the PIXI
+   material are three readings of one creature rather than two.
+
+   What that gives up is stated rather than discovered: on a ringed token
+   at subject fit, Foundry's own band runs from the cell out to 1.0848 of
+   it, and the sentence is inside that -- lettering over the ring rather
+   than beyond it. That is the trade the ask makes, and it is the trade
+   the rails already made at Obsidian orbit: a caption a third of a cell
+   from the thing it captions is not a caption. The sentence carries its
+   own stroke and two shadows for exactly this reason, and a table that
+   wants the whole readout clear of the band has tokenChipScale, which
+   moves the sentence, the rails and the material together.
+
+   That leaves --tkr with no consumer at all, which is exactly what
+   happened to --tk0 when the tracks moved, and it goes the same way
+   rather than being left declared for the next reader to trace.
+   `chipScale` still computes the clearance, because the two fit modes'
+   reciprocal arithmetic is checked against it and
+   game.daggerheart.dh.tokenChips() prints it -- a number that is reported
+   is not a number that is read.
 
    Radii only. A band's width, a gem and a numeral keep their size at
    every setting, which is the range ruler's rule arriving here -- the
-   rings are geometry and scale with what they measure, the lettering is
-   read and does not. The dial exists to move the readout clear of
-   something, never to make a bigger readout, and a chip whose tracks
-   are 8% fatter than the chip beside it is two tracks you cannot
-   compare at a glance.
+   rings are geometry and scale with what they measure, the marks are
+   read and do not. The sentence looks like the exception and is not
+   one: it is set in the SVG's own units, so it has always been a
+   fraction of the chip rather than a fixed size, and following the
+   subject only changes which circle that fraction is of. The dial
+   exists to move the readout onto the creature, never to make a bigger
+   readout, and a chip whose tracks are 8% fatter than the chip beside
+   it is two tracks you cannot compare at a glance.
 
    Radii scale as RADII and not as insets, which is the one piece of
    arithmetic here worth reading twice. An inset is measured from the
@@ -197,7 +220,7 @@
    calc(50% - (50% - <inset>) * var(--tkv)) and the rail lands where the
    creature's own edge now is.
 
-   Both scales are written by token-hud.ts, which is where the questions
+   The scale is written by token-hud.ts, which is where the questions
    get asked -- a stylesheet cannot see a fit mode. */
 
 /* ══ OBSIDIAN ORBIT ════════════════════════════════════════════════
@@ -245,7 +268,8 @@
 .dh.tok.is-selected .er-bloom{opacity:1;animation:tkCrown 4.2s cubic-bezier(.4,0,.2,1) infinite}
 
 /* The clip is the promise. Every rail, gem, badge and specular pass is
-   inside the creature; only .er-bloom and .tkcond are outside it.
+   inside the creature; only .er-bloom and the condition sentence's own
+   ascenders are outside it, and both follow the creature to get there.
 
    Which makes the clip itself the first thing that has to follow the
    subject: left at a flat 49.2% it is a promise about the grid cell, and
@@ -425,9 +449,18 @@
    there; what matters here is that the glyphs grow OUTWARD from their
    baseline, so the baseline is what has to come in to close the gap and the
    type gets bigger without eating into the creature. The animated texture
-   itself is a PIXI filter on the token mesh, not an HTML overlay. */
+   itself is a PIXI filter on the token mesh, not an HTML overlay.
+
+   It scales on --tkv, THE SUBJECT, which is the same number the rails,
+   the clip and the shader's own frame correction are read against -- so
+   the sentence sits on the creature's rim at every fit mode, subject
+   scale and texture scale rather than on the grid cell's. It used to
+   scale on --tkr, the outward clearance, which is floored at 1 and
+   divides by the subject scale: a caption a third of a cell out from the
+   rails it captions, on every table running Foundry's default ring, and
+   drawn perfectly. See THE RING above. */
 .dh.tok .tkcond{position:absolute;inset:-6%;opacity:0;pointer-events:none;
-  transform:scale(var(--tkr));transition:opacity .28s ease}
+  transform:scale(var(--tkv,1));transition:opacity .28s ease}
 .dh.tok.conditioned .tkcond{opacity:1}
 /* Three separate jobs, and they are three declarations rather than one
    heavier shadow: the stroke gives every glyph its own dark edge against

@@ -477,7 +477,10 @@ function draw() {
       `<div class="art" style="transform:scale(${artK})${c.t.ring ? ';box-shadow:none' : ''}"></div>`
       + TOKEN_CHIP(ST);
     const chip = spr.querySelector('.tok');
-    chip.style.setProperty('--tkr', honest ? k.readout : 1);
+    /* One scale is written, because one is drawn against. The clearance is
+       still printed under each cell — it is the other half of the fit-mode
+       arithmetic and the number the dial's diagnostic reports — and nothing
+       reads it since the condition sentence came in onto the creature. */
     chip.style.setProperty('--tkv', honest ? k.subject : 1);
     const b = band(c.t);
     if (b) spr.insertBefore(b, spr.firstChild);

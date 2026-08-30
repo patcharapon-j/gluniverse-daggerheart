@@ -130,11 +130,36 @@ assert.match(one, /--hope-r:calc\([\d.]+cqw \* var\(--tkv/,
   "the Hope arc's radius must follow the subject, not the grid cell");
 
 const css = readFileSync(new URL("../styles/token.css", import.meta.url), "utf8");
+/* The builder is read as text for the one number that is a radius rather
+   than markup: the sentence's path is drawn in `token.js` beside the
+   arithmetic that puts it there, and a check on the markup cannot see it. */
+const chipJs = readFileSync(new URL("../src/module/ui/token.js", import.meta.url), "utf8");
 for (const rail of ["armor", "hp", "stress"])
   assert.match(css, new RegExp(`\\.er-ring\\.${rail}\\s*\\{inset:calc\\(50% - [\\d.]+%\\s*\\*\\s*var\\(--tkv`),
     `the ${rail} rail must follow the subject, not the grid cell`);
 assert.match(css, /\.er-shell\{[^}]*clip-path:circle\(calc\([\d.]+%\s*\*\s*var\(--tkv/s,
   "the clip is a promise about the creature, so it follows the subject too");
+/* The condition sentence was the last thing reading the OUTWARD CLEARANCE,
+   and that is the same finding wearing the other hat: a caption set against
+   the rim stood 1.0848 cells out at Foundry's default fit while the rails it
+   captions had come in onto the artwork, and further out again on a subject
+   scale under 1, where the clearance divides. Drawn perfectly, every time. */
+assert.match(css, /\.dh\.tok \.tkcond\{[^}]*transform:scale\(var\(--tkv/s,
+  "the sentence is a caption on the creature's rim and follows the subject");
+/* Which leaves --tkr with no consumer, so it is retired rather than left
+   declared for the next reader to trace — the same end --tk0 came to when
+   the tracks moved inside. A stylesheet that still reads it has put
+   something back outside the creature without saying so. */
+assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /var\(--tkr/,
+  "--tkr has no consumer since the readout moved onto the creature");
+
+/* And the baseline is the rim. Text on a circular path grows OUTWARD from
+   its baseline, so this is the one radius that may sit ON the creature: any
+   further out is the moat above, and any further in sets the sentence
+   across the Armor rail it captions — whose outer edge is radius 48. */
+const CR = Number(chipJs.match(/const CR = ([\d.]+);/)?.[1]);
+assert.ok(CR > 48 && CR <= 49.2,
+  `the sentence's baseline sits between the Armor rail and the rim — got ${CR}`);
 /* Radii only. A band's width is a thing you count and keeps its size at
    every setting — the range ruler's rule arriving here. An inset is
    measured from the EDGE and a radius from the centre, which is why every
