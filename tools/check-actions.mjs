@@ -35,9 +35,10 @@
  *              carries, and every `damageName` names one of its printed
  *              expressions. Neither emits a button otherwise — silently.
  *   SHAPE      no authored `use-item` or `mark-use` (the system adds both),
- *              no step carrying `steps`, `said` or `when`, no key naming a
- *              document that does not exist, no feature naming a block that
- *              does not exist.
+ *              no step carrying `steps` or `when` — depth is structural and a
+ *              precondition on one link of a press is a label that press
+ *              cannot honour — no key naming a document that does not exist,
+ *              no feature naming a block that does not exist.
  *
  * ── what it cannot check
  *
@@ -249,7 +250,11 @@ const checkAction = (where, a, doc, isStep) => {
       [...doc.damage].join(" | ") || "(it prints none)");
   }
   if (isStep) {
-    for (const f of ["steps", "said", "when"]) {
+    /* Depth is the structural rule and `when` is the semantic one: a step runs
+       inside one press, so a precondition on it alone would be a label the
+       press cannot honour. `said` it keeps — provenance is not a nesting
+       concern, and a chain's second half needs its own quotation. */
+    for (const f of ["steps", "when"]) {
       if (a[f] !== undefined) bad(where, `a step may not carry \`${f}\` — chains are one level deep`);
     }
   } else {

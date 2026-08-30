@@ -135,11 +135,11 @@
     write(list);
   };
 
-  /** A step is an action minus the three things only a head may carry. */
+  /** A step keeps `said` and drops the two things only a head may carry. */
   const addStep = (i: number) => {
     const list = rows();
     if (!list[i]) return;
-    const { said: _s, when: _w, steps: _st, ...step } = blank();
+    const { when: _w, steps: _st, ...step } = blank();
     list[i].steps = [...(list[i].steps ?? []), step];
     write(list);
   };

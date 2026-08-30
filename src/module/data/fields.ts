@@ -252,8 +252,22 @@ const actionCore = (): Record<string, any> => ({
   mark: int(1, { min: 0 }),
 });
 
-/** One link of a chain: an action with nothing that could make it a chain. */
-export const stepField = (): any => schema(actionCore());
+/**
+ * One link of a chain: an action with nothing that could make it a chain.
+ *
+ * It keeps `said` and drops `when` and `steps`, and that split is the whole
+ * rule rather than a convenience. **Depth is structural** — a chain of chains
+ * is not expressible, so `steps` cannot appear here. **`when` is not** — a
+ * step runs as part of one press, so a precondition on it alone would be a
+ * label promising something the press cannot honour.
+ *
+ * `said` stays because provenance is not a nesting concern. "Spend a Hope
+ * **and** make an attack against a target" is two quotations and the head can
+ * only carry one; a step with no `said` is half a chain nobody can check.
+ * Every reader of the corpus reached for this independently, which is the
+ * evidence that the first shape was wrong about it.
+ */
+export const stepField = (): any => schema({ ...actionCore(), said: str() });
 
 export const actionField = (): any =>
   schema({
@@ -648,7 +662,8 @@ const completeAction = (a: any): any => ({
   when: "",
   ...a,
   steps: (a.steps ?? []).map((s: any) => {
-    const { said: _s, when: _w, steps: _st, ...step } = completeAction(s);
+    // `when` and `steps` are what a step may not have; `said` it keeps.
+    const { when: _w, steps: _st, ...step } = completeAction(s);
     return step;
   }),
 });
