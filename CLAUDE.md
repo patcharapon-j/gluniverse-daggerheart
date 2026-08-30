@@ -2842,8 +2842,10 @@ because somebody granted it and it has not expired.
 
 ### The parsers are the suggest button now
 
-`sheets/suggest.ts` is where they went, and nothing was deleted. The same three
-patterns run **once, on a press**, and their guess arrives as ordinary editable
+`sheets/suggest.ts` is where they went, and nothing was deleted — `featurePrice`
+moved there whole, with its own argument unedited, because the reasoning is
+what makes a suggestion trustworthy enough to offer. The same three patterns run
+**once, on a press**, and their guess arrives as ordinary editable
 rows in the Automation panel that somebody looks at before it can charge
 anybody anything. **A guess you can see and edit is a different object from a
 guess that acts.**
@@ -2856,6 +2858,23 @@ because somebody pressing suggest on a block they have already edited means
 and a hand-written action is not recoverable. And it may only ever name a pool
 or expression the document actually carries, because one naming a missing pool
 draws no button and gives the GM nothing on screen to explain why.
+
+`authoredPrice` is what replaced it on the sheet, and it is a change of
+*meaning* rather than of implementation: the parse could only ever find the
+first clause per currency, because a regex cannot know whether a second "mark a
+Stress" is a second price or the same one restated. A reading knows. A chain's
+steps are included, since the whole point of a chain is that it is one act with
+one bill.
+
+**One authored cost predates all of this and survives**: a `feature` Item's
+`stressCost`/`fearCost`, which somebody typed into the item sheet. A homebrew
+feature built through those two fields goes on charging what it was told to.
+
+**An unannotated document gets the two structural presses and nothing else**,
+which is the posture rather than a gap — `check-actions.mjs` will not let a
+rule unit through unannotated and undeclined, so a document reaching that point
+has genuinely nothing authored, and a guess there would be the retired parser
+back under another name.
 
 `apps/rules.ts`'s three sweeps survive untouched as the fallback for
 un-annotated documents, and the asymmetry is worth stating: **surfacing a rule
