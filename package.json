@@ -1,6 +1,6 @@
 {
   "name": "gluniverse-daggerheart",
-  "version": "1.11.2",
+  "version": "1.11.3",
   "description": "An unofficial Foundry VTT game system for Daggerheart.",
   "type": "module",
   "private": true,
