@@ -856,7 +856,8 @@ export const ACTION_SUBJECTS = ["self", "targets"] as const;
 export type ActionSubject = (typeof ACTION_SUBJECTS)[number];
 
 /* ── conditions ──────────────────────────────────────────────────────────
-   The three the *core rules* name, plus thirteen the cards do.
+   The three the *core rules* name, plus thirteen the cards do, plus seven
+   the optional chapters and one class stance do.
 
    "Daggerheart has no poisoned, no prone, no blinded" is still true and was
    never the whole claim. What this list said for a long time was that three
@@ -887,6 +888,29 @@ export type ActionSubject = (typeof ACTION_SUBJECTS)[number];
    Vulnerable until you clear one, which is the one condition the sheet can
    know on its own. See `syncVulnerable` in documents/actor.ts. The other two
    are applied by a hand, because only the fiction knows.
+
+   ── the seven the optional chapters name ────────────────────────────────
+
+   Registering these was overdue and the file said so in five places: four
+   variant rule pages and a table carried a sentence apologising that
+   Frostbitten, Nauseated, Cursed, Roped, Broken and Destroyed "are not
+   registered conditions", so a table running Monster Hunting or a Colossus
+   had six states the rules define, refer back to, and give a duration — and
+   nowhere to put any of them but somebody's memory.
+
+   They pass the same test the thirteen do, which is the only reason they are
+   here: each is a word a card *defines* and then refers back to. "While
+   Frostbitten, a PC gains a -1 penalty to their Proficiency" is that shape
+   exactly. Two words that look like candidates are not: *Distract* is a verb
+   the Bard's Make a Scene uses once and never refers back to, and *Chain*
+   is only ever a card's name.
+
+   `unstoppable` is the odd one and is here on Cloaked's precedent — a core
+   class feature that puts a named state on its holder. The Guardian's stance
+   prints "While Unstoppable, you gain the following benefits" and drops when
+   its die would pass its maximum. This registers the *state*, not the
+   shifting: what drops you out of a stance is three different sentences on
+   three different cards, which is the shape this system declines to guess at.
    ─────────────────────────────────────────────────────────────────────── */
 
 export interface ConditionDef {
@@ -1014,6 +1038,59 @@ export const CONDITIONS: ConditionDef[] = [
     name: "Ablaze",
     img: `${SYSTEM_PATH}/assets/conditions/ablaze.svg`,
     rule: "An Ablaze creature is burning. What that costs them is on the card.",
+  },
+  /* ── the optional chapters', and one class's ─────────────────────────
+     Ordered as they arrive at a table, with the Colossus's pair last because
+     a GM meets those only while running one. */
+  {
+    id: "roped",
+    name: "Roped",
+    img: `${SYSTEM_PATH}/assets/conditions/roped.svg`,
+    rule:
+      "While Roped, the target is Restrained and Vulnerable \u2014 but whoever threw " +
+      "the rope must remain within Very Close range of them.",
+  },
+  {
+    id: "frostbitten",
+    name: "Frostbitten",
+    img: `${SYSTEM_PATH}/assets/conditions/frostbitten.svg`,
+    rule:
+      "While Frostbitten, a PC gains a -1 penalty to their Proficiency. It lasts " +
+      "until they spend a Hope to clear it.",
+  },
+  {
+    id: "nauseated",
+    name: "Nauseated",
+    img: `${SYSTEM_PATH}/assets/conditions/nauseated.svg`,
+    rule: "While Nauseated, a PC can't gain Hope. It lasts until they clear a Hit Point.",
+  },
+  {
+    id: "cursed",
+    name: "Cursed",
+    img: `${SYSTEM_PATH}/assets/conditions/cursed.svg`,
+    rule:
+      "A creature afflicted with a magical curse gains the Cursed condition. What " +
+      "lifts it is written on the curse, and it resists an ordinary clear.",
+  },
+  {
+    id: "unstoppable",
+    name: "Unstoppable",
+    img: `${SYSTEM_PATH}/assets/conditions/unstoppable.svg`,
+    rule:
+      "While Unstoppable, you gain the benefits printed on the stance. It drops " +
+      "when the Unstoppable Die's value would exceed its maximum, or when you rest.",
+  },
+  {
+    id: "broken",
+    name: "Broken",
+    img: `${SYSTEM_PATH}/assets/conditions/broken.svg`,
+    rule: "A Broken segment can't use actions or reactions.",
+  },
+  {
+    id: "destroyed",
+    name: "Destroyed",
+    img: `${SYSTEM_PATH}/assets/conditions/destroyed.svg`,
+    rule: "A Destroyed segment can't use any of its features.",
   },
 ];
 

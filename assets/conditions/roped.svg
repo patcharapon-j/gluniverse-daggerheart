@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round">
+  <!-- A lasso: the loop, and the line still running back to whoever threw it.
+       Deliberately drawn as Restrained's sibling — same stroke, no fill, no
+       silhouette of its own — because Roped IS Restrained plus a tether, and
+       the card says so: "the target is Restrained and Vulnerable, but you must
+       remain within Very Close". Two closed links say a bind that is simply
+       on you. An open loop with a line leaving it says a bind somebody is
+       holding the other end of, which is the whole of the difference. -->
+  <ellipse cx="35" cy="21" rx="16" ry="12.5"/>
+  <path d="M24.5 30.5C20 40 17.5 49 15 59"/>
+</svg>

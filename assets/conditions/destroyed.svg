@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- The same bar, gone. Broken is two pieces that still line up; this is
+       five that no longer do, thrown along the same diagonal so the eye reads
+       them as having come from one thing. A Destroyed segment "can't use any
+       of its features", which is a step past Broken rather than a different
+       kind of harm — so it is a step past Broken's mark rather than a
+       different kind of picture. -->
+  <path d="M3 17h16l-4 10-9 3-3-8V17Z"/>
+  <path d="M25 12h13l-3 12-10 3-4-8 4-7Z"/>
+  <path d="M46 20l14 4-3 11-11-2-3-8 3-5Z"/>
+  <path d="M10 42l11 2 2 9-9 5-6-7 2-9Z"/>
+  <path d="M34 38l13 3-2 12-12 1-2-9 3-7Z"/>
+</svg>

@@ -19,18 +19,45 @@ import { CONDITIONS, DEAD, PALETTE } from "../design/qa/condition-fidelity/mater
 import { CONDITION_MATERIAL_BASELINE } from "../design/qa/condition-fidelity/baseline.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const out = process.argv[2] ?? join(root, "design/qa/condition-fidelity/sixteen-materials.html");
+/* Named for what it holds rather than for how many, which it was: the page
+   was `sixteen-materials.html` and the count went to twenty-three the moment
+   the optional chapters' conditions were registered. A filename carrying a
+   number is a filename that goes stale without anything failing. */
+const out = process.argv[2] ?? join(root, "design/qa/condition-fidelity/condition-materials.html");
 
 /* The shader only ever sees the square crop a live Token mesh already
    contains, so that is what gets embedded — 24KB instead of 3.2MB. */
 const source = join(root, "design/assets/art-sample-01.png");
 const crop = join(root, "node_modules/.cache-portrait.jpg");
-const size = (flag) =>
-  Number(execFileSync("sips", ["-g", flag, source]).toString().match(/\d+$/m)[0]);
-const [w, h] = [size("pixelWidth"), size("pixelHeight")];
-execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", source, "-vf",
-  `crop=${Math.round(w * .334)}:${Math.round(h * .483)}:${Math.round(w * .313)}:${Math.round(h * .16)},scale=320:320`,
-  "-q:v", "3", crop]);
+/* The dimensions came out of `sips`, which is macOS only — so this tool
+   could not be run at all on the machine most likely to be touching the
+   shader. A PNG states its own size in the IHDR chunk, which is always the
+   first one and always at a fixed offset, so reading it here costs eight
+   bytes and removes the platform dependency entirely. */
+const header = readFileSync(source);
+if (header.readUInt32BE(0) !== 0x89504e47) {
+  throw new Error(`build-condition-gate: ${source} is not a PNG`);
+}
+const [w, h] = [header.readUInt32BE(16), header.readUInt32BE(20)];
+
+/* ffmpeg is still needed and is still not everywhere. It fails as an
+   `ENOENT` on `spawnSync`, which names the syscall and not the problem, so
+   say what is actually missing — this page is a QA artifact and somebody
+   hitting this is trying to regenerate it, not debug Node. */
+try {
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", source, "-vf",
+    `crop=${Math.round(w * .334)}:${Math.round(h * .483)}:${Math.round(w * .313)}:${Math.round(h * .16)},scale=320:320`,
+    "-q:v", "3", crop]);
+} catch (error) {
+  if (error?.code === "ENOENT") {
+    throw new Error(
+      "build-condition-gate: ffmpeg is not on PATH.\n" +
+        "  It crops the portrait the gate embeds. Install it and run this again;\n" +
+        "  the committed page is stale until you do.",
+    );
+  }
+  throw error;
+}
 const portrait = `data:image/jpeg;base64,${readFileSync(crop).toString("base64")}`;
 rmSync(crop, { force: true });
 

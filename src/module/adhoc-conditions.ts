@@ -1,7 +1,8 @@
 /**
  * Conditions this system does not name.
  *
- * Daggerheart names sixteen and `config.ts` has all sixteen, which is the
+ * Daggerheart's cards and its optional chapters name twenty-three between
+ * them and `config.ts` has all twenty-three, which is the
  * right list and is not the whole list a table needs. A GM says "you are
  * Waterlogged until you dry off" and means it exactly as hard as Restrained;
  * the difference is that no card will ever mention it. Before this, the only
@@ -11,7 +12,7 @@
  *
  * ── it is a status, not a note ───────────────────────────────────────
  * An ad-hoc condition is an ActiveEffect carrying a status id, exactly as
- * the sixteen are, and everything downstream reads it through
+ * the named ones are, and everything downstream reads it through
  * `actor.statuses` and `actor.appliedEffects` without knowing the
  * difference. That is the whole of why it is worth doing this way rather
  * than with a flag holding an array of strings: a status participates in
@@ -28,7 +29,7 @@
  *
  * ── one material for all of them ─────────────────────────────────────
  * See `ADHOC_CONDITION_ID` in `token-conditions.ts`. The short version: the
- * shader draws the sixteen as what they are and has no idea what
+ * shader draws the named ones as what they are and has no idea what
  * Waterlogged is, so it says only that the creature is marked. It says it
  * at all — rather than leaving an ad-hoc condition with no material —
  * because the sentence naming it leaves at 36px and the material does not.
@@ -122,7 +123,7 @@ export async function removeAdhocCondition(actor: any, id: string): Promise<void
 }
 
 /* ── the GM's way in ───────────────────────────────────────────────────
-   In Foundry's own status palette, beside the sixteen, because that is
+   In Foundry's own status palette, beside the named ones, because that is
    where a GM already goes to put a condition on a creature and a second
    place to do the same job is a second place to forget about.
 

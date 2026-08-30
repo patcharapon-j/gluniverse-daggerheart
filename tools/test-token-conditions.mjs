@@ -18,7 +18,7 @@ import {
 } from "../src/module/adhoc-conditions.ts";
 import { TOKEN_CHIP, conditionRun, conditionSegments } from "../src/module/ui/token.js";
 
-/* Sixteen named conditions, plus the one every typed condition shares. */
+/* Every named condition, plus the one every typed condition shares. */
 assert.equal(CONDITION_MATERIALS.length, CONDITIONS.length + 1,
   "every registered condition needs a material, and the unnamed one needs the last");
 assert.equal(new Set(CONDITION_MATERIALS.map((entry) => entry.id)).size, CONDITION_MATERIALS.length,
@@ -224,6 +224,6 @@ assert.doesNotMatch(css, /\.tkvuln/);
 assert.doesNotMatch(css, /\.tkarc|\.tkhope|\.tkdiff/,
   "Obsidian orbit replaced the outboard tracks; no legacy selector may survive");
 
-console.log("token conditions: 16 named materials plus the one a GM types, all animated, "
+console.log(`token conditions: ${CONDITIONS.length} named materials plus the one a GM types, all animated, `
   + "a premultiplied break clipped to the cell, a colour per condition in one sentence, "
   + "icon-free terminal override");

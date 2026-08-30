@@ -111,7 +111,12 @@ export const PALETTE = [
   '#ef4c5c', '#76d8d1', '#c467e8', '#a8dbe7',
   '#e78ba7', '#9bc45b', '#f2c85c', '#55bff5',
   '#7785a1', '#8d55b8', '#86a7c9', '#f0783f',
-  /* The seventeenth, and the only warm neutral: whatever the GM typed. */
+  /* The optional chapters' seven, and the Guardian's stance. Broken and
+     Destroyed are one hue at two values on purpose: the rules put them one
+     step apart, so the palette does too. */
+  '#c9a06a', '#bfe6f2', '#6f8f5e', '#a03a6e',
+  '#c9922e', '#8c8378', '#5e5952',
+  /* The last, and the only warm neutral: whatever the GM typed. */
   '#c8b39a',
 ];
 
@@ -135,6 +140,13 @@ export const CONDITIONS = [
   ['horrified',     'Horrified',       'A deeper breath over a wider reach, so the edge advances across a real distance rather than trembling in place.'],
   ['silenced',      'Silenced',        'Rings half as frequent and twice as thick, with the node spacing itself breathing so a standing wave still has somewhere to go.'],
   ['ablaze',        'Ablaze',          'Larger tongues, a faster rise, and a stronger curl, because a fire at 40px is a shape before it is a texture. No longer the fall-through, because the fall-through has a better tenant.'],
+  ['roped',         'Roped',           'One cord under tension with a loop at one end, not Restrained\'s several lashed bands \u2014 the rule is that whoever threw it must stay within Very Close, so the mark has to say somebody is holding the other end. The haul travels away from the creature.'],
+  ['frostbitten',   'Frostbitten',     'Rime creeping inward from the rim, leaving facets behind it. Needles rather than a wash: pale blue spread evenly over a token at 40px is a colour cast and reads as lighting. Repeats where Stunned is irregular, because frost grows the same way in every direction and a blow does not.'],
+  ['nauseated',     'Nauseated',       'A churn, which is the one motion here that turns over rather than travelling. Hidden is the other fbm branch and it rises; this rolls, because the rule describes something already inside rather than something arriving. The domain warp is what makes it turn over itself \u2014 without it the same noise scrolls, and a scroll is a current.'],
+  ['cursed',        'Cursed',          'A spiral that does not arrive anywhere, over glyphs turning the other way. Every other bind in the set has a printed exit and is drawn as a shape you can see the end of; this one resists an ordinary clear. Told apart from Hexed by being one continuous arm rather than two grids, so you read a direction instead of an interference.'],
+  ['unstoppable',   'Unstoppable',     'Chevrons climbing, and the heat behind them. Momentum with a ceiling on it, so nothing wavers, counter-rotates or breathes \u2014 anything that could read as hesitating is the wrong claim. Ablaze is the other warm branch and curls; this does not, because fire turns over itself and a thing being driven does not.'],
+  ['broken',        'Broken',          'One fracture, and the two sides working against each other. The grind is the whole of the time in it: a Broken segment is part of a creature that has stopped, attached to one that has not, so something has to move or the mark is Vulnerable\'s shatter without the event.'],
+  ['destroyed',     'Destroyed',       'The same fracture, everywhere, and opening \u2014 on a period slow enough to notice between rounds rather than watch. Deliberately not the shattered branch a defeated token gets: that one throws shards off the creature because the creature is gone, and a Destroyed segment is still standing there.'],
   ['adhoc',         'Named by the GM', 'The one whose subject is unknown. Everything above draws a thing; this cannot, because nobody told it what is happening, and inventing a subject would put the texture of something else on the creature. A ring of marks turning at the rim over a wash that breathes: it says the creature is noted, at the size where the sentence naming it has already gone.'],
 ];
 

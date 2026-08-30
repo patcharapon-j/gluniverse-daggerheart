@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- A bar snapped, the halves sheared past each other. Broken is a Colossus
+       segment that "can't use actions or reactions" — a part of a creature
+       that has stopped working while the creature has not — so the mark is a
+       structural member rather than a wound, and the two halves are still
+       obviously one object.
+
+       Drawn as the first of a pair: Destroyed is this same bar, further. The
+       rules put those two in that relationship and the marks say so, which is
+       cheaper for a reader than two unrelated pictures they have to learn the
+       order of. -->
+  <path d="M4 15h22l-5 9 6 8-4 9H4V15Z"/>
+  <path d="M60 49H38l5-9-6-8 4-9h19v26Z"/>
+</svg>

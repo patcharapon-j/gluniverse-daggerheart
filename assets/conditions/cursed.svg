@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- The family rhombus, which in this set means a mark somebody put on you
+       — Hexed, Charged and Horrified all open with it — and inside it a
+       spiral, which nothing else here uses.
+
+       A spiral because of the one thing the rule actually says: a curse
+       "resists an ordinary clear". Every other bind in this set has an exit
+       printed on it, and the mark for those is a shape you can see the end of.
+       This one winds inward and does not arrive anywhere, which is the
+       distinction a second bolt or a second lattice could not have drawn. -->
+  <path d="M32 2 62 32 32 62 2 32 32 2Zm0 9L11 32l21 21 21-21L32 11Z"/>
+  <path d="M32 45.5a13.5 13.5 0 1 1 13.5-13.5 10 10 0 0 1-10 10 7.2 7.2 0 0 1-7.2-7.2A5 5 0 0 1 33 29.8"
+        fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+</svg>
