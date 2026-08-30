@@ -19,7 +19,9 @@ system in `design/`.
   - `documents/` — Actor and Item behaviour. Marking, equipping, applying
     damage. One implementation each, shared by the sheet and the chat card.
   - `dice/` — the roll engine, the chat plate, and the Dice So Nice colorsets.
-  - `sheets/` — Svelte 5 sheet components.
+  - `sheets/` — Svelte 5 sheet components. `suggest.ts` is the retired prose
+    parsers, kept as the item sheet's "suggest automation" press.
+  - `effects.ts` — temporary ActiveEffects and the sweep that expires them.
   - `apps/` — the ApplicationV2 ↔ Svelte bridge, and the three dialogs.
   - `ui/` — **vendored** from `design/`. Do not edit; see below.
 - `src/packs-src/` — compendium source, one module per pack. See below.
@@ -257,9 +259,16 @@ neighbours' width.
 **A row that costs something pays for it.** The Hope action has charged for
 itself since it moved to the rail and it was the only one; every other feature
 that opens "Spend a Hope" or "Mark a Stress" printed the price and left the
-paying to you, which is the half that gets forgotten. `featurePrice` in
-`cards.ts` reads it and `useAbility` charges before posting, and the refusal is
-the track that cannot pay flinching rather than a dialog.
+paying to you, which is the half that gets forgotten. The refusal is the track
+that cannot pay flinching rather than a dialog.
+
+> **Everything from here to the end of this block is history.** `featurePrice`
+> no longer decides what a card charges — costs are authored per document and
+> the parse is the item sheet's "suggest" press. See **A card's buttons are
+> data too** for what replaced it and why. It is kept because the widening
+> below is the clearest statement in this file of *why* a parse over rules text
+> cannot be made safe, and the corpus measurements in it are what sized the
+> reading that replaced it.
 
 That is a parse of English rules text, which this system refuses to do
 everywhere else, so it is bounded hard — and **the bound was the wrong one.**
@@ -2656,6 +2665,280 @@ nine landed under readings `DECLINED` already names. All fifteen were written up
 rather than silenced, which is the only way a coverage ratchet is worth having,
 and the six new readings are newer than the rest of the file and worth a second
 reader.
+
+## A card's buttons are data too
+
+Everything above about `cardDamage` — one reading, keyed `type:name`, filled at
+`prepareBaseData` so an embedded copy gets it — is the same argument arriving at
+the rest of what a card does. **What a rule asks of you is authored now, and no
+longer swept out of its own prose at render time.**
+
+Three patterns used to decide a card's buttons. `featurePrice` read a cost,
+`rollCall` read a roll, and a third sniffed the literal words "damage roll".
+Each was bounded with real care, each is argued for at length in the sections
+above, and each was wrong somewhere nobody could see:
+
+- Three weapons named **Scary** say "the target must mark a Stress", and the
+  sheet charged that Stress to the *wielder*.
+- Four suits of **Banded Armor** say Severe damage costs an Armor Slot, and the
+  sheet charged it on a press rather than on the damage.
+- **Unleash Chaos** printed "Mark Stress" where the pattern wanted "Mark a
+  Stress", so a card that has always cost a Stress cost nothing at all until
+  SRD 2.0 added the article.
+
+None of those looks wrong afterwards, and that is the whole argument. A card
+with a button too many and a card with a button too few both render perfectly;
+the only witness is the player who paid, three hours later, noticing a track
+that has not moved all session. `PRICED` in `check-cards.mjs` existed to keep
+that safe by hand — 275 documents, 843 quoted clauses — and it said in its own
+comments what it could not do: **prove a price was missed.** A card stating a
+cost in words the regex did not know was invisible to it by construction.
+
+### The vocabulary is closed, and the declines are the deliverable
+
+`ACTION_KINDS` in `config.ts` is fifteen presses and nothing else, each backed
+by at least thirty distinct rule units in the corpus, in five families:
+currency (`pay`/`gain`/`clear` over one `amount` block), the document's own
+counters (`move-resource`/`die-pool`/`refresh`), rolls (`roll-trait`,
+`roll-damage`, `roll-card-damage`, and `roll-dice` for the fifty units that
+roll a die which is *not* damage and have never had a button), the table's
+state (`apply-condition`, `grant-effect`), and the two that already existed.
+
+Closed rather than a script field, and that is the load-bearing decision. A
+rule this cannot express gets **no button and a `DECLINED` entry naming the
+reading that disqualified it**, which is a fact somebody can act on — where a
+scripting hatch would have produced a button nobody can review and no ratchet
+could ever police. It is `card-damage.mjs`'s posture applied to a much larger
+reading: sixty-one declines there, and here the declines are the specification
+for whatever comes next.
+
+**`pay`, `gain` and `clear` are three kinds over one block of tracks**, and the
+sign was never the difference: paying can be *refused* when the purse is short,
+gaining cannot, and clearing is bounded by what is marked rather than by what
+is left.
+
+### Two places, and mixed ancestry is what settles it
+
+`system.actions[]` **and** `featureField.actions[]`, mirroring `modifiers` and
+deliberately not `resources`. Both arrangements are right for their own reason.
+A player *adds* a counter after embedding, so it belongs to the document and
+names its rule by string. An action is printed **on** a rule and has to travel
+with it — creation copies one ancestry's bottom feature onto another document,
+and a flat `feature: "Surefooted"` binding would arrive on a document that has
+no such block. A domain card, a consumable and a piece of loot print their rule
+in `system.description` and have no block to nest in, which is why the
+document-level array exists as well.
+
+`src/packs-src/card-actions.mjs` is the reading, delivered twice from one
+source: `withActions()` writes it into the built compendium document, and
+`fillCardActions` writes it onto every construction of an **embedded copy**,
+because a domain card on a character sheet is a duplicate made months ago and a
+pack rebuild never reaches it. Neither ever overwrites a non-empty array — that
+is somebody's homebrew and it wins. This is what keeps the whole change out of
+`src/module/migration/`, where it would otherwise have been the largest entry
+by an order of magnitude.
+
+### `said` is the field that makes a thousand readings reviewable
+
+Every action carries the words it was read from, quoted off the card. It is
+`card-resources.mjs`'s provenance promoted out of a checker's table into the
+data itself, and it does three jobs nothing else can: a human can check 989
+readings against their own quotations in an afternoon and cannot check them
+against 1,136 documents ever; `check-actions.mjs` fails the build when the
+words leave the card, because upstream fixing a typo and upstream rewriting a
+rule around its cost look identical from here; and it is the posted button's
+`title`, so "why did that button take a Stress" is answerable three hours later
+without scrolling back to the card.
+
+**`when` is printed and never read.** Ninety-eight rule units say "on a
+success", and a posted card has no honest link to the roll that resolved it —
+which is exactly why `roll-card-damage` reads no critical. The condition rides
+on the label, the table reads it, the press does what it says. Modelling
+outcome gating would be the same guess with a bigger blast radius.
+
+**`steps` is one level deep structurally** — a step is `actionField` minus
+`steps` and `said`, so a chain of chains is not expressible rather than
+discouraged. One level is what "Spend a Hope **and** make an attack" needs, and
+it needs it: two buttons for one sentence lets somebody take the second without
+paying for the first. A chain **charges before it rolls and aborts whole**,
+which is `payFor`'s rule applied to a list rather than to one roll, and it is
+the only arrangement in which "aborts whole" means anything.
+
+### What survives the authored path, and why
+
+Exactly two, and both are structural rather than printed. `mark-use` is *The
+Twilight Marked*'s toll — a rule of the campaign frame, not a sentence on Rune
+Ward — and `use-item` is a consumable's quantity, a fact about the object. No
+reader annotating a card should have to remember to write down that Root and
+Void cards cost a Mark. Everything else an annotated document offers is what
+its entry says and nothing more, so a card cannot carry a counter button its
+reader did not put there.
+
+**Resolution happens at the post, not at the press.** An authored action names
+things in the card's vocabulary — a counter by its printed name, a trait that
+might be the `spellcast` pointer, a damage mode by which expression it is — and
+a posted card carries answers instead, because the message is a record and the
+character may have changed by the time somebody presses it. It is also why the
+label is written there: a button reading "Roll 3d8+2" that threw a different
+number of dice would be worse than no label at all.
+
+**Returning nothing is a real answer.** A `spellcast` pointer that resolves to
+nothing on a character with no spellcasting subclass emits *no button*, because
+a row that answered it by rolling Finesse is a worse answer than silence. An
+action naming a counter the document does not carry draws nothing rather than a
+button that does nothing.
+
+**And it retired the last small parser in that file.** `actionsFor` decided
+whether a counter was spent or marked by testing its *name* against
+`/^uses?$/i` — a guess about English, on data whose author already knew the
+answer.
+
+### Conditions are a press, never a consequence
+
+`apply-condition` puts one of the twenty-three registered conditions on
+somebody through `damageRecipients` — a GM means the tokens they have
+**selected**, a player means their own character — so one button is correct on
+both sides of the screen. Never automatic, and that is the rule rather than an
+omission: applying a condition is adjudication, and the sheet is not where
+adjudication happens. Idempotent, because pressing twice is something people do
+and two copies of one condition is two rows in the HUD saying the same word.
+
+Reaction Rolls still get no button, and the reason is unchanged: the roll a
+target is forced to make belongs to the other side of the exchange, which is
+precisely what `apps/targets.ts` was written to fix for damage. They are
+declined out loud rather than omitted.
+
+### Temporary effects are ActiveEffects, and passives are not
+
+`grant-effect` creates a real ActiveEffect, which is the right document for a
+rule with a duration: it shows on the sheet, a GM can lift it by hand, it
+survives a reload. `src/module/effects.ts` is the sweep.
+
+**The scope rides in a flag rather than in Foundry's `duration`**, because that
+counts seconds, rounds and turns and Daggerheart has none of the three. It has
+"until your next long rest", "until the end of the scene", and — thirty-seven
+times — the bare word *temporarily*. `ACTION_DURATIONS` is `RESOURCE_REFRESH`'s
+members with `manual` replaced by `temporary`, and the sweep hangs off the four
+call sites that already reach `refreshResources`: both rests, `endScene()` and
+`endSession()`. One seam, so a card granting a bonus *and* a use until your
+next long rest has both halves expire together by construction rather than by
+two mechanisms agreeing. There is deliberately **no table** in `effects.ts`
+saying which rest ends which duration — `restScopes` already answers that, and
+a second copy is the exact bug `restScopes` was itself written to fix.
+
+**`temporary` is never swept.** It is the rules' own keyword for a state a roll
+clears, which is GM-adjudicated; putting a timer on it would be inventing a
+rule. It gets a real, visible, hand-dismissable effect and no expiry.
+
+**Always-on passives stay `modifiers` and did not move**, and the reason is the
+`condition` field. Half the interesting passives in this corpus are gated on
+loadout composition or a track's state — four cards of one domain, no weapons
+equipped, a full Stress track — and an ActiveEffect `change` is unconditional
+by construction, so an always-on version of "while you have 4+ Grace cards in
+your loadout" is silently wrong exactly where the rule is most specific.
+`activeModifiers` folds effect-borne modifiers in as a genuinely separate
+population: an Item is a passive because you are *holding* it, an effect is one
+because somebody granted it and it has not expired.
+
+### The parsers are the suggest button now
+
+`sheets/suggest.ts` is where they went, and nothing was deleted — `featurePrice`
+moved there whole, with its own argument unedited, because the reasoning is
+what makes a suggestion trustworthy enough to offer. The same three patterns run
+**once, on a press**, and their guess arrives as ordinary editable
+rows in the Automation panel that somebody looks at before it can charge
+anybody anything. **A guess you can see and edit is a different object from a
+guess that acts.**
+
+It is deliberately more generous than the runtime version could be: an
+over-suggestion costs one click to delete, and the failure that mattered was an
+over-*charge*, which this cannot make. It **appends** rather than replaces,
+because somebody pressing suggest on a block they have already edited means
+"and what else did you see", not "throw mine away" — a duplicate is one click
+and a hand-written action is not recoverable. And it may only ever name a pool
+or expression the document actually carries, because one naming a missing pool
+draws no button and gives the GM nothing on screen to explain why.
+
+`authoredPrice` is what replaced it on the sheet, and it is a change of
+*meaning* rather than of implementation: the parse could only ever find the
+first clause per currency, because a regex cannot know whether a second "mark a
+Stress" is a second price or the same one restated. A reading knows. A chain's
+steps are included, since the whole point of a chain is that it is one act with
+one bill.
+
+**One authored cost predates all of this and survives**: a `feature` Item's
+`stressCost`/`fearCost`, which somebody typed into the item sheet. A homebrew
+feature built through those two fields goes on charging what it was told to.
+
+**An unannotated document gets the two structural presses and nothing else**,
+which is the posture rather than a gap — `check-actions.mjs` will not let a
+rule unit through unannotated and undeclined, so a document reaching that point
+has genuinely nothing authored, and a guess there would be the retired parser
+back under another name.
+
+`apps/rules.ts`'s three sweeps survive untouched as the fallback for
+un-annotated documents, and the asymmetry is worth stating: **surfacing a rule
+is safe to guess at, charging for one is not.** A sweep that shows you a rule
+you did not need costs a line of panel; a parse that takes a Stress costs a
+resource.
+
+### The check that could not see its own subject
+
+`check-item-sheet.mjs` proves every declared field has a control somewhere, and
+its walker incremented the bracket depth **before** flushing the token it had
+accumulated. `...tracked()` is a token at depth zero followed immediately by
+`(`, so the next branch was the depth-above-zero one, which resets the token.
+The spread was never recognised and `keys.push("resources")` was unreachable
+code.
+
+So every field the spread carries had been invisible to it for as long as it
+existed, and the tool printed the identical sentence — "every one reachable" —
+before and after the stand-in was written, which is why nothing caught it. That
+is precisely the failure the file exists to prevent, arriving in the file
+itself. It went from 68 fields to 123, and reported what it should always have
+been reporting: `actions`, `modifiers` and `cardDamage` had no control on any
+of the eleven subtypes. **Two of those three predate this work entirely** — the
+compendium has been writing passive modifiers and printed damage expressions
+since they existed, and a GM has never been able to see or edit either.
+
+The counter runs after the flush now, and the stand-in reads `tracked()`'s own
+members rather than restating one of them, so the next field added to the
+spread is policed by being added.
+
+### `tools/check-actions.mjs` is the ratchet, pointed the other way
+
+`PRICED` asked *did the pattern start charging something nobody read*. This
+asks *is there a rule unit nobody has read*, which is answerable because the
+corpus is closed, and it is what `PRICED` explicitly could not do. `PRICED` is
+**deleted** rather than left standing: a ratchet policing a pattern nothing runs
+goes green on a system it no longer describes, and the next reader trusts it.
+
+    node tools/check-actions.mjs --report
+
+Five checks — coverage against a deliberately broad sweep (a false positive
+costs one `DECLINED` line, a false negative is a card that silently loses its
+buttons); `said` still verbatim on its card, with emphasis flattened both sides
+because quoting "Mark a Stress" off "**Mark a Stress**" is quoting correctly;
+every closed set lifted from `config.ts` **as text**, which is
+`check-item-sheet.mjs`'s move for its reason, so a rename stops the tool rather
+than leaving it checking a set nothing uses; every `resource` and `damageName`
+naming something the document carries; and the shape rules — no authored
+`use-item` or `mark-use`, no step carrying `steps`/`said`/`when`, no key naming
+a document that is not there.
+
+Its block walk is deliberately the same one `fillCardActions` does, in the same
+order: a block this tool can see but annotation cannot reach would be a check
+passing on data the game never loads.
+
+**What it cannot check is whether the reading is right.** A `pay` of one Stress
+on a card that says "mark a Stress" and one on a card where the *target* marks
+it are indistinguishable here — both quote real words off a real card. That is
+the reader's job, and `said` is what makes it a job a human can finish.
+
+`tools/test-authored-actions.mjs` is the behaviour half, and it is
+negative-controlled: removing the early return that suppresses the parse fails
+its first assertion, and making the `spellcast` pointer fall back to Finesse
+fails its fifth.
 
 ## Rolling
 
@@ -5208,9 +5491,10 @@ heights. Negative-controlled.
 
 ## Conditions
 
-`CONDITIONS` in `config.ts` registers the three the **core rules** name —
-Vulnerable, Hidden, Restrained — plus thirteen the **cards** do, as Foundry
-status effects, with marks in `assets/conditions/`. Foundry's own list is
+`CONDITIONS` in `config.ts` registers **twenty-three**: the three the *core
+rules* name — Vulnerable, Hidden, Restrained — plus thirteen the *cards* do,
+plus seven the optional chapters and one class stance do. All as Foundry status
+effects, with marks in `assets/conditions/`. Foundry's own list is
 blinded, deaf, paralysis and prone, and none of those words appear in this
 game; `dead` survives the replacement because it is what
 `specialStatusEffects.DEFEATED` points at.
@@ -5224,6 +5508,39 @@ feature and is on six cards. Marked for Death is the Assassin's and is on
 five, with three Executioners Guild cards turning on it. Hexed is the Witch's.
 The others are Spectral, Invisible, Enraptured, Corroded, Stunned, Charged,
 Drained, Horrified, Silenced and Ablaze.
+
+**Seven more were apologised for in five places before they were registered.**
+`variant-rules.mjs` carried sentences saying Frostbitten and Nauseated "are not
+registered conditions, so neither has a token mark"; Cursed had one of its own,
+so did Roped, and so did Broken and Destroyed. A table running Monster Hunting,
+a Grimdark curse or a Colossus had six states the rules define, refer back to
+and give a duration, with nowhere to put any of them but somebody's memory.
+They pass the same test — "While Frostbitten, a PC gains a -1 penalty to their
+Proficiency" is that shape exactly. The seventh is **Unstoppable**, on Cloaked's
+precedent: a core class feature that puts a named state on its holder. It
+registers the *state* and not the shifting, because what drops you out of a
+stance is three different sentences on three different cards.
+
+Two words that look like candidates are declined rather than skipped: *Distract*
+is a verb the Bard's Make a Scene uses once and never refers back to, and
+*Chain* is only ever a card's name.
+
+**Registering one is four things.** A mark in the established idiom — Roped is
+Restrained's sibling by construction, same stroke and no fill, because Roped
+*is* Restrained plus a tether and the difference is an open loop with a line
+leaving it; Nauseated is Hope's own rhombus struck through with Silenced's bar,
+because "can't gain Hope" is the whole rule and a queasy face would say nothing
+about which resource stopped; Broken and Destroyed are one bar in two states.
+A hue in `PALETTE`, positional against this list. A `conditionPattern` branch
+drawing the actual substance, **with time in it** — the invariant
+`test-token-conditions.mjs` enforces and the one Restrained shipped without
+through two review passes. And a `conditionWarp` branch, so none of them falls
+through to the material for a condition whose subject is unknown.
+
+At twenty-three the palette is straining, exactly as the shader's own notes
+predicted — "the only thing separating them is hue, which is the actual
+complaint" — so the seven lean on their ramps to tell themselves apart and the
+hex only has to be legible in the HUD sentence.
 
 **The test is that shape and nothing looser.** A word the fiction produces is
 described; a word a card *defines and then refers back to* is tracked.
@@ -5684,26 +6001,31 @@ place in the world that knows the import path.
   which is the Brawler's `d8+d6`. What Versatile needs is the list this schema
   still does not have: `damage` as several stat lines with a live choice
   between them.
-- **A feature *block* has no authored cost field**, so the prose parse is the
-  only route to its price. `featureField()` is `{name, description, modifiers}`
-  and the escape hatch — `stressCost`/`fearCost`, which always outrank the text
-  — exists only on the `feature` Item subtype. That is why the widening above
-  had to be got right rather than worked around: a class or subclass feature
-  the pattern cannot read is a feature nobody can price by hand either.
-- **Temporary effects.** 87 rules match the sweep for one, which is the largest
-  bucket it turned up, and the number wants breaking down before anybody acts
-  on it — a third of it is not a modifier at all.
+- ~~**A feature block has no authored cost field.**~~ **Closed.**
+  `featureField()` is `{name, description, modifiers, actions}` now, and a
+  block's price is an authored `pay` action rather than a parse of its prose.
+  The entry is kept because its reasoning is what forced the shape: a class or
+  subclass feature the pattern could not read was a feature nobody could price
+  by hand either, which is why `actions` had to nest in the block rather than
+  live in a table keyed by document.
+- **Temporary effects — the machinery exists now and the readings are what is
+  left.** `grant-effect` creates a real ActiveEffect with a Daggerheart
+  duration and `effects.ts` sweeps it at the four rest and scene seams, so
+  every bucket below is a matter of *annotating* the cards rather than of
+  building anything. 87 rules match the sweep, and the breakdown still matters
+  because a third of it is not a modifier at all.
   - **Nineteen are a numeric bonus or penalty**, and they are the tidiest set
     in the corpus: the six Major potions each give +1 to a named trait until
     your next rest, Full Surge gives +2 to all six, Featherstep gives Evasion
     equal to your tier, No Mercy +1 to attacks, Insomniac's Periapt +2 to
-    attack and damage. These are Foundry ActiveEffects and nothing else, and
-    they are where to start.
+    attack and damage. These are exactly what `grant-effect` was built for —
+    a `modifiers` list and a `duration` — and they are where to start.
   - **Nineteen apply a condition this system now registers** — Earthquake,
     Shadowbind, Chokehold, Tempest, Bolt Beacon, Terrify, Rime Scepter's
     Freezing, Adder's Fang's Venomous, the Poisoners Guild's three toxins.
-    Half-answered already: the token can wear the state, and nothing puts it
-    there.
+    Fully answered by `apply-condition` now: the token wears the state and a
+    press on the card is what puts it there, on the GM's selected tokens or on
+    a player's own character. What is left is one annotation each.
   - **Forty-five are a duration on something that was created**, which is not
     a modifier and should not be built as one. Manifest Wall, Natural
     Familiar, Book of Homet's gateway, Astral Projection, Midnight Spirit, the

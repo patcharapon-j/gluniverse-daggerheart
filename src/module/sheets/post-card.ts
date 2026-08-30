@@ -16,21 +16,52 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
-  SYSTEM_ID, TRAITS, isMarkedDomain, markedSpellcast, traitLabel, type Trait,
+  CONDITIONS, SYSTEM_ID, TRAITS, isMarkedDomain, markedSpellcast, traitLabel, type Trait,
 } from "../config.ts";
 import { CARD } from "../ui/card.js";
-import { featurePrice, isFree, plain, type CardOptions, type Price } from "./cards.ts";
+import { isFree, type CardOptions, type Price } from "./cards.ts";
 
 export interface CardAction {
   kind:
     | "pay-cost"
+    | "gain"
+    | "clear"
     | "move-resource"
+    | "die-pool"
+    | "refresh"
     | "use-item"
     | "roll-damage"
     | "roll-card-damage"
     | "roll-trait"
+    | "roll-dice"
+    | "apply-condition"
+    | "grant-effect"
     | "mark-use";
   label: string;
+  /**
+   * The words this was read from, carried onto the message.
+   *
+   * A posted card is a record, and three hours later "why did that button
+   * take a Stress" is a question only the card's own sentence answers. It is
+   * the action's tooltip on the plate and it costs one string.
+   */
+  said?: string;
+  /** `gain` / `clear`: a Hit Point, which `pay-cost` never needed. */
+  hitPoints?: number;
+  /** `die-pool`: what the press does. See `DIE_POOL_OPS`. */
+  op?: string;
+  /** `refresh` / `die-pool` / `move-resource`: the pool's printed name. */
+  resource?: string;
+  /** `roll-dice`: the formula, which is never damage. */
+  formula?: string;
+  /** `apply-condition`: an id out of `CONDITIONS`. */
+  condition?: string;
+  /** `apply-condition` / `grant-effect`: self, or whoever is selected. */
+  subject?: string;
+  /** `grant-effect`: the ActiveEffect to create. */
+  effect?: { name: string; duration: string; modifiers: any[] };
+  /** A chain, run in order and aborted whole if a link refuses. */
+  steps?: CardAction[];
   /** `mark-use` only: how much Mark this press costs. 3 on the two level 10s. */
   mark?: number;
   hope?: number;
@@ -55,12 +86,19 @@ export interface CardAction {
 }
 
 export interface PostCardOptions {
+  /**
+   * Which feature block is being posted, by its printed name.
+   *
+   * A card posted from the Features panel is one *rule* off a document that
+   * has several, and its buttons are that rule's — a class row for Cloaked
+   * must not carry Sneak Attack's press. Blank means the whole document,
+   * which is what every other caller means.
+   */
+  feature?: string;
   /** Exact price of a feature row. Omit to infer it from a single-rule card. */
   price?: Price;
   /** Only the counters owned by the posted feature. Omit for the whole Item. */
   resourceIndexes?: number[];
-  /** A rule which explicitly calls for a Damage Roll. */
-  damageRoll?: boolean;
 }
 
 /**
@@ -81,11 +119,22 @@ const attr = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 /** The wrapper both halves of this file have to agree on. */
+/**
+ * The wrapper both halves of this file have to agree on.
+ *
+ * `said` becomes the button's `title`, which is the cheapest useful place it
+ * could go: three hours later "why did that button take a Stress" is a
+ * question only the card's own sentence answers, and the alternative is
+ * scrolling back to the card and reading the paragraph again. It is a plain
+ * attribute rather than anything drawn, because the row is already the
+ * narrowest thing on a 300px plate.
+ */
 const actionRow = (actions?: CardAction[]): string =>
   !actions?.length
     ? ""
     : `<div class="pl-act card-actions">${actions.map((a, i) =>
-        `<button type="button" class="pl-b" data-dh-act="card-action:${i}"><i></i>${attr(a.label)}</button>`,
+        `<button type="button" class="pl-b" data-dh-act="card-action:${i}"` +
+        `${a.said ? ` title="${attr(a.said)}"` : ""}><i></i>${attr(a.label)}</button>`,
       ).join("")}</div>`;
 
 export const cardWrapper = (card: CardOptions & { actions?: CardAction[] }): string =>
@@ -119,69 +168,14 @@ const blocks = (card: CardOptions): { n: string; t: string }[] => {
   ];
 };
 
-/* ── "Make a Spellcast Roll" ───────────────────────────────────────────
-   The second parse of English rules text in this system, and it has to argue
-   for itself the way the first one does. `featurePrice` is the other, and its
-   whole discipline is that a pattern over rules text is only allowed where the
-   book writes the thing in one shape, on purpose, every time.
-
-   A roll is written that way. Daggerheart asks for one in the imperative and
-   in one shape — "Make a Spellcast Roll", "make an Instinct Roll (12)" — and
-   everything else that puts a trait next to the word *Roll* is describing a
-   bonus to a roll rather than asking for one:
-
-       Channeling — "+1 to Spellcast Rolls"
-       Not Good Enough — "you gain a +1 bonus to your next Knowledge Roll"
-       Deadly Focus — "+10 bonus to your damage rolls"
-
-   None of those says *make*, and that verb is the whole of what a button
-   needs. So it is required, and required to be *imperative* — which is
-   `featurePrice`'s own
-   discriminator arriving at a different question. There it is "who is paying";
-   here it is "who is being told to roll", and the shape of the answer is the
-   same: the clause head, or an offer. What precedes `make` is the whole test.
-
-       "When you would make a Spellcast Roll, you can spend a Hope…"
-       "Additionally, before you make a Spellcast Roll while within…"
-
-   Both name a roll being made somewhere else and neither is a call to roll
-   now; "would" and "you" are not in the caller set, so neither is reached. A
-   card saying "by making an additional Spellcast Roll" is out on the verb
-   alone.
-
-   Two more things fall out of the shape rather than needing a rule of their
-   own, and both are worth stating because they look like omissions:
-
-   - **No Reaction Rolls.** The trait word has to sit immediately against
-     `Roll`, so "make an Agility Reaction Roll" and "must succeed on a Reaction
-     Roll (16)" are both unreachable. That is also what keeps the *target's*
-     rolls off this card: in this game the thing a target is forced to make is
-     always a Reaction Roll, which is why `to` is safe in the caller set even
-     though it is the word a coercion is written with.
-   - **"make the … Roll" is given up**, deliberately, as `featurePrice` gives
-     up "must". Two cards phrase it that way and nothing in the sentence tells
-     the definite article apart from a reference back to a roll already named.
-
-   A printed Difficulty rides along in the same match, because the book prints
-   it in the same breath — "Make a Spellcast Roll (15)". An *unprinted* one
-   does not and must not: a target number is the GM's everywhere else in this
-   system, and the popover deliberately declines to offer one. */
-
-const ROLL_MK = "[\\s*_]";
-const ROLL_CALLER =
-  "(?:^|<br>|•|[.!?:;,]|\\band\\b|\\bthen\\b|\\byou can\\b|\\byou may\\b|\\bto\\b)";
-const ROLL_WORDS = [...TRAITS, "spellcast"].join("|");
-const ROLL_RX = new RegExp(
-  `${ROLL_CALLER}${ROLL_MK}*make${ROLL_MK}+an?${ROLL_MK}+(${ROLL_WORDS})` +
-    `${ROLL_MK}+roll\\b${ROLL_MK}*(?:\\(${ROLL_MK}*(\\d+)${ROLL_MK}*\\))?`,
-  "i",
-);
-
-/** The first roll a block asks for, and only the first — see `actionsFor`. */
-const rollCall = (text: string): { word: string; dc: number | null } | null => {
-  const m = ROLL_RX.exec(text);
-  return m ? { word: String(m[1]).toLowerCase(), dc: m[2] ? Number(m[2]) : null } : null;
-};
+/* ── the roll a card asks for ──────────────────────────────────────────
+   The pattern that found one has moved to `sheets/suggest.ts`; what stays here
+   is the half that cannot: resolving `spellcast` against a character, which is
+   the one place the campaign frame's own override is honest. A button on the
+   card is the object naming the trait being the object pressed, and the player
+   is looking straight at it — reading `spellcastTrait` anywhere else would be
+   a campaign rule reaching into the roll engine with nothing on screen to say
+   why. See "A card that asks for a roll" in CLAUDE.md. */
 
 /**
  * Which of the six a call resolves to, or nothing at all.
@@ -228,9 +222,359 @@ const costLabel = (p: Price): string => [
   p.fear && `Spend ${p.fear} Fear`,
 ].filter(Boolean).join(" · ");
 
+/**
+ * The weapon a "Roll damage" press throws, when the card is not itself one.
+ *
+ * Primary first, then anything equipped. Lifted out of `actionsFor` when the
+ * authored path arrived, because two copies of "which weapon did they mean"
+ * is two answers the first time somebody equips a second one.
+ */
+const equippedWeapon = (actor: any, item: any): any =>
+  item?.type === "weapon"
+    ? item
+    : actor?.items?.find?.(
+        (it: any) => it.type === "weapon" && it.system?.equipped && it.system?.slot === "primary",
+      ) ?? actor?.items?.find?.((it: any) => it.type === "weapon" && it.system?.equipped);
+
+/**
+ * One printed damage expression as a press.
+ *
+ * `proficiency` is resolved here rather than at the click, and the reason is
+ * the label: a button reading "Roll 3d8+2" that threw a different number of
+ * dice would be worse than no label at all. The Proficiency in it is the one
+ * this character had when the card was posted, which is what the card said
+ * when it was posted.
+ *
+ * **No critical.** A weapon's damage button is reached from the attack plate
+ * that produced it and knows whether it critted; a posted card is a card, and
+ * there is no honest link from it to a roll — the player may have posted it
+ * before rolling, after rolling, or to argue about what it says.
+ */
+function cardDamageAction(
+  d: any,
+  actor: any,
+  card: CardOptions,
+  labelPrefix = "",
+): CardAction {
+  const count = Math.max(1, Number(d.count) || 1) *
+    (d.proficiency ? Math.max(1, Number(actor?.system?.proficiency) || 1) : 1);
+  const bonus = Number(d.bonus) || 0;
+  const mode = String(d.name ?? "");
+  return {
+    kind: "roll-card-damage",
+    label: `${labelPrefix}${damageLabel(mode, count, String(d.dice || "d6"), bonus)}`,
+    damageName: mode ? `${card.name} · ${mode}` : card.name,
+    count,
+    die: String(d.dice || "d6"),
+    bonus,
+    // Direct rides in the type, as it does on an adversary's attack, because
+    // `apps/damage.ts` reads it back off the same string. Save-for-half does
+    // not travel at all — halving is the *target's* outcome, decided against
+    // thresholds this side of the exchange does not own.
+    damageType: `${d.direct ? "direct " : ""}${String(d.type || "physical")}`,
+  };
+}
+
+/**
+ * The two presses that are the system's rather than the card's.
+ *
+ * `mark-use` is *The Twilight Marked*'s toll — a rule of the campaign frame,
+ * not a sentence printed on Rune Ward — and it goes to the **head** of the row
+ * because it is the one action there that is not optional: using a Root or
+ * Void card gains a Mark whether you like it or not. `use-item` is a
+ * consumable's quantity, which is a fact about the object rather than about
+ * its rules text.
+ *
+ * Neither is something a reader annotating a card should have to remember to
+ * write down, which is why both survive the authored path.
+ */
+function appendStructural(out: CardAction[], item: any, card: CardOptions): void {
+  if (item && ["consumable", "loot"].includes(item.type) && Number(item.system?.quantity) > 0) {
+    out.push({ kind: "use-item", label: `Use ${item.name}`, itemId: item.id });
+  }
+  if (item?.type === "domainCard" && isMarkedDomain(item.system?.domain)) {
+    /* The two level 10 cards buy an extra action and cost 3, and it is read
+       off the text rather than listed because the cards say it in the words
+       the frame uses — a second list of two names is a second thing to keep
+       true. This is the one prose read that survives, and it survives because
+       its subject is the frame rather than the card. */
+    const mark = /gain \*\*?3 Mark/i.test(String(card.text ?? "")) ? 3 : 1;
+    out.unshift({ kind: "mark-use", label: mark === 1 ? "Use · Mark" : `Use · ${mark} Mark`, mark });
+  }
+}
+
+/* ── authored actions ─────────────────────────────────────────────────────
+   What the document says it asks of you, read once by somebody and written
+   down. See `ACTION_KINDS` in `config.ts` for why this exists and
+   `card-actions.mjs` for the reading itself.
+
+   This function's whole job is **resolution**: an authored action names things
+   in the card's own vocabulary — a counter by its printed name, a trait that
+   might be the `spellcast` pointer, a damage mode by which of the card's
+   expressions it is — and a posted card has to carry answers rather than
+   names, because the message is a record and the character it was resolved
+   against may have changed by the time somebody presses the button.
+
+   Which is the same reason the label is written here and not at the press:
+   a button reading "Roll 3d8+2" that rolled a different number of dice would
+   be worse than no label at all.
+
+   **Two actions stay automatic even on an annotated document**, and both are
+   structural rather than printed. `use-item` is about a consumable's quantity
+   and `mark-use` is *The Twilight Marked*'s toll, which is a rule of the
+   frame rather than a sentence on the card — no reader annotating Rune Ward
+   should have to remember to write down that Root and Void cards cost a Mark.
+   Everything else an annotated document offers is what its entry says and
+   nothing more, so a card cannot carry a counter button its reader did not
+   put there. */
+
+/** Which feature blocks a post is *about*. Blank means the whole document. */
+const authoredBlocks = (item: any, feature?: string): any[] => {
+  const s = item?.system ?? {};
+  const all = [
+    ...(s.classFeatures ?? []),
+    s.hopeFeature,
+    ...(s.features ?? []),
+    s.topFeature,
+    s.bottomFeature,
+    s.feature,
+  ].filter(Boolean);
+  return feature ? all.filter((b: any) => b.name === feature) : all;
+};
+
+/**
+ * Every authored action a post should carry, document-level and block-level.
+ *
+ * A post *about one feature* takes that block's alone — a class row for
+ * Cloaked must not carry Sneak Attack's press — and a post about the whole
+ * document takes its own plus every block's, which is what a domain card with
+ * one rule and a subclass card with three both need.
+ */
+const authoredActions = (item: any, feature?: string): { action: any; from: string }[] => {
+  if (!item) return [];
+  const blocks = authoredBlocks(item, feature)
+    .flatMap((b: any) => (b.actions ?? []).map((action: any) => ({ action, from: b.name ?? "" })));
+  // A feature post is that feature's, full stop: the document's own actions
+  // belong to its own rules text, which is not what is being posted.
+  if (feature) return blocks;
+  return [
+    ...((item.system?.actions ?? []) as any[]).map((action) => ({ action, from: "" })),
+    ...blocks,
+  ];
+};
+
+/** A counter or die pool's index, by the name the card prints on it. */
+const poolIndex = (list: any[], name: string): number =>
+  list.findIndex((r: any) => String(r?.name ?? "").toLowerCase() === name.toLowerCase());
+
+const AMOUNT_WORDS: Array<[string, string]> = [
+  ["hope", "Hope"],
+  ["stress", "Stress"],
+  ["hitPoints", "Hit Point"],
+  ["armorSlots", "Armor Slot"],
+  ["fear", "Fear"],
+];
+
+/** "2 Hope · 1 Stress", pluralised, in the order the sheet's rail draws them. */
+const amountLabel = (amount: any): string =>
+  AMOUNT_WORDS.filter(([key]) => Number(amount?.[key]) > 0)
+    .map(([key, word]) => {
+      const n = Number(amount[key]);
+      return `${n} ${word}${n === 1 || word === "Hope" || word === "Stress" || word === "Fear" ? "" : "s"}`;
+    })
+    .join(" · ");
+
+/**
+ * One authored action, resolved against this character, or nothing.
+ *
+ * Returning null is a real answer and not a failure: a `roll-trait` whose
+ * `spellcast` pointer resolves to nothing on a character with no spellcasting
+ * subclass emits **no button**, because a row that answered it by rolling
+ * Finesse would be a worse answer than silence. A `roll-card-damage` naming a
+ * mode the document does not print is the same shape — the annotation and the
+ * card have drifted, and a button is not the place to say so.
+ */
+function resolveAction(
+  a: any,
+  actor: any,
+  item: any,
+  card: CardOptions,
+  from: string,
+): CardAction | null {
+  const prefix = from ? `${from} · ` : "";
+  const when = a.when ? `${a.when} · ` : "";
+  const named = (derived: string): string => a.label || `${prefix}${when}${derived}`;
+  const base = { said: a.said || undefined, subject: a.subject || "self" };
+
+  switch (a.kind) {
+    case "pay": {
+      const amount = a.amount ?? {};
+      return {
+        ...base,
+        kind: "pay-cost",
+        label: named(`Spend ${amountLabel(amount) || "nothing"}`),
+        hope: Number(amount.hope) || 0,
+        stress: Number(amount.stress) || 0,
+        armor: Number(amount.armorSlots) || 0,
+        hitPoints: Number(amount.hitPoints) || 0,
+        fear: Number(amount.fear) || 0,
+      };
+    }
+    case "gain":
+    case "clear": {
+      const amount = a.amount ?? {};
+      const words = amountLabel(amount);
+      if (!words) return null;
+      return {
+        ...base,
+        kind: a.kind,
+        label: named(`${a.kind === "gain" ? "Gain" : "Clear"} ${words}`),
+        hope: Number(amount.hope) || 0,
+        stress: Number(amount.stress) || 0,
+        armor: Number(amount.armorSlots) || 0,
+        hitPoints: Number(amount.hitPoints) || 0,
+        fear: Number(amount.fear) || 0,
+      };
+    }
+    case "move-resource": {
+      /* The name is resolved to an index here rather than at the press,
+         because a player may rename their own counter between the post and
+         the click and the message is a record of what was offered. This is
+         also what retired the last small parser in this file: the sign used
+         to be decided by testing the counter's *name* against `/^uses?$/i`,
+         which is a guess about English on data whose author already knew the
+         answer. */
+      const index = poolIndex(item?.system?.resources ?? [], a.resource || "");
+      if (index < 0) return null;
+      const by = Number(a.by) || 0;
+      const name = String(a.resource).replace(/s$/i, "");
+      return {
+        ...base,
+        kind: "move-resource",
+        label: named(by < 0 ? `Spend ${name}` : `Mark ${name}`),
+        itemId: item.id,
+        resource: a.resource,
+        resourceIndex: index,
+        by,
+      };
+    }
+    case "die-pool": {
+      const index = poolIndex(item?.system?.dice ?? [], a.resource || "");
+      if (index < 0) return null;
+      const name = String(a.resource);
+      const verb: Record<string, string> = {
+        place: `Place a ${name}`,
+        roll: `Roll a ${name}`,
+        spend: `Spend a ${name}`,
+        step: `Step the ${name} up`,
+        clear: `Clear the ${name}`,
+      };
+      return {
+        ...base,
+        kind: "die-pool",
+        label: named(verb[a.op] ?? `Use the ${name}`),
+        itemId: item.id,
+        resource: a.resource,
+        resourceIndex: index,
+        op: String(a.op || "place"),
+      };
+    }
+    case "refresh":
+      if (!a.resource) return null;
+      return {
+        ...base,
+        kind: "refresh",
+        label: named(`Refill ${a.resource}`),
+        itemId: item?.id,
+        resource: a.resource,
+      };
+    case "roll-trait": {
+      const trait = traitOf(String(a.trait || ""), actor, item);
+      if (!trait) return null;
+      return {
+        ...base,
+        kind: "roll-trait",
+        label: named(rollLabel(String(a.trait))),
+        trait,
+        dc: Number(a.dc) > 0 ? Number(a.dc) : null,
+      };
+    }
+    case "roll-damage": {
+      const weapon = equippedWeapon(actor, item);
+      return { ...base, kind: "roll-damage", label: named("Roll damage"), weaponId: weapon?.id };
+    }
+    case "roll-card-damage": {
+      const printed = ((item?.system?.cardDamage ?? []) as any[])
+        .find((d) => String(d.name ?? "") === String(a.damageName ?? ""));
+      if (!printed) return null;
+      return cardDamageAction(printed, actor, card, a.label || `${prefix}${when}`);
+    }
+    case "roll-dice":
+      if (!a.formula) return null;
+      return { ...base, kind: "roll-dice", label: named(`Roll ${a.formula}`), formula: a.formula };
+    case "apply-condition": {
+      const condition = CONDITIONS.find((c) => c.id === a.condition);
+      if (!condition) return null;
+      return {
+        ...base,
+        kind: "apply-condition",
+        label: named(condition.name),
+        condition: condition.id,
+      };
+    }
+    case "grant-effect": {
+      const effect = a.effect ?? {};
+      if (!effect.name) return null;
+      return {
+        ...base,
+        kind: "grant-effect",
+        label: named(effect.name),
+        effect: {
+          name: String(effect.name),
+          duration: String(effect.duration || "temporary"),
+          modifiers: [...(effect.modifiers ?? [])],
+        },
+      };
+    }
+    case "use-item":
+      if (!item) return null;
+      return { ...base, kind: "use-item", label: named(`Use ${item.name}`), itemId: item.id };
+    case "mark-use":
+      return { ...base, kind: "mark-use", label: named("Use · Mark"), mark: Number(a.mark) || 1 };
+    default:
+      return null;
+  }
+}
+
 function actionsFor(card: CardOptions, actor: any, options: PostCardOptions): CardAction[] {
   const item = card.id ? actor?.items?.get?.(card.id) : null;
   const out: CardAction[] = [];
+
+  /* ── the authored row ──────────────────────────────────────────────────
+     If somebody has read this document, their reading is the whole row and
+     nothing below this block runs for it. That is the point: a parse cannot
+     be *partly* retired, because a card whose price was authored and whose
+     roll was still swept would be charging the reader's answer and guessing
+     at the rest, which is the worst of both and impossible to review.
+
+     Two exceptions, and both are structural rather than printed —
+     `mark-use` is *The Twilight Marked*'s toll and `use-item` is a
+     consumable's quantity, neither of which is a sentence anybody wrote on
+     a card. See the block above `authoredBlocks`. */
+  const authored = authoredActions(item, options.feature);
+  if (authored.length) {
+    for (const { action, from } of authored) {
+      const resolved = resolveAction(action, actor, item, card, from);
+      if (!resolved) continue;
+      resolved.steps = ((action.steps ?? []) as any[])
+        .map((step) => resolveAction(step, actor, item, card, from))
+        .filter(Boolean) as CardAction[];
+      if (!resolved.steps.length) delete resolved.steps;
+      out.push(resolved);
+    }
+    appendStructural(out, item, card);
+    return out;
+  }
 
   const addPrice = (price: Price, featureName = "") => {
     if (isFree(price)) return;
@@ -245,140 +589,37 @@ function actionsFor(card: CardOptions, actor: any, options: PostCardOptions): Ca
     }
   };
 
-  if (options.price) {
-    addPrice(options.price);
-  } else {
-    const authored = item?.type === "feature" ? item.system : undefined;
-    if (card.text) addPrice(featurePrice({ description: card.text }, authored));
-    for (const feature of card.feats ?? []) {
-      addPrice(
-        featurePrice({ description: feature.t }),
-        card.feats && card.feats.length > 1 ? feature.n : "",
-      );
-    }
+  /* ── the parse path is gone ────────────────────────────────────────────
+     Three patterns used to run here: a price swept out of the prose, a roll
+     read off "make a … Roll", and a sniff for the literal words "damage roll".
+     Every rule unit in the packs is read now — `tools/check-actions.mjs` will
+     not let one through unannotated and undeclined — so a document reaching
+     this point has genuinely nothing authored, and the honest answer is the
+     two structural presses and no more.
+
+     They are not deleted: `sheets/suggest.ts` is the same three patterns
+     behind the item sheet's "suggest" press, where their guess arrives as
+     editable rows somebody looks at before it can charge anybody anything.
+
+     `options.price` still travels, and it is not a leftover. The Hope action
+     is not an Item and has no block to author against — it is assembled from
+     the class's `hopeFeature` by `hopeCard`, and `hopeCost` reads its price
+     off that block's own authored actions. One caller, one explicit price. */
+  if (options.price) addPrice(options.price);
+
+  /* The `feature` subtype's own `stressCost`/`fearCost`, which survive the
+     retirement because they were never a parse: somebody typed them into the
+     item sheet deliberately, and they are the one authored cost that predates
+     `actions`. A homebrew feature built through those two fields goes on
+     charging what it was told to. */
+  // Unconditional: the branch above returned, so nothing here is annotated.
+  if (item?.type === "feature") {
+    const stress = Number(item.system?.stressCost) || 0;
+    const fear = Number(item.system?.fearCost) || 0;
+    if (stress || fear) addPrice({ hope: 0, armor: 0, stress, fear });
   }
 
-  const resources: any[] = item?.system?.resources ?? [];
-  const indexes = options.resourceIndexes ?? resources.map((_r, i) => i);
-  for (const i of indexes) {
-    const res = resources[i];
-    if (!res) continue;
-    const budget = /^uses?$/i.test(String(res.name ?? ""));
-    const name = String(res.name || "Counter").replace(/s$/i, "");
-    out.push({
-      kind: "move-resource",
-      label: budget ? `Spend ${name}` : `Mark ${name}`,
-      itemId: item.id,
-      resourceIndex: i,
-      by: budget ? -1 : 1,
-    });
-  }
-
-  if (item && ["consumable", "loot"].includes(item.type) && Number(item.system?.quantity) > 0) {
-    out.push({ kind: "use-item", label: `Use ${item.name}`, itemId: item.id });
-  }
-
-  /* *The Twilight Marked*'s toll, and it goes **first** in the row.
-     Every other action here is optional — a cost the card offers you, a
-     counter you may spend, a damage roll you may want. This one is not: using
-     a Root or Void card gains a Mark and feeds the GM's pool whether you like
-     it or not, so it is the first thing the row says rather than the last.
-
-     It is a *press* and not something the post applies, because posting a card
-     is how you show it as often as it is how you play it. Which also settles
-     the three cases the frame calls out — a reaction, a second activation and
-     a use that failed are all somebody pressing this.
-
-     The two level 10 cards buy an extra action and cost 3. Read off the text
-     rather than listed, because the cards say it in the words the frame uses
-     and a second list of two names is a second thing to keep true. */
-  if (item?.type === "domainCard" && isMarkedDomain(item.system?.domain)) {
-    const mark = /gain \*\*?3 Mark/i.test(String(card.text ?? "")) ? 3 : 1;
-    out.unshift({ kind: "mark-use", label: mark === 1 ? "Use · Mark" : `Use · ${mark} Mark`, mark });
-  }
-
-  /* The row reads in the order the card's sentence does — pay, roll, damage —
-     which is what puts this after every price above it and before both damage
-     blocks below. A card that asks for a Stress, a roll and then some dice is
-     a card whose buttons are pressed left to right.
-
-     **One button per block, and the first invocation only.** A block that
-     calls for two rolls is calling for the second *because of* how the first
-     went ("on a success, make a Presence Roll"), so a row offering both up
-     front would be offering a roll nobody has earned yet. The reader can press
-     the trait plate on their own sheet for the second, which is what they did
-     before this button existed.
-
-     **Repeatable, and therefore no claim.** Every other action in this row
-     spends something once — a Hope leaves a purse, a use leaves a counter —
-     and a row of live buttons three hours later is an invitation to collect it
-     twice. A roll spends nothing. You will genuinely roll the same card again
-     next round, and burning the button on the first press would send you back
-     to the sheet for every press after it. Ownership is the whole gate. */
-  for (const b of blocks(card)) {
-    const call = rollCall(b.t);
-    if (!call) continue;
-    const trait = traitOf(call.word, actor, item);
-    if (!trait) continue;
-    out.push({
-      kind: "roll-trait",
-      label: `${b.n ? `${b.n} · ` : ""}${rollLabel(call.word)}`,
-      trait,
-      dc: call.dc,
-    });
-  }
-
-  /* The card's own dice, which is a different button from the one below it.
-     Two, never one, and the corpus is what settles it: seventy-seven entries
-     print a complete damage expression, the "damage roll" sniff below matches
-     fifty of which thirty-four print no dice at all, and *not one* card with a
-     complete expression says the phrase. The two are not two readings of one
-     thing — "add a d6 to your damage roll" is a clause about the weapon in
-     your hand, and "they take 2d8+4 magic damage" is the card rolling.
-
-     So the label **prints the dice**. A row carrying two buttons both reading
-     "Roll damage" is precisely the ambiguity this exists to remove, and the
-     expression is the one thing that can never be true of both.
-
-     `proficiency` is resolved *here* rather than at the press, unlike the
-     weapon below, and the reason is the label: a button reading "Roll 3d8+2"
-     that rolled a different number of dice would be worse than no label at
-     all. The Proficiency in it is the one this character had when the card was
-     posted, which is what the card said when it was posted.
-
-     **No critical.** A weapon's damage button is reached from an attack plate
-     and reads the crit off the message that hit; a posted card is a card, and
-     there is no honest link from it to a roll that critted — the player may
-     have posted it before rolling, after rolling, or to argue about what it
-     says. Guessing would double dice on a hit that never happened. */
-  for (const d of (item?.system?.cardDamage ?? []) as any[]) {
-    const count = Math.max(1, Number(d.count) || 1) *
-      (d.proficiency ? Math.max(1, Number(actor?.system?.proficiency) || 1) : 1);
-    const bonus = Number(d.bonus) || 0;
-    const mode = String(d.name ?? "");
-    out.push({
-      kind: "roll-card-damage",
-      label: damageLabel(mode, count, String(d.dice || "d6"), bonus),
-      damageName: mode ? `${card.name} · ${mode}` : card.name,
-      count,
-      die: String(d.dice || "d6"),
-      bonus,
-      // Direct rides in the type, as it does on an adversary's attack, because
-      // `apps/damage.ts` reads it back off the same string. Save-for-half does
-      // not travel at all — halving is the *target's* outcome, decided against
-      // thresholds this side of the exchange does not own.
-      damageType: `${d.direct ? "direct " : ""}${String(d.type || "physical")}`,
-    });
-  }
-
-  const saysDamageRoll = blocks(card).some((b) => /\bdamage roll\b/i.test(plain(b.t)));
-  if (item?.type === "weapon" || options.damageRoll || saysDamageRoll) {
-    const weapon = item?.type === "weapon"
-      ? item
-      : actor?.items?.find?.((it: any) => it.type === "weapon" && it.system?.equipped && it.system?.slot === "primary")
-        ?? actor?.items?.find?.((it: any) => it.type === "weapon" && it.system?.equipped);
-    out.push({ kind: "roll-damage", label: "Roll damage", weaponId: weapon?.id });
-  }
+  appendStructural(out, item, card);
   return out;
 }
 

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- Two chevrons, climbing. The Guardian's stance gives benefits "while
+       Unstoppable" and drops when its die would pass its maximum, so what the
+       mark has to carry is momentum with a ceiling on it — something going up
+       that will eventually stop.
+
+       Two rather than one, and stacked rather than nested: a single chevron is
+       an arrow and an arrow means direction, while a repeat means a rate. The
+       upper is the narrower of the two, so the pair also reads as converging
+       on something. -->
+  <path d="M32 4 55 27h-12L32 16 21 27H9L32 4Z"/>
+  <path d="M32 31 52 51h-11l-9-9-9 9H12L32 31Z"/>
+</svg>

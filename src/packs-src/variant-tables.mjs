@@ -226,7 +226,7 @@ const SCATTERSHOT = f("Scattershot", "When you make an attack, target all creatu
 const QUICK_SHOT = f("Quick Shot", "Spend 2 Hope to gain a +4 bonus to primary weapon damage.");
 
 /**
- * Roped names a condition this system does not register, and holds one target.
+ * Roped names a registered condition and holds one target.
  *
  * `CONDITIONS` admits a state a card defines and then refers back to with
  * "While X", which this passes cleanly — but it is also the shape CLAUDE.md

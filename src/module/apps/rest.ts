@@ -82,6 +82,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { expireEffects } from "../effects.ts";
 import { SYSTEM_ID } from "../config.ts";
 import { DIE } from "../dice/plate.ts";
 import {
@@ -468,7 +469,13 @@ async function refreshUses(actor: any, kind: RestKind): Promise<number> {
      caller is counting *what this rest gave back*, and the reader does not
      care which field it was stored in. */
   const dice = await refreshDicePools(actor, scopes);
-  return moved.length + dice.length;
+  /* And the temporary effects this rest ends, which are the third record on
+     the same seam. A card granting "+1 to Agility until your next long rest"
+     is a bonus and a duration, and until effects existed there was nowhere to
+     put either — so this is not a third mechanism agreeing with two others,
+     it is the same scopes answering for one more field. */
+  const gone = await expireEffects(actor, [...scopes]);
+  return moved.length + dice.length + gone.length;
 }
 
 /**

@@ -25,11 +25,13 @@ import {
   WEAPON_SLOTS,
 } from "../config.ts";
 import {
+  actionField,
   arr,
   bool,
   choice,
   damageField,
   featureField,
+  fillCardActions,
   fillCardDamage,
   html,
   int,
@@ -68,6 +70,7 @@ const ItemModel = (): any =>
     prepareBaseData(): void {
       super.prepareBaseData();
       fillCardDamage(this, this.parent?.type, this.parent?.name);
+      fillCardActions(this, this.parent?.type, this.parent?.name);
     }
   };
 
@@ -128,6 +131,21 @@ const tracked = () => ({
   cardDamage: arr(damageField()),
   /** Always-on self modifiers; activation follows the owning Item subtype. */
   modifiers: arr(modifierField()),
+  /**
+   * What this document's *own* rules text asks you to do — see `actionField`.
+   *
+   * The document-level half of the pair, and it is not the same population as
+   * `featureField.actions`. A domain card, a consumable and a piece of loot
+   * print their rule in `system.description` and have no block to nest in; a
+   * class prints three features and each needs its actions bound to the rule
+   * that prints it. Both halves exist because both populations do.
+   *
+   * Spread onto every subtype for `resources`' reason, arriving a fourth
+   * time: a sweep guessing which subtypes could ask something of you would be
+   * wrong about consumables, which are a hundred and twenty documents whose
+   * entire content is a press.
+   */
+  actions: arr(actionField()),
 });
 
 /* ══════════════════════════════════════════════════════════════════════

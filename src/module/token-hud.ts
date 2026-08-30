@@ -227,7 +227,7 @@ function stateOf(token: any): ChipState | null {
 
   const sys = actor.system ?? {};
   const res = sys.resources ?? {};
-  /* The sixteen first, in CONDITIONS' own order, then whatever the GM typed
+  /* The named ones first, in CONDITIONS' own order, then whatever the GM typed
      in the order they typed it. Two lists rather than one sorted list, and
      the split is deliberate: the named conditions read the same way on every
      token at the table because their order is a constant, and an ad-hoc one

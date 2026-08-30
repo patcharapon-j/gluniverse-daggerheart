@@ -24,18 +24,37 @@ const rgb = (hex: string): readonly [number, number, number] => {
   return [((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255];
 };
 
+/**
+ * One hue per condition, positional against `CONDITIONS`.
+ *
+ * The last seven are the optional chapters' and the Guardian's, and finding
+ * hues for them is where this palette started to strain — which the shader's
+ * own notes predicted: at this count "the only thing separating them is hue,
+ * which is the actual complaint". So the seven lean on the accent ramps below
+ * to do the telling apart, and the hex only has to be legible in the HUD
+ * sentence and not confusable at a glance.
+ *
+ * Two of them are deliberately a pair rather than two colours. Broken and
+ * Destroyed are one step apart in the rules — a segment that cannot act, then
+ * one that cannot do anything — so they are one hue at two values, and the
+ * palette says the same thing the two marks do.
+ */
 const PALETTE = [
   "#9b72e4", "#7590a6", "#aeb8c4", "#7388aa",
   "#ef4c5c", "#76d8d1", "#c467e8", "#a8dbe7",
   "#e78ba7", "#9bc45b", "#f2c85c", "#55bff5",
   "#7785a1", "#8d55b8", "#86a7c9", "#f0783f",
+  /* roped: hemp. frostbitten: rime. nauseated: bile. cursed: wine.
+     unstoppable: hot bronze. broken / destroyed: one stone, two values. */
+  "#c9a06a", "#bfe6f2", "#6f8f5e", "#a03a6e",
+  "#c9922e", "#8c8378", "#5e5952",
 ] as const;
 
 /**
  * The material every condition this system does not name is drawn in.
  *
  * A GM can type a condition. There is exactly one material for all of them
- * and there deliberately is not one each: the sixteen are drawn as what they
+ * and there deliberately is not one each: the named ones are drawn as what they
  * ARE, and nothing here knows what "Waterlogged" is. Giving a typed name a
  * texture picked by hashing it would be this shader inventing a subject,
  * which is worse than admitting it has none — a creature would be wearing
@@ -82,10 +101,10 @@ export const CONDITION_SLOTS = 5;
  * Total by construction: an id this file does not know is a condition
  * somebody typed, and every one of those shares the unnamed material. That
  * rule lives here rather than at the call site so a caller cannot silently
- * lose a condition by handing over an id that is not one of the sixteen —
+ * lose a condition by handing over an id that is not one this system names —
  * the old `map(get).filter(Boolean)` did exactly that, and did it invisibly.
  *
- * Deduped for a reason the sixteen never needed. Five typed conditions are
+ * Deduped for a reason the named ones never needed. Five typed conditions are
  * one texture, and without this they would take every slot the composite has
  * to say the same thing five times over.
  */
@@ -167,7 +186,7 @@ float hash21(vec2 p) {
    with about .22, so an unscaled swap would quietly flatten every
    smoothstep already tuned against the old field. 1.3 matches the two
    distributions, which is what lets this be a fidelity change rather than
-   a retune of sixteen conditions. */
+   a retune of every condition. */
 vec2 hash22(vec2 p) {
   p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
   return fract(sin(p) * 43758.5453) * 2.0 - 1.0;
@@ -251,7 +270,7 @@ vec3 colorAt(int i) {
    Every condition keeps the primitive it shipped with. What they did not
    have was SCALE HIERARCHY or a COMPOSITION, and without those a pattern
    is a texture: one frequency, spread evenly, radially symmetric, filling
-   the disc. Sixteen textures at one frequency are sixteen hazes, and the
+   the disc. Two dozen textures at one frequency are two dozen hazes, and the
    only thing separating them is hue — which is the actual complaint.
 
    So each one now has a large structure, a medium one, and a fine register
@@ -613,6 +632,133 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
     return vec2(clamp(flame * .90 + tongues * .34, 0.0, 1.0), smoothstep(.80, 1.08, lift) * .82);
   }
 
+  /* Roped — one cord, and that is the entire difference from Restrained.
+     That one is a binding: several bands, lashed, tightening on the body.
+     This is a single line with tension along it and a loop at one end, and
+     the tension travels *away* — because the rule is that whoever threw it
+     "must remain within Very Close range", so the thing the mark has to say
+     is that somebody is holding the other end. A haul on a slow period, and
+     the lay of the fibre running along the cord so it is rope rather than a
+     drawn stripe. */
+  if (id < 16.5) {
+    float across = p.x * .55 + p.y * .84;
+    float along  = p.x * .84 - p.y * .55;
+    float haul   = .055 * sin(t * .70);
+    float cord   = band(across, haul, .165);
+    float lay    = pow(max(0.0, sin(along * 12.0 - t * 1.15)), 3.0);
+    float loop   = band(abs(length(p - vec2(.36, .32)) - .29), 0.0, .080);
+    float strain = band(fract(along * .42 - t * .32), .5, .16);
+    return vec2(clamp(cord * (.60 + .40 * lay) + loop * .76, 0.0, 1.0),
+                cord * lay * .44 + loop * (.24 + .46 * strain));
+  }
+
+  /* Frostbitten — rime, and it grows inward from the rim. Frost does not
+     appear evenly over a surface; it takes the edges first and creeps, so
+     the creep front is the animation and the facets are what it leaves
+     behind. Needles rather than a wash, because a wash of pale blue at 40px
+     is a colour cast and reads as lighting rather than as a condition.
+
+     Deliberately not Stunned's radial burst even though both are spiky: that
+     one is irregular because a blow is, and this one repeats because frost
+     grows the same way in every direction. Same argument as the mark. */
+  if (id < 17.5) {
+    float facet   = 1.0 - smoothstep(.030, .155, voronoiEdge(p * 5.2 + 3.0));
+    float needles = pow(max(0.0, cos(a * 13.0 + fbmD(p * 3.0, d) * 3.0)), 6.0)
+                  * smoothstep(.28, 1.05, r);
+    float creep   = smoothstep(.34 + .17 * sin(t * .30), 1.06, r);
+    float glint   = band(fract(a / (PI * 2.0) - t * .07), .5, .055);
+    return vec2(clamp((facet * .55 + needles * .68) * creep, 0.0, 1.0),
+                facet * creep * (.28 + .55 * glint));
+  }
+
+  /* Nauseated — a churn, which is the one motion in the set that turns over
+     rather than travelling. Hidden is the other fbm-and-tide branch and it
+     RISES: smoke engulfing from below, going one way. This rolls, because
+     what the rule describes is not something arriving, it is something
+     already inside and moving. The domain warp is what makes it turn over
+     itself; without it the same noise scrolls, and a scroll is a current. */
+  if (id < 18.5) {
+    vec2 swirl  = vec2(gnoise(p * .90 + t * .17), gnoise(p * .90 + 19.0 - t * .13)) * .80;
+    float churn = fbmD(p * 1.70 + swirl + vec2(0.0, sin(t * .33) * .32), d);
+    float roll  = band(fract(churn * 1.6 - t * .21), .5, .19);
+    float gut   = smoothstep(.86, .08, r) * (.30 + .30 * sin(t * .55));
+    return vec2(clamp(smoothstep(.34, .74, churn) * .80 + roll * .38 + gut * .24, 0.0, 1.0),
+                roll * .46);
+  }
+
+  /* Cursed — a spiral that does not arrive anywhere, over glyphs that turn
+     the other way. Every other bind here has a printed exit and is drawn as
+     a shape you can see the end of; this one "resists an ordinary clear",
+     so the figure winds inward forever.
+
+     Hexed is the branch it has to be told apart from, and both are lattices
+     in a violet. Hexed counter-rotates two *grids* and its whole character
+     is the moire; this is one continuous arm, so what you read is a
+     direction rather than an interference. The grip pulse is slow enough to
+     be felt and not watched — a curse is not an event. */
+  if (id < 19.5) {
+    float turn   = a / (PI * 2.0);
+    float spiral = band(fract(turn + r * 1.90 - t * .11), .5, .17);
+    float second = band(fract(turn - r * 1.35 + t * .07), .5, .11);
+    float glyph  = pow(max(0.0, sin(a * 9.0 + r * 5.0 - t * .22)), 12.0)
+                 * smoothstep(1.02, .18, r);
+    float grip   = smoothstep(1.04, .30, r) * (.55 + .45 * sin(t * .26));
+    return vec2(clamp(spiral * .76 + second * .42 + glyph * .58, 0.0, 1.0),
+                spiral * grip * .50 + glyph * .68);
+  }
+
+  /* Unstoppable — chevrons climbing, and the heat behind them. The stance
+     is momentum with a ceiling on it, so the pattern travels one way and
+     never wavers: no breath, no counter-rotation, nothing that could read as
+     hesitating. Ablaze is the other warm branch and curls; this does not,
+     because fire turns over itself and a thing being driven does not. */
+  if (id < 20.5) {
+    float up    = p.y * .92 + abs(p.x) * .38;
+    float chev  = band(fract(up * 2.30 - t * .62), .5, .195);
+    float grain = fbmD(p * 3.40 + vec2(0.0, -t * .45), d) * d;
+    float rise  = smoothstep(-1.0, .85, p.y);
+    float forge = smoothstep(.30, .95, grain * .50 + rise * .70);
+    return vec2(clamp(chev * .80 + forge * .44, 0.0, 1.0),
+                chev * rise * .72 + forge * .28);
+  }
+
+  /* Broken — one fracture, and the two sides still working against each
+     other. That grind is the whole of the time in it: a Broken segment is
+     part of a creature that has stopped, attached to one that has not, so
+     something has to be moving or the mark is Vulnerable's shatter without
+     the event. Dust sits in the seam and drifts, which is the other half of
+     "this is load-bearing and it has gone". */
+  if (id < 21.5) {
+    float across = p.x * .32 + p.y * .95;
+    float jag    = fbmD(vec2(p.x * 2.6, p.y * .6) + 5.0, d) * .30;
+    float work   = .045 * sin(t * .48);
+    float gap    = across + jag - work;
+    float seam   = band(gap, 0.0, .075);
+    float lip    = band(abs(gap), .075, .035);
+    float dust   = smoothstep(.55, 0.0, abs(gap))
+                 * fbmD(p * 6.0 + vec2(t * .10, -t * .30), d) * d;
+    return vec2(clamp(seam * .92 + lip * .54 + dust * .38, 0.0, 1.0),
+                lip * (.42 + .38 * sin(t * .48 + 1.6)) + seam * .18);
+  }
+
+  /* Destroyed — the same fracture, everywhere, and opening. One seam that
+     works is a break; a field of them that widens is a thing that has come
+     apart, and the widening is on a period slow enough that you notice it
+     between rounds rather than watching it happen.
+
+     Deliberately not the shattered branch a defeated token gets: that
+     one throws shards off the creature and clips to its circle, because the
+     creature is gone. A Destroyed segment is still standing there. */
+  if (id < 22.5) {
+    float open  = .045 + .020 * sin(t * .22);
+    float seams = 1.0 - smoothstep(open, open + .10, voronoiEdge(p * 3.10 + 13.0));
+    float fine  = (1.0 - smoothstep(.030, .130, voronoiEdge(p * 7.40 + 29.0))) * d;
+    float fall  = band(fract(p.y * .90 + t * .26), .5, .22)
+                * fbmD(p * 4.20 + vec2(0.0, -t * .55), d) * d;
+    return vec2(clamp(seams * .90 + fine * .46 + fall * .32, 0.0, 1.0),
+                seams * .22 + fall * .30);
+  }
+
   /* The seventeenth, and the only one whose subject is unknown: a condition
      a GM typed the name of. Everything above draws a THING — fire, rot,
      rope, a lattice — and this one may not, because it has not been told
@@ -630,7 +776,7 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
 
      It is a sash across the body rather than a ring at the rim, and that is
      not a style choice. The rim already has a tenant: the chip's rotating
-     sentence is a band of lettering at exactly that radius, and the sixteen
+     sentence is a band of lettering at exactly that radius, and the named ones
      that live out there — the reticle, the standing waves — are named
      things the sentence is naming with them. A seventeenth ring competing
      with the words for the same pixels would read as a rendering fault. */
@@ -686,6 +832,32 @@ vec2 conditionWarp(float id, vec2 p, float t, float value) {
   if(id<13.5)return -radial*value*.028;
   if(id<14.5)return radial*sin(r*20.0+t*2.0)*value*.017;
   if(id<15.5)return vec2(sin(p.y*9.0+t*2.6),value*-.8)*value*.020;
+  /* Roped hauls the artwork toward the cord's own normal rather than toward
+     the centre: a rope pulls in the direction it is pulled, and a radial
+     drag would be a binding tightening, which is Restrained's. */
+  if(id<16.5)return vec2(.55,.84)*sin(t*.70)*value*.020;
+  /* Frostbitten stiffens rather than moves. The smallest displacement in
+     the set on purpose — frost sets a surface, and a face that swims under
+     ice is a face under water. */
+  if(id<17.5)return radial*value*.006;
+  /* Nauseated is the churn reaching the artwork, and it is the one warp
+     that does not settle: the two components run at unrelated rates so the
+     motion never returns to where it started. */
+  if(id<18.5)return vec2(sin(p.y*3.1+t*.62),cos(p.x*2.7-t*.47))*value*.026;
+  /* Cursed turns the artwork slowly about the creature's own centre, which
+     is the spiral's motion arriving on the picture. Tangential, and it never
+     reverses. */
+  if(id<19.5)return vec2(-p.y,p.x)*value*.014;
+  /* Unstoppable pushes upward, and only upward. Nothing lateral, because a
+     wobble on this one would be exactly the wrong claim. */
+  if(id<20.5)return vec2(0.0,.020)*value*(.6+.4*sin(t*1.3));
+  /* Broken shears: the two sides of the seam offset against each other on
+     the grind, so the displacement is a step across the fracture rather than
+     a wave along it. */
+  if(id<21.5)return vec2(.95,-.32)*sign(p.x*.32+p.y*.95)*sin(t*.48)*value*.016;
+  /* Destroyed pushes every fragment away from the centre as the seams open,
+     on the same slow period the pattern widens on. */
+  if(id<22.5)return radial*(.55+.45*sin(t*.22))*value*.022;
   /* The unnamed one barely moves the artwork. It is a mark ON a creature
      rather than something happening TO one, and a displacement is the most
      literal claim in this shader about a subject it has not been told. */
@@ -718,6 +890,35 @@ vec3 conditionAccent(float id, vec3 base, vec2 p, float t, float value) {
   if(id<13.5)return mix(vec3(.035,.005,.055),vec3(.68,.23,.82),value*.7);
   if(id<14.5)return mix(vec3(.1,.2,.31),vec3(.78,.91,1.0),value*.72);
   if(id<15.5)return mix(vec3(.62,.045,.008),vec3(1.0,.86,.27),clamp(value+p.y*.16,0.0,1.0));
+  /* Hemp. A cord is one of the few subjects here that is genuinely matte, so
+     this is the flattest ramp in the set on purpose — the fibre is in the
+     pattern and putting a sheen on it as well would make it wet rope. */
+  if(id<16.5)return mix(vec3(.20,.13,.06),vec3(.86,.70,.44),value*.78);
+  /* Rime. Ice is the one material where the bright end has to go past the
+     hue entirely: frost on a surface is white, and a ramp that stopped at
+     pale blue would read as a wash rather than as something crystalline. */
+  if(id<17.5)return mix(vec3(.055,.14,.20),vec3(.88,.97,1.0),pow(value,1.3));
+  /* Bile. Kept dark at the low end and well short of Corroded's acid green at
+     the high one: those two are the only greens in the set and the ramps are
+     what separate them, since the hues cannot. */
+  if(id<18.5)return mix(vec3(.055,.10,.045),vec3(.60,.76,.38),value*.72);
+  /* Wine. The set is already crowded with violets, so this one goes red
+     rather than purple as it lights — Cursed beside Hexed has to be a
+     different *direction* of travel and not a different shade at rest. */
+  if(id<19.5)return mix(vec3(.10,.015,.055),vec3(.86,.28,.54),value*.80);
+  /* Hot bronze. Ablaze is the other warm ramp and reaches yellow-white; this
+     stops at bronze, because a stance is metal being driven rather than
+     something burning. */
+  if(id<20.5)return mix(vec3(.16,.085,.02),vec3(1.0,.76,.34),value*.84);
+  /* Dry stone, and the exponent is the point. Broken is a fracture in
+     something that still holds together, so the brightness stays in the break
+     and off the face — pow keeps the body dark at every value below the very
+     top of the range. */
+  if(id<21.5)return mix(vec3(.09,.085,.08),vec3(.62,.58,.52),pow(value,1.6));
+  /* The same stone, one step down and one step darker, which is what the
+     rules say Destroyed is. A second hue here would have made the pair two
+     unrelated states a reader has to learn the order of. */
+  if(id<22.5)return mix(vec3(.05,.048,.045),vec3(.40,.37,.34),pow(value,2.0));
   /* Parchment, and deliberately the only warm neutral in the set. Every
      other ramp names a substance; this one names a note somebody wrote. */
   return mix(vec3(.13,.11,.09),vec3(.96,.89,.76),value*.80);
@@ -898,7 +1099,7 @@ void main() {
        widens the range first and the smoothstep curve then fixes both ends
        and pushes everything between them outward, so a condition has
        places it IS and places it is not. Applied here rather than in
-       sixteen branches because it is one claim about all of them. */
+       every branch because it is one claim about all of them. */
     float value=clamp(field.x*1.16-.055,0.0,1.0);
     value=value*value*(3.0-2.0*value);
     colorSum+=colorAt(i); accentSum+=conditionAccent(id,colorAt(i),p,localTime,value);

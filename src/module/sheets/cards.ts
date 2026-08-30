@@ -900,56 +900,6 @@ export const HOPE_ACTION_COST = 3;
    An authored `stressCost`/`fearCost` on a `feature` Item always wins over
    the text, because somebody typed it deliberately. */
 
-const AMOUNTS: Record<string, number> = {
-  a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
-};
-
-const amount = (w: string): number => AMOUNTS[w.toLowerCase()] ?? (Number(w) || 0);
-
-/**
- * Emphasis and whitespace, together, anywhere the two can meet.
- *
- * `plain` leaves markdown behind rather than markup — a card that prints
- * "you can **mark a Stress**" arrives with the asterisks still in it, and
- * they land in the middle of the phrase rather than around it. Every junction
- * in the pattern therefore has to allow them.
- */
-const MK = "[\\s*]";
-
-/**
- * What may stand immediately before the verb: a clause head, or an offer.
- *
- * These are the two ways the holder's own price is written. Everything else
- * that could precede "mark a Stress" — "must", "would", "they", "the target",
- * a bare "when you" — is a consequence or somebody else's bill, and is left
- * unreachable on purpose. See the argument above.
- *
- * `•` is here because `plain` renders a list item as one, so a bulleted price
- * is a price at the head of a clause with no punctuation in front of it.
- */
-const PAYER = "(?:^|<br>|•|[.!?:;,]|\\band\\b|\\bthen\\b|\\byou can\\b|\\byou may\\b)";
-
-/**
- * The clause itself, kept separate from the number so the ratchet can quote it.
- *
- * `tools/check-cards.mjs` cannot import this — it is a `.mjs` tool and this is
- * TypeScript — so it lifts these three declarations out of the file as *text*,
- * which is `check-item-sheet.mjs`'s move for the same reason. That is what
- * keeps there from being a second copy of the pattern maintained by hand, and
- * it is why the three are named constants rather than one inlined literal.
- */
-const priceClause = (text: string, unit: string): RegExpExecArray | null =>
-  new RegExp(
-    `${PAYER}${MK}*(?:spend|mark|pay)${MK}+(a|an|one|two|three|four|five|six|\\d+)${MK}+${unit}\\b`,
-    "i",
-  ).exec(text);
-
-/** The first clause in which *you* are asked to pay this currency, if any. */
-const priceOf = (text: string, unit: string): number => {
-  const m = priceClause(text, unit);
-  return m ? amount(m[1] as string) : 0;
-};
-
 export interface Price {
   hope: number;
   stress: number;
@@ -963,14 +913,39 @@ export const isFree = (p: Price): boolean => !p.hope && !p.stress && !p.fear && 
  * @param system the Item's own `system`, when the feature *is* an Item — its
  * authored cost fields outrank anything read out of the prose.
  */
-export function featurePrice(feature: any, system?: any): Price {
-  const text = plain(feature?.description).replace(/<br>/g, " ");
-  return {
-    hope: priceOf(text, "hope"),
-    stress: Number(system?.stressCost) || priceOf(text, "stress"),
-    fear: Number(system?.fearCost) || priceOf(text, "fear"),
-    armor: Math.max(priceOf(text, "armor slot"), priceOf(text, "armor slots")),
+/**
+ * What a rule costs, read off its authored actions.
+ *
+ * This used to sweep the prose. See **A card's buttons are data too** in
+ * CLAUDE.md for why it does not any more; what is left here is the reduction
+ * from a block's `pay` actions to the one `Price` the sheet's row prints and
+ * the Hope action charges.
+ *
+ * **Summed across every `pay` on the block, and that is a change of meaning
+ * rather than of implementation.** The parse could only ever find the *first*
+ * clause per currency, because a regex has no way to know whether a second
+ * "mark a Stress" is a second price or the same one restated. A reading knows,
+ * so a card that genuinely prices two different uses now prices both — and a
+ * card that mentions a Stress twice for one use has one entry, because
+ * somebody read it.
+ *
+ * A chain's steps are included: the whole point of a chain is that it is one
+ * act with one bill.
+ */
+export function authoredPrice(actions: any[] = []): Price {
+  const out: Price = { hope: 0, stress: 0, fear: 0, armor: 0 };
+  const take = (a: any) => {
+    if (a?.kind !== "pay") return;
+    out.hope += Number(a.amount?.hope) || 0;
+    out.stress += Number(a.amount?.stress) || 0;
+    out.fear += Number(a.amount?.fear) || 0;
+    out.armor += Number(a.amount?.armorSlots) || 0;
   };
+  for (const a of actions ?? []) {
+    take(a);
+    for (const step of a?.steps ?? []) take(step);
+  }
+  return out;
 }
 
 /** "3 Hope · 1 Stress", or nothing at all — which is most of them. */
@@ -985,21 +960,20 @@ export const priceLabel = (p: Price): string | undefined =>
     .join(" · ") || undefined;
 
 /**
- * The Hope action's own price, read off the rule rather than assumed.
+ * The Hope action's own price, off its authored actions rather than assumed.
  *
- * Almost every Hope feature in the book opens "Spend 3 Hope to …", and the
- * few that do not say a different number in the same sentence. Parsing it
- * means the sheet charges what the card says instead of what the common case
- * says — which matters exactly once per campaign, on the one class that is
- * different, and that is the case a hardcoded 3 gets wrong silently.
+ * Almost every Hope feature in the book opens "Spend 3 Hope to …", and the few
+ * that do not say a different number in the same sentence — so the sheet
+ * charges what the card says instead of what the common case says, which
+ * matters exactly once per campaign on the one class that is different.
  *
- * This one keeps a *default* where {@link featurePrice} returns zero, because
- * a Hope feature is a Hope feature: it is definitionally bought, so a price
- * that could not be read is a price that could not be read rather than a
- * feature that is free.
+ * This one keeps a **default** where {@link authoredPrice} returns zero,
+ * and that is the one place in this file where silence is not the answer: a
+ * Hope feature is definitionally bought, so a price nobody has authored is a
+ * price nobody has authored rather than a feature that is free.
  */
 export function hopeCost(feature: any): number {
-  const n = featurePrice(feature).hope;
+  const n = authoredPrice(feature?.actions).hope;
   return n > 0 ? n : HOPE_ACTION_COST;
 }
 

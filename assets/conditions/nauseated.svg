@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="#ffffff">
+  <!-- Hope's own gem, struck out. "While Nauseated, a PC can't gain Hope" is
+       the entire rule, and the rhombus is what Hope is drawn as everywhere in
+       this system — the rail's gems, the rest dialog, the ledger, the chat
+       plate's pips. So the mark states the mechanism rather than a mood, which
+       is what Corroded and Drained argue for and what a queasy face would have
+       failed to do: nothing about a face says which resource stopped.
+
+       The bar is Silenced's, verbatim. A slash across the thing you have lost
+       is already this set's way of saying you have lost it, and a second
+       vocabulary for one idea is one more thing to decode at 24px. -->
+  <path d="M32 4 60 32 32 60 4 32 32 4Zm0 9.9L13.9 32 32 50.1 50.1 32 32 13.9Z"/>
+  <path d="M11.6 6.4 57.6 52.4l-5.2 5.2L6.4 11.6z"/>
+</svg>

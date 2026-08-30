@@ -8,7 +8,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SYSTEM_ID } from "../config.ts";
+import { CONDITIONS, SYSTEM_ID } from "../config.ts";
 import { askRoll } from "../apps/ask-roll.ts";
 import { takeDamage } from "../apps/damage.ts";
 import { damageRecipients, noRecipientKey } from "../apps/targets.ts";
@@ -17,6 +17,7 @@ import { payMark } from "../marked.ts";
 import { fitSoon } from "../apps/fit-cards.ts";
 import { loadSigils } from "../sheets/cards.ts";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
+import { refreshedValue } from "../data/resources.ts";
 import { rollWeaponDamage } from "./actions.ts";
 import { canReroll, rerollDie } from "./reroll.ts";
 import { rollDamage } from "./rolls.ts";
@@ -353,6 +354,65 @@ const finish = (el: HTMLElement): void => {
   if (el instanceof HTMLButtonElement) el.disabled = true;
 };
 
+/* ── running one press ────────────────────────────────────────────────────
+   A press is a **chain**, always, and a chain of one is the common case. See
+   `actionField` in `data/fields.ts` for why chains exist at all: "Spend a Hope
+   and make an attack" is one act at the table, and two buttons for one
+   sentence lets somebody take the second without paying for the first.
+
+   So the shape of this function is: settle every currency the whole chain
+   moves **first**, refuse the whole chain if any part of it cannot be paid,
+   then do the things that are not currency in the order they were written.
+   That is `payFor`'s rule — charge before the dice — applied to a list rather
+   than to one roll, and it is the only arrangement in which "aborts whole"
+   means anything.
+
+   Currency is summed rather than applied step by step for the same reason it
+   is checked up front: a chain costing a Hope and a Stress must not take the
+   Hope and then discover the Stress track is full. One check, one write.
+*/
+
+interface Purse {
+  hope: number;
+  stress: number;
+  hitPoints: number;
+  armor: number;
+  fear: number;
+}
+
+const EMPTY: Purse = { hope: 0, stress: 0, hitPoints: 0, armor: 0, fear: 0 };
+
+const sum = (chain: CardAction[], kind: string): Purse =>
+  chain.filter((a) => a.kind === kind).reduce<Purse>((p, a) => ({
+    hope: p.hope + (a.hope ?? 0),
+    stress: p.stress + (a.stress ?? 0),
+    hitPoints: p.hitPoints + (a.hitPoints ?? 0),
+    armor: p.armor + (a.armor ?? 0),
+    fear: p.fear + (a.fear ?? 0),
+  }), { ...EMPTY });
+
+const any = (p: Purse): boolean => !!(p.hope || p.stress || p.hitPoints || p.armor || p.fear);
+
+/**
+ * Which kinds spend a claim.
+ *
+ * A claim exists because a Hope leaves a purse and cannot leave it twice, so
+ * anything that moves a resource, a counter or a condition takes one. Rolls
+ * do not: a roll leaves nothing, you will genuinely roll the same card again
+ * next round, and a button that burned itself on the first press would send
+ * the reader back to their own sheet for every press after it. Ownership is
+ * the whole gate there.
+ *
+ * `roll-damage` and `roll-card-damage` are the exception among rolls and were
+ * claim-once before any of this: damage completes an attack, and two clients
+ * pressing it is one attack dealing damage twice.
+ */
+const CLAIMS = new Set([
+  "pay-cost", "gain", "clear", "move-resource", "die-pool", "refresh",
+  "use-item", "mark-use", "roll-damage", "roll-card-damage",
+  "apply-condition", "grant-effect",
+]);
+
 async function runCardAction(
   action: CardAction,
   index: number,
@@ -360,136 +420,318 @@ async function runCardAction(
 ): Promise<void> {
   const { actor, message, el } = ctx;
   const key = `card-action-${index}`;
+  const chain: CardAction[] = [action, ...(action.steps ?? [])];
 
-  if (action.kind === "pay-cost") {
-    if (action.fear) {
-      if (!game.user?.isGM) return warn("GMOnly");
-      if (getFear() < action.fear) return warn("CannotPay");
-      if (!(await claimOnce(message, key))) return;
-      await setFear(getFear() - action.fear);
-      finish(el);
-      return;
+  const cost = sum(chain, "pay-cost");
+  const gain = sum(chain, "gain");
+  const clear = sum(chain, "clear");
+
+  /* Fear is the GM's, and it is the one currency a player's client may not
+     write — it is a world setting rather than a field on anybody's actor. A
+     chain that moves it is a GM's chain entirely, because taking half of it
+     and leaving the Fear would be worse than refusing. */
+  if ((cost.fear || gain.fear) && !game.user?.isGM) return warn("GMOnly");
+  if (cost.fear && getFear() < cost.fear) return warn("CannotPay");
+
+  /* Everything that is not purely the GM's Fear needs the actor. A pure Fear
+     press has no actor at all — the GM posted somebody else's card — which is
+     why this is not an unconditional ownership gate. */
+  const needsActor = chain.some((a) => a.kind !== "pay-cost" || a.hope || a.stress || a.hitPoints || a.armor);
+  if (needsActor && !actor?.isOwner) return warn("NotYours");
+
+  if (actor && any(cost) && !canPay(actor, cost)) return warn("CannotPay");
+
+  const claims = chain.some((a) => CLAIMS.has(a.kind));
+  if (claims && !(await claimOnce(message, key))) return;
+
+  /* One write for every track the chain touches, in both directions. A chain
+     that pays a Stress and clears a Hit Point is two changes to one document,
+     and two updates would be two entries in the change log for one press. */
+  if (actor && (any(cost) || any(gain) || any(clear))) {
+    await actor.update(currencyUpdate(actor, cost, gain, clear));
+  }
+  if (cost.fear) await setFear(getFear() - cost.fear);
+  if (gain.fear) await setFear(getFear() + gain.fear);
+
+  for (const step of chain) {
+    if (!(await runEffect(step, ctx))) return;
+  }
+
+  if (claims) finish(el);
+}
+
+/** Can this actor afford every currency the chain asks for at once? */
+function canPay(actor: any, cost: Purse): boolean {
+  const r = actor.system?.resources ?? {};
+  const left = (track: any): number => (track?.max ?? 0) - (track?.marked ?? 0);
+  return cost.hope <= (r.hope?.value ?? 0)
+    && cost.stress <= left(r.stress)
+    && cost.hitPoints <= left(r.hitPoints)
+    && cost.armor <= left(r.armorSlots);
+}
+
+/**
+ * The three verbs over one block of tracks.
+ *
+ * `pay` marks or spends, `gain` adds, `clear` gives back — and they are three
+ * kinds rather than one signed kind because the sign was never the difference:
+ * paying can be *refused* when the purse is short, gaining cannot, and
+ * clearing is bounded by what is marked rather than by what is left. Every one
+ * of those bounds is applied here, so a chain that clears two Hit Points on a
+ * character with one marked gives back one and does not go negative.
+ */
+function currencyUpdate(actor: any, cost: Purse, gain: Purse, clear: Purse): Record<string, number> {
+  const r = actor.system?.resources ?? {};
+  const out: Record<string, number> = {};
+  const track = (path: string, live: any, marked: number, cleared: number) => {
+    if (!marked && !cleared) return;
+    const now = Number(live?.marked ?? 0);
+    const max = Number(live?.max ?? 0);
+    out[`system.resources.${path}.marked`] = Math.max(0, Math.min(max, now + marked - cleared));
+  };
+  if (cost.hope || gain.hope || clear.hope) {
+    const now = Number(r.hope?.value ?? 0);
+    const max = Number(r.hope?.max ?? 0);
+    // Clearing Hope is not a thing any card says, so it folds into gaining.
+    out["system.resources.hope.value"] =
+      Math.max(0, Math.min(max, now - cost.hope + gain.hope + clear.hope));
+  }
+  track("stress", r.stress, cost.stress, clear.stress);
+  track("hitPoints", r.hitPoints, cost.hitPoints, clear.hitPoints);
+  track("armorSlots", r.armorSlots, cost.armor, clear.armor);
+  return out;
+}
+
+/**
+ * The half of a step that is not currency.
+ *
+ * @returns false when the chain must stop — a step that could not find its
+ * subject. The currency has already been written by then, deliberately: it was
+ * checked before anything ran, so the only way here is a document that changed
+ * under the press, and refusing to *also* roll the dice is the recoverable
+ * half of that.
+ */
+async function runEffect(action: CardAction, ctx: ActionContext): Promise<boolean> {
+  const { actor, message } = ctx;
+  const item = action.itemId ? actor?.items?.get?.(action.itemId) : null;
+
+  switch (action.kind) {
+    case "pay-cost":
+    case "gain":
+    case "clear":
+      return true;
+
+    /* The popover rather than a raw roll, because a card asking for a
+       Spellcast Roll is the start of a sentence you are still composing — the
+       advantage, the flat modifier, the Experiences and the Hope they cost.
+       It anchors on the button that was pressed: `prep` flips left when it
+       would overflow, and a 300px sidebar is where that matters most. */
+    case "roll-trait":
+      if (!action.trait) return true;
+      await askRoll(actor, action.trait, ctx.el, {
+        label: action.label,
+        dc: action.dc ?? null,
+      });
+      return true;
+
+    case "roll-card-damage":
+      await rollDamage({
+        actor,
+        label: action.damageName || (message.getFlag(SYSTEM_ID, "card")?.name ?? "Damage"),
+        count: action.count ?? 1,
+        die: action.die ?? "d6",
+        mods: action.bonus ? [{ k: "card", v: action.bonus }] : [],
+        damageType: action.damageType,
+      });
+      return true;
+
+    case "roll-damage": {
+      const weapon = action.weaponId ? actor?.items?.get?.(action.weaponId) : null;
+      if (!weapon) {
+        warn("NoWeapon");
+        return false;
+      }
+      await rollWeaponDamage(actor, weapon);
+      return true;
     }
-    if (!actor?.isOwner) return warn("NotYours");
-    const hope = actor.system?.resources?.hope;
-    const stress = actor.system?.resources?.stress;
-    const armor = actor.system?.resources?.armorSlots;
-    if ((action.hope ?? 0) > (hope?.value ?? 0)) return warn("CannotPay");
-    if ((action.stress ?? 0) > (stress?.max ?? 0) - (stress?.marked ?? 0)) return warn("CannotPay");
-    if ((action.armor ?? 0) > (armor?.max ?? 0) - (armor?.marked ?? 0)) return warn("CannotPay");
-    if (!(await claimOnce(message, key))) return;
-    const update: Record<string, number> = {};
-    if (action.hope) update["system.resources.hope.value"] = hope.value - action.hope;
-    if (action.stress) update["system.resources.stress.marked"] = stress.marked + action.stress;
-    if (action.armor) update["system.resources.armorSlots.marked"] = armor.marked + action.armor;
-    await actor.update(update);
-    finish(el);
-    return;
+
+    /* A formula that is not damage — "roll a d4; on a 4, …". Fifty rule units
+       in the corpus ask for one and not one of them had a button, because the
+       only two roll paths this system had were a duality roll and damage, and
+       this is neither. Foundry's own roll card rather than a plate, for
+       `refocus`'s reason: the three plates here each exist because the dice
+       mean something a total cannot say, and this one does not. */
+    case "roll-dice": {
+      if (!action.formula) return true;
+      const roll = await new Roll(action.formula, actor?.getRollData?.() ?? {}).evaluate();
+      await roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor: action.label,
+      });
+      return true;
+    }
+
+    case "move-resource": {
+      const live = item?.liveResources?.[action.resourceIndex ?? -1];
+      const want = Number(live?.res?.value ?? 0) + Number(action.by ?? 0);
+      if (!live || want < 0 || (live.max !== null && want > live.max)) {
+        warn("CannotPay");
+        return false;
+      }
+      return !!(await item.moveResource(action.resourceIndex ?? -1, action.by ?? 0));
+    }
+
+    case "die-pool": {
+      const at = action.resourceIndex ?? -1;
+      if (!item || at < 0) return true;
+      if (action.op === "step") return !!(await item.stepDie(at));
+      if (action.op === "clear") {
+        const pools = [...(item.system?.dice ?? [])];
+        if (!pools[at]) return true;
+        pools[at] = { ...pools[at], dice: [] };
+        await item.update({ "system.dice": pools });
+        return true;
+      }
+      /* `place` and `roll` are one call: `placeDie` puts a die down and rolls
+         it where the card says the tray arrives rolled, which is the
+         distinction `onRefresh: "reroll"` already draws for Prayer Dice. */
+      return !!(await item.placeDie(at));
+    }
+
+    /* Through `refreshedValue`, not by filling. A refresh is not always a
+       refill: a card that says "place tokens" *clears* on one and the
+       Vampire's Feed removes exactly one, which is what `onRefresh` records
+       and what `refreshResources` already honours on a rest. Filling all three
+       here would have been a second, wrong answer to a question this system
+       had already settled — and wrong in the direction that hands somebody a
+       full pool the card never gives back. */
+    case "refresh": {
+      if (!item) return true;
+      const at = poolNamed(item.system?.resources ?? [], action.resource);
+      if (at < 0) return true;
+      const pools = [...(item.system?.resources ?? [])];
+      const live = item.liveResources?.[at];
+      pools[at] = { ...pools[at], value: refreshedValue(pools[at], live?.max ?? null) };
+      await item.update({ "system.resources": pools });
+      return true;
+    }
+
+    case "use-item":
+      if (!item || Number(item.system?.quantity ?? 0) < 1) {
+        warn("CannotPay");
+        return false;
+      }
+      await item.update({ "system.quantity": Number(item.system.quantity) - 1 });
+      return true;
+
+    /* The card names the condition; a press puts it somewhere. Never
+       automatic, and that is the rule rather than an omission: applying a
+       condition is adjudication, and the sheet is not where adjudication
+       happens. `damageRecipients` is the same rule damage already uses — a GM
+       means the tokens they have selected, a player means their own character
+       — so one button is correct on both sides of the screen. */
+    case "apply-condition": {
+      const id = action.condition;
+      if (!id) return true;
+      const targets = action.subject === "targets" ? damageRecipients() : [actor].filter(Boolean);
+      if (!targets.length) {
+        warn(noRecipientKey());
+        return false;
+      }
+      for (const target of targets) await applyCondition(target, id);
+      ui.notifications?.info(
+        `${action.label} · ${targets.map((t: any) => t.name).join(", ")}`,
+      );
+      return true;
+    }
+
+    /* A real ActiveEffect, because a modifier with a duration is exactly what
+       one is for: it shows on the sheet, a GM can lift it by hand, and it
+       survives a reload. The duration is ours rather than Foundry's — see
+       `ACTION_DURATIONS` — because Foundry counts seconds, rounds and turns
+       and Daggerheart has none of the three. */
+    case "grant-effect": {
+      const effect = action.effect;
+      if (!effect) return true;
+      const targets = action.subject === "targets" ? damageRecipients() : [actor].filter(Boolean);
+      if (!targets.length) {
+        warn(noRecipientKey());
+        return false;
+      }
+      for (const target of targets) await grantEffect(target, effect);
+      return true;
+    }
+
+    case "mark-use": {
+      /* The one action whose cost is not fully known until it is pressed: how
+         much of it lands as Fear and how much as Stress depends on the GM's
+         pool at this moment, and a label written when the card was posted
+         would state a price that has since changed. `payMark` decides and the
+         notification says which it was — the button cannot. */
+      const price = await payMark(actor, message, action.mark ?? 1);
+      if (!price) {
+        warn("CannotPay");
+        return false;
+      }
+      ui.notifications?.info(
+        `${actor.name} gains ${price.mark} Mark` +
+          (price.fear ? ` · the GM gains ${price.fear} Fear` : "") +
+          (price.stress ? ` · ${price.stress} Stress (the pool is full)` : ""),
+      );
+      return true;
+    }
+
+    default:
+      return true;
   }
+}
 
-  if (!actor?.isOwner) return warn("NotYours");
+/** A counter's index by the name the card prints on it. */
+const poolNamed = (list: any[], name?: string): number =>
+  list.findIndex((r: any) => String(r?.name ?? "").toLowerCase() === String(name ?? "").toLowerCase());
 
-  /* The two presses the card itself answers, and they are above the item
-     lookup because neither needs one: both were resolved against the card at
-     the moment it was posted and carry their own answer in the flag.
+/**
+ * A condition, applied by hand.
+ *
+ * Idempotent, because pressing twice is something people do and a second copy
+ * of one condition is two rows in the token HUD saying the same word. It goes
+ * on as a status rather than as a named effect for the reason
+ * `adhoc-conditions.ts` gives: the status id is what the token chip, the
+ * effect ring and the combat tracker all read.
+ */
+async function applyCondition(actor: any, id: string): Promise<void> {
+  if ((actor.effects ?? []).some((e: any) => e.statuses?.has?.(id))) return;
+  const condition = CONDITIONS.find((c) => c.id === id);
+  if (!condition) return;
+  await actor.createEmbeddedDocuments("ActiveEffect", [
+    { name: condition.name, img: condition.img, statuses: [id] },
+  ]);
+}
 
-     `roll-trait` takes **no claim at all**, which is the one departure from
-     everything else in this switch. A claim exists because a Hope leaves a
-     purse and cannot leave it twice; a roll leaves nothing. You will roll this
-     card again next round, and a button that burned itself on the first press
-     would send you back to the sheet for every press after it. Ownership is
-     the whole gate.
-
-     It is also its own press, independent of the price above it. Rolling and
-     paying are two decisions the card states separately — several cards let
-     you pay *after* seeing whether you needed to — so folding them into one
-     button would be this file deciding the order for the table.
-
-     The popover opens beside the button that was pressed, which is what the
-     seam takes an anchor for: `prep` flips left when it would overflow, and a
-     300px sidebar is where that matters most. `askRoll` resolves null on every
-     way out, and every way out is free — so a dismissed popover leaves the row
-     exactly as it found it. */
-  if (action.kind === "roll-trait") {
-    // Narrowing rather than a check: a call with no trait it could resolve
-    // emits no button, so the only way here is a hand-edited flag.
-    if (!action.trait) return;
-    await askRoll(actor, action.trait, el, {
-      label: action.label,
-      dc: action.dc ?? null,
-    });
-    return;
-  }
-
-  /* Card damage **is** claimed, and the distinction from the roll above is
-     what the two things are. A duality roll is a question and you may ask it
-     as often as you like; damage completes an attack, and the plate's own
-     `roll-damage` has been claim-once since it was written for exactly that
-     reason. Two clients pressing this is one attack dealing damage twice.
-
-     No critical is read. See the block in `sheets/post-card.ts` — a posted
-     card has no honest link to the roll that critted. */
-  if (action.kind === "roll-card-damage") {
-    if (!(await claimOnce(message, key))) return;
-    await rollDamage({
-      actor,
-      /* The plate is named after the *object*, exactly as a weapon's is — the
-         button says the dice because it sits next to another button that also
-         rolls damage, and a plate has no such neighbour to be told apart from. */
-      label: action.damageName || (message.getFlag(SYSTEM_ID, "card")?.name ?? "Damage"),
-      count: action.count ?? 1,
-      die: action.die ?? "d6",
-      mods: action.bonus ? [{ k: "card", v: action.bonus }] : [],
-      damageType: action.damageType,
-    });
-    finish(el);
-    return;
-  }
-
-  const item = action.itemId ? actor.items?.get?.(action.itemId) : null;
-  if (action.kind === "move-resource") {
-    const live = item?.liveResources?.[action.resourceIndex ?? -1];
-    const want = Number(live?.res?.value ?? 0) + Number(action.by ?? 0);
-    if (!live || want < 0 || (live.max !== null && want > live.max)) return warn("CannotPay");
-    if (!(await claimOnce(message, key))) return;
-    if (!(await item.moveResource(action.resourceIndex ?? -1, action.by ?? 0))) return;
-    finish(el);
-    return;
-  } else if (action.kind === "use-item") {
-    if (!item || Number(item.system?.quantity ?? 0) < 1) return warn("CannotPay");
-    if (!(await claimOnce(message, key))) return;
-    await item.update({ "system.quantity": Number(item.system.quantity) - 1 });
-    finish(el);
-    return;
-  } else if (action.kind === "mark-use") {
-    /* The one action whose cost is not fully known until it is pressed: how
-       much of it lands as Fear and how much as Stress depends on the GM's pool
-       at this moment, and a label written when the card was posted would be
-       stating a price that has since changed. So `payMark` decides and the
-       notification says which it was — the button cannot.
-
-       Claimed *after* the payment rather than before, unlike the rest of this
-       switch, because `payMark` is the thing that knows whether the Stress can
-       be afforded. A claim spent on a refusal is a card that can never be
-       used. */
-    const price = await payMark(actor, message, action.mark ?? 1);
-    if (!price) return warn("CannotPay");
-    if (!(await claimOnce(message, key))) return;
-    ui.notifications?.info(
-      `${actor.name} gains ${price.mark} Mark` +
-        (price.fear ? ` · the GM gains ${price.fear} Fear` : "") +
-        (price.stress ? ` · ${price.stress} Stress (the pool is full)` : ""),
-    );
-    finish(el);
-    return;
-  } else if (action.kind === "roll-damage") {
-    const weapon = action.weaponId ? actor.items?.get?.(action.weaponId) : null;
-    if (!weapon) return warn("NoWeapon");
-    if (!(await claimOnce(message, key))) return;
-    await rollWeaponDamage(actor, weapon);
-    finish(el);
-    return;
-  }
+/**
+ * A temporary effect, with the duration written where this system can sweep it.
+ *
+ * The scope goes in a flag rather than in Foundry's `duration`, and that is
+ * the whole design: `duration` counts seconds, rounds and turns, and "until
+ * your next long rest" is none of them. `refreshResources`' four call sites —
+ * both rests, `endScene()` and `endSession()` — are what expire these, which
+ * means one seam rather than a timer nobody can see.
+ *
+ * `temporary` never expires on its own. Thirty-seven of the eighty-seven
+ * temporary rules in the corpus say only that word, which the rules define as
+ * a state a roll clears; putting a timer on it would be inventing a rule.
+ */
+async function grantEffect(
+  actor: any,
+  effect: { name: string; duration: string; modifiers: any[] },
+): Promise<void> {
+  await actor.createEmbeddedDocuments("ActiveEffect", [
+    {
+      name: effect.name,
+      img: `systems/${SYSTEM_ID}/assets/conditions/adhoc.svg`,
+      flags: { [SYSTEM_ID]: { duration: effect.duration, modifiers: effect.modifiers } },
+    },
+  ]);
 }
 
 /**

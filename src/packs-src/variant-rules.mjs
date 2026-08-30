@@ -774,7 +774,7 @@ const western = journalEntry("western", "Western", "Western", [
     `${notAutomated([
       THE_SWITCH,
       THE_GEAR,
-      "Nothing else. Six Shot's six Ammo tokens are not a pool the sheet keeps and do not gate an attack; Roped is not a registered condition; and Dynamite's Reaction Roll (14) and its doubled damage against objects are the GM's to resolve.",
+      "Six Shot's six Ammo tokens are not a pool the sheet keeps and do not gate an attack, and Dynamite's Reaction Roll (14) and its doubled damage against objects are the GM's to resolve. Roped is a registered condition with a token mark, applied by a press on the card rather than automatically.",
     ])}
 <p>You can use the following mechanics in a western-themed campaign.</p>
 <p>The section below is printed under the heading <em>Weapons &amp;
@@ -835,7 +835,7 @@ const colossal = journalEntry("colossal", "Colossal Adversaries", "Colossal Adve
     `${notAutomated([
       THE_SWITCH,
       "Nothing else, and this variant is the furthest from anything the system can hold: a colossus is one creature whose Hit Points and Difficulty live per-segment while its thresholds, Stress and Experiences live on a shared framework, which the adversary schema cannot express. Run each segment as its own adversary Actor and keep the framework's numbers by hand.",
-      "Broken and Destroyed are not registered conditions and are not derived from a segment's Hit Point track.",
+      "Broken and Destroyed are registered conditions with token marks of their own, applied by a press. Neither is derived from a segment's Hit Point track \u2014 what breaks a segment is on the colossus, not on its wounds.",
     ])}
 <p>"Colossus" is a special adversary type that uses multiple adversary stat
 blocks called segments to represent the body parts of an extremely large
@@ -1042,7 +1042,7 @@ const fairyTale = journalEntry("fairyTale", "Fairy Tale", "Fairy Tale", [
     "Fairy Tale Campaigns",
     `${notAutomated([
       THE_SWITCH,
-      "Nothing else. Cursed is not among the sixteen conditions this system registers, so there is no token mark for it and nothing enforces that it resists an ordinary clear.",
+      "Cursed is a registered condition with a token mark of its own. Nothing enforces that it resists an ordinary clear \u2014 what lifts a particular curse is written on that curse, and this system prints the rule rather than adjudicating it.",
       "Transform needs an adversary Actor holding several stat blocks with a pointer to the active one, which the adversary schema cannot express — the workable answer today is one Actor per form with Hit Points and Stress kept on the primary.",
     ])}
 <p>You can use the following mechanics in campaigns that center on curses,
@@ -1464,10 +1464,9 @@ and is not printed in the SRD, so there is nothing here to reproduce.</p>`,
 <tr><td>Water Spell</td><td>Riverlands, Sea</td><td>This adversary unleashes a geyser or tidal wave. Make an attack against all targets within Very Close range. Targets they succeed against are pushed to Close range of where they were and mark a number of Stress equal to this adversary's tier.</td></tr>
 </tbody>
 </table>
-<p class="dh-variant-aside">"Enviromancer" is the SRD's spelling. Note that two
-conditions appear here that this system does not register — <em>Frostbitten</em>
-and <em>Nauseated</em> — so neither has a token mark and neither is applied for
-you.</p>`,
+<p class="dh-variant-aside">"Enviromancer" is the SRD's spelling. <em>Frostbitten</em>
+and <em>Nauseated</em> are both registered conditions with token marks of their
+own — a press on the card applies one, and nothing applies it for you.</p>`,
   ),
 ]);
 
