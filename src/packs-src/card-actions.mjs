@@ -83,6 +83,20 @@ export const CARD_ACTIONS = {
       ],
     },
   },
+  "ancestry:Rattin": {
+    features: {
+      "Familiar Scent": [
+        { kind: "pay", amount: { stress: 1 }, said: "mark a Stress" },
+      ],
+    },
+  },
+  "ancestry:Avori": {
+    features: {
+      "Watchful Eyes": [
+        { kind: "pay", amount: { stress: 1 }, said: "mark a Stress" },
+      ],
+    },
+  },
   "ancestry:Drakona": {
     features: {
       "Elemental Breath": [

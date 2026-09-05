@@ -218,6 +218,7 @@ const noUpstream = async (f, get = (d) => d.name) =>
 const key = (name) => String(name).replace(/[‘’ʼ]/g, "'").toLowerCase();
 
 const NO_UPSTREAM = new Set([
+  ...(await noUpstream("gluniverse-heritage.mjs")),
   ...(await noUpstream("hf-heritage.mjs")),
   ...(await noUpstream("transformations.mjs")),
   ...(await noUpstream("dread-cards.mjs")),
