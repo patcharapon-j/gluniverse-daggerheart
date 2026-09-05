@@ -176,6 +176,27 @@
 import { SYSTEM_ID } from "../config.ts";
 import { absolute } from "../assets.ts";
 
+interface PendingRoll {
+  promise: Promise<void>;
+  resolve: () => void;
+}
+
+/** Dice So Nice animations still in flight, in start order per message. */
+const pendingRolls = new Map<string, PendingRoll[]>();
+
+/**
+ * The completion of every 3D roll already announced for this message.
+ *
+ * `null` means Dice So Nice did not claim the message. That keeps the chat
+ * card's own short arrival for clients without the module, with 3D dice hidden,
+ * or with this system's setting switched off.
+ */
+export function waitFor3dDice(messageId: string): Promise<void> | null {
+  const pending = pendingRolls.get(messageId);
+  if (!pending?.length) return null;
+  return Promise.all(pending.map((roll) => roll.promise)).then(() => {});
+}
+
 /**
  * The four roles a die can have here, and the only thing the roll engine names.
  *
@@ -605,5 +626,29 @@ export function registerDice(): void {
     const message = game.messages?.get(id);
     if (!message?.getFlag(SYSTEM_ID, "kind")) return;
     ctx.willTrigger3DRoll = false;
+  });
+
+  /* `MessageProcessed` states Dice So Nice's final decision after every
+     module has had a chance to decline the animation. Record only our chat
+     plates. A normal roll has one pending entry; a second entry covers two
+     rerolls started from the chat log before the first one has landed. */
+  Hooks.on("diceSoNiceMessageProcessed", (id: string, ctx: any) => {
+    if (!ctx.willTrigger3DRoll) return;
+    const message = game.messages?.get(id);
+    if (!message?.getFlag(SYSTEM_ID, "kind")) return;
+
+    let resolve = () => {};
+    const promise = new Promise<void>((done) => { resolve = done; });
+    pendingRolls.set(id, [...(pendingRolls.get(id) ?? []), { promise, resolve }]);
+  });
+
+  /* Dice So Nice emits one completion per render, in the same order it queued
+     them. Resolve one waiter rather than every waiter for the message, since a
+     later reroll may still be on the table. */
+  Hooks.on("diceSoNiceRollComplete", (id: string) => {
+    const pending = pendingRolls.get(id);
+    const roll = pending?.shift();
+    roll?.resolve();
+    if (!pending?.length) pendingRolls.delete(id);
   });
 }

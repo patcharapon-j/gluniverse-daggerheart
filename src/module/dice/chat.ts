@@ -21,7 +21,8 @@ import { refreshedValue } from "../data/resources.ts";
 import { rollWeaponDamage } from "./actions.ts";
 import { canReroll, rerollDie } from "./reroll.ts";
 import { rollDamage } from "./rolls.ts";
-import { play } from "./arrival.ts";
+import { hold, play } from "./arrival.ts";
+import { waitFor3dDice } from "./dsn.ts";
 
 /** When each message was first announced on this client. */
 const played = new Map<string, number>();
@@ -86,11 +87,13 @@ export function registerChat(): void {
     bindActions(message, plate);
     bindRerolls(message, plate);
 
-    // Only the arrival, not every re-render. A message that was already in
-    // the log when the client connected has nothing to announce — and it
-    // must land outright rather than roll, or it would spend a second
-    // hiding a result the reader has already been told.
-    if (arriving(message)) play(plate);
+    const dice = waitFor3dDice(message.id);
+
+    // A fresh roll gets the full arrival. A reroll only holds its changed
+    // result until the new 3D die lands, since replaying the whole card would
+    // announce the same message twice. Other re-renders land immediately.
+    if (arriving(message)) play(plate, dice);
+    else if (dice) hold(plate, dice);
     else plate.classList.add("land");
   });
 }

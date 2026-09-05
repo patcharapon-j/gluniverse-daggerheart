@@ -5759,6 +5759,12 @@ sound, via `diceSoNiceMessagePreProcess` — the one hook whose context is still
 mutable. Scoped to our own messages: a system that switched off a user's dice
 everywhere from a checkbox labelled "3D dice on rolls" would be overreaching.
 
+The chat plate now takes Dice So Nice's final animation decision from
+`diceSoNiceMessageProcessed` and holds its result until the matching
+`diceSoNiceRollComplete`. The same queue covers rerolls. Clients without a 3D
+animation keep the plate's own 430ms arrival, so the chat card always has one
+clock rather than racing the dice tray.
+
 ## Phil's Token Studio
 
 A token and portrait editor — crop, frame, effects, a paint mask, and a Save
