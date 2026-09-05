@@ -5568,11 +5568,11 @@ today. The adversary half is not wired either way.
 
 ## 3D dice
 
-`dice/dsn.ts`. The plate draws its own dice and draws them well, which is why
-the module is off by default — but off by default is not off, and a table that
-turned it on got two identical house-default d12s tumbling next to a card that
-had just gone to some trouble to say which was which. The whole duality roll
-is "did gold beat violet".
+`dice/dsn.ts`. When Dice So Nice is installed, the system's 3D dice are on by
+default and each player can turn them off. Before the custom colorsets, a table
+that turned them on got two identical house-default d12s tumbling next to a card
+that had just gone to some trouble to say which was which. The whole duality
+roll is "did gold beat violet".
 
 Four *roles*, taken from the values the plate already uses, and split the
 way the plate splits them. **Hope and Fear are read as a colour** — you are

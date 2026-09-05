@@ -1,13 +1,11 @@
 /**
  * Dice So Nice, told what this system's dice look like.
  *
- * The plate draws its own dice, and it draws them well — a gold diamond for
- * Hope, a violet one for Fear, pale chamfered squares for the advantage d6s.
- * That is why the 3D dice are off by default here: two answers to one question
- * is worse than either.
+ * The plate draws its own dice: a gold diamond for Hope, a violet one for Fear,
+ * and pale chamfered squares for the advantage d6s. With Dice So Nice installed,
+ * the matching 3D dice are on by default and each player can turn them off.
  *
- * But "off by default" is not "off". A table that wants the toy should get the
- * toy, and what they used to get was a pair of identical house-default d12s
+ * What tables used to get was a pair of identical house-default d12s
  * tumbling next to a card that had just gone to some trouble to say which one
  * was which. The whole point of the duality roll is that the two d12s are not
  * interchangeable, and the one surface that could have said so loudest was
