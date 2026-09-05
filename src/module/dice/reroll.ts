@@ -270,18 +270,9 @@ export async function rerollDie(message: any, key: string): Promise<boolean> {
   target.write(face);
   settle(kind, plate);
 
-  /* 3D first, then the write. The dice land while the card still says what it
-     said, and the card changes as they settle — which is the order the arrival
-     animation already establishes for a roll being watched. Awaited, so a
-     table with the toy on does not read the answer before the dice stop.
-
-     `showForRoll` is called rather than relied on: DSN animates on message
-     *creation*, and this is an update. The setting is the same one that
-     suppresses the dice on a fresh plate — the two halves of one switch. */
-  if (game.settings.get(SYSTEM_ID, "diceSoNice")) {
-    await (game as any).dice3d?.showForRoll?.(roll, game.user, true)?.catch?.(() => {});
-  }
-
+  // Dice So Nice animates newly appended rolls on message updates. Calling
+  // showForRoll here as well would animate the same die twice. Its message
+  // hook also respects the system's diceSoNice setting through dsn.ts.
   const [oldNext, oldNextAct] = legacyNext(message, kind);
   await message.update({
     content: rebuild(
