@@ -143,3 +143,8 @@ export async function openCreation(actor: any): Promise<any> {
 export function refreshCreation(actor: any): void {
   open.get(actor?.id)?.render?.(false);
 }
+
+/** Cached choices must be fetched again after the GM changes available content. */
+export function closeCreationForContentChange(): void {
+  for (const app of open.values()) void app.close();
+}

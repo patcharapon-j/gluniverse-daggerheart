@@ -16,6 +16,7 @@
 
 import { mount, unmount, type Component } from "svelte";
 import { LOADOUT_LIMIT, TRANSFORMATION_LIMIT } from "../config.ts";
+import { contentChoiceAllowed } from "../gunslinger.ts";
 import { tokenStudioHeaderControl } from "../token-studio.ts";
 import { SheetState } from "./sheet-state.svelte.ts";
 
@@ -180,6 +181,10 @@ export async function handleActorDrop(actor: any, event: DragEvent): Promise<any
 
   const item = await fromUuid(data.uuid);
   if (!item) return [];
+  if (!contentChoiceAllowed(item)) {
+    ui.notifications?.warn(game.i18n.localize("DAGGERHEART.Warning.GunslingerDisabled"));
+    return [];
+  }
   // Already ours. Foundry's own default would hand back a duplicate.
   if (item.parent?.id === actor.id) return [];
 

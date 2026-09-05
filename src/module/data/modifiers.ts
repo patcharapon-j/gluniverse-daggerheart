@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { isBrawlerStrike } from "../brawler.ts";
-import { TRAITS, type Trait } from "../config.ts";
+import { SYSTEM_ID, TRAITS, type Trait } from "../config.ts";
 import { temporaryModifiers } from "../effects.ts";
 
 /* ── the closed sets, stated ──────────────────────────────────────────────
@@ -215,14 +215,17 @@ export function activeModifiers(actor: any): ActiveModifier[] {
 
   for (const item of [...(actor?.items ?? [])]) {
     if (!passiveItemActive(item)) continue;
+    // This package authors its modifiers explicitly. Similar feature names
+    // must not acquire corebook mechanics through the legacy fallback.
+    const authoredHomebrew = item.flags?.[SYSTEM_ID]?.contentPackage === "gunslinger";
     const own = item.system?.modifiers?.length
       ? item.system.modifiers
-      : legacyItemModifiers(item);
+      : authoredHomebrew ? [] : legacyItemModifiers(item);
     for (const m of own) if (conditionMet(actor, item, m)) out.push({ ...m, item, label: item.name });
     for (const f of featureBlocks(item)) {
       const featureModifiers = f?.modifiers?.length
         ? f.modifiers
-        : legacyFeatureModifiers(item, f);
+        : authoredHomebrew ? [] : legacyFeatureModifiers(item, f);
       for (const m of featureModifiers) {
         if (conditionMet(actor, item, m)) out.push({ ...m, item, label: f.name || item.name });
       }

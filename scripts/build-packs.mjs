@@ -32,6 +32,8 @@ const stableId = (key) => createHash("sha1").update(key).digest("hex").slice(0, 
  * match `docType`.
  */
 export const PACKS = [
+  { name: "gunslinger", module: "gunslinger.mjs", label: "Gunslinger Homebrew", collection: "items", docType: "Item" },
+  { name: "gunslinger-rules", module: "gunslinger-rules.mjs", label: "Gunslinger Playtest Rules", collection: "journal", docType: "JournalEntry" },
   {
     name: "classes",
     module: "classes.mjs",
@@ -203,7 +205,7 @@ function documentDoc(pack, entry, folderId) {
     folder: folderId,
     sort: entry.sort ?? 0,
     ownership: { default: 0 },
-    flags: {},
+    flags: entry.flags ?? {},
   };
 }
 

@@ -1,3 +1,4 @@
+import { contentChoiceAllowed } from "../gunslinger.ts";
 /**
  * Taking a domain card, wherever the reason came from.
  *
@@ -169,6 +170,7 @@ function unclaimedCards(actor: any): any[] {
  * vault and a sheet you can rearrange.
  */
 async function grantCard(actor: any, card: any): Promise<any> {
+  if (!contentChoiceAllowed(card)) return null;
   const limit = actor.system?.loadoutLimit ?? LOADOUT_LIMIT;
   const held = actor.items.filter(
     (i: any) => i.type === "domainCard" && i.system?.inLoadout,

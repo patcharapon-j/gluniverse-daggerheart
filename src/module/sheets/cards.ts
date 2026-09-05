@@ -488,6 +488,8 @@ export function cardOf(
       const ck = classKey(it.name);
       return {
         ...base,
+        // Trick Shot's five effects need the existing expandable card treatment.
+        cls: it.name === "Gunslinger" ? "grow" : undefined,
         d: dom(p),
         d2: q ? dom(q) : undefined,
         sig: sig[p] ?? "", sigKey: p,
@@ -528,7 +530,8 @@ export function cardOf(
     case "subclass": {
       // Its own class's pair when we can find one, the character's otherwise.
       // See `classDomains` above for why the difference matters.
-      const own = ctx.classDomains?.[String(s.className ?? "").toLowerCase()];
+      const own = ctx.classDomains?.[String(s.className ?? "").toLowerCase()] ??
+        (s.className === "Gunslinger" ? { primary: "bone", secondary: "artifice" } : undefined);
       const p = own?.primary ?? ctx.domains?.primary;
       const q = own?.secondary ?? ctx.domains?.secondary;
       // Same rule as the class, and it fires far less often — a subclass has
