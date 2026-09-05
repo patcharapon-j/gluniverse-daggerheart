@@ -238,16 +238,16 @@ export function registerSettings(): void {
     onChange: () => Hooks.callAll("daggerheart.activityChanged"),
   });
 
-  /* Off by default, and deliberately so: the chat plate draws its own dice
-     with its own geometry, and a 3D d12 tumbling next to a drawn one is two
-     answers to the same question. Tables that want the toy can have it. */
+  /* Dice So Nice is optional, but when it is installed our themed Hope, Fear,
+     advantage, and disadvantage dice should appear without another setup step.
+     This remains a client setting so each player can turn the animation off. */
   game.settings.register(SYSTEM_ID, "diceSoNice", {
     name: "DAGGERHEART.Settings.DiceSoNice",
     hint: "DAGGERHEART.Settings.DiceSoNiceHint",
     scope: "client",
     config: true,
     type: Boolean,
-    default: false,
+    default: true,
   });
 }
 

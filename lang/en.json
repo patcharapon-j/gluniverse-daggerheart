@@ -41,7 +41,7 @@
       "Theme": "Sheet theme",
       "ThemeHint": "Dark is the base. Light changes the substrate under the same palette; the window frame stays dark in both, because the frame is the application and not the sheet.",
       "DiceSoNice": "3D dice on rolls",
-      "DiceSoNiceHint": "Off by default — the chat card draws its own dice, and two answers to the same question is worse than either.",
+      "DiceSoNiceHint": "Shows themed Hope, Fear, advantage, and disadvantage dice when Dice So Nice is installed.",
       "ChangeLog": "Watch changes to characters",
       "ChangeLogHint": "Records one entry in the GM's activity log when a character's Hit Points, Stress, Armor Slots, Hope, counters or loadout settle. Coalesced, so applying damage is one entry rather than four, and a change taken straight back is not recorded at all. Nothing is posted to chat, and players see none of it. Rests and character creation post their own card and are left alone.",
       "Activity": "Activity log",
