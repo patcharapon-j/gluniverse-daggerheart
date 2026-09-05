@@ -28,7 +28,7 @@
     "authored:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-authored-actions.mjs",
     "rest-context:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-rest-context.mjs",
     "adversary-roll:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-adversary-roll.mjs",
-    "dsn-performance:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-dsn-roll-performance.mjs",
+    "dsn-performance:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-dsn-roll-performance.mjs && node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-reroll.mjs",
     "activity:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-activity-log.mjs",
     "actors:check": "node tools/check-actor-sheets.mjs",
     "stat-blocks:extract": "node tools/extract-stat-blocks.mjs && npm run stat-blocks:check",
