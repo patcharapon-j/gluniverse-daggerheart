@@ -24,7 +24,7 @@
     "passives:check": "node tools/check-passives.mjs && node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-passive-modifiers.mjs",
     "marks:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-mark-track-shapes.mjs",
     "counters:check": "node tools/test-counter-pool-shapes.mjs",
-    "chat-actions:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-chat-card-actions.mjs",
+    "chat-actions:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-chat-card-actions.mjs && node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-chat-card-fit.mjs",
     "authored:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-authored-actions.mjs",
     "rest-context:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-rest-context.mjs",
     "adversary-roll:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-adversary-roll.mjs",

@@ -160,7 +160,7 @@ function drain(): void {
   for (let n = 0; n < CHUNK && queue.length; n++) {
     const { card, done } = queue.shift()!;
     // A message can be removed between the ask and the frame.
-    if (!card.isConnected) continue;
+    if (!card.isConnected || !(card as HTMLElement).clientWidth) continue;
     /* One card's failure is one card's. This queue is module-level and
        shared by every message in the log, so an exception escaping here
        would leave `draining` true with a queue that never empties — every
