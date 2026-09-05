@@ -34,6 +34,7 @@ import { ancestryItem, communityItem, feat } from "./_helpers.mjs";
    it tells: what they export is, by definition, what has no official card. */
 import HOPE_AND_FEAR from "./hf-heritage.mjs";
 import TRANSFORMATIONS from "./transformations.mjs";
+import GLUNIVERSE from "./gluniverse-heritage.mjs";
 import { withDice } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
 
@@ -451,4 +452,5 @@ export default withDamage(withDice([
   ...communities,
   ...HOPE_AND_FEAR,
   ...TRANSFORMATIONS,
+  ...GLUNIVERSE,
 ]));
