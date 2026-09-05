@@ -9,6 +9,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID } from "./config.ts";
+import { registerGunslingerSettings } from "./gunslinger.ts";
 import { registerVariantSettings } from "./variants.ts";
 
 /** The Fear pool caps at twelve. */
@@ -99,6 +100,7 @@ export function registerSettings(): void {
      ten near-identical registrations inlined here would bury the four
      settings above them that each say something different. */
   registerVariantSettings();
+  registerGunslingerSettings();
 
   game.settings.register(SYSTEM_ID, "theme", {
     name: "DAGGERHEART.Settings.Theme",

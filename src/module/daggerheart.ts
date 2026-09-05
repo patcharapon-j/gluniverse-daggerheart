@@ -29,7 +29,7 @@ import { registerDice } from "./dice/dsn.ts";
 import { rollAdversaryAttack, rollAttack, rollTrait, rollWeaponDamage } from "./dice/actions.ts";
 import { rollDamage, rollDuality, rollFoe } from "./dice/rolls.ts";
 import { applyTheme, gainFear, getFear, registerSettings, setFear, spendFear } from "./settings.ts";
-import { openCreation, refreshCreation } from "./apps/create.ts";
+import { closeCreationForContentChange, openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
 import {
@@ -135,6 +135,7 @@ Hooks.once("init", () => {
   registerBrawler();
   registerDice();
   registerBrowser();
+  Hooks.on("daggerheart.contentChanged", closeCreationForContentChange);
   requestFonts();
 
   /* Vulnerable, kept in step with the Stress track — the one condition the

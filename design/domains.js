@@ -90,7 +90,12 @@ export const MARKED = [
     blurb:'Unmaking and calculation. The cold arithmetic of a thing removed.' },
 ];
 
-export const byslug = Object.fromEntries([...DOMAINS, ...MARKED].map(d => [d.slug, d]));
+export const HOMEBREW = [
+  { slug:'artifice', name:'Artifice', light:'#b77946', dark:'#68422c', mk:'artifice',
+    classes:['Gunslinger'], blurb:'Understand, repair, and improvise useful things under pressure.' },
+];
+
+export const byslug = Object.fromEntries([...DOMAINS, ...MARKED, ...HOMEBREW].map(d => [d.slug, d]));
 
 // The official marks are not centred inside their 250x250 viewBoxes — the ink
 // sits up to 3px off centre, and the drawn size varies ~5% between domains, so
@@ -143,7 +148,7 @@ export const glyph = name => load(`/design/assets/types/${name}.svg`);
 export const CLASSES = ['bard','druid','guardian','ranger','rogue',
                         'seraph','sorcerer','warrior','wizard',
                         // Hope and Fear.
-                        'assassin','brawler','warlock','witch'];
+                        'assassin','brawler','warlock','witch','gunslinger'];
 export const clazz = name => load(`/design/assets/classes/${name}.svg`);
 
 // Non-domain card types. Graphite, because in this system a saturated hue

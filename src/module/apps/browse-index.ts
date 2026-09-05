@@ -56,6 +56,7 @@ import {
   TRAIT_LABELS,
   WEAPON_SLOTS,
 } from "../config.ts";
+import { contentPackAllowed, gunslingerEnabled } from "../gunslinger.ts";
 import { activeVariants } from "../variants.ts";
 import { SUBCLASS_RANKS } from "../data/items.ts";
 import { plain } from "../sheets/cards.ts";
@@ -231,7 +232,7 @@ const rangeAxis = (
 const domainAxis = (read: (s: any) => any[]): Axis => ({
   id: "domain",
   label: "Domain",
-  values: DOMAINS.map((d) => ({
+  values: DOMAINS.filter(d => d !== "artifice" || gunslingerEnabled()).map((d) => ({
     v: d,
     label: DOMAIN_CONFIG[d]?.label ?? d,
     hue: DOMAIN_CONFIG[d]?.light,
@@ -456,6 +457,7 @@ export function ourPacks(): any[] {
   return [...(game.packs ?? [])].filter(
     (p: any) =>
       p.metadata?.system === SYSTEM_ID &&
+      contentPackAllowed(p.collection) &&
       (p.metadata?.type === "Item" || p.metadata?.type === "Actor") &&
       (variants || p.collection !== VARIANT_PACK),
   );

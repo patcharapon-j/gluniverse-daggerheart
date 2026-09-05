@@ -81,6 +81,8 @@ export const DOMAINS = [
      preload rather than for the card. Change one, change both. */
   "root",
   "void",
+  // Registered even when unavailable so owned homebrew remains valid.
+  "artifice",
 ] as const;
 export type Domain = (typeof DOMAINS)[number];
 
@@ -207,6 +209,13 @@ export const DOMAIN_CONFIG: Record<string, DomainDef> = {
     dark: "#4b3216",
     icon: `${SYSTEM_PATH}/assets/domains/root.svg`,
     blurb: "Hunger and the dreaming root. What grows through you does not ask.",
+  },
+  artifice: {
+    label: "Artifice",
+    light: "#b77946",
+    dark: "#68422c",
+    icon: `${SYSTEM_PATH}/assets/domains/artifice.svg`,
+    blurb: "Understand, repair, and improvise useful things under pressure.",
   },
   void: {
     label: "Void",

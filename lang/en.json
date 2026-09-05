@@ -57,7 +57,9 @@
       "MassiveDamage": "Massive Damage (optional rule)",
       "MassiveDamageHint": "Damage at or above twice your Severe threshold marks 4 Hit Points rather than 3. The SRD prints this as optional; this system has always applied it, so it is on by default — turning it off changes what a hit costs at your table.",
       "DefinedRanges": "Defined Ranges (optional rule)",
-      "DefinedRangesHint": "Measures the range rings in the squares the SRD prints for grid play — Melee 1, Very Close 3, Close 6, Far 12 — rather than converting the book’s approximate distances. It moves one band: Very Close goes from 2 squares to 3."
+      "DefinedRangesHint": "Measures the range rings in the squares the SRD prints for grid play — Melee 1, Very Close 3, Close 6, Far 12 — rather than converting the book’s approximate distances. It moves one band: Very Close goes from 2 squares to 3.",
+      "GunslingerContent": "Gunslinger homebrew package",
+      "GunslingerContentHint": "Enable the playtest Gunslinger class, Drifter and Sharpshooter subclasses, Artifice domain, expanded firearms, and rules journal. Changes close open creation and browse windows. Turning this off hides new choices and compendiums; items already owned by characters keep working."
     },
     "Theme": {
       "Dark": "Dark",
@@ -94,7 +96,8 @@
       "OneTransformation": "{name} is already {held}, and a character can have only one transformation. Remove that card first if you meant to change it.",
       "NoTokenStudio": "Phil's Token Studio is not installed or is switched off in this world.",
       "TokenStudioFailed": "Phil's Token Studio could not be opened — see the console for what it said.",
-      "TokenStudioNotYours": "That is not your actor to edit."
+      "TokenStudioNotYours": "That is not your actor to edit.",
+      "GunslingerDisabled": "The Gunslinger homebrew package is disabled in this world. Enable it in Configure Settings to add this content."
     },
     "TokenStudio": {
       "Open": "Token Studio"

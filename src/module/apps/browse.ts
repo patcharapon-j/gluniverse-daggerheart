@@ -163,7 +163,7 @@ export function registerBrowser(): void {
      Closed rather than refreshed if the window is open: a rail whose counts
      changed under the reader is a window that has quietly become about a
      different question. */
-  Hooks.on("daggerheart.variantsChanged", () => {
+  for (const hook of ["daggerheart.variantsChanged", "daggerheart.contentChanged"]) Hooks.on(hook, () => {
     dropPack();
     if (open?.rendered) void open.close();
   });

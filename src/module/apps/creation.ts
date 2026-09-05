@@ -44,6 +44,7 @@ import {
   TRAITS,
   type CreationStep,
 } from "../config.ts";
+import { contentChoiceAllowed, supplementalItems } from "../gunslinger.ts";
 import { variantEnabled } from "../variants.ts";
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -76,8 +77,8 @@ export const PACK = {
  */
 export async function fromPack(key: keyof typeof PACK, type?: string): Promise<any[]> {
   const pack = game.packs?.get(PACK[key]);
-  if (!pack) return [];
-  const docs = await pack.getDocuments();
+  const [base, extra] = await Promise.all([pack?.getDocuments() ?? [], supplementalItems(key)]);
+  const docs = [...base, ...extra].filter(contentChoiceAllowed);
   return type ? docs.filter((d: any) => d.type === type) : [...docs];
 }
 
@@ -441,6 +442,7 @@ const twoHanded = (actor: any): boolean =>
  * class in session four being handed two Hope for it.
  */
 export async function takeClass(actor: any, cls: any, sub: any): Promise<void> {
+  if (!contentChoiceAllowed(cls) || !contentChoiceAllowed(sub)) return;
   const doomed = cascadeOf(actor, cls);
   if (doomed.length) await removeGranted(actor, doomed.map((d) => d.id));
 
@@ -476,6 +478,7 @@ export async function takeClass(actor: any, cls: any, sub: any): Promise<void> {
  * is the same nonsense as a School of War card on a Rogue.
  */
 export async function takeSubclass(actor: any, sub: any): Promise<void> {
+  if (!contentChoiceAllowed(sub)) return;
   const held = of(actor, "subclass");
   if (held.some((h: any) => h.system?.subclassName === sub.system?.subclassName)) return;
   await removeGranted(actor, held.map((h: any) => h.id));
@@ -546,6 +549,7 @@ export async function takeTraits(actor: any, values: Record<string, number | nul
  * the other one is arithmetic, not a decision to be interrupted for.
  */
 export async function takeWeapon(actor: any, weapon: any, slot: "primary" | "secondary"): Promise<void> {
+  if (!contentChoiceAllowed(weapon)) return;
   const held = of(actor, "weapon").filter((i: any) => i.system?.equipped && i.system?.slot === slot);
   await removeGranted(actor, held.map((i: any) => i.id));
 
@@ -605,6 +609,7 @@ export async function takeExperiences(actor: any, names: string[]): Promise<void
  * `handleActorDrop` makes for a card dragged in.
  */
 export async function takeCard(actor: any, card: any): Promise<void> {
+  if (!contentChoiceAllowed(card)) return;
   const limit = actor.system?.loadoutLimit ?? LOADOUT_LIMIT;
   const held = of(actor, "domainCard").filter((c: any) => c.system?.inLoadout).length;
   const source = card.toObject();
