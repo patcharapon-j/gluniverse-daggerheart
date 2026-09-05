@@ -6,37 +6,34 @@ export default withActions([
   ancestryItem({
     name: "Rattin",
     art: "systems/gluniverse-daggerheart/assets/cards/ancestry/rattin.webp",
-    description: "Rattin are ratlike humanoids with sensitive whiskers, rounded ears, prominent incisors, and long balancing tails. Their builds and fur colors vary, including albino individuals.",
+    description: "Rattin are ratlike humanoids of varied builds and fur colors, including albino, with sensitive whiskers, round ears, prominent incisors, and long balancing tails.",
     top: feat("Tight Squeeze", `
-      You can squeeze through an opening large enough for your head to pass through,
-      provided your equipment can fit. Moving through cramped passages doesn't impose
-      disadvantage on your rolls.`),
+      You can squeeze through openings that fit your head and equipment.
+      Moving through cramped passages doesn't impose disadvantage on your rolls.`),
     bottom: feat("Familiar Scent", `
-      When you smell a creature or object within Melee range, you can commit its scent
-      to memory. You can remember a number of scents equal to your Proficiency,
-      replacing one whenever you memorize another.
+      Memorize a creature's or object's scent by smelling it within Melee range.
+      Remember up to your Proficiency in scents, replacing one when learning another.
 
-      You can **mark a Stress** to determine whether a remembered scent is present
-      within Close range and, if so, which direction it is strongest. This cannot
-      detect scents through airtight barriers.`),
+      **Mark a Stress** to detect whether a remembered scent is within Close range
+      and its strongest direction. Airtight barriers block detection.`),
   }),
   ancestryItem({
     name: "Avori",
     art: "systems/gluniverse-daggerheart/assets/cards/ancestry/avori.webp",
-    description: "Avori are feathered humanoids with beaks, taloned feet, and wings that may grow from their arms or separately from their backs. Their varied birdlike forms include those unable to sustain flight.",
+    description: "Avori are varied birdlike humanoids, including flightless forms, with feathers, beaks, taloned feet, and wings on their arms or separately on their backs.",
     top: feat("Watchful Eyes", `
-      When you pause to observe a place you can clearly see within Far range,
-      you can **mark a Stress** to ask the GM one question:
+      Pause to observe a clearly visible place within Far range and **mark a Stress**
+      to ask the GM one:
 
-      - What movement here seems concealed or out of place?
-      - What visible detail would help us get through this area?
+      - What movement seems concealed or out of place?
+      - What visible detail would help us pass through?
       - What is someone here physically preparing to do?
 
-      The GM answers truthfully based on what is visible from your position.`),
+      The GM answers truthfully using only what's visible from your position.`),
     bottom: feat("Featherfall", `
-      You can use your feathers to glide safely downward, moving up to Close range
-      horizontally during a descent. You take no damage from falling while you have
-      room to spread your feathers and control your descent.`),
+      You can glide downward up to Close range horizontally per descent.
+      Take no falling damage while you have room to spread your feathers
+      and control your descent.`),
   }),
 ].map((card) => ({
   ...card,
