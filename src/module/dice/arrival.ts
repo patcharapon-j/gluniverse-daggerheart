@@ -11,13 +11,15 @@
  * degrades to a couple of steps and the result still lands.
  *
  * The result was never at stake either way: it is written into the markup
- * before any of this runs, and the tumble only overwrites the display.
+ * before any of this runs, and the tumble only overwrites the display. When
+ * Dice So Nice owns the roll, its completion promise replaces the fixed
+ * deadline so both presentations land on the same frame.
  */
 
 const TUMBLE = 430;
 const STEP = 58;
 
-export function play(el: HTMLElement): void {
+function run(el: HTMLElement, settled: Promise<unknown> | null, arrival: boolean): void {
   clearTimeout(Number(el.dataset.tk) || 0);
   el.classList.remove("play", "land", "rolling", "veil");
   void el.offsetWidth;
@@ -26,8 +28,10 @@ export function play(el: HTMLElement): void {
      restarts cleanly — and removed first, or ten replays leave ten of them
      stacked and the card gets progressively brighter. */
   el.querySelector(":scope > .swp")?.remove();
-  el.insertAdjacentHTML("afterbegin", '<span class="swp"></span>');
-  el.classList.add("play");
+  if (arrival) {
+    el.insertAdjacentHTML("afterbegin", '<span class="swp"></span>');
+    el.classList.add("play");
+  }
 
   /* Every die tumbles inside its own range, which is why each one carries
      its size in the markup: a d6 that flashes an 11 on its way to landing
@@ -47,19 +51,46 @@ export function play(el: HTMLElement): void {
      See the veil block at the foot of `design/plate.css`. It is presentation
      only: the result is already in the markup and stays correct whether or
      not any of this runs. */
-  el.classList.add("rolling", "veil");
-  const t0 = Date.now();
-  const step = () => {
-    if (Date.now() - t0 >= TUMBLE - STEP / 2) {
-      nums.forEach((n, i) => (n.textContent = real[i] ?? ""));
-      if (big && total != null) big.textContent = total;
-      el.classList.remove("rolling", "veil");
-      el.classList.add("land");
-      return;
-    }
+  const land = () => {
+    clearTimeout(Number(el.dataset.tk) || 0);
+    nums.forEach((n, i) => (n.textContent = real[i] ?? ""));
+    if (big && total != null) big.textContent = total;
+    el.classList.remove("rolling", "veil");
+    el.classList.add("land");
+  };
+  const spin = () => {
     nums.forEach((n, i) => (n.textContent = String(1 + Math.floor(Math.random() * (mx[i] ?? 6)))));
     if (big) big.textContent = "·";
+  };
+
+  el.classList.add("rolling", "veil");
+  spin();
+
+  if (settled) {
+    const step = () => {
+      spin();
+      el.dataset.tk = String(setTimeout(step, STEP));
+    };
+    el.dataset.tk = String(setTimeout(step, STEP));
+    void settled.then(land, land);
+    return;
+  }
+
+  const t0 = Date.now();
+  const step = () => {
+    if (Date.now() - t0 >= TUMBLE - STEP / 2) return land();
+    spin();
     el.dataset.tk = String(setTimeout(step, STEP));
   };
   el.dataset.tk = String(setTimeout(step, STEP));
+}
+
+/** Play a newly posted plate, synchronized to 3D dice when present. */
+export function play(el: HTMLElement, settled: Promise<unknown> | null = null): void {
+  run(el, settled, true);
+}
+
+/** Hold a reroll's new result without replaying the whole card arrival. */
+export function hold(el: HTMLElement, settled: Promise<unknown>): void {
+  run(el, settled, false);
 }
