@@ -77,7 +77,7 @@
 </div>
 
 <style>
-  .environment-difficulty{font:700 42px/1 var(--f-display);letter-spacing:-.05em;color:var(--ink)}
-  .tx{margin:0;font:400 12px/1.62 var(--f-ui);color:var(--ink-2)}
+  .environment-difficulty{font:700 calc(42px * var(--dh-sheet-font-scale, 1))/1 var(--f-display);letter-spacing:-.05em;color:var(--ink)}
+  .tx{margin:0;font:400 calc(12px * var(--dh-sheet-font-scale, 1))/1.62 var(--f-ui);color:var(--ink-2)}
   .rich :global(p){margin:.45em 0}
 </style>

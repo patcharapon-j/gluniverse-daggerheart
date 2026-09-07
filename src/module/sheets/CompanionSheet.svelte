@@ -121,11 +121,11 @@
 <style>
   .companion-defence{display:grid;grid-template-columns:150px minmax(0,1fr);gap:20px;align-items:center}
   .companion-evasion{min-height:112px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--sunk);clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)}
-  .companion-evasion span{font:700 8px/1 var(--f-mono);letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3)}
-  .companion-evasion b{margin-top:8px;font:700 44px/1 var(--f-display);letter-spacing:-.06em;color:var(--ink)}
+  .companion-evasion span{font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3)}
+  .companion-evasion b{margin-top:8px;font:700 calc(44px * var(--dh-sheet-font-scale, 1))/1 var(--f-display);letter-spacing:-.06em;color:var(--ink)}
   .training-readout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
-  .training-readout span{display:flex;align-items:center;gap:8px;background:var(--sunk);padding:9px 11px}.training-readout b{font:600 11.5px/1.3 var(--f-ui);color:var(--ink-2)}.training-readout i{margin-left:auto;font:700 12px/1 var(--f-mono);font-style:normal;color:var(--hope-tx)}
-  .tx{margin:0;font:400 12px/1.62 var(--f-ui);color:var(--ink-2)}.rich :global(p){margin:.45em 0}
+  .training-readout span{display:flex;align-items:center;gap:8px;background:var(--sunk);padding:9px 11px}.training-readout b{font:600 calc(11.5px * var(--dh-sheet-font-scale, 1))/1.3 var(--f-ui);color:var(--ink-2)}.training-readout i{margin-left:auto;font:700 calc(12px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);font-style:normal;color:var(--hope-tx)}
+  .tx{margin:0;font:400 calc(12px * var(--dh-sheet-font-scale, 1))/1.62 var(--f-ui);color:var(--ink-2)}.rich :global(p){margin:.45em 0}
   .xp .r,.wr .go{height:auto;min-height:0;border:0;padding:0;font:inherit;text-align:inherit;cursor:pointer}
   @container (max-width:430px){.companion-defence{grid-template-columns:1fr}.training-readout{grid-template-columns:1fr}}
 </style>

@@ -624,7 +624,7 @@
     min-height: 20px;
     max-height: 20px;
     border-radius: 0;
-    font: 400 11px/1 var(--f-ui, sans-serif);
+    font: 400 calc(11px * var(--dh-sheet-font-scale, 1))/1 var(--f-ui, sans-serif);
     padding: 0 5px;
     background: var(--sunk);
     color: var(--ink);
@@ -646,7 +646,7 @@
     border-radius: 0;
     background: none;
     color: var(--ink-3);
-    font: 500 11px/1 var(--f-ui, sans-serif);
+    font: 500 calc(11px * var(--dh-sheet-font-scale, 1))/1 var(--f-ui, sans-serif);
     cursor: pointer;
   }
 
@@ -671,7 +671,7 @@
   .an {
     display: grid;
     gap: 2px;
-    font: 500 7.5px/1 var(--f-mono, monospace);
+    font: 500 calc(7.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono, monospace);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-3);
@@ -697,7 +697,7 @@
     min-height: 20px;
     max-height: 20px;
     border-radius: 0;
-    font: 400 10px/1 var(--f-ui, sans-serif);
+    font: 400 calc(10px * var(--dh-sheet-font-scale, 1))/1 var(--f-ui, sans-serif);
     padding: 0 4px;
     background: var(--sunk);
     color: var(--ink);
@@ -726,7 +726,7 @@
     min-height: 20px;
     max-height: 20px;
     border-radius: 0;
-    font: 400 10px/1 var(--f-ui, sans-serif);
+    font: 400 calc(10px * var(--dh-sheet-font-scale, 1))/1 var(--f-ui, sans-serif);
     padding: 0 4px;
     background: var(--sunk);
     color: var(--ink);
@@ -734,7 +734,7 @@
   }
 
   .ar {
-    font: 500 7.5px/20px var(--f-mono, monospace);
+    font: 500 calc(7.5px * var(--dh-sheet-font-scale, 1))/20px var(--f-mono, monospace);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--ink-3);
