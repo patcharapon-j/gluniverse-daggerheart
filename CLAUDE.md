@@ -4151,6 +4151,19 @@ ignore the ring read as a decision; gems that *very nearly* follow it read as
 sloppiness with nothing on screen to say which. `tools/verify/` measures the
 spread rather than trusting the rule.
 
+**And a scar is a slot out of play rather than a slot off the token.** The chip
+drew its run to `hope.max`, which is the **live** ceiling — `data/actors.ts`
+has already taken a slot off it for every scar — so a twice-scarred character
+got four gems with two of them crossed out, and lost two slots twice over. The
+sheet, the rest dialog and the ledger all draw `live + scars` and cross the
+tail, which is what a scar is: a printed slot that can never be filled again.
+Nothing on screen could say which of the two it was — four diamonds and six
+diamonds both look deliberate, and the crossed ones look correct in either — so
+it is the shape of bug the ledger's own `max + scars` comment already names,
+arriving on the one surface that read the derived number instead of the printed
+one. `tools/test-token-hope-arc.mjs` asserts the count, the number scarred and
+that the scars are the tail.
+
 ### Arriving and leaving
 
 A chip had neither, and that is the third thing on this component that was

@@ -118,6 +118,27 @@ for (const part of ["gem", "lamp", "pit", "edge", "rim", "fx"])
     `the Hope gems must be gem.js's GEM — no .${part} in the markup`);
 assert.match(one, /class="gem scar"/, "a scarred slot is GEM's own scar, not a recolour");
 
+/* ── a scar takes a slot out of play, not off the token ───────────
+   `hope.max` is the LIVE ceiling and the schema has already subtracted the
+   scars from it, so a chip drawn to that number is short by one gem per
+   scar — two scars read as a four-slot character with two crossed off
+   rather than a six-slot one. The row is `live + scars` wide and the scars
+   are the tail of it, which is what the rail, the rest dialog and the
+   change log all draw. Nothing on screen says which of the two it is: six
+   diamonds and four diamonds both look deliberate. */
+for (const [live, scars] of [[6, 0], [4, 2], [5, 1], [1, 5]]) {
+  const html = chip(live, Math.min(2, live), { scars });
+  const gems = [...html.matchAll(/<i class="er-gem"[^>]*>\s*<i class="gem([^"]*)"/g)]
+    .map((m) => m[1].includes("scar"));
+
+  assert.equal(gems.length, live + scars,
+    `${live} live Hope and ${scars} scars must draw ${live + scars} slots`);
+  assert.equal(gems.filter(Boolean).length, scars,
+    `${live}+${scars}: exactly ${scars} of the slots are scarred`);
+  assert.deepEqual(gems.slice(live), Array.from({ length: scars }, () => true),
+    `${live}+${scars}: the scars are the tail of the run, not the head`);
+}
+
 /* ── the readout sits on the creature ────────────────────────────
    Obsidian orbit moved the rails INSIDE the creature, which swapped which
    scale they belong to, and nobody moved them: --tkr went on being written
