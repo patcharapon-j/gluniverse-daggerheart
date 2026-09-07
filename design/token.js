@@ -382,8 +382,16 @@ const hopeGeometry = (n) => {
 
 const bottomOf = (s) => {
   if (s.hope?.max) {
-    const n = s.hope.max;
+    /* `hope.max` is the LIVE ceiling, which the schema has already taken a
+       slot off for every scar — so the printed six comes back as four on a
+       twice-scarred character, and a row drawn to it is four gems with two
+       of them crossed out. That is the row saying the character lost four
+       slots rather than two. The row is `live + scars` wide, which is
+       ledger.js's own arithmetic and the sheet's: a scarred slot is not an
+       absent one, it is a printed slot that can never be filled again. */
     const scars = s.scars ?? 0;
+    const live = s.hope.max;
+    const n = live + scars;
     const { width, angles } = hopeGeometry(n);
     /* Radius and width are written here rather than in the stylesheet so
        the circle, the gems on it and the spacing between them cannot drift
@@ -400,7 +408,7 @@ const bottomOf = (s) => {
        and takes no arbitrary one. */
     return `<div class="er-hope" style="--hope-r:calc(${HOPE_R}cqw * var(--tkv,1));--sz:${width.toFixed(2)}px">${
       Array.from({ length: n }, (_, i) => {
-        const scar = i >= n - scars;
+        const scar = i >= live;
         return `<i class="er-gem" style="--a:${angles[i].toFixed(2)}deg">${
           GEM({ on: i < (s.hope.value ?? 0) && !scar, scar })}</i>`;
       }).join('')
@@ -623,7 +631,11 @@ export function setChip(el, s = {}) {
      being shared, and the shared driver is worth more than the layout. */
   if (s.hope?.max) {
     const row = el.querySelector('.er-hope');
-    if (row) setPool(row, s.hope.value ?? 0, { max: s.hope.max });
+    /* No `max`: setPool reads it off the row, and the row is `live + scars`
+       wide while `hope.max` is the live half alone. It is only ever used for
+       Fear's own ramp, so passing the shorter number was harmless and said
+       something untrue about the run it was driving. */
+    if (row) setPool(row, s.hope.value ?? 0);
   }
 
   if ('conditions' in s) {
