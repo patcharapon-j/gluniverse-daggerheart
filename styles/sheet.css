@@ -120,9 +120,9 @@
   clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%)}
 .dh .win > .tt{flex:none;display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;
   background:var(--frame);box-shadow:inset 0 -1px 0 var(--frame-line)}
-.dh .win > .tt b{font:700 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+.dh .win > .tt b{font:700 calc(10px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
   color:var(--frame-tx)}
-.dh .win > .tt s{margin-left:auto;text-decoration:none;font:700 11px/1 var(--f-mono);
+.dh .win > .tt s{margin-left:auto;text-decoration:none;font:700 calc(11px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);
   color:var(--frame-tx-3);letter-spacing:.3em}
 .dh .win > .bd{position:relative;flex:1 1 auto;min-height:0;display:flex;height:var(--h,720px)}
 /* container so the tab strip can drop its counter when the pane is narrow */
@@ -233,9 +233,9 @@
   background:linear-gradient(90deg,transparent,rgba(212,167,44,.5) 30%,
                              rgba(212,167,44,.5) 70%,transparent)}
 .dh .dio .nm{position:absolute;left:18px;right:18px;bottom:15px;z-index:2}
-.dh .dio .nm b{display:block;font:700 19px/1.02 var(--f-display);color:#fff;letter-spacing:-.02em;
+.dh .dio .nm b{display:block;font:700 calc(19px * var(--dh-sheet-font-scale, 1))/1.02 var(--f-display);color:#fff;letter-spacing:-.02em;
   text-transform:uppercase;text-shadow:0 1px 12px rgba(0,0,0,.6)}
-.dh .dio .nm span{display:block;font:700 8.5px/1.5 var(--f-mono);letter-spacing:.16em;
+.dh .dio .nm span{display:block;font:700 calc(8.5px * var(--dh-sheet-font-scale, 1))/1.5 var(--f-mono);letter-spacing:.16em;
   text-transform:uppercase;color:#b6bec8;margin-top:7px}
 .dh .dio .nm span em{font-style:normal;color:var(--hope)}
 /* The name is the same trick the level plate plays, for the same reason:
@@ -251,12 +251,12 @@
    character whose pronouns are blank and whose sheet is locked, because an
    empty line under a name is a field reporting that it is empty. */
 .dh .dio .nm .b{display:block;width:100%;border:0;background:transparent;padding:0;
-  font:700 19px/1.02 var(--f-display);color:#fff;letter-spacing:-.02em;
+  font:700 calc(19px * var(--dh-sheet-font-scale, 1))/1.02 var(--f-display);color:#fff;letter-spacing:-.02em;
   text-transform:uppercase;text-shadow:0 1px 12px rgba(0,0,0,.6)}
 .dh .dio .nm .b:focus,.dh .dio .nm .pn:focus{outline:1px solid rgba(255,255,255,.4);
   outline-offset:3px}
 .dh .dio .nm .pn{display:block;width:100%;margin-top:6px;border:0;background:transparent;
-  padding:0;font:700 8.5px/1.5 var(--f-mono);letter-spacing:.16em;
+  padding:0;font:700 calc(8.5px * var(--dh-sheet-font-scale, 1))/1.5 var(--f-mono);letter-spacing:.16em;
   text-transform:uppercase;color:#b6bec8}
 .dh .dio .nm .pn::placeholder{color:#6d7682}
 /* the level plate is the sheet's other gold fill and it sits in the frame,
@@ -277,7 +277,7 @@
 .dh .dio .lv{position:absolute;top:0;right:0;z-index:2;display:flex;align-items:baseline;gap:4px;
   background:var(--hope);color:#14161a;padding:5px 8px 5px 9px;
   clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 calc(100% - 7px))}
-.dh .dio .lv i{font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;font-style:normal;
+.dh .dio .lv i{font:700 calc(7.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.14em;font-style:normal;
   text-transform:uppercase;opacity:.58;margin-right:-.14em}
 /* `b` when you are reading it and an `input.b` when you may change it. The
    two are styled as one thing on purpose: the plate *is* the field, and a
@@ -287,7 +287,7 @@
    2ch, not 2.2ch. `ch` is the width of a "0" and these are tabular figures,
    so two digits measure exactly 2ch and the extra fifth was a fifth of a
    digit of dead gold on the right of every single-digit level. */
-.dh .dio .lv b,.dh .dio .lv .b{font:700 19px/1 var(--f-display);letter-spacing:-.03em;
+.dh .dio .lv b,.dh .dio .lv .b{font:700 calc(19px * var(--dh-sheet-font-scale, 1))/1 var(--f-display);letter-spacing:-.03em;
   width:2ch;border:0;background:transparent;color:inherit;padding:0;
   font-variant-numeric:tabular-nums;text-align:center;appearance:textfield}
 .dh .dio .lv .b::-webkit-outer-spin-button,.dh .dio .lv .b::-webkit-inner-spin-button{
@@ -307,7 +307,7 @@
 .dh .dio:hover .fr,.dh .dio.framing .fr{opacity:1}
 .dh .dio .ctl{border:0;cursor:pointer;padding:6px 9px 5px;
   background:rgba(10,12,15,.78);color:#c3ccd8;
-  font:700 8px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
   clip-path:polygon(0 0,100% 0,100% 100%,5px 100%,0 calc(100% - 5px))}
 .dh .dio .ctl:hover{background:rgba(10,12,15,.94);color:#fff}
 .dh .dio .ctl.on{background:var(--hope);color:#14161a}
@@ -321,7 +321,7 @@
 .dh .dio.framing .fx{display:flex}
 .dh .dio.framing .nm{display:none}
 .dh .dio .fx .seg{display:flex;gap:1px;flex:none}
-.dh .dio .fx .z{margin-left:auto;font:700 8px/1 var(--f-mono);letter-spacing:.12em;
+.dh .dio .fx .z{margin-left:auto;font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.12em;
   color:#8d95a1;font-variant-numeric:tabular-nums}
 
 /* ── framing the card: the card ────────────────────────────────────
@@ -390,14 +390,14 @@
 .dh .dfn .crest .gh.f{opacity:.3}
 /* the arch's mass is low and the shield's is high, so a single centred
    numeral sits wrong in one of them — each gets its own optical centre */
-.dh .dfn .crest .v{position:relative;z-index:2;font:700 25px/1 var(--f-display);letter-spacing:-.04em;
+.dh .dfn .crest .v{position:relative;z-index:2;font:700 calc(25px * var(--dh-sheet-font-scale, 1))/1 var(--f-display);letter-spacing:-.04em;
   color:var(--ink);font-variant-numeric:tabular-nums}
 /* nudged right, away from its own trail — a numeral sitting on the ghost
    outlines is the one thing that would make the trail read as clutter again */
 .dh .dfn .crest.ev .v{margin:5px 0 0 2px}
 .dh .dfn .crest .v.sh{margin-top:-3px}
 .dh .dfn .side{flex:1 1 auto;min-width:0;padding-top:2px}
-.dh .dfn .k{display:block;font:700 8.5px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+.dh .dfn .k{display:block;font:700 calc(8.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-3);text-align:center}
 .dh .dfn .crest + .k,.dh .dfn .cap{margin-top:5px}
 
@@ -423,7 +423,7 @@
   background:var(--line)}
 .dh .acts button{border:0;cursor:pointer;background:var(--sunk);
   padding:calc(var(--row, 7px) - 1px) 4px var(--row, 7px);
-  color:var(--ink-3);font:700 8px/1.35 var(--f-mono);letter-spacing:.13em;
+  color:var(--ink-3);font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1.35 var(--f-mono);letter-spacing:.13em;
   text-transform:uppercase;transition:background .12s,color .12s}
 .dh .acts button:hover{background:var(--sunk-2);color:var(--hope-tx)}
 /* The chamfer is on the strip, not on each cell — three cut corners in a row
@@ -470,9 +470,9 @@
 .dh .hact:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2);
   transform:translateX(2px)}
 .dh .hact .hd{display:flex;align-items:center;gap:9px;min-width:0}
-.dh .hact b{flex:1 1 auto;min-width:0;font:600 12px/1.25 var(--f-ui);color:var(--ink);
+.dh .hact b{flex:1 1 auto;min-width:0;font:600 calc(12px * var(--dh-sheet-font-scale, 1))/1.25 var(--f-ui);color:var(--ink);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dh .hact s{flex:none;text-decoration:none;font:700 8px/1 var(--f-mono);letter-spacing:.14em;
+.dh .hact s{flex:none;text-decoration:none;font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.14em;
   text-transform:uppercase;color:var(--hope-tx)}
 .dh .hact .c{flex:none;display:flex;gap:3px}
 .dh .hact .c i{width:9px;height:9px;background:var(--hope);
@@ -480,7 +480,7 @@
 /* The rule itself, set as prose — it is the only running sentence in the
    rail, and everything around it is a label or a figure. Left of the pips
    rather than indented under the name: the block is one object. */
-.dh .hact p{margin:0;font:400 11px/1.45 var(--f-ui);color:var(--ink-2);white-space:normal}
+.dh .hact p{margin:0;font:400 calc(11px * var(--dh-sheet-font-scale, 1))/1.45 var(--f-ui);color:var(--ink-2);white-space:normal}
 .dh .hact p b{font-weight:700;color:var(--ink)}
 /* Game terms keep the colours they wear on a card. `mark()` emits these two
    classes wherever it runs and card.css scopes its own rules to `.card`, so
@@ -533,9 +533,9 @@
 .dh .xp .r{display:flex;align-items:baseline;gap:10px;padding:4px 9px;background:var(--sunk);
   cursor:pointer;transition:background .14s,transform .14s}
 .dh .xp .r:hover{background:var(--sunk-2);transform:translateX(2px)}
-.dh .xp .r b{font:600 12px/1.25 var(--f-ui);color:var(--ink);min-width:0;
+.dh .xp .r b{font:600 calc(12px * var(--dh-sheet-font-scale, 1))/1.25 var(--f-ui);color:var(--ink);min-width:0;
   overflow-wrap:anywhere}
-.dh .xp .r em{margin-left:auto;flex:none;font:700 13px/1 var(--f-display);font-style:normal;
+.dh .xp .r em{margin-left:auto;flex:none;font:700 calc(13px * var(--dh-sheet-font-scale, 1))/1 var(--f-display);font-style:normal;
   color:var(--hope-tx);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 
 /* ── gold ──────────────────────────────────────────────────────────
@@ -551,7 +551,7 @@
    at a glance that one of these is a resource and the other is a mood. */
 .dh .gld .rows{display:flex;flex-direction:column;gap:6px}
 .dh .gld .ln{display:flex;align-items:center;gap:11px}
-.dh .gld .ln > .k{flex:none;width:48px;font:700 7.5px/1 var(--f-mono);letter-spacing:.13em;
+.dh .gld .ln > .k{flex:none;width:48px;font:700 calc(7.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.13em;
   text-transform:uppercase;color:var(--ink-3)}
 .dh .gld .ln .set{flex:1 1 auto;display:flex;gap:3px;min-width:0}
 .dh .gld .ln .set i{position:relative;flex:1 1 0;aspect-ratio:1;max-width:19px;cursor:pointer;
@@ -603,8 +603,8 @@
 .dh .pnl{padding:var(--sec, 10px) var(--pnl-x, 14px) calc(var(--sec, 10px) + 1px);border-top:1px solid var(--line)}
 .dh .pnl:first-child{border-top:0}
 .dh .pnl > .k{display:flex;align-items:baseline;gap:8px;margin-bottom:var(--run, 8px);
-  font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
-.dh .pnl > .k s{margin-left:auto;text-decoration:none;font-size:9px;color:var(--hope-tx)}
+  font:700 calc(9px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.dh .pnl > .k s{margin-left:auto;text-decoration:none;font-size:calc(9px * var(--dh-sheet-font-scale, 1));color:var(--hope-tx)}
 /* A panel heading's one action, if it has one. It inherits the heading's
    own type rather than declaring any, so it reads as part of the label and
    not as a control parked next to it — the panel is quiet furniture and a
@@ -696,7 +696,7 @@
    Quiet ink and the body face. An empty panel is not an error — a new
    character has six of them — and a sheet that set this in anything louder
    would be reporting a problem instead of a state. */
-.dh .ach{font:400 11.5px/1.5 var(--f-ui);color:var(--ink-3);margin:0;padding:2px 0 3px}
+.dh .ach{font:400 calc(11.5px * var(--dh-sheet-font-scale, 1))/1.5 var(--f-ui);color:var(--ink-3);margin:0;padding:2px 0 3px}
 /* A way out of the empty state, in the sentence that describes it. Underlined
    rather than made a button: it is a phrase in a line of prose, and a box
    around two words in the middle of a sentence is a worse object than a link. */
@@ -782,7 +782,7 @@
    carried that has nowhere else on the sheet to be. */
 .dh .abl .dm{display:flex;align-items:center;gap:12px;margin:0 0 3px;flex-wrap:wrap}
 .dh .abl .dm i{display:inline-flex;align-items:center;gap:6px;font-style:normal;
-  font:700 8px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
   color:var(--ink-3)}
 .dh .abl .dm i::before{content:"";width:7px;height:7px;flex:none;background:var(--c);
   clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
@@ -819,16 +819,16 @@
    reads as a column of counters down the same rule. */
 .dh .abl .a > .chits{margin-top:1px}
 .dh .abl .hd{display:flex;align-items:baseline;gap:10px;min-width:0}
-.dh .abl .hd s{flex:1 1 auto;min-width:0;text-decoration:none;font:700 8px/1.3 var(--f-mono);
+.dh .abl .hd s{flex:1 1 auto;min-width:0;text-decoration:none;font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1.3 var(--f-mono);
   letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A price, when the feature has one. Strain rather than gold: a class
    feature that costs anything costs Stress, and gold is the Hope action's
    colour three panels up — one hue, one currency. */
-.dh .abl .hd em{flex:none;font-style:normal;font:700 8px/1.3 var(--f-mono);
+.dh .abl .hd em{flex:none;font-style:normal;font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1.3 var(--f-mono);
   letter-spacing:.14em;text-transform:uppercase;color:var(--strain)}
-.dh .abl .ap > b{font:600 13px/1.3 var(--f-display);letter-spacing:-.01em;color:var(--ink)}
-.dh .abl p{margin:0;font:400 11.5px/1.5 var(--f-ui);color:var(--ink-2);white-space:normal}
+.dh .abl .ap > b{font:600 calc(13px * var(--dh-sheet-font-scale, 1))/1.3 var(--f-display);letter-spacing:-.01em;color:var(--ink)}
+.dh .abl p{margin:0;font:400 calc(11.5px * var(--dh-sheet-font-scale, 1))/1.5 var(--f-ui);color:var(--ink-2);white-space:normal}
 .dh .abl p b{font-weight:700;color:var(--ink)}
 .dh .abl p b.t-hope{color:var(--hope-tx)}
 .dh .abl p b.t-fear{color:var(--fear-tx)}
@@ -966,7 +966,7 @@
    round the sheet rather than as two copies of the same strip. */
 .dh .win > .tape.bot > i{animation-direction:reverse}
 .dh .win > .tape span{flex:none;padding:5px 0;white-space:nowrap;
-  font:700 8px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
+  font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;
   color:var(--strain)}
 @keyframes tapeRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
@@ -1018,10 +1018,10 @@
    label, number — and you had to work out the pairing from the words. */
 .dh .cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:var(--run, 8px) 24px}
 .dh .cfg .f{display:flex;align-items:center;gap:9px;min-width:0}
-.dh .cfg .f > span{flex:1 1 auto;min-width:0;font:400 11.5px/1.3 var(--f-ui);color:var(--ink-2)}
+.dh .cfg .f > span{flex:1 1 auto;min-width:0;font:400 calc(11.5px * var(--dh-sheet-font-scale, 1))/1.3 var(--f-ui);color:var(--ink-2)}
 .dh .cfg .f input{flex:none;width:62px;padding:5px 7px;border:0;
   background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);
-  font:700 12px/1 var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;
+  font:700 calc(12px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;
   appearance:textfield;transition:box-shadow .14s}
 .dh .cfg .f input::-webkit-outer-spin-button,.dh .cfg .f input::-webkit-inner-spin-button{
   -webkit-appearance:none;margin:0}
@@ -1056,9 +1056,9 @@
 .dh .lst .r{display:flex;align-items:center;gap:6px}
 .dh .lst .r input{min-width:0;padding:6px 8px;border:0;background:var(--sunk);
   box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);
-  font:400 12px/1.2 var(--f-ui);transition:box-shadow .14s}
+  font:400 calc(12px * var(--dh-sheet-font-scale, 1))/1.2 var(--f-ui);transition:box-shadow .14s}
 .dh .lst .r input.t{flex:1 1 auto}
-.dh .lst .r input.n{flex:none;width:54px;text-align:right;font:700 12px/1.2 var(--f-mono);
+.dh .lst .r input.n{flex:none;width:54px;text-align:right;font:700 calc(12px * var(--dh-sheet-font-scale, 1))/1.2 var(--f-mono);
   font-variant-numeric:tabular-nums;color:var(--hope-tx);appearance:textfield}
 .dh .lst .r input.n::-webkit-outer-spin-button,.dh .lst .r input.n::-webkit-inner-spin-button{
   -webkit-appearance:none;margin:0}
@@ -1075,12 +1075,12 @@
    nothing in this system has a rounded corner. */
 .dh .lst .r .x{flex:none;width:24px;height:24px;min-height:0;max-height:none;
   padding:0;border:0;border-radius:0;cursor:pointer;
-  background:transparent;color:var(--ink-4);font:700 13px/1 var(--f-mono);
+  background:transparent;color:var(--ink-4);font:700 calc(13px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);
   transition:color .14s,background .14s}
 .dh .lst .r .x:hover{color:var(--wound);background:var(--sunk)}
 .dh .lst .add{align-self:flex-start;margin-top:3px;border:0;border-radius:0;background:none;
   height:auto;min-height:0;max-height:none;padding:0;cursor:pointer;
-  font:700 9px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  font:700 calc(9px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
   color:var(--ink-3);transition:color .12s}
 .dh .lst .add:hover{color:var(--hope-tx)}
 
@@ -1097,9 +1097,9 @@
    step in size and two in ink, and the numeral takes the rest: at 27px it is
    the largest thing on the pane, which is right, because "what do I add" is
    the question this row exists to answer. */
-.dh .trs .tr .k{font:700 8.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+.dh .trs .tr .k{font:700 calc(8.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.dh .trs .tr .v{font:700 27px/1 var(--f-display);letter-spacing:-.045em;color:var(--ink);
+.dh .trs .tr .v{font:700 calc(27px * var(--dh-sheet-font-scale, 1))/1 var(--f-display);letter-spacing:-.045em;color:var(--ink);
   font-variant-numeric:tabular-nums;-webkit-text-stroke:.4px currentColor}
 .dh .trs .tr .mk{width:5px;height:5px;background:var(--line);transform:rotate(45deg)}
 .dh .trs .tr.on .mk{background:var(--ink)}
@@ -1133,7 +1133,7 @@
    than `27px` so it tracks the font size it is stated beside. */
 .dh .trs .tr input.v{width:100%;min-width:0;height:1em;border:0;background:transparent;padding:0;
   text-align:center;appearance:textfield;
-  font:700 27px/1 var(--f-display);letter-spacing:-.045em;color:var(--ink);
+  font:700 calc(27px * var(--dh-sheet-font-scale, 1))/1 var(--f-display);letter-spacing:-.045em;color:var(--ink);
   font-variant-numeric:tabular-nums;-webkit-text-stroke:.4px currentColor}
 .dh .trs .tr input.v::-webkit-outer-spin-button,
 .dh .trs .tr input.v::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -1188,7 +1188,7 @@
    gets skipped. `hyphens:none` because "Comprehend" is the longest of the
    eighteen and a narrow window would otherwise break it in half. */
 .dh .trs .tr .vb{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:1px}
-.dh .trs .tr .vb i{font:400 8.5px/1 var(--f-ui);font-style:normal;color:var(--ink-4);
+.dh .trs .tr .vb i{font:400 calc(8.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-ui);font-style:normal;color:var(--ink-4);
   hyphens:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .dh .trs .tr:hover .vb i{color:var(--ink-3)}
 
@@ -1201,14 +1201,14 @@
   overflow-x:auto;scrollbar-width:none}
 .dh .tabs::-webkit-scrollbar{display:none}
 .dh .tabs button{flex:none;border:0;cursor:pointer;background:transparent;color:var(--frame-tx-2);
-  position:relative;font:700 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  position:relative;font:700 calc(9px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
   padding:9px 12px 8px;transition:color .14s,background .14s}
 .dh .tabs button:hover{color:var(--frame-tx)}
 .dh .tabs button.on{color:var(--ink);background:var(--paper)}
 .dh .tabs button.on::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
   background:var(--hope)}
 .dh .tabs .ct{margin-left:auto;align-self:center;padding:0 10px 0 14px;flex:none;
-  font:700 9px/1 var(--f-mono);letter-spacing:.14em;color:var(--frame-tx-3);white-space:nowrap}
+  font:700 calc(9px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.14em;color:var(--frame-tx-3);white-space:nowrap}
 @container (max-width:560px){.dh .tabs .ct{display:none}.dh .tabs .edt{margin-left:auto}}
 
 /* ── the edit toggle ───────────────────────────────────────────────
@@ -1234,7 +1234,7 @@
   display:flex;align-items:center;gap:7px;border:0;cursor:pointer;
   padding:0 12px 0 13px;background:var(--frame-2);color:var(--frame-tx-3);
   box-shadow:inset 1px 0 0 var(--frame-line);
-  font:700 8.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  font:700 calc(8.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
   transition:color .14s}
 .dh .tabs .edt i{flex:none;width:9px;height:9px;background:var(--frame);
   box-shadow:inset 0 0 0 1.25px var(--frame-line);
@@ -1253,7 +1253,7 @@
 
    A tier you have not reached is dimmed rather than hidden. Seeing what
    level 5 offers is most of why anyone opens this tab. */
-.dh .adv .ach{font:400 11.5px/1.5 var(--f-ui);color:var(--ink-3);margin:0 0 var(--run, 8px);
+.dh .adv .ach{font:400 calc(11.5px * var(--dh-sheet-font-scale, 1))/1.5 var(--f-ui);color:var(--ink-3);margin:0 0 var(--run, 8px);
   padding-left:9px;border-left:2px solid var(--line)}
 
 /* ── the budget ────────────────────────────────────────────────────
@@ -1276,15 +1276,15 @@
 .dh .adv .bal{display:flex;align-items:center;gap:10px;margin:0 0 var(--run, 8px);padding:5px 10px;
   background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
-.dh .adv .bal .n{flex:none;font:700 12px/1 var(--f-mono);letter-spacing:.02em;
+.dh .adv .bal .n{flex:none;font:700 calc(12px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.02em;
   font-variant-numeric:tabular-nums;color:var(--ink-2)}
-.dh .adv .bal .t{min-width:0;font:400 11px/1.4 var(--f-ui);color:var(--ink-3)}
+.dh .adv .bal .t{min-width:0;font:400 calc(11px * var(--dh-sheet-font-scale, 1))/1.4 var(--f-ui);color:var(--ink-3)}
 .dh .adv .bal.owed{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 45%,var(--line))}
 .dh .adv .bal.owed .n{color:var(--hope-tx)}
 .dh .adv .bal.over{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--wound) 52%,var(--line))}
 .dh .adv .bal.over .n{color:var(--wound)}
 .dh .adv .row{display:flex;align-items:flex-start;gap:11px;padding:3px 0}
-.dh .adv .row .lb{font:400 11.5px/1.36 var(--f-ui);color:var(--ink-2);min-width:0}
+.dh .adv .row .lb{font:400 calc(11.5px * var(--dh-sheet-font-scale, 1))/1.36 var(--f-ui);color:var(--ink-2);min-width:0}
 /* exhausted: every slot marked, so the option is spent for this tier */
 .dh .adv .row.done .lb{color:var(--ink-3)}
 
@@ -1306,7 +1306,7 @@
    design and the strike is turned off, exactly as `.pick s` does — it is a
    quiet second line about the thing above it, which is the job. */
 .dh .adv .row .got{display:block;margin-top:4px;text-decoration:none;
-  font:600 11px/1.3 var(--f-ui);color:var(--ink-2)}
+  font:600 calc(11px * var(--dh-sheet-font-scale, 1))/1.3 var(--f-ui);color:var(--ink-2)}
 .dh .adv .row .got::before{content:"↳ ";color:var(--ink-3)}
 /* Owed, not taken. Violet is the wrong hue — this is not a rule acting on
    you — and the wound's red is wrong for the same reason it is wrong on the
@@ -1326,7 +1326,7 @@
    two-digit level does not move the label under it, and gold once the
    card has been taken — the same "spent" the budget line means by it. */
 .dh .adv .row .lvn{flex:none;width:33px;padding-top:1px;text-align:center;
-  font:700 12px/1.25 var(--f-mono);letter-spacing:.02em;
+  font:700 calc(12px * var(--dh-sheet-font-scale, 1))/1.25 var(--f-mono);letter-spacing:.02em;
   font-variant-numeric:tabular-nums;color:var(--ink-3)}
 .dh .adv .row.done .lvn{color:var(--hope-tx)}
 
@@ -1339,7 +1339,7 @@
    button in this panel, so it states its own. */
 .dh .adv .row .tk{display:inline-block;margin-top:5px;padding:3px 9px 4px;
   height:auto;min-height:0;max-height:none;border:0;cursor:pointer;
-  font:700 8px/1.35 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
+  font:700 calc(8px * var(--dh-sheet-font-scale, 1))/1.35 var(--f-mono);letter-spacing:.13em;text-transform:uppercase;
   color:var(--hope-tx);background:color-mix(in srgb,var(--hope) 11%,var(--sunk));
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 45%,var(--line));
   clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
@@ -1397,7 +1397,7 @@
 /* Sits against the dots rather than at the right edge. Right-aligned it read
    as a second, unrelated figure — the numeral *is* the count of filled dots
    and belongs next to them. */
-.dh .prof .n{font:700 20px/1 var(--f-display);letter-spacing:-.04em;
+.dh .prof .n{font:700 calc(20px * var(--dh-sheet-font-scale, 1))/1 var(--f-display);letter-spacing:-.04em;
   color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* ── borrowed components, re-scaled ────────────────────────────────
@@ -1408,8 +1408,8 @@
    pool needs a nudge, because its header was sized for a card — and the
    tile needs more than a nudge, for the reason below. */
 .dh .win .pool .hd{margin-bottom:10px}
-.dh .win .pool .hd .k{font-size:8.5px}
-.dh .win .pool .hd .n{font-size:14px}
+.dh .win .pool .hd .k{font-size:calc(8.5px * var(--dh-sheet-font-scale, 1))}
+.dh .win .pool .hd .n{font-size:calc(14px * var(--dh-sheet-font-scale, 1))}
 
 /* ── the tile at sheet width ───────────────────────────────────────
    Container-query type is proportional, and proportion is the wrong model
@@ -1532,21 +1532,21 @@
 .dh .slots3{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));
   gap:10px;align-items:start}
 .dh .slot .sh{display:flex;align-items:baseline;gap:8px;margin-bottom:5px;
-  font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  font:700 calc(7.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
   color:var(--ink-3)}
 /* Height stated, for `.pnl > .k .nw`'s reason: an 11px control in a slot
    header that Foundry would otherwise draw 28px tall. */
 .dh .slot .sh button{margin-left:auto;border:0;background:transparent;cursor:pointer;padding:2px 0;
   height:auto;min-height:0;max-height:none;
-  font:700 7.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  font:700 calc(7.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-3);transition:color .14s}
 .dh .slot .sh button:hover{color:var(--hope-tx)}
 .dh .slot .ph{display:flex;flex-direction:column;justify-content:center;gap:5px;
   padding:14px 15px;min-height:82px;background:var(--sunk);
   box-shadow:inset 0 0 0 1.5px var(--line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
-.dh .slot .ph b{font:600 12.5px/1 var(--f-ui);color:var(--ink-2)}
-.dh .slot .ph span{font:400 11px/1.5 var(--f-ui);color:var(--ink-3)}
+.dh .slot .ph b{font:600 calc(12.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-ui);color:var(--ink-2)}
+.dh .slot .ph span{font:400 calc(11px * var(--dh-sheet-font-scale, 1))/1.5 var(--f-ui);color:var(--ink-3)}
 /* Violet, because a blocked slot is a rule acting on you rather than a
    choice you have not made yet — the same distinction the Vulnerable strip
    draws, and the only other place on this sheet that Fear's hue appears. */
@@ -1570,7 +1570,7 @@
 .dh .eqp:hover .tile{transform:none}
 .dh .eqp:hover{transform:translateY(-3px)}
 .dh .eqp .act{position:absolute;left:0;right:0;bottom:0;z-index:6;text-align:center;
-  padding:6px 0 7px;font:700 7.5px/1 var(--f-mono);letter-spacing:.16em;
+  padding:6px 0 7px;font:700 calc(7.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);letter-spacing:.16em;
   text-transform:uppercase;color:#14161a;background:var(--hope);
   opacity:0;transform:translateY(100%);
   transition:opacity .18s cubic-bezier(.2,.8,.25,1),transform .18s cubic-bezier(.2,.8,.25,1)}
@@ -1589,7 +1589,8 @@
    The cards are parked with visibility rather than display, or fit() would
    measure them at zero height and every peek would render uncompacted. */
 .dh .peeklayer{position:absolute;inset:0;z-index:60;pointer-events:none}
-.dh .peeklayer .pkc{position:absolute;left:0;top:0;width:262px;
+.dh .peeklayer .pkc{position:absolute;left:0;top:0;
+  width:calc(262px * var(--dh-hover-card-scale,1));
   visibility:hidden;opacity:0;transform:translateX(-8px) scale(.97);
   filter:drop-shadow(0 18px 34px rgba(0,0,0,.55));
   transition:opacity .2s cubic-bezier(.2,.8,.25,1),transform .2s cubic-bezier(.2,.8,.25,1),
@@ -1642,6 +1643,6 @@
 
 /* ── study page chrome ─────────────────────────────────────────────*/
 .dh .lay{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
-.dh .mm{font:500 10.5px/1.7 var(--f-mono);color:#7d8794;margin-top:12px}
+.dh .mm{font:500 calc(10.5px * var(--dh-sheet-font-scale, 1))/1.7 var(--f-mono);color:#7d8794;margin-top:12px}
 .dh .mm b{color:#e2e7ec;font-weight:700}
 .dh .mm em{font-style:normal;color:#e0803a}

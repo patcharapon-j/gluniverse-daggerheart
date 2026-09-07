@@ -3808,7 +3808,7 @@
      every card on this sheet is a SPINE, a TILE or a CARD from `design/`,
      so there is nothing left for this sheet to invent a look for. */
   .bio {
-    font: 400 12.5px/1.6 var(--f-ui);
+    font: 400 calc(12.5px * var(--dh-sheet-font-scale, 1))/1.6 var(--f-ui);
     color: var(--ink-2);
   }
   /* The trait and experience rows, the Evasion arch and the two roll buttons

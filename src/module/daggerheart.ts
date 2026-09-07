@@ -28,7 +28,15 @@ import { registerMessageHeaders } from "./message-header.ts";
 import { registerDice } from "./dice/dsn.ts";
 import { rollAdversaryAttack, rollAttack, rollTrait, rollWeaponDamage } from "./dice/actions.ts";
 import { rollDamage, rollDuality, rollFoe } from "./dice/rolls.ts";
-import { applyTheme, gainFear, getFear, registerSettings, setFear, spendFear } from "./settings.ts";
+import {
+  applyDisplayPreferences,
+  applyTheme,
+  gainFear,
+  getFear,
+  registerSettings,
+  setFear,
+  spendFear,
+} from "./settings.ts";
 import { closeCreationForContentChange, openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
@@ -207,6 +215,7 @@ async function refreshScope(scope: "scene" | "session", actor?: any): Promise<nu
 
 Hooks.once("ready", () => {
   applyTheme();
+  applyDisplayPreferences();
 
   /* Not in `init` with the rest of the registrations: this one writes to
      Foundry's own chrome, and `#ui-top` does not exist until the game view

@@ -113,6 +113,32 @@ export function registerSettings(): void {
     onChange: applyTheme,
   });
 
+  /* Readability belongs to the person at the screen. These two dials are
+     client-scoped so a player can enlarge their sheet and card peeks without
+     changing the layout for anybody else at the table. CSS variables keep
+     the preference live across every open sheet; no rerender is needed. */
+  game.settings.register(SYSTEM_ID, "sheetFontScale", {
+    name: "DAGGERHEART.Settings.SheetFontScale",
+    hint: "DAGGERHEART.Settings.SheetFontScaleHint",
+    scope: "client",
+    config: true,
+    type: Number,
+    range: { min: 0.9, max: 1.4, step: 0.05 },
+    default: 1,
+    onChange: applyDisplayPreferences,
+  });
+
+  game.settings.register(SYSTEM_ID, "hoverCardScale", {
+    name: "DAGGERHEART.Settings.HoverCardScale",
+    hint: "DAGGERHEART.Settings.HoverCardScaleHint",
+    scope: "client",
+    config: true,
+    type: Number,
+    range: { min: 0.75, max: 1.5, step: 0.05 },
+    default: 1,
+    onChange: applyDisplayPreferences,
+  });
+
   /* On by default, and world-scoped, because what is being switched is
      whether the table's changes are *recorded at all* rather than who gets to
      look at the record. That question stopped being a matter of taste when
@@ -310,4 +336,27 @@ export const spendFear = (n = 1): Promise<number> => setFear(getFear() - n);
 export function applyTheme(value?: string): void {
   const theme = value ?? game.settings.get(SYSTEM_ID, "theme") ?? "dark";
   document.documentElement.classList.toggle("dh-light", theme === "light");
+}
+
+/** Apply this client's sheet readability preferences to every open window. */
+export function applyDisplayPreferences(): void {
+  const read = (key: string, fallback: number, min: number, max: number): number => {
+    let value = fallback;
+    try {
+      value = Number(game.settings?.get(SYSTEM_ID, key) ?? fallback);
+    } catch {
+      /* Settings are not available before init. Keep the documented default. */
+    }
+    return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+  };
+
+  const root = document.documentElement;
+  root.style.setProperty(
+    "--dh-sheet-font-scale",
+    String(read("sheetFontScale", 1, 0.9, 1.4)),
+  );
+  root.style.setProperty(
+    "--dh-hover-card-scale",
+    String(read("hoverCardScale", 1, 0.75, 1.5)),
+  );
 }

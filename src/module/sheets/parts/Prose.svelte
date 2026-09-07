@@ -140,7 +140,7 @@
 
   .prose :global(.editor-content) {
     padding: 10px 12px;
-    font: 400 12.5px/1.6 var(--f-ui);
+    font: 400 calc(12.5px * var(--dh-sheet-font-scale, 1))/1.6 var(--f-ui);
     color: var(--ink-2);
   }
 
@@ -160,7 +160,7 @@
     color: var(--ink-3);
     background: transparent;
     border: 0;
-    font-size: 11px;
+    font-size: calc(11px * var(--dh-sheet-font-scale, 1));
   }
   .prose :global(button.toggle:hover) {
     color: var(--hope-tx);
@@ -172,6 +172,6 @@
   .prose :global(.editor-content:empty)::after {
     content: "Nothing written yet.";
     color: var(--ink-4);
-    font: 400 12.5px/1.6 var(--f-ui);
+    font: 400 calc(12.5px * var(--dh-sheet-font-scale, 1))/1.6 var(--f-ui);
   }
 </style>

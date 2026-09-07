@@ -1723,7 +1723,7 @@
   }
   .it-hd .eyebrow {
     display: block;
-    font: 700 8.5px/1 var(--f-mono);
+    font: 700 calc(8.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--ink-3);
@@ -1733,7 +1733,7 @@
     width: 100%;
     border: 0;
     background: transparent;
-    font: 700 18px/1.05 var(--f-display);
+    font: 700 calc(18px * var(--dh-sheet-font-scale, 1))/1.05 var(--f-display);
     letter-spacing: -0.02em;
     color: var(--ink);
     padding: 0;
@@ -1754,7 +1754,7 @@
   }
   .fields span {
     display: block;
-    font: 700 8px/1 var(--f-mono);
+    font: 700 calc(8px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-3);
@@ -1768,7 +1768,7 @@
     background: var(--sunk);
     box-shadow: inset 0 0 0 1px var(--line);
     color: var(--ink);
-    font: 500 12px/1 var(--f-ui);
+    font: 500 calc(12px * var(--dh-sheet-font-scale, 1))/1 var(--f-ui);
     padding: 6px 8px;
   }
   .fields input:focus,
@@ -1782,7 +1782,7 @@
      titled at rather than at field size, because it is a heading that
      happens to be typed into. */
   .fnm {
-    font: 600 12.5px/1.3 var(--f-ui);
+    font: 600 calc(12.5px * var(--dh-sheet-font-scale, 1))/1.3 var(--f-ui);
     margin-bottom: 5px;
   }
 
@@ -1831,7 +1831,7 @@
     cursor: pointer;
     background: transparent;
     color: var(--ink-4);
-    font: 700 12px/1 var(--f-mono);
+    font: 700 calc(12px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono);
     transition:
       color 0.14s,
       background 0.14s;
@@ -1867,7 +1867,7 @@
     cursor: pointer;
   }
   .sw span {
-    font: 500 11.5px/1 var(--f-ui);
+    font: 500 calc(11.5px * var(--dh-sheet-font-scale, 1))/1 var(--f-ui);
     color: var(--ink-2);
   }
 </style>
