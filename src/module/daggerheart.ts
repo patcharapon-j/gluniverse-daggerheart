@@ -55,24 +55,6 @@ import { openTokenStudio } from "./token-studio.ts";
 import { clearMark, isMarkedCharacter, markedSpellcast, payUpkeep, registerMarked, rollOffMark } from "./marked.ts";
 import { migrateOnReady, migrateWorld } from "./migration/index.ts";
 
-/**
- * The design is set in Google Sans, which is not bundled — it is not ours to
- * redistribute. The stylesheet is requested at init and every rule falls
- * back to a system stack, so an offline client gets the layout and the
- * metrics without the face.
- */
-function requestFonts(): void {
-  if (document.getElementById("dh-fonts")) return;
-  const link = document.createElement("link");
-  link.id = "dh-fonts";
-  link.rel = "stylesheet";
-  link.href =
-    "https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700" +
-    "&family=Google+Sans+Text:wght@400;500;600;700" +
-    "&family=Google+Sans+Code:wght@400;500;600;700&display=swap";
-  document.head.append(link);
-}
-
 Hooks.once("init", () => {
   console.log(`${SYSTEM_ID} | Initializing GLUniverse — Daggerheart`);
 
@@ -144,7 +126,6 @@ Hooks.once("init", () => {
   registerDice();
   registerBrowser();
   Hooks.on("daggerheart.contentChanged", closeCreationForContentChange);
-  requestFonts();
 
   /* Vulnerable, kept in step with the Stress track — the one condition the
      sheet can work out for itself. Gated on the active GM for the reason the
