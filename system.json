@@ -16,6 +16,7 @@
     "module/daggerheart.js"
   ],
   "styles": [
+    "styles/fonts.css",
     "styles/tokens.css",
     "styles/frame.css",
     "styles/mark.css",
