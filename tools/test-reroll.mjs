@@ -1,4 +1,13 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+/* The real lang file. The plate builders resolve every visible string through
+   `DAGGERHEART.Plate.*`, and `rebuild` runs them — so a harness that echoed
+   the key would rebuild a card made of keys. */
+const en = JSON.parse(readFileSync(new URL("../lang/en.json", import.meta.url), "utf8"));
+const localize = (key) => key.split(".").reduce((o, k) => o?.[k], en) ?? key;
+const format = (key, data = {}) =>
+  String(localize(key)).replace(/\{(\w+)\}/g, (_, name) => data[name] ?? "");
 
 const SYSTEM_ID = "gluniverse-daggerheart";
 const hooks = new Map();
@@ -14,7 +23,7 @@ let enabled = true;
 let animations = [];
 globalThis.game = {
   user: { id: "roller" },
-  i18n: { localize: (key) => key },
+  i18n: { localize, format },
   settings: { get: () => enabled },
   messages: new Map(),
   dice3d: { showForRoll: async (roll) => { animations.push(roll); } },

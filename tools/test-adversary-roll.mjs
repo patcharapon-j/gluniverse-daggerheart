@@ -33,6 +33,16 @@
  */
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+/* The real lang file, not an echo of the key: these cards are now built out
+   of `DAGGERHEART.Plate.*`, so a harness that returned the key would assert
+   nothing about the words and would hide a key that does not exist. */
+const en = JSON.parse(readFileSync(new URL("../lang/en.json", import.meta.url), "utf8"));
+const localize = (key) => key.split(".").reduce((o, k) => o?.[k], en) ?? key;
+const format = (key, data = {}) =>
+  String(localize(key)).replace(/\{(\w+)\}/g, (_, name) => data[name] ?? "");
+
 
 globalThis.Math.clamp ??= (value, min, max) => Math.min(max, Math.max(min, value));
 globalThis.CONST = { CHAT_MESSAGE_STYLES: { OTHER: 0 } };
@@ -49,7 +59,7 @@ globalThis.game = {
   get user() {
     return { isGM: true, targets };
   },
-  i18n: { format: (key) => key },
+  i18n: { localize, format },
 };
 globalThis.canvas = { tokens: { controlled: [] } };
 globalThis.foundry = {
@@ -187,8 +197,8 @@ assert.equal(row(result.message), true, "a hit offered the GM nothing");
 assert.match(result.message.content, /data-dh-act="roll-foe-damage"/);
 assert.match(
   result.message.content,
-  /DAGGERHEART\.Plate\.DealDamage/,
-  "the offer is not a keyed string",
+  /DEAL 2D8\+2 PHYSICAL DAMAGE|Deal 2d8\+2 physical damage/i,
+  "the offer did not render the expression the GM is deciding about",
 );
 assert.equal(
   result.message.flags["gluniverse-daggerheart"].nextAct,
@@ -220,6 +230,17 @@ assert.equal(result.message.whisper, undefined, "an attack was whispered, and it
 aim();
 result = await rollAdversaryReaction(armed, 13);
 assert.equal(row(result.message), false, "a reaction offered damage — nothing passes hands on one");
+
+
+/* No card renders a raw key. `check-i18n.mjs` proves every key it can see
+   resolves; this proves the card actually resolved them, which is the half
+   that shows up on screen when a `t()` call is given a name that is not in
+   the block. */
+assert.doesNotMatch(
+  result.message.content,
+  /DAGGERHEART\./,
+  "a key reached the card unresolved",
+);
 
 console.log(
   "adversary attack: the target's own number resolves the rail, only a landed roll offers damage, and a reaction is whispered",

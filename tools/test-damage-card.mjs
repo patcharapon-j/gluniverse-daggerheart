@@ -24,6 +24,16 @@
  */
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+/* The real lang file, not an echo of the key: these cards are now built out
+   of `DAGGERHEART.Plate.*`, so a harness that returned the key would assert
+   nothing about the words and would hide a key that does not exist. */
+const en = JSON.parse(readFileSync(new URL("../lang/en.json", import.meta.url), "utf8"));
+const localize = (key) => key.split(".").reduce((o, k) => o?.[k], en) ?? key;
+const format = (key, data = {}) =>
+  String(localize(key)).replace(/\{(\w+)\}/g, (_, name) => data[name] ?? "");
+
 
 globalThis.Math.clamp ??= (value, min, max) => Math.min(max, Math.max(min, value));
 globalThis.CONST = { CHAT_MESSAGE_STYLES: { OTHER: 0 } };
@@ -38,7 +48,7 @@ globalThis.game = {
   get user() {
     return { isGM, name: "Tester", targets: new Set(), character };
   },
-  i18n: { format: (key) => key },
+  i18n: { localize, format },
 };
 globalThis.canvas = { get tokens() { return { controlled }; } };
 globalThis.foundry = {
@@ -139,6 +149,17 @@ for (const word of ["minor", "major", "severe", "massive", "hit point"]) {
 select('Bramble<script>"wolf"');
 r = await roll();
 assert.doesNotMatch(line(r), /<script>/, "a token name went into the card unescaped");
+
+
+/* No card renders a raw key. `check-i18n.mjs` proves every key it can see
+   resolves; this proves the card actually resolved them, which is the half
+   that shows up on screen when a `t()` call is given a name that is not in
+   the block. */
+assert.doesNotMatch(
+  r.message.content,
+  /DAGGERHEART\./,
+  "a key reached the card unresolved",
+);
 
 console.log(
   "damage card: it names the recipients the button would hit, two then a count, and forecasts nothing about them",
