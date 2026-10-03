@@ -43,6 +43,7 @@
     "styles/make.css",
     "styles/browse.css",
     "styles/marked.css",
+    "styles/foil.css",
     "styles/token.css",
     "styles/ruler.css",
     "styles/daggerheart-components.css",

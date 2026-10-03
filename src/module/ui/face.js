@@ -222,9 +222,24 @@ const seam = (o) => `
 
 /* The printed foot: what the printing records, or Homebrew for a card that
    has no printing to record anything. */
+/* A card's own number, or the word for a card that has none.
+
+   `code` first, and `homebrew` only when there is no code, because the two
+   are not the alternatives they look like. `homebrew()` in `cards.ts`
+   answers "no Darrington printing", and a campaign-frame card has none —
+   but it *does* come out of a box, and `markedCode()` names which:
+   `TM·ROOT`. With the word first, every Root and Void card printed
+   "Homebrew" over a set mark the builder had already been handed, which
+   made nonsense of the whole argument in `marked.css` that the footer's
+   right cell is where a frame says where it came from.
+
+   So: a card that knows its set says its set, and the word is what is left
+   for a card that genuinely came from nowhere but this table. */
 const printedFoot = (o) => `
-    <footer class="dh-foot">${o.homebrew ? '<b>Homebrew</b>' :
-      `${o.code ? `<b>${o.code}</b>` : ''}${o.artist ? `<span>Art: ${o.artist}</span>` : ''}`}
+    <footer class="dh-foot">${o.code
+      ? `<b>${o.code}</b>${o.artist ? `<span>Art: ${o.artist}</span>` : ''}`
+      : o.homebrew ? '<b>Homebrew</b>'
+      : `${o.artist ? `<span>Art: ${o.artist}</span>` : ''}`}
     </footer>`;
 
 /* ── rules text ──────────────────────────────────────────────────

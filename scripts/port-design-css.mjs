@@ -74,6 +74,7 @@ const SHEETS = [
   "make.css",
   "browse.css",
   "marked.css",
+  "foil.css",
   "token.css",
   "ruler.css",
 ];
