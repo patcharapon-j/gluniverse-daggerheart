@@ -289,9 +289,11 @@ export async function rollOffMark(actor: any, bought = 0): Promise<MarkRollOutco
   }
   await actor.update(update);
 
-  /* A failure with Fear also feeds the pool, which is the frame's grammar
-     everywhere else: the mark's every move is the GM's gain. */
-  if (!success && !hope) await gainFear(1);
+  /* The Fear this roll owes the pool is applied by `applyFear` in
+     `dice/chat.ts`, off the message the roll just posted, like every other
+     Fear outcome in the system. It was gained here as well until that hook
+     existed, which would now be two Fear for one roll — and it was gained
+     only on a failure, where the rule is any Fear outcome at all. */
 
   return { mark, difficulty, bought: spend, success, hope, surging };
 }

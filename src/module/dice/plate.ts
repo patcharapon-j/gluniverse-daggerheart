@@ -555,9 +555,6 @@ const FOE_V = (r: FoePlate): string =>
         ? `hit ${esc(r.target)}`
         : `missed ${esc(r.target)}`;
 
-const FOE_GH = (r: FoePlate): string =>
-  r.rxn ? "REACTION" : foeCrit(r) ? "CRITICAL" : r.dc == null ? "ATTACK" : r.hit ? "HIT" : "MISS";
-
 /* Evasion and Difficulty are different target numbers and the chip says
    which — a GM reading a log full of both should never have to work out what
    the number on the right was. An unresolved attack has no chip at all. */

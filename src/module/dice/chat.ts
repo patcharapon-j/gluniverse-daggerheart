@@ -20,7 +20,7 @@ import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
 import { refreshedValue } from "../data/resources.ts";
 import { rollWeaponDamage } from "./actions.ts";
 import { canReroll, rerollDie } from "./reroll.ts";
-import { rollDamage } from "./rolls.ts";
+import { applyFearClaim, rollDamage } from "./rolls.ts";
 import { hold, play } from "./arrival.ts";
 import { waitFor3dDice } from "./dsn.ts";
 
@@ -74,6 +74,10 @@ const arriving = (message: any): boolean => {
 };
 
 export function registerChat(): void {
+  Hooks.on("createChatMessage", (message: any) => {
+    void applyFear(message);
+  });
+
   Hooks.on("renderChatMessageHTML", (message: any, html: HTMLElement) => {
     const host = html.querySelector<HTMLElement>(".dh-card");
     if (!host) return;
@@ -96,6 +100,35 @@ export function registerChat(): void {
     else if (dice) hold(plate, dice);
     else plate.classList.add("land");
   });
+}
+
+/**
+ * A Fear outcome hands the GM a Fear. That is not a choice, so it is not a
+ * press.
+ *
+ * It runs on creation rather than on render because every client renders a
+ * message, several times, and exactly one client creates it. And on the
+ * active GM alone, because only a GM may write a world setting and two of
+ * them would otherwise both write it — the guard `syncVulnerable` already
+ * uses for the same reason.
+ *
+ * The claim is written before the pool and read back by `bindActions`, so
+ * the row draws spent from its first frame on every client. The card states
+ * what has already happened rather than offering it, which is what it had
+ * always said it did.
+ */
+async function applyFear(message: any): Promise<void> {
+  if (game.users?.activeGM !== game.user) return;
+  if (message.getFlag(SYSTEM_ID, "kind") !== "duality") return;
+
+  /* A reaction has no Hope and no Fear, and a critical is its own rung with
+     its own two claims. `claims` in `plate.ts` draws exactly this line. */
+  const plate = message.getFlag(SYSTEM_ID, "plate");
+  if (plate?.out !== "fear" || plate.rxn) return;
+
+  if (message.getFlag(SYSTEM_ID, "claimed.fear")) return;
+  await message.setFlag(SYSTEM_ID, "claimed.fear", true);
+  await applyFearClaim(1);
 }
 
 /**
@@ -187,12 +220,31 @@ const CLAIM_OF: Record<string, string> = {
   "gain-fear": "fear",
 };
 
+/** The same row, saying the same thing, with nothing to press. */
+const statement = (el: HTMLElement): HTMLSpanElement => {
+  const span = document.createElement("span");
+  span.className = `${el.className} theirs`;
+  span.dataset.dhAct = el.dataset.dhAct ?? "";
+  span.innerHTML = el.innerHTML;
+  return span;
+};
+
 function bindActions(message: any, plate: HTMLElement): void {
   const taken = message.getFlag(SYSTEM_ID, "claimed") ?? {};
 
   for (const el of plate.querySelectorAll<HTMLElement>("[data-dh-act]")) {
     const act = el.dataset.dhAct;
     if (!act) continue;
+
+    /* The Fear claim is a statement to anyone who cannot write the pool, and
+       `setFear` silently refuses a non-GM. The builder cannot make this call
+       — a plate is stored as one string for every reader — so it emits the
+       button and the downgrade happens here, among the other per-reader
+       decisions. */
+    if (act === "gain-fear" && !game.user?.isGM) {
+      el.replaceWith(statement(el));
+      continue;
+    }
 
     if (el.tagName !== "BUTTON") continue;
 
