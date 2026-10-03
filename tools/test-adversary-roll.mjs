@@ -173,6 +173,39 @@ result = await rollAdversaryAttack(adversary);
 assert.equal(plateOf(result.message).dc, null, "two targets resolved one of them");
 assert.equal(plateOf(result.message).target, "Ranger · Bard");
 
+/* ── the claim row, offered only by a roll that landed ───────────────── */
+
+const armed = {
+  ...adversary,
+  system: { attack: { name: "Slash", modifier: 2, damage: { count: 2, dice: "d8", bonus: 2, type: "physical" } } },
+};
+const row = (message) => /<div class="pl-act">/.test(message.content);
+
+aim({ ...ranger, system: { evasion: { value: 10 } } });
+result = await rollAdversaryAttack(armed);
+assert.equal(row(result.message), true, "a hit offered the GM nothing");
+assert.match(result.message.content, /data-dh-act="roll-foe-damage"/);
+assert.match(
+  result.message.content,
+  /DAGGERHEART\.Plate\.DealDamage/,
+  "the offer is not a keyed string",
+);
+assert.equal(
+  result.message.flags["gluniverse-daggerheart"].nextAct,
+  "roll-foe-damage",
+  "the offer was rendered but not recorded, so a reroll would eat it",
+);
+
+aim({ ...ranger, system: { evasion: { value: 99 } } });
+result = await rollAdversaryAttack(armed);
+assert.equal(row(result.message), false, "a miss offered damage anyway");
+// postPlate stores a withheld offer as an explicit null, not a hole.
+assert.equal(result.message.flags["gluniverse-daggerheart"].nextAct, null);
+
+aim();
+result = await rollAdversaryAttack(armed);
+assert.equal(row(result.message), false, "an unresolved attack offered damage — no hit is being claimed");
+
 /* ── and the reaction, which is whispered ────────────────────────────── */
 
 aim();
@@ -184,6 +217,10 @@ assert.equal(plateOf(result.message).rxn, true);
 result = await rollAdversaryAttack(adversary);
 assert.equal(result.message.whisper, undefined, "an attack was whispered, and it has no secret to keep");
 
+aim();
+result = await rollAdversaryReaction(armed, 13);
+assert.equal(row(result.message), false, "a reaction offered damage — nothing passes hands on one");
+
 console.log(
-  "adversary attack: the target's own number resolves the rail, an absent number stays absent, and a reaction is whispered",
+  "adversary attack: the target's own number resolves the rail, only a landed roll offers damage, and a reaction is whispered",
 );

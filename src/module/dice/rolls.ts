@@ -301,8 +301,11 @@ export interface FoeOptions {
   dc?: number | null;
   target?: string;
   reaction?: boolean;
+  /** The trailing offer, made only by a roll that actually landed. */
   next?: string;
   nextAct?: string;
+  /** The same offer worded for a critical, which awards maximum dice. */
+  critNext?: string;
 }
 
 export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll: any; message: any }> {
@@ -345,14 +348,21 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
   // given none.
   base.hit = foeCrit(base) ? true : base.dc == null ? false : base.total >= base.dc;
 
+  /* A miss hands the GM nothing, so it is offered nothing — and an
+     unresolved attack claims no hit either, which is the same `landed` the
+     rail is drawn from. `ACT([], undefined)` returns the empty string, so
+     the row is absent rather than present and empty. */
+  const next = base.hit ? (foeCrit(base) && opts.critNext ? opts.critNext : opts.next) : undefined;
+  const nextAct = next ? opts.nextAct : undefined;
+
   const message = await postPlate({
     roll,
-    content: foePlate(base, opts.next, opts.nextAct),
+    content: foePlate(base, next, nextAct),
     actor: opts.actor,
     type: "adversary",
     plate: base,
-    next: opts.next,
-    nextAct: opts.nextAct,
+    next,
+    nextAct,
     whisper: opts.reaction,
   });
 

@@ -18,7 +18,8 @@ import { watchChatCard } from "../apps/chat-card-fit.ts";
 import { loadSigils } from "../sheets/cards.ts";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
 import { refreshedValue } from "../data/resources.ts";
-import { rollWeaponDamage } from "./actions.ts";
+import { rollAdversaryDamage, rollWeaponDamage } from "./actions.ts";
+import { foeCrit } from "./plate.ts";
 import { canReroll, rerollDie } from "./reroll.ts";
 import { applyFearClaim, rollDamage } from "./rolls.ts";
 import { hold, play } from "./arrival.ts";
@@ -216,6 +217,10 @@ const CLAIM_OF: Record<string, string> = {
   "gain-hope": "hope",
   "clear-stress": "stress",
   "roll-damage": "damage",
+  /* The same claim as the player's, because the key names what changed
+     hands — this attack's damage has been rolled — and not which button
+     did it. Two GMs pressing it is one attack dealing damage twice. */
+  "roll-foe-damage": "damage",
   "apply-damage": "applied",
   "gain-fear": "fear",
 };
@@ -243,6 +248,17 @@ function bindActions(message: any, plate: HTMLElement): void {
        decisions. */
     if (act === "gain-fear" && !game.user?.isGM) {
       el.replaceWith(statement(el));
+      continue;
+    }
+
+    /* The GM's damage roll is not offered to a player at all. The Fear claim
+       above survives as a statement because it is *about* them; this is not,
+       and there is nothing to read in a button nobody at this screen may
+       press. The row goes with it when it was the only thing in it. */
+    if (act === "roll-foe-damage" && !game.user?.isGM) {
+      const row = el.closest<HTMLElement>(".pl-act");
+      el.remove();
+      if (row && !row.children.length) row.remove();
       continue;
     }
 
@@ -370,6 +386,19 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
       if (!(await claimOnce(message, "damage"))) return;
       const critical = message.getFlag(SYSTEM_ID, "plate")?.out === "crit";
       await rollWeaponDamage(actor, weapon, { critical });
+      finish(el);
+      return;
+    }
+    /* The GM's half of the same offer. The weapon lookup above has no
+       counterpart here — an adversary's damage is one expression on its own
+       stat block — and the critical carries across off the d20 the way the
+       player's carries off the duality pair. */
+    case "roll-foe-damage": {
+      if (!game.user?.isGM) return warn("AdversaryGMOnly");
+      if (!actor) return;
+      if (!(await claimOnce(message, "damage"))) return;
+      const plate = message.getFlag(SYSTEM_ID, "plate");
+      await rollAdversaryDamage(actor, { critical: plate ? foeCrit(plate) : false });
       finish(el);
       return;
     }

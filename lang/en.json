@@ -101,7 +101,8 @@
       "NoTokenStudio": "Phil's Token Studio is not installed or is switched off in this world.",
       "TokenStudioFailed": "Phil's Token Studio could not be opened — see the console for what it said.",
       "TokenStudioNotYours": "That is not your actor to edit.",
-      "GunslingerDisabled": "The Gunslinger homebrew package is disabled in this world. Enable it in Configure Settings to add this content."
+      "GunslingerDisabled": "The Gunslinger homebrew package is disabled in this world. Enable it in Configure Settings to add this content.",
+      "AdversaryGMOnly": "Only a GM can roll an adversary's damage."
     },
     "TokenStudio": {
       "Open": "Token Studio"
@@ -243,6 +244,10 @@
       "Once": "once per rest",
       "Rule": "Clear your Focus, roll a d6 per point of Instinct, and gain Focus equal to the highest result.",
       "NoDice": "Refocus rolls a d6 per point of Instinct — at {mod} there is nothing to roll, so the pool is left where it is."
+    },
+    "Plate": {
+      "DealDamage": "Deal {damage}",
+      "DealDamageMax": "Deal {damage}, starting at maximum"
     }
   }
 }

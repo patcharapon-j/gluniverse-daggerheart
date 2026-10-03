@@ -303,8 +303,32 @@ export async function rollAdversaryAttack(
     advantage: opts.advantage,
     dc: aimed.dc,
     target: aimed.name,
+    /* The damage that follows from the hit, which the GM card has had a
+       styled but unfilled slot for all along: `.g1 .pl-act` is in
+       `plate.css` and `foePlate` already took a `next`. */
+    next: game.i18n.format("DAGGERHEART.Plate.DealDamage", {
+      damage: foeDamage(attack.damage),
+    }),
+    critNext: game.i18n.format("DAGGERHEART.Plate.DealDamageMax", {
+      damage: foeDamage(attack.damage),
+    }),
+    nextAct: "roll-foe-damage",
   });
 }
+
+/**
+ * The adversary's damage, as the GM is offered it: "2d8+2 physical damage".
+ *
+ * Written out rather than shortened because the offer is the only place the
+ * expression appears before it is rolled, and a GM deciding whether to press
+ * it is deciding about *that* — the stat block is not open.
+ */
+const foeDamage = (dmg: any): string => {
+  const bonus = Number(dmg?.bonus ?? 0);
+  return `${Math.max(1, dmg?.count ?? 1)}${dmg?.dice ?? "d6"}${bonus ? `+${bonus}` : ""} ${
+    dmg?.direct ? "direct " : ""
+  }${dmg?.type ?? "physical"} damage`;
+};
 
 export async function rollAdversaryDamage(actor: any, { critical = false } = {}) {
   const dmg = actor.system?.attack?.damage ?? { count: 1, dice: "d6", bonus: 0, type: "physical" };
