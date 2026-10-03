@@ -18,7 +18,14 @@ const compile=(gl,type,source)=>{const shader=gl.createShader(type);gl.shaderSou
 const materialById = new Map(CONDITION_MATERIALS.map((entry,index)=>[entry.id,{...entry,index}]));
 
 async function boot(canvas,state){
-  const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false,preserveDrawingBuffer:true});
+  /* premultipliedAlpha MUST match Foundry's pipeline, and the reason is a bug
+     this page concealed through three review passes. The shader writes
+     premultiplied colour — see the note at the end of main() — and a context
+     asking for straight alpha un-multiplies it on composite, which quietly
+     undoes the exact term that stops a glow over a transparent pixel becoming
+     a glow drawn on the map. A harness that composites differently from the
+     canvas verifies a renderer nobody ships. */
+  const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:true,preserveDrawingBuffer:true});
   if(!gl)throw new Error('WebGL unavailable');
   const program=gl.createProgram();gl.attachShader(program,compile(gl,gl.VERTEX_SHADER,vertex));gl.attachShader(program,compile(gl,gl.FRAGMENT_SHADER,TOKEN_CONDITION_FRAGMENT));gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));gl.useProgram(program);

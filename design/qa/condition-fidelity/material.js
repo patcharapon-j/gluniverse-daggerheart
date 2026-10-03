@@ -6,7 +6,7 @@
  * page is built from and the reasoning that produced it, which is worth
  * keeping and is not worth carrying inside a fragment shader.
  *
- * baseline.js holds the shader this replaced, frozen, as the comparison.
+ * baseline.js holds the shipped shader, frozen, as the comparison.
  *
  * This is NOT a redesign. An earlier proposal replaced the composite with a
  * physical material model — absorb, emit, relief, a key light — and it was
@@ -106,19 +106,18 @@
  *   through something else; past that it is a thing melting.
  */
 
-export const PALETTE = [
-  '#9b72e4', '#7590a6', '#aeb8c4', '#7388aa',
-  '#ef4c5c', '#76d8d1', '#c467e8', '#a8dbe7',
-  '#e78ba7', '#9bc45b', '#f2c85c', '#55bff5',
-  '#7785a1', '#8d55b8', '#86a7c9', '#f0783f',
-  /* The optional chapters' seven, and the Guardian's stance. Broken and
-     Destroyed are one hue at two values on purpose: the rules put them one
-     step apart, so the palette does too. */
-  '#c9a06a', '#bfe6f2', '#6f8f5e', '#a03a6e',
-  '#c9922e', '#8c8378', '#5e5952',
-  /* The last, and the only warm neutral: whatever the GM typed. */
-  '#c8b39a',
-];
+/**
+ * The shipped palette, read from the shipped palette.
+ *
+ * This was a second copy of twenty-four hex strings, which is a palette that
+ * disagrees with itself the first time somebody tunes a hue — and it would
+ * disagree silently, on the one page whose entire job is showing you the
+ * colours before you decide about them. The shader is imported from src for
+ * exactly this reason and so is the colour now.
+ */
+import { ADHOC_CONDITION_ID, CONDITION_MATERIALS } from '../../../src/module/token-conditions.ts';
+
+export const PALETTE = CONDITION_MATERIALS.map((material) => material.hex);
 
 /** id, label, and what this pass changed. Order IS the shader branch order.
     The last entry is the shader's fall-through and is not in CONDITIONS in
@@ -149,6 +148,21 @@ export const CONDITIONS = [
   ['destroyed',     'Destroyed',       'The same fracture, everywhere, and opening \u2014 on a period slow enough to notice between rounds rather than watch. Deliberately not the shattered branch a defeated token gets: that one throws shards off the creature because the creature is gone, and a Destroyed segment is still standing there.'],
   ['adhoc',         'Named by the GM', 'The one whose subject is unknown. Everything above draws a thing; this cannot, because nobody told it what is happening, and inventing a subject would put the texture of something else on the creature. A ring of marks turning at the rim over a wash that breathes: it says the creature is noted, at the size where the sentence naming it has already gone.'],
 ];
+
+/* Order IS the shader's branch order, and the branch cutoffs are the index in
+   CONDITION_MATERIALS — so the row copy below, the palette above and the
+   `if (id < N.5)` ladder in the shader are one sequence. Nothing about a
+   mismatch is visible on the page: the rows would simply describe the wrong
+   material, in the right colour, and read as a design problem. */
+const EXPECTED = CONDITION_MATERIALS.map((material) => material.id);
+const ACTUAL = CONDITIONS.map(([id]) => id);
+if (ACTUAL.length !== EXPECTED.length || ACTUAL.some((id, i) => id !== EXPECTED[i]))
+  throw new Error(
+    `condition-fidelity: row copy is out of step with CONDITION_MATERIALS\n` +
+      `  shader: ${EXPECTED.join(', ')}\n  rows:   ${ACTUAL.join(', ')}`,
+  );
+if (ACTUAL[ACTUAL.length - 1] !== ADHOC_CONDITION_ID)
+  throw new Error('condition-fidelity: the fall-through row must be last');
 
 /** Not a condition: a separate branch of the shader, and its own row. */
 export const DEAD = ['dead', 'Dead',

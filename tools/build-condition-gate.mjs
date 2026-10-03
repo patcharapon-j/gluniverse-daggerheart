@@ -17,6 +17,7 @@ import { dirname, join } from "node:path";
 import { TOKEN_CONDITION_FRAGMENT } from "../src/module/token-conditions.ts";
 import { CONDITIONS, DEAD, PALETTE } from "../design/qa/condition-fidelity/material.js";
 import { CONDITION_MATERIAL_BASELINE } from "../design/qa/condition-fidelity/baseline.js";
+import { stripGlslComments } from "./lib/glsl.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 /* Named for what it holds rather than for how many, which it was: the page
@@ -365,7 +366,7 @@ const IDS = ${j(CONDITIONS.map(([id]) => id))};
 const PALETTE = ${j(PALETTE)};
 const PORTRAIT = ${j(portrait)};
 const SHIPPED = ${j(CONDITION_MATERIAL_BASELINE)};
-const REFINED = ${j(TOKEN_CONDITION_FRAGMENT)};
+const REFINED = ${j(stripGlslComments(TOKEN_CONDITION_FRAGMENT))};
 
 const table = document.getElementById('table');
 table.innerHTML = ROWS.map((r) =>
@@ -477,7 +478,7 @@ async function boot() {
     gl.uniform4f(u.outputFrame, 0, 0, frame, frame);
     gl.uniform4f(u.inputClamp, 0, 0, 1, 1);
     /* One tile is one token and the creature fills it, so the creature ends
-       at the frame — which is the plain-token case and the shader's own
+       at the frame, which is the plain-token case and the shader's own
        default. The gate is not where a ringed token is studied; the live
        value is measured off the mesh in token-hud.ts. */
     gl.uniform1f(u.uSubject, 1);
