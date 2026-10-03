@@ -566,6 +566,22 @@ declare module "*/ui/ruler.js" {
 declare module "*/ui/terms.js" {
   /** Card text with every term it names given its colour and its symbol. */
   export function rich(text?: string): string;
+
+  /** The same, without the `**bold**` and `*italic*` pass. */
+  export function terms(text?: string): string;
+
+  /** A term's mark, as path data, keyed by the term the scanner found. */
+  export const MARK_PATHS: Record<string, string>;
+
+  /**
+   * What a use limit waits for, as path data: a sun, a book, a stage, a
+   * crescent. `rest` is stated so a caller can fall back on it without
+   * having to prove the index hit — every refresh a card can name is in
+   * here, and `rest` is what an unknown one means.
+   */
+  export const PER_PATHS: Record<string, string | undefined> & { rest: string };
+
+  export const DIE_PATH: string;
 }
 
 declare module "*/ui/ornaments.js" {

@@ -62,6 +62,7 @@ import { resourceMax, type Resource } from "../data/resources.ts";
 import { poolCapacity, type DiePool } from "../data/dice-pools.ts";
 import { CHITS } from "../ui/chit.js";
 import { KEEP } from "../ui/keep.js";
+import { PER_PATHS } from "../ui/terms.js";
 import { CLASSES, KINDS, byslug } from "../ui/domains.js";
 import { clazz, glyph, icon } from "../ui/domains.js";
 
@@ -157,6 +158,17 @@ export interface CardContext {
    * is the honest reading rather than a gap.
    */
   actor?: any;
+  /**
+   * Where the surface is holding the card, when that is part of its state.
+   *
+   * `rest` on a card in hand, `within-reach`/`out-of-reach` in the vault,
+   * and never `used` — being used up is a fact about the document and
+   * `cardOf` reads it off the budget itself. So this is the half of `state`
+   * the card cannot know, and a card that *is* spent keeps `used` whatever
+   * is passed here, because "out of reach" and "already gone" is one claim
+   * too many to put on one stamp.
+   */
+  state?: "rest" | "within-reach" | "out-of-reach";
 }
 
 export interface CardOptions {
@@ -325,6 +337,24 @@ export interface CardOptions {
    * none. A surface that knows better may set it.
    */
   homebrew?: boolean;
+  /**
+   * `data-state`: what the card is doing, which is the stamp over the art.
+   *
+   * Four values and only two of them speak: `used` prints "Used" and
+   * `out-of-reach` prints what recalling it costs. `rest` and
+   * `within-reach` are the quiet ones, and the difference between them is
+   * the vault's own treatment rather than a word on the painting.
+   */
+  state?: "rest" | "within-reach" | "out-of-reach" | "used";
+  /**
+   * The card's limited uses as charge lights, already drawn.
+   *
+   * A readout rather than a control, for `chits`'s reason, and drawn by
+   * `cardUses` off the one resource the card's own rule spends. Unset for
+   * the cards that have no budget, which is most of them — an empty row of
+   * lights claims a limit the card does not have.
+   */
+  uses?: string;
   /**
    * Counter rows, already drawn, for the plate's lower left.
    *
@@ -502,6 +532,103 @@ export function cardChits(it: ItemSnapshot, actor?: any): string | undefined {
   }
   return rows.join("");
 }
+/* ── uses, and being spent ────────────────────────────────────────────
+   A card that says "once per long rest" has a budget, and the budget is
+   already a `resource` with a `max.n` and a `refresh` — `items.ts` derives
+   `system.uses` off the first one that belongs to the document rather than
+   to a feature block, and `refreshUses` in `apps/rest.ts` has cleared them
+   at the right rest since before the card was redrawn. So there is nothing
+   to parse and nothing to store: the card only has to draw what is there.
+
+   Re-derived here rather than taken from `system.uses` alone, because a
+   snapshot does not always carry the derived field. The character sheet's
+   comes off a live document and does; the compendium browser's comes off a
+   pack index and does not, and a browsed card with its lights missing
+   would look like a card with no budget. Same predicate as `items.ts`'s,
+   deliberately — two readings of "which pile is the card's own" is one
+   reading too many. */
+
+/** The card's own budget: the first fixed-ceiling pool that is not a feature's. */
+const budgetOf = (s: any): any =>
+  s?.uses ??
+  (s?.resources ?? []).find(
+    (r: any) => !r.feature && r.max?.kind === "fixed" && r.max.n > 0,
+  ) ??
+  null;
+
+/** How a refresh reads after "back each" — gluvtt's `perWords`, verbatim. */
+const PER_WORDS: Record<string, string> = {
+  rest: "rest",
+  shortRest: "short rest",
+  longRest: "long rest",
+  session: "session",
+  scene: "scene",
+  manual: "use",
+};
+
+/* Text and attribute escaping, because a resource's name is authored. */
+const escapeText = (s: string): string =>
+  String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c] as string);
+
+const escapeAttr = (s: string): string => escapeText(s).replaceAll('"', "&quot;");
+
+const mark = (path: string): string =>
+  `<svg viewBox="0 0 16 16" class="dh-term-mark" aria-hidden="true" focusable="false">` +
+  `<path d="${path}" fill="currentColor" fill-rule="evenodd"/></svg>`;
+
+/**
+ * A card's limited uses as charge lights, drawn the way gluvtt draws them.
+ *
+ * A **readout**, like `cardChits` and for the same reason: the two surfaces
+ * this reaches are the peek layer, which is `pointer-events:none`, and the
+ * chat log, where a row of live buttons three hours later is an invitation
+ * to spend the same use twice. Where the budget is a control — the features
+ * row, the loadout bay — the lights are a `Chits` component instead.
+ *
+ * One light per use, lit while it is there to spend. The mark says what the
+ * budget waits for rather than what spending it costs, which is `PER_PATHS`
+ * in `terms.js` and is why a long rest gets a sun and a scene a stage.
+ */
+export function cardUses(it: ItemSnapshot): string | undefined {
+  const use = budgetOf(it.system);
+  if (!use) return undefined;
+  const max = use.max?.n ?? 0;
+  if (max <= 0) return undefined;
+  const left = Math.max(0, Math.min(max, use.value ?? 0));
+  const refresh = use.refresh ?? "rest";
+  const name = use.name || "uses";
+  const said =
+    `${name}: ${left} of ${max} ${max === 1 ? "use" : "uses"} left, ` +
+    `back each ${PER_WORDS[refresh] ?? "rest"}`;
+  const lights = Array.from(
+    { length: max },
+    (_, i) => `<i class="dh-charge-light${i < left ? " is-lit" : ""}"></i>`,
+  ).join("");
+  return (
+    `<span class="dh-charge${left === 0 ? " is-spent" : ""}" role="group" ` +
+    `aria-label="${escapeAttr(said)}">` +
+    mark(PER_PATHS[refresh] ?? PER_PATHS.rest) +
+    `<span class="dh-charge-name">${escapeText(name)}</span>` +
+    `<span class="dh-charge-lights">${lights}</span></span>`
+  );
+}
+
+/**
+ * Whether the card has been used up, by whichever rule applies to it.
+ *
+ * A card with a budget is spent when the budget is empty; a card without one
+ * is spent when somebody has said so. `items.ts` derives exactly this as
+ * `system.isSpent` and this is the same answer re-derived, for `cardUses`'s
+ * reason: a pack-index snapshot has no derived fields. One rule, written
+ * twice because it is read in two places that cannot share a document.
+ */
+export function isSpent(it: ItemSnapshot): boolean {
+  const use = budgetOf(it.system);
+  const max = use?.max?.n ?? 0;
+  if (use && max > 0) return (use.value ?? 0) <= 0;
+  return it.system?.spent === true;
+}
+
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* ── prose ────────────────────────────────────────────────────────────
@@ -603,6 +730,14 @@ export function cardOf(
     artist: s.printing?.artist || undefined,
     homebrew: homebrew(it.type, s),
     chits: cardChits(it, ctx.actor),
+    /* The budget and whether it is empty. `state` is the *card's* state and
+       nothing else: `used` when it has been spent, and otherwise whatever
+       the surface says, because `within-reach` and `out-of-reach` are
+       answers about where the card is sitting and only the surface holding
+       it knows that. A caller that knows better overrides it — see
+       `ctx.state`, which is how the vault marks a card out of reach. */
+    uses: cardUses(it),
+    state: (isSpent(it) ? "used" : (ctx.state ?? "rest")) as CardOptions["state"],
   };
 
   switch (it.type) {
