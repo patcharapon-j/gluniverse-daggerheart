@@ -399,6 +399,36 @@
   .die.rr:hover,.die.rr:active{transform:none}
 }
 
+/* ── the whole arrival, for a reader who asked for stillness ───────
+   The veil block below already says what should happen here: "a client
+   that never runs the arrival — an old message scrolled back into view,
+   a reader on reduced motion — never wears the veil at all and sees the
+   finished card immediately." Nothing implemented it. This block and the
+   matching guard in `dice/chat.ts` do.
+
+   `animation:none` is safe on every one of these because each keyframe
+   already ends on the element's own natural value — scale(1), opacity 1,
+   no transform, a clip path outside the box — which is the same property
+   that lets a re-render be handed the end state instead of travelling to
+   it. A card with the animations off is the settled card.
+
+   The dice numerals are the other half and they are not CSS: the tumble
+   is written by `arrival.ts`, so the guard that matters is the one in
+   the chat hook, which lands the plate without ever spinning it. */
+@media (prefers-reduced-motion:reduce){
+  .pl.play,
+  .pl.play.land > .swp,
+  .pl.mat.play .embers i,
+  .pl.mat.play .foil,
+  .pl.mat.play .seal,
+  .pl.play.land .die.lit,.pl.play.land .die.w,.pl.play.land .die.a:not(.dim),
+  .pl.play.land .pl-vb,
+  .pl.play.land .pl-num,
+  .pl.play.land .pl-act{animation:none}
+  .pl .pl-gh,.pl .pl-meta,.pl .shards,
+  .pl:not(.play) .pl-vb,.pl:not(.play) .pl-act{transition:none}
+}
+
 /* Damage dice are the wound: the material a Hit Point is made of, and
    the one place this card is allowed to use that red. On a critical the
    maximised set is struck rather than rolled, so it is shown as the deep

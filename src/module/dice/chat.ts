@@ -25,6 +25,19 @@ import { applyFearClaim, rollDamage } from "./rolls.ts";
 import { hold, play } from "./arrival.ts";
 import { waitFor3dDice } from "./dsn.ts";
 
+/**
+ * Whether this client has asked for stillness.
+ *
+ * Read per render rather than cached: the preference can change mid-session
+ * from the operating system, and a cached answer would keep animating for a
+ * reader who just turned it off — or keep a card frozen for one who turned
+ * it back on. `matchMedia` is optional only so the node harnesses, which
+ * assemble the handful of globals these functions touch, do not have to
+ * carry a media-query implementation to render a card.
+ */
+const still = (): boolean =>
+  globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
 /** When each message was first announced on this client. */
 const played = new Map<string, number>();
 
@@ -93,6 +106,16 @@ export function registerChat(): void {
     bindRerolls(message, plate);
 
     const dice = waitFor3dDice(message.id);
+
+    /* A reader who asked for stillness is handed the settled card. The veil
+       block in `plate.css` has always described this as what happens to
+       them, and nothing did it — they got the full tumble, the sweep and a
+       card that spent four hundred milliseconds in graphite. The result was
+       never at stake: it is in the markup before any of this runs. */
+    if (still()) {
+      plate.classList.add("land");
+      return;
+    }
 
     // A fresh roll gets the full arrival. A reroll only holds its changed
     // result until the new 3D die lands, since replaying the whole card would
