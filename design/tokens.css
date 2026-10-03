@@ -28,8 +28,65 @@
    Only :root and .light ship to Foundry; the page chrome at the bottom is
    scaffolding for the study pages.
    ══════════════════════════════════════════════════════════════════ */
+
+/* ── the width axis ────────────────────────────────────────────────
+   A fourth face, and it exists for one reason: the three above have no
+   width axis. The faces in styles/fonts.css are Google Sans, which ships
+   wght 400–700 and nothing else — measured, not assumed. So font-stretch
+   on any of them is a no-op, and the card typography that reads 130% at
+   the name and 82% at the numerals had nowhere to land.
+
+   Google Sans Flex is the same drawing with every axis still in it:
+   wght 1–1000 and wdth 25–151, opsz pinned at 18. Same OFL 1.1, its own
+   licence beside the files because the copyright line differs from the
+   other family's. Bundled rather than fetched for the same reason the
+   rest are — a Foundry world runs offline and on a LAN.
+
+   Two subsets only, latin and latin-ext, at the same unicode-ranges the
+   other faces use. Google Sans Flex has no Thai subset to bundle; that
+   is why the stack falls back to Google Sans, so Thai still sets, just
+   at one width. Nothing Thai carries the hero name today.
+   ── */
+@font-face {
+  font-family: "Google Sans Flex";
+  src: url("../assets/fonts/google-sans-flex/google-sans-flex-wdth-normal-1-1000-latin-ext.woff2") format("woff2-variations");
+  font-style: normal;
+  font-weight: 1 1000;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Google Sans Flex";
+  src: url("../assets/fonts/google-sans-flex/google-sans-flex-wdth-normal-1-1000-latin.woff2") format("woff2-variations");
+  font-style: normal;
+  font-weight: 1 1000;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root{
   --f-display:"Google Sans"; --f-ui:"Google Sans Text"; --f-mono:"Google Sans Code";
+
+  /* --f-flex is opt-in rather than folded into --f-display, and that is
+     deliberate: it is a separate family, so swapping it in under the
+     display name would change every heading in the system to get one
+     card its width axis. Name it where the width is doing work. The
+     fallback is the display face, which is the same drawing at wdth 100
+     and covers the subsets Flex does not. */
+  --f-flex:"Google Sans Flex","Google Sans";
+
+  /* The four widths the cards set, as percentages for font-stretch. They
+     are the axis read at four places rather than a ramp, so they are not
+     numbered: --w-square is the axis at rest, --w-hero is the card name
+     at wght 850 uppercase, --w-figures is a run of numerals pulled in so
+     a stat block reads as a column, --w-condensed is a label that has to
+     fit a width it does not get to choose. */
+  --w-square:100%;
+  --w-condensed:90%;
+  --w-figures:82%;
+  --w-hero:130%;
 
   /* Two golds, for contrast not semantics: --hope is the fill and is
      illegible as text on either substrate. --hope-tx is the same hue

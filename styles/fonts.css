@@ -19,6 +19,11 @@
    font picker uses these faces, and Dice So Nice's numerals wait on
    document.fonts.load() in dice/dsn.ts, which these rules satisfy. Keep
    this file first in system.json so every later sheet can name the faces.
+
+   One face is not here. Google Sans Flex, which the card wears for its width
+   axis, is declared in design/tokens.css beside the --w-* tokens that drive it,
+   so the design/ study pages get the real face rather than falling back. It is a
+   separate family under its own OFL copyright, hence its own licence file.
    ══════════════════════════════════════════════════════════════════ */
 
 /* thai */
