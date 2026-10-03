@@ -83,4 +83,41 @@ for (const setting of [true, false]) {
   }
 }
 
-console.log("reroll: one animation per appended die, settings and roll history preserved");
+/* The adversary rail, which a reroll can now move.
+ *
+ * `settle` has always recomputed the foe plate's `hit`, and it was
+ * unobservable while every adversary attack carried `dc: null` — the card had
+ * one appearance and nothing could change it. Now `hit` is what lights the
+ * rail, so a d20 rerolled across the target's Evasion has to redraw the card
+ * as the other outcome, and a reroll that stays on the same side of it must
+ * not. */
+const railCase = async (dc, { hit, cls }) => {
+  const flags = {
+    kind: "adversary",
+    plate: { who: "Jagged Knife", label: "Slash", mods: [], total: 2, d20: [2], dc, hit: false },
+  };
+  const message = {
+    id: "rail", rolls: [new Roll("1d20")],
+    canUserModify: () => true,
+    getFlag: (_system, key) => flags[key],
+    async update(data) {
+      this.rolls = data.rolls;
+      flags.plate = data[`flags.${SYSTEM_ID}.plate`];
+      this.content = data.content;
+    },
+  };
+  game.messages.set(message.id, message);
+  assert.equal(await rerollDie(message, "d20:0"), true);
+  // The mock die always lands on 5, so the reroll takes the d20 from 2 to 5.
+  assert.equal(flags.plate.total, 5);
+  assert.equal(flags.plate.hit, hit, `vs ${dc}: the reroll did not resettle the verdict`);
+  assert.match(message.content, new RegExp(`class="pl g1 ${cls}"`), `vs ${dc}: the rail did not redraw`);
+};
+
+await railCase(4, { hit: true, cls: "hit" });
+await railCase(9, { hit: false, cls: "cold" });
+await railCase(null, { hit: false, cls: "cold" });
+
+console.log(
+  "reroll: one animation per appended die, settings and roll history preserved, and the adversary rail resettles across the target number",
+);

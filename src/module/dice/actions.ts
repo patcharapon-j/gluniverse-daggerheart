@@ -12,6 +12,7 @@
 
 import { traitLabel, type Trait } from "../config.ts";
 import { modifierTotal, rollModifierTerms, weaponModifierTerms } from "../data/modifiers.ts";
+import { attackTarget } from "../apps/targets.ts";
 import { plain } from "../sheets/cards.ts";
 import { getFear, setFear } from "../settings.ts";
 import { rollDamage, rollDuality, rollFoe } from "./rolls.ts";
@@ -166,6 +167,12 @@ const weaponNote = (weapon: any): Note | undefined => {
  * The attack half. Damage is a separate message on purpose: the target's
  * thresholds decide what the number means, and the attack card should not
  * pretend to know them.
+ *
+ * It does resolve the *attack*, though. An explicit `dc` from the roll
+ * popover wins; otherwise the reticle is read, because targeting is the
+ * gesture an attack is already made with. Without it `VERDICT` fell through
+ * to "with Hope" on every attack in the system and the card never said
+ * whether it landed.
  */
 export async function rollAttack(actor: any, weapon: any, opts: Common & { reaction?: boolean } = {}) {
   if (!(await payFor(actor, opts.experiences))) return null;
@@ -187,7 +194,7 @@ export async function rollAttack(actor: any, weapon: any, opts: Common & { react
     advantage: opts.advantage,
     hopeDie: opts.hopeDie,
     fearDie: opts.fearDie,
-    dc: opts.dc ?? null,
+    dc: opts.dc ?? attackTarget().dc,
     next: "Roll damage",
     nextAct: "roll-damage",
     weaponId: weapon?.id,
@@ -280,6 +287,13 @@ export async function rollAdversaryAttack(
     ...(opts.extra ?? []),
   ];
 
+  /* The target's Evasion, off the GM's own reticle — which for a GM is
+     precisely the gesture made on behalf of a monster that is about to
+     attack. The rail is the whole of this card's outcome signal and it was
+     stuck cold on every roll while this was hardcoded `null`; the design has
+     drawn the lit version since before the stat blocks landed. */
+  const aimed = attackTarget();
+
   return rollFoe({
     actor,
     label: attack.name || "Attack",
@@ -287,9 +301,8 @@ export async function rollAdversaryAttack(
     modifierDice: attack.modifierDice,
     modifierLabel: "attack modifier",
     advantage: opts.advantage,
-    // Adversary attacks are unresolved in this rules version. The roll card
-    // reports the d20 and modifier; the table decides what that means.
-    dc: null,
+    dc: aimed.dc,
+    target: aimed.name,
   });
 }
 
@@ -307,7 +320,17 @@ export async function rollAdversaryDamage(actor: any, { critical = false } = {})
   });
 }
 
-/** A d20 reaction roll: no critical benefit, and nothing passes hands. */
+/**
+ * A d20 reaction roll: no critical benefit, and nothing passes hands.
+ *
+ * Whispered, because its Difficulty is a number the GM invented and `FOE_META`
+ * prints it. An attack card has no secret — the number it is measured against
+ * is the target's own Evasion, printed on their sheet — but this one does, and
+ * a plate is one stored string replicated to every client, so the only way not
+ * to leak it is not to send it. `rollFoe` whispers every reaction for that
+ * reason rather than only the ones carrying a number: one roll that is GM
+ * bookkeeping in the rules should not be GM bookkeeping only sometimes.
+ */
 export async function rollAdversaryReaction(actor: any, dc: number | null = null, advantage = 0) {
   return rollFoe({
     actor,

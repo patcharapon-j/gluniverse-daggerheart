@@ -353,6 +353,7 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
     plate: base,
     next: opts.next,
     nextAct: opts.nextAct,
+    whisper: opts.reaction,
   });
 
   return { plate: base, roll, message };
@@ -433,6 +434,8 @@ interface PostOptions {
   nextAct?: string;
   /** Anything the card's own buttons will need when they are pressed. */
   extra?: Record<string, unknown>;
+  /** GMs only, for a card carrying a number the table has not been told. */
+  whisper?: boolean;
 }
 
 /**
@@ -450,6 +453,7 @@ async function postPlate({
   next,
   nextAct,
   extra,
+  whisper,
 }: PostOptions): Promise<any> {
   return ChatMessage.create({
     type,
@@ -461,6 +465,9 @@ async function postPlate({
     // play for dice nobody is being shown — the two halves of one setting.
     sound: game.settings.get(SYSTEM_ID, "diceSoNice") ? undefined : null,
     content: `<div class="dh dh-plate">${content}</div>`,
+    /* Not drawn per reader — a plate is one stored string replicated to every
+       client, so a card with a secret is withheld rather than redacted. */
+    ...(whisper ? { whisper: ChatMessage.getWhisperRecipients("GM").map((u: any) => u.id) } : {}),
     flags: {
       [SYSTEM_ID]: {
         plate,
