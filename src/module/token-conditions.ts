@@ -515,12 +515,26 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      assignment steps on a beat instead of drifting — drifting is a
      pattern sliding across a face, which reads as a texture bug. */
   if (id < 3.5) {
-    float beat = fract(floor(t * 1.7) * .618);
-    vec3 v = voronoi3(p * 1.45 + vec2(sin(t * .11), cos(t * .09)) * .16);
-    float panels = floor(fract(v.z * 7.13 + beat * 3.0) * 3.0) * .5;
+    /* The dazzle re-dealt its VALUES on the beat and never its shapes, so the
+       same panel outline sat on the creature for the whole fight and only
+       changed brightness. Half a claim: what breaks up a silhouette is the
+       edges moving, not the fill flickering.
+
+       The lattice itself is now displaced on the beat, so the panels are cut
+       differently each time. Each panel also gets its own value from its own
+       site rather than from a cell index threaded through a fract, which is
+       what lets three tones land in a pattern instead of in bands. */
+    float step = floor(t * 1.7);
+    float beat = fract(step * .618);
+    vec2 deal = vec2(hash21(vec2(step, 1.0)), hash21(vec2(step, 2.0))) - .5;
+    vec4 panel = voronoiSite(p * 1.45 + deal * .55);
+    float tone = floor(hash21(panel.zw) * 3.0) * .5;
+    vec3 v = voronoi3(p * 1.45 + deal * .55);
     float seam = 1.0 - smoothstep(.030, .105, v.y);
-    float grain = smoothstep(.42, .08, voronoiCell(p * 4.8)) * d;
-    return vec2(clamp(panels * .62 + seam * .18 + grain * .18, 0.0, 1.0),
+    /* The grain is inside the panel, in the panel's own frame, so it moves
+       with the cut rather than sitting under it as a second unrelated net. */
+    float grain = smoothstep(.42, .08, voronoiCell((p * 1.45 - panel.zw) * 3.3)) * d;
+    return vec2(clamp(tone * .62 + seam * .18 + grain * .18, 0.0, 1.0),
                 seam * (.10 + .30 * beat));
   }
 
@@ -529,15 +543,43 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      also the one that should behave like equipment: the ticks orbit, the
      range sweep runs, and the whole mark pulses on a lock rhythm. */
   if (id < 4.5) {
+    /* The reticle was centred on p, which is the token's own centre, and
+       every feature in it was a band on r. That makes it perfectly radially
+       symmetric and therefore the same picture whatever it is drawn over: at
+       any distance it stops being a sight and becomes a vignette with a ring
+       in it, and at 40px the ring and the cross are both sub-pixel.
+
+       It is now aimed. The mark sits off centre, over the upper body where a
+       shooter would put it, and it drifts slowly as though being kept there
+       by someone rather than printed on the creature. Everything below is
+       built in that frame, so the symmetry is about the mark and not about
+       the token. */
+    vec2 aim = vec2(-.14 + .05 * sin(t * .23), .20 + .04 * cos(t * .19));
+    vec2 q = p - aim;
+    float rr = length(q) * 1.45;
+    float qa = atan(q.y, q.x);
     float spin = t * .55;
     float pulse = .45 + .55 * pow(.5 + .5 * sin(t * 3.2), 3.0);
-    float ring = band(r, .70, .028);
-    float outer = band(r, .82, .012);
-    float cross = (band(abs(p.x), 0.0, .016) + band(abs(p.y), 0.0, .016))
-                * smoothstep(.20, .40, r) * smoothstep(1.02, .84, r);
-    float ticks = pow(max(0.0, cos((a + spin) * 8.0)), 26.0) * band(r, .76, .085);
-    float sweep = band(r, .18 + .58 * fract(t * .42), .026);
-    float lock = pow(max(0.0, cos((a - spin * .40) * 4.0)), 10.0) * band(r, .70, .155);
+    /* Widths are in pixels now via band, so the ring survives being small
+       instead of vanishing into a quarter of one. */
+    float ring = band(rr, .62, .030);
+    float outer = band(rr, .78, .016);
+    /* The cross is cut, which is what a reticle actually looks like: four
+       ticks pointing in, with the middle left clear so you can see what you
+       are aiming at. */
+    float arm = max(band(abs(dot(q, vec2(.97, .26))), 0.0, .018),
+                    band(abs(dot(q, vec2(-.26, .97))), 0.0, .018));
+    float cross = arm * smoothstep(.16, .34, rr) * smoothstep(.92, .66, rr);
+    /* Eight ticks, but no longer eight identical ones: each is offset and
+       sized by its own index, so the ring reads as machined rather than as a
+       cosine raised to a power. */
+    float slot = floor(fract((qa + spin) / (PI * 2.0)) * 8.0);
+    float seed = hash21(vec2(slot, 3.0));
+    float within = abs(fract((qa + spin) / (PI * 2.0) * 8.0) - .5);
+    float ticks = (1.0 - smoothstep(.10 + .14 * seed, .34, within))
+                * band(rr, .70, .060 + .035 * seed);
+    float sweep = band(rr, .14 + .56 * fract(t * .42), .028);
+    float lock = pow(max(0.0, cos((qa - spin * .40) * 4.0)), 10.0) * band(rr, .62, .160);
     return vec2(clamp(ring * .95 + outer * .70 + cross * .85 + ticks * .80
                       + sweep * .75 + lock * .55, 0.0, 1.0),
                 (ring * .90 + cross * .70 + sweep * 1.0 + ticks * .80) * pulse);
@@ -818,13 +860,32 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      one is irregular because a blow is, and this one repeats because frost
      grows the same way in every direction. Same argument as the mark. */
   if (id < 17.5) {
-    float facet   = 1.0 - smoothstep(.030, .155, voronoiEdge(p * 5.2 + 3.0));
-    float needles = pow(max(0.0, cos(a * 13.0 + fbmD(p * 3.0, d) * 3.0)), 6.0)
-                  * smoothstep(.28, 1.05, r);
-    float creep   = smoothstep(.34 + .17 * sin(t * .30), 1.06, r);
-    float glint   = band(fract(a / (PI * 2.0) - t * .07), .5, .055);
-    return vec2(clamp((facet * .55 + needles * .68) * creep, 0.0, 1.0),
-                facet * creep * (.28 + .55 * glint));
+    /* The needles were thirteen identical evenly-spaced spikes about the
+       token centre, which is the same construction as five other conditions
+       in this set with a different integer in it. Frost does not grow in
+       thirteen equal rays from a creature's navel; it nucleates and spreads,
+       and each crystal has its own direction. So every needle now belongs to
+       a cell and points whichever way its own cell points. */
+    vec4 cell = voronoiSite(p * 5.2 + 3.0);
+    float seed = hash21(cell.zw);
+    vec2 local = p * 5.2 + 3.0 - cell.zw;
+    float lean = seed * PI * 2.0;
+    vec2 axis = vec2(cos(lean), sin(lean));
+    /* Along its own axis, so a crystal is longer than it is wide and the
+       long direction is not the same for any two of them. */
+    float spine = abs(dot(local, vec2(-axis.y, axis.x)));
+    float reach = abs(dot(local, axis));
+    float needle = (1.0 - smoothstep(.0, .16 + .12 * seed, spine))
+                 * (1.0 - smoothstep(.20 + .40 * seed, .62, reach));
+    float facet = 1.0 - smoothstep(.030, .155, cell.x);
+    /* Still from the rim inward, because that is where a surface chills
+       first, but the front is no longer a circle: the cell's own seed
+       advances it early or late, so the edge of the ice is ragged. */
+    float front = .34 + .17 * sin(t * .30) - .16 * seed;
+    float creep = smoothstep(front, front + .52, r);
+    float glint = band(fract(dot(p, axis) * .9 - t * .07), .5, .055);
+    return vec2(clamp((facet * .42 + needle * .74) * creep, 0.0, 1.0),
+                (facet * .22 + needle * .30) * creep * (.28 + .55 * glint));
   }
 
   /* Nauseated — a churn, which is the one motion in the set that turns over
@@ -906,12 +967,25 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      one throws shards off the creature and clips to its circle, because the
      creature is gone. A Destroyed segment is still standing there. */
   if (id < 22.5) {
-    float open  = .045 + .020 * sin(t * .22);
-    float seams = 1.0 - smoothstep(open, open + .10, voronoiEdge(p * 3.10 + 13.0));
-    float fine  = (1.0 - smoothstep(.030, .130, voronoiEdge(p * 7.40 + 29.0))) * d;
-    float fall  = band(fract(p.y * .90 + t * .26), .5, .22)
-                * fbmD(p * 4.20 + vec2(0.0, -t * .55), d) * d;
-    return vec2(clamp(seams * .90 + fine * .46 + fall * .32, 0.0, 1.0),
+    /* This and Corroded were the same pattern: a thresholded edge net at
+       about 3.1 with a finer one at 7.4 summed on top, which is why neither
+       could be told from the other without its colour. The difference now is
+       structural rather than numerical. Corroded's two scales are a mask and
+       a texture; here the fine net is drawn INSIDE each coarse fragment, in
+       that fragment's own frame, so the piece is breaking up rather than the
+       whole surface being equally crazed. */
+    vec4 piece = voronoiSite(p * 3.10 + 13.0);
+    float seed = hash21(piece.zw + 4.4);
+    vec2 inside = (p * 3.10 + 13.0 - piece.zw) * (2.2 + 1.6 * seed);
+    /* Each fragment opens on its own clock. The shipped swing was .020 over
+       twenty-two seconds, which is below the threshold of noticing; a piece
+       that lets go while you are looking at it is the whole subject. */
+    float give = .045 + .055 * smoothstep(.2, .9, fract(t * .10 + seed));
+    float seams = 1.0 - smoothstep(give, give + .10, piece.x);
+    float inner = (1.0 - smoothstep(.055, .20, voronoiEdge(inside + seed * 20.0))) * d;
+    float fall = band(fract(p.y * .90 + t * .26), .5, .22)
+               * fbmD(p * 4.20 + vec2(0.0, -t * .55), d) * d;
+    return vec2(clamp(seams * .90 + inner * seams * .54 + fall * .32, 0.0, 1.0),
                 seams * .22 + fall * .30);
   }
 
