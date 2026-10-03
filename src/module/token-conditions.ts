@@ -471,11 +471,24 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      now rises and falls, so the concealment is something the creature is
      doing rather than a level somebody set. */
   if (id < 1.5) {
-    float base = fbmD(p * 1.15 + vec2(t * .105, -t * .075), d);
-    float mid  = fbmD(p * 2.60 - vec2(t * .200,  t * .130) + 11.0, d);
-    float fine = fbmD(p * 5.60 + vec2(-t * .330, t * .190) + 27.0, d) * d;
-    float tide = smoothstep(.95 + .34 * sin(t * .42), -.62, p.y);
-    return vec2(clamp(smoothstep(.44, .70, base * .62 + mid * .30 + fine * .22 + tide * .44),
+    /* Three registers of the same noise, each scrolling in a straight line at
+       its own rate. That is parallax, and parallax of fog past a creature is
+       a backdrop moving behind glass: nothing in it ever turns over, so after
+       two seconds you have seen all of it.
+
+       One register now, through two passes of domain warp. The warp is what
+       makes smoke curl into itself instead of sliding, and warping the warp
+       is what stops the curl reading as a regular swirl. The fine register
+       stays as detail on top, carried in the same warped frame so it belongs
+       to the smoke rather than drifting through it. */
+    vec2 drift = p * 1.15 + vec2(t * .105, -t * .075);
+    vec2 curled = warp2(drift, t * .22, .55 + .25 * d);
+    float base = fbmD(curled, d);
+    float fine = fbmD(curled * 3.4 + 27.0, d) * d;
+    /* The tide still rises, because concealment comes from somewhere, and it
+       is no longer a straight horizon: the warp carries it too. */
+    float tide = smoothstep(.95 + .34 * sin(t * .42), -.62, p.y + (base - .5) * .55);
+    return vec2(clamp(smoothstep(.40, .68, base * .78 + fine * .26 + tide * .44),
                       0.0, 1.0), 0.0);
   }
 
@@ -791,14 +804,30 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      runs to now falls over the loop, so the creature is being emptied
      rather than standing in a puddle at a fixed height. */
   if (id < 12.5) {
+    /* The trails were sin(p.x * 14) — fourteen evenly spaced vertical stripes
+       in screen x, identical, with no relation to the creature at all, and
+       the runs at thirty-eight were sub-pixel on top of them. Something
+       draining out of a body runs in a few channels, not in a comb, and each
+       channel wanders.
+
+       Each run now has its own index, its own lateral wander and its own
+       rate, so there are a handful of them going down at different speeds. */
     float level = .18 * sin(p.x * 2.6 + t * .40) + .26 * sin(t * .33);
     float sink = smoothstep(-.62, .92, -p.y + level);
     float n = fbmD(p * 2.2 + vec2(t * .14, -t * .10), d);
-    float trails = pow(.5 + .5 * sin(p.x * 14.0 + n * 3.0), 8.0);
-    float runs = pow(.5 + .5 * sin(p.x * 38.0 + n * 4.5), 14.0) * d;
-    float drop = band(fract(-p.y * 1.05 + t * .62 + noise2(vec2(p.x * 4.0, 0.0)) * .90), .5, .085)
-               * trails;
-    return vec2(clamp(sink * .76 + trails * sink * .46 + runs * sink * .30 + drop * .60, 0.0, 1.0),
+    /* Seven channels across the body, each wandering by its own seed. */
+    float lane = p.x * 3.5 + n * .9;
+    float laneId = floor(lane);
+    float seed = hash21(vec2(laneId, 23.0));
+    float wander = sin(p.y * (1.6 + seed * 1.8) + seed * 6.3) * .20;
+    float within = abs(fract(lane) - .5 + wander);
+    float trails = 1.0 - smoothstep(.06 + .10 * seed, .34, within);
+    /* The fine channel lives inside its own run rather than across the
+       whole creature, and is still bought with pixels. */
+    float runs = (1.0 - smoothstep(.02, .09, within)) * d;
+    /* Drops fall down their own run, at their own rate. */
+    float drop = band(fract(-p.y * 1.05 + t * (.45 + .34 * seed) + seed), .5, .085) * trails;
+    return vec2(clamp(sink * .70 + trails * sink * .52 + runs * sink * .30 + drop * .60, 0.0, 1.0),
                 drop * 1.0 + trails * sink * .20);
   }
 
@@ -842,11 +871,27 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      the fall-through has a better tenant: whatever this shader was handed
      that it does not recognise. */
   if (id < 15.5) {
+    /* The flame had no source. lift was the noise plus a linear gradient in
+       p.y, which is uniform across x, so the fire began everywhere along the
+       bottom edge at once and rose in a sheet. Fire has seats: it catches in
+       a few places and spreads from them, and the places are what make it
+       look like this creature is burning rather than like a flame filter.
+
+       Two seats, each with its own strength and its own flicker, and the
+       lift is now strongest above them. */
     vec2 flameP = vec2(p.x * 1.70, p.y * 1.90 - t * 1.05);
-    vec2 curl = vec2(gnoise(flameP * .55 + t * .55), gnoise(flameP * .55 + 7.0 - t * .42))
-              * .72 * (.35 + .65 * d);
+    vec2 curl = warp1(flameP * .55, t * .55, .72 * (.35 + .65 * d)) - flameP * .55;
     float flameNoise = fbmD(flameP + vec2(0.0, sin(p.x * 3.0 + t * 1.30) * .30) + curl, d);
-    float lift = flameNoise + (p.y + 1.0) * .30;
+    /* A seat is a place low on the body that the fire climbs from. The
+       flicker is per seat, so they do not breathe together. */
+    float seatA = (1.0 - smoothstep(.0, .62, length(p - vec2(-.38, -.52))))
+                * (.70 + .30 * sin(t * 2.3));
+    float seatB = (1.0 - smoothstep(.0, .48, length(p - vec2(.30, -.64))))
+                * (.70 + .30 * sin(t * 1.7 + 2.1));
+    float seats = max(seatA, seatB);
+    /* Climb: height above the seats rather than height in the frame. */
+    float climb = smoothstep(-.95, .70, p.y) * (.30 + .70 * seats) + seats * .34;
+    float lift = flameNoise + climb;
     float flame = smoothstep(.38, .78, lift);
     float tongues = pow(.5 + .5 * sin(p.x * 8.0 + flameNoise * 7.0 + t * .50), 6.0) * flame;
     return vec2(clamp(flame * .90 + tongues * .34, 0.0, 1.0), smoothstep(.80, 1.08, lift) * .82);
@@ -937,11 +982,32 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      already inside and moving. The domain warp is what makes it turn over
      itself; without it the same noise scrolls, and a scroll is a current. */
   if (id < 18.5) {
-    vec2 swirl  = vec2(gnoise(p * .90 + t * .17), gnoise(p * .90 + 19.0 - t * .13)) * .80;
-    float churn = fbmD(p * 1.70 + swirl + vec2(0.0, sin(t * .33) * .32), d);
-    float roll  = band(fract(churn * 1.6 - t * .21), .5, .19);
-    float gut   = smoothstep(.86, .08, r) * (.30 + .30 * sin(t * .55));
-    return vec2(clamp(smoothstep(.34, .74, churn) * .80 + roll * .38 + gut * .24, 0.0, 1.0),
+    /* This and Hidden were the same construction, and the comments defended
+       the difference as warp versus scroll, which is one line of code. Hidden
+       is now two-pass warped smoke; this has to be something else or the pair
+       is still one condition in two colours.
+
+       So the distinction is made structural. Nausea is rotational and it has
+       a centre inside the body, low and off to one side, which smoke does
+       not: the churn is drawn in a frame that TURNS about that point, so the
+       motion is angular rather than translational. The old gut term was a
+       radial vignette pulsing on a sine, which is the single most generic
+       thing this shader can draw; it is replaced by the churn's own
+       convergence toward that centre. */
+    vec2 pit = vec2(-.12, -.34);
+    vec2 q = p - pit;
+    float spin = t * .26 + length(q) * 1.4;
+    vec2 turned = vec2(q.x * cos(spin) - q.y * sin(spin),
+                       q.x * sin(spin) + q.y * cos(spin));
+    vec2 swirl = vec2(gnoise(turned * .90 + t * .17), gnoise(turned * .90 + 19.0 - t * .13)) * .80;
+    float churn = fbmD(turned * 1.70 + swirl, d);
+    /* Rolling over: the band is in the turned frame, so it travels around
+       the centre rather than across the creature. */
+    float roll = band(fract(churn * 1.6 - t * .21), .5, .19);
+    /* What was a vignette is now the drag toward the centre, strongest where
+       the churn is strong, so it has a shape rather than a radius. */
+    float drag = smoothstep(.30, .80, churn) * smoothstep(1.25, .25, length(q));
+    return vec2(clamp(smoothstep(.34, .74, churn) * .74 + roll * .38 + drag * .30, 0.0, 1.0),
                 roll * .46);
   }
 
