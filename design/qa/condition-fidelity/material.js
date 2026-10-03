@@ -6,7 +6,7 @@
  * page is built from and the reasoning that produced it, which is worth
  * keeping and is not worth carrying inside a fragment shader.
  *
- * baseline.js holds the shader this replaced, frozen, as the comparison.
+ * baseline.js holds the shipped shader, frozen, as the comparison.
  *
  * This is NOT a redesign. An earlier proposal replaced the composite with a
  * physical material model — absorb, emit, relief, a key light — and it was
@@ -106,50 +106,73 @@
  *   through something else; past that it is a thing melting.
  */
 
-export const PALETTE = [
-  '#9b72e4', '#7590a6', '#aeb8c4', '#7388aa',
-  '#ef4c5c', '#76d8d1', '#c467e8', '#a8dbe7',
-  '#e78ba7', '#9bc45b', '#f2c85c', '#55bff5',
-  '#7785a1', '#8d55b8', '#86a7c9', '#f0783f',
-  /* The optional chapters' seven, and the Guardian's stance. Broken and
-     Destroyed are one hue at two values on purpose: the rules put them one
-     step apart, so the palette does too. */
-  '#c9a06a', '#bfe6f2', '#6f8f5e', '#a03a6e',
-  '#c9922e', '#8c8378', '#5e5952',
-  /* The last, and the only warm neutral: whatever the GM typed. */
-  '#c8b39a',
-];
+/**
+ * The shipped palette, read from the shipped palette.
+ *
+ * This was a second copy of twenty-four hex strings, which is a palette that
+ * disagrees with itself the first time somebody tunes a hue — and it would
+ * disagree silently, on the one page whose entire job is showing you the
+ * colours before you decide about them. The shader is imported from src for
+ * exactly this reason and so is the colour now.
+ */
+import { ADHOC_CONDITION_ID, CONDITION_MATERIALS } from '../../../src/module/token-conditions.ts';
+
+export const PALETTE = CONDITION_MATERIALS.map((material) => material.hex);
 
 /** id, label, and what this pass changed. Order IS the shader branch order.
     The last entry is the shader's fall-through and is not in CONDITIONS in
     `config.ts`: it is the material for every condition a GM types. */
 export const CONDITIONS = [
-  ['vulnerable',    'Vulnerable',      'Bigger shards, and a stress front running out from the impact, so the fracture is something that happened rather than something that is.'],
-  ['hidden',        'Hidden',          'Three smoke registers at roughly double the speed, over a tide that surges instead of sitting at a fixed line.'],
-  ['restrained',    'Restrained',      'It had no time in it at all. The bands now cinch on a haul and a strain highlight runs their length.'],
-  ['cloaked',       'Cloaked',         'The dazzle re-deals on a beat. Camouflage that holds still is a paint job.'],
-  ['markedForDeath','Marked for Death','The reticle turns, the sweep runs twice as fast, and the whole mark pulses on a lock rhythm.'],
-  ['spectral',      'Spectral',        'Scan lines a third as fine, so they survive 40px as lines rather than aliasing into grey, and the sweep moves twice as fast through them.'],
-  ['hexed',         'Hexed',           'Coarser lattices counter-rotating at nearly double the rate. The moire is now the fastest thing on the token.'],
+  ['vulnerable',    'Vulnerable',      'Crazing now lives inside its own shard, in that shard\'s frame and at a scale the shard sets, instead of being a second unrelated voronoi sprinkled over the whole face. The splits radiate without a protractor: each has its own width and reach, and some are not there at all.'],
+  ['hidden',        'Hidden',          'One register through two passes of domain warp, where it was three registers of the same noise scrolling past in straight lines. Parallax of fog is a backdrop behind glass; nothing in it turns over, so two seconds was all of it. The warp curls the smoke into itself, and warping the warp stops the curl reading as a regular swirl.'],
+  ['restrained',    'Restrained',      'The turns bow across the body and stop at the silhouette, and each has its own width, pitch and bite. Infinite parallel stripes at one global pitch running off both edges of the creature is not a binding, whatever colour it is.'],
+  ['cloaked',       'Cloaked',         'The lattice is displaced on the beat, so the panels are cut differently each time rather than holding one outline and changing brightness. What breaks up a silhouette is the edges moving. The grain sits inside the panel\'s own frame and moves with the cut.'],
+  ['markedForDeath','Marked for Death','Aimed. The mark sits off centre over the upper body and drifts as though somebody is keeping it there, and everything in it is built in that frame, so the symmetry is about the mark and not about the token. Centred on p it was radially symmetric and therefore the same picture over any creature. The cross is cut in the middle, the ticks are not eight identical ones, and the widths are in pixels so the ring survives being small.'],
+  ['spectral',      'Spectral',        'Eighteen lines, with the second register an interference at a slightly different pitch rather than a finer copy. Thirty jittered lines was one and a third pixels each at 40px, which is the textbook crawl, and eighty-eight was never resolvable at any size. A beat between two close carriers is coarse while both carriers are fine.'],
+  ['hexed',         'Hexed',           'One lattice stays polar because a hex is cast at something; the other is now a straight grid turning in its own plane. Two polar lattices interfere into a rosette about the token centre, which is a star in a glow and the same star on every creature. Two geometries also means the beat never settles into a repeat.'],
   ['invisible',     'Invisible',       'The budget still goes to the refracting shell and the wipe that hands the outline back. The displacement is a third of what it was: at the old amplitude the creature stopped being identifiable, and a creature you cannot identify is not invisible, it is melting.'],
-  ['enraptured',    'Enraptured',      'The motes are gone. Round, evenly spaced, identical dots read as polka dots on a face. This is rising light, drawn as rising light.'],
-  ['corroded',      'Corroded',        'The weights are the other way round. Corroded ramps dark green to acid green with the field, so whatever holds the high value is what turns bright, and the pit interiors held it: corrosion with the exposure inverted. The seam network is the bright part of rust and now takes it.'],
+  ['enraptured',    'Enraptured',      'Each rising light belongs to a cell and climbs at its own rate from its own place. The lanes were six narrow stripes in screen x all rising on one phase, which is the polka-dot mistake this branch\'s own note diagnosed, one dimension down.'],
+  ['corroded',      'Corroded',        'Structurally separated from Destroyed, which was the same thresholded edge net at the same two scales. Here the two scales are a mask and a texture; there the fine net is drawn inside each fragment. Also stopped asking the nine-cell search the same question twice per pixel.'],
   ['stunned',       'Stunned',         'Two fronts half a period apart so there is always one crossing, over five thick spokes instead of seven thin ones.'],
-  ['charged',       'Charged',         'Half the exponent again, so the channel is thick enough to survive 40px, with forks that come and go along it and charge that crawls rather than pulsing in place. A smooth stripe is not electricity whatever colour it is.'],
-  ['drained',       'Drained',         'Wider runs, a level that actually falls over the loop, and drops at nearly double the rate.'],
+  ['charged',       'Charged',         'The route is reseeded on every strike, so each flash finds a different way down. The bolt followed one path from one fixed origin for the whole fight and only its brightness pulsed, which is a neon tube with a flicker.'],
+  ['drained',       'Drained',         'A handful of channels, each wandering by its own seed and falling at its own rate, with the fine run inside its own channel. Fourteen identical evenly spaced vertical stripes in screen x bore no relation to the creature, and the thirty-eight on top of them were sub-pixel.'],
   ['horrified',     'Horrified',       'A deeper breath over a wider reach, so the edge advances across a real distance rather than trembling in place.'],
   ['silenced',      'Silenced',        'Rings half as frequent and twice as thick, with the node spacing itself breathing so a standing wave still has somewhere to go.'],
-  ['ablaze',        'Ablaze',          'Larger tongues, a faster rise, and a stronger curl, because a fire at 40px is a shape before it is a texture. No longer the fall-through, because the fall-through has a better tenant.'],
-  ['roped',         'Roped',           'One cord under tension with a loop at one end, not Restrained\'s several lashed bands \u2014 the rule is that whoever threw it must stay within Very Close, so the mark has to say somebody is holding the other end. The haul travels away from the creature.'],
-  ['frostbitten',   'Frostbitten',     'Rime creeping inward from the rim, leaving facets behind it. Needles rather than a wash: pale blue spread evenly over a token at 40px is a colour cast and reads as lighting. Repeats where Stunned is irregular, because frost grows the same way in every direction and a blow does not.'],
-  ['nauseated',     'Nauseated',       'A churn, which is the one motion here that turns over rather than travelling. Hidden is the other fbm branch and it rises; this rolls, because the rule describes something already inside rather than something arriving. The domain warp is what makes it turn over itself \u2014 without it the same noise scrolls, and a scroll is a current.'],
+  ['ablaze',        'Ablaze',          'Fire with seats. lift was noise plus a linear gradient in p.y, uniform across x, so the flame began everywhere along the bottom edge at once and rose as a sheet. It now catches in two places, each with its own flicker, and climbs from them.'],
+  ['roped',         'Roped',           'The cord sags under its own tension, carries two counter-laid strands, and throws a shadow on one side. One perfectly straight line of constant width with a sine for texture is a painted stripe; the shadow is the cheapest thing that puts one surface above another.'],
+  ['frostbitten',   'Frostbitten',     'Every needle belongs to a cell and points the way its own cell points, and the front advances early or late per cell so the edge of the ice is ragged. Thirteen identical evenly spaced rays from the creature\'s navel was the same construction as five other conditions with a different integer in it.'],
+  ['nauseated',     'Nauseated',       'Separated from Hidden structurally rather than by one line. Nausea is rotational and has a centre inside the body, so the churn is drawn in a frame that turns about that point and the motion is angular rather than translational. The radial vignette pulsing on a sine is replaced by the churn\'s own drag toward that centre.'],
   ['cursed',        'Cursed',          'A spiral that does not arrive anywhere, over glyphs turning the other way. Every other bind in the set has a printed exit and is drawn as a shape you can see the end of; this one resists an ordinary clear. Told apart from Hexed by being one continuous arm rather than two grids, so you read a direction instead of an interference.'],
-  ['unstoppable',   'Unstoppable',     'Chevrons climbing, and the heat behind them. Momentum with a ceiling on it, so nothing wavers, counter-rotates or breathes \u2014 anything that could read as hesitating is the wrong claim. Ablaze is the other warm branch and curls; this does not, because fire turns over itself and a thing being driven does not.'],
-  ['broken',        'Broken',          'One fracture, and the two sides working against each other. The grind is the whole of the time in it: a Broken segment is part of a creature that has stopped, attached to one that has not, so something has to move or the mark is Vulnerable\'s shatter without the event.'],
-  ['destroyed',     'Destroyed',       'The same fracture, everywhere, and opening \u2014 on a period slow enough to notice between rounds rather than watch. Deliberately not the shattered branch a defeated token gets: that one throws shards off the creature because the creature is gone, and a Destroyed segment is still standing there.'],
-  ['adhoc',         'Named by the GM', 'The one whose subject is unknown. Everything above draws a thing; this cannot, because nobody told it what is happening, and inventing a subject would put the texture of something else on the creature. A ring of marks turning at the rim over a wash that breathes: it says the creature is noted, at the size where the sentence naming it has already gone.'],
+  ['unstoppable',   'Unstoppable',     'Each chevron has its own index, so they are not all one width and do not all arrive at one rate, and the heat is carried ahead of the leading edge rather than washed over the lower half. One V repeated to infinity over a vertical gradient is a decal of an arrow.'],
+  ['broken',        'Broken',          'The trunk still works, and now it branches: each limb leans its own way, reaches its own distance, and some are not there. A single line with noise on it is Restrained\'s construction with a different constant.'],
+  ['destroyed',     'Destroyed',       'The fine net is drawn inside each coarse fragment, in that fragment\'s own frame, so a piece is breaking up rather than the whole surface being equally crazed. Each fragment also opens on its own clock: the shipped swing was below the threshold of noticing, and a piece letting go while you watch is the subject.'],
+  ['adhoc',         'Named by the GM', 'Each tally has its own index, so the marks differ in width, lean and where they sit. One sine raised to a power is a ruler, and the point of this condition is that a person noted something. The wash is carried by the sash\'s own breath instead of by a vignette, which is the one thing this shader can draw that looks identical over every creature.'],
 ];
+
+/* Order IS the shader's branch order, and the branch cutoffs are the index in
+   CONDITION_MATERIALS — so the row copy below, the palette above and the
+   `if (id < N.5)` ladder in the shader are one sequence. Nothing about a
+   mismatch is visible on the page: the rows would simply describe the wrong
+   material, in the right colour, and read as a design problem. */
+const EXPECTED = CONDITION_MATERIALS.map((material) => material.id);
+const ACTUAL = CONDITIONS.map(([id]) => id);
+if (ACTUAL.length !== EXPECTED.length || ACTUAL.some((id, i) => id !== EXPECTED[i]))
+  throw new Error(
+    `condition-fidelity: row copy is out of step with CONDITION_MATERIALS\n` +
+      `  shader: ${EXPECTED.join(', ')}\n  rows:   ${ACTUAL.join(', ')}`,
+  );
+if (ACTUAL[ACTUAL.length - 1] !== ADHOC_CONDITION_ID)
+  throw new Error('condition-fidelity: the fall-through row must be last');
 
 /** Not a condition: a separate branch of the shader, and its own row. */
 export const DEAD = ['dead', 'Dead',
-  'Nine shards on a spiral, opening on a settle, each with a lit lip and a shadowed one. Dust falls through it and a cold glint crosses it on a twenty-second loop. Clipped to the creature\'s own circle: the shard edge test was on the displaced coordinate alone, so a fragment a push outside the token still drew, and what it drew was the filter\'s square frame.'];
+  'Rebuilt. It was nine shards on a fixed golden-angle spiral, which meant every corpse on the board '
+  + 'broke the same way, into nine convex blobs of one size, all breathing together on a twenty-second '
+  + 'sine \u2014 out, back, out, back. A corpse that re-assembles every ten seconds is the one thing a '
+  + 'corpse must not do. There is now an impact point placed from the token\'s own seed, so no two '
+  + 'creatures shatter alike; the fragments are graded small at the blow and large away from it by '
+  + 'scaling a cartesian frame, which keeps them irregular; radial cracks cut across the pieces rather '
+  + 'than being drawn over them; each piece catches the light at its own angle, turns its own way and '
+  + 'falls; and the settle is 1 - exp(-age), so it happens once and stops, with only the dust still '
+  + 'moving afterwards. A log-polar frame was tried first and graded correctly but came out as '
+  + 'concentric rings of wedges, which read as a flower.'];

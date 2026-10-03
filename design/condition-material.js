@@ -17,8 +17,15 @@ const vertex = `attribute vec2 aPosition;varying vec2 vTextureCoord;void main(){
 const compile=(gl,type,source)=>{const shader=gl.createShader(type);gl.shaderSource(shader,source);gl.compileShader(shader);if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(shader));return shader;};
 const materialById = new Map(CONDITION_MATERIALS.map((entry,index)=>[entry.id,{...entry,index}]));
 
-async function boot(canvas,state){
-  const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false,preserveDrawingBuffer:true});
+async function boot(canvas,state,index){
+  /* premultipliedAlpha MUST match Foundry's pipeline, and the reason is a bug
+     this page concealed through three review passes. The shader writes
+     premultiplied colour — see the note at the end of main() — and a context
+     asking for straight alpha un-multiplies it on composite, which quietly
+     undoes the exact term that stops a glow over a transparent pixel becoming
+     a glow drawn on the map. A harness that composites differently from the
+     canvas verifies a renderer nobody ships. */
+  const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:true,preserveDrawingBuffer:true});
   if(!gl)throw new Error('WebGL unavailable');
   const program=gl.createProgram();gl.attachShader(program,compile(gl,gl.VERTEX_SHADER,vertex));gl.attachShader(program,compile(gl,gl.FRAGMENT_SHADER,TOKEN_CONDITION_FRAGMENT));gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));gl.useProgram(program);
@@ -38,6 +45,18 @@ async function boot(canvas,state){
   gl.uniform4f(uniform('inputSize'),canvas.width,canvas.height,1/canvas.width,1/canvas.height);
   gl.uniform4f(uniform('outputFrame'),0,0,canvas.width,canvas.height);
   gl.uniform4f(uniform('inputClamp'),0,0,1,1);
+  /* uSubject was never set here, so it arrived as the WebGL default of zero
+     and every pattern was drawn in a space twenty times the creature. This
+     page has been showing a material nobody ships. One tile is one token and
+     the creature fills it, which is the plain-token case and the shader's own
+     default; a ringed token is studied on the canvas, not here. */
+  gl.uniform1f(uniform('uSubject'),1);
+  /* Ages saturate the onset: these cards are a still statement about what a
+     material looks like, not about how it arrives. */
+  for(let i=0;i<5;i++)gl.uniform1f(uniform('uAge'+i),99);
+  /* One per card rather than zero, so the three canvases are visibly not in
+     phase with each other — which is what a line of tokens looks like. */
+  gl.uniform1f(uniform('uSeed'),index*11.3);
   gl.uniform1f(uniform('uCount'),state.ids.length);gl.uniform1f(uniform('uDead'),state.dead?1:0);
   state.ids.slice(0,5).forEach((id,index)=>{const m=materialById.get(id);gl.uniform1f(uniform(`uId${index}`),m.index);gl.uniform3fv(uniform(`uColor${index}`),m.color);});
   const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -46,7 +65,7 @@ async function boot(canvas,state){
 }
 
 try{
-  const renderers=await Promise.all([...document.querySelectorAll('canvas')].map((canvas)=>boot(canvas,states[+canvas.dataset.index])));
+  const renderers=await Promise.all([...document.querySelectorAll('canvas')].map((canvas)=>boot(canvas,states[+canvas.dataset.index],+canvas.dataset.index)));
   document.querySelector('#qa').textContent=`Production shader ready · ${renderers[0]} · 16 unique materials · defeated frozen`;
   document.documentElement.dataset.qa='ready';
 }catch(error){document.querySelector('#qa').textContent=`Shader failed · ${error.message}`;document.documentElement.dataset.qa='failed';console.error(error);}

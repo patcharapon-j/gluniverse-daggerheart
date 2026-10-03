@@ -1,4 +1,4 @@
-// Zero-dependency static server for design iteration.
+// Near-zero-dependency static server for design iteration.
 // Serves the repo root so design/*.html can reference design/assets/* directly.
 // ESM, because package.json says "type": "module" and every other script in
 // this repo is one. It was CommonJS, which meant `npm run preview` threw on
@@ -26,7 +26,31 @@ const TYPES = {
   '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
+  // The shader lives in a .ts module and the design pages import it from there
+  // rather than copying it, which is the whole point of those pages. A browser
+  // refuses a module served as anything but JavaScript, and refuses TypeScript
+  // syntax once it arrives, so .ts is stripped on the way out. Before this,
+  // design/condition-material.html failed to load its own module and rendered
+  // three empty canvases: the live harness was dead and the only thing still
+  // verifying the shader was the generated gate page, which inlines the source
+  // as a string and so never noticed.
+  '.ts': 'text/javascript; charset=utf-8',
 };
+
+/* esbuild is a dev dependency and already present for Vite. It is imported
+   lazily so every page that needs no stripping still works in a checkout with
+   no node_modules, which is how this server was used before .ts was served. */
+let strip = null;
+async function transformTs(source, file) {
+  if (!strip) {
+    const esbuild = await import('esbuild').catch(() => null);
+    if (!esbuild)
+      throw new Error('serving .ts needs esbuild: run npm install');
+    strip = esbuild.transform ?? esbuild.default.transform;
+  }
+  const out = await strip(source, { loader: 'ts', format: 'esm', sourcefile: file });
+  return out.code;
+}
 
 http
   .createServer((req, res) => {
@@ -58,16 +82,26 @@ http
       return;
     }
 
-    fs.readFile(file, (err, buf) => {
+    fs.readFile(file, async (err, buf) => {
       if (err) {
         res.writeHead(404, { 'content-type': 'text/plain' }).end('not found: ' + rel);
         return;
       }
+      const ext = path.extname(file).toLowerCase();
+      let body = buf;
+      if (ext === '.ts') {
+        try {
+          body = await transformTs(buf.toString('utf8'), file);
+        } catch (error) {
+          res.writeHead(500, { 'content-type': 'text/plain' }).end(String(error.message ?? error));
+          return;
+        }
+      }
       res.writeHead(200, {
-        'content-type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream',
+        'content-type': TYPES[ext] || 'application/octet-stream',
         'cache-control': 'no-store',
       });
-      res.end(buf);
+      res.end(body);
     });
   })
   .listen(PORT, () => console.log(`design preview  http://localhost:${PORT}/`));

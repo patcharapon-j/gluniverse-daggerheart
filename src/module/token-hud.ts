@@ -158,6 +158,8 @@ interface ChipState {
   difficulty?: number | null;
   conditions?: string[];
   conditionIds?: string[];
+  /** The same conditions, newest first, for the material's five slots. */
+  materialIds?: string[];
   tints?: string[];
   /** The first active condition's material colour, for the sentence. */
   tint?: string;
@@ -215,6 +217,30 @@ function reading(actor: any): "full" | "marks" | "none" {
 }
 
 /**
+ * When each status on this actor was applied, newest wins.
+ *
+ * Read off the effect documents rather than stored, because Foundry already
+ * records it: every ActiveEffect carries its own creation time. One effect can
+ * carry several statuses and several effects can carry the same one, so the
+ * latest application of a status is the one that counts.
+ *
+ * An effect with no creation time sorts as oldest, which is the right answer
+ * for the one case that produces it: a status that has been on the actor since
+ * before anything was keeping track.
+ */
+function conditionRecency(actor: any): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const effect of actor?.appliedEffects ?? []) {
+    const at = Number(effect?._stats?.createdTime ?? 0) || 0;
+    for (const status of effect?.statuses ?? []) {
+      const seen = out.get(status);
+      if (seen === undefined || at > seen) out.set(status, at);
+    }
+  }
+  return out;
+}
+
+/**
  * The chip's state, or null for a creature this client draws nothing for.
  *
  * Conditions are the one thing here that survives a `none`, and it is why this
@@ -237,6 +263,23 @@ function stateOf(token: any): ChipState | null {
   const adhocTint = conditionTint(ADHOC_CONDITION_ID) ?? "";
   const conditionIds = [...active.map((c) => c.id), ...adhoc.map((c) => c.id)];
   const conditions = [...active.map((c) => c.name), ...adhoc.map((c) => c.name)];
+
+  /* The sentence names all of them; the material has five slots. Which five
+     was CONDITIONS' own order, which meant a sixth condition silently cost
+     the creature whichever of its conditions happens to come first in a list
+     in config.ts — so a GM who applied Marked for Death to an already heavily
+     afflicted adversary could watch the mark not appear. Newest first instead:
+     the condition somebody just applied is the one they are looking for.
+
+     The sentence keeps the constant order on purpose and is not sorted with
+     it. That order is why the same pair of statuses reads the same way on
+     every token at the table, and the slots are a different question with a
+     different answer. */
+  const applied = conditionRecency(actor);
+  const materialIds = conditionIds
+    .map((id, index) => ({ id, index, at: applied.get(id) ?? 0 }))
+    .sort((a, b) => (b.at - a.at) || (a.index - b.index))
+    .map((entry) => entry.id);
 
   /* Each condition names itself in its own colour, and `tint` is the key
      the rest of the sentence is set in — the FIRST condition's, which is
@@ -266,7 +309,7 @@ function stateOf(token: any): ChipState | null {
   const see = reading(actor);
   if (see === "none") {
     return conditions.length || defeated
-      ? { conditions, conditionIds, tints, tint, defeated, ...chrome }
+      ? { conditions, conditionIds, materialIds, tints, tint, defeated, ...chrome }
       : null;
   }
 
@@ -277,6 +320,7 @@ function stateOf(token: any): ChipState | null {
     armor: track(res.armorSlots),
     conditions,
     conditionIds,
+    materialIds,
     tints,
     tint,
     defeated,
@@ -546,7 +590,7 @@ function sync(token: any): void {
   const gone = !state || (!token.isVisible && !isGM());
 
   if (gone) clearTokenConditionMaterial(token);
-  else syncTokenConditionMaterial(token, state.conditionIds ?? [], !!state.defeated,
+  else syncTokenConditionMaterial(token, state.materialIds ?? state.conditionIds ?? [], !!state.defeated,
     subjectInFrame(token));
 
   let chip = chips.get(id);
@@ -892,4 +936,45 @@ function forActor(actor: any): void {
   for (const token of canvas.tokens?.placeables ?? []) {
     if (token.actor?.id === actor.id) sync(token);
   }
+}
+
+/**
+ * Put a set of conditions on the controlled tokens, to look at the material.
+ *
+ * The composite is the part of this system hardest to check, because seeing it
+ * means getting several conditions onto one creature and the honest way to do
+ * that is to stage a fight. The design pages render it beside the shipped one
+ * at a size you can judge, which is the right tool for deciding; this is the
+ * other half, for confirming the decision on the real canvas with the real
+ * mesh, real token art and a real dynamic ring.
+ *
+ *   game.daggerheart.tokenChips.conditions("vulnerable", "charged")
+ *   game.daggerheart.tokenChips.conditions()   // clears them again
+ *
+ * Applied as ordinary ActiveEffects through Foundry's own status API, so they
+ * behave exactly as conditions applied by hand: no test path, nothing that
+ * only exists for this. Which also means the clear only removes statuses this
+ * call could have set, and leaves anything the fight actually put there.
+ */
+export async function applyTokenConditions(...ids: string[]): Promise<string> {
+  const tokens = canvas?.tokens?.controlled ?? [];
+  if (!tokens.length) return "select a token first";
+
+  const known = new Set(CONDITIONS.map((condition) => condition.id));
+  const wanted = ids.filter((id) => known.has(id));
+  const unknown = ids.filter((id) => !known.has(id));
+
+  for (const token of tokens) {
+    const actor = token.actor;
+    if (!actor) continue;
+    for (const id of known) {
+      const has = !!actor.statuses?.has?.(id);
+      const want = wanted.includes(id);
+      if (has !== want) await actor.toggleStatusEffect(id, { active: want });
+    }
+  }
+
+  const named = wanted.length ? wanted.join(", ") : "nothing";
+  const note = unknown.length ? ` (not conditions: ${unknown.join(", ")})` : "";
+  return `${tokens.length} token(s) set to ${named}${note}`;
 }
