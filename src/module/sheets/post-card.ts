@@ -138,7 +138,7 @@ const actionRow = (actions?: CardAction[]): string =>
       ).join("")}</div>`;
 
 export const cardWrapper = (card: CardOptions & { actions?: CardAction[] }): string =>
-  `<div class="${wrapperClass(card)}" style="${attr(card.art ?? "")}">` +
+  `<div class="${wrapperClass(card)}" style="${attr(card.artCss ?? "")}">` +
   `${CARD(card)}${actionRow(card.actions)}</div>`;
 
 /**

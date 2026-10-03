@@ -270,7 +270,7 @@ async function pickCard(cap: number, held: any[], pool: any[]): Promise<string |
     const key = `c${cards.length}`;
     cards.push(
       `<div class="pkc${opts.noart ? " noart" : ""}" data-peek="${key}" style="${attr(
-        opts.art ?? "",
+        opts.artCss ?? "",
       )}">${CARD(opts)}</div>`,
     );
     return key;

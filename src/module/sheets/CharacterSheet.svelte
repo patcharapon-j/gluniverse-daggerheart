@@ -2913,7 +2913,7 @@
             <div class="k">Domain loadout<s>{loadout.length} / {loadoutLimit}</s></div>
             <div class="grid2">
               {#each loadoutCards as r (r.pk)}
-                <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
+                <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.artCss}>
                   {@html SPINE(r.card)}
                   {@render pools(r.it, ".spine .meta")}
                 </div>
@@ -3028,7 +3028,7 @@
                 {#if subclassCards.length}
                   <div class="sub">
                     {#each subclassCards as r (r.pk)}
-                      <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
+                      <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.artCss}>
                         {@html TILE({ ...r.card, text: "" })}
                         {@render pools(r.it, ".tile .ft")}
                       </div>
@@ -3043,7 +3043,7 @@
             <div class="k">Heritage<s>{heritage}</s></div>
             <div class="grid2">
               {#each heritageCards as r (r.pk)}
-                <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
+                <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.artCss}>
                   {@html SPINE(r.card)}
                   {@render pools(r.it, ".spine .meta")}
                 </div>
@@ -3085,7 +3085,7 @@
                   data-swap
                   data-drag
                   draggable="true"
-                  style={r.card.art}
+                  style={r.card.artCss}
                   ondragstart={(e) => dragCard(e, r.pk)}
                   ondragend={endDrag}
                   ondragover={(e) => dragOver(e, "loadout", r.pk)}
@@ -3206,7 +3206,7 @@
                   data-swap
                   data-drag
                   draggable="true"
-                  style={r.card.art}
+                  style={r.card.artCss}
                   ondragstart={(e) => dragCard(e, r.pk)}
                   ondragend={endDrag}
                   ondragover={(e) => dragOver(e, "vault", r.pk)}
@@ -3268,7 +3268,7 @@
                          the slot, because the slot carries a header the
                          tile does not: the rect that flies has to be the
                          rect of the thing you watched leave. -->
-                    <div class:noart={card.noart} data-fk={s.it.id} style={card.art}>
+                    <div class:noart={card.noart} data-fk={s.it.id} style={card.artCss}>
                       {@html TILE(card)}
                       {@render pools(s.it, ".tile .ft")}
                     </div>
@@ -3306,7 +3306,7 @@
                       class="eqp"
                       class:no
                       class:noart={card.noart}
-                      style={card.art}
+                      style={card.artCss}
                       data-pk={g.id}
                       data-fk={g.id}
                       title={no ? `${primary?.name} is Two-Handed — no free hand` : ""}
@@ -3348,7 +3348,7 @@
                     src?.type === "consumable"
                       ? charges(Math.min(CHARGES, src.system.quantity ?? 0), r.pk)
                       : null}
-                  <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.art}>
+                  <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.artCss}>
                     {@html SPINE({ ...r.card, aside })}
                     {@render pools(r.it, ".spine .meta")}
                   </div>
@@ -3792,7 +3792,7 @@
          rides up over Foundry's window chrome. -->
     <div class="peeklayer">
       {#each peekRows as r (r.pk)}
-        <div class="pkc" class:noart={r.card.noart} data-peek={r.pk} style={r.card.art}>
+        <div class="pkc" class:noart={r.card.noart} data-peek={r.pk} style={r.card.artCss}>
           {@html CARD(r.card)}
         </div>
       {/each}

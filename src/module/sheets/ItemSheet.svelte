@@ -1300,6 +1300,36 @@
                A counter you put down, not a box you cross off. Compendium
                documents intentionally carry none: the player or GM adds the
                useful counters after the item belongs to a character. -->
+
+          <!-- Spent sits above the counters because it is the same question
+               asked the cheap way, and the panel below is where you look when
+               the cheap way is not enough. A card with a counter does not use
+               this flag at all: its spent state is its counter reading zero,
+               which `isSpent` reads, and a second switch here would be a
+               second place to be wrong. So it is disabled with the reason
+               showing rather than hidden, because a control that vanishes
+               when a sibling field changes reads as a bug. -->
+          <div class="pnl">
+            <div class="k">Spent</div>
+            <div class="fields">
+              <label class="sw">
+                <input
+                  type="checkbox"
+                  checked={sys.spent}
+                  disabled={!ed || !!sys.uses}
+                  onchange={(e) => set("system.spent", (e.currentTarget as HTMLInputElement).checked)}
+                />
+                <span>
+                  {#if sys.uses}
+                    Spent when its counter is empty
+                  {:else}
+                    Marked spent
+                  {/if}
+                </span>
+              </label>
+            </div>
+          </div>
+
           <div class="pnl">
             <div class="k">
               Tracked resources<s>{(sys.resources ?? []).length}</s>

@@ -282,7 +282,7 @@ export async function ruleCardsPanel(
     const key = `p${cards.length}`;
     cards.push(
       `<div class="pkc${card.noart ? " noart" : ""}" data-peek="${key}" style="${attr(
-        card.art ?? "",
+        card.artCss ?? "",
       )}">${CARD(card)}</div>`,
     );
     return key;
