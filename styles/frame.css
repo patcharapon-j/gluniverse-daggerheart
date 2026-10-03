@@ -585,6 +585,32 @@
   margin: 0;
 }
 
+/* The ported card is not its own container, and that is the difference.
+   `.card` declared `container-type` on itself; `.dh-face` deliberately does
+   not, so that one host can size a card without the card arguing back. The
+   whole of its size system hangs off that — `--dh-w` defaults to `100cqi`
+   and every length on the card is a share of it — so without this rule the
+   face resolves to zero and draws nothing at all.
+
+   It is here rather than in `design/`, with the other two rules about what
+   a Foundry chat message does to a card, because `design/chat.css` is a
+   study page's own stylesheet and is not among the sheets
+   `port-design-css.mjs` carries over. */
+.chat-message .dh-card-face {
+  container-type: inline-size;
+}
+
+/* The counters sit under the face, not on it. `chit.css` parks the stack on
+   a plate and a card posted at slot size has no plate: its rules are the
+   peek's job. Under the face is also where gluniverse-vtt's own posted card
+   puts a die pool, so this is upstream's answer rather than a workaround. A
+   readout and never a control, which `post-card.ts` argues. */
+.chat-message .dh-card-chits {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+
 /* Posted-card actions borrow the roll plate's one-shot button grammar, but
    stand outside the card's container so they do not steal room from rules
    text. Gold is the neutral self-sheet action hue; Fear buttons keep their

@@ -890,6 +890,28 @@ button.dh-charge-light {
   flex-direction: row-reverse;
 }
 
+/* Pinned. A hover peek dies as soon as you move toward it, which is fine
+   for "which card is this" and useless for "read this card", so a click
+   holds it open. The state has to be visible or a pinned card reads as a
+   hover that forgot to close: it sits deeper, and a gold rule brightens at
+   its edge. This is `sheet.css`'s `.pkc.pin` carried onto the ported peek,
+   which had no such rule and was stating the shadow from JS instead. */
+.dh-peek.pin {
+  filter: drop-shadow(0 34px 48px color-mix(in oklab, var(--vtt-opaque) 72%, transparent));
+}
+
+.dh-peek.pin .dh-peek-face::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--vtt-accent-line) 60%, transparent);
+}
+
+.dh-peek-face {
+  position: relative;
+}
+
 .dh-peek-face {
   width: 264px;
 }
