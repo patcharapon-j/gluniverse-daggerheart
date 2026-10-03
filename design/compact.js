@@ -181,25 +181,107 @@ export const COMPACT = (opts) => {
 };
 
 /* ── the vault row ────────────────────────────────────────────────
-   A vaulted card is the same compact card in one of two states, and the two
-   states are the whole vault: a card you can afford to recall, and one you
-   cannot. `reach` is the only thing a caller has to decide, because it is
-   the only thing the caller knows — whether the holder has the Stress.
+   Ported from gluvtt's `VaultRow` in sheets/character/VaultTab.tsx. Styles
+   in design/vault.css, which carries the long version of why the vault gets
+   its own form at all; the short version is that a loadout holds five cards
+   and a vault holds dozens, and a wall of thirty 100×140 paintings is a
+   thing you search rather than read. So the row turns the card on its side
+   and changes what it spends its pixels on: the name gets a whole line at
+   the row's own size, and the painting shrinks to a 60px strip at the left
+   that fades out under the type rather than ending at a seam.
 
-   `within-reach` lights the recall chip and the press ring and says nothing
-   over the artwork; the price is already on the chip and saying it twice on
-   a 100px card is saying it nowhere. `out-of-reach` greys and hatches the
-   painting, dims the chip and stamps what the recall needs — the one case
-   where the number has to be read rather than glanced at, because it is the
-   number telling you no.
+   This is a different builder and not a mode of COMPACT() because almost
+   nothing survives the change of form. There is no pennant, no counter
+   rail, no tier metal, no glare and no tilt — all five are things you do to
+   a picture of a card, and a row is not one. What it keeps is the option
+   object, verbatim, so `cardOf()` still feeds every builder in the system
+   from one shape and no caller has to know which form its card will take.
 
-   This is a wrapper and not a flag on COMPACT() because the states are not
-   the row's only difference in practice: a vault list is where the recall
-   price has to be present on every row, so `rc` defaulting to 0 rather than
-   to absent is the right default *here* and the wrong one everywhere else.
-   A card with no recall cost at all cannot be vaulted. */
-export const VAULT_ROW = (opts) => COMPACT({
-  rc: 0,
-  ...opts,
-  state: opts.state ?? (opts.reach === false ? 'out-of-reach' : 'within-reach'),
-});
+   ── the two states, which are the whole vault ──────────────────────
+   A card you can afford to recall, and one you cannot. `reach` is the only
+   thing a caller has to decide, because it is the only thing the caller
+   knows — whether the holder has the Stress.
+
+   `within-reach` lights the cost chip and says nothing in words; the price
+   is already on the chip, and a row that announced "you can afford this" on
+   every affordable row of thirty would be announcing nothing.
+   `out-of-reach` drains the lens, steps the name back and stamps what the
+   recall needs — the one case where the number has to be read rather than
+   glanced at, because it is the number telling you no.
+
+   `rc` defaults to 0 rather than to absent, which it does nowhere else: a
+   vault list is where the price has to be present on every row, and a card
+   with no recall cost at all cannot be vaulted.
+
+   ── the option object ───────────────────────────────────────────────
+   The same vocabulary as COMPACT(), FACE() and CARD(). What a row reads:
+
+     d, d2        domain definitions. `d.light` colours the mark and the
+                  lens's wash, `d.dark` the ink under it
+     lvl          the numeral. `pre` is accepted and deliberately not
+                  printed — see .dh-vrow-level in vault.css
+     rc           recall cost in Stress, defaulted to 0 here
+     type, foot,
+     homebrew     the kind line, through `kindWords()`
+     name         the card's name, which gets the flexible column
+     sig          the domain's mark, and the lens's fallback mark when
+                  there is no painting. `fbsig` is preferred for the
+                  latter when a caller resolved one
+     art          the painting
+     state        'within-reach' | 'out-of-reach' | 'used' | 'socket' |
+                  'rest' | 'disabled' | 'drag'. An explicit state wins
+                  over `reach`
+     id           the Item it is printed on; data-card, for the gestures
+     controls     raw HTML beside the press — the recall press, which
+                  says the price itself and so suppresses the cost chip
+     cls          extra classes on the li
+
+   `pre`, `glyph`, `tier`, `doms`, `size`, `posted`, `rail`, `text`,
+   `flavour`, `feats`, `stats`, `code`, `artist`, `motif` and `fbname` are
+   accepted and ignored. Taking the whole object and reading part of it is
+   the point, the same as it is for COMPACT(): a caller that has to strip
+   fields per builder is a caller that will strip the wrong one. */
+export const VAULT_ROW = (opts) => {
+  const o = {rc: 0, type: 'Spell', name: 'Rain of Blades', ...opts};
+  const state = o.state ?? (o.reach === false ? 'out-of-reach' : 'within-reach');
+
+  /* A socket is a hollow — the shape a row left when a drag picked it up.
+     Nothing in it is actionable, so it takes no press and no chip. */
+  const inert = state === 'socket';
+
+  /* The label says `rest` for every state but the two that change what the
+     card *is* to a reader, exactly as COMPACT() does and for the same
+     reason: being mid-drag or momentarily unaffordable is a fact about the
+     list, not about the card. */
+  const spoken = state === 'out-of-reach' || state === 'used' ? state : 'rest';
+
+  /* The cost chip and the host's press are the same message, so the chip
+     stands down when the press is there. `.dh-recall-price` inside
+     `controls` is what says the price in that case. */
+  const chip = !inert && !o.controls && o.rc != null;
+
+  return `
+<li class="dh-vrow ${o.art ? 'has-art' : 'no-art'}${o.cls ? ' ' + o.cls : ''}"${
+    o.id ? ` data-card="${o.id}"` : ''} data-state="${state}"
+  style="${vars(o)}">
+  <button type="button" class="dh-vrow-face"
+    aria-label="${cardLabel({...o, state: spoken}).replace(/"/g, '&quot;')}"${
+      inert || state === 'disabled' ? ' aria-disabled="true"' : ''}>
+    <!-- data-face is on the lens and not on the button, which is gluvtt's
+         own split and worth keeping: Peek opens against the painting, and
+         anchoring it to the full width of a row would float it off the end
+         of the name rather than off the card. -->
+    <span class="dh-vrow-lens" data-face aria-hidden="true">
+      ${o.art ? '' : sigil(o.fbsig || o.sig, 'dh-vrow-sigil')}
+    </span>
+    <span class="dh-vrow-level" aria-hidden="true">${o.lvl ?? ''}</span>
+    ${sigil(o.sig, 'dh-vrow-mark')}
+    <b class="dh-vrow-name">${o.name}</b>
+    ${state === 'out-of-reach'
+      ? `<span class="dh-vrow-stamp">Needs ${o.rc ?? 0} Stress</span>` : ''}
+    <small class="dh-vrow-kind">${kindWords(o).join(' · ')}</small>
+    ${chip ? `<span class="dh-vrow-cost" aria-hidden="true"><b>${o.rc}</b>${DH_BOLT}</span>` : ''}
+  </button>
+  ${inert || !o.controls ? '' : o.controls}
+</li>`;
+};

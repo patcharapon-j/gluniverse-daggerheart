@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/design/card.css">
 <link rel="stylesheet" href="/design/face.css">
 <link rel="stylesheet" href="/design/compact.css">
+<link rel="stylesheet" href="/design/vault.css">
 <style>
   body { background:var(--paper); color:var(--ink); font-family:var(--f-ui);
          margin:0; padding:28px; }
@@ -20,7 +21,19 @@
   .w264 { width:264px } .w200 { width:200px } .w132 { width:132px }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,100px); gap:14px 12px }
   .grid.gear { grid-template-columns:repeat(auto-fill,124px) }
-  .vault { display:flex; flex-direction:column; gap:6px; max-width:430px }
+  /* .dh-vrows brings its own grid, gap and container-type — all a host owes
+     a vault is a width. 620px is a sheet's Vault tab; 360px is under the
+     460px breakpoint in vault.css, where the row sheds its mark, kind line
+     and stamp. */
+  .vault { max-width:620px } .vault.narrow { max-width:360px }
+  /* The recall press is the Vault *tab's* furniture, not the row's, so it is
+     not in vault.css — this is just enough of it to show that a row with a
+     press stands its own cost chip down. */
+  .dh-recall-press { display:inline-flex; align-items:center; height:22px;
+    margin:0 2px; padding:0 8px; border:1px solid var(--vtt-line-strong);
+    border-radius:4px 0; background:var(--vtt-ink-0); color:var(--vtt-text-2);
+    font:inherit; font-size:11px; font-weight:700; cursor:pointer }
+  .dh-recall-free { margin-left:6px; color:var(--vtt-text-3); font-weight:650 }
 </style>
 <body class="dh ramp">
 <div id="out"></div>
@@ -93,8 +106,32 @@ el.innerHTML = `
   <div class="row">${cards.slice(0,4).map(c => face(c,'slot','w132')).join('')}</div>
   <h2>Compact &mdash; the loadout bays</h2>
   <div class="grid">${cards.map(c => small(c,{ size:'s' })).join('')}</div>
-  <h2>Vault rows</h2>
-  <div class="vault">${cards.slice(0,4).map((c,i) => VAULT_ROW({ ...c, motif:motif(c.d.slug), reach:i < 2 })).join('')}</div>`
+  <h2>Vault rows &mdash; the form a vault of dozens takes</h2>
+  <ul class="dh-vrows vault">${
+    [ VAULT_ROW({ ...cards[0], reach:true }),
+      VAULT_ROW({ ...cards[1], reach:true }),
+      /* Out of reach: the lens drains, the name steps back, the chip
+         inverts and the stamp says what the recall needs. */
+      VAULT_ROW({ ...cards[3], rc:2, reach:false }),
+      VAULT_ROW({ ...cards[4], reach:false }),
+      /* No painting, so the lens draws the domain's field with the mark in
+         it rather than a hole. A class card never has one. */
+      VAULT_ROW({ ...cards[2], rc:1, reach:true }),
+      /* A long name, to show the one flexible column ellipse rather than
+         push the kind line and the chip off the row. */
+      VAULT_ROW({ ...cards[1], name:'Rain of Blades and Every Other Falling Thing', reach:true }),
+      /* Spent, and the hollow a dragged row leaves. */
+      VAULT_ROW({ ...cards[0], state:'used' }),
+      VAULT_ROW({ ...cards[3], state:'socket' }),
+      /* With a press hung beside it, which says the price itself — so the
+         cost chip stands down rather than saying it twice. */
+      VAULT_ROW({ ...cards[0], reach:true,
+        controls:`<button type="button" class="dh-recall-press">Recall<span
+          class="dh-recall-free">free</span></button>` }),
+    ].join('')}</ul>
+  <h2>&hellip; and under 460px, where it sheds the mark, kind and stamp</h2>
+  <ul class="dh-vrows vault narrow">${
+    [cards[1], cards[4], cards[2]].map((c,i) => VAULT_ROW({ ...c, rc:i, reach:i < 2 })).join('')}</ul>`
 
 bindFaceFx(el)
 window.__ready = true

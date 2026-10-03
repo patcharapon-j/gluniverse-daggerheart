@@ -59,6 +59,7 @@ const SHEETS = [
   "face-tokens.css",
   "face.css",
   "compact.css",
+  "vault.css",
   "chit.css",
   "keep.css",
   "ledger.css",
