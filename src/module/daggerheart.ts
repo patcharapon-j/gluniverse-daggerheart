@@ -41,6 +41,7 @@ import { closeCreationForContentChange, openCreation, refreshCreation } from "./
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
 import {
+  applyTokenConditions,
   rebuildTokenChips,
   registerTokenBars,
   registerTokenChips,
@@ -210,7 +211,13 @@ Hooks.once("ready", () => {
        silent — a hook registered after it had fired, and a clip on a
        transformed box — so the component answers questions as well as
        drawing. `game.daggerheart.tokenChips()` reports; `.rebuild()` fixes. */
-    tokenChips: Object.assign(reportTokenChips, { rebuild: rebuildTokenChips }),
+    tokenChips: Object.assign(reportTokenChips, {
+      rebuild: rebuildTokenChips,
+      /* `.conditions("vulnerable","charged")` dresses the selected tokens so
+         the composite can be looked at on the real canvas without staging a
+         fight to produce it. Called with nothing, it clears them. */
+      conditions: applyTokenConditions,
+    }),
     /* And one for the ruler, which needs it more: a component that only
        exists while something is selected has no steady state to inspect,
        so "it never appeared" and "it appeared and went" look the same
