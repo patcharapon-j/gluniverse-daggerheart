@@ -490,17 +490,39 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      before and each nearly twice as wide, because at 40px the old pitch
      was four grey lines. */
   if (id < 2.5) {
+    /* The bands were infinite parallel stripes at one global pitch: the same
+       width everywhere, evenly spaced, running off the edge of the creature
+       in both directions. Nothing about that is a binding. A rope around a
+       body is wider where it crosses the thickest part, the turns are not
+       evenly spaced because whoever threw it was not measuring, and every
+       turn bites deepest in its own place.
+
+       Each turn now has its own index and its own seed, so width, pitch and
+       bite all vary from turn to turn, and the turns bow across the body
+       instead of running straight. */
     float cinch = .5 + .5 * sin(t * .62);
     float axis = p.y * 1.9 + p.x * .78;
-    float u = abs(fract(axis * .82 + .5) - .5);
-    float bands = 1.0 - smoothstep(.175 - .030 * cinch, .255 - .030 * cinch, u);
-    float lash = pow(max(0.0, sin((p.x * 2.4 - p.y * 1.1) * 4.4 + .35 * sin(t * .50))), 20.0);
+    /* The bow is what makes a band lie ON something rather than across it. */
+    float wrap = axis * .82 + p.x * p.x * .34;
+    float turnId = floor(wrap + .5);
+    float seed = hash21(vec2(turnId, 7.0));
+    float u = abs(fract(wrap + .5) - .5);
+    float width = .150 + .070 * seed - .030 * cinch;
+    float bands = 1.0 - smoothstep(width, width + .080, u);
+    /* The lashing is per turn too, so the fibre does not run in one
+       unbroken diagonal across every band at the same angle. */
     float along = p.x * 1.9 - p.y * .78;
-    float strain = band(fract(along * .55 - t * .30), .5, .075);
-    float rivet = (1.0 - smoothstep(.08, .26, voronoiEdge(vec2(axis * 1.5, p.x * 2.3) * 1.25)))
+    float lash = pow(max(0.0, sin((along + seed * 4.0) * 4.4 + .35 * sin(t * .50))), 20.0);
+    float strain = band(fract(along * .55 - t * .30 + seed), .5, .075);
+    /* A rivet belongs to its turn, in its turn's own frame. */
+    float rivet = (1.0 - smoothstep(.08, .26,
+                    voronoiEdge(vec2(along * 2.3 + seed * 11.0, turnId * 3.7) * 1.25)))
                 * d * bands;
-    return vec2(clamp(bands * .44 + lash * .18 + rivet * .30 + bands * strain * .30, 0.0, 1.0),
-                bands * lash * (.55 + .55 * cinch) + rivet * .35 + bands * strain * .75);
+    /* The turns stop at the body. A binding that carries on past the
+       creature is a pattern on the map. */
+    float held = smoothstep(1.04, .72, r);
+    return vec2(clamp((bands * .44 + lash * .18 + rivet * .30 + bands * strain * .30) * held, 0.0, 1.0),
+                (bands * lash * (.55 + .55 * cinch) + rivet * .35 + bands * strain * .75) * held);
   }
 
   /* Cloaked — dazzle. Flat panels at three values with hard boundaries
@@ -839,15 +861,35 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      the lay of the fibre running along the cord so it is rope rather than a
      drawn stripe. */
   if (id < 16.5) {
+    /* One perfectly straight line of constant width, with a pure sine for
+       texture. A rope under tension is not straight — it sags between the
+       hand and the creature — it is not one width, and its surface is two
+       strands laid against each other rather than a sinusoid.
+
+       The cord now sags, carries two counter-laid strands, and throws a
+       shadow on the side away from the light, which is what makes it sit on
+       top of the artwork rather than inside it. */
     float across = p.x * .55 + p.y * .84;
     float along  = p.x * .84 - p.y * .55;
     float haul   = .055 * sin(t * .70);
-    float cord   = band(across, haul, .165);
-    float lay    = pow(max(0.0, sin(along * 12.0 - t * 1.15)), 3.0);
-    float loop   = band(abs(length(p - vec2(.36, .32)) - .29), 0.0, .080);
+    /* Catenary enough: the sag is a parabola in the cord's own length. */
+    float sag    = (along * along - .30) * .13;
+    float offset = across - haul - sag;
+    float cord   = band(offset, 0.0, .120);
+    /* Two strands, laid opposite ways, so the twist reads as a twist. */
+    float twist  = along * 11.0 - t * 1.15;
+    float strandA = pow(max(0.0, sin(twist + offset * 7.0)), 2.0);
+    float strandB = pow(max(0.0, sin(twist * 1.02 - offset * 7.0 + PI)), 2.0);
+    float lay    = max(strandA, strandB);
+    /* The fibre, bought with pixels: at 40px a rope is a line with a colour. */
+    float fibre  = pow(max(0.0, sin(twist * 3.1 + offset * 19.0)), 4.0) * d;
+    /* Under the cord, on one side only. A shadow is the cheapest thing that
+       makes one surface read as being above another. */
+    float under  = (1.0 - smoothstep(.0, .11, abs(offset - .145))) * .5;
+    float loop   = band(abs(length(p - vec2(.36, .32)) - .29), 0.0, .070);
     float strain = band(fract(along * .42 - t * .32), .5, .16);
-    return vec2(clamp(cord * (.60 + .40 * lay) + loop * .76, 0.0, 1.0),
-                cord * lay * .44 + loop * (.24 + .46 * strain));
+    return vec2(clamp(cord * (.52 + .34 * lay + .16 * fibre) + loop * .76 + under * .30, 0.0, 1.0),
+                cord * lay * .40 + loop * (.24 + .46 * strain));
   }
 
   /* Frostbitten — rime, and it grows inward from the rim. Frost does not
@@ -930,13 +972,30 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      hesitating. Ablaze is the other warm branch and curls; this does not,
      because fire turns over itself and a thing being driven does not. */
   if (id < 20.5) {
+    /* The chevron was one V repeated to infinity with no variation along its
+       own length, and the forge behind it was a vertical gradient. Together
+       that is a decal of an upward arrow, and the thing it is supposed to say
+       is momentum.
+
+       Each chevron now has its own index, so they are not all the same width
+       and they do not all arrive at the same rate; and the heat is carried in
+       front of the leading edge rather than being a wash over the lower half,
+       so the brightest part of this is where the creature is about to be
+       rather than where it already is. */
     float up    = p.y * .92 + abs(p.x) * .38;
-    float chev  = band(fract(up * 2.30 - t * .62), .5, .195);
+    float march = up * 2.30 - t * .62;
+    float vId   = floor(march);
+    float seed  = hash21(vec2(vId, 19.0));
+    /* Narrower at the front, wider behind: a stack that is being driven,
+       not a ruler. */
+    float chev  = band(fract(march), .5, .140 + .095 * seed);
     float grain = fbmD(p * 3.40 + vec2(0.0, -t * .45), d) * d;
     float rise  = smoothstep(-1.0, .85, p.y);
-    float forge = smoothstep(.30, .95, grain * .50 + rise * .70);
+    /* Heat where the chevrons are, not where the bottom of the token is. */
+    float lead  = pow(max(0.0, 1.0 - abs(fract(march) - .5) * 2.0), 2.2);
+    float forge = smoothstep(.30, .95, grain * .50 + rise * .42 + lead * .40);
     return vec2(clamp(chev * .80 + forge * .44, 0.0, 1.0),
-                chev * rise * .72 + forge * .28);
+                chev * (.40 + .46 * lead) * (.45 + .55 * rise) + forge * .28);
   }
 
   /* Broken — one fracture, and the two sides still working against each
@@ -946,16 +1005,36 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      the event. Dust sits in the seam and drifts, which is the other half of
      "this is load-bearing and it has gone". */
   if (id < 21.5) {
+    /* One seam, at one angle, across the whole creature. A fracture in
+       something solid does not run as a single line: it branches, the
+       branches are shorter than the trunk, and they stop. Without that this
+       is a stripe with noise on it, which is Restrained's construction with
+       a different constant.
+
+       The trunk is still one working seam, because a Broken segment is one
+       break. What is added is the branching off it, each branch on its own
+       side at its own angle, and a secondary crack that does not reach the
+       trunk at all. */
     float across = p.x * .32 + p.y * .95;
+    float along  = p.x * .95 - p.y * .32;
     float jag    = fbmD(vec2(p.x * 2.6, p.y * .6) + 5.0, d) * .30;
     float work   = .045 * sin(t * .48);
     float gap    = across + jag - work;
     float seam   = band(gap, 0.0, .075);
-    float lip    = band(abs(gap), .075, .035);
-    float dust   = smoothstep(.55, 0.0, abs(gap))
-                 * fbmD(p * 6.0 + vec2(t * .10, -t * .30), d) * d;
-    return vec2(clamp(seam * .92 + lip * .54 + dust * .38, 0.0, 1.0),
-                lip * (.42 + .38 * sin(t * .48 + 1.6)) + seam * .18);
+    /* Branches: the trunk's own length picks which branch you are near, and
+       each one leans its own way and reaches its own distance. */
+    float limbId = floor(along * 1.7);
+    float limbSeed = hash21(vec2(limbId, 13.0));
+    float lean = (limbSeed - .5) * 1.5;
+    float fromTrunk = gap * (1.0 + lean * (fract(along * 1.7) - .5) * 2.4);
+    float limb = band(fromTrunk, 0.0, .030 + .018 * limbSeed)
+               * (1.0 - smoothstep(.10, .34 + .30 * limbSeed, abs(gap)))
+               * step(.35, limbSeed);
+    float lip  = band(abs(gap), .075, .035);
+    float dust = smoothstep(.55, 0.0, abs(gap))
+               * fbmD(p * 6.0 + vec2(t * .10, -t * .30), d) * d;
+    return vec2(clamp(seam * .92 + limb * .62 + lip * .54 + dust * .38, 0.0, 1.0),
+                lip * (.42 + .38 * sin(t * .48 + 1.6)) + seam * .18 + limb * .20);
   }
 
   /* Destroyed — the same fracture, everywhere, and opening. One seam that
