@@ -58,9 +58,22 @@
      `portraitOf`. Imported rather than restated, because the framing is
      only worth anything if the preview and the card agree. */
   import { portraitOf } from "../dice/rolls.ts";
+  /* Kept although nothing in this file draws with them any more: every
+     surface here goes through the ported card below, and `ui/tile.js` is
+     retired once the last call site elsewhere in the repo is gone. */
   import { SPINE, TILE } from "../ui/tile.js";
   import { XBOX, XMARK } from "../ui/mark.js";
   import { CARD, rich } from "../ui/card.js";
+  /* The ported card, and it is three builders rather than one because the
+     three forms do not share a class name — see the note at the head of
+     `ui/face.js`. What they share is the option object, which is `cardOf`'s:
+     `FACE` is the full card the peek layer holds, `COMPACT` the small card a
+     loadout bay and a heritage card take, and `VAULT_ROW` the lens row a
+     list of dozens takes — the vault, and the gear tab, whose panels were
+     landscape rows already. */
+  import { FACE } from "../ui/face.js";
+  import { COMPACT, VAULT_ROW } from "../ui/compact.js";
+  import { bindFaceFx, sweepChanged } from "../ui/face-fx.js";
   import { cardFitter } from "../apps/fit-cards.ts";
   import { chitClicks, refuseChits } from "../ui/chit.js";
   import { keepClicks, refuseKeep } from "../ui/keep.js";
@@ -547,6 +560,66 @@
       .map((i) => ({ pk: i.id, card: opt(i), it: i }))
       .filter((r): r is Row => r.card !== null);
 
+  /* ── where a counter row lands on a compact card ───────────────────
+     `COMPACT` draws its `.dh-cc-controls` strip under the card only when it
+     is handed something to put in it, and what we have to put there does not
+     exist yet when the string is built: `Chits` and `Keep` build their rows
+     detached and append them to a selector afterwards — see the note at the
+     head of `Chits.svelte`. So what goes in is an empty comment. It is
+     truthy, it draws nothing, and it is identical across a spend, which is
+     the property that matters: the builder's string has to compare equal or
+     `{@html}` replaces the strip the counter row was appended to.
+
+     Nothing at all for an item with no pool, so a card that counts nothing
+     carries no empty strip under it. The strip rather than `.dh-cc-rail`,
+     which is the rail's own pips and sits absolutely over the painting's top
+     right corner: the sheet's chit row is a horizontal thing the width of a
+     panel, and 100px of card has no room for it on the artwork. */
+  const COUNTER_SLOT = ".dh-cc-controls";
+
+  /* ── a gear row ────────────────────────────────────────────────────
+     The gear tab's three panels were landscape rows already — three labelled
+     slots, a carried list and the loot — so what they want is `VAULT_ROW`,
+     the painting as a thumbnail with the name on a line of its own, rather
+     than a 124px portrait in a 262px column.
+
+     The one thing to undo is the price. `VAULT_ROW` defaults `rc` to 0 and
+     says why: a vault list is the one place the cost has to be on every row,
+     and a card with no recall cost cannot be vaulted. Nothing on this tab has
+     one, so handing the card's own `rc` straight back — undefined, for every
+     kind of gear — is what stops a breastplate advertising that it recalls
+     for free. Spreading the card is not enough on its own: the key has to be
+     present to beat the default. */
+  const gearRow = (card: CardOptions, controls?: string): string =>
+    VAULT_ROW({ ...card, rc: card.rc, controls });
+  const counters = (it: ItemSnapshot): string | undefined =>
+    liveResources(it, doc).length || liveDicePools(it, doc).length
+      ? "<!--counters-->"
+      : undefined;
+
+  /* ── the one thing a vaulted card cannot know about itself ─────────
+     Whether you can afford to take it back. `cardOf` reads `used` off the
+     document's own budget and takes everything else from `ctx.state`,
+     because `within-reach` and `out-of-reach` are answers about where the
+     card is sitting and only the panel holding it knows — see `CardContext`.
+     Passing it is what makes an unaffordable row drain its lens, step its
+     name back and stamp the price, which is the whole of the vault.
+
+     A `function` and not a `const`, so it can be written next to `rows()`
+     and still call `canPay`, which belongs down with the swap. */
+  function reachRows(items: ItemSnapshot[]): Row[] {
+    return items
+      .map((i) => ({
+        pk: i.id,
+        card: cardOf(i, sigils, {
+          ...ctx,
+          state: canPay(i) ? ("within-reach" as const) : ("out-of-reach" as const),
+        }),
+        it: i,
+      }))
+      .filter((r): r is Row => r.card !== null);
+  }
+
   /* Three kinds on one row, and that is the book's own arrangement rather
      than a saving of space: a transformation is added "as if it were part of
      your character's heritage", does not count against the loadout limit, and
@@ -558,7 +631,7 @@
     rows([...snap.of("ancestry"), ...snap.of("community"), ...snap.of("transformation")]),
   );
   const loadoutCards = $derived(rows(loadout));
-  const vaultCards = $derived(rows(vault));
+  const vaultCards = $derived(reachRows(vault));
 
   /* ── the subclass, which really is a card ──────────────────────────
      The class stopped being one and the subclass did too, and only the
@@ -764,15 +837,36 @@
     });
   });
 
-  /* Only the cards that arrived, a few per frame — see `apps/fit-cards.ts`.
-     This used to be `fit(winEl)`, the whole solve over every peeked card, and
-     it ran on every sync rather than on every *change*: `peekRows` is rebuilt
-     by `rows()` on each pass, so its array identity is new whatever happened,
-     and marking a Stress box paid for re-measuring a dozen cards nobody had
-     touched. The mark rides on the `.card` itself, which is what `{@html}`
-     replaces when a card's text genuinely changes, so a real edit invalidates
-     its own solve and nothing else's. */
-  const fitter = cardFitter(() => winEl);
+  /* The card's own pointer behaviours: the turn toward the hand, the
+     painting's parallax and the glare that follows it. Delegated from the
+     window and bound once, the same arrangement and the same reason as
+     `peeks` above — the listeners sit on a scope root rather than on the
+     cards, so a re-render that replaces every card in the pane leaves them
+     standing.
+
+     Unlike the three bindings above it hands back a teardown, and the
+     teardown is what the effect returns: two sheets can be open, and a
+     window that has gone must not leave a listener behind on it. */
+  $effect(() => {
+    if (!winEl) return;
+    return bindFaceFx(winEl);
+  });
+
+  /* And the measuring passes, which are not bindings — see the note at the
+     head of `ui/face-fx.js`. Only the cards that arrived, a few per frame,
+     through `apps/fit-cards.ts`, which knows both ladders: a `.dh-face` steps
+     its painting down and then its type until the rules fit the plate, and a
+     `.dh-cc` steps its name until it fits two lines. Named here rather than
+     left to the default, because the default does not sweep for compact cards
+     and a loadout is five of them.
+
+     The mark rides on the card itself, which is what `{@html}` replaces when
+     a card's text genuinely changes, so a real edit invalidates its own solve
+     and nothing else's. That is what makes the dependency affordable:
+     `peekRows` is rebuilt by `rows()` on every pass, so its identity is new
+     whatever happened, and without the mark marking a Stress box would pay to
+     re-measure a dozen cards nobody had touched. */
+  const fitter = cardFitter(() => winEl, ".dh-face, .dh-cc");
 
   $effect(() => {
     void peekRows;
@@ -780,6 +874,16 @@
   });
 
   $effect(() => () => fitter.stop());
+
+  /* The drain down a card that has just become spent. Not part of the fit —
+     it is a one-off animation rather than a measurement — and it runs off a
+     mark `sweepChanged` keeps on the element, so a card that arrives already
+     used, on a sheet opening or a tab switching to it, has no previous state
+     to differ from and correctly does not sweep. */
+  $effect(() => {
+    void snap.rev;
+    if (winEl) sweepChanged(winEl);
+  });
 
   /* ── fitting the window, once ──────────────────────────────────────
      Five tabs of wildly different heights share one window: Advancement is
@@ -1000,6 +1104,16 @@
     return { name: f.name || "Hope Feature", cost: hopeCost(f), text: text ? rich(text) : "" };
   });
 
+  /* The mark on the edge of the Hope card, taken off the card the press
+     posts rather than looked up again here. A class card's plate is its
+     class mark and not the first of its two domains' — see `fbsig` in
+     `cards.ts` — so `fbsig` is the right one to put on the edge, with the
+     first domain's sigil behind it for a class whose mark did not resolve. */
+  const hopeMark = $derived.by(() => {
+    const card = classItem ? hopeCard(classItem, sigils) : null;
+    return card?.fbsig || card?.sig || "";
+  });
+
   /* ── Focus, which only one subclass has ────────────────────────────
      The schema carries the pool on every character and says why; this is the
      other half of that argument. A row of six diamonds that can never hold
@@ -1073,6 +1187,16 @@
     /** The type line: which card it came on, and whose. */
     origin: string;
     name: string;
+    /**
+     * `passive`, `action` or `reaction` — `data-kind` on the feature card.
+     *
+     * The three the schema names and the three `.dh-feature-card` draws an
+     * edge colour for, which is not a coincidence: the edge is the one thing
+     * on the row that says what kind of thing the rule is before you read
+     * it. A class feature has no kind field and is a passive fact about what
+     * you are, which is the word `featureCard` already gives its glyph.
+     */
+    kind: string;
     /** Marked up by the cards' own renderer, so it reads as it will in chat. */
     text: string;
     /**
@@ -1140,6 +1264,7 @@
         key: `${it.id}:${o.slot}`,
         origin: o.origin,
         name: f.name || "Feature",
+        kind: o.system?.kind || "passive",
         text: text ? rich(text) : "",
         bind: o.bind ?? f.name ?? "",
         price,
@@ -1404,7 +1529,17 @@
     // the background here, not the foreground: the shelve button, the
     // charge pips and the Resting checkbox all sit *on* a row and none of
     // them mean "show everyone this card".
-    if (t.closest?.("button, input, label, a, [data-act]")) return;
+    //
+    // With one exception, and it is new: the ported card's own face *is* a
+    // `<button>`. That is deliberate upstream — the whole painting is one
+    // press, so a card is reachable by Tab and actionable by Return without
+    // a `role` or a `tabindex` written by hand — but it means the test above
+    // now answers "control" for the one element that is the row. So the
+    // card's face is excused by name, and everything hung beside it (the
+    // shelve press, the counter strip, the charge boxes) is outside it and
+    // still guarded.
+    const face = t.closest?.(".dh-cc-face, .dh-vrow-face");
+    if (!face && t.closest?.("button, input, label, a, [data-act]")) return;
     const pk = t.closest<HTMLElement>("[data-pk]")?.dataset.pk;
     if (pk) toChat(cardFor(pk));
   }
@@ -2562,27 +2697,47 @@
                  to see and a number four panels away. Pressing it does both
                  halves: the Hope leaves and the card lands in chat. -->
             {#if hopeAction}
-              <button
-                type="button"
-                class="hact"
-                class:no={purse < hopeAction.cost}
-                title={purse < hopeAction.cost
-                  ? `${hopeAction.name} costs ${hopeAction.cost} Hope — you have ${purse}.`
-                  : `Spend ${hopeAction.cost} Hope and show ${hopeAction.name} to the table.`}
-                onclick={useHopeAction}
-              >
-                <span class="hd">
-                  <span class="c">
-                    {#each Array(hopeAction.cost) as _, i (i)}<i></i>{/each}
-                  </span>
-                  <b>{hopeAction.name}</b>
-                  <s>{hopeAction.cost} Hope</s>
+              <!-- And it gains the card look without giving up the press.
+                   `.dh-feature-card` is the design's form for a feature — a
+                   kind-coloured edge carrying the class's own mark, then the
+                   rule — and a Hope action is a class feature. What it is not
+                   is a row in the Features list: the whole point of moving it
+                   here was that "can I afford it" and "what does it say" are
+                   one question asked mid-turn, with the gems it spends
+                   directly above.
+
+                   So the card is the host and `.hact` is untouched inside it.
+                   That way round because the card is a `<div>` and the press
+                   is a `<button>`; the other way round is a button holding a
+                   button, which is not markup a browser keeps. -->
+              <div class="dh-feature-card hplate" data-kind="action">
+                <span class="dh-feature-edge" aria-hidden="true">
+                  <span class="dh-sigil dh-feature-mark">{@html hopeMark}</span>
                 </span>
-                <!-- The rule, on the row. Not a caption under a control —
-                     the whole block is the move, which is why it is inside
-                     the button and not beside it. -->
-                {#if hopeAction.text}<p>{@html hopeAction.text}</p>{/if}
-              </button>
+                <div class="dh-feature-body">
+                  <button
+                    type="button"
+                    class="hact"
+                    class:no={purse < hopeAction.cost}
+                    title={purse < hopeAction.cost
+                      ? `${hopeAction.name} costs ${hopeAction.cost} Hope — you have ${purse}.`
+                      : `Spend ${hopeAction.cost} Hope and show ${hopeAction.name} to the table.`}
+                    onclick={useHopeAction}
+                  >
+                    <span class="hd">
+                      <span class="c">
+                        {#each Array(hopeAction.cost) as _, i (i)}<i></i>{/each}
+                      </span>
+                      <b>{hopeAction.name}</b>
+                      <s>{hopeAction.cost} Hope</s>
+                    </span>
+                    <!-- The rule, on the row. Not a caption under a control —
+                         the whole block is the move, which is why it is inside
+                         the button and not beside it. -->
+                    {#if hopeAction.text}<p>{@html hopeAction.text}</p>{/if}
+                  </button>
+                </div>
+              </div>
             {/if}
           </div>
         </div>
@@ -2911,17 +3066,26 @@
                is what says to go there. -->
           <div class="pnl">
             <div class="k">Domain loadout<s>{loadout.length} / {loadoutLimit}</s></div>
-            <div class="grid2">
+            <!-- Bays, in the design's own grid. A compact card is a known
+                 100px rather than a fraction of whatever holds it — see the
+                 note on the two sizes at the head of `design/compact.css` —
+                 so the grid states that width and `.dh-cc-empty` is the
+                 hollow at exactly the size of the card it is waiting for.
+
+                 No `artCss` and no `.noart` on the wrapper any more. The new
+                 builders take `art` as a bare URL and write `--dh-art`
+                 themselves, and `no-art` is a class they put on the card; a
+                 declaration on the wrapper would be the old surfaces' answer
+                 to a question this one already answers. -->
+            <div class="dh-cc-grid">
               {#each loadoutCards as r (r.pk)}
-                <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.artCss}>
-                  {@html SPINE(r.card)}
-                  {@render pools(r.it, ".spine .meta")}
+                <div class="pk" data-pk={r.pk}>
+                  {@html COMPACT({ ...r.card, controls: counters(r.it) })}
+                  {@render pools(r.it, COUNTER_SLOT)}
                 </div>
               {/each}
               {#each Array(Math.max(0, loadoutLimit - loadoutCards.length)) as _, i (i)}
-                <div class="pk">
-                  <div class="mtslot"><b>Empty</b><span>room for one more</span></div>
-                </div>
+                <div class="dh-cc-empty"><b>Empty</b><span>one more</span></div>
               {/each}
             </div>
           </div>
@@ -2957,80 +3121,115 @@
                    the rule the Beastbound tile is for. The tile is the
                    printed thing; it keeps its own rules. -->
               <div class="cols">
-                <div class="runs">
-                  <!-- The row is a `<div>` and `.ap` is the press. A feature
-                       that counts something carries a chit row, a chit is a
-                       button, and a button inside a button is not markup a
-                       browser keeps — the wall `.fcls`/`.fclsr` hit in the
-                       creation window, answered the same way. -->
-                  {#each abilities as a (a.key)}
-                    <div class="a" class:paid={!!a.cost} data-pk={a.pk}>
-                      <button
-                        type="button"
-                        class="ap"
-                        title={a.cost
-                          ? `Pay ${a.cost} and show ${a.name} to the table`
-                          : `Show ${a.name} to the table`}
-                        onclick={() => useAbility(a)}
-                      >
-                        <span class="hd">
-                          <s>{a.origin}</s>
-                          {#if a.cost}<em>{a.cost}</em>{/if}
+                <!-- A feature is a card laid on its side, which is what
+                     `.dh-feature-card` in the ported `face.css` is for: a
+                     kind-coloured edge carrying the class's mark, then the
+                     name, the price and the rule. The rule stays *on* the
+                     row — that is the whole argument above and nothing about
+                     the card look changes it — so this is the one surface on
+                     the sheet that is not a `{@html}` string. There is no
+                     builder for this form in the port, and writing one would
+                     mean editing `design/`, so the markup is the stylesheet's
+                     own contract written out in Svelte, which also means the
+                     chit rows and the dice trays stay native components in
+                     their own slot instead of being re-parented into a
+                     builder's output.
+
+                     `.dh-feature-name` is the press rather than the whole
+                     row, which is the design's answer to the wall `.ap` hit:
+                     a chit is a button and a button inside a button is not
+                     markup a browser keeps. -->
+                {#if abilities.length}
+                  <ul class="runs">
+                    {#each abilities as a (a.key)}
+                      <li class="dh-feature-card" data-kind={a.kind} data-pk={a.pk}>
+                        <span class="dh-feature-edge" aria-hidden="true">
+                          <span class="dh-sigil dh-feature-mark"
+                            >{@html a.card?.fbsig || a.card?.sig || ""}</span
+                          >
                         </span>
-                        <b>{a.name}</b>
-                        {#if a.text}<p>{@html a.text}</p>{/if}
-                      </button>
-                      {#each a.res as r (r.i)}
-                        <Chits
-                          value={r.res.value}
-                          max={r.max}
-                          name={(r.res.name || "tokens").toLowerCase()}
-                          key="{a.pk}:{r.i}"
-                          add={ed}
-                        />
-                      {/each}
-                      <!-- Counters first, then dice, which is the order the
-                           `pools` snippet uses on a spine and a tile — a
-                           feature carrying both spent a use and is holding a
-                           die, and that is the order it happened in. Neither
-                           takes a `slot`: this row has slack of its own, so
-                           the tray draws in flow under the rule rather than
-                           being re-parented into somebody's meta line. -->
-                      {#each a.dice as p (p.i)}
-                        <Keep
-                          mode={p.pool.mode}
-                          faces={p.pool.faces}
-                          dice={p.pool.dice}
-                          max={p.max}
-                          name={(p.pool.name || "dice").toLowerCase()}
-                          key="{a.pk}:{p.i}"
-                          add={ed}
-                          roll={p.pool.onRefresh !== "reroll"}
-                          rev={snap.rev}
-                        />
-                      {/each}
-                    </div>
-                  {:else}
+                        <div class="dh-feature-body">
+                          <div class="dh-feature-head">
+                            <h4>
+                              <button
+                                type="button"
+                                class="dh-feature-name"
+                                title={a.cost
+                                  ? `Pay ${a.cost} and show ${a.name} to the table`
+                                  : `Show ${a.name} to the table`}
+                                onclick={() => useAbility(a)}>{a.name}</button
+                              >
+                            </h4>
+                            {#if a.cost}
+                              <span class="dh-feature-cost" class:is-fear={a.price.fear > 0}
+                                >{a.cost}</span
+                              >
+                            {/if}
+                            <s>{a.origin}</s>
+                          </div>
+                          {#if a.text}
+                            <div class="dh-feature-text"><p>{@html a.text}</p></div>
+                          {/if}
+                          <!-- Counters first, then dice, which is the order the
+                               `pools` snippet uses on a card — a feature
+                               carrying both spent a use and is holding a die,
+                               and that is the order it happened in. Neither
+                               takes a `slot`: the design gives this form its
+                               own strip, so the trays draw in flow in it
+                               rather than being re-parented anywhere. -->
+                          {#if a.res.length || a.dice.length}
+                            <div class="dh-feature-controls">
+                              {#each a.res as r (r.i)}
+                                <Chits
+                                  value={r.res.value}
+                                  max={r.max}
+                                  name={(r.res.name || "tokens").toLowerCase()}
+                                  key="{a.pk}:{r.i}"
+                                  add={ed}
+                                />
+                              {/each}
+                              {#each a.dice as p (p.i)}
+                                <Keep
+                                  mode={p.pool.mode}
+                                  faces={p.pool.faces}
+                                  dice={p.pool.dice}
+                                  max={p.max}
+                                  name={(p.pool.name || "dice").toLowerCase()}
+                                  key="{a.pk}:{p.i}"
+                                  add={ed}
+                                  roll={p.pool.onRefresh !== "reroll"}
+                                  rev={snap.rev}
+                                />
+                              {/each}
+                            </div>
+                          {/if}
+                        </div>
+                      </li>
+                    {/each}
+                  </ul>
+                {:else}
+                  <div class="runs">
                     <p class="ach">No class yet. Drag one in from the compendium.</p>
-                  {/each}
-                </div>
-                <!-- Tiles, not spines. A subclass has no level and no recall
-                     cost, so two of a spine's five cells are empty — and it
-                     carries a Spellcast trait, which is a fact no other row
-                     on this sheet shows and which a spine has nowhere to
-                     put. `text: ""` because TILE otherwise leads with the
-                     card's first feature, and this tile is a 68px strip:
-                     what fits is a clause and a half, which reads as the
-                     whole rule and is not one. Truncating a rule is worse
-                     than not showing it, and the full text is one hover
-                     away in the peek — the same bargain every card in the
-                     loadout makes. -->
+                  </div>
+                {/if}
+                <!-- The printed object, drawn as one: a compact card, which
+                     is the same bay a loadout card takes because a subclass
+                     card is the same kind of thing — printed, acquired one
+                     at a time, held. A compact card has no body by
+                     construction, so there is no `text: ""` to pass any
+                     more and no clause-and-a-half of a rule reading as the
+                     whole of it. The full card is one hover away in the
+                     peek, the bargain every card in the loadout makes.
+
+                     Both classes: `.sub` is what gives this column its
+                     width and its gap, `.dh-cc-grid` what gives it the
+                     card's own 100px track. -->
                 {#if subclassCards.length}
-                  <div class="sub">
+                  <div class="sub dh-cc-grid">
                     {#each subclassCards as r (r.pk)}
-                      <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.artCss}>
-                        {@html TILE({ ...r.card, text: "" })}
-                        {@render pools(r.it, ".tile .ft")}
+                      <div class="pk" data-pk={r.pk}>
+                        {@html COMPACT({ ...r.card, controls: counters(r.it) })}
+                        {@render pools(r.it, COUNTER_SLOT)}
                       </div>
                     {/each}
                   </div>
@@ -3041,11 +3240,15 @@
 
           <div class="pnl">
             <div class="k">Heritage<s>{heritage}</s></div>
-            <div class="grid2">
+            <!-- Cards, in the loadout's own bays. Ancestry and community
+                 have no domain, so `data-domains="0"` and the kind glyph
+                 tint the card dusk and umber rather than inventing a hue
+                 for them — see the no-domain block in `design/compact.css`. -->
+            <div class="dh-cc-grid">
               {#each heritageCards as r (r.pk)}
-                <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.artCss}>
-                  {@html SPINE(r.card)}
-                  {@render pools(r.it, ".spine .meta")}
+                <div class="pk" data-pk={r.pk}>
+                  {@html COMPACT({ ...r.card, controls: counters(r.it) })}
+                  {@render pools(r.it, COUNTER_SLOT)}
                 </div>
               {:else}
                 <p class="ach">No ancestry or community yet.</p>
@@ -3069,12 +3272,11 @@
                 {loadout.length} / {loadoutLimit}{armedCard ? " · choose one to replace" : ""}
               </s>
             </div>
-            <div class="grid2">
+            <div class="dh-cc-grid">
               {#each loadoutCards as r (r.pk)}
                 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
                 <div
                   class="pk"
-                  class:noart={r.card.noart}
                   class:lift={dragId === r.pk}
                   class:dz={overId === r.pk}
                   class:dz-a={overId === r.pk && overAfter}
@@ -3085,7 +3287,6 @@
                   data-swap
                   data-drag
                   draggable="true"
-                  style={r.card.artCss}
                   ondragstart={(e) => dragCard(e, r.pk)}
                   ondragend={endDrag}
                   ondragover={(e) => dragOver(e, "loadout", r.pk)}
@@ -3099,8 +3300,8 @@
                     recall(armedCard.id, r.pk);
                   }}
                 >
-                  {@html SPINE(r.card)}
-                  {@render pools(r.it, ".spine .meta")}
+                  {@html COMPACT({ ...r.card, controls: counters(r.it) })}
+                  {@render pools(r.it, COUNTER_SLOT)}
                   <span class="swp"></span>
                   <button
                     type="button"
@@ -3115,28 +3316,37 @@
               {/each}
               {#each Array(Math.max(0, loadoutLimit - loadoutCards.length)) as _, i (i)}
                 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+                <!-- `.dh-cc-empty` and `data-live`, which is the design's own
+                     name for a hollow that is expecting something: the slot
+                     lights while a card is armed or in the hand, which is
+                     exactly when "drop one here" is true.
+
+                     Two words and not the spine's sentence: the hollow is
+                     100px wide, and `.dh-cc-empty` centres its line rather
+                     than wrapping it, so a phrase runs out over the card
+                     beside it. -->
                 <div
-                  class="pk"
+                  class="dh-cc-empty"
                   data-ld=""
+                  data-live={armedCard || dragId ? "true" : "false"}
                   ondragover={(e) => dragOver(e, "loadout", null)}
                   ondrop={(e) => dropCard(e, "loadout", null)}
                   onclick={() => armedCard && recall(armedCard.id, null)}
                 >
-                  <div class="mtslot">
-                    <b>Empty</b>
-                    <span
-                      >{armedCard || dragId ? "drop a card here" : "room for one more"}</span
-                    >
-                  </div>
+                  <b>Empty</b>
+                  <span>{armedCard || dragId ? "drop one here" : "one more"}</span>
                 </div>
               {/each}
             </div>
           </div>
 
-          <!-- The same spine as the loadout, because it is the same card —
-               drawing it as a mini would say "different kind of thing" when
-               the truth is "same thing, not in hand". So: identical row,
-               desaturated, with a vault tab down its edge. -->
+          <!-- The vault's own form, and it is the one place on this sheet
+               where a card is not drawn as a card. The loadout above it is
+               five bays you read; this is dozens you search, and `VAULT_ROW`
+               is what the design does about that — same option object, same
+               card, laid on its side. What used to say "filed, not held" was
+               a desaturated spine under a hatch; now it is the lens, which
+               drains on the rows you cannot afford. -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
             class="pnl swap vaultp"
@@ -3189,14 +3399,13 @@
               {/if}
             </div>
 
-            <div class="grid2">
+            <div class="dh-vrows">
               {#each vaultCards as r (r.pk)}
                 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
                 <div
                   class="pk vl"
                   class:arm={armed === r.pk}
                   class:mute={!!armedCard && armed !== r.pk}
-                  class:noart={r.card.noart}
                   class:lift={dragId === r.pk}
                   class:dz={overId === r.pk}
                   class:dz-a={overId === r.pk && overAfter}
@@ -3206,14 +3415,28 @@
                   data-swap
                   data-drag
                   draggable="true"
-                  style={r.card.artCss}
                   ondragstart={(e) => dragCard(e, r.pk)}
                   ondragend={endDrag}
                   ondragover={(e) => dragOver(e, "vault", r.pk)}
                   ondrop={(e) => dropCard(e, "vault", r.pk)}
                 >
-                  {@html SPINE(r.card)}
-                  {@render pools(r.it, ".spine .meta")}
+                  <!-- The row, not the card. A loadout holds five paintings
+                       and a vault holds dozens, and thirty of them is a wall
+                       you search rather than a shelf you read — so the card
+                       turns on its side, the name gets a whole line and the
+                       painting shrinks to a lens at the left. The two states
+                       are the whole panel and they come off `reachRows`:
+                       within reach lights the cost chip and says nothing,
+                       out of reach drains the lens and stamps the price.
+
+                       The counters draw in flow under the row rather than
+                       into it. A row has no rail — a rail is something you
+                       do to a picture of a card — so there is nowhere in the
+                       builder's output to put them, and `controls` is spoken
+                       for: anything hung there stands the cost chip down,
+                       and the cost is the one number this panel exists for. -->
+                  {@html VAULT_ROW(r.card)}
+                  {@render pools(r.it, "")}
                   <span class="swp"></span>
                   <!-- Arming is a control now, not the row. Every other card
                        row on this sheet posts its card to chat when you click
@@ -3264,13 +3487,19 @@
                         unequip
                       </button>
                     </div>
-                    <!-- `data-fk` on the tile's own wrapper rather than on
+                    <!-- `data-fk` on the row's own wrapper rather than on
                          the slot, because the slot carries a header the
-                         tile does not: the rect that flies has to be the
-                         rect of the thing you watched leave. -->
-                    <div class:noart={card.noart} data-fk={s.it.id} style={card.artCss}>
-                      {@html TILE(card)}
-                      {@render pools(s.it, ".tile .ft")}
+                         row does not: the rect that flies has to be the
+                         rect of the thing you watched leave.
+
+                         `.dh-vrows` is that wrapper, and it earns the place:
+                         it is the list box the row's own narrow form is a
+                         container query against, so a row in a 262px slot
+                         sheds its mark and its kind line instead of
+                         crushing them — see the foot of `design/vault.css`. -->
+                    <div class="dh-vrows" data-fk={s.it.id}>
+                      {@html gearRow(card)}
+                      {@render pools(s.it, "")}
                     </div>
                   </div>
                 {:else}
@@ -3305,16 +3534,16 @@
                     <div
                       class="eqp"
                       class:no
-                      class:noart={card.noart}
-                      style={card.artCss}
                       data-pk={g.id}
                       data-fk={g.id}
                       title={no ? `${primary?.name} is Two-Handed — no free hand` : ""}
                     >
-                      {@html TILE(card)}
-                      {@render pools(g, ".tile .ft")}
+                      <div class="dh-vrows">
+                        {@html gearRow(card)}
+                      </div>
+                      {@render pools(g, "")}
                       <!-- The strip was a label over a tile that was itself
-                           the button. Now it is the button and the tile is a
+                           the button. Now it is the button and the row is a
                            card like every other card here — which also means
                            the one gesture that changes your equipment is no
                            longer the same gesture as reading it. -->
@@ -3341,16 +3570,24 @@
                 Loot<s>{lootCards.length} carried · {chargeTotal} charges</s>
               </div>
               <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-              <div class="grid2" onclick={onCharge}>
+              <!-- The charges go in `controls`, which is the slot beside the
+                   press a row keeps for whatever the host hangs there. That
+                   is the one place on the row they can go — the lens is 60px
+                   of painting and the name's column ellipses — and it costs
+                   nothing here, because what `controls` otherwise stands
+                   down is the recall cost chip and loot has no recall cost.
+                   `data-act` on each box is still what keeps the click off
+                   the card: a control inside a row is a control first. -->
+              <div class="dh-vrows" onclick={onCharge}>
                 {#each lootCards as r (r.pk)}
                   {@const src = lootItems.find((i) => i.id === r.pk)}
                   {@const aside =
                     src?.type === "consumable"
                       ? charges(Math.min(CHARGES, src.system.quantity ?? 0), r.pk)
-                      : null}
-                  <div class="pk" class:noart={r.card.noart} data-pk={r.pk} style={r.card.artCss}>
-                    {@html SPINE({ ...r.card, aside })}
-                    {@render pools(r.it, ".spine .meta")}
+                      : undefined}
+                  <div class="pk" data-pk={r.pk}>
+                    {@html gearRow(r.card, aside)}
+                    {@render pools(r.it, "")}
                   </div>
                 {/each}
               </div>
@@ -3791,9 +4028,17 @@
          part of the sheet. Parked higher up, a card centred on a top row
          rides up over Foundry's window chrome. -->
     <div class="peeklayer">
+      <!-- The full face, at the size the peek is drawn at. `w` and not a
+           container: `.dh-face` defaults `--dh-w` to `100cqi`, so a host that
+           is not a container gives it nothing and the card draws at zero —
+           and `.pkc` is a fixed 262px in `design/sheet.css`, which is not
+           this sheet's to add `container-type` to. Stating the width outright
+           is the other half of that bargain and the one the stylesheet's own
+           Peek rule takes; see the `--u` note at the head of
+           `design/face.css`. -->
       {#each peekRows as r (r.pk)}
-        <div class="pkc" class:noart={r.card.noart} data-peek={r.pk} style={r.card.artCss}>
-          {@html CARD(r.card)}
+        <div class="pkc" data-peek={r.pk}>
+          {@html FACE({ ...r.card, size: "full", w: 262 })}
         </div>
       {/each}
     </div>
@@ -3805,8 +4050,70 @@
 
 <style>
   /* There is no bespoke row style here any more, and that is the point:
-     every card on this sheet is a SPINE, a TILE or a CARD from `design/`,
-     so there is nothing left for this sheet to invent a look for. */
+     every card on this sheet is a FACE, a COMPACT or a VAULT_ROW from
+     `design/`, so there is nothing left for this sheet to invent a look for.
+     What is left is the three rules below, and none of them draws a card —
+     they say where a list's box is and what colour is behind one. */
+
+  /* The feature list is a list now, because `.dh-feature-card` is an `<li>`.
+     `design/sheet.css` already gives `.runs` its column width and its gap;
+     this is only the user agent's own bullets and indent taken off. */
+  ul.runs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The origin line — "Class · Bard" — which is the one thing the design's
+     feature head has no slot for: it carries a name, a price and a Homebrew
+     tag, and whose card the rule came off is none of the three. Drawn as
+     every other label of its kind on this sheet is, so it reads as a caption
+     rather than as a second heading. */
+  .dh-feature-head s {
+    flex: none;
+    text-decoration: none;
+    color: var(--vtt-text-3);
+    font: 700 8px/1.3 var(--f-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* The equip bar, given room. `design/sheet.css` hangs `.eqp .act`
+     absolutely off the bottom edge of the cell, which was right when the
+     cell held a 100px tile — the bar rises out of the artwork on hover and
+     covers nothing you were reading. The cell holds a 44px row now, and the
+     one case where the bar is always up, a weapon with no free hand, was
+     burying the name it exists to explain. The cell leaves it a strip of its
+     own instead; the bar is still absolute against the cell and still rises
+     from the same edge, so the gesture is untouched. */
+  .eqp {
+    padding-bottom: 20px;
+  }
+
+    /* The feature card, grounded on the rail. `.dh-feature-card` is drawn for
+     ink — it is the form a feature takes in the dark panels this card was
+     ported out of — and the rail is paper, which is the one fact about the
+     host the stylesheet cannot know. So the plate stands down and the edge
+     takes the Hope hue; everything else is the design's, and `.hact` fills
+     the body exactly as it did when it was the whole row.
+
+     `padding: 0` because `.hact` already carries the row's own, and two
+     paddings is a press inset from the frame it is supposed to be. */
+  .hplate {
+    background: transparent;
+    box-shadow: none;
+  }
+  .hplate .dh-feature-body {
+    padding: 0;
+  }
+  .hplate .dh-feature-edge {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--hope) 26%, transparent),
+      transparent
+    );
+    color: var(--hope-tx);
+  }
   .bio {
     font: 400 calc(12.5px * var(--dh-sheet-font-scale, 1))/1.6 var(--f-ui);
     color: var(--ink-2);
@@ -3954,7 +4261,7 @@
      `border-radius` because Foundry rounds both and nothing in this system
      is rounded — every surface here is chamfered. */
   .hact,
-  .abl .a,
+  .dh-feature-name,
   .acts button,
   .cfg .f input,
   .lst .r input,
