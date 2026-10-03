@@ -24,7 +24,8 @@
   } from "../config.ts";
   import { cardOf, loadSigils, plain, type Sigils } from "../sheets/cards.ts";
   import { CARD } from "../ui/card.js";
-  import { cardFitter } from "./fit-cards.ts";
+  import { FACE } from "../ui/face.js";
+  import { bindFaceFx, fit as fitFace } from "../ui/face-fx.js";
   import {
     axesFor,
     countsFor,
@@ -232,29 +233,35 @@
      in the search field — so every letter re-solved every card on screen,
      including the ones the letter did not touch.
 
-     Both halves are the same fix and it lives in `apps/fit-cards.ts` now,
-     because the character sheet's peek layer and the creation window turned
-     out to have the same bug and no idea they had it. A card that has been
-     fitted wears `data-fit` and is not fitted again, so a keystroke pays
-     only for the cards that arrived with it; and the ones that did arrive
-     are fitted a few per frame. The `{#each}` is keyed on the uuid, which is
-     what makes the attribute survive a filter change — a card that stayed on
-     screen kept its element and therefore its solve.
+     Both halves are the same fix. A card that has been fitted wears
+     `data-fit` and is not fitted again, so a keystroke pays only for the
+     cards that arrived with it; and the ones that did arrive are fitted a
+     few per frame. The `{#each}` is keyed on the uuid, which is what makes
+     the attribute survive a filter change — a card that stayed on screen
+     kept its element and therefore its solve.
 
-     The mark moved onto the `.card` itself when the helper was extracted,
-     and that is a correction rather than a detail: `.bcrd` is the button
-     Svelte keeps, and the card inside it is `{@html}` output, which is
-     replaced when — and only when — the card's text genuinely changes. A
-     mark on the button outlives a rewritten card and would skip it.
+     The mark sits on the `.dh-face` itself and not on `.bcrd`: the button is
+     what Svelte keeps, and the card inside it is `{@html}` output, replaced
+     when — and only when — the card's text genuinely changes. A mark on the
+     button outlives a rewritten card and would skip it.
 
      Two things invalidate a solve and both clear the marks. Fonts, because
      metrics measured against a fallback face are wrong by enough to cost a
-     line — the vendored `fit()` says so at the top, and the fitter owns that
-     half now, since every caller wanted it. And width, because `auto-fill`
-     changes the column count as the window resizes and a card solved at
-     250px is not solved at 196 — which stays here, because it is a fact
-     about this grid and not about fitting. Nothing else does: the grid's
-     height is free to change, and does, every time this runs.
+     line — `face-fx.js`'s `fit()` says so at the top. And width, because
+     `auto-fill` changes the column count as the window resizes and a card
+     solved at 250px is not solved at 196; the ladder is written in unitless
+     multiples of `--u`, so most of a solve does scale, but the `max(10px, …)`
+     floors on type do not and a narrow column lands on a different rung.
+     Nothing else invalidates it: the grid's height is free to change.
+
+     ── why this is spelt out here rather than reached for ───────────
+     `apps/fit-cards.ts`'s `cardFitter` is the same two answers, and it is
+     bound to `card.js`'s `fit`, which writes `--plate` and `--u` on a
+     `.card` and has nothing to say to a `.dh-face` — handed one it finds no
+     `.cnt` and silently does nothing. Widening it to take a fit function
+     touches a file three other surfaces share, so the loop is restated
+     against `face-fx.js`'s ladder instead and the shared helper is left
+     alone for whoever ports the last `.card` surface.
      ══════════════════════════════════════════════════════════════════ */
 
   const asSnapshot = (e: Entry) => ({
@@ -269,25 +276,94 @@
 
   const cardFor = (e: Entry) => cardOf(asSnapshot(e), sigils);
 
-  const fitter = cardFitter(() => body);
+  /* `fitFace(scope)` does exactly one thing with its scope:
+     `scope.querySelectorAll('.dh-face')`. So the way to solve a single card
+     is to hand it a scope that answers with that card and nothing else,
+     which is both narrower and safer than passing the card's parent — and
+     `ui/face-fx.js` is vendored from `design/`, so widening it to take an
+     element would mean changing the design system to serve a Foundry-side
+     concern. */
+  const only = (card: Element): any => ({ querySelectorAll: () => [card] });
+
+  /** Cards solved per frame. Six is about a frame's worth at card size. */
+  const CHUNK = 6;
+
+  /** Supersedes a pass still walking, so a change abandons it rather than
+      racing it. */
+  let pass = 0;
+  /** Whether a font-driven invalidation is still owed. Once only: the faces
+      land once per session, and re-arming would re-solve on every run. */
+  let awaitingFonts = true;
+
+  function fitFaces(): void {
+    if (!body) return;
+
+    /* The faces this is about to measure against may not be the faces it
+       will be read in. A window opened by hand is long past that; one opened
+       during load is not, and neither knows which it is. */
+    if (awaitingFonts && document.fonts?.status === "loading") {
+      awaitingFonts = false;
+      void document.fonts.ready.then(() => resetFaces()).catch(() => {});
+    }
+
+    /* The work first, and the supersede only if there is any. Bumping `pass`
+       on a run with nothing to do would cancel a pass still walking, and the
+       cards it had not reached would stay unsolved until something unrelated
+       happened to ask again — which is exactly a filter narrowing. */
+    const todo = [...body.querySelectorAll(".dh-face:not([data-fit])")];
+    if (!todo.length) return;
+    const mine = ++pass;
+
+    let i = 0;
+    const step = (): void => {
+      if (mine !== pass) return;
+      for (const end = Math.min(i + CHUNK, todo.length); i < end; i++) {
+        const card = todo[i] as HTMLElement;
+        fitFace(only(card));
+        card.dataset.fit = "1";
+      }
+      if (i < todo.length) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function resetFaces(): void {
+    if (!body) return;
+    for (const el of body.querySelectorAll<HTMLElement>(".dh-face[data-fit]")) {
+      delete el.dataset.fit;
+    }
+    fitFaces();
+  }
 
   $effect(() => {
     void capped;
     void sigils;
-    fitter.run();
+    fitFaces();
   });
 
-  $effect(() => () => fitter.stop());
+  $effect(() => () => void ++pass);
 
-  /* Width, and only width. `fit` writes an `aspect-ratio`, so the grid's
-     height moves every time this runs — observing that would be a loop. */
+  /* The pointer tilt, bound once over the grid and not per card. `.dh-face`
+     elements come and go with every filter press; a delegated listener on the
+     scroller does not, which is the whole argument at the head of
+     `face-fx.js`. Teardown is the function it hands back, returned from the
+     effect so Svelte runs it when this component is destroyed — and again if
+     `body` is ever rebound, which it is not. */
+  $effect(() => {
+    if (!body) return;
+    return bindFaceFx(body);
+  });
+
+  /* Width, and only width. The fit ladder writes `--dh-art-h`, so the card's
+     own proportions move every time this runs — observing that would be a
+     loop. */
   $effect(() => {
     if (!body) return;
     let was = body.clientWidth;
     const ro = new ResizeObserver(() => {
       if (!body || body.clientWidth === was) return;
       was = body.clientWidth;
-      fitter.reset();
+      resetFaces();
     });
     ro.observe(body);
     return () => ro.disconnect();
@@ -516,16 +592,35 @@
             <button
               type="button"
               class="bcrd"
-              class:noart={card?.noart}
               class:lift={lifted === e.uuid}
-              style={card?.art}
               draggable="true"
               title={e.name}
               onclick={() => open(e)}
               ondragstart={(ev) => startDrag(ev, e)}
               ondragend={endDrag}
             >
-              {#if card}{@html CARD(card)}{/if}
+              <!-- The face at `full`, and the host that gives it a size.
+                   `--dh-w` defaults to `100cqi`, so a face in a plain block
+                   measures zero and draws nothing: the box it is in has to
+                   declare `container-type: inline-size`. It is declared here
+                   rather than in `browse.css` because `styles/` is generated
+                   from `design/` and this is a fact about this one grid.
+
+                   `full` and not `slot`, because this grid is the answer
+                   rather than an index of it — `.bcards` is a 196px floor
+                   stretched to about 250 precisely so the rules text printed
+                   on the card is readable, which is what somebody came here
+                   to read. A slot face leaves its rules to a peek, and this
+                   window has no peek; the compact card drops them outright
+                   and is a fixed 100px, which would leave two thirds of every
+                   track empty.
+
+                   No `class:noart` any more: `FACE` branches on `art` itself
+                   — `has-art` against `no-art` on the article — and `.noart`
+                   on an ancestor is a hook only the old `.card` reads. -->
+              <span class="bhost" style="display:block;container-type:inline-size">
+                {#if card}{@html FACE({ ...card, size: "full" })}{/if}
+              </span>
               {#if manyPacks}<s class="bsrc">{e.packLabel}</s>{/if}
             </button>
           {/each}

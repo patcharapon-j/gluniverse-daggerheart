@@ -139,6 +139,40 @@ export function registerSettings(): void {
     onChange: applyDisplayPreferences,
   });
 
+  /* How much the cards move, and it is client-scoped for the reason the two
+     dials above it are: a card turning under the pointer is a fact about one
+     person's screen, and the OS setting it overrides — `prefers-reduced-motion`
+     — is itself a per-person accessibility preference. A world switch would
+     let the GM decide whose inner ear is which.
+
+     Three values, and the middle one is why this exists. Until now the only
+     way to turn the motion down was the OS dial, which is all or nothing and
+     which a lot of people leave on `reduce` for reasons that have nothing to
+     do with a 6° tilt. `full` is the card as drawn, `reduced` keeps the
+     transitions and takes them to about a third, and `off` is zero.
+
+     `inherit` is the fourth value the obvious build would have, and it is
+     deliberately absent: `full` already means "whatever the OS says" for
+     everybody who has not touched the OS dial, and a setting whose default
+     reads as a third state is a setting nobody can tell the state of. What
+     `full` costs is that somebody with `reduce` set system-wide and `full`
+     chosen here gets motion — which is the right way round, because they
+     said so here, afterwards, about this system. */
+  game.settings.register(SYSTEM_ID, "motion", {
+    name: "DAGGERHEART.Settings.Motion",
+    hint: "DAGGERHEART.Settings.MotionHint",
+    scope: "client",
+    config: true,
+    type: String,
+    choices: {
+      full: "DAGGERHEART.Motion.Full",
+      reduced: "DAGGERHEART.Motion.Reduced",
+      off: "DAGGERHEART.Motion.Off",
+    },
+    default: "full",
+    onChange: applyDisplayPreferences,
+  });
+
   /* On by default, and world-scoped, because what is being switched is
      whether the table's changes are *recorded at all* rather than who gets to
      look at the record. That question stopped being a matter of taste when
@@ -359,4 +393,86 @@ export function applyDisplayPreferences(): void {
     "--dh-hover-card-scale",
     String(read("hoverCardScale", 1, 0.75, 1.5)),
   );
+  applyMotion();
 }
+
+/* ── the motion dial ──────────────────────────────────────────────────
+   What the three choices are worth as `--vtt-motion-speed`, the single
+   scale `face-tokens.css` multiplies all five card durations by.
+
+   0.35 rather than 0.5 for `reduced`, because the number that has to come
+   down is the one you notice: `--vtt-motion-reveal` is 620ms and the sweep
+   runs at 2.2× that, so half speed is still most of a second of a line
+   falling down a card. A third puts the reveal at about 220ms, which reads
+   as a transition rather than as an event. */
+const MOTION_SPEED: Record<string, number> = { full: 1, reduced: 0.35, off: 0 };
+
+/**
+ * The motion preference, as a rule in the document.
+ *
+ * **Not `documentElement.style.setProperty`, which is what the two dials
+ * above do and what this started as.** Those two write tokens nothing
+ * redeclares, so inheritance carries them into every sheet.
+ * `--vtt-motion-speed` is different: `face-tokens.css` declares it *on*
+ * `.dh` — once at 1, and again at 0 inside
+ * `@media (prefers-reduced-motion: reduce)`. A declared value on an element
+ * beats an inherited one whatever the inherited one's origin or importance,
+ * so a property set on `<html>` never reaches a `.dh` root at all, and under
+ * a reduced-motion OS it would lose to the media query even if it did.
+ *
+ * So the preference has to arrive as a declaration on `.dh` itself, and the
+ * two ways to do that are an inline style on every `.dh` root — of which
+ * this system opens an unbounded, changing number — or one rule appended
+ * after the system's stylesheets, where equal specificity is settled by
+ * order and the later rule wins. The second is the one that holds still.
+ * `:root` is named beside `.dh` so the handful of ported surfaces that live
+ * outside a `.dh` root inherit it too.
+ *
+ * This is `sheets/card-style.ts`'s idiom, one `<style>` element rewritten in
+ * place rather than appended to, because unlike a motif this value changes.
+ */
+let motionSheet: HTMLStyleElement | null = null;
+
+export function applyMotion(value?: string): void {
+  if (typeof document === "undefined") return;
+  let choice = value;
+  if (choice === undefined) {
+    try {
+      choice = String(game.settings?.get(SYSTEM_ID, "motion") ?? "full");
+    } catch {
+      /* Before init. The documented default is the card as drawn. */
+      choice = "full";
+    }
+  }
+  const speed = MOTION_SPEED[choice] ?? 1;
+  motionSheet ??= document.head.appendChild(document.createElement("style"));
+  motionSheet.textContent = `:root,.dh{--vtt-motion-speed:${speed}}`;
+}
+
+/**
+ * Whether this client has asked for no motion at all.
+ *
+ * `off` takes every duration to zero, which is enough for everything the
+ * stylesheets own — a transition that takes 0ms does not happen. It is not
+ * enough for the two behaviours JavaScript owns. `face-fx.js`'s pointer tilt
+ * still writes `--dh-rx`/`--dh-ry` on every move, so the card still *turns*,
+ * instantly rather than smoothly, which is more jarring than the animation
+ * was; and `sweep()` still hangs `data-sweeping` on the card for 1364ms. Both
+ * are gated on one function in that file, `reduced()`, which reads
+ * `matchMedia('(prefers-reduced-motion:reduce)')` and nothing else.
+ *
+ * This is the seam for that: `reduced()` wants to be
+ * `matchMedia(…).matches || motionOff()`. `src/module/ui/face-fx.js` is
+ * vendored from `design/face-fx.js` and neither may be edited from here, and
+ * a design-system file cannot import a Foundry setting anyway — so the real
+ * shape is a settable gate on the module (an exported `setMotionGate(fn)`,
+ * or a `--vtt-motion-speed` read off the scope) and it is one deliberate
+ * change in `design/`, not a workaround on this side.
+ */
+export const motionOff = (): boolean => {
+  try {
+    return String(game.settings?.get(SYSTEM_ID, "motion") ?? "full") === "off";
+  } catch {
+    return false;
+  }
+};

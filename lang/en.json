@@ -42,6 +42,8 @@
       "ThemeHint": "Dark is the base. Light changes the substrate under the same palette; the window frame stays dark in both, because the frame is the application and not the sheet.",
       "SheetFontScale": "Sheet font size",
       "SheetFontScaleHint": "Changes text size in your actor and item sheets. 1 is the original size. This affects only your screen.",
+      "Motion": "Card motion",
+      "MotionHint": "How much the cards move under the pointer. Reduced keeps the turns and the glints and shortens them; Off stops them. Full overrides your system's own reduced-motion setting, which is otherwise obeyed. This affects only your screen.",
       "HoverCardScale": "Hovered card size",
       "HoverCardScaleHint": "Changes the size of cards shown when you hover over a sheet row. 1 is the original size. This affects only your screen.",
       "DiceSoNice": "3D dice on rolls",
@@ -68,6 +70,11 @@
     "Theme": {
       "Dark": "Dark",
       "Light": "Light"
+    },
+    "Motion": {
+      "Full": "Full",
+      "Reduced": "Reduced",
+      "Off": "Off"
     },
     "AdversaryChip": {
       "None": "Nothing",

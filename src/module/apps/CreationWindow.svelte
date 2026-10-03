@@ -58,7 +58,8 @@
   import { cardOf, classKey, loadSigils, plain, type Sigils } from "../sheets/cards.ts";
   import { postCard } from "../sheets/post-card.ts";
   import { CARD, rich } from "../ui/card.js";
-  import { cardFitter } from "./fit-cards.ts";
+  import { FACE } from "../ui/face.js";
+  import { bindFaceFx, fit as fitFace } from "../ui/face-fx.js";
   import { setVals, sign, VALS, type ValRow } from "../ui/make.js";
   import { dhDialog } from "./dialog.ts";
 
@@ -263,30 +264,101 @@
      on every gesture — the trait spread writes six numbers per chip — was
      therefore re-solving every card in the window after each press, several
      hundred forced layouts behind a control whose own work is one number.
-     `cardFitter` solves only what arrived and spreads it across frames; the
-     font pass it used to spell out here is the fitter's now, because all
-     three windows wanted it. See `apps/fit-cards.ts`. */
-  const fitter = cardFitter(() => winEl);
+     So a solve is marked and not redone, and the arrivals are spread a few
+     per frame.
+
+     The loop is spelt out here rather than taken from `apps/fit-cards.ts`:
+     `cardFitter` is bound to `card.js`'s `fit`, which writes `--plate` and
+     `--u` on a `.card` and has nothing to say to a `.dh-face` — handed one
+     it finds no `.cnt` and silently does nothing. Widening it to take a fit
+     function touches a file three other surfaces share, so the shared helper
+     is left alone for whoever ports the last `.card` surface. The browse
+     window carries the same twenty lines for the same reason. */
+
+  /* `fitFace(scope)` does exactly one thing with its scope:
+     `scope.querySelectorAll('.dh-face')`. So the way to solve one card is to
+     hand it a scope that answers with that card and nothing else — and
+     `ui/face-fx.js` is vendored from `design/`, so widening it to take an
+     element would mean changing the design system to serve a Foundry-side
+     concern. */
+  const only = (card: Element): any => ({ querySelectorAll: () => [card] });
+
+  /** Cards solved per frame. Six is about a frame's worth at card size. */
+  const CHUNK = 6;
+
+  /** Supersedes a pass still walking, so a step change abandons it. */
+  let pass = 0;
+  /** A font-driven invalidation, owed once: the faces land once per session
+      and re-arming would re-solve on every run. */
+  let awaitingFonts = true;
+
+  function fitFaces(): void {
+    if (!winEl) return;
+
+    if (awaitingFonts && document.fonts?.status === "loading") {
+      awaitingFonts = false;
+      void document.fonts.ready.then(() => resetFaces()).catch(() => {});
+    }
+
+    /* The work first, and the supersede only if there is any — bumping
+       `pass` on a run with nothing to do would cancel a pass still walking
+       and leave the cards it had not reached unsolved. */
+    const todo = [...winEl.querySelectorAll(".dh-face:not([data-fit])")];
+    if (!todo.length) return;
+    const mine = ++pass;
+
+    let i = 0;
+    const step = (): void => {
+      if (mine !== pass) return;
+      for (const end = Math.min(i + CHUNK, todo.length); i < end; i++) {
+        const card = todo[i] as HTMLElement;
+        fitFace(only(card));
+        card.dataset.fit = "1";
+      }
+      if (i < todo.length) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function resetFaces(): void {
+    if (!winEl) return;
+    for (const el of winEl.querySelectorAll<HTMLElement>(".dh-face[data-fit]")) {
+      delete el.dataset.fit;
+    }
+    fitFaces();
+  }
 
   $effect(() => {
     void at;
     void reviewing;
     void snap.rev;
-    fitter.run();
+    fitFaces();
   });
 
-  $effect(() => () => fitter.stop());
+  $effect(() => () => void ++pass);
+
+  /* The pointer tilt, bound once over the window and not per card. Every
+     `.dh-face` here is replaced when the step changes; a delegated listener
+     on `.forge` is not, which is the argument at the head of `face-fx.js`.
+     Teardown is the function it hands back, returned from the effect so
+     Svelte runs it when the component is destroyed. */
+  $effect(() => {
+    if (!winEl) return;
+    return bindFaceFx(winEl);
+  });
 
   /* Width, and only width. The card steps are `auto-fill` grids, so resizing
      the window changes the column count and a card solved at 210px is not
-     solved at 176. Nothing used to watch for that — the old effect covered it
+     solved at 176 — the ladder is written in unitless multiples of `--u` so
+     most of a solve scales with the card, but the `max(10px, …)` floors on
+     type do not and a narrow column lands on a different rung. Nothing used to watch for that — the old effect covered it
      only by accident, because every step here writes to the actor and the
      next write re-solved the lot. Marking the solves makes the accident stop
      happening, so the real dependency has to be stated.
 
-     `fit` writes an `aspect-ratio`, so the grid's height moves every time
-     this runs; observing that would be a loop. The browse window's grid
-     draws exactly the same distinction. */
+     The fit ladder writes `--dh-art-h`, so the card's own proportions move
+     every time this runs; observing that would be a loop. The browse
+     window's grid draws exactly the same distinction. */
   $effect(() => {
     if (!winEl) return;
     const el = winEl;
@@ -294,7 +366,7 @@
     const ro = new ResizeObserver(() => {
       if (el.clientWidth === was) return;
       was = el.clientWidth;
-      fitter.reset();
+      resetFaces();
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -1246,11 +1318,30 @@
                         class="fcrd"
                         class:on={chosenSub?.system?.subclassName === s.system?.subclassName}
                         class:just={justId === s.id}
-                        class:noart={card?.noart}
-                        style={card?.art}
                         onclick={() => pickSubclass(s)}
                       >
-                        {#if card}{@html CARD(card)}{/if}
+                        <!-- The face at `full`, and the host that gives it a size.
+                             `--dh-w` defaults to `100cqi`, so a face in a plain block
+                             measures zero and draws nothing: the box around it has to
+                             declare `container-type: inline-size`. Declared here and
+                             not in `make.css`, because `styles/` is generated from
+                             `design/` and this is a fact about this window's grids.
+
+                             `full` rather than `slot` or the compact card: each of
+                             these four grids *is* the choice, and what you choose on
+                             is the rules printed on the card. Nothing in this window
+                             peeks — see the NO PEEK block above — so a face that left
+                             its rules to a peek would leave them nowhere.
+
+                             No `class:noart`: `FACE` branches on `art` itself, and
+                             `.noart` on an ancestor is a hook only the old `.card`
+                             reads. -->
+                        <span
+                          class="fhost"
+                          style="display:block;container-type:inline-size"
+                        >
+                          {#if card}{@html FACE({ ...card, size: "full" })}{/if}
+                        </span>
                       </button>
                     {/each}
                   </div>
@@ -1298,11 +1389,11 @@
               class="fcrd"
               class:on={mixing ? mixTop?.id === a.id : chosenAncestry?.name?.startsWith(a.name)}
               class:just={justId === a.id}
-              class:noart={card?.noart}
-              style={card?.art}
               onclick={() => pickAncestry(a)}
             >
-              {#if card}{@html CARD(card)}{/if}
+              <span class="fhost" style="display:block;container-type:inline-size">
+                {#if card}{@html FACE({ ...card, size: "full" })}{/if}
+              </span>
               {#if mixing}<div class="fwhy">{mixTop ? "bottom feature" : "top feature"}</div>{/if}
             </button>
           {/each}
@@ -1327,14 +1418,14 @@
               class="fcrd"
               class:on={chosenCommunity?.name === c.name}
               class:just={justId === c.id}
-              class:noart={card?.noart}
-              style={card?.art}
               onclick={async () => {
                 await takeCommunity(doc, c);
                 flash(c.id);
               }}
             >
-              {#if card}{@html CARD(card)}{/if}
+              <span class="fhost" style="display:block;container-type:inline-size">
+                {#if card}{@html FACE({ ...card, size: "full" })}{/if}
+              </span>
             </button>
           {/each}
         </div>
@@ -1606,12 +1697,24 @@
               class="fcrd"
               class:on={mine}
               class:just={justId === c.id}
-              class:noart={card?.noart}
-              style={card?.art}
               disabled={!!why || full}
               onclick={() => toggleCard(c)}
             >
-              {#if card}{@html CARD(card)}{/if}
+              <!-- The refused card's dim rides on the host and not on the
+                   button, and that is `make.css`'s own split kept: the
+                   button also holds `.fwhy`, which is the one thing on a
+                   refused card that has to stay readable. The rule that used
+                   to do it reads `.fcrd[disabled] > .card`, which no longer
+                   matches anything — restating it against `.dh-face` means
+                   editing `design/make.css`, so it is inline here instead. -->
+              <span
+                class="fhost"
+                style="display:block;container-type:inline-size{why || full
+                  ? ';opacity:.34;filter:saturate(.3)'
+                  : ''}"
+              >
+                {#if card}{@html FACE({ ...card, size: "full" })}{/if}
+              </span>
               {#if why}<div class="fwhy">{why}</div>
               {:else if full}<div class="fwhy">two already chosen</div>{/if}
             </button>
