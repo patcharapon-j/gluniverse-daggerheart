@@ -2,8 +2,7 @@
      (apps/web/art-src/daggerheart/masters). The subject it was drawn
      from is in that repo's subjects.tsv. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-<g transform="translate(0.000000,250.000000) scale(0.024414,-0.024414)"
-fill="#000000">
+<g transform="translate(0.000000,250.000000) scale(0.024414,-0.024414)">
 <path d="M4256 9471 c-4 -6 -15 -11 -25 -11 -9 0 -27 -9 -39 -20 -12 -11 -26
 -20 -33 -20 -17 0 -139 -126 -139 -144 0 -9 -4 -16 -8 -16 -5 0 -19 -21 -32
 -47 -12 -27 -26 -56 -31 -65 -5 -10 -9 -25 -9 -33 0 -8 -4 -15 -10 -15 -5 0
