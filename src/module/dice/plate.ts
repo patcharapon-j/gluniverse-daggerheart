@@ -80,6 +80,30 @@ const esc = (s: unknown): string => foundry.utils.escapeHTML(String(s ?? ""));
  * Anything unrecognised falls back to the square. A homebrew d3 has no
  * silhouette here and a plain chip is the honest thing to draw for it.
  */
+/**
+ * A card's own words.
+ *
+ * Every visible string on a plate was an English literal in this file — the
+ * verdicts, the ghost words, the claims, the chips — and `check-i18n.mjs`
+ * could not see any of them, because what it sweeps for is the *shape* of a
+ * key and these were prose. So they become keys, and the one `DAGGERHEART`
+ * block that held `Chat.Reroll` grows a `Plate` neighbour.
+ *
+ * `globalThis.game` rather than `game`: this module is imported directly by
+ * the harnesses under `tools/`, which assemble only the globals the builders
+ * touch, and a bare `game` is a ReferenceError there rather than `undefined`.
+ *
+ * One consequence, which is correct under the rule the rest of this file is
+ * built on: a localised string goes into the stored content, so a card keeps
+ * the language it was posted in. A log is a record.
+ */
+const t = (key: string, data?: Record<string, unknown>): string => {
+  const i18n = (globalThis as { game?: { i18n?: any } }).game?.i18n;
+  const path = `DAGGERHEART.Plate.${key}`;
+  if (!i18n) return path;
+  return data ? i18n.format(path, data) : i18n.localize(path);
+};
+
 const SHAPE: Record<string, string> = {
   d4: "d4",
   d6: "sq",
@@ -155,8 +179,9 @@ const ADV_TERM = (r: DualityPlate): Term[] =>
     : [
         {
           k:
-            (r.adv.neg ? "disadvantage" : "advantage") +
-            (r.adv.dice.length > 1 ? ` · highest of ${r.adv.dice.length}` : ""),
+            r.adv.dice.length > 1
+              ? t(r.adv.neg ? "DisadvantageOf" : "AdvantageOf", { n: r.adv.dice.length })
+              : t(r.adv.neg ? "Disadvantage" : "Advantage"),
           v: advVal(r),
         },
       ];
@@ -182,7 +207,7 @@ const TERMS = (t: Term[], cls?: string): string =>
 const DICE_TERM = (r: DualityPlate): string => {
   const hd = dualityDie(r, "h");
   const fd = dualityDie(r, "f");
-  return hd === "d12" && fd === "d12" ? "dice" : `${hd} + ${fd}`;
+  return hd === "d12" && fd === "d12" ? t("Dice") : `${hd} + ${fd}`;
 };
 
 export const ARITH = (r: DualityPlate): string =>
@@ -201,19 +226,18 @@ export const ARITH = (r: DualityPlate): string =>
 export const VERDICT = (r: DualityPlate): string =>
   r.rxn
     ? r.out === "crit"
-      ? "critical success"
+      ? t("CriticalSuccess")
       : r.dc == null
         ? ""
-        : r.hit
-          ? "success"
-          : "failure"
+        : t(r.hit ? "Success" : "Failure")
     : r.out === "crit"
-      ? "critical success"
+      ? t("CriticalSuccess")
       : r.dc == null
-        ? r.out === "hope"
-          ? "with Hope"
-          : "with Fear"
-        : `${r.hit ? "success" : "failure"} ${r.out === "hope" ? "with Hope" : "with Fear"}`;
+        ? t(r.out === "hope" ? "WithHope" : "WithFear")
+        : t("Outcome", {
+            result: t(r.hit ? "Success" : "Failure"),
+            feeling: t(r.out === "hope" ? "WithHope" : "WithFear"),
+          });
 
 /* The name sits beside the portrait, where the face already answers the same
    question — so the meta line's left slot carries the *kind* of roll, which
@@ -221,8 +245,8 @@ export const VERDICT = (r: DualityPlate): string =>
    adversary rolls all need. A missing Difficulty is not a fact worth a slot:
    no chip, no "no difficulty", nothing. */
 const META = (r: { kind?: string; dc: number | null }): string =>
-  `<div class="pl-meta"><span>${esc(r.kind ?? "duality roll")}</span>${
-    r.dc == null ? "" : `<s>vs ${r.dc}</s>`
+  `<div class="pl-meta"><span>${esc(r.kind ?? t("KindDuality"))}</span>${
+    r.dc == null ? "" : `<s>${t("Vs", { dc: r.dc })}</s>`
   }</div>`;
 
 /* The portrait, and nothing at all when there is not one.
@@ -269,16 +293,16 @@ interface Claim {
 const claims = (r: DualityPlate): Claim[] =>
   r.rxn
     ? r.out === "crit"
-      ? [{ t: "Ignore the effect", mine: true }]
+      ? [{ t: t("IgnoreEffect"), mine: true }]
       : []
     : r.out === "crit"
       ? [
-          { t: "+1 Hope", mine: true, act: "gain-hope" },
-          { t: "Clear 1 Stress", mine: true, act: "clear-stress" },
+          { t: t("GainHope"), mine: true, act: "gain-hope" },
+          { t: t("ClearStress"), mine: true, act: "clear-stress" },
         ]
       : r.out === "hope"
         ? [{ t: "+1 Hope", mine: true, act: "gain-hope" }]
-        : [{ t: "GM gains a Fear", mine: false, act: "gain-fear" }];
+        : [{ t: t("GMGainsFear"), mine: false, act: "gain-fear" }];
 
 const ACT = (list: Claim[], next?: string, nextAct?: string): string =>
   !list.length && !next
@@ -294,6 +318,26 @@ const ACT = (list: Claim[], next?: string, nextAct?: string): string =>
     ${next ? `<button type="button" class="pl-b go" data-dh-act="${nextAct ?? ""}"><i></i>${esc(next)}</button>` : ""}
   </div>`;
 
+/**
+ * Who the damage lands on, directly above the button that would land it.
+ *
+ * Names and nothing else. The card above this one says a damage plate "stops
+ * at the number", and it still does: a severity printed here would be the
+ * pre-armour one, and spending an Armor Slot to move the hit down a rung is
+ * the commonest thing that happens between this card being drawn and the
+ * damage being taken.
+ *
+ * Two names, then a count. Three fit only by ellipsing all three, and three
+ * half-names say less than two whole ones and a number.
+ */
+const TGT = (list?: { n: string }[]): string =>
+  !list?.length
+    ? ""
+    : `<div class="dmg-tgt"><em>${t("LandsOn")}</em>${list
+        .slice(0, 2)
+        .map((t) => `<i>${esc(t.n)}</i>`)
+        .join("")}${list.length > 2 ? `<s>+${list.length - 2}</s>` : ""}</div>`;
+
 /* Red plus material: a bracket and a lit glass edge in CSS, embers, one foil
    sweep and a struck badge. All of it red, and nothing below this rung may
    use any of it. It rides on `.mat` rather than on `.crit`, because critical
@@ -301,11 +345,11 @@ const ACT = (list: Claim[], next?: string, nextAct?: string): string =>
 const CRIT = (on: boolean): string =>
   on
     ? `<span class="embers"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-     <span class="foil"></span><span class="seal"><i></i><b>Critical</b></span>`
+     <span class="foil"></span><span class="seal"><i></i><b>${t("Critical")}</b></span>`
     : "";
 
 const GHOST = (r: DualityPlate): string =>
-  r.out === "crit" ? "CRITICAL" : r.rxn ? "REACTION" : r.out === "hope" ? "HOPE" : "FEAR";
+  t(r.out === "crit" ? "GhostCritical" : r.rxn ? "GhostReaction" : r.out === "hope" ? "GhostHope" : "GhostFear");
 
 /**
  * The rule this roll brought with it — a weapon's feature, in practice.
@@ -429,7 +473,7 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
      apart. With one group this is the line it has always been. */
   const terms: Term[] = [
     ...(crit
-      ? groups.map((g) => ({ k: `${g.n}${g.die} maximum`, v: sum(g.max ?? []) }))
+      ? groups.map((g) => ({ k: t("Maximum", { dice: `${g.n}${g.die}` }), v: sum(g.max ?? []) }))
       : []),
     ...groups.map((g) => ({ k: `${g.n}${g.die}`, v: sum(g.rolls) })),
     ...(r.bonus ? [{ k: r.bonus.k, v: r.bonus.v }] : []),
@@ -463,14 +507,14 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
   <div class="p">
     ${POR(r)}
     <span class="shards"></span>
-    <span class="pl-gh">${crit ? "CRITICAL" : "DAMAGE"}</span>
+    <span class="pl-gh">${t(crit ? "GhostCritical" : "GhostDamage")}</span>
     ${EYE(r)}
-    <span class="row"><b class="pl-vb">${crit ? "critical " : ""}${esc(r.dtype)} damage</b><u class="pl-num">${r.total}</u></span>
+    <span class="row"><b class="pl-vb">${t(crit ? "CriticalDamageType" : "DamageType", { type: esc(r.dtype) })}</b><u class="pl-num">${r.total}</u></span>
   </div>
   <div class="dmg-st">
     ${
       crit
-        ? `<span class="grp"><s>max</s>${DICE_OF((g) => g.max ?? [], "w max", false)}</span><span class="op">+</span>`
+        ? `<span class="grp"><s>${t("Max")}</s>${DICE_OF((g) => g.max ?? [], "w max", false)}</span><span class="op">+</span>`
         : ""
     }
     <span class="grp">${DICE_OF((g) => g.rolls, "w", true)}</span>
@@ -481,8 +525,9 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
     }
   </div>
   ${TERMS(terms, "dmg-a")}
-  <div class="pl-meta"><span>${crit ? "critical damage" : "damage roll"}</span><s>${notation}</s></div>
-  ${ACT([], next ?? "Apply to target", nextAct ?? "apply-damage")}
+  <div class="pl-meta"><span>${t(crit ? "KindCriticalDamage" : "KindDamage")}</span><s>${notation}</s></div>
+  ${TGT(r.tgt)}
+  ${ACT([], next ?? t("ApplyToTarget"), nextAct ?? "apply-damage")}
 </div>`;
 };
 
@@ -530,7 +575,7 @@ const D20 = (r: FoePlate, sz: number): string => {
 const FOE_ARITH = (r: FoePlate): string =>
   TERMS([
     {
-      k: r.d20.length > 1 ? `d20 · ${r.neg ? "lowest" : "highest"} of ${r.d20.length}` : "d20",
+      k: r.d20.length > 1 ? t(r.neg ? "D20LowestOf" : "D20HighestOf", { n: r.d20.length }) : "d20",
       v: d20Keep(r),
     },
     ...r.mods,
@@ -545,22 +590,22 @@ const FOE_V = (r: FoePlate): string =>
     ? r.dc == null
       ? ""
       : r.hit
-        ? "success"
-        : "failure"
+        ? t("Success")
+        : t("Failure")
     : r.dc == null
-      ? foeCrit(r) ? "critical" : ""
+      ? foeCrit(r) ? t("Critical") : ""
     : foeCrit(r)
-      ? `critical hit ${esc(r.target)}`
+      ? t("CriticalHit", { name: esc(r.target) })
       : r.hit
-        ? `hit ${esc(r.target)}`
-        : `missed ${esc(r.target)}`;
+        ? t("Hit", { name: esc(r.target) })
+        : t("Missed", { name: esc(r.target) });
 
 /* Evasion and Difficulty are different target numbers and the chip says
    which — a GM reading a log full of both should never have to work out what
    the number on the right was. An unresolved attack has no chip at all. */
 const FOE_META = (r: FoePlate): string =>
-  `<div class="pl-meta"><span>${esc(r.kind ?? "adversary attack")}</span>${
-    r.dc == null ? "" : `<s>vs ${r.rxn ? "" : "evasion "}${r.dc}</s>`
+  `<div class="pl-meta"><span>${esc(r.kind ?? t("KindAdversary"))}</span>${
+    r.dc == null ? "" : `<s>${t(r.rxn ? "Vs" : "VsEvasion", { dc: r.dc })}</s>`
   }</div>`;
 
 /**

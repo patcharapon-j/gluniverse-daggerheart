@@ -401,6 +401,36 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
   .dh .die.rr:hover,.dh .die.rr:active{transform:none}
 }
 
+/* ── the whole arrival, for a reader who asked for stillness ───────
+   The veil block below already says what should happen here: "a client
+   that never runs the arrival — an old message scrolled back into view,
+   a reader on reduced motion — never wears the veil at all and sees the
+   finished card immediately." Nothing implemented it. This block and the
+   matching guard in `dice/chat.ts` do.
+
+   `animation:none` is safe on every one of these because each keyframe
+   already ends on the element's own natural value — scale(1), opacity 1,
+   no transform, a clip path outside the box — which is the same property
+   that lets a re-render be handed the end state instead of travelling to
+   it. A card with the animations off is the settled card.
+
+   The dice numerals are the other half and they are not CSS: the tumble
+   is written by `arrival.ts`, so the guard that matters is the one in
+   the chat hook, which lands the plate without ever spinning it. */
+@media (prefers-reduced-motion:reduce){
+  .dh .pl.play,
+  .dh .pl.play.land > .swp,
+  .dh .pl.mat.play .embers i,
+  .dh .pl.mat.play .foil,
+  .dh .pl.mat.play .seal,
+  .dh .pl.play.land .die.lit,.dh .pl.play.land .die.w,.dh .pl.play.land .die.a:not(.dim),
+  .dh .pl.play.land .pl-vb,
+  .dh .pl.play.land .pl-num,
+  .dh .pl.play.land .pl-act{animation:none}
+  .dh .pl .pl-gh,.dh .pl .pl-meta,.dh .pl .shards,
+  .dh .pl:not(.play) .pl-vb,.dh .pl:not(.play) .pl-act{transition:none}
+}
+
 /* Damage dice are the wound: the material a Hit Point is made of, and
    the one place this card is allowed to use that red. On a critical the
    maximised set is struck rather than rolled, so it is shown as the deep
@@ -656,6 +686,27 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
    line becomes the last thing on the plate, sitting hard against the edge.
    It takes the row's own 11px when it is the one closing the card. */
 .dh .pl-meta:last-child{padding-bottom:11px}
+
+/* ── who the damage lands on ───────────────────────────────────────
+   Between the meta line and the claim row, because it is the subject of
+   the row directly under it: the Apply button and this name the same
+   thing, and anything between them would be reading matter in the middle
+   of one sentence.
+
+   The names take the wound's own ink rather than the body's, so the line
+   reads as part of the card's answer and not as another piece of
+   notation. The overflow count is set in --ink-3: it is bookkeeping about
+   the list, not a name in it. */
+.dh .dmg-tgt{display:flex;align-items:baseline;gap:7px;padding:7px 12px 0;
+  font:700 8px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden}
+.dh .dmg-tgt em{font-style:normal;color:var(--ink-3)}
+.dh .dmg-tgt i{font-style:normal;color:var(--o-tx);overflow:hidden;text-overflow:ellipsis}
+.dh .dmg-tgt i + i::before{content:"·";color:var(--ink-3);margin-right:7px}
+.dh .dmg-tgt s{text-decoration:none;margin-left:auto;color:var(--ink-3)}
+/* Last thing on the card when there is nothing to claim, so it takes the
+   claim row's bottom padding exactly as the meta line does. */
+.dh .dmg-tgt:last-child{padding-bottom:11px}
 
 /* ── the note ──────────────────────────────────────────────────────
    A rule the roll carried with it. Weapons have features — Whirlwind hits
@@ -1319,6 +1370,16 @@ html.dh-light .dh .pl.mat .shards{background:repeating-linear-gradient(114deg,tr
 .dh .pl .pl-gh,.dh .pl .pl-meta,.dh .pl .shards{transition:opacity .42s ease-out .06s}
 .dh .pl.veil .pl-gh,.dh .pl.veil .pl-meta,.dh .pl.veil .shards{opacity:0;transition:none}
 .dh .pl.veil .pl-vb,.dh .pl.veil .pl-act{opacity:0}
+/* A reroll is not an arrival, so `hold` adds `land` without `play` — and the
+   staged reveal above is `.play.land`, which left the verdict and the claim
+   row to snap back in one frame while the ghost word beside them faded over
+   four hundred milliseconds. The same two beats, in the same order, for the
+   card that is being corrected rather than announced: it is quieter than the
+   arrival because nothing is being announced, and it is not nothing, because
+   the sentence did just change. */
+.dh .pl:not(.play) .pl-vb{transition:opacity .34s ease-out .02s}
+.dh .pl:not(.play) .pl-act{transition:opacity .3s ease-out .14s}
+.dh .pl.veil:not(.play) .pl-vb,.dh .pl.veil:not(.play) .pl-act{transition:none}
 
 /* The critical's material is the loudest tell on the card — four things
    nothing below it may have, all four of them visible before a die has

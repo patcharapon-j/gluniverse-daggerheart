@@ -123,6 +123,19 @@ export interface DamagePlate extends PlateBase, DiceGroup {
   /** A bonus die some features add on top. */
   bonus?: { k: string; v: number; mx?: number };
   dtype: string;
+  /**
+   * Who the Apply button would land this on, named at roll time.
+   *
+   * Names only. The card says what it says about the number and stops there —
+   * what the number becomes depends on thresholds, armour, resistance and
+   * immunity, and the first three are decided in the dialog this card's
+   * button opens, after it was drawn.
+   *
+   * Optional, like `extra` and `hd`/`fd` above: a log is a record, and every
+   * damage card posted before this existed named nobody. Absent reads as
+   * "this card never knew", which is what it was.
+   */
+  tgt?: { n: string }[];
 }
 
 /** An adversary's d20 attack or reaction. A null DC is intentionally unresolved. */

@@ -299,6 +299,23 @@ export const RENDER = {A, B, C, D, E};
    sentence, delivered at the top rung. */
 const sum = a => a.reduce((x, y) => x + y, 0);
 
+/* ── who it lands on ───────────────────────────────────────────────
+   The card above says this card stops at the number, and it still
+   does: this names the recipients and claims nothing about what the
+   number becomes for them. Thresholds, armour, resistance and
+   immunity are all decided in the dialog the Apply button opens, and
+   a severity printed here would be the pre-armour one — right up
+   until somebody spends a slot to move it down a rung, which is the
+   commonest thing that happens next.
+
+   Two names, then a count. Three fit only by ellipsing all three, and
+   three half-names say less than two whole ones and a number — the
+   arithmetic strip above caps itself at 54% against the same 300px. */
+const TGT = list => !list?.length ? '' : `
+  <div class="dmg-tgt"><em>lands on</em>${
+    list.slice(0, 2).map(t => `<i>${t.n}</i>`).join('')}${
+    list.length > 2 ? `<s>+${list.length - 2}</s>` : ''}</div>`;
+
 export const DMG = (r, next) => {
   const crit = !!r.max, flat = sum(r.mods.map(m => m.v));
   /* The damage dice take their own silhouette too, and this closes a
@@ -334,6 +351,7 @@ export const DMG = (r, next) => {
   ${TERMS(terms, 'dmg-a')}
   <div class="pl-meta"><span>${crit ? 'critical damage' : 'damage roll'}</span><s>${
     notation}</s></div>
+  ${TGT(r.tgt)}
   ${ACT([], next ?? 'Apply to target')}
 </div>`;
 };
