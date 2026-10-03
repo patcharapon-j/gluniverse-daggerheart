@@ -1340,6 +1340,16 @@ html.dh-light .dh .pl.mat .shards{background:repeating-linear-gradient(114deg,tr
 .dh .pl .pl-gh,.dh .pl .pl-meta,.dh .pl .shards{transition:opacity .42s ease-out .06s}
 .dh .pl.veil .pl-gh,.dh .pl.veil .pl-meta,.dh .pl.veil .shards{opacity:0;transition:none}
 .dh .pl.veil .pl-vb,.dh .pl.veil .pl-act{opacity:0}
+/* A reroll is not an arrival, so `hold` adds `land` without `play` — and the
+   staged reveal above is `.play.land`, which left the verdict and the claim
+   row to snap back in one frame while the ghost word beside them faded over
+   four hundred milliseconds. The same two beats, in the same order, for the
+   card that is being corrected rather than announced: it is quieter than the
+   arrival because nothing is being announced, and it is not nothing, because
+   the sentence did just change. */
+.dh .pl:not(.play) .pl-vb{transition:opacity .34s ease-out .02s}
+.dh .pl:not(.play) .pl-act{transition:opacity .3s ease-out .14s}
+.dh .pl.veil:not(.play) .pl-vb,.dh .pl.veil:not(.play) .pl-act{transition:none}
 
 /* The critical's material is the loudest tell on the card — four things
    nothing below it may have, all four of them visible before a die has
