@@ -97,6 +97,22 @@ const COMPOSITES = [
     "Three dark conditions. The extra octaves are what stop this reading as one grey fog."],
   [["spectral", "invisible"], "Spectral + Invisible",
     "The two most transparent materials in the set, layered."],
+  /* The cases the mean was worst at, and the reason this pass exists. A row
+     here is only useful if the two hues are far enough apart that averaging
+     them produces a colour naming neither, which is what every token wearing
+     an opposed pair looked like. */
+  [["markedForDeath", "frostbitten"], "Marked for Death + Frostbitten",
+    "Hot red against pale ice, the furthest-apart pair in the set. The mean of these two is a dirty pink that is neither condition; each should now hold its own ground and mix only where the reticle crosses the rime."],
+  [["ablaze", "charged"], "Ablaze + Charged",
+    "Orange flame and blue bolt. Both are bright, both have hot cores, and the averaged hue used to be a flat steel that read as a third condition nobody had applied."],
+  [["corroded", "cursed"], "Corroded + Cursed",
+    "Acid green and wine. Opposed, and both patterns cover real area rather than drawing a figure, so this is the clearest look at what the seam itself does."],
+  [["vulnerable", "stunned", "roped"], "Vulnerable + Stunned + Roped",
+    "Three, with purple, gold and hemp far enough apart to tell whether a third condition muddies a pair that was working."],
+  [["markedForDeath", "charged", "ablaze", "frostbitten"], "Four",
+    "Past the point any composite stays fully legible, and the question is only whether it degrades into separable territories or back into one wash."],
+  [["vulnerable", "hidden", "charged", "corroded", "ablaze"], "Five, the ceiling",
+    "Every slot the shader has. Five is a design limit rather than a technical one: the honest test is whether the rim still reads as five arcs at a glance."],
 ];
 
 /* Dead is not a condition and is not in CONDITIONS, because CONDITIONS is
@@ -452,6 +468,7 @@ async function boot() {
   const uniformsFor = (program) => {
     if (!cache.has(program)) {
       const names = ['uSampler','inputSize','outputFrame','inputClamp','uCount','uDead','uTime','uSubject',
+        'uSeed','uAge0','uAge1','uAge2','uAge3','uAge4',
         'uId0','uId1','uId2','uId3','uId4','uColor0','uColor1','uColor2','uColor3','uColor4'];
       const map = {};
       for (const n of names) map[n] = gl.getUniformLocation(program, n);
@@ -482,6 +499,13 @@ async function boot() {
        default. The gate is not where a ringed token is studied; the live
        value is measured off the mesh in token-hud.ts. */
     gl.uniform1f(u.uSubject, 1);
+    /* Ages saturate the onset and the seed is zero in both columns. The page
+       compares two composites, so anything that would put them at different
+       points in the same animation is a difference it must not invent. The
+       baseline program has neither uniform and getUniformLocation returns
+       null for both, which these calls silently ignore. */
+    gl.uniform1f(u.uSeed, 0);
+    for (let i = 0; i < 5; i++) gl.uniform1f(u['uAge' + i], 99);
     const x = slot * TILE;
     const y = canvas.height - (row + 1) * TILE;
     gl.viewport(x, y, TILE, TILE);

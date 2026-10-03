@@ -124,6 +124,42 @@ export function conditionMaterialsFor(
   return out;
 }
 const MARK = Symbol("daggerheartConditionMaterial");
+/* When each condition in each slot started being drawn, and which slot holds
+   which, so `tick` can advance the onset without re-deriving any of it. Held
+   on the filter rather than in a second map keyed by token, because the
+   filter is already the per-token object this module owns and `detach`
+   already throws it away. */
+const AGES = Symbol("daggerheartConditionAges");
+const SLOTS = Symbol("daggerheartConditionSlots");
+/** Long enough that smoothstep is saturated: a condition that is just there. */
+const ARRIVED = 99;
+
+/**
+ * A stable per-token phase offset.
+ *
+ * Every pattern in the shader runs off one clock, so without this two
+ * creatures carrying the same condition animate in exact phase — a rank of
+ * identical adversaries pulsing together, which reads as one effect applied
+ * to a group rather than as a condition each of them has. Derived from the
+ * id so it survives a redraw, a scene reload and the token moving; a seed
+ * taken from anything on screen would reseat the phase every time the view
+ * panned.
+ *
+ * Spread over a minute because the slowest thing in the set loops on about
+ * twenty seconds, so a minute's worth of offsets puts two tokens somewhere
+ * genuinely different in every pattern rather than a third of the way into
+ * the same one.
+ */
+function tokenSeed(token: any): number {
+  const id = String(token?.document?.id ?? token?.id ?? "");
+  let hash = 2166136261;
+  for (let i = 0; i < id.length; i++) {
+    hash ^= id.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return ((hash >>> 0) / 4294967296) * 60;
+}
+
 const filters = new Map<any, any>();
 let FilterClass: any;
 let registered = false;
@@ -170,6 +206,19 @@ uniform vec4 outputFrame;  // xy = frame origin, zw = frame size in screen px
 uniform vec4 inputClamp;   // xy = min uv, zw = max uv, both in texture space
 uniform float uId0; uniform float uId1; uniform float uId2; uniform float uId3; uniform float uId4;
 uniform vec3 uColor0; uniform vec3 uColor1; uniform vec3 uColor2; uniform vec3 uColor3; uniform vec3 uColor4;
+/* A hash of the token id, constant for the token's life. Every pattern in
+   here runs off one clock, so two creatures with the same condition were in
+   exact phase with each other: a line of goblins pulsing in time is the one
+   artifact that reads as a shader rather than as a condition. Hashed in JS
+   rather than derived from the frame, because anything derived from where the
+   token is on screen jumps phase the moment it moves or the view pans. */
+uniform float uSeed;
+/* Seconds since each condition was applied, so a material can arrive rather
+   than appear. There is no counterpart for removal: fading out needs the slot
+   held open after the condition is gone, which means a dying condition
+   competing for a slot with a live one, and the limit is five. Onset is the
+   half that is visible. */
+uniform float uAge0; uniform float uAge1; uniform float uAge2; uniform float uAge3; uniform float uAge4;
 
 #define PI 3.141592653589793
 
@@ -259,6 +308,11 @@ float idAt(int i) {
 vec3 colorAt(int i) {
   if (i == 0) return uColor0; if (i == 1) return uColor1; if (i == 2) return uColor2;
   if (i == 3) return uColor3; return uColor4;
+}
+
+float ageAt(int i) {
+  if (i == 0) return uAge0; if (i == 1) return uAge1; if (i == 2) return uAge2;
+  if (i == 3) return uAge3; return uAge4;
 }
 
 /* x = the material field, exactly the quantity the shipped shader
@@ -1083,11 +1137,55 @@ void main() {
 
   vec4 original=sampleArt(uv);
   float circle=1.0-smoothstep(.94,1.0,length(p));
+  float count=max(uCount,1.0);
+
+  /* ── each condition keeps its own colour where it is the one present ──
+     The loop below already knows, per pixel, how much of each condition is
+     there. That number used to be spent only on coverage: the colour was the
+     plain mean of the active hues, applied at full strength over the whole
+     creature, so a token that was Vulnerable and Charged was one purple wash
+     everywhere, including the pixels where only the fracture existed and no
+     bolt did. Two hues opposite each other averaged to something naming
+     neither, which the chroma restore below was added to rescue, and
+     rescuing a mean is not the same as not taking one.
+
+     So the colour is weighted by presence instead. A pixel inside only the
+     fracture is the fracture's purple; a pixel inside only the bolt is the
+     bolt's blue; the two mix where they actually overlap, and nowhere else.
+     That is the whole change. The composite underneath it is untouched, and
+     deliberately: the material still reads as fused into the artwork rather
+     than laid over it, which is the best thing about it.
+
+     The weight is value^2.5 rather than value. At the first power the
+     gradients between two conditions are wide enough that most of the token
+     is still a mixture, which is the wash again with extra steps. The
+     exponent narrows the hand-over so each condition holds its territory and
+     the seam becomes a feature you can see rather than the default state. */
   vec3 colorSum=vec3(0.0); vec3 accentSum=vec3(0.0); vec2 warp=vec2(0.0);
+  vec3 colorMean=vec3(0.0); vec3 accentMean=vec3(0.0);
+  float weightSum=0.0; float topWeight=0.0;
+  vec3 rimSum=vec3(0.0); float rimWeight=0.0;
   float survival=1.0; float peak=0.0; float hot=0.0; float darkness=0.0;
+
+  /* The rim is partitioned by angle, and the reason is size. At 40px a token
+     is a disc with a colour on it: the interior patterns are below what the
+     screen can resolve and the ring of material around the edge is the only
+     part of any of this that still reads. Weighting that ring by presence
+     does not help, because the ring is a geometric band and the patterns are
+     not reliably in it — the honest answer there is the mean, which is the
+     mud, in the one place that matters most. So each active condition owns an
+     arc instead. Five conditions are five arcs of five colours; one is one
+     arc all the way round, which is what ships today. */
+  float arc=atan(p.y,p.x)/(2.0*PI)+.5;
+  float seg=arc*count;
+
   for(int i=0;i<5;i++){
     if(float(i)>=uCount)break;
-    float id=idAt(i); float localTime=uTime+float(i)*1.73;
+    /* Per-slot so two instances of a pattern do not lockstep, and per-token
+       so two creatures with the same condition do not either. uSeed is a
+       hash of the token id: a line of goblins pulsing in time is the most
+       obvious tell in here, and it was free to fix. */
+    float id=idAt(i); float localTime=uTime+float(i)*1.73+uSeed;
     vec2 field=conditionPattern(id,p,localTime,detail);
 
     /* One contrast curve over every condition's field, and it is the single
@@ -1102,26 +1200,95 @@ void main() {
        every branch because it is one claim about all of them. */
     float value=clamp(field.x*1.16-.055,0.0,1.0);
     value=value*value*(3.0-2.0*value);
-    colorSum+=colorAt(i); accentSum+=conditionAccent(id,colorAt(i),p,localTime,value);
+
+    /* Onset. A condition used to arrive by existing: one frame without, the
+       next frame with it at full strength, which reads as the sprite changing
+       rather than as something happening to the creature. uAge is seconds
+       since this condition was applied, so the material grows in over a third
+       of a second. There is no matching fade on removal on purpose; see the
+       note on uAge in the uniform block. */
+    float arrival=smoothstep(0.0,.35,ageAt(i));
+    value*=arrival;
+
+    float weight=pow(value,2.5);
+    colorSum+=colorAt(i)*weight; colorMean+=colorAt(i);
+    vec3 slotAccent=conditionAccent(id,colorAt(i),p,localTime,value);
+    accentSum+=slotAccent*weight; accentMean+=slotAccent;
+    weightSum+=weight; topWeight=max(topWeight,weight);
+
+    /* This slot's arc of the rim, with a soft hand-over either side. The two
+       ends of the ring meet inside one window and average there, which is
+       what keeps the seam from being a cut. */
+    float own=smoothstep(float(i)-.12,float(i)+.12,seg)
+             *(1.0-smoothstep(float(i)+.88,float(i)+1.12,seg));
+    rimSum+=colorAt(i)*own; rimWeight+=own;
+
+    /* Displacements compound rather than average: two distortions of one
+       surface genuinely add, and dividing by the count was quietly taking
+       Invisible's refraction down to a third of itself the moment anything
+       else was on the creature. Clamped as a vector further down, because
+       what compounding needs is a ceiling, not a divisor. */
     warp+=conditionWarp(id,p,localTime,value); survival*=1.0-value*.72;
-    peak=max(peak,value); hot=max(hot,clamp(field.y,0.0,1.0));
+    peak=max(peak,value); hot=max(hot,clamp(field.y,0.0,1.0)*arrival);
     if((id>.5&&id<1.5)||(id>11.5&&id<13.5))darkness+=value;
   }
-  float count=max(uCount,1.0);
-  vec3 material=colorSum/count;
-  if(uCount>1.0){
+
+  /* Where no condition is present the weights are all zero and there is no
+     ownership to read, so the colour falls back to the mean it always was.
+     Nothing is drawn there; this only has to be defined. */
+  vec3 material=weightSum>1e-4?colorSum/weightSum:colorMean/count;
+
+  /* How much of the presence at this pixel is NOT the dominant condition.
+     Zero for one condition anywhere, and zero inside a single condition's
+     own territory however many others are active. Doubled so an even
+     two-way collision counts as a full seam. */
+  float seam=weightSum>1e-4?clamp((1.0-topWeight/weightSum)*2.0,0.0,1.0):0.0;
+
+  /* The chroma restore, now applied only where two hues actually meet. It
+     exists because opposite hues average to a grey that names neither, which
+     is a statement about the seam and was being applied to the whole token:
+     every multi-condition creature had its colours pushed to full saturation
+     everywhere, including the large areas where exactly one condition was
+     present and nothing needed rescuing. */
+  if(uCount>1.0&&seam>.001){
     float low=min(material.r,min(material.g,material.b)); vec3 chroma=material-vec3(low);
     float high=max(chroma.r,max(chroma.g,chroma.b)); if(high>.001)chroma/=high;
-    material=clamp(mix(material,chroma,.68),0.0,1.0);
+    material=clamp(mix(material,chroma,.68*seam),0.0,1.0);
   }
-  float field=clamp(1.0-survival,0.0,1.0); warp/=count;
+  float field=clamp(1.0-survival,0.0,1.0);
+
+  /* The ceiling is just above the largest single displacement in the set,
+     which is Invisible's. A stack can therefore push the artwork further than
+     any one condition does, which is the point, but not so far that the
+     creature stops being identifiable: past that it is not refracting, it is
+     melting. One condition never reaches the cap, so a single condition's
+     warp is exactly what it was. */
+  float warpLength=length(warp);
+  if(warpLength>.048)warp*=.048/warpLength;
   vec4 warped=sampleArt(uv+warp);
-  vec3 accent=uCount>1.0?material:accentSum/count;
+
+  /* The accent ramps are what give each condition its own dark-to-bright
+     shading, and with two or more conditions every one of them used to be
+     discarded for the averaged base colour. That is most of why a token
+     wearing two conditions read flatter than the same token wearing one. They
+     are weighted by presence like the colour, and only pulled toward the
+     mixed material inside the seam, where there genuinely is no single
+     condition's shading to show. */
+  vec3 accent=weightSum>1e-4?accentSum/weightSum:accentMean/count;
+  accent=mix(accent,material,.55*seam);
+
+  /* The ring, by arc. Falls back to the body colour before the first slot's
+     window opens, which cannot happen while uCount is at least one. */
+  vec3 rim=rimWeight>1e-4?rimSum/rimWeight:material;
   float luminance=dot(warped.rgb,vec3(.2126,.7152,.0722));
   vec3 colorized=accent*(.16+luminance*1.24);
   float tint=clamp(.20+field*.56+min(uCount-1.0,2.0)*.020,.20,.70);
   vec3 color=mix(warped.rgb,colorized,tint);
-  color*=1.0-clamp(darkness/count,0.0,1.0)*.38;
+  /* Not divided by the count any more. Darkness is the dark conditions' own
+     coverage at this pixel and it is already spatial, so dividing it was
+     making Hidden stop darkening the creature because something bright had
+     been added elsewhere on it. */
+  color*=1.0-clamp(darkness,0.0,1.0)*.38;
 
   /* Everything added to the picture is gathered first and rolled off
      together. Adding each term straight onto that accumulator and clamping
@@ -1135,10 +1302,20 @@ void main() {
      a colour, and the ring of material around its edge is the only part of
      any of this that still reads. It is worth more than the interior at
      that size, so it is weighted for that size rather than for this page. */
-  vec3 glow = emissive*pow(peak,3.4)*.42
-            + material*edge*.30
+  /* The emissive terms are divided down as conditions accumulate, and the
+     reason is the thing this pass is for. peak and hot are maxima over
+     the active set, so five conditions put a high value almost everywhere on
+     the creature simply by covering it, and the glow built from them clipped
+     the rim to pure white in three of sixteen samples — losing the colour in
+     the exact place the arcs were added to preserve it. A creature with five
+     conditions on it is one creature with five things on it, not five times
+     the light. Exactly 1.0 at one condition, so a single condition is
+     untouched. */
+  float crowd = 1.0 + (count - 1.0) * .18;
+  vec3 glow = emissive*pow(peak,3.4)*(.42/crowd)
+            + rim*edge*.30
             + vec3(.72,.83,1.0)*glass*.1
-            + mix(accent,vec3(1.0),.72)*pow(hot,1.6)*.80;
+            + mix(accent,vec3(1.0),.72)*pow(hot,1.6)*(.80/crowd);
   color += glow / (1.0 + glow * .68);
 
   color+=(noise2(uv*118.0+uTime*.03)-.5)*.035*(field+.18);
@@ -1158,10 +1335,15 @@ function getFilterClass(): any {
   if (!Base) return null;
   FilterClass = class DaggerheartConditionFilter extends Base {
     static defaultUniforms = {
-      uTime: 1.75, uCount: 0, uDead: 0, uSubject: 1,
+      uTime: 1.75, uCount: 0, uDead: 0, uSubject: 1, uSeed: 0,
       uId0: 0, uId1: 0, uId2: 0, uId3: 0, uId4: 0,
       uColor0: [0,0,0], uColor1: [0,0,0], uColor2: [0,0,0],
       uColor3: [0,0,0], uColor4: [0,0,0],
+      /* Arrived, not arriving. A slot whose age has never been written is a
+         slot nothing is in, and defaulting those to zero would make every
+         unused slot permanently mid-onset — harmless while uCount excludes
+         them, and a flash the first frame if it ever does not. */
+      uAge0: ARRIVED, uAge1: ARRIVED, uAge2: ARRIVED, uAge3: ARRIVED, uAge4: ARRIVED,
     };
     static _createFragmentShader(): string { return TOKEN_CONDITION_FRAGMENT; }
   };
@@ -1216,10 +1398,25 @@ export function syncTokenConditionMaterial(
        move token space the moment a creature touches the viewport edge. The
        frame has to stay the object's own bounds for `tokenUv` to be stable. */
     filter.autoFit = false;
+    filter.uniforms.uSeed = tokenSeed(token);
+    filter[AGES] = new Map<string, number>();
+    filter[SLOTS] = [] as string[];
     filters.set(token, filter);
   }
 
   const materials = conditionMaterialsFor(ids);
+
+  /* When each of these started being drawn. `sync` runs on every refresh of
+     every token, so "first seen" has to be remembered rather than recomputed:
+     a condition that has been on a creature for a minute must not restart its
+     onset because somebody panned the canvas. Keyed by the material id, which
+     is what a slot actually holds — all the ad-hoc conditions share one. */
+  const now = clock();
+  const ages: Map<string, number> = filter[AGES] ?? (filter[AGES] = new Map());
+  const live = new Set(materials.map((material) => material.id));
+  for (const key of [...ages.keys()]) if (!live.has(key)) ages.delete(key);
+  for (const material of materials) if (!ages.has(material.id)) ages.set(material.id, now);
+  filter[SLOTS] = materials.map((material) => material.id);
   /* Clamped rather than trusted. Above 1 the material would be asked to
      cover more than the frame holds, which it cannot — there is nothing
      out there to sample — and a bad read collapsing it to a dot is the
@@ -1231,6 +1428,7 @@ export function syncTokenConditionMaterial(
     filter.uniforms[`uId${i}`] = material.index;
     filter.uniforms[`uColor${i}`] = [...material.color];
   });
+  writeAges(filter, now);
 
   const others = (mesh.filters ?? []).filter((candidate: any) => candidate !== filter && !candidate?.[MARK]);
   mesh.filters = [...others, filter];
@@ -1251,16 +1449,55 @@ const REDUCED = typeof matchMedia === "function"
    which is a moment against a night of stutter. */
 const CLOCK_WRAP = 3600;
 
+/** The one clock. Wrapped, for the reason above. */
+const clock = (): number => (performance.now() / 1000) % CLOCK_WRAP;
+
+/**
+ * Seconds since each slot's condition arrived, as the shader's uniforms.
+ *
+ * Written from `tick` as well as from `sync`, because an onset has to advance
+ * on its own: `sync` runs when something about the token changes and a
+ * condition appearing is exactly the moment nothing else is going to.
+ *
+ * The clock wraps once an hour and a start time recorded before a wrap is
+ * larger than the time after it, which would read as a negative age and send
+ * a settled condition back through its own onset. Adding the period back is
+ * the same correction the wrap itself is: a condition that straddles it is
+ * reported as nearly an hour old, which is true enough for a smoothstep that
+ * saturates in a third of a second.
+ */
+function writeAges(filter: any, time: number): void {
+  const ages: Map<string, number> | undefined = filter[AGES];
+  const slots: string[] = filter[SLOTS] ?? [];
+  for (let i = 0; i < CONDITION_SLOTS; i++) {
+    const key = slots[i];
+    const started = key === undefined ? undefined : ages?.get(key);
+    if (started === undefined) { filter.uniforms[`uAge${i}`] = ARRIVED; continue; }
+    const age = time - started;
+    filter.uniforms[`uAge${i}`] = age < 0 ? age + CLOCK_WRAP : age;
+  }
+}
+
 function tick(): void {
-  if (REDUCED?.matches) return;
-  const time = (performance.now() / 1000) % CLOCK_WRAP;
+  if (REDUCED?.matches) {
+    /* Reduced motion stops the clock, so an onset driven off it would stop
+       halfway and leave the material at a fraction of itself forever. Every
+       condition is simply there, which is what this setting asks for. */
+    for (const filter of filters.values())
+      for (let i = 0; i < CONDITION_SLOTS; i++) filter.uniforms[`uAge${i}`] = ARRIVED;
+    return;
+  }
+  const time = clock();
   /* The break used to be held at a fixed time because it was a still image
      and advancing it would only have burned a uniform write. It is not still
      any more: the shards separate on a settle, dust falls through the gaps and
      a glint crosses the faces on a twenty-second loop, all of them far slower
      than any living condition so a corpse reads as stillness that happens to
      be lit rather than as an effect running. */
-  for (const filter of filters.values()) filter.uniforms.uTime = time;
+  for (const filter of filters.values()) {
+    filter.uniforms.uTime = time;
+    writeAges(filter, time);
+  }
 }
 
 export function registerTokenConditionMaterials(): void {
