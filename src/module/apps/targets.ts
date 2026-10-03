@@ -59,6 +59,59 @@ export function damageRecipients(): any[] {
   return mine.length ? mine : targeted;
 }
 
+/**
+ * What a roll is compared against, which belongs to the thing being hit
+ * rather than to whoever is hitting it. A character and a companion are found
+ * by their Evasion and an adversary by its Difficulty, so this reads whichever
+ * the target actually has — and a PC swinging at a PC resolves for free.
+ *
+ * An Environment whose Difficulty is printed as special has no number, and
+ * neither has anything off this list. `null` is the honest answer rather than
+ * a degraded one, and the card already draws it: the same ruling as a "4/None"
+ * threshold and the minion band.
+ */
+const targetNumber = (actor: any): number | null => {
+  const s = actor?.system ?? {};
+  switch (actor?.type) {
+    case "character":
+    case "companion":
+      return finite(s.evasion?.value);
+    case "adversary":
+      return finite(s.difficulty);
+    case "environment":
+      return s.difficultySpecial ? null : finite(s.difficulty);
+    default:
+      return null;
+  }
+};
+
+const finite = (v: unknown): number | null =>
+  Number.isFinite(Number(v)) ? Number(v) : null;
+
+/**
+ * The thing being attacked: its name, and the number the roll is measured
+ * against.
+ *
+ * `game.user.targets` is the right handle for this and the wrong one for
+ * damage, which is the distinction the whole of this file exists to draw. The
+ * reticle is what you aim at the thing you are *attacking*, so it answers
+ * "what am I rolling against" and never "who takes the harm" —
+ * `damageRecipients` above answers the second and must not be used for the
+ * first.
+ *
+ * One target, or no number. A card carries one verdict, and "hit" against two
+ * different Evasions is two different answers, so two reticles name both and
+ * resolve neither. That is the same card the system has drawn for an
+ * unresolved attack all along, which is why it needs nothing new to draw it.
+ */
+export function attackTarget(): { name: string; dc: number | null } {
+  const aimed = unique(actorsOf(game.user?.targets ?? []));
+  return {
+    name: aimed.map((a) => a?.name).filter(Boolean).join(" · "),
+    dc: aimed.length === 1 ? targetNumber(aimed[0]) : null,
+  };
+}
+
 /** Why there was nobody to hit, in the words of whoever is asking. */
 export const noRecipientKey = (): string =>
   game.user?.isGM ? "NoSelection" : "NoCharacter";

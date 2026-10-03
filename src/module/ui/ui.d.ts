@@ -674,6 +674,13 @@ declare module "*/ui/face-fx.js" {
   export function sweep(card: Element): void;
   export function sweepChanged(scope?: ParentNode): void;
 
+  /**
+   * Whether a card should hold still — the one reading every card surface
+   * shares. `--vtt-motion-speed` when a person has stated a preference, the
+   * OS's `prefers-reduced-motion` when nobody has.
+   */
+  export function stillCards(): boolean;
+
   /** The tilt a pointer at (x, y) over `rect` asks for, in degrees and shares. */
   export function tiltAt(
     rect: DOMRect,

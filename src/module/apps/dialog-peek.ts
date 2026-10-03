@@ -60,7 +60,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PEEK_GRACE_MS, PEEK_REST_MS, bindFaceFx } from "../ui/face-fx.js";
+import { PEEK_GRACE_MS, PEEK_REST_MS, bindFaceFx, stillCards } from "../ui/face-fx.js";
 import { cardFitter, focusFrom, frameArt } from "./fit-cards.ts";
 
 export interface DialogPeekOptions {
@@ -110,7 +110,10 @@ const GROW_EASE = "cubic-bezier(.16,1,.3,1)";
    the top left of the screen taking the layer's drop shadow with it. */
 const PARKED = "left:-9999px;top:0;visibility:hidden;opacity:0";
 
-const reduced = (): boolean => matchMedia("(prefers-reduced-motion:reduce)").matches;
+/* The card's own reading, shared with the tilt, the sweep and the chat
+   card's arrival, so a person who chose Off gets a peek that appears rather
+   than one that grows while the card under it holds still. */
+const reduced = (): boolean => stillCards();
 
 export function dialogPeeks({ root, layer, rows, pin = true }: DialogPeekOptions): void {
   /* Onto <body>, and it is not optional. `position:fixed` was the obvious

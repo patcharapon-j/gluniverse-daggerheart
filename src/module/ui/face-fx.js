@@ -80,6 +80,19 @@ const reduced = () => {
   return matchMedia('(prefers-reduced-motion:reduce)').matches;
 };
 
+/* The same reading, exported, so that every surface a card appears on
+   answers "should this move" the same way.
+
+   There were three readings before this: the tilt and the sweep in here,
+   the chat card's arrival in `dice/chat.ts`, and the peek's growth in
+   `apps/dialog-peek.ts` — each calling `matchMedia` directly. They agreed
+   while the OS was the only voice and stopped agreeing the moment a person
+   could choose: at Off the card went still and the peek still grew, and at
+   Full on a machine asking for reduced motion the card turned and the peek
+   did not. One exported predicate is the fix, and it belongs here because
+   this is the file that already had to answer the question. */
+export const stillCards = () => reduced();
+
 /** The most a card turns toward the pointer, in degrees. */
 export const MAX_TILT = 6;
 

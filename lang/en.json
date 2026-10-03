@@ -108,7 +108,8 @@
       "NoTokenStudio": "Phil's Token Studio is not installed or is switched off in this world.",
       "TokenStudioFailed": "Phil's Token Studio could not be opened — see the console for what it said.",
       "TokenStudioNotYours": "That is not your actor to edit.",
-      "GunslingerDisabled": "The Gunslinger homebrew package is disabled in this world. Enable it in Configure Settings to add this content."
+      "GunslingerDisabled": "The Gunslinger homebrew package is disabled in this world. Enable it in Configure Settings to add this content.",
+      "AdversaryGMOnly": "Only a GM can roll an adversary's damage."
     },
     "TokenStudio": {
       "Open": "Token Studio"
@@ -250,6 +251,50 @@
       "Once": "once per rest",
       "Rule": "Clear your Focus, roll a d6 per point of Instinct, and gain Focus equal to the highest result.",
       "NoDice": "Refocus rolls a d6 per point of Instinct — at {mod} there is nothing to roll, so the pool is left where it is."
+    },
+    "Plate": {
+      "DealDamage": "Deal {damage}",
+      "DealDamageMax": "Deal {damage}, starting at maximum",
+      "AppliedOne": "{name} · {severity} · {hp} HP",
+      "AppliedMany": "{count} marked · {hp} HP",
+      "CriticalSuccess": "critical success",
+      "Success": "success",
+      "Failure": "failure",
+      "WithHope": "with Hope",
+      "WithFear": "with Fear",
+      "Outcome": "{result} {feeling}",
+      "Critical": "critical",
+      "GhostCritical": "CRITICAL",
+      "GhostReaction": "REACTION",
+      "GhostHope": "HOPE",
+      "GhostFear": "FEAR",
+      "GhostDamage": "DAMAGE",
+      "GainHope": "+1 Hope",
+      "ClearStress": "Clear 1 Stress",
+      "GMGainsFear": "GM gains a Fear",
+      "IgnoreEffect": "Ignore the effect",
+      "ApplyToTarget": "Apply to target",
+      "LandsOn": "lands on",
+      "Dice": "dice",
+      "Advantage": "advantage",
+      "Disadvantage": "disadvantage",
+      "AdvantageOf": "advantage · highest of {n}",
+      "DisadvantageOf": "disadvantage · lowest of {n}",
+      "D20HighestOf": "d20 · highest of {n}",
+      "D20LowestOf": "d20 · lowest of {n}",
+      "KindDuality": "duality roll",
+      "KindAdversary": "adversary attack",
+      "KindDamage": "damage roll",
+      "KindCriticalDamage": "critical damage",
+      "DamageType": "{type} damage",
+      "CriticalDamageType": "critical {type} damage",
+      "Vs": "vs {dc}",
+      "VsEvasion": "vs evasion {dc}",
+      "Max": "max",
+      "Maximum": "{dice} maximum",
+      "Hit": "hit {name}",
+      "Missed": "missed {name}",
+      "CriticalHit": "critical hit {name}"
     }
   }
 }

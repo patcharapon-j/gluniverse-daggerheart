@@ -18,14 +18,28 @@ import { watchChatCard } from "../apps/chat-card-fit.ts";
 import { frameArt } from "../apps/fit-cards.ts";
 import { loadSigils } from "../sheets/cards.ts";
 import { useOrnaments } from "../sheets/card-style.ts";
-import { bindFaceFx } from "../ui/face-fx.js";
+import { bindFaceFx, stillCards } from "../ui/face-fx.js";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
 import { refreshedValue } from "../data/resources.ts";
-import { rollWeaponDamage } from "./actions.ts";
+import { rollAdversaryDamage, rollWeaponDamage } from "./actions.ts";
+import { foeCrit } from "./plate.ts";
 import { canReroll, rerollDie } from "./reroll.ts";
 import { applyFearClaim, rollDamage } from "./rolls.ts";
 import { hold, play } from "./arrival.ts";
 import { waitFor3dDice } from "./dsn.ts";
+
+/**
+ * Whether this client has asked for stillness.
+ *
+ * Read per render rather than cached: the preference can change mid-session
+ * from the operating system, and a cached answer would keep animating for a
+ * reader who just turned it off — or keep a card frozen for one who turned
+ * it back on. `matchMedia` is optional only so the node harnesses, which
+ * assemble the handful of globals these functions touch, do not have to
+ * carry a media-query implementation to render a card.
+ */
+const still = (): boolean =>
+  globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
 /** When each message was first announced on this client. */
 const played = new Map<string, number>();
@@ -95,6 +109,16 @@ export function registerChat(): void {
     bindRerolls(message, plate);
 
     const dice = waitFor3dDice(message.id);
+
+    /* A reader who asked for stillness is handed the settled card. The veil
+       block in `plate.css` has always described this as what happens to
+       them, and nothing did it — they got the full tumble, the sweep and a
+       card that spent four hundred milliseconds in graphite. The result was
+       never at stake: it is in the markup before any of this runs. */
+    if (still()) {
+      plate.classList.add("land");
+      return;
+    }
 
     // A fresh roll gets the full arrival. A reroll only holds its changed
     // result until the new 3D die lands, since replaying the whole card would
@@ -174,7 +198,11 @@ const RISE_MS = 340;
 
 function rise(face: HTMLElement): void {
   face.classList.add("arrive");
-  if (matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  /* `stillCards`, not `still` above and not `matchMedia` again. This is the
+     card's own motion and it answers to the Card motion setting along with
+     the tilt, the sweep and the peek; `still()` is the duality plate's and
+     reads the OS alone, which is what its own ratchet asserts. */
+  if (stillCards()) return;
   face.animate(
     [{ opacity: 0, transform: "translateY(-8px)" }, { opacity: 1, transform: "none" }],
     { duration: RISE_MS, easing: "cubic-bezier(.2,.8,.28,1)", fill: "both" },
@@ -278,8 +306,24 @@ const CLAIM_OF: Record<string, string> = {
   "gain-hope": "hope",
   "clear-stress": "stress",
   "roll-damage": "damage",
+  /* The same claim as the player's, because the key names what changed
+     hands — this attack's damage has been rolled — and not which button
+     did it. Two GMs pressing it is one attack dealing damage twice. */
+  "roll-foe-damage": "damage",
   "apply-damage": "applied",
   "gain-fear": "fear",
+};
+
+/**
+ * Relabel a row in place, leaving its diamond where it is.
+ *
+ * The `<i>` is the marker every `.pl-b` carries and `.done` restyles; only
+ * the words after it change, so the text node is replaced rather than the
+ * element's contents.
+ */
+const state = (el: HTMLElement, text: string): void => {
+  for (const node of [...el.childNodes]) if (node.nodeType === 3) node.remove();
+  el.append(text);
 };
 
 /** The same row, saying the same thing, with nothing to press. */
@@ -308,12 +352,30 @@ function bindActions(message: any, plate: HTMLElement): void {
       continue;
     }
 
+    /* The GM's damage roll is not offered to a player at all. The Fear claim
+       above survives as a statement because it is *about* them; this is not,
+       and there is nothing to read in a button nobody at this screen may
+       press. The row goes with it when it was the only thing in it. */
+    if (act === "roll-foe-damage" && !game.user?.isGM) {
+      const row = el.closest<HTMLElement>(".pl-act");
+      el.remove();
+      if (row && !row.children.length) row.remove();
+      continue;
+    }
+
     if (el.tagName !== "BUTTON") continue;
 
     const key = act.startsWith("card-action:") ? act.replace(":", "-") : CLAIM_OF[act];
     if (key && taken[key]) {
       el.classList.add("done");
       (el as HTMLButtonElement).disabled = true;
+      /* A spent Hope says "+1 Hope" and that is the whole story. Damage is
+         the one claim whose outcome nobody can reconstruct from the card, so
+         it is the one that reports back. */
+      if (act === "apply-damage") {
+        const applied: Applied[] = message.getFlag(SYSTEM_ID, "applied") ?? [];
+        if (applied.length) state(el, appliedLabel(applied));
+      }
       continue;
     }
 
@@ -435,6 +497,19 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
       finish(el);
       return;
     }
+    /* The GM's half of the same offer. The weapon lookup above has no
+       counterpart here — an adversary's damage is one expression on its own
+       stat block — and the critical carries across off the d20 the way the
+       player's carries off the duality pair. */
+    case "roll-foe-damage": {
+      if (!game.user?.isGM) return warn("AdversaryGMOnly");
+      if (!actor) return;
+      if (!(await claimOnce(message, "damage"))) return;
+      const plate = message.getFlag(SYSTEM_ID, "plate");
+      await rollAdversaryDamage(actor, { critical: plate ? foeCrit(plate) : false });
+      finish(el);
+      return;
+    }
     /* The one claim with no owner: damage lands on whoever is *targeted*,
        which is a choice made after the card was posted and by someone who
        may not be the roller.
@@ -446,8 +521,15 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
        unless something was actually hit. */
     case "apply-damage": {
       const plate = message.getFlag(SYSTEM_ID, "plate");
-      if (!(await applyDamageToTargets(plate?.total ?? 0, plate?.dtype))) return;
-      if (await claimOnce(message, "applied")) finish(el);
+      const applied = await applyDamageToTargets(plate?.total ?? 0, plate?.dtype);
+      if (!applied.length) return;
+      if (!(await claimOnce(message, "applied"))) return;
+      /* After the claim, so a second client that lost the race leaves the
+         first one's record alone rather than overwriting it with its own
+         empty one. */
+      await message.setFlag(SYSTEM_ID, "applied", applied);
+      finish(el);
+      state(el, appliedLabel(applied));
       return;
     }
     default:
@@ -884,21 +966,21 @@ async function claimOnce(message: any, key: string): Promise<boolean> {
  * caller uses that to decide whether to spend the claim — so backing out of
  * the dialog leaves the button live rather than burning it.
  */
-async function applyDamageToTargets(amount: number, damageType?: string): Promise<boolean> {
+async function applyDamageToTargets(amount: number, damageType?: string): Promise<Applied[]> {
   const recipients = damageRecipients();
   if (!recipients.length) {
     warn(noRecipientKey());
-    return false;
+    return [];
   }
 
   let owned = 0;
-  let hit = 0;
+  const applied: Applied[] = [];
   for (const actor of recipients) {
     if (!actor?.isOwner) continue;
     owned++;
     const result = await takeDamage(actor, amount, { damageType });
     if (!result) continue;
-    hit++;
+    applied.push({ n: actor.name, sev: result.severity, hp: result.marked });
     ui.notifications?.info(
       game.i18n.format("DAGGERHEART.Info.DamageApplied", {
         name: actor.name,
@@ -908,8 +990,40 @@ async function applyDamageToTargets(amount: number, damageType?: string): Promis
     );
   }
   if (!owned) warn("NotYours");
-  return hit > 0;
+  return applied;
 }
+
+/** One line of what actually happened, kept so the card can state it. */
+interface Applied {
+  n: string;
+  sev: string;
+  hp: number;
+}
+
+/**
+ * What the spent row says once the damage has landed.
+ *
+ * The toast above says this already and then it is gone, which is the wrong
+ * lifetime for it: the question "what did that do" is asked minutes later,
+ * by someone scrolling back. So the record goes on the message and the row
+ * becomes the answer — the same slot, in its second state.
+ *
+ * Written here rather than by the builder for the reason the builder cannot:
+ * the stored content is a pure rendering of the plate, and this is not a fact
+ * about the roll. `bindActions` already owns everything the card knows only
+ * at render time.
+ */
+const appliedLabel = (list: Applied[]): string => {
+  const hp = list.reduce((n, a) => n + (a.hp ?? 0), 0);
+  const one = list.length === 1 ? list[0] : undefined;
+  return one
+    ? game.i18n.format("DAGGERHEART.Plate.AppliedOne", {
+        name: one.n,
+        severity: game.i18n.localize(`DAGGERHEART.Severity.${one.sev}`),
+        hp: one.hp ?? 0,
+      })
+    : game.i18n.format("DAGGERHEART.Plate.AppliedMany", { count: list.length, hp });
+};
 
 const warn = (key: string): void => {
   ui.notifications?.warn(game.i18n.localize(`DAGGERHEART.Warning.${key}`));

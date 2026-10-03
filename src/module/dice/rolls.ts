@@ -27,6 +27,7 @@ import { absolute } from "../assets.ts";
 import { SYSTEM_ID } from "../config.ts";
 import { getFear, setFear } from "../settings.ts";
 import { ADV, DIS, FEAR, HOPE, paint } from "./dsn.ts";
+import { damageRecipients } from "../apps/targets.ts";
 import { damagePlate, dualityPlate, foeCrit, foePlate } from "./plate.ts";
 import type { DamagePlate, DiceGroup, DualityPlate, FoePlate, Note, Outcome, Term } from "./types.ts";
 
@@ -270,6 +271,14 @@ export async function rollDamage(opts: DamageOptions): Promise<{ plate: DamagePl
     ...first,
     ...(rest.length ? { extra: rest } : {}),
     dtype: opts.damageType ?? "physical",
+    /* Resolved with the same call the button will make, so the card names
+       the people it would actually hit rather than the ones aimed at. It is
+       a forecast and the press re-resolves: `applyDamageToTargets` reads
+       `damageRecipients` again, and selection may have moved by then. */
+    ...(() => {
+      const named = damageRecipients().map((a: any) => ({ n: a?.name ?? "—" }));
+      return named.length ? { tgt: named } : {};
+    })(),
   };
 
   const message = await postPlate({
@@ -301,8 +310,11 @@ export interface FoeOptions {
   dc?: number | null;
   target?: string;
   reaction?: boolean;
+  /** The trailing offer, made only by a roll that actually landed. */
   next?: string;
   nextAct?: string;
+  /** The same offer worded for a critical, which awards maximum dice. */
+  critNext?: string;
 }
 
 export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll: any; message: any }> {
@@ -345,14 +357,22 @@ export async function rollFoe(opts: FoeOptions): Promise<{ plate: FoePlate; roll
   // given none.
   base.hit = foeCrit(base) ? true : base.dc == null ? false : base.total >= base.dc;
 
+  /* A miss hands the GM nothing, so it is offered nothing — and an
+     unresolved attack claims no hit either, which is the same `landed` the
+     rail is drawn from. `ACT([], undefined)` returns the empty string, so
+     the row is absent rather than present and empty. */
+  const next = base.hit ? (foeCrit(base) && opts.critNext ? opts.critNext : opts.next) : undefined;
+  const nextAct = next ? opts.nextAct : undefined;
+
   const message = await postPlate({
     roll,
-    content: foePlate(base, opts.next, opts.nextAct),
+    content: foePlate(base, next, nextAct),
     actor: opts.actor,
     type: "adversary",
     plate: base,
-    next: opts.next,
-    nextAct: opts.nextAct,
+    next,
+    nextAct,
+    whisper: opts.reaction,
   });
 
   return { plate: base, roll, message };
@@ -433,6 +453,8 @@ interface PostOptions {
   nextAct?: string;
   /** Anything the card's own buttons will need when they are pressed. */
   extra?: Record<string, unknown>;
+  /** GMs only, for a card carrying a number the table has not been told. */
+  whisper?: boolean;
 }
 
 /**
@@ -450,6 +472,7 @@ async function postPlate({
   next,
   nextAct,
   extra,
+  whisper,
 }: PostOptions): Promise<any> {
   return ChatMessage.create({
     type,
@@ -461,6 +484,9 @@ async function postPlate({
     // play for dice nobody is being shown — the two halves of one setting.
     sound: game.settings.get(SYSTEM_ID, "diceSoNice") ? undefined : null,
     content: `<div class="dh dh-plate">${content}</div>`,
+    /* Not drawn per reader — a plate is one stored string replicated to every
+       client, so a card with a secret is withheld rather than redacted. */
+    ...(whisper ? { whisper: ChatMessage.getWhisperRecipients("GM").map((u: any) => u.id) } : {}),
     flags: {
       [SYSTEM_ID]: {
         plate,
