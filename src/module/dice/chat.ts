@@ -225,6 +225,18 @@ const CLAIM_OF: Record<string, string> = {
   "gain-fear": "fear",
 };
 
+/**
+ * Relabel a row in place, leaving its diamond where it is.
+ *
+ * The `<i>` is the marker every `.pl-b` carries and `.done` restyles; only
+ * the words after it change, so the text node is replaced rather than the
+ * element's contents.
+ */
+const state = (el: HTMLElement, text: string): void => {
+  for (const node of [...el.childNodes]) if (node.nodeType === 3) node.remove();
+  el.append(text);
+};
+
 /** The same row, saying the same thing, with nothing to press. */
 const statement = (el: HTMLElement): HTMLSpanElement => {
   const span = document.createElement("span");
@@ -268,6 +280,13 @@ function bindActions(message: any, plate: HTMLElement): void {
     if (key && taken[key]) {
       el.classList.add("done");
       (el as HTMLButtonElement).disabled = true;
+      /* A spent Hope says "+1 Hope" and that is the whole story. Damage is
+         the one claim whose outcome nobody can reconstruct from the card, so
+         it is the one that reports back. */
+      if (act === "apply-damage") {
+        const applied: Applied[] = message.getFlag(SYSTEM_ID, "applied") ?? [];
+        if (applied.length) state(el, appliedLabel(applied));
+      }
       continue;
     }
 
@@ -413,8 +432,15 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
        unless something was actually hit. */
     case "apply-damage": {
       const plate = message.getFlag(SYSTEM_ID, "plate");
-      if (!(await applyDamageToTargets(plate?.total ?? 0, plate?.dtype))) return;
-      if (await claimOnce(message, "applied")) finish(el);
+      const applied = await applyDamageToTargets(plate?.total ?? 0, plate?.dtype);
+      if (!applied.length) return;
+      if (!(await claimOnce(message, "applied"))) return;
+      /* After the claim, so a second client that lost the race leaves the
+         first one's record alone rather than overwriting it with its own
+         empty one. */
+      await message.setFlag(SYSTEM_ID, "applied", applied);
+      finish(el);
+      state(el, appliedLabel(applied));
       return;
     }
     default:
@@ -851,21 +877,21 @@ async function claimOnce(message: any, key: string): Promise<boolean> {
  * caller uses that to decide whether to spend the claim — so backing out of
  * the dialog leaves the button live rather than burning it.
  */
-async function applyDamageToTargets(amount: number, damageType?: string): Promise<boolean> {
+async function applyDamageToTargets(amount: number, damageType?: string): Promise<Applied[]> {
   const recipients = damageRecipients();
   if (!recipients.length) {
     warn(noRecipientKey());
-    return false;
+    return [];
   }
 
   let owned = 0;
-  let hit = 0;
+  const applied: Applied[] = [];
   for (const actor of recipients) {
     if (!actor?.isOwner) continue;
     owned++;
     const result = await takeDamage(actor, amount, { damageType });
     if (!result) continue;
-    hit++;
+    applied.push({ n: actor.name, sev: result.severity, hp: result.marked });
     ui.notifications?.info(
       game.i18n.format("DAGGERHEART.Info.DamageApplied", {
         name: actor.name,
@@ -875,8 +901,40 @@ async function applyDamageToTargets(amount: number, damageType?: string): Promis
     );
   }
   if (!owned) warn("NotYours");
-  return hit > 0;
+  return applied;
 }
+
+/** One line of what actually happened, kept so the card can state it. */
+interface Applied {
+  n: string;
+  sev: string;
+  hp: number;
+}
+
+/**
+ * What the spent row says once the damage has landed.
+ *
+ * The toast above says this already and then it is gone, which is the wrong
+ * lifetime for it: the question "what did that do" is asked minutes later,
+ * by someone scrolling back. So the record goes on the message and the row
+ * becomes the answer — the same slot, in its second state.
+ *
+ * Written here rather than by the builder for the reason the builder cannot:
+ * the stored content is a pure rendering of the plate, and this is not a fact
+ * about the roll. `bindActions` already owns everything the card knows only
+ * at render time.
+ */
+const appliedLabel = (list: Applied[]): string => {
+  const hp = list.reduce((n, a) => n + (a.hp ?? 0), 0);
+  const one = list.length === 1 ? list[0] : undefined;
+  return one
+    ? game.i18n.format("DAGGERHEART.Plate.AppliedOne", {
+        name: one.n,
+        severity: game.i18n.localize(`DAGGERHEART.Severity.${one.sev}`),
+        hp: one.hp ?? 0,
+      })
+    : game.i18n.format("DAGGERHEART.Plate.AppliedMany", { count: list.length, hp });
+};
 
 const warn = (key: string): void => {
   ui.notifications?.warn(game.i18n.localize(`DAGGERHEART.Warning.${key}`));

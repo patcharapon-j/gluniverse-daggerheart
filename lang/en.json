@@ -247,7 +247,9 @@
     },
     "Plate": {
       "DealDamage": "Deal {damage}",
-      "DealDamageMax": "Deal {damage}, starting at maximum"
+      "DealDamageMax": "Deal {damage}, starting at maximum",
+      "AppliedOne": "{name} · {severity} · {hp} HP",
+      "AppliedMany": "{count} marked · {hp} HP"
     }
   }
 }
