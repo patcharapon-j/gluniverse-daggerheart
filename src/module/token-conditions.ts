@@ -254,12 +254,22 @@ float noise2(vec2 p) { return clamp(gnoise(p) * 1.3 + 0.5, 0.0, 1.0); }
 
 /* Two octaves past where the shipped fbm stops, and both are bought with
    pixels rather than spent unconditionally. The first five accumulate
-   exactly as before, so at a small token this is the old field. */
+   exactly as before, so at a small token this is the old field.
+
+   The break is not a micro-optimisation, it is the difference between the
+   budget being real and being decorative. Weighting the last two octaves by
+   detail and adding them anyway means every fbm in this shader evaluates
+   two octaves it has already decided are worth nothing — twenty-nine percent
+   of the most expensive call in the file, spent to multiply by zero, at
+   exactly the token size where the frame budget is tightest. detail is a
+   uniform scalar per draw, so this branch is coherent across the whole
+   token and costs nothing to take. */
 float fbmD(vec2 p, float detail) {
   float value = 0.0;
   float amp = .5;
   mat2 turn = mat2(.8, -.6, .6, .8);
   for (int i = 0; i < 7; i++) {
+    if (i >= 5 && detail < .001) break;
     float w = (i >= 5) ? detail : 1.0;
     value += amp * w * noise2(p);
     p = turn * p * 2.03 + 17.17;
@@ -268,6 +278,10 @@ float fbmD(vec2 p, float detail) {
   return value;
 }
 
+/* Five octaves, now actually five: the break above means passing zero detail
+   stops the loop rather than running it twice more for nothing. The two
+   callers of this are both in conditionWarp, which asks for a smooth
+   displacement and never wanted the fine registers. */
 float fbm(vec2 p) { return fbmD(p, 0.0); }
 
 /* F1 and the seam, because a cell's INSIDE and a cell's EDGE are two
@@ -348,7 +362,12 @@ float ageAt(int i) {
 vec2 conditionPattern(float id, vec2 p, float t, float d) {
   float r = length(p);
   float a = atan(p.y, p.x);
-  float n = fbmD(p * 2.2 + vec2(t * .14, -t * .10), d);
+  /* There was a shared fbm here, computed before the ladder and therefore on
+     every pixel of every condition. Three branches used it. The other
+     twenty-one paid seven octaves of gradient noise — the single most
+     expensive call in this shader — for a number they never read. It now
+     lives in the three branches that want it, which is most of the budget
+     this pass spends on structure. */
 
   /* Vulnerable — it broke from somewhere. Shards are voronoi in the
      impact's own polar frame, so they radiate the way glass actually
@@ -453,6 +472,7 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      lines were at 54 per token width, which is finer than a 40px token can
      draw: they aliased into grey. At 30 they are lines. */
   if (id < 5.5) {
+    float n = fbmD(p * 2.2 + vec2(t * .14, -t * .10), d);
     float drift = p.y + n * .18 - t * .42;
     float scan = pow(.5 + .5 * sin(drift * 30.0), 7.0);
     float fine = pow(.5 + .5 * sin(drift * 88.0), 7.0) * d;
@@ -514,6 +534,7 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
     float bloom = band(r, .34 + .12 * sin(t * .80), .30);
     float petals = pow(max(0.0, cos(a * 5.0 + t * .50)), 8.0) * band(r, .52, .34);
     float swirl = pow(.5 + .5 * cos(a * 3.0 - r * 4.5 + t * .95), 10.0) * smoothstep(1.05, .20, r);
+    float n = fbmD(p * 2.2 + vec2(t * .14, -t * .10), d);
     float lane = pow(.5 + .5 * sin(p.x * 6.0 + n * 3.0), 20.0);
     float climb = fract(-p.y * .60 + t * .30 + noise2(vec2(p.x * 3.0, 0.0)));
     float sparks = lane * band(climb, .5, .14) * smoothstep(1.0, .10, r) * (.45 + .55 * d);
@@ -541,8 +562,12 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
   if (id < 9.5) {
     float eat = .50 - .12 * sin(t * .30);
     float patch = smoothstep(eat, eat + .13, fbmD(p * 1.5 + vec2(t * .085, -t * .050), d));
-    float e = voronoiEdge(p * 3.2);
-    float pits = smoothstep(.46, .07, voronoiCell(p * 3.2));
+    /* One call, both answers. voronoi3 returns the cell and the seam together
+       and this asked for them separately on the identical coordinate, which
+       is a nine-cell search run twice per pixel for one result. */
+    vec3 v = voronoi3(p * 3.2);
+    float e = v.y;
+    float pits = smoothstep(.46, .07, v.x);
     float rim = 1.0 - smoothstep(.03, .15, e);
     float lip = 1.0 - smoothstep(.008, .055, e);
     float fine = smoothstep(.26, .05, voronoiCell(p * 7.4)) * (.40 + .60 * d);
@@ -628,6 +653,7 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
   if (id < 12.5) {
     float level = .18 * sin(p.x * 2.6 + t * .40) + .26 * sin(t * .33);
     float sink = smoothstep(-.62, .92, -p.y + level);
+    float n = fbmD(p * 2.2 + vec2(t * .14, -t * .10), d);
     float trails = pow(.5 + .5 * sin(p.x * 14.0 + n * 3.0), 8.0);
     float runs = pow(.5 + .5 * sin(p.x * 38.0 + n * 4.5), 14.0) * d;
     float drop = band(fract(-p.y * 1.05 + t * .62 + noise2(vec2(p.x * 4.0, 0.0)) * .90), .5, .085)
@@ -1318,7 +1344,14 @@ void main() {
             + mix(accent,vec3(1.0),.72)*pow(hot,1.6)*(.80/crowd);
   color += glow / (1.0 + glow * .68);
 
-  color+=(noise2(uv*118.0+uTime*.03)-.5)*.035*(field+.18);
+  /* The grain is a hundred and eighteen cycles across the token, animated,
+     and it was the one term in here that ran at full strength in every state
+     at every size. At 40px that is per-frame white noise on a disc forty
+     pixels wide: the only term in this shader guaranteed to crawl on every
+     token on the board, including tokens with nothing wrong with them. It is
+     film grain, which is a statement about a close-up, so it is bought with
+     pixels like every other fine register. */
+  color+=(noise2(uv*118.0+uTime*.03)-.5)*.035*(field+.18)*(.18+.82*detail);
   color=clamp((color-.5)*1.14+.5,0.0,1.0);
   /* The material is premultiplied by the artwork's own alpha for the reason
      the break is: PIXI adds a filter's colour at full strength whatever the
