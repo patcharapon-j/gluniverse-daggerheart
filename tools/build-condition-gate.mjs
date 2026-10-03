@@ -504,8 +504,17 @@ async function boot() {
        points in the same animation is a difference it must not invent. The
        baseline program has neither uniform and getUniformLocation returns
        null for both, which these calls silently ignore. */
-    gl.uniform1f(u.uSeed, 0);
     for (let i = 0; i < 5; i++) gl.uniform1f(u['uAge' + i], 99);
+    /* Zero for every living row, and it has to be: the baseline program has
+       no uSeed at all, so a non-zero one would put the two columns at
+       different points in the same animation and the page would be comparing
+       phase instead of design.
+
+       The break is the exception, because uSeed is where the blow landed and
+       a fracture at seed zero is one fracture. The baseline's break does not
+       read it, which is the point being shown. uAge0 at 99 is a corpse that
+       has finished settling, which is the state worth looking at. */
+    gl.uniform1f(u.uSeed, dead ? 21.7 : 0.0);
     const x = slot * TILE;
     const y = canvas.height - (row + 1) * TILE;
     gl.viewport(x, y, TILE, TILE);

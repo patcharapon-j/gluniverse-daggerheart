@@ -109,7 +109,24 @@ assert.doesNotMatch(dead, /ABLAZE/);
 assert.doesNotMatch(dead, /<img|death-glyph|skull/);
 
 assert.match(TOKEN_CONDITION_FRAGMENT, /vec4 shattered\(/);
-assert.match(TOKEN_CONDITION_FRAGMENT, /for \(int i = 0; i < 9; i\+\+\)/);
+/* The nine-shard loop this used to assert is gone. It pinned a break that
+   was the SAME on every corpse on the board, built from nine evenly spread
+   sites that gave nine convex blobs of one size. What replaces it is pinned
+   instead: an impact placed from the token's own seed, a fracture built in
+   the log-polar frame of that impact so the pieces grade from small at the
+   blow to large away from it, and a settle that happens once. */
+assert.match(TOKEN_CONDITION_FRAGMENT, /vec2 impact = vec2\(hash21\(vec2\(uSeed, 11\.0\)\)/,
+  "where a corpse was struck is a fact about that creature, not a constant of the shader");
+assert.match(TOKEN_CONDITION_FRAGMENT, /vec2 frac = p \* \(1\.45 \+ 3\.30 \* near\) \+ uSeed;/,
+  "the pieces grade small at the blow by scaling a CARTESIAN frame, not by going log-polar");
+assert.doesNotMatch(TOKEN_CONDITION_FRAGMENT, /log\(rr/,
+  "log-polar cells grade correctly and come out as rings of wedges, which read as a flower");
+assert.match(TOKEN_CONDITION_FRAGMENT, /float seam = min\(cellv\.y, mix\(1\.0, offSpoke \* 1\.6, crack\)\);/,
+  "radial cracks cut the piece mask, so a crack separates rather than being drawn over the top");
+assert.match(TOKEN_CONDITION_FRAGMENT, /float settle = 1\.0 - exp\(-age \* \(\.45 \+ \.70 \* seed\)\)/,
+  "a corpse settles once and stays settled; the old sine re-assembled it every ten seconds");
+assert.doesNotMatch(TOKEN_CONDITION_FRAGMENT, /shardSite\(/,
+  "the fixed spiral of sites is what made every corpse break alike");
 assert.match(TOKEN_CONDITION_FRAGMENT, /if\(uDead>\.5\)/);
 
 /* Detail is bought with pixels, and outputFrame.z is the only place in this

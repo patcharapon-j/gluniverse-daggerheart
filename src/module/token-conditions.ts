@@ -133,6 +133,10 @@ const AGES = Symbol("daggerheartConditionAges");
 const SLOTS = Symbol("daggerheartConditionSlots");
 /** Long enough that smoothstep is saturated: a condition that is just there. */
 const ARRIVED = 99;
+/* The break's own slot. Not a condition and not in CONDITIONS, because the
+   shader reaches it through uDead rather than through an id -- but it starts
+   at a moment like everything else, so it is aged the same way. */
+const DEAD_KEY = "dead";
 
 /**
  * A stable per-token phase offset.
@@ -454,11 +458,27 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
   if (id < .5) {
     vec2 q = p - vec2(-.26, -.18);
     float rr = length(q), qa = atan(q.y, q.x);
-    float seam = voronoiEdge(vec2(qa * 1.15, rr * 1.9) * 1.05);
+    vec4 piece = voronoiSite(vec2(qa * 1.15, rr * 1.9) * 1.05);
+    float seed = hash21(piece.zw + 2.2);
+    float seam = voronoi3(vec2(qa * 1.15, rr * 1.9) * 1.05).y;
     float shard = 1.0 - smoothstep(.028, .175, seam);
-    float craze = (1.0 - smoothstep(.04, .19, voronoiEdge(p * 8.5))) * d
+    /* The crazing was a second, unrelated voronoi at 8.5 over the whole
+       face, gated only on nearness to a seam. Glass does not craze
+       uniformly: the fine cracks belong to a particular shard and run in
+       that shard's own direction. Drawn in the piece's frame, at a scale
+       the piece itself sets. */
+    vec2 inside = (vec2(qa * 1.15, rr * 1.9) * 1.05 - piece.zw) * (5.0 + 4.0 * seed);
+    float craze = (1.0 - smoothstep(.06, .24, voronoiEdge(inside))) * d
                 * smoothstep(.42, .0, seam);
-    float splits = pow(max(0.0, cos(qa * 5.0 + rr * 2.2)), 18.0) * smoothstep(1.9, .06, rr);
+    /* The splits were five identical evenly spaced rays from the impact.
+       A break radiates, but not on a protractor: each split now has its own
+       width and its own reach. */
+    float rayId = floor(qa / (PI * 2.0) * 7.0 + 3.5);
+    float raySeed = hash21(vec2(rayId, 5.0));
+    float toRay = abs(fract(qa / (PI * 2.0) * 7.0 + 3.5) - .5);
+    float splits = (1.0 - smoothstep(.04 + .10 * raySeed, .30, toRay))
+                 * smoothstep(1.9 * (.5 + .5 * raySeed), .06, rr)
+                 * step(.28, raySeed);
     float front = band(fract(rr * .55 - t * .34), .5, .13);
     return vec2(clamp(shard * .95 + craze * .60 + splits * .80, 0.0, 1.0),
                 (1.0 - smoothstep(.0, .048, seam)) * (.35 + .85 * front)
@@ -627,11 +647,22 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
   if (id < 5.5) {
     float n = fbmD(p * 2.2 + vec2(t * .14, -t * .10), d);
     float drift = p.y + n * .18 - t * .42;
-    float scan = pow(.5 + .5 * sin(drift * 30.0), 7.0);
-    float fine = pow(.5 + .5 * sin(drift * 88.0), 7.0) * d;
+    /* Thirty lines across the token, ungated, with noise jittering their
+       phase: at 40px that is one and a third pixels per line and it crawls,
+       which is the textbook case. And eighty-eight was never resolvable at
+       any size this is drawn at.
+
+       Eighteen now, and the second register is an interference with a
+       slightly different pitch rather than a finer copy of the first. A beat
+       between two close frequencies is coarse even though both carriers are
+       fine, which is how you get the sense of fine structure at a size that
+       cannot draw it. */
+    float scan = pow(.5 + .5 * sin(drift * 18.0), 5.0);
+    float beat = pow(.5 + .5 * sin(drift * 20.4), 5.0);
+    float interference = scan * beat * (.45 + .55 * d);
     float fog = smoothstep(.44, .76, fbmD(p * 1.9 + vec2(t * .13, 0.0), d));
     float sweep = band(fract(drift * .38), .5, .045);
-    return vec2(clamp(scan * .56 + fine * .26 + fog * .44 + sweep * .62, 0.0, 1.0),
+    return vec2(clamp(scan * .46 + interference * .40 + fog * .44 + sweep * .62, 0.0, 1.0),
                 sweep * (.35 + .65 * fog) * 1.1 + scan * sweep * .70);
   }
 
@@ -642,8 +673,19 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
      between two quick coarse ones it is a figure crawling over the
      creature, and the figure is the subject. */
   if (id < 6.5) {
+    /* Both lattices were polar, cos(a * N + r * M), which makes their
+       interference a rosette centred on the token: at any distance it is a
+       glow with a star in it, and it is the same star on every creature.
+
+       One lattice stays polar, because a hex is cast at something. The other
+       is now a straight grid, turning in its own plane, so the moire between
+       them is a travelling interference across the body rather than a
+       pattern about its middle. Two lattices in two different geometries
+       also means the beat never settles into a repeat. */
     float l1 = pow(max(0.0, cos(a * 5.0 + r * 11.0 - t * .95)), 7.0);
-    float l2 = pow(max(0.0, cos(a * 8.0 - r *  8.0 + t * .68)), 8.0);
+    float spin = t * .31;
+    vec2 g = vec2(p.x * cos(spin) - p.y * sin(spin), p.x * sin(spin) + p.y * cos(spin)) * 7.4;
+    float l2 = pow(max(0.0, cos(g.x)), 8.0) * .5 + pow(max(0.0, cos(g.y)), 8.0) * .5;
     float rings = band(fract(r * 2.2 - t * .22), .5, .085) * .55;
     return vec2(clamp(l1 * .72 + l2 * .62 + rings, 0.0, 1.0), l1 * l2 * 3.0);
   }
@@ -687,10 +729,23 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
     float bloom = band(r, .34 + .12 * sin(t * .80), .30);
     float petals = pow(max(0.0, cos(a * 5.0 + t * .50)), 8.0) * band(r, .52, .34);
     float swirl = pow(.5 + .5 * cos(a * 3.0 - r * 4.5 + t * .95), 10.0) * smoothstep(1.05, .20, r);
-    float n = fbmD(p * 2.2 + vec2(t * .14, -t * .10), d);
-    float lane = pow(.5 + .5 * sin(p.x * 6.0 + n * 3.0), 20.0);
-    float climb = fract(-p.y * .60 + t * .30 + noise2(vec2(p.x * 3.0, 0.0)));
-    float sparks = lane * band(climb, .5, .14) * smoothstep(1.0, .10, r) * (.45 + .55 * d);
+    /* The lanes were pow(sin(p.x * 6), 20) — six narrow vertical stripes in
+       screen x, all rising on one phase, which is a comb and not a rise.
+       The comment above this branch already diagnosed the motes as polka
+       dots; the lanes were the same mistake one dimension down.
+
+       Each rising light now belongs to a cell and climbs at its own rate
+       from its own place, so the motion is several things going up rather
+       than one thing going up in six places. */
+    vec4 site = voronoiSite(vec2(p.x * 3.4, p.y * 1.9 - t * .30));
+    float seed = hash21(site.zw + 8.8);
+    vec2 local = vec2(p.x * 3.4, p.y * 1.9 - t * .30) - site.zw;
+    /* Taller than wide, and leaning its own way: a light going up, not a dot. */
+    float lane = (1.0 - smoothstep(.0, .13 + .09 * seed, abs(local.x + local.y * .22 * (seed - .5))))
+               * (1.0 - smoothstep(.22, .60, abs(local.y)));
+    float climb = fract(t * (.22 + .30 * seed) + seed);
+    float sparks = lane * smoothstep(.0, .35, climb) * (1.0 - smoothstep(.55, 1.0, climb))
+                 * smoothstep(1.0, .10, r) * (.45 + .55 * d);
     return vec2(clamp(bloom * .58 + petals * .34 + swirl * .32 + sparks * .62, 0.0, 1.0),
                 sparks * sparks * 1.20 + petals * bloom * .55);
   }
@@ -768,7 +823,14 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
   if (id < 11.5) {
     vec2 q = p - vec2(.34, -.52);
     float qa = atan(q.y, q.x), rr = length(q);
-    float branch = fbmD(vec2(qa * 1.3, rr * 2.6 - t * 1.6), d);
+    /* One bolt, from one fixed origin, following the same path every frame:
+       the brightness pulsed but the route never changed, which is a neon
+       tube with a flicker. Lightning does not strike twice along the same
+       channel. The route is reseeded on each strike, so every flash finds a
+       different way down. */
+    float strikeId = floor(t * 1.35);
+    float route = hash21(vec2(strikeId, 29.0)) * 40.0;
+    float branch = fbmD(vec2(qa * 1.3, rr * 2.6 - t * 1.6) + route, d);
     float curve = sin(qa * 2.1 + branch * 5.0);
     float reach = smoothstep(2.1, .04, rr);
     /* Half the exponent again. pow 5 was still a stripe about a fortieth of
@@ -1163,9 +1225,23 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
   /* Tally marks, going along it. A blank sash is a colour swatch; the marks
      are what make it a thing somebody wrote on, and they are the part that
      tells you it is the same condition you saw last round. */
-  float tally = pow(max(0.0, sin(along * 8.5 + t * .60)), 10.0) * ribbon;
-  float wash = (.24 + .32 * smoothstep(.30, .82, fbmD(p * 1.2 + vec2(t * .06, -t * .05), d)))
-             * smoothstep(1.05, .14, r);
+  /* The tallies were one sine raised to a power: identical marks at a
+     perfectly even pitch, which is a ruler rather than something somebody
+     wrote. Each mark now has its own index, so they differ in width, lean
+     and how far down the sash they sit — the point of this condition is that
+     a person noted something, and a person does not rule lines. */
+  float pitch = along * 8.5 / (PI * 2.0);
+  float markId = floor(pitch);
+  float markSeed = hash21(vec2(markId, 31.0));
+  float toMark = abs(fract(pitch) - .5);
+  float tally = (1.0 - smoothstep(.10 + .16 * markSeed, .40, toMark))
+              * step(.22, markSeed) * ribbon;
+  /* The wash was multiplied by smoothstep(1.05, .14, r), which is a vignette
+     and therefore the one thing in this shader that looks the same whatever
+     it is drawn over. The sash is the subject; the wash is now carried by
+     the sash's own breath rather than by distance from the middle. */
+  float wash = (.18 + .30 * smoothstep(.30, .82, fbmD(p * 1.2 + vec2(t * .06, -t * .05), d)))
+             * (.35 + .65 * ribbon);
   float breath = .5 + .5 * sin(t * .90);
   float fade = smoothstep(1.02, .26, r);
   /* The hems carry most of the field and little of the heat. They were the
@@ -1299,20 +1375,16 @@ vec3 conditionAccent(float id, vec3 base, vec2 p, float t, float value) {
   return mix(vec3(.13,.11,.09),vec3(.96,.89,.76),value*.80);
 }
 
-vec2 turn(vec2 p,float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c)*p;}
-
-/* Nine sites on a golden-angle spiral rather than seven placed by hand.
-   The spiral is not decoration: hand-placed sites drift into pairs, and a
-   pair of close sites makes a long thin sliver, which is the one shard
-   shape that reads as a mistake rather than as glass. The spiral cannot
-   produce one, and it stays deterministic, so the break is the same break
-   every time a token dies. */
-vec2 shardSite(float i) {
-  float a = i * 2.39996 + .70;
-  return vec2(cos(a), sin(a)) * (.14 + .30 * sqrt(i));
-}
-float shardSpin(float i) { return (hash21(vec2(i, 5.51)) - .5) * .17; }
-float shardPush(float i) { return .030 + .055 * hash21(vec2(i, 17.3)); }
+/* The nine-site golden-angle spiral that used to live here is gone, and the
+   note it carried is worth keeping because it was right about the wrong
+   thing. It argued the spiral over hand-placed sites because hand-placed
+   sites drift into pairs and a pair makes a long thin sliver, which is the
+   one shard shape that reads as a mistake. True. But it also made the break
+   deterministic and therefore identical on every corpse on the board, and it
+   gave nine convex blobs of one size, which is not how anything breaks.
+   The fracture is built in the log-polar frame of an impact point now; see
+   shattered. Slivers are avoided there by the same property that avoids them
+   here -- voronoi sites on a jittered lattice are never close together. */
 
 vec2 tokenUv(vec2 tex){ return tex * inputSize.xy / outputFrame.zw; }
 
@@ -1345,37 +1417,123 @@ vec4 sampleArt(vec2 local){
    than a decal of one. The loop is deliberately far slower than anything a
    living condition does: it should register as stillness that happens to
    be lit, not as an effect running. */
-vec4 shattered(vec2 uv, vec2 p, float t, float d) {
-  float first = 99.0, second = 99.0, sid = 0.0;
-  vec2 nearSite = vec2(0.0), nextSite = vec2(0.0);
-  for (int i = 0; i < 9; i++) {
-    float fi = float(i);
-    vec2 site = shardSite(fi);
-    float rough = (noise2(p * 3.2 + vec2(fi * 7.1, fi * 3.3)) - .5) * .11;
-    float dist = distance(p, site) + rough;
-    if (dist < first) {
-      second = first; nextSite = nearSite;
-      first = dist; nearSite = site; sid = fi;
-    } else if (dist < second) { second = dist; nextSite = site; }
-  }
-  float seam = second - first;
+vec4 shattered(vec2 uv, vec2 p, float t, float d, float age) {
+  /* A creature that has been destroyed, and the second attempt at it.
 
-  float settle = .5 + .5 * sin(t * .16);
-  float solid = smoothstep(.026 + .024 * settle, .094 + .024 * settle, seam);
+     The first was nine shards on a golden-angle spiral. Three things were
+     wrong with that and all three are structural rather than tuning:
 
-  vec2 escape = normalize(nearSite + vec2(.0001));
-  vec2 source = turn(p - escape * shardPush(sid) * (.55 + .45 * settle), -shardSpin(sid));
+     Nine sites on a fixed spiral means every corpse on the board breaks the
+     SAME WAY. The pattern was a constant of the shader, so a room of dead
+     adversaries was a room of identical fractures, which reads as a decal
+     the moment you see the second one.
+
+     Voronoi regions of nine evenly-spread sites are nine convex blobs of
+     roughly one size. Nothing breaks like that. A struck solid gives a few
+     large pieces away from the blow and a crowd of small ones around it,
+     and the pieces are angular, with long edges running away from where it
+     was hit.
+
+     And the settle was one global sin(t * .16), so all nine pieces breathed
+     together on a twenty-second loop -- out, back, out, back. A corpse that
+     re-assembles every ten seconds is the one thing a corpse must not do.
+
+     What replaces it: the fracture is built in the LOG-POLAR frame of an
+     impact point, which is where this gets most of its quality for free.
+     Uniform cells in that frame are small near the impact and large away
+     from it, and they come out as wedges and rings rather than blobs --
+     which is what percussion fracture actually looks like, without drawing
+     a single radial crack by hand. The impact is placed from uSeed, so no
+     two creatures break alike. And the motion runs off age rather than a
+     sine: it happens once, decays, and stops. */
+
+  /* Where it was hit. Off centre, because a blow lands somewhere, and from
+     the token's own seed so this corpse is not the one next to it. */
+  vec2 impact = vec2(hash21(vec2(uSeed, 11.0)) - .5, hash21(vec2(uSeed, 23.0)) - .5) * 1.05;
+  vec2 q = p - impact;
+  float rr = length(q);
+  float aa = atan(q.y, q.x);
+
+  /* The grading is the thing worth having -- small pieces at the blow, large
+     ones away from it -- and the first attempt got it from a log-polar
+     frame, which was a mistake worth recording. Uniform cells in log-polar
+     do grade correctly, but they also come out as concentric rings of
+     wedges, so the corpse read as a dahlia: radially regular about the
+     impact, which is the same vignette-and-rosette failure this whole pass
+     exists to remove, arrived at by a cleverer route.
+
+     So the frame stays cartesian, where voronoi is irregular in the way
+     fracture actually is, and the grading comes from scaling that frame by
+     distance from the impact instead. Cells are compressed near the blow and
+     stretched away from it. The scaling is not conformal, so the pieces come
+     out skewed -- which is correct here: a fragment near an impact is
+     stretched along the shock, not a regular polygon. */
+  float near = exp(-rr * 1.9);
+  /* Coarse on purpose. The first numbers here put the whole corpse somewhere
+     between four and seven cells across, which is crackle glaze: you could
+     see it had broken and not what had broken. A destroyed creature has to
+     stay recognisable as that creature, so most of it is a handful of large
+     fragments and only the ground around the blow is fine. */
+  vec2 frac = p * (1.45 + 3.30 * near) + uSeed;
+  /* Roughness on the lookup, not on the result: a fracture edge is ragged,
+     and perturbing the coordinate bends the seam instead of fading it. */
+  frac += vec2(noise2(p * 4.1) - .5, noise2(p * 3.7 + 9.0) - .5) * .55;
+
+  vec4 piece = voronoiSite(frac);
+  vec3 cellv = voronoi3(frac);
+  float seed = hash21(piece.zw + 3.3);
+
+  /* Radial cracks, which are the signature of a struck solid and the one
+     part of this that cannot come out of a cellular pattern: a few long
+     seams running away from the blow, right across whatever cells are in
+     the way. Five or six of them, each at its own angle with its own
+     wander and its own reach, and some absent. They CUT the piece mask
+     rather than being drawn over it, so a crack genuinely separates. */
+  float spoke = aa / (PI * 2.0) * 6.0 + hash21(vec2(uSeed, 5.0)) * 6.0;
+  float spokeId = floor(spoke);
+  float spokeSeed = hash21(vec2(spokeId, 41.0));
+  float wander = (noise2(vec2(rr * 3.1, spokeId * 7.7)) - .5) * .30;
+  float offSpoke = abs(fract(spoke) - .5 + wander);
+  float crack = (1.0 - smoothstep(.030 + .030 * spokeSeed, .085, offSpoke))
+              * smoothstep(.06, .30, rr)
+              * (1.0 - smoothstep(.55 + .55 * spokeSeed, 1.45, rr))
+              * step(.26, spokeSeed);
+
+  float seam = min(cellv.y, mix(1.0, offSpoke * 1.6, crack));
+
+  /* Once, and then it is over. 1 - exp is the shape of a thing that happened:
+     fast at the start, asymptotic, and it never comes back. Each piece has
+     its own rate, so they do not leave together. */
+  float settle = 1.0 - exp(-age * (.45 + .70 * seed));
+
+  /* The gaps open as the pieces go, and in pixels, so a small corpse is
+     still visibly in pieces instead of being one smooth disc. */
+  float gap = (.012 + .034 * settle) + gPixel * .5;
+  float solid = smoothstep(gap, gap + .050 + .022 * settle, seam);
+
+  /* Away from the blow, which is the direction a fragment of a struck thing
+     actually travels, plus its own scatter. Pieces further out move less:
+     the energy went into the ones near the impact. */
+  vec2 away = normalize(q + vec2(.0001));
+  vec2 scatter = vec2(hash21(piece.zw + 7.7) - .5, hash21(piece.zw + 13.1) - .5);
+  float throwDist = (.055 + .085 * seed) * settle * (1.0 - smoothstep(.1, 1.3, rr));
+  /* And they fall. Gravity is the cheapest signal in here that this is a
+     thing that has stopped rather than a thing that is happening. */
+  vec2 drop = vec2(0.0, -1.0) * settle * (.030 + .055 * seed);
+  vec2 travel = away * throwDist + scatter * throwDist * .8 + drop;
+
+  /* Each piece turns its own way, by an amount that also stops. */
+  float spin = (seed - .5) * 1.25 * settle;
+  vec2 rel = p - piece.zw * 0.0 - travel;
+  vec2 source = vec2(rel.x * cos(spin) - rel.y * sin(spin),
+                     rel.x * sin(spin) + rel.y * cos(spin));
+
   /* Two circles, and shipping only the first is what let the break grow out
      of the token into a square.
 
      circle is the edge of the ARTWORK, and it has to be measured on
      source, because a shard that has travelled carries its own edge with
      it and clipping its art on p would shave the piece rather than move it.
-     But source is p pulled back INWARD by the escape push, so a fragment
-     sitting a full push outside the creature reads as inside the art and
-     draws — and since the only thing out there to stop it is the filter's
-     own frame, what it drew was the frame: a disc inflated until it met
-     four straight edges and four cut corners.
 
      cell is the creature's own circle, which is a fact about p and about
      nothing the shards do. It is the same threshold the living branch
@@ -1385,17 +1543,35 @@ vec4 shattered(vec2 uv, vec2 p, float t, float d) {
   vec4 art = sampleArt(source * .5 + .5);
   float lum = dot(art.rgb, vec3(.2126, .7152, .0722));
 
-  vec2 across = normalize(nextSite - nearSite + vec2(.0001));
-  float bevel = (1.0 - smoothstep(.0, .085, seam)) * dot(across, normalize(vec2(-.45, -.89)));
+  /* The lit and shadowed lips of the break. across is the direction from
+     this piece to its neighbour, so the bevel knows which way the edge
+     faces rather than shading every seam the same. */
+  vec2 across = normalize(piece.zw - cellv.z * vec2(1.0, 1.0) + vec2(.0001));
+  float lipWidth = .085 + gPixel;
+  float lip = 1.0 - smoothstep(.0, lipWidth, seam);
+  float bevel = lip * dot(across, normalize(vec2(-.45, -.89)));
 
-  float craze = (1.0 - smoothstep(.02, .10, voronoiEdge(p * 7.5)))
-              * smoothstep(.07, .26, seam) * d;
-  float grain = noise2(source * 82.0) - .5;
+  /* Each piece catches the light at its own angle, which is what stops nine
+     fragments of the same portrait reading as one cracked photograph. The
+     old version shaded only the seams, so the faces were all identical. */
+  float facet = .80 + .34 * cos(seed * 6.2831853 + spin * 2.4);
+
+  /* Crazing on the piece, in the piece's own frame, concentrated near the
+     impact where the stone is worst hit. */
+  vec2 inside = (frac - piece.zw) * (3.4 + 2.2 * seed);
+  float craze = (1.0 - smoothstep(.05, .22, voronoiEdge(inside)))
+              * smoothstep(.07, .26, seam) * d
+              * (1.0 - smoothstep(.0, 1.1, rr));
+  /* Bought with pixels, like every other fine register: at 40px this was
+     per-frame white noise on a forty-pixel disc. */
+  float grain = (noise2(source * 82.0) - .5) * d;
   float glint = band(fract(p.x * .62 + p.y * .38 - t * .052), .5, .075);
+  /* Dust still falls, and it is the only thing in here that keeps moving
+     once the pieces have stopped -- which is the point of it. */
   float dust = smoothstep(.10, .015, voronoiCell(vec2(p.x * 5.5 + sin(t * .20),
                                                       p.y * 5.5 + t * .16)));
 
-  vec3 cold = mix(vec3(lum), vec3(.62, .72, .88) * lum, .62);
+  vec3 cold = mix(vec3(lum), vec3(.62, .72, .88) * lum, .62) * facet;
   cold *= .66 + .34 * smoothstep(-.95, .85, -source.y);
   cold += vec3(.80, .86, .94) * max(bevel, 0.0) * (.34 + .58 * glint);
   cold *= 1.0 - max(-bevel, 0.0) * .55;
@@ -1404,7 +1580,7 @@ vec4 shattered(vec2 uv, vec2 p, float t, float d) {
   cold += grain * .05;
   /* PREMULTIPLIED, and the clipping above is worth nothing without it.
      PIXI composites a filter's output with ONE / ONE_MINUS_SRC_ALPHA, which
-     adds the colour at full strength whatever the alpha says — so a fragment
+     adds the colour at full strength whatever the alpha says -- so a fragment
      that returns a lit shard face and an alpha of zero draws the lit shard
      face. That is what the square was: not a clipping failure at all, but
      every clipped fragment painting its colour anyway, out to the edges of
@@ -1466,7 +1642,7 @@ void main() {
      exists so the division cannot produce an edge wider than the token. */
   gPixel = 2.0 / max(frame, 12.0);
 
-  if(uDead>.5){gl_FragColor=shattered(uv,p,uTime,detail);return;}
+  if(uDead>.5){gl_FragColor=shattered(uv,p,uTime,detail,ageAt(0));return;}
 
   vec4 original=sampleArt(uv);
   float circle=1.0-smoothstep(.94,1.0,length(p));
@@ -1744,7 +1920,13 @@ export function syncTokenConditionMaterial(
     filters.set(token, filter);
   }
 
-  const materials = conditionMaterialsFor(ids);
+  /* A defeated creature has no conditions in the slots, and the break needs
+     one number the living branch does not: how long ago it died. The shards
+     travel once and stop, so the shader has to know where in that it is.
+     Carried through the same slot-age machinery rather than a uniform of its
+     own, because the question is identical -- when did this start. */
+  const materials = dead ? [] : conditionMaterialsFor(ids);
+  const keys = dead ? [DEAD_KEY] : materials.map((material) => material.id);
 
   /* When each of these started being drawn. `sync` runs on every refresh of
      every token, so "first seen" has to be remembered rather than recomputed:
@@ -1753,10 +1935,10 @@ export function syncTokenConditionMaterial(
      is what a slot actually holds — all the ad-hoc conditions share one. */
   const now = clock();
   const ages: Map<string, number> = filter[AGES] ?? (filter[AGES] = new Map());
-  const live = new Set(materials.map((material) => material.id));
+  const live = new Set(keys);
   for (const key of [...ages.keys()]) if (!live.has(key)) ages.delete(key);
-  for (const material of materials) if (!ages.has(material.id)) ages.set(material.id, now);
-  filter[SLOTS] = materials.map((material) => material.id);
+  for (const key of keys) if (!ages.has(key)) ages.set(key, now);
+  filter[SLOTS] = keys;
   /* Clamped rather than trusted. Above 1 the material would be asked to
      cover more than the frame holds, which it cannot — there is nothing
      out there to sample — and a bad read collapsing it to a dot is the

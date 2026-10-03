@@ -24,6 +24,7 @@ canvas{width:100%;aspect-ratio:1;display:block;border-radius:50%;background:#0a0
 .drift{margin:0 0 26px;font:700 10px/1.4 ui-monospace,monospace;letter-spacing:.08em;
   text-transform:uppercase;color:var(--dim);min-height:14px}
 .drift[data-state=ok]{color:#7fd6a8}.drift[data-state=bad]{color:#f2777a}
+.drift[data-state=info]{color:#8fa6c4}
 #picker{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
 button{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid var(--line);
   border-radius:999px;background:transparent;color:var(--dim);font:500 11px/1 inherit;cursor:pointer}
@@ -38,7 +39,8 @@ button i{width:9px;height:9px;border-radius:50%}
   <h1>Condition collisions</h1>
   <p class="lede">The shipped composite beside the working one, both read straight out of
   <code>src</code>, at a size where two hues meeting over a cheekbone is a decision you can see.
-  Left is <code id="ref">—</code>. Pick up to five conditions; pick none for the defeated break.
+  Left is <code id="ref">—</code>. Pick up to five conditions; pick none for the defeated break, then
+  <em>reseed token</em> to see that two creatures do not shatter alike.
   The strip under the stages samples sixteen points around the rim, which is the only part of any
   of this that still reads at 40px.</p>
 
@@ -57,6 +59,7 @@ button i{width:9px;height:9px;border-radius:50%}
     <button type="button" id="pause">pause</button>
     <button type="button" id="small">40px budget</button>
     <button type="button" id="replay">replay onset</button>
+    <button type="button" id="reseed">reseed token</button>
   </div>
 </main><script type="module" src="/design/condition-collision.js"></script></body>
 </html>

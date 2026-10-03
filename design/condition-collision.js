@@ -114,6 +114,9 @@ function draw({ gl, u }, { ids, dead, time, frame, seed, age }) {
   gl.uniform4f(u.inputClamp, 0, 0, 1, 1);
   gl.uniform1f(u.uSubject, 1);
   gl.uniform1f(u.uTime, time);
+  /* The break places its impact point from uSeed, so this is what makes two
+     corpses break differently. Varied here rather than left at zero, because
+     a page showing one fracture cannot show that they differ. */
   gl.uniform1f(u.uSeed, seed);
   gl.uniform1f(u.uDead, dead ? 1 : 0);
   gl.uniform1f(u.uCount, dead ? 0 : ids.length);
@@ -150,6 +153,9 @@ let paused = false;
 let small = false;
 let frozenAge = 99;
 let onsetAt = null;
+/* Changed by the reseed button. The break reads the impact point off this, so
+   it is the one control that shows two creatures do not shatter alike. */
+let seed = 0;
 
 const picker = document.querySelector('#picker');
 picker.innerHTML = CONDITION_MATERIALS.map((material) => `
@@ -178,17 +184,19 @@ try {
 }
 
 /**
- * The claim this whole pass rests on: one condition still looks exactly like
- * it shipped.
+ * How far this condition has moved from the shipped one, as a number.
  *
- * Presence weighting is supposed to change the composite only where more than
- * one condition is present — with a single condition the weight cancels in its
- * own normalisation and every term should come out where it was. "Should" is
- * not evidence, and nothing about a quiet drift in a single-condition material
- * would be visible beside a baseline rendering the same picture. So the two
- * canvases are differenced whenever exactly one condition is selected, and the
- * worst channel is reported. Anything above a rounding step is a regression in
- * the twenty-four cases that are not what this pass is about.
+ * This started as a pass/fail: the composite rework was supposed to leave
+ * single-condition output untouched, so any difference at all was a
+ * regression, and it was worth 0/255 across all twenty-four materials. The
+ * pattern rework spends that invariance deliberately — nineteen of the
+ * twenty-four branches are meant to look different now — so the readout is
+ * a measurement rather than a verdict, and the five still-untouched branches
+ * are the ones where a non-zero number would be a surprise.
+ *
+ * It is also phase-sensitive: the baseline program has no uSeed, so reseeding
+ * puts the two columns at different points in the same animation and the
+ * number stops meaning anything. Reported only at seed zero for that reason.
  */
 function singleConditionDrift() {
   const pixels = (gl) => {
@@ -204,6 +212,11 @@ function singleConditionDrift() {
   return worst;
 }
 
+/* The five whose metaphor, not whose execution, is the ceiling: they are
+   waiting on a decision rather than on work, so they should still match the
+   shipped shader exactly and the readout says so if they stop. */
+const UNTOUCHED = new Set(['invisible', 'stunned', 'horrified', 'silenced', 'cursed']);
+
 const drift = document.querySelector('#drift');
 let frames = 0;
 
@@ -211,7 +224,7 @@ function render(now) {
   const time = paused ? 2.35 : now / 1000;
   const age = onsetAt === null ? frozenAge : (now - onsetAt) / 1000;
   const frame = small ? 40 : SIZE;
-  const state = { ids: [...ids], dead: ids.size === 0, time, frame, seed: 0, age };
+  const state = { ids: [...ids], dead: ids.size === 0, time, frame, seed, age };
   /* The baseline has neither uSeed nor uAge and getUniformLocation returns
      null for both, which the uniform calls ignore: the left column is simply
      the shader as it shipped. */
@@ -225,13 +238,17 @@ function render(now) {
   /* Not every frame: reading back two full canvases is the most expensive
      thing on this page and the answer does not move. */
   if (frames++ % 30 === 0) {
-    if (ids.size !== 1) drift.textContent = '';
-    else {
+    const only = ids.size === 1 ? [...ids][0] : null;
+    if (!only || seed !== 0) {
+      drift.textContent = '';
+      delete drift.dataset.state;
+    } else {
       const worst = singleConditionDrift();
-      drift.textContent = worst <= 1
-        ? `one condition: identical to ${CONDITION_MATERIAL_BASELINE_REF} (worst channel ${worst}/255)`
-        : `one condition: DRIFTED from ${CONDITION_MATERIAL_BASELINE_REF} by ${worst}/255`;
-      drift.dataset.state = worst <= 1 ? 'ok' : 'bad';
+      const untouched = UNTOUCHED.has(only);
+      drift.textContent = untouched
+        ? `${only}: not reworked, so this should be nil — ${worst}/255 from ${CONDITION_MATERIAL_BASELINE_REF}`
+        : `${only}: reworked — ${worst}/255 from ${CONDITION_MATERIAL_BASELINE_REF}`;
+      drift.dataset.state = untouched ? (worst <= 1 ? 'ok' : 'bad') : 'info';
     }
   }
   requestAnimationFrame(render);
@@ -258,6 +275,12 @@ document.querySelector('#small').addEventListener('click', (event) => {
   event.target.textContent = small ? 'full detail' : '40px budget';
 });
 document.querySelector('#replay').addEventListener('click', () => { onsetAt = performance.now(); });
+document.querySelector('#reseed').addEventListener('click', () => {
+  seed = Math.random() * 60;
+  /* Reseeding moves the impact point, so the break has to happen again for
+     the new one to mean anything. */
+  onsetAt = performance.now();
+});
 
 requestAnimationFrame(render);
 document.documentElement.dataset.qa = 'ready';
