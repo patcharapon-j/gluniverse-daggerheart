@@ -294,6 +294,26 @@ const ACT = (list: Claim[], next?: string, nextAct?: string): string =>
     ${next ? `<button type="button" class="pl-b go" data-dh-act="${nextAct ?? ""}"><i></i>${esc(next)}</button>` : ""}
   </div>`;
 
+/**
+ * Who the damage lands on, directly above the button that would land it.
+ *
+ * Names and nothing else. The card above this one says a damage plate "stops
+ * at the number", and it still does: a severity printed here would be the
+ * pre-armour one, and spending an Armor Slot to move the hit down a rung is
+ * the commonest thing that happens between this card being drawn and the
+ * damage being taken.
+ *
+ * Two names, then a count. Three fit only by ellipsing all three, and three
+ * half-names say less than two whole ones and a number.
+ */
+const TGT = (list?: { n: string }[]): string =>
+  !list?.length
+    ? ""
+    : `<div class="dmg-tgt"><em>lands on</em>${list
+        .slice(0, 2)
+        .map((t) => `<i>${esc(t.n)}</i>`)
+        .join("")}${list.length > 2 ? `<s>+${list.length - 2}</s>` : ""}</div>`;
+
 /* Red plus material: a bracket and a lit glass edge in CSS, embers, one foil
    sweep and a struck badge. All of it red, and nothing below this rung may
    use any of it. It rides on `.mat` rather than on `.crit`, because critical
@@ -482,6 +502,7 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
   </div>
   ${TERMS(terms, "dmg-a")}
   <div class="pl-meta"><span>${crit ? "critical damage" : "damage roll"}</span><s>${notation}</s></div>
+  ${TGT(r.tgt)}
   ${ACT([], next ?? "Apply to target", nextAct ?? "apply-damage")}
 </div>`;
 };

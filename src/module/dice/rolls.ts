@@ -27,6 +27,7 @@ import { absolute } from "../assets.ts";
 import { SYSTEM_ID } from "../config.ts";
 import { getFear, setFear } from "../settings.ts";
 import { ADV, DIS, FEAR, HOPE, paint } from "./dsn.ts";
+import { damageRecipients } from "../apps/targets.ts";
 import { damagePlate, dualityPlate, foeCrit, foePlate } from "./plate.ts";
 import type { DamagePlate, DiceGroup, DualityPlate, FoePlate, Note, Outcome, Term } from "./types.ts";
 
@@ -270,6 +271,14 @@ export async function rollDamage(opts: DamageOptions): Promise<{ plate: DamagePl
     ...first,
     ...(rest.length ? { extra: rest } : {}),
     dtype: opts.damageType ?? "physical",
+    /* Resolved with the same call the button will make, so the card names
+       the people it would actually hit rather than the ones aimed at. It is
+       a forecast and the press re-resolves: `applyDamageToTargets` reads
+       `damageRecipients` again, and selection may have moved by then. */
+    ...(() => {
+      const named = damageRecipients().map((a: any) => ({ n: a?.name ?? "—" }));
+      return named.length ? { tgt: named } : {};
+    })(),
   };
 
   const message = await postPlate({

@@ -657,6 +657,27 @@ html.dh-light .dh{--crit-tx:#a8241c;--wound-tx:#a02730}
    It takes the row's own 11px when it is the one closing the card. */
 .dh .pl-meta:last-child{padding-bottom:11px}
 
+/* ── who the damage lands on ───────────────────────────────────────
+   Between the meta line and the claim row, because it is the subject of
+   the row directly under it: the Apply button and this name the same
+   thing, and anything between them would be reading matter in the middle
+   of one sentence.
+
+   The names take the wound's own ink rather than the body's, so the line
+   reads as part of the card's answer and not as another piece of
+   notation. The overflow count is set in --ink-3: it is bookkeeping about
+   the list, not a name in it. */
+.dh .dmg-tgt{display:flex;align-items:baseline;gap:7px;padding:7px 12px 0;
+  font:700 8px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden}
+.dh .dmg-tgt em{font-style:normal;color:var(--ink-3)}
+.dh .dmg-tgt i{font-style:normal;color:var(--o-tx);overflow:hidden;text-overflow:ellipsis}
+.dh .dmg-tgt i + i::before{content:"·";color:var(--ink-3);margin-right:7px}
+.dh .dmg-tgt s{text-decoration:none;margin-left:auto;color:var(--ink-3)}
+/* Last thing on the card when there is nothing to claim, so it takes the
+   claim row's bottom padding exactly as the meta line does. */
+.dh .dmg-tgt:last-child{padding-bottom:11px}
+
 /* ── the note ──────────────────────────────────────────────────────
    A rule the roll carried with it. Weapons have features — Whirlwind hits
    everything adjacent, Brutal upgrades a maximum die — and until now the
