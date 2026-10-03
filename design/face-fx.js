@@ -48,8 +48,35 @@
 // ── the behaviours ──────────────────────────────────────────────────
 
 /* The only motion gate. Read per event rather than cached: Foundry sessions
-   are long and the OS setting can change inside one. */
-const reduced = () => matchMedia('(prefers-reduced-motion:reduce)').matches;
+   are long, and both the OS setting and the person's own can change inside
+   one.
+
+   It reads `--vtt-motion-speed` first and the media query only as a
+   fallback, and that order is the whole point. The host declares the
+   property when somebody has stated a preference — Foundry's own Card
+   motion setting writes `:root,.dh{--vtt-motion-speed:n}` after the system
+   stylesheets — so a stated preference is a number here and an unstated one
+   is nothing at all. A number wins outright: `0` means Off and stops the
+   turn and the glint even on a machine that never asked for reduced motion,
+   and any positive number means the person has said Full or Reduced *after*
+   seeing their OS setting, which is the one case where overriding an
+   accessibility default is the accessible answer rather than a rude one.
+   With nothing declared there is no preference to honour and the OS's is
+   the only one there is, so the media query decides.
+
+   A property read rather than an injected gate because this file is a
+   design-system module: it cannot import a Foundry setting, and a
+   `setMotionGate()` would put the ordering question — who registers first,
+   the sheet or the gate — into a file that has no way to answer it. The
+   custom property is already the channel the stylesheets use for exactly
+   this, and reading it needs no agreement with anybody. */
+const reduced = () => {
+  const stated = parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue('--vtt-motion-speed'),
+  );
+  if (Number.isFinite(stated)) return stated === 0;
+  return matchMedia('(prefers-reduced-motion:reduce)').matches;
+};
 
 /** The most a card turns toward the pointer, in degrees. */
 export const MAX_TILT = 6;

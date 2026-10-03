@@ -1213,23 +1213,14 @@
   }
 }
 
-/* The motion scale in face-tokens.css already takes every duration to
-   zero under this query. This block is upstream's, kept verbatim, and
-   it switches the transitions off outright rather than to 0ms. */
-@media (prefers-reduced-motion: reduce) {
-  .dh .dh-face-tilt,
-  .dh .dh-art-paint,
-  .dh .dh-art-sigil,
-  .dh .dh-sweep,
-  .dh .dh-die-cube,
-  .dh .dh-charge-light {
-    transition: none;
-  }
-
-  .dh .dh-die.is-tumbling {
-    animation: none;
-  }
-}
+/* Upstream's reduced-motion block stood here and has been taken out, for
+   the reason set out in compact.css: every duration it switched off is
+   already `calc(... * var(--vtt-motion-speed))` and goes to zero under the
+   same query, while `transition: none` is a property declaration that no
+   custom property write can beat. That made the system's Card motion
+   setting's Full choice — "I have seen my OS setting, move the cards
+   anyway" — impossible to honour. The scale answers both directions and
+   the block answered only one. */
 
 /* ══════════════════════════════════════════════════════════════════
    PART TWO — from gluvtt illuminated.css

@@ -695,7 +695,11 @@
    stands still for most of the 1.2s, then fades out. */
 .dh .dh-cc[data-posted] .dh-cc-kind {
   color: var(--dh-cc-posted);
-  animation: dh-cc-posted 1.2s var(--vtt-ease-out);
+  /* On the motion scale rather than a flat 1.2s, which is the one
+     animation on a card that was not. It has to be, now that the scale is
+     the only thing switching motion off: the reduced-motion block below
+     used to stop this one by name and no longer exists. */
+  animation: dh-cc-posted calc(1.2s * var(--vtt-motion-speed)) var(--vtt-ease-out);
 }
 
 @keyframes dh-cc-posted {
@@ -1148,22 +1152,16 @@
   box-shadow: 0 0 0 2px var(--vtt-accent-line);
 }
 
-/* The motion scale in face-tokens.css already takes every duration to
-   zero under this query. This block is upstream's, kept verbatim, and
-   it switches the transitions off outright rather than to 0ms. */
-@media (prefers-reduced-motion: reduce) {
-  .dh .dh-cc-face,
-  .dh .dh-cc-art,
-  .dh .dh-cc-glare,
-  .dh .dh-cc-pool-die,
-  .dh .dh-cc-pip::before {
-    transition: none;
-  }
-
-  .dh .dh-cc[data-posted] .dh-cc-kind {
-    animation: none;
-  }
-}
+/* Upstream's reduced-motion block stood here and has been taken out.
+   The motion scale in face-tokens.css already takes every duration on a
+   compact card to zero under the same query, which that block's own
+   comment admitted — it was belt and braces. Braces turned out to cost
+   something: `transition: none` is a property declaration, so no custom
+   property write can beat it, and the system's Card motion setting offers
+   Full, which means "I have seen my OS setting and I want the cards to
+   move anyway". With the block here, Full silently did nothing on a
+   machine asking for reduced motion. The scale alone honours both
+   answers, so the scale alone is what is left. */
 
 /* ── game terms on a compact card ─────────────────────────────────────
 
