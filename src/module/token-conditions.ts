@@ -222,6 +222,21 @@ uniform float uAge0; uniform float uAge1; uniform float uAge2; uniform float uAg
 
 #define PI 3.141592653589793
 
+/* How wide one screen pixel is in p, the creature's own space.
+
+   Set once in main, from the single camera read this shader is allowed, and
+   it is a global rather than a parameter because the alternative is threading
+   one number nobody varies through four signatures and every call site in the
+   ladder.
+
+   Every edge in here was a fixed width in token space, which means a feature
+   specified at a fortieth of the creature is a quarter of a pixel on a 40px
+   token and sixteen pixels on a close-up. That is the whole of why fine
+   detail crawls: not that it is too fine, but that nothing in this shader
+   ever knew how fine a pixel is. The default is the close-up case, so a
+   harness that forgets to set it gets the old behaviour. */
+float gPixel = .004;
+
 float hash21(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
   p += dot(p, p + 45.32);
@@ -284,10 +299,57 @@ float fbmD(vec2 p, float detail) {
    displacement and never wanted the fine registers. */
 float fbm(vec2 p) { return fbmD(p, 0.0); }
 
+/* Domain warp, written once. Three branches and two warp cases hand-roll
+   exactly this pair of gnoise lookups, and a shared one is what makes the
+   second-order form below affordable. */
+vec2 warp1(vec2 p, float t, float amp) {
+  return p + vec2(gnoise(p + vec2(t, 0.0)), gnoise(p.yx - vec2(0.0, t))) * amp;
+}
+
+/* Warp the warp. One pass of domain warping turns straight noise into
+   something that curls; two passes are what stop the curl itself reading as
+   a regular swirl, which is the difference between smoke and a marbling
+   filter. Cheap relative to the fbm it feeds. */
+vec2 warp2(vec2 p, float t, float amp) {
+  return warp1(warp1(p, t * .7, amp * .6), -t * .5, amp);
+}
+
 /* F1 and the seam, because a cell's INSIDE and a cell's EDGE are two
    different subjects and the shipped helper only ever offered the edge.
    Pits are interiors; crazing and crust are edges. Asking for a dot and
    being handed a web is how Enraptured ended up drawing Corroded. */
+/* The same nine-cell search, plus the thing it was throwing away: WHERE the
+   winning cell is.
+
+   Without the site, a cellular pattern can only be a web — you know how far
+   you are from a seam and nothing else. With it, every cell has a local
+   origin, so a feature can be drawn relative to its own cell: a facet with
+   its own orientation, a needle of its own length, a shard turned its own
+   way. That is the mechanical fix for the comb. Everything repeated in this
+   shader is currently produced by pow(cos(a * N), M) or fract(x * k), and
+   both of those generate instances that are identical and evenly spaced,
+   which is what reads as polka dots on a face rather than as a material.
+
+   hash21(site) is then a stable random per cell, so orientation, scale and
+   phase can all vary without a second noise lookup. */
+vec4 voronoiSite(vec2 x) {
+  vec2 ip = floor(x);
+  vec2 fp = fract(x);
+  float f1 = 8.0;
+  vec2 best = vec2(0.0);
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 g = vec2(float(i), float(j));
+      vec2 cell = ip + g;
+      vec2 o = vec2(hash21(cell), hash21(cell + 31.7));
+      vec2 site = g + .16 + .68 * o;
+      float dist = distance(fp, site);
+      if (dist < f1) { f1 = dist; best = cell + .16 + .68 * o; }
+    }
+  }
+  return vec4(f1, 0.0, best);
+}
+
 vec3 voronoi3(vec2 x) {
   vec2 n = floor(x);
   vec2 f = fract(x);
@@ -310,8 +372,22 @@ vec3 voronoi3(vec2 x) {
 float voronoiEdge(vec2 x) { return voronoi3(x).y; }
 float voronoiCell(vec2 x) { return voronoi3(x).x; }
 
+/* The transition is at least one pixel wide, and otherwise exactly what it
+   was: at a size where the feature resolves, max() picks the authored width
+   and the falloff is the same .8 ratio this shipped with. It only does
+   anything once a band is thin enough that its own edge is narrower than the
+   screen can draw, which is the case that aliases. */
 float band(float value, float center, float width) {
-  return 1.0 - smoothstep(width, width * 1.8, abs(value - center));
+  float w = max(width, gPixel * .75);
+  float falloff = max(w * .8, gPixel);
+  return 1.0 - smoothstep(w, w + falloff, abs(value - center));
+}
+
+/* A threshold that knows how wide a pixel is. The shader is full of
+   smoothstep(lo, hi, x) with lo and hi chosen by eye on a design page, which
+   is a transition authored for one zoom level and wrong at every other. */
+float aastep(float edge, float value) {
+  return smoothstep(edge - gPixel, edge + gPixel, value);
 }
 
 float idAt(int i) {
@@ -1157,7 +1233,19 @@ void main() {
        thing being dressed is the creature rather than the quad around it.
        A ringed token at 60px was claiming half again the detail it could
        resolve, which is the frequency that crawls. */
-  float detail = smoothstep(44.0, 104.0, outputFrame.z * uSubject);
+  /* One read of the camera, two things derived from it, and the rule it was
+     guarding is unchanged: nothing else in this shader is allowed to know
+     where the viewport is. It used to produce only the detail budget, which
+     answers "how much structure can be resolved" and throws away the more
+     useful half of the same measurement -- how big a pixel is. A budget can
+     only fade an under-resolved feature out; a pixel size lets an edge be
+     drawn at the width the screen can actually show. */
+  float frame = outputFrame.z * uSubject;
+  float detail = smoothstep(44.0, 104.0, frame);
+  /* p spans -1..1 across the creature, so a pixel is two over the frame. The
+     floor is a creature too small for any of this to mean anything, and it
+     exists so the division cannot produce an edge wider than the token. */
+  gPixel = 2.0 / max(frame, 12.0);
 
   if(uDead>.5){gl_FragColor=shattered(uv,p,uTime,detail);return;}
 

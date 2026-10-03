@@ -122,7 +122,16 @@ assert.match(TOKEN_CONDITION_FRAGMENT, /if\(uDead>\.5\)/);
    token's frame is half again its cell, so the budget was claiming detail
    the creature could not resolve — which is the frequency that crawls. */
 const code = TOKEN_CONDITION_FRAGMENT.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-assert.match(code, /float detail = smoothstep\(44\.0, 104\.0, outputFrame\.z \* uSubject\);/);
+assert.match(code, /float frame = outputFrame\.z \* uSubject;/,
+  "the camera is read once, into one name");
+/* The rule was "only the detail budget may know the camera", and it is now
+   "only one line may know the camera". Same guarantee, and it buys the other
+   half of the same measurement: a budget can only fade an under-resolved
+   feature out, where a pixel size lets an edge be drawn at a width the
+   screen can show. The count below is what actually enforces the rule. */
+assert.match(code, /gPixel = 2\.0 \/ max\(frame, 12\.0\);/,
+  "and how wide a pixel is, which every edge in this shader needs and none of them had");
+assert.match(code, /float detail = smoothstep\(44\.0, 104\.0, frame\);/);
 assert.equal((code.match(/outputFrame\.z[^w]/g) ?? []).length, 1,
   "only the detail budget may read the token's size on screen");
 
