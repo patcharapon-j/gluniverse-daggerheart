@@ -44,6 +44,17 @@ const MODULES = [
   "make.js",
   "token.js",
   "ruler.js",
+  /* The ported card: its two builders, their behaviours, the motifs the
+     frame wears, the art framing and the term treatment the text uses.
+     `compact.js` imports from `./face.js` and `face.js` from
+     `./terms.js`, which resolve unchanged because every module lands
+     side by side in `src/module/ui/`. */
+  "terms.js",
+  "ornaments.js",
+  "framing.js",
+  "face.js",
+  "compact.js",
+  "face-fx.js",
 ];
 
 /**

@@ -28,8 +28,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { motifOf, ornamentImages } from "../../../design/ornaments.js";
-import { coverCss, focusOnArt, type Focus } from "../../../design/framing.js";
+import { motifOf, ornamentImages } from "../ui/ornaments.js";
+import { coverCss, focusOnArt, type Focus } from "../ui/framing.js";
 /* The import attribute is not optional: Node refuses a JSON module without
    it, and `tools/check-gunslinger.mjs` imports this file's caller into Node.
    Vite and tsc both accept it. */
