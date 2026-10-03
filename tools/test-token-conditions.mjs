@@ -109,7 +109,24 @@ assert.doesNotMatch(dead, /ABLAZE/);
 assert.doesNotMatch(dead, /<img|death-glyph|skull/);
 
 assert.match(TOKEN_CONDITION_FRAGMENT, /vec4 shattered\(/);
-assert.match(TOKEN_CONDITION_FRAGMENT, /for \(int i = 0; i < 9; i\+\+\)/);
+/* The nine-shard loop this used to assert is gone. It pinned a break that
+   was the SAME on every corpse on the board, built from nine evenly spread
+   sites that gave nine convex blobs of one size. What replaces it is pinned
+   instead: an impact placed from the token's own seed, a fracture built in
+   the log-polar frame of that impact so the pieces grade from small at the
+   blow to large away from it, and a settle that happens once. */
+assert.match(TOKEN_CONDITION_FRAGMENT, /vec2 impact = vec2\(hash21\(vec2\(uSeed, 11\.0\)\)/,
+  "where a corpse was struck is a fact about that creature, not a constant of the shader");
+assert.match(TOKEN_CONDITION_FRAGMENT, /vec2 frac = p \* \(1\.45 \+ 3\.30 \* near\) \+ uSeed;/,
+  "the pieces grade small at the blow by scaling a CARTESIAN frame, not by going log-polar");
+assert.doesNotMatch(TOKEN_CONDITION_FRAGMENT, /log\(rr/,
+  "log-polar cells grade correctly and come out as rings of wedges, which read as a flower");
+assert.match(TOKEN_CONDITION_FRAGMENT, /float seam = min\(cellv\.y, mix\(1\.0, offSpoke \* 1\.6, crack\)\);/,
+  "radial cracks cut the piece mask, so a crack separates rather than being drawn over the top");
+assert.match(TOKEN_CONDITION_FRAGMENT, /float settle = 1\.0 - exp\(-age \* \(\.45 \+ \.70 \* seed\)\)/,
+  "a corpse settles once and stays settled; the old sine re-assembled it every ten seconds");
+assert.doesNotMatch(TOKEN_CONDITION_FRAGMENT, /shardSite\(/,
+  "the fixed spiral of sites is what made every corpse break alike");
 assert.match(TOKEN_CONDITION_FRAGMENT, /if\(uDead>\.5\)/);
 
 /* Detail is bought with pixels, and outputFrame.z is the only place in this
@@ -122,7 +139,16 @@ assert.match(TOKEN_CONDITION_FRAGMENT, /if\(uDead>\.5\)/);
    token's frame is half again its cell, so the budget was claiming detail
    the creature could not resolve — which is the frequency that crawls. */
 const code = TOKEN_CONDITION_FRAGMENT.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-assert.match(code, /float detail = smoothstep\(44\.0, 104\.0, outputFrame\.z \* uSubject\);/);
+assert.match(code, /float frame = outputFrame\.z \* uSubject;/,
+  "the camera is read once, into one name");
+/* The rule was "only the detail budget may know the camera", and it is now
+   "only one line may know the camera". Same guarantee, and it buys the other
+   half of the same measurement: a budget can only fade an under-resolved
+   feature out, where a pixel size lets an edge be drawn at a width the
+   screen can show. The count below is what actually enforces the rule. */
+assert.match(code, /gPixel = 2\.0 \/ max\(frame, 12\.0\);/,
+  "and how wide a pixel is, which every edge in this shader needs and none of them had");
+assert.match(code, /float detail = smoothstep\(44\.0, 104\.0, frame\);/);
 assert.equal((code.match(/outputFrame\.z[^w]/g) ?? []).length, 1,
   "only the detail budget may read the token's size on screen");
 
@@ -162,7 +188,66 @@ branches.forEach((branch, i) => {
   assert.match(branch, /[^A-Za-z0-9_]t[^A-Za-z0-9_]/,
     `${CONDITION_MATERIALS[i].id} has no time in it, so it is a decal`);
 });
-assert.match(TOKEN_CONDITION_FRAGMENT, /material=clamp\(mix\(material,chroma,\.68\)/);
+/* ── the composite keeps each condition's own colour ──────────────────
+   Every one of these forbids a shape rather than pinning a number, because
+   the failure is invisible: a wrong blend still renders, still looks
+   plausible, and only shows itself on a two-condition token nobody
+   screenshotted. The specific regression guarded against is the one that
+   shipped — the colour was the plain mean of the active hues applied over the
+   whole creature, so a pixel inside only one condition's pattern was still
+   painted a mixture of all of them, and two opposite hues averaged to
+   something naming neither. */
+assert.match(code, /float weight=pow\(value,2\.5\);/,
+  "presence weights the colour, and above the first power so each condition keeps its territory");
+assert.match(code, /vec3 material=weightSum>1e-4\?colorSum\/weightSum:colorMean\/count;/,
+  "the body colour is weighted by presence, with the mean only where nothing is present");
+assert.doesNotMatch(code, /vec3 material=colorSum\/count;/,
+  "the plain mean of the active hues over the whole creature is the bug this replaced");
+assert.doesNotMatch(code, /accent=uCount>1\.0\?material:/,
+  "the per-condition accent ramps may not be discarded the moment a second condition arrives");
+assert.match(code, /vec3 accent=weightSum>1e-4\?accentSum\/weightSum:accentMean\/count;/,
+  "each condition's own dark-to-bright shading survives in its own territory");
+assert.match(code, /material=clamp\(mix\(material,chroma,\.68\*seam\)/,
+  "the chroma restore is a statement about the seam, so it is applied only at the seam");
+assert.match(code, /float seam=weightSum>1e-4\?clamp\(\(1\.0-topWeight\/weightSum\)\*2\.0,0\.0,1\.0\):0\.0;/,
+  "the seam is how much of the presence here is not the dominant condition");
+assert.doesNotMatch(code, /warp\/=count;/,
+  "displacements of one surface compound; dividing took Invisible down to a third of itself in a stack");
+assert.match(code, /if\(warpLength>\.048\)warp\*=\.048\/warpLength;/,
+  "compounding needs a ceiling rather than a divisor, and the ceiling clears every single condition");
+assert.doesNotMatch(code, /clamp\(darkness\/count,/,
+  "a dark condition's own coverage is already spatial and must not be diluted by what else is active");
+
+/* Brightness may not grow with the count. peak and hot are maxima over the
+   active set, so a crowded token lifts them almost everywhere just by being
+   covered, and the glow built on them clipped the rim to white in the very
+   place the arcs exist to keep coloured. */
+assert.match(code, /float crowd = 1\.0 \+ \(count - 1\.0\) \* \.18;/,
+  "the emissive terms are divided down as conditions accumulate");
+assert.match(code, /emissive\*pow\(peak,3\.4\)\*\(\.42\/crowd\)/,
+  "the peak glow is shared out rather than summed up");
+assert.match(code, /pow\(hot,1\.6\)\*\(\.80\/crowd\)/,
+  "so is the incandescent term, which is the one that clipped");
+
+/* The rim is partitioned by angle because at 40px it is the only part of any
+   of this that resolves, and weighting a geometric band by patterns that are
+   not reliably in it returns the mean — which is the mud, in the one place it
+   matters most. */
+assert.match(code, /vec3 rim=rimWeight>1e-4\?rimSum\/rimWeight:material;/,
+  "the rim is owned by arc, not averaged");
+assert.match(code, /\+ rim\*edge\*\.30/,
+  "the ring of material at the edge is drawn in the arc colours, not the blended one");
+
+/* Per-token phase, and an onset. Two creatures with the same condition were
+   in exact phase with each other, and a condition arrived by existing. */
+assert.match(code, /uniform float uSeed;/, "the shader is told which token it is on");
+assert.match(code, /float localTime=uTime\+float\(i\)\*1\.73\+uSeed;/,
+  "the phase offset is per slot and per token, so neither two conditions nor two tokens lockstep");
+assert.match(code, /float arrival=smoothstep\(0\.0,\.35,ageAt\(i\)\);/,
+  "a material arrives over a third of a second rather than appearing");
+assert.match(code, /value\*=arrival;/, "the onset scales the field, so it grows in");
+assert.match(code, /hot=max\(hot,clamp\(field\.y,0\.0,1\.0\)\*arrival\);/,
+  "the incandescent part arrives with the rest; a hot core at full strength over nothing is a flash");
 /* PREMULTIPLIED, both branches. PIXI composites a filter's output with
    ONE / ONE_MINUS_SRC_ALPHA, which adds the colour at full strength whatever
    the alpha channel says — so a fragment that clips itself to zero alpha and
