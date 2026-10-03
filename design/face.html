@@ -1,0 +1,101 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Face — the ported card</title>
+<!-- The study page for the card ported from gluniverse-vtt. Everything here is
+     drawn by design/face.js and design/compact.js off real domain data and real
+     paintings, so what this page shows is what a sheet and a chat card show. -->
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/face-tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/face.css">
+<link rel="stylesheet" href="/design/compact.css">
+<style>
+  body { background:var(--paper); color:var(--ink); font-family:var(--f-ui);
+         margin:0; padding:28px; }
+  h2 { font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+       opacity:.55; margin:30px 0 12px; font-weight:600 }
+  .row { display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap }
+  /* --dh-w defaults to 100cqi, so a host has to be a container. */
+  .host { container-type:inline-size }
+  .w264 { width:264px } .w200 { width:200px } .w132 { width:132px }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,100px); gap:14px 12px }
+  .grid.gear { grid-template-columns:repeat(auto-fill,124px) }
+  .vault { display:flex; flex-direction:column; gap:6px; max-width:430px }
+</style>
+<body class="dh ramp">
+<div id="out"></div>
+<script type="module">
+import { byslug, KINDS, icon, glyph, clazz } from '/design/domains.js'
+import { FACE } from '/design/face.js'
+import { COMPACT, VAULT_ROW } from '/design/compact.js'
+import { bindFaceFx } from '/design/face-fx.js'
+import { motifOf, ornamentImages } from '/design/ornaments.js'
+
+/* One <style> per motif, exactly as gluvtt injects them. */
+const seen = new Set()
+function motif(slug) {
+  const m = motifOf(slug)
+  if (!seen.has(m)) {
+    seen.add(m)
+    const { corner, seam } = ornamentImages(m)
+    const s = document.createElement('style')
+    s.textContent = `[data-motif="${m}"]{--dh-orn-corner:${corner};--dh-orn-seam:${seam}}`
+    document.head.append(s)
+  }
+  return m
+}
+
+const A = p => `/assets/cards/${p}`
+const cards = [
+  { d:byslug.grace, lvl:1, rc:0, type:'Spell', name:'Deft Deceiver', glyph:'primary',
+    text:'Spend a Hope to gain advantage on a roll to deceive or trick someone into believing something false.',
+    art:A('domains/grace/deft-deceiver.webp'), code:'DH-CB 071', artist:'Jenny Tan' },
+  { d:byslug.midnight, lvl:4, rc:2, type:'Grimoire', name:'Rain of Blades', glyph:'primary', tier:3,
+    text:'**Make a Spellcast Roll** against all adversaries within Close range. Targets you succeed against take *d8+2* magic damage and are **Vulnerable** until your next rest.\n\nMark a Stress to add your Proficiency to the damage.',
+    art:A('domains/midnight/shadowbind.webp'), code:'DH-CB 118', artist:'Mat Wilma' },
+  { d:byslug.sage, d2:byslug.arcana, type:'Class', name:'Druid', glyph:'primary',
+    flavour:'Those who draw on the power of the natural world.',
+    stats:[{k:'Evasion',v:'10'},{k:'Hit Points',v:'6'}],
+    feats:[{n:'Beastform', t:'Mark a Stress to transform into a creature of your tier or lower.'},
+           {n:'Wildtouch', t:'Perform harmless, subtle effects involving nature at will.'}],
+    foot:'Sage · Arcana' },
+  { d:KINDS.ancestry, type:'Ancestry', name:'Galapa', glyph:'ancestry', foot:'Heritage',
+    flavour:'Galapa resemble anthropomorphic turtles with large, domed shells.',
+    feats:[{n:'Shell', t:'Add your Proficiency to your Armor Score.'},
+           {n:'Retract', t:'Mark a Stress to retract into your shell. You have resistance to physical damage.'}],
+    art:A('ancestry/galapa.webp'), code:'DH-CB 014' },
+  { d:byslug.dread, lvl:3, rc:1, type:'Spell', name:'Invoke Torment', glyph:'primary',
+    text:'Mark a Stress to curse a target within Far range. They become **Vulnerable** until your next long rest.',
+    art:A('domains/dread/invoke-torment.webp'), code:'DH-HF 042' },
+]
+const used = { ...cards[1], state:'used', name:'Rain of Blades' }
+
+const el = document.getElementById('out')
+
+/* Sigils load async, so resolve them before drawing rather than patching the
+   markup afterwards: FACE takes the mark as markup, the same way the system's
+   loadSigils() hands it to CARD(). */
+for (const c of cards.concat([used])) {
+  c.sig  = c.d.slug in KINDS ? await glyph(c.glyph) : await icon(c.d.slug)
+  if (c.d2) c.sig2 = await icon(c.d2.slug)
+  if (!c.art) c.fbsig = c.type === 'Class' ? await clazz(c.name.toLowerCase()) : c.sig
+}
+
+const face = (o, size, cls) => `<div class="host ${cls}">${FACE({ ...o, size, motif:motif(o.d.slug) })}</div>`
+const small = (o, extra) => COMPACT({ ...o, motif:motif(o.d.slug), ...extra })
+
+el.innerHTML = `
+  <h2>Full card &mdash; 264px, the peek size</h2>
+  <div class="row">${[cards[0], cards[1], cards[4]].map(c => face(c,'full','w264')).join('')}</div>
+  <h2>No painting (a class card never has one), and a used card</h2>
+  <div class="row">${[cards[2], used].map(c => face(c,'full','w264')).join('')}</div>
+  <h2>Slot face &mdash; 132px, what chat posts</h2>
+  <div class="row">${cards.slice(0,4).map(c => face(c,'slot','w132')).join('')}</div>
+  <h2>Compact &mdash; the loadout bays</h2>
+  <div class="grid">${cards.map(c => small(c,{ size:'s' })).join('')}</div>
+  <h2>Vault rows</h2>
+  <div class="vault">${cards.slice(0,4).map((c,i) => VAULT_ROW({ ...c, motif:motif(c.d.slug), reach:i < 2 })).join('')}</div>`
+
+bindFaceFx(el)
+window.__ready = true
+</script>

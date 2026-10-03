@@ -1,0 +1,1190 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH COMPACT CARD — the small card, and every state it can be in
+
+   PORT from gluniverse-vtt, one file:
+     apps/web/src/rulesets/daggerheart/cards/compact.css
+   The full card is face.css (cards.css + illuminated.css merged) and
+   the tokens both lean on are face-tokens.css. moves.css — the card
+   flight and move CSS — is NOT ported.
+
+   Deliberately off this repo's house style, same two ways and for the
+   same reason as face.css: gluvtt's class names verbatim (.dh-cc,
+   .dh-cc-face, .dh-cc-pennant, .dh-cc-glare, not .cc, .ccf, .ccp) and
+   gluvtt's one-declaration-per-line formatting, so a `diff` against the
+   upstream file still lines up and a fix made there can be read
+   straight across. Nothing here is scoped by hand: scripts/
+   port-design-css.mjs rewrites the palette root to `.dh` and prefixes
+   every other selector on the way into styles/.
+
+   ── the two sizes, and why they are pixels ────────────────────────
+   S is 100×140 and L is 124×174, and unlike the full face these are
+   fixed pixel sizes rather than a --u scale. That is on purpose: a
+   Compact card is a *known physical size* in a grid of them, the way a
+   contact sheet is. It is never asked to draw at an arbitrary width, so
+   there is nothing for a unit system to buy, and type at 8.5px is
+   legible by measurement rather than by ratio.
+
+   What varies is --dh-cc-k, a single multiplier, 1 at S and 1.12 at L.
+   The pennant, the level numeral and the name all scale by it; the
+   chrome that has to stay hittable — the recall chip, the pips, the
+   count — does not. Height is always width × 1.4, the same 100:140
+   proportion as the full face.
+
+   ── sigils are boxes here, not masks ──────────────────────────────
+   Same divergence from upstream as face.css, same reason. This system's
+   domain and kind art is already `fill="currentColor"` svg on a 250×250
+   viewBox, and the markup injects it inline inside a wrapper, so
+   .dh-cc-sigil and .dh-cc-pennant-mark are *boxes* carrying a size and
+   a `color`, with one shared rule making the svg inside fill them.
+   Nothing reads --dh-sigil and nothing here masks.
+
+   ── the 0.667 tilt damping, which must not drift ──────────────────
+   The tilt binds on .dh-cc, not on .dh-cc-face, and that split is load
+   bearing in both directions. It reads its rect from .dh-cc because the
+   face is the element that hover and :active translate and scale, and
+   measuring a transformed element feeds the turn back into itself —
+   the card chases its own lift. So: --dh-rx and --dh-ry are written on
+   .dh-cc and inherit down, and the lift, the press and the drag scale
+   stay on .dh-cc-face where nothing is measuring. [data-touched] lands
+   on .dh-cc for the same reason.
+
+   tilt writes up to 6°. A Compact card multiplies both rotations by
+   0.667, so it turns at 4° at most. Preserved exactly. The reason is the size: the same angle on
+   a 100px card reads as a wobble rather than a turn, and at 6° the
+   bottom corners visibly clip inside the grid's gap. The painting's
+   parallax is damped to match, at -1.6px against the full face's -2.4u,
+   and the glare's offset is 40% against the face's 45%.
+
+   The glare also has non-zero fallbacks — var(--dh-px, -0.5) — where the
+   full face falls back to 0. That is not an oversight: an untouched
+   Compact card shows its highlight up and to the left, as a stack of
+   cards under one light would, and only moves it once a pointer arrives.
+
+   ── at-risk CSS, kept and flagged ─────────────────────────────────
+     -webkit-box / -webkit-line-clamp  The name clamps to two lines.
+                       Still the only way to clamp by line count that
+                       works everywhere; `line-clamp` unprefixed is
+                       newer. Both the prefixed properties and
+                       `display: -webkit-box` must stay together.
+     mix-blend-mode    The glare screens and the out-of-reach static
+                       overlays. Needs the parent to be a stacking
+                       context, which .dh-cc-face is by way of its
+                       transform.
+     font-stretch %    Inert unless the UI font carries a width axis.
+                       See face-tokens.css.
+     individual transforms  `translate:`, `rotate:` and `scale:` as
+                       their own properties, rather than inside
+                       `transform`. Chrome 104+ / Safari 14.1+. Note
+                       that .dh-cc-face uses `transform` and the drag
+                       state adds `scale:` beside it — those compose,
+                       and swapping either form for the other silently
+                       changes the result.
+     backdrop-filter   Not used here. The shared sweep's one is turned
+                       off at the foot of this file, see that rule.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* The two sizes' widths, which a place holding a Compact card can size itself by.
+   On the palette root rather than on .dh-cc, because the consumer that
+   needs them is the grid or the panel *around* the cards, which is not
+   inside one. The port rewrites this root to our own. */
+:root {
+  --dh-cc-s-w: 100px;
+  --dh-cc-l-w: 124px;
+}
+
+.dh-cc {
+  --dh-dom: color-mix(in oklab, var(--vtt-fog-1), var(--vtt-ink-5) 30%);
+  --dh-dom-dk: var(--vtt-ink-5);
+  --dh-dom-2: var(--dh-dom);
+  --dh-dom-2-dk: var(--dh-dom-dk);
+  --dh-art: none;
+  --dh-edge: color-mix(in oklab, var(--dh-dom) 70%, var(--vtt-white));
+  --dh-light: color-mix(in oklab, var(--dh-dom) 45%, var(--vtt-white));
+  --dh-cc-metal: var(--dh-edge);
+  --dh-cc-posted: color-mix(in oklab, var(--vtt-positive) 60%, var(--vtt-white));
+  --dh-cc-w: var(--dh-cc-s-w);
+  --dh-cc-k: 1;
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  width: var(--dh-cc-w);
+  list-style: none;
+  color: var(--vtt-text);
+  font-family: var(--vtt-font-ui);
+}
+
+.dh-cc[data-size="l"] {
+  --dh-cc-w: var(--dh-cc-l-w);
+  --dh-cc-k: 1.12;
+}
+
+/* With no domain, its kind's tint: weapon oxblood, armor steel, consumable verdigris, loot
+   brass, ancestry dusk, community umber. */
+.dh-cc[data-domains="0"][data-glyph="weapon"] {
+  --dh-dom: var(--vtt-dh-weapon);
+  --dh-dom-dk: var(--vtt-dh-weapon-deep);
+}
+
+.dh-cc[data-domains="0"][data-glyph="armor"] {
+  --dh-dom: var(--vtt-dh-armor);
+  --dh-dom-dk: var(--vtt-dh-armor-deep);
+}
+
+.dh-cc[data-domains="0"][data-glyph="consumable"] {
+  --dh-dom: var(--vtt-dh-consumable);
+  --dh-dom-dk: var(--vtt-dh-consumable-deep);
+}
+
+.dh-cc[data-domains="0"][data-glyph="loot"] {
+  --dh-dom: var(--vtt-dh-loot);
+  --dh-dom-dk: var(--vtt-dh-loot-deep);
+}
+
+.dh-cc[data-domains="0"][data-glyph="ancestry"] {
+  --dh-dom: var(--vtt-dh-ancestry);
+  --dh-dom-dk: var(--vtt-dh-ancestry-deep);
+}
+
+.dh-cc[data-domains="0"][data-glyph="community"] {
+  --dh-dom: var(--vtt-dh-community);
+  --dh-dom-dk: var(--vtt-dh-community-deep);
+}
+
+.dh-cc[data-tier="3"] {
+  --dh-cc-metal: var(--vtt-dh-silver);
+}
+
+.dh-cc[data-tier="4"] {
+  --dh-cc-metal: var(--vtt-dh-gold);
+}
+
+/* ── sigils ──────────────────────────────────────────────────────────── */
+
+/* Both sigil hooks here are boxes with the asset's svg injected inside
+   (see the header). This is what makes the svg fill its box and inherit
+   the box's colour, so the rules below only state a size and a colour. */
+.dh-cc-sigil > svg,
+.dh-cc-pennant-mark > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* ── the face ─────────────────────────────────────────────────────────── */
+
+/* The 0.667 on the two rotations is the damping described in the header
+   and is the single most load-sensitive number in this file. The three
+   transitions are listed in a fixed order because the [data-touched]
+   rule below overrides their durations positionally: transform first,
+   then box-shadow, then filter. */
+.dh-cc-face {
+  position: relative;
+  display: block;
+  width: var(--dh-cc-w);
+  height: calc(var(--dh-cc-w) * 1.4);
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--dh-dom-dk);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--vtt-white) 4%, transparent),
+    0 8px 16px -8px color-mix(in oklab, var(--vtt-opaque) 85%, transparent),
+    0 2px 4px color-mix(in oklab, var(--vtt-opaque) 40%, transparent);
+  /* A turn of 4° at most: the shared tilt writes up to 6°. */
+  transform: perspective(520px) translateY(var(--dh-cc-lift, 0))
+    rotateX(calc(var(--dh-rx, 0deg) * 0.667)) rotateY(calc(var(--dh-ry, 0deg) * 0.667))
+    scale(var(--dh-cc-press, 1));
+  transition:
+    transform var(--vtt-motion-snap) var(--vtt-ease-out),
+    box-shadow var(--vtt-motion-base) var(--vtt-ease-out),
+    filter var(--vtt-motion-base) var(--vtt-ease);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Under the hand the turn becomes near-instant while the light keeps
+   its own pace — the card has to feel attached to the pointer, but a
+   shadow that snapped with it would read as a flicker.
+
+   The attribute is on .dh-cc, not on the face: the tilt binds to the
+   outer element so it is not measuring something it is also
+   transforming. Upstream writes it on the face and could, because its
+   own markup is shaped the other way round. */
+.dh-cc[data-touched] .dh-cc-face {
+  transition-duration: var(--vtt-motion-instant), var(--vtt-motion-base), var(--vtt-motion-base);
+}
+
+.dh-cc-face:focus-visible {
+  outline: 2px solid var(--vtt-dh-hope);
+  outline-offset: 2px;
+}
+
+/* The edge: a steady line of the domain, an ink hairline inside it, a glint along the top. */
+.dh-cc-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px var(--dh-edge),
+    inset 0 0 0 2px color-mix(in oklab, var(--vtt-ink-0) 55%, transparent),
+    inset 0 1px 0 2px color-mix(in oklab, var(--vtt-white) 4%, transparent);
+  pointer-events: none;
+}
+
+/* Gear of tier 3 and 4 wears its metal on the edge; a domain card keeps its colour. */
+.dh-cc:where([data-domains="0"]):where([data-tier="3"], [data-tier="4"]) .dh-cc-face::after {
+  box-shadow:
+    inset 0 0 0 1px var(--dh-cc-metal),
+    inset 0 0 0 2px color-mix(in oklab, var(--vtt-ink-0) 60%, transparent),
+    inset 0 0 10px -4px var(--dh-cc-metal);
+}
+
+/* Inset -3px so the painting has somewhere to slide to: the parallax
+   moves it up to 1.6px and the overhang is what stops a bare edge
+   appearing on the far side. The no-art rules below reset the inset to
+   0, because a generated field has no edge to run out of. */
+.dh-cc-art {
+  position: absolute;
+  inset: -3px;
+  background: var(--dh-art) center top / cover no-repeat;
+  /* The painting slides a touch behind the glass as the card turns. */
+  translate: calc(var(--dh-px, 0) * -1.6px) calc(var(--dh-py, 0) * -1.6px);
+  transition:
+    translate var(--vtt-motion-snap) var(--vtt-ease-out),
+    filter var(--vtt-motion-base) var(--vtt-ease);
+}
+
+/* `.vtt-framed-art` is gluvtt's own art component, which is not part of
+   this port. The rule is kept because it costs nothing and because a
+   Foundry-side equivalent will want the same treatment: fill the plate
+   absolutely rather than flow inside it. */
+.dh-cc-art .vtt-framed-art {
+  position: absolute;
+  inset: 0;
+}
+
+/* No painting: a designed field. The domain's (or kind's) light behind its mark, a fine
+   engraved guilloche, and the field's colour. */
+.dh-cc.no-art .dh-cc-art {
+  inset: 0;
+  background:
+    radial-gradient(
+      48% 32% at 50% 40%,
+      color-mix(in oklab, var(--dh-dom) 60%, var(--vtt-white) 18%),
+      transparent 72%
+    ),
+    repeating-conic-gradient(
+      from 0deg at 50% 40%,
+      color-mix(in oklab, var(--vtt-white) 4.5%, transparent) 0 1.2deg,
+      transparent 1.2deg 6deg
+    ),
+    repeating-radial-gradient(
+      circle at 50% 40%,
+      transparent 0 5px,
+      color-mix(in oklab, var(--vtt-white) 3.5%, transparent) 5px 6px
+    ),
+    linear-gradient(165deg, var(--dh-dom), var(--dh-dom-dk) 58%, var(--vtt-ink-1));
+}
+
+/* Two domains blend into each other rather than meeting on a line. */
+.dh-cc.no-art:where([data-domains="2"]) .dh-cc-art {
+  background:
+    radial-gradient(
+      48% 32% at 50% 40%,
+      color-mix(in oklab, var(--dh-dom) 40%, var(--vtt-white) 28%),
+      transparent 72%
+    ),
+    repeating-conic-gradient(
+      from 0deg at 50% 40%,
+      color-mix(in oklab, var(--vtt-white) 4%, transparent) 0 1.2deg,
+      transparent 1.2deg 6deg
+    ),
+    linear-gradient(
+      125deg,
+      var(--dh-dom) 0%,
+      var(--dh-dom-dk) 30%,
+      color-mix(in oklab, var(--dh-dom-dk) 72%, var(--dh-dom-2-dk)) 38%,
+      color-mix(in oklab, var(--dh-dom-dk) 50%, var(--dh-dom-2-dk)) 50%,
+      color-mix(in oklab, var(--dh-dom-2-dk) 72%, var(--dh-dom-dk)) 62%,
+      var(--dh-dom-2-dk) 76%,
+      var(--dh-dom-2) 100%
+    );
+}
+
+/* Homebrew with no painting: a hatched field. */
+.dh-cc.no-art:where(.is-homebrew) .dh-cc-art {
+  background:
+    radial-gradient(
+      48% 32% at 50% 40%,
+      color-mix(in oklab, var(--dh-dom) 45%, var(--vtt-white) 15%),
+      transparent 72%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--vtt-white) 5.5%, transparent) 0 1.5px,
+      transparent 1.5px 6px
+    ),
+    linear-gradient(165deg, var(--dh-dom), var(--dh-dom-dk) 62%, var(--vtt-ink-1));
+}
+
+/* The large mark, centred on the space above the title.
+   A domain card's mark is wider than a gear card's — 66% against 46% —
+   because a domain sigil is a line drawing and a gear glyph is a solid
+   silhouette, and the solid one carries at a smaller size. */
+.dh-cc-sigil {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 46%;
+  height: auto;
+  aspect-ratio: 1;
+  color: color-mix(in oklab, var(--vtt-white) 88%, var(--dh-dom));
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 1px 0 color-mix(in oklab, var(--vtt-white) 25%, transparent))
+    drop-shadow(0 2px 4px color-mix(in oklab, var(--vtt-ink-0) 70%, transparent));
+}
+
+.dh-cc:not([data-domains="0"]) .dh-cc-sigil {
+  width: 66%;
+}
+
+.dh-cc[data-size="l"] .dh-cc-sigil {
+  width: 42%;
+}
+
+.dh-cc[data-domains="0"][data-tier="3"] .dh-cc-sigil {
+  color: color-mix(in oklab, var(--vtt-dh-silver) 50%, var(--vtt-white));
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--vtt-dh-silver) 45%, transparent))
+    drop-shadow(0 2px 3px color-mix(in oklab, var(--vtt-ink-0) 80%, transparent));
+}
+
+.dh-cc[data-domains="0"][data-tier="4"] .dh-cc-sigil {
+  color: color-mix(in oklab, var(--vtt-dh-gold) 70%, var(--vtt-white));
+  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--vtt-dh-gold) 50%, transparent))
+    drop-shadow(0 2px 3px color-mix(in oklab, var(--vtt-ink-0) 80%, transparent));
+}
+
+/* Darker and taller than the full face's equivalent (94% at 82% of the
+   way down, against 88% at the foot): the name here is two lines of
+   11.5px over the painting with no plate under it, so the picture has
+   to be put further out of the way than a full card's is. */
+.dh-cc-fade {
+  position: absolute;
+  inset: auto 0 0;
+  height: 58%;
+  background: linear-gradient(
+    transparent,
+    color-mix(in oklab, var(--vtt-ink-0) 55%, transparent) 40%,
+    color-mix(in oklab, var(--vtt-ink-0) 94%, transparent) 82%
+  );
+}
+
+/* ── the pennant ──────────────────────────────────────────────────────── */
+
+.dh-cc-pennant {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: calc(21px * var(--dh-cc-k));
+  padding: 4px 0 8px;
+  color: var(--vtt-white);
+  filter: drop-shadow(0 1px 1.5px var(--vtt-shade));
+}
+
+/* Two gradients, not one: the 90° layer is a 1px lit left edge and a 1px
+   shaded right edge, which is the whole of the banner's roundness at
+   this size, and the 180° layer underneath is its colour. */
+.dh-cc-pennant::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--vtt-white) 22%, transparent) 0 1px,
+      transparent 1px calc(100% - 1px),
+      color-mix(in oklab, var(--vtt-ink-0) 35%, transparent) calc(100% - 1px)
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--dh-dom) 62%, var(--vtt-ink-0)),
+      color-mix(in oklab, var(--dh-dom) 90%, var(--vtt-ink-0))
+    );
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 5px), 0 100%);
+}
+
+.dh-cc-pennant.is-two::before {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--vtt-white) 22%, transparent) 0 1px,
+      transparent 1px calc(100% - 1px),
+      color-mix(in oklab, var(--vtt-ink-0) 35%, transparent) calc(100% - 1px)
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--dh-dom) 82%, var(--vtt-ink-0)) 0%,
+      color-mix(
+          in oklab,
+          color-mix(in oklab, var(--dh-dom) 50%, var(--dh-dom-2)) 82%,
+          var(--vtt-ink-0)
+        )
+        50%,
+      color-mix(in oklab, var(--dh-dom-2) 82%, var(--vtt-ink-0)) 100%
+    );
+}
+
+.dh-cc-pennant.is-plain::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--dh-dom) 50%, var(--vtt-ink-4)),
+    color-mix(in oklab, var(--dh-dom) 30%, var(--vtt-ink-2))
+  );
+}
+
+/* Tier 3 and 4: a silver or gold rim and number on a domain card; gear's pennant is the metal. */
+.dh-cc:not([data-domains="0"])[data-tier="3"] .dh-cc-pennant::before {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--vtt-dh-silver) 50%, var(--vtt-white)) 0 1.5px,
+      transparent 1.5px calc(100% - 1.5px),
+      color-mix(in oklab, var(--vtt-dh-silver) 50%, var(--vtt-dh-silver-deep)) calc(100% - 1.5px)
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--vtt-dh-silver) 50%, var(--vtt-white)) 0 1.5px,
+      transparent 1.5px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--dh-dom) 62%, var(--vtt-ink-0)),
+      color-mix(in oklab, var(--dh-dom) 90%, var(--vtt-ink-0))
+    );
+}
+
+.dh-cc:not([data-domains="0"])[data-tier="4"] .dh-cc-pennant::before {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--vtt-dh-gold) 70%, var(--vtt-white)) 0 1.5px,
+      transparent 1.5px calc(100% - 1.5px),
+      color-mix(in oklab, var(--vtt-dh-gold) 60%, var(--vtt-dh-gold-deep)) calc(100% - 1.5px)
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--vtt-dh-gold) 70%, var(--vtt-white)) 0 1.5px,
+      transparent 1.5px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--dh-dom) 62%, var(--vtt-ink-0)),
+      color-mix(in oklab, var(--dh-dom) 90%, var(--vtt-ink-0))
+    );
+}
+
+/* :where() on the ancestor, so these two can be overridden by anything
+   that names .dh-cc-level b at plain specificity. */
+:where(.dh-cc:not([data-domains="0"])[data-tier="3"]) .dh-cc-level b {
+  color: color-mix(in oklab, var(--vtt-dh-silver) 50%, var(--vtt-white));
+}
+
+:where(.dh-cc:not([data-domains="0"])[data-tier="4"]) .dh-cc-level b {
+  color: color-mix(in oklab, var(--vtt-dh-gold) 70%, var(--vtt-white));
+}
+
+.dh-cc[data-domains="0"][data-tier="3"] .dh-cc-pennant::before {
+  background: linear-gradient(
+    170deg,
+    color-mix(in oklab, var(--vtt-dh-silver) 50%, var(--vtt-white)),
+    color-mix(in oklab, var(--vtt-dh-silver) 50%, var(--vtt-dh-silver-deep)) 35%,
+    color-mix(in oklab, var(--vtt-dh-silver) 50%, var(--vtt-white)) 55%,
+    var(--vtt-dh-silver-deep) 85%
+  );
+}
+
+.dh-cc[data-domains="0"][data-tier="4"] .dh-cc-pennant::before {
+  background: linear-gradient(
+    170deg,
+    var(--vtt-dh-critical),
+    color-mix(in oklab, var(--vtt-dh-gold) 60%, var(--vtt-dh-gold-deep)) 35%,
+    color-mix(in oklab, var(--vtt-dh-gold) 70%, var(--vtt-white)) 55%,
+    var(--vtt-dh-gold-deep) 85%
+  );
+}
+
+/* Gear's pennant is solid metal, so the numeral on it goes to ink. */
+.dh-cc[data-domains="0"]:is([data-tier="3"], [data-tier="4"]) .dh-cc-pennant {
+  color: var(--vtt-ink-1);
+}
+
+.dh-cc-level {
+  display: grid;
+  justify-items: center;
+  line-height: 0.85;
+}
+
+.dh-cc-level b {
+  font-size: calc(15px * var(--dh-cc-k));
+  font-weight: 900;
+  font-stretch: var(--vtt-width-figures);
+}
+
+/* 6.5px, and not scaled by --dh-cc-k: the word LEVEL is a label you
+   recognise rather than read, and growing it on the L card would make
+   it compete with the numeral. */
+.dh-cc-level small {
+  font-size: 6.5px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.dh-cc-pennant-mark {
+  width: calc(13px * var(--dh-cc-k));
+  height: calc(13px * var(--dh-cc-k));
+}
+
+/* ── the recall chip, the quill and the count ─────────────────────────── */
+
+/* The cyan Stress mark colour on the bolt, where face.css uses the
+   violet Stress bar colour for the same thing. Upstream's own
+   disagreement, carried across rather than papered over; both tokens
+   are declared in face-tokens.css and the fix is one word there. */
+.dh-cc-recall {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: 18px;
+  padding: 0 4px 0 5px;
+  background: color-mix(in oklab, var(--vtt-ink-0) 86%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--vtt-line-strong),
+    inset 0 1px 0 color-mix(in oklab, var(--vtt-white) 6%, transparent);
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+  color: var(--vtt-white);
+  font-size: 12px;
+  font-weight: 900;
+  font-stretch: var(--vtt-width-figures);
+}
+
+.dh-cc-recall svg {
+  width: 10px;
+  height: 10px;
+  color: var(--vtt-dh-stress);
+}
+
+.dh-cc-recall.is-free svg {
+  color: var(--vtt-fog-1);
+}
+
+.dh-cc-quill {
+  position: absolute;
+  left: 9px;
+  top: 46px;
+  z-index: 3;
+  width: 12px;
+  height: 12px;
+  color: var(--vtt-fog-3);
+  filter: drop-shadow(0 1px 1px var(--vtt-shade));
+}
+
+.dh-cc[data-size="l"] .dh-cc-quill {
+  top: 54px;
+}
+
+/* Homebrew: a dashed inner rule. */
+.dh-cc.is-homebrew .dh-cc-face::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  z-index: 7;
+  border-radius: 3px;
+  border: 1px dashed color-mix(in oklab, var(--vtt-fog-3) 55%, transparent);
+  pointer-events: none;
+}
+
+.dh-cc-quantity {
+  position: absolute;
+  right: 5px;
+  bottom: 6px;
+  z-index: 4;
+  padding: 1px 4px;
+  background: color-mix(in oklab, var(--vtt-ink-0) 86%, transparent);
+  color: var(--vtt-white);
+  font-size: 11px;
+  font-weight: 850;
+  font-stretch: var(--vtt-width-figures);
+}
+
+/* ── the foot: stamp, name, kind line ─────────────────────────────────── */
+
+.dh-cc-foot {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  z-index: 3;
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+
+/* Two lines at most, and never a broken word: `word-break: keep-all`
+   with `overflow-wrap: normal` means a name that will not fit on two
+   lines gets clipped by the clamp rather than hyphenated into nonsense.
+   --dh-cc-fit is script's knob for shrinking a long name a step before
+   that happens, and defaults to 1 so the rule stands alone. */
+.dh-cc-foot h3 {
+  --dh-cc-fit: 1;
+  display: -webkit-box;
+  max-width: 100%;
+  max-height: 2.05em;
+  margin: 0;
+  overflow: hidden;
+  color: var(--vtt-white);
+  font-size: calc(11.5px * var(--dh-cc-k) * var(--dh-cc-fit));
+  font-weight: 850;
+  font-stretch: var(--vtt-width-hero);
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow:
+    0 1px 2px color-mix(in oklab, var(--vtt-ink-0) 90%, transparent),
+    0 0 8px color-mix(in oklab, var(--vtt-ink-0) 60%, transparent);
+  overflow-wrap: normal;
+  word-break: keep-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.dh-cc-kind {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: color-mix(in oklab, var(--dh-light) 78%, var(--vtt-white));
+  font-size: calc(8.5px * var(--dh-cc-k));
+  font-weight: 750;
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-shadow: var(--vtt-shadow-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Posting a card replaces the kind line with the confirmation for a
+   moment. The 15%/85% hold is what makes it readable: it fades in,
+   stands still for most of the 1.2s, then fades out. */
+.dh-cc[data-posted] .dh-cc-kind {
+  color: var(--dh-cc-posted);
+  animation: dh-cc-posted 1.2s var(--vtt-ease-out);
+}
+
+@keyframes dh-cc-posted {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  15%,
+  85% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.dh-cc-stamp {
+  margin-bottom: 2px;
+  padding: 2px 4px;
+  background: color-mix(in oklab, var(--vtt-ink-0) 90%, transparent);
+  box-shadow: inset 0 0 0 1px var(--vtt-line-strong);
+  color: var(--vtt-white);
+  font-size: 8.5px;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.dh-cc[data-state="out-of-reach"] .dh-cc-stamp {
+  color: var(--vtt-dh-stress);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--vtt-dh-stress) 60%, transparent);
+}
+
+/* The glare, damped to 40% against the full face's 45%, with a resting
+   position up and to the left rather than dead centre. See the header. */
+.dh-cc-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: radial-gradient(
+    circle at calc(50% + var(--dh-px, -0.5) * 40%) calc(50% + var(--dh-py, -0.7) * 40%),
+    color-mix(in oklab, var(--vtt-white) 30%, transparent),
+    transparent 55%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity var(--vtt-motion-base) var(--vtt-ease-out);
+  pointer-events: none;
+}
+
+/* An always-present layer the states below paint into, so nothing has
+   to be added to or removed from the card to show static across it. */
+.dh-cc-static {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Marking it used, the shared sweep's line of light falls down it (face.css, sweep.ts);
+   here the painting drains on its own, under the name, so the sweep keeps only its line.
+   Turning the backdrop-filter off is also what stops the small card
+   paying for a full-size compositor pass on every card in a grid. */
+.dh-cc .dh-sweep {
+  z-index: 2;
+  backdrop-filter: none;
+}
+
+/* ── the counter rail: the right edge, under the recall ───────────────── */
+
+.dh-cc-rail {
+  position: absolute;
+  top: 28px;
+  right: 5px;
+  z-index: 8;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+/* The L card has no quill in the way at that height, so its rail starts
+   at the top instead of below the recall chip. */
+.dh-cc[data-size="l"] .dh-cc-rail {
+  top: 8px;
+}
+
+.dh-cc-pips {
+  display: grid;
+}
+
+/* An 18px box round a 10px diamond: the target stays finger-sized while
+   the mark stays small enough to sit on the card's edge. */
+.dh-cc-pip {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+button.dh-cc-pip {
+  cursor: pointer;
+}
+
+.dh-cc-pip::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  rotate: 45deg;
+  background: var(--vtt-ink-4);
+  box-shadow:
+    inset 0 0 0 1px var(--vtt-line-strong),
+    0 1px 2px var(--vtt-shade);
+  transition:
+    background var(--vtt-motion-fast) var(--vtt-ease),
+    box-shadow var(--vtt-motion-fast) var(--vtt-ease);
+}
+
+.dh-cc-pip.is-lit::before {
+  background: radial-gradient(circle at 35% 35%, var(--vtt-white), var(--dh-light) 60%);
+  box-shadow:
+    inset 0 0 0 1px var(--dh-edge),
+    0 0 7px var(--dh-light);
+}
+
+button.dh-cc-pip:hover::before {
+  box-shadow:
+    inset 0 0 0 1px var(--vtt-white),
+    0 0 7px var(--dh-light);
+}
+
+.dh-cc-count,
+.dh-cc-token,
+.dh-cc-pool-die,
+.dh-cc-pool-add {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+:is(button.dh-cc-count, button.dh-cc-token, button.dh-cc-pool-die, .dh-cc-pool-add):not(:disabled) {
+  cursor: pointer;
+}
+
+.dh-cc-count {
+  min-width: 18px;
+  height: 16px;
+  padding: 0 3px;
+  background: color-mix(in oklab, var(--vtt-ink-0) 86%, transparent);
+  box-shadow: inset 0 0 0 1px var(--vtt-line-strong);
+  color: var(--vtt-white);
+  font-size: 10px;
+  font-weight: 850;
+  font-stretch: var(--vtt-width-figures);
+}
+
+.dh-cc-token,
+.dh-cc-token .dh-cc-die {
+  width: 22px;
+  height: 22px;
+}
+
+.dh-cc-token:where(.is-out) .dh-cc-die {
+  opacity: 0.35;
+}
+
+.dh-cc-die-body {
+  fill: color-mix(in oklab, var(--dh-dom) 55%, var(--vtt-ink-1));
+  stroke: var(--dh-edge);
+  stroke-width: 1.5;
+}
+
+.dh-cc-die-pip,
+.dh-cc-die-number {
+  fill: var(--vtt-white);
+}
+
+.dh-cc-die-number {
+  font: 900 13px var(--vtt-font-ui);
+  font-stretch: var(--vtt-width-figures);
+}
+
+.dh-cc-pool {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.dh-cc-pool-die,
+.dh-cc-pool-die .dh-cc-die {
+  width: 20px;
+  height: 20px;
+}
+
+.dh-cc-pool-die {
+  transition: transform var(--vtt-motion-fast) var(--vtt-ease-out);
+}
+
+button.dh-cc-pool-die:hover:not(:disabled) {
+  transform: rotate(-12deg) scale(1.08);
+}
+
+/* A Die Pool's dice are bone, apart from the card's tokens. */
+:is(.dh-cc-pool-die, .dh-cc-pool-add) .dh-cc-die-body {
+  fill: var(--vtt-dh-bone);
+  stroke: var(--vtt-dh-bone-edge);
+}
+
+:is(.dh-cc-pool-die, .dh-cc-pool-add) :is(.dh-cc-die-pip, .dh-cc-die-number) {
+  fill: var(--vtt-dh-bone-ink);
+}
+
+.dh-cc-pool-add .dh-cc-die {
+  width: 12px;
+  height: 12px;
+}
+
+.dh-cc-more {
+  color: var(--vtt-white);
+  font-size: 10px;
+  font-weight: 850;
+  text-shadow: var(--vtt-shadow-text);
+}
+
+.dh-cc-pool-add {
+  width: 18px;
+  height: 16px;
+  background: color-mix(in oklab, var(--vtt-ink-0) 80%, transparent);
+  box-shadow: inset 0 0 0 1px var(--vtt-line-strong);
+  color: var(--vtt-text-2);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dh-cc-pool-add:disabled {
+  opacity: 0.45;
+}
+
+/* ── the controls under it ────────────────────────────────────────────── */
+
+/* Wider than the card by 16px, so a row of two chips can overhang
+   slightly rather than wrapping to three lines at the S size. */
+.dh-cc-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  width: calc(var(--dh-cc-w) + 16px);
+}
+
+/* ── states ───────────────────────────────────────────────────────────── */
+
+/* Hover and drag share the lift, which is why they share a rule: a
+   dragged card is a hovered card that kept going. Disabled and socket
+   are excluded rather than overridden, so neither ever lifts. */
+.dh-cc:not([data-state="disabled"], [data-state="socket"]) .dh-cc-face:hover,
+.dh-cc[data-state="drag"] .dh-cc-face {
+  --dh-cc-lift: -2px;
+  box-shadow:
+    0 16px 26px -12px color-mix(in oklab, var(--vtt-opaque) 95%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--dh-edge) 70%, transparent),
+    0 0 18px -6px var(--dh-light);
+}
+
+.dh-cc-face:hover .dh-cc-glare {
+  opacity: 1;
+}
+
+.dh-cc:not([data-state="disabled"], [data-state="socket"]) .dh-cc-face:active {
+  --dh-cc-press: 0.97;
+}
+
+/* Used: drained to grey, stamped. */
+.dh-cc[data-state="used"] .dh-cc-art {
+  filter: grayscale(1) brightness(0.55);
+}
+
+/* In the vault within reach: the edge and the cost lit. */
+.dh-cc[data-state="within-reach"] .dh-cc-face::after {
+  box-shadow:
+    inset 0 0 0 1px var(--dh-edge),
+    inset 0 0 0 2px color-mix(in oklab, var(--vtt-ink-0) 55%, transparent),
+    inset 0 0 18px -6px var(--dh-light);
+}
+
+.dh-cc[data-state="within-reach"] .dh-cc-recall {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--vtt-dh-stress) 70%, transparent),
+    0 0 8px -2px var(--vtt-dh-stress);
+}
+
+/* Out of reach: static across it, the cost in the Stress colour. */
+.dh-cc[data-state="out-of-reach"] .dh-cc-art {
+  filter: saturate(0.25) brightness(0.7);
+}
+
+.dh-cc[data-state="out-of-reach"] .dh-cc-static {
+  background: repeating-linear-gradient(0deg, var(--vtt-glint) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+}
+
+.dh-cc[data-state="out-of-reach"] .dh-cc-recall {
+  color: var(--vtt-dh-stress);
+  box-shadow: inset 0 0 0 1px var(--vtt-dh-stress);
+}
+
+/* Disabled: not to be picked now. */
+.dh-cc[data-state="disabled"] .dh-cc-face {
+  cursor: not-allowed;
+  filter: saturate(0.2) brightness(0.5);
+}
+
+/* Drag: the lifted copy. The fixed 9°/12° are written here rather than
+   left to the pointer, so a dragged card holds one convincing angle
+   instead of wobbling with the cursor — and because the damping above
+   applies, it draws at 6° and 8°. */
+.dh-cc[data-state="drag"] .dh-cc-face {
+  --dh-cc-lift: -6px;
+  --dh-rx: 9deg;
+  --dh-ry: 12deg;
+  scale: 1.06;
+  box-shadow:
+    0 28px 36px -12px color-mix(in oklab, var(--vtt-opaque) 95%, transparent),
+    0 0 0 1px var(--dh-edge);
+  cursor: grabbing;
+}
+
+/* Socket: the hollow a lifted card leaves. Its contents are hidden
+   rather than removed, so the place keeps its exact size, and both
+   pseudo-elements are restated — the edge faint, the homebrew rule off. */
+.dh-cc[data-state="socket"] .dh-cc-face {
+  background: repeating-linear-gradient(135deg, var(--vtt-ink-2) 0 6px, var(--vtt-ink-1) 6px 12px);
+  box-shadow: inset 0 2px 6px color-mix(in oklab, var(--vtt-opaque) 60%, transparent);
+  cursor: default;
+}
+
+.dh-cc[data-state="socket"] .dh-cc-face > * {
+  visibility: hidden;
+}
+
+.dh-cc[data-state="socket"] .dh-cc-face::after {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--dh-edge) 40%, transparent);
+}
+
+.dh-cc[data-state="socket"] .dh-cc-face::before {
+  display: none;
+}
+
+/* Moving cards between the loadout and the vault: a card that drags; the one a drag is
+   over, or the armed one, lit; the rest stepping back while one is armed. */
+.dh-cc[draggable="true"] > .dh-cc-face {
+  cursor: grab;
+}
+
+.dh-cc:is([data-over="true"], [data-armed="true"]) .dh-cc-face {
+  box-shadow:
+    0 0 0 2px var(--dh-edge),
+    0 0 18px -6px var(--dh-light);
+}
+
+.dh-cc[data-muted="true"] {
+  opacity: 0.55;
+}
+
+/* Gear that can't go in hand now. */
+.dh-cc[data-blocked="true"] .dh-cc-face {
+  filter: saturate(0.3);
+  opacity: 0.7;
+}
+
+/* Posted: a moment of the confirmation's light round the edge. */
+.dh-cc[data-posted] .dh-cc-face {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--dh-cc-posted) 60%, transparent),
+    0 0 18px -4px color-mix(in oklab, var(--dh-cc-posted) 60%, transparent),
+    0 8px 16px -8px color-mix(in oklab, var(--vtt-opaque) 85%, transparent);
+}
+
+/* ── a grid of them ───────────────────────────────────────────────────── */
+
+/* The column widths are the two card widths written out, not the
+   variables: a grid-template-columns track cannot be a var() that
+   resolves on a descendant, and these have to match .dh-cc-s-w and
+   .dh-cc-l-w by hand. Change one and change both. */
+.dh-cc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 100px);
+  gap: 14px 12px;
+  align-items: start;
+  margin: 0;
+  padding: 0;
+}
+
+.dh-cc-grid.is-gear {
+  grid-template-columns: repeat(auto-fill, 124px);
+}
+
+/* An empty place in a grid, the size of the card it waits for. */
+.dh-cc-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  width: 100px;
+  height: 140px;
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--vtt-white) 1.8%, transparent) 0 6px,
+      transparent 6px 12px
+    ),
+    var(--vtt-ink-1);
+  box-shadow:
+    inset 0 0 0 1px var(--vtt-ink-5),
+    inset 0 2px 10px color-mix(in oklab, var(--vtt-opaque) 60%, transparent);
+  color: var(--vtt-text-3);
+  font-size: 11px;
+  font-weight: 650;
+  list-style: none;
+  text-align: center;
+}
+
+.dh-cc-empty b {
+  color: var(--vtt-text-2);
+  font-weight: 750;
+}
+
+.dh-cc-empty[data-live="true"] {
+  box-shadow:
+    inset 0 0 0 1px var(--vtt-dh-hope),
+    0 0 16px -4px var(--vtt-dh-hope),
+    inset 0 2px 10px color-mix(in oklab, var(--vtt-opaque) 60%, transparent);
+  color: var(--vtt-dh-hope);
+}
+
+/* While a vault card is armed, the loadout cards it could replace. */
+[data-armed="true"] .dh-cc-grid .dh-cc:not(.is-vaulted) .dh-cc-face {
+  cursor: crosshair;
+}
+
+[data-armed="true"] .dh-cc-grid .dh-cc:not(.is-vaulted) .dh-cc-face:hover {
+  box-shadow: 0 0 0 2px var(--vtt-accent-line);
+}
+
+/* The motion scale in face-tokens.css already takes every duration to
+   zero under this query. This block is upstream's, kept verbatim, and
+   it switches the transitions off outright rather than to 0ms. */
+@media (prefers-reduced-motion: reduce) {
+  .dh-cc-face,
+  .dh-cc-art,
+  .dh-cc-glare,
+  .dh-cc-pool-die,
+  .dh-cc-pip::before {
+    transition: none;
+  }
+
+  .dh-cc[data-posted] .dh-cc-kind {
+    animation: none;
+  }
+}
+
+/* ── game terms on a compact card ─────────────────────────────────────
+
+   Upstream's compact.css has no `.dh-term` rules, and that is not an
+   omission: a compact card prints a name, a pennant and a level, never a
+   paragraph of rules, so there is no term on it to colour. The same is
+   true here — compact.js carries no rules text and imports no marker.
+
+   What this block is for is the two ways a term could still arrive on one.
+   A compact card's own `<b>`s are structural — .dh-cc-level b is the
+   numeral, .dh-cc-empty b is the count in an empty slot's label — and
+   face.css's `.dh-term` set is deliberately unscoped, upstream's way, so a
+   future compact peek or tooltip that reuses rulesText() picks the whole
+   treatment up for free. When it does, the mark is the part that does not
+   survive the change of scale: 0.92em of 11px type is a nine-pixel glyph
+   in front of every term in a two-line strip, which is noise rather than
+   signal. So the compact card keeps the colour and the caps and drops the
+   marks, and the structural `<b>`s are untouched either way because
+   nothing here names a bare element. */
+.dh-cc .dh-term-mark {
+  display: none;
+}
+
+.dh-cc .dh-term {
+  font-size: 1em;
+}

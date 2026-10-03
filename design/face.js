@@ -58,7 +58,7 @@
 // sigil alone, with the name already printed on the painting's foot. It
 // stays in the signature so one option object can feed both builders without
 // `cardOf()` having to know which fields each one reads.
-import { rich } from './card.js';
+import { rich } from './terms.js';
 
 /* ── marks ────────────────────────────────────────────────────────
    The two marks drawn here rather than loaded: the recall bolt and the
@@ -157,7 +157,7 @@ const vars = (o) => [
   o.d && `--dh-dom-dk:${o.d.dark}`,
   o.d2 && `--dh-dom-2:${o.d2.light}`,
   o.d2 && `--dh-dom-2-dk:${o.d2.dark}`,
-  o.art && `--dh-art:url("${o.art}")`,
+  o.art && `--dh-art:url('${o.art.replaceAll("'", "%27")}')`,
   o.w && `--dh-w:${o.w}px`,
 ].filter(Boolean).join(';');
 
@@ -226,19 +226,23 @@ const printedFoot = (o) => `
     </footer>`;
 
 /* ── rules text ──────────────────────────────────────────────────
-   Paragraphs from blank lines, and the body of each through this repo's own
-   `rich()` — the marker in card.js, which handles `**bold**`, `*italic*`
-   and the game terms. gluvtt's `RulesText.tsx` + `terms.ts` are *not*
-   ported, by design: a second term scanner is a second list of terms, and
-   the day they disagree is the day a card says Stress in two colours.
+   Paragraphs from blank lines, and the body of each through terms.js —
+   the port of gluvtt's `terms.ts` + the marking half of `RulesText.tsx`.
+   It handles `**bold**`, `*italic*`, and every game term the rules name,
+   each in its resource's colour with its own mark in front of it.
 
-   One consequence the CSS port has to know: terms come out of `rich()` as
-   `<b>` and `<b class="t-hope">`/`<b class="t-fear">`, not as gluvtt's
-   `<b class="dh-term" data-term="stress">` with an inline mark svg. The
-   `.dh-term[data-term]` rules in cards.css have nothing to match and the
-   colouring belongs on `.dh-rules-text b` and `.t-hope`/`.t-fear` instead.
-   See the report accompanying this port for the terms gluvtt marks that
-   card.js's TERMS does not. */
+   This used to go through card.js's `rich()` instead, on the argument that
+   one term list is safer than two. The treatment that bought was two
+   coloured words out of thirty, no marks, and — because card.js puts its
+   styling on a bare `<b>` — the same small caps and print colour on every
+   `**bold**` in a card's prose. terms.js emits `<b class="dh-term"
+   data-term="…">` for a term and `<strong>`/`<em>` for emphasis, so the CSS
+   can tell the two apart and the `.dh-term[data-term]` colour set has
+   something to match. card.js keeps its own minimal marker for tile.js.
+
+   The two lists are kept honest by pointing at one source rather than by
+   there being one list: terms.js transcribes this system's CONDITIONS from
+   src/module/config.ts and says so. */
 export const rulesText = (text, cls) => `
     <div class="dh-rules-text${cls ? ' ' + cls : ''}">${
       String(text).split(/\n{2,}/).map(p => `<p>${rich(p)}</p>`).join('')}</div>`;

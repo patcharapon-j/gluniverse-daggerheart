@@ -97,7 +97,7 @@ const vars = (o) => [
   o.d && `--dh-dom-dk:${o.d.dark}`,
   o.d2 && `--dh-dom-2:${o.d2.light}`,
   o.d2 && `--dh-dom-2-dk:${o.d2.dark}`,
-  o.art && `--dh-art:url("${o.art}")`,
+  o.art && `--dh-art:url('${o.art.replaceAll("'", "%27")}')`,
 ].filter(Boolean).join(';');
 
 const sigil = (markup, cls) =>
