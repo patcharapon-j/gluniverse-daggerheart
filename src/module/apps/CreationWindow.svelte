@@ -57,7 +57,7 @@
   } from "./creation.ts";
   import { cardOf, classKey, loadSigils, plain, type Sigils } from "../sheets/cards.ts";
   import { postCard } from "../sheets/post-card.ts";
-  import { CARD, rich } from "../ui/card.js";
+  import { rich } from "../ui/card.js";
   import { FACE } from "../ui/face.js";
   import { bindFaceFx, fit as fitFace } from "../ui/face-fx.js";
   import { setVals, sign, VALS, type ValRow } from "../ui/make.js";

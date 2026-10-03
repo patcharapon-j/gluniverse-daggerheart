@@ -23,7 +23,6 @@
     TRAIT_LABELS,
   } from "../config.ts";
   import { cardOf, loadSigils, plain, type Sigils } from "../sheets/cards.ts";
-  import { CARD } from "../ui/card.js";
   import { FACE } from "../ui/face.js";
   import { bindFaceFx, fit as fitFace } from "../ui/face-fx.js";
   import {

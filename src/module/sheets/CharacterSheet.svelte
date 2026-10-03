@@ -58,12 +58,13 @@
      `portraitOf`. Imported rather than restated, because the framing is
      only worth anything if the preview and the card agree. */
   import { portraitOf } from "../dice/rolls.ts";
-  /* Kept although nothing in this file draws with them any more: every
-     surface here goes through the ported card below, and `ui/tile.js` is
-     retired once the last call site elsewhere in the repo is gone. */
-  import { SPINE, TILE } from "../ui/tile.js";
   import { XBOX, XMARK } from "../ui/mark.js";
-  import { CARD, rich } from "../ui/card.js";
+  /* `rich` only. `CARD`, `SPINE` and `TILE` are gone from this file along
+     with the last surface that drew one: everything here goes through the
+     ported card below. The modules stay vendored because `tools/verify`
+     still draws the old forms side by side with the new, and `tile.css`
+     still owns a consumable's charge boxes, which a vault row wears. */
+  import { rich } from "../ui/card.js";
   /* The ported card, and it is three builders rather than one because the
      three forms do not share a class name — see the note at the head of
      `ui/face.js`. What they share is the option object, which is `cardOf`'s:
