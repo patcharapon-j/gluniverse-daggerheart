@@ -45,6 +45,7 @@
      that compound resolves the palette is exactly what this page is for. -->
 <link rel="stylesheet" href="/styles/token.css">
 <link rel="stylesheet" href="/styles/ruler.css">
+<link rel="stylesheet" href="/styles/spotlight.css">
 <!-- Last, exactly as system.json loads it: the Svelte components' own styles.
      Leaving it out is how the first pass missed that the sheet's stack is not
      the study page's stack. -->
@@ -271,6 +272,15 @@
   </div>
 </section>
 
+<h2><span>// THE SPOTLIGHT</span>Whose move it is, drawn over the board and under the interface</h2>
+<!-- Under a band with pointer events ON, for the chip's reason: the light
+     covers the whole board, so it must stay inert even where the page would
+     hand it clicks. The layer is drawn fixed in the game; here it is pinned
+     to its stage so it can be measured. -->
+<section id="spotband" style="padding:0 26px;pointer-events:auto">
+  <div id="spotstage" style="position:relative;height:260px;background:#0b0d10;overflow:hidden"></div>
+</section>
+
 <pre id="ok"></pre>
 
 <script type="module">
@@ -291,6 +301,7 @@ import { OPT, PLATE, TRAY, VALS } from '/src/module/ui/make.js';
 import { TOKEN_CHIP, chipScale, setChip, setTier,
          RING_OUT, RING_IN } from '/src/module/ui/token.js';
 import { RANGE_RULER, radiusOf, setRulerZoom } from '/src/module/ui/ruler.js';
+import { SPOTLIGHT, spotlight } from '/src/module/ui/spotlight.js';
 /* `CLASSES` is taken further down by the compendium's own class list, and the
    two are genuinely different things — nine slugs against nine documents. */
 import { CLASSES as CLASS_SLUGS, KINDS, byslug, icon, glyph, clazz } from '/src/module/ui/domains.js';
@@ -2434,6 +2445,75 @@ setTimeout(async () => { try {
   }
   check('no other sheet reaches into the browser', bReach.length === 0,
         bReach.length ? bReach.slice(0, 4).join(' · ') : `${bOwn.length} elements clean`);
+
+  /* ══ THE SPOTLIGHT ═════════════════════════════════════════════════
+     Run ahead of THE TOKEN, whose stale selectors throw and end the page.
+     Six. The light itself is a shader and is judged on design/spotlight.html;
+     what can go wrong silently is the environment — a layer that eats the
+     board's clicks, a plinth press at Foundry's 28px, a reload that replays
+     an announcement nothing caused — and that is what is asserted here. */
+  const spStage = document.getElementById('spotstage');
+  spStage.innerHTML = SPOTLIGHT();
+  const spEl = spStage.firstElementChild;
+  spEl.style.position = 'absolute';
+  const spCtl = spotlight(spEl, {});
+
+  check('the spotlight resolves the palette while standing outside every root',
+        getComputedStyle(spEl).getPropertyValue('--fear').trim() !== '',
+        getComputedStyle(spEl).getPropertyValue('--fear').trim() || 'no --fear');
+
+  const spInert = [spEl, ...spEl.querySelectorAll('*')].filter(e => getComputedStyle(e).pointerEvents !== 'none');
+  check('nothing in the spotlight takes pointer events, even on a band that has them',
+        spInert.length === 0, spInert.length ? spInert.map(e => e.className).join(', ') : 'all inert');
+
+  spCtl.set('fear', {settled: true});
+  check('a spotlight already held arrives settled, with no announcement',
+        !spEl.classList.contains('sl-play') && spEl.classList.contains('sl-tagged'),
+        spEl.className);
+
+  spCtl.set('hope');
+  check('a change announces: the headline restarts and names the side',
+        spEl.classList.contains('sl-play') && spEl.querySelector('.sl-head b').textContent === 'Player Spotlight',
+        spEl.querySelector('.sl-head b').textContent);
+  spCtl.set('off');
+  spCtl.destroy();
+
+  /* The two presses are buttons on the plinth, so they pay the floor the
+     refreshes beside them pay, and they are a state, so their two values
+     have to look different standing still. Transitions off before reading,
+     for the switch's reason. */
+  const spb = document.querySelector('#ui-top .hud .spb');
+  const spbH = spb ? spb.getBoundingClientRect().height : 0;
+  check('a spotlight press measures 14px, not Foundry\'s 28', Math.abs(spbH - 14) < .6, `${spbH.toFixed(1)}px`);
+  const spPip = spb?.querySelector('i');
+  const spLit = v => { spb.style.transition = 'none'; spPip.style.transition = 'none'; spb.setAttribute('aria-pressed', v);
+    return [getComputedStyle(spPip).backgroundColor, getComputedStyle(spb).color]; };
+  const [spOn, spTxOn] = spb ? spLit('true') : [];
+  const [spOff, spTxOff] = spb ? spLit('false') : [];
+  check('a spotlight press draws its two states differently', !!spb && spOn !== spOff && spTxOn !== spTxOff,
+        spb ? `pip ${spOff} → ${spOn}` : 'no press on the GM strip');
+
+  const spOwn = [...spEl.querySelectorAll('*')];
+  const spReach = [];
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch { continue; }
+    const from = sheet.href?.split('/').pop() ?? 'page';
+    if (from === 'spotlight.css') continue;
+    const walk = (rs) => { for (const r of rs) {
+      const sel = r.selectorText;
+      if (sel === undefined) { if (r.cssRules) walk(r.cssRules); continue; }
+      if (!/box-sizing/.test(r.style.cssText)) {
+        for (const el of spOwn) {
+          let m = false; try { m = el.matches(sel); } catch {}
+          if (m) { spReach.push(`${from} ${sel}`); break; }
+        }
+      }
+      if (r.cssRules?.length) walk(r.cssRules);
+    }};
+    walk(rules);
+  }
+  check('no other sheet reaches into the spotlight', spReach.length === 0,
+        spReach.length ? spReach.slice(0, 4).join(' · ') : `${spOwn.length} elements clean`);
 
   /* ══ THE TOKEN ═════════════════════════════════════════════════════
      Thirteen things, and every one of them is invisible on design/token.html —

@@ -5125,6 +5125,66 @@ SVG legends, on one selected token. It is one object against the chip's N, so
 it is the smaller worry of the two — but it is the same shape of cost, and
 neither has been measured on a real board.
 
+## The spotlight
+
+Daggerheart has no initiative: the spotlight moves on a GM move or a failed
+roll, and at a real table that hand-off is felt by everybody and seen by
+nobody. A press on the Fear strip's right plinth — **player** or **gm** — says
+it to the whole table: the top of the screen announces it for about a second
+and a half, then settles into a 40px band that holds for as long as the
+spotlight does. `design/spotlight.*` is the component and its study page,
+`src/module/spotlight.ts` is the half a study page cannot have.
+
+**It speaks Hope and Fear and nothing else.** Gold for the party, violet for
+the GM. A blue and a red were the brief and both are taken — Codex is blue,
+Blade is red — and the two hues this system already uses for "whose turn" are
+exactly these two.
+
+**The light is a WebGL2 shader and the type is HTML.** God-rays, motes and a
+gold flare on one side; domain-warped ink with a burning rim, embers, a
+closing vignette and one chromatic tear on the other; a ragged front between
+them on a hand-off, so the incoming side eats the outgoing one from the top
+down. None of that is gradients. The headline and the band's label stay in
+the DOM so they are crisp at any render scale and read out by assistive
+technology. A side's whole life is computed from two timestamps rather than
+stepped frame by frame, so six flips in a second is the same arithmetic as
+one and nothing is left half-way; the study page's freeze slider is that
+clock, injected.
+
+**One setting, read everywhere, written by a GM.** `spotlight` is a world
+setting (`off`/`hope`/`fear`) for the Fear pool's reason, and its
+`onChange` is the only thing that moves the light, the plinth presses and the
+strip's flare — so the plinth, the two keybindings, `endScene()` and a macro
+(`game.daggerheart.spotlight`) cannot disagree. A client that loads
+mid-fight arrives **settled**, with no announcement, because nothing just
+happened on its screen. The keys are unbound and `restricted`; pressing the
+lit side again clears it, because a cycling key has the GM counting presses.
+`endScene()` for the whole table clears it too, since a conflict ends with its
+scene.
+
+**The map shimmer is a filter for half a second and then nothing.** It is the
+one effect an overlay cannot draw, because it warps what is underneath. It is
+`dhShimmer` — the same GLSL the study page runs over its painted map — as a
+PIXI filter on the stage, attached while the envelope is above zero and taken
+off the moment it reaches it, so at rest nothing of ours is in Foundry's
+render path.
+
+**The layer stands between the board and the interface** — z 1, against the
+board's 0 and `#interface`'s 60 — so the light falls on the map while the
+Fear strip and the sidebar stand in front of it. Click-through throughout.
+The label and headline are placed against the Fear strip at runtime
+(`anchor`), because v13 and v14 dock that strip in different places.
+
+**What it costs.** Measured at 1600×900 on the study page: 120fps while
+announcing. A settled band redraws at 30fps; with nothing lit the loop stops.
+`spotlightLite` is a client switch that halves the resolution and drops two
+octaves, and the system's motion dial or the OS reduced-motion setting gets a
+still band and a short fade with no announcement and no shimmer.
+
+**What it does not do.** It never touches the initiative tracker, posts
+nothing to chat or the activity log — the spotlight changes many times a
+fight, and that flood is the reason the log left chat — and plays no sound.
+
 ## The three dialogs
 
 This system went a long way without a modal, on purpose: a sheet you press

@@ -65,7 +65,15 @@ const SWITCH = (chips, ruler) => `
     data-ruler aria-pressed="${ruler ? 'true' : 'false'}"
     title="Show range rings under the selected token (this screen only)"><i></i>range</button></div>`;
 
-export const FEAR_HUD = ({cur = 4, max = 12, gm = true, chips = true, ruler = true}) => `
+/* The spotlight's two presses, on the GM's plinth beside the two refreshes.
+   One per side, and pressing the lit one turns the spotlight off. They are a
+   state rather than an act, so they carry the view switch's socket-and-pip,
+   lit in the side's own colour; see spotlight.js. */
+const SPOT = spot => `<button class="spb" data-spot="hope" aria-pressed="${spot === 'hope'}"
+    title="Player spotlight"><i></i>player</button><button class="spb" data-spot="fear"
+    aria-pressed="${spot === 'fear'}" title="GM spotlight"><i></i>gm</button><span class="sps"></span>`;
+
+export const FEAR_HUD = ({cur = 4, max = 12, gm = true, chips = true, ruler = true, spot = 'off'}) => `
 <div class="hud${gm ? ' gm' : ''}" style="--i:${intensity(cur, max).toFixed(3)}">
   <b class="hglow"></b>
   <b class="hface"></b>
@@ -73,5 +81,5 @@ export const FEAR_HUD = ({cur = 4, max = 12, gm = true, chips = true, ruler = tr
   <span class="tally">${cur}<s>/${max}</s></span>
   ${gm ? `<div class="stp"><button data-f="1">+</button><button data-f="-1">−</button></div>` : ''}
   ${SWITCH(chips, ruler)}
-  ${gm ? `<div class="cyc"><button data-refresh="scene" title="Refresh all once-per-scene counters and dice">scene</button><button data-refresh="session" title="Refresh all once-per-session counters and dice">session</button></div>` : ''}
+  ${gm ? `<div class="cyc">${SPOT(spot)}<button data-refresh="scene" title="Refresh all once-per-scene counters and dice">scene</button><button data-refresh="session" title="Refresh all once-per-session counters and dice">session</button></div>` : ''}
 </div>`;
