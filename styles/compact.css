@@ -1170,119 +1170,303 @@
   box-shadow: 0 0 0 2px var(--vtt-accent-line);
 }
 
-/* ── vaulted: filed, not held ─────────────────────────────────────────
+/* ── vaulted: in the case ─────────────────────────────────────────────
 
    The two rules above are the only thing upstream does with
-   `.is-vaulted`: it uses the class to exclude vault cards from the armed
+   `.is-vaulted`: it uses the class to keep vault cards out of the armed
    crosshair and gives it no appearance at all. That works upstream because
    its Vault tab can be switched to rows, so the two collections become two
    different objects whenever it matters. This sheet has no switch — the
-   grid is the only layout — so here the loadout's grid and the vault's grid
-   are the same object at the same size, stacked one above the other, and
-   the panel headings are all that says which is which. A heading is read
-   once and then forgotten. The card has to carry it.
+   grid is the only layout — so the loadout's grid and the vault's grid are
+   the same object at the same size, stacked one above the other, and the
+   card has to carry the difference the panel heading says once.
+
+   ── what it was, and why it went ────────────────────────────────
+   A 45° hatch across the painting, one pixel of ink every seven, inside a
+   faint inset "sleeve". Every part of that argument was reasonable — texture
+   rather than a badge, the opposite lean to the socket's 135° — and the
+   result read as a rendering fault. A hatch over a painting is this
+   system's vocabulary for *missing* (the socket, the drag hole, homebrew
+   with no art), so thirty of them said "these did not load", and the
+   sleeve was too faint to say anything at all. Texture was the right
+   instinct and the wrong texture: it described an absence when what it had
+   to describe is a place.
 
    ── what it is ──────────────────────────────────────────────────
-   Two layers and no badge. The word "vaulted" is already said by the panel
-   heading and again by the recall press under every card in the grid, so a
-   third saying of it would be the loudest thing on the tab and the least
-   informative. This wants to be texture.
+   The card is mounted in a case. Four layers, and each is a separate claim
+   about a physical object, which is what lets them be strong without being
+   loud:
 
-     the sleeve   A hairline of ink on the card's own edge, a pale lip just
-                  inside it, and a soft vignette drawing in from all four
-                  sides. That is a card in a sleeve seen from the front:
-                  the lip is the fold catching the light, the vignette is
-                  the card sitting a millimetre behind plastic. Inset
-                  rather than a surround, because a surround would have
-                  grown the grid's cell and made the two grids different
-                  sizes, which is the one thing that must not happen here.
-     the file     A fine 45° rule across the painting, one pixel of ink
-                  every seven. At that pitch it is a surface rather than a
-                  pattern: at a glance the vault's paintings read very
-                  slightly dulled and the loadout's read clean, and only on
-                  looking do you see what is doing it. 45° is deliberately
-                  the opposite lean to the 135° hatch that socket and
-                  .dh-cc-empty use, so a vaulted card can never be taken
-                  for a hole in a grid.
+     the frame    A gunmetal surround, 5px of the bay's own width, cooled
+                  toward the card's domain so a Grace case and a Midnight
+                  case are kin rather than twins. Bevelled top and bottom,
+                  a rivet at each corner, and a clasp centred on the lower
+                  rail. Inside the bay rather than round it, because a
+                  surround would grow the cell and the two grids must stay
+                  the same size — that is the one thing that cannot move.
+     the inlay    The domain's own hairline, moved from the card's outer
+                  edge to the frame's inner one. The card does not lose its
+                  colour by going into storage; the colour is where the
+                  card now starts.
+     the glass    A pane over the whole card, recessed: the frame's shadow
+                  falls onto the painting from above, the pane is a shade
+                  cooler at its top, and one specular streak with a thin
+                  second reflection lies across its upper left. The streak
+                  is what sells glass at 100px — a pane you cannot see the
+                  surface of is just a darker picture.
+     the storage  The painting itself, cooled and dimmed: half its
+                  saturation, four fifths of its light. A stored card is
+                  the same card at rest, not a damaged one.
+
+   ── reaching for it ─────────────────────────────────────────────
+   Hover is taking the card out to look at it, and three things answer at
+   once: the streak travels off the far edge of the pane, the painting
+   warms back to full colour, and the inlay and the clasp light in the
+   domain. The streak travels on --vtt-motion-reveal, the slowest step on
+   the scale, so it reads as light moving across glass rather than as a
+   flicker; the painting warms on --vtt-motion-base, so the colour is back
+   before the light has finished crossing. Nothing moves at rest — the
+   gem's rule, and on a grid of thirty it matters more than anywhere.
+
+   ── out of reach ────────────────────────────────────────────────
+   The case fogs. The shared out-of-reach state paints scanlines into
+   `.dh-cc-static`; on a vaulted card that layer *is* the glass, so the
+   scanlines are replaced rather than stacked — static on a pane is a
+   screen, and a screen is a different object from a case. Instead the pane
+   clouds over the painting (never over the name, which keeps its contrast),
+   the inlay and the clasp take the Stress colour, and the painting drains
+   further than storage alone. The stamp in the foot already says the
+   number; the case says "locked" without a word.
 
    ── how it composes ─────────────────────────────────────────────
-   Three other things draw on this card, and the two hosts below are picked
-   so that none of them is touched.
+   Everything is drawn on `.dh-cc-static` (z 4) and its two pseudo-elements,
+   plus a restatement of the edge on `.dh-cc-face::after` (z 7):
 
-   `reachRows` writes data-state="within-reach" / "out-of-reach" on the
-   same `<li>`. Within-reach lights `.dh-cc-face::after` (z 7) and the
-   recall chip; out-of-reach drains `.dh-cc-art` with a filter and paints
-   `.dh-cc-static`'s own background. So the sleeve goes on
-   `.dh-cc-static::after` and the file on `.dh-cc-art::after`, both of which
-   are free. Nothing is restated, nothing is overridden, and no rule here
-   competes on specificity with a state rule — which is why none of this had
-   to be ordered carefully. Out-of-reach's filter does reach the file,
-   because a filter applies to descendants: the hatch dims with the painting
-   it is on, which is the right answer and is why it is on the art rather
-   than above it.
+     the pane     `.dh-cc-static` itself: inset by the frame, the inlay and
+                  the recess as box-shadows, the cool cast and the fog as
+                  its background
+     the streak   its `::before`, a 300%-wide gradient moved by
+                  background-position, so it is clipped by its own box and
+                  the pane needs no overflow
+     the frame    its `::after`, inset negatively back out to the bay's
+                  edge and cut to a ring with a masked content-box, so its
+                  metal can be a gradient
+
+   z 4 is above the pennant, the recall chip and the foot (all z 3), which
+   is the right order for glass and for a frame: the banner hangs from
+   under the top rail, and the chip, the counter rail and the foot step in
+   by the frame's width so nothing sits on the metal. The glare (z 5) and
+   the edge (z 7) stay above it all.
 
    The foil (foil.css) puts its weave on `.dh-cc.mk` and its sheen on
-   `.dh-cc-art::before` at z 2. `.dh-cc-art` carries a `translate` for the
-   parallax, so it is its own stacking context: the file at z 1 sits over
-   the painting and under the sheen, and the whole art box still sits under
-   `.dh-cc-fade`, `.dh-cc-foot` (z 3) and the edge (z 7). A vaulted Root
-   card therefore keeps its weave, keeps its travelling light, and gains a
-   sleeve. It reads as both, with the metal of the one and the ink of the
-   other on different layers.
+   `.dh-cc-art::before`, both under the pane, so a vaulted Root card keeps
+   its metal and gains a case. The storage filter is on `.dh-cc-art` and so
+   reaches the sheen, which dims with the painting it belongs to.
 
-   The sleeve is on `.dh-cc-static` and not on the art for one more reason:
-   the art translates up to 1.6px under the pointer, and an edge that
-   drifted 1.6px against the fixed domain hairline above it would have read
-   as a printing fault every time a hand passed over the grid.
+   The press under each card is `.dh-shelve` with `.dh-recall-press` over
+   it; the chip lives in face.css and its recall state in vault.css. Nothing
+   about it is restated here. */
+.dh .dh-cc.is-vaulted {
+  --dh-vault-rim: 5px;
+  --dh-vault-hi: color-mix(in oklab, var(--dh-light) 16%, var(--vtt-fog-3));
+  --dh-vault-mid: color-mix(in oklab, var(--dh-dom-dk) 32%, var(--vtt-ink-6));
+  --dh-vault-lo: color-mix(in oklab, var(--dh-dom-dk) 28%, var(--vtt-ink-0));
+  --dh-vault-inlay: color-mix(in oklab, var(--dh-edge) 62%, transparent);
+  --dh-vault-clasp: color-mix(in oklab, var(--dh-vault-hi) 70%, var(--dh-vault-mid));
+}
 
-   ── restraint ───────────────────────────────────────────────────
-   This is a list of dozens, so the amplitude is set where it stops being
-   noticeable per card and starts being noticeable per grid. And the one
-   card you are actually looking at comes out of the sleeve: on hover the
-   file fades most of the way out, so the painting you are inspecting is the
-   painting and not the painting through a screen. The sleeve stays, because
-   that is the part carrying the meaning.
+/* The edge, restated for a card in a case. The domain line moves inward to
+   the inlay, so what is left at the bay's own edge is the outer cut of the
+   frame — a hairline of ink and the glint along the top. Within reach is
+   named too, because that state restates the edge at the same specificity
+   and would otherwise put the domain line back on the outside. */
+.dh .dh-cc.is-vaulted .dh-cc-face::after,
+.dh .dh-cc.is-vaulted[data-state="within-reach"] .dh-cc-face::after {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--vtt-ink-0) 85%, transparent),
+    inset 0 1px 0 1px color-mix(in oklab, var(--vtt-white) 7%, transparent);
+}
 
-   The fade is off --vtt-motion-base, which is
-   `calc(240ms * var(--vtt-motion-speed))`, so the system's Card motion
-   setting governs it at Full, Reduced and Off. There is deliberately no
-   `@media (prefers-reduced-motion: reduce)` block — the note below says why
-   one here would break that setting's Full.
+/* Off the metal: everything at z 3 steps in by the frame's width. The
+   pennant drops by it too, so the banner hangs from under the top rail
+   rather than having its numeral cut off by it. */
+.dh .dh-cc.is-vaulted .dh-cc-pennant {
+  top: calc(var(--dh-vault-rim) - 1px);
+  left: calc(var(--dh-vault-rim) + 2px);
+}
 
-   The press under each of these cards is `.dh-shelve`, with
-   `.dh-recall-press` over it; the chip lives in face.css and its recall
-   state in vault.css. Nothing about it is restated here. */
-.dh .dh-cc.is-vaulted .dh-cc-static::after {
+.dh .dh-cc.is-vaulted .dh-cc-recall {
+  top: calc(var(--dh-vault-rim) + 2px);
+  right: calc(var(--dh-vault-rim) + 2px);
+}
+
+.dh .dh-cc.is-vaulted .dh-cc-rail {
+  top: calc(var(--dh-vault-rim) + 25px);
+  right: calc(var(--dh-vault-rim) + 2px);
+}
+
+.dh .dh-cc.is-vaulted .dh-cc-foot {
+  left: calc(var(--dh-vault-rim) + 3px);
+  right: calc(var(--dh-vault-rim) + 3px);
+  bottom: calc(var(--dh-vault-rim) + 3px);
+}
+
+/* ── storage ──────────────────────────────────────────────────────────── */
+
+.dh .dh-cc.is-vaulted .dh-cc-art {
+  filter: saturate(0.5) brightness(0.8) contrast(1.06);
+}
+
+.dh .dh-cc.is-vaulted[data-state="out-of-reach"] .dh-cc-art {
+  filter: saturate(0.2) brightness(0.62) contrast(1.06);
+}
+
+.dh .dh-cc.is-vaulted .dh-cc-face:is(:hover, :focus-visible) .dh-cc-art {
+  filter: none;
+}
+
+.dh .dh-cc.is-vaulted[data-state="out-of-reach"] .dh-cc-face:is(:hover, :focus-visible) .dh-cc-art {
+  filter: saturate(0.7) brightness(0.88);
+}
+
+/* ── the glass ────────────────────────────────────────────────────────── */
+
+/* The pane. `mix-blend-mode` and `opacity` are restated because the shared
+   out-of-reach rule sets both on this element, and a pane at 55% that
+   overlays its own fog is no pane at all. */
+.dh .dh-cc.is-vaulted .dh-cc-static,
+.dh .dh-cc.is-vaulted[data-state="out-of-reach"] .dh-cc-static {
+  inset: var(--dh-vault-rim);
+  border-radius: 2px;
+  opacity: 1;
+  mix-blend-mode: normal;
+  background: linear-gradient(
+    172deg,
+    color-mix(in oklab, var(--vtt-fog-3) 11%, transparent),
+    transparent 34%
+  );
+  box-shadow:
+    inset 0 0 0 1px var(--dh-vault-inlay),
+    inset 0 0 0 2px color-mix(in oklab, var(--vtt-ink-0) 70%, transparent),
+    inset 0 4px 6px -2px color-mix(in oklab, var(--vtt-opaque) 85%, transparent),
+    inset 0 0 16px -5px color-mix(in oklab, var(--vtt-opaque) 75%, transparent);
+  transition: box-shadow var(--vtt-motion-base) var(--vtt-ease-out);
+}
+
+/* Fogged: a cloud over the painting that thins out well above the name, so
+   the one line of type the stamp and the title share keeps the contrast it
+   was set for. */
+.dh .dh-cc.is-vaulted[data-state="out-of-reach"] .dh-cc-static {
+  --dh-vault-inlay: color-mix(in oklab, var(--vtt-dh-stress) 70%, transparent);
+  background:
+    radial-gradient(
+      90% 55% at 50% 34%,
+      color-mix(in oklab, var(--vtt-fog-3) 40%, transparent),
+      color-mix(in oklab, var(--vtt-fog-2) 20%, transparent) 55%,
+      transparent 80%
+    ),
+    linear-gradient(
+      172deg,
+      color-mix(in oklab, var(--vtt-fog-3) 14%, transparent),
+      transparent 40%
+    );
+}
+
+/* Lit as you reach for it. */
+.dh .dh-cc.is-vaulted:not([data-state="out-of-reach"]) .dh-cc-face:is(:hover, :focus-visible) .dh-cc-static {
+  box-shadow:
+    inset 0 0 0 1px var(--dh-edge),
+    inset 0 0 0 2px color-mix(in oklab, var(--vtt-ink-0) 55%, transparent),
+    inset 0 4px 6px -2px color-mix(in oklab, var(--vtt-opaque) 70%, transparent),
+    inset 0 0 18px -6px var(--dh-light);
+}
+
+/* The streak, and the faint second reflection behind it. The image is three
+   panes wide and the pane shows one of them: at rest the window sits so the
+   streak crosses the upper left, and reaching for the card slides the
+   window until the streak has left by the right. */
+.dh .dh-cc.is-vaulted .dh-cc-static::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--vtt-ink-0) 72%, transparent),
-    inset 0 0 0 3px color-mix(in oklab, var(--vtt-fog-3) 9%, transparent),
-    inset 0 0 16px -5px color-mix(in oklab, var(--vtt-ink-0) 82%, transparent);
+  background: linear-gradient(
+    116deg,
+    transparent 40%,
+    color-mix(in oklab, var(--vtt-white) 4%, transparent) 42%,
+    color-mix(in oklab, var(--vtt-white) 22%, transparent) 44.5%,
+    color-mix(in oklab, var(--vtt-white) 6%, transparent) 46.5%,
+    transparent 48%,
+    transparent 50%,
+    color-mix(in oklab, var(--vtt-white) 11%, transparent) 51%,
+    transparent 52.5%
+  ) 64% 0 / 300% 100% no-repeat;
+  mix-blend-mode: screen;
   pointer-events: none;
+  transition: background-position var(--vtt-motion-reveal) var(--vtt-ease-out);
 }
 
-/* z-index 1 and not left at auto: a pseudo-element would paint above the
-   art's own background either way, but saying 1 puts this layer's place in
-   the art's stack on the page next to the foil's sheen at 2. */
-.dh .dh-cc.is-vaulted .dh-cc-art::after {
+.dh .dh-cc.is-vaulted .dh-cc-face:is(:hover, :focus-visible) .dh-cc-static::before {
+  background-position: 6% 0;
+}
+
+/* ── the frame ────────────────────────────────────────────────────────── */
+
+/* Inset back out to the bay's edge and cut to a ring: the mask keeps the
+   padding box and removes the content box, which is what lets the metal be
+   a gradient rather than the flat colour a box-shadow would have to be.
+
+   Eight layers, top to bottom: the four rivets, the clasp, the two bevel
+   lines, and the steel. The steel runs light-dark-light across the
+   diagonal, which is all a 4px rail needs to read as turned metal. */
+.dh .dh-cc.is-vaulted .dh-cc-static::after {
+  --dh-vault-rivet: radial-gradient(
+    circle,
+    var(--dh-vault-hi) 0 0.6px,
+    var(--dh-vault-mid) 1.1px,
+    var(--dh-vault-lo) 1.5px,
+    transparent 1.9px
+  );
   content: "";
   position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: repeating-linear-gradient(
-    45deg,
-    color-mix(in oklab, var(--vtt-ink-0) 30%, transparent) 0 1px,
-    transparent 1px 7px
-  );
+  inset: calc(var(--dh-vault-rim) * -1);
+  padding: var(--dh-vault-rim);
+  border-radius: 5px;
+  background:
+    var(--dh-vault-rivet) left 1px top 1px / 7px 7px no-repeat,
+    var(--dh-vault-rivet) right 1px top 1px / 7px 7px no-repeat,
+    var(--dh-vault-rivet) left 1px bottom 1px / 7px 7px no-repeat,
+    var(--dh-vault-rivet) right 1px bottom 1px / 7px 7px no-repeat,
+    linear-gradient(var(--dh-vault-clasp), var(--dh-vault-clasp))
+      center bottom 1.5px / 18px 2px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--vtt-white) 22%, transparent), transparent)
+      0 1px / 100% 1px no-repeat,
+    linear-gradient(transparent, color-mix(in oklab, var(--vtt-opaque) 60%, transparent))
+      0 calc(100% - 1px) / 100% 1px no-repeat,
+    linear-gradient(
+      152deg,
+      var(--dh-vault-hi),
+      var(--dh-vault-mid) 20%,
+      var(--dh-vault-lo) 46%,
+      var(--dh-vault-mid) 68%,
+      var(--dh-vault-hi) 86%,
+      var(--dh-vault-mid)
+    );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   pointer-events: none;
-  transition: opacity var(--vtt-motion-base) var(--vtt-ease-out);
 }
 
-.dh .dh-cc.is-vaulted .dh-cc-face:hover .dh-cc-art::after {
-  opacity: 0.25;
+/* The clasp is the one part of the case that changes with the state: lit
+   in the domain while you are reaching for a card you can take back, and
+   in the Stress colour on a card you cannot. */
+.dh .dh-cc.is-vaulted:not([data-state="out-of-reach"]) .dh-cc-face:is(:hover, :focus-visible) {
+  --dh-vault-clasp: var(--dh-light);
+}
+
+.dh .dh-cc.is-vaulted[data-state="out-of-reach"] {
+  --dh-vault-clasp: var(--vtt-dh-stress);
 }
 
 /* Upstream's reduced-motion block stood here and has been taken out.
