@@ -492,7 +492,15 @@ function place(chip: HTMLElement, token: any): void {
    would be the readout blinking every time a maximum moved.
 
    So `fresh` is threaded through rather than inferred, because "there was
-   no chip a moment ago" is true of both and only one of them means it. */
+   no chip a moment ago" is true of both and only one of them means it.
+
+   That paragraph was aspirational for as long as it has been here. The code
+   under it set one local on the way out of BOTH branches, so every shape
+   change played the full 460ms arrival: a level-up, a scar, an adversary
+   becoming visible. It survived because each half reads correctly on its
+   own -- the teardown is right, the build is right, and the flag they share
+   is the only place the two are told apart. It is threaded now, and the
+   flag is named `appeared` for the claim rather than for the timing. */
 
 /* ── settle, and why this one is a deadline and nothing else ──────
    settle.js's arithmetic — read the end off the animations themselves, so
@@ -581,13 +589,39 @@ function reclaim(id: string): HTMLElement | undefined {
    the GM has toggled invisible, which the GM can still see. */
 const visible = (token: any): boolean => token?.visible !== false && !token?.document?.hidden;
 
+/* ── a creature has more than one placeable ───────────────────────────
+   Foundry's drag ghost is `document.clone({keepId: true})` drawn as a second
+   Token object, so for the length of a drag one creature is on the board
+   twice and both copies answer to the same document id. That is not an edge
+   case to exclude: the ghost is the copy the person dragging is looking at,
+   and the readout belongs on the creature, so the chip rides it.
+
+   What it cannot survive is identity taken from the placeable. `_original`
+   is the real object behind a ghost and `isPreview` is how Foundry says
+   which is which. Every question about WHO this is goes through the first;
+   every question about WHERE to draw takes the object it was handed. The bug
+   this replaces deleted the live chip on `destroyToken` for the ghost,
+   because the ghost's id is the creature's id -- so the next hook built a
+   new one and the arrival replayed, on every drag, dropped or cancelled.
+
+   A creation preview -- dragging an actor onto the board -- has no
+   `_original` and no document id, so it falls out of `sync` before any of
+   this can apply to it. */
+const ghost = (token: any): boolean => token?.isPreview === true;
+const realOf = (token: any): any => token?._original ?? token;
+
 function sync(token: any): void {
-  const id = token?.document?.id ?? token?.id;
+  /* Who, from the real placeable; where, from the one we were handed. */
+  const subject = realOf(token);
+  const id = subject?.document?.id ?? subject?.id;
   if (!id) return;
 
   const enabled = game.settings?.get(SYSTEM_ID, "tokenChip") !== false;
-  const state = enabled ? stateOf(token) : null;
-  const gone = !state || (!token.isVisible && !isGM());
+  const state = enabled ? stateOf(subject) : null;
+  /* Visibility is the real token's. A ghost is created `visible = false` and
+     turned on a frame later by `clone().draw().then()`, so asking the ghost
+     would retire a living creature's chip on the frame a drag starts. */
+  const gone = !state || (!subject.isVisible && !isGM());
 
   if (gone) clearTokenConditionMaterial(token);
   else syncTokenConditionMaterial(token, state.materialIds ?? state.conditionIds ?? [], !!state.defeated,
@@ -601,15 +635,20 @@ function sync(token: any): void {
 
   /* Before anything is built: a creature that is back inside its own
      departure keeps the element it already had. */
-  let fresh = false;
   if (!chip) chip = reclaim(id);
 
+  /* Three ways to arrive holding a chip and only one of them is an
+     appearance, so the distinction is carried rather than read back off
+     "there was no chip a moment ago", which is true of two of the three. */
   const shape = shapeOf(state);
+  let rebuilt = false;
   if (chip && chip.dataset.shape !== shape) {
     retire(id, chip, false);
     chip = undefined;
+    rebuilt = true;
   }
 
+  let appeared = false;
   if (!chip) {
     const host = document.createElement("div");
     host.innerHTML = TOKEN_CHIP(state);
@@ -618,19 +657,19 @@ function sync(token: any): void {
     chip.dataset.shape = shape;
     chips.set(id, chip);
     layer?.appendChild(chip);
-    fresh = true;
+    appeared = !rebuilt;
   } else {
     chips.set(id, chip);
   }
 
   place(chip, token);
-  setChip(chip, { ...state, hidden: !visible(token) });
+  setChip(chip, { ...state, hidden: !visible(subject) });
 
   /* After `place`, and that ordering is the whole of it: the arrival is a
      scale about the chip's own centre, and a chip that has not been placed
      yet is a 0x0 box at the top-left of the scene. It would grow there and
      jump. */
-  if (fresh) {
+  if (appeared) {
     const el = chip;
     el.classList.add("arrive");
     after(el, () => el.classList.remove("arrive"));
@@ -648,6 +687,48 @@ function redraw(): void {
   for (const [id, chip] of [...chips]) {
     if (!live.has(id)) retire(id, chip, true);
   }
+}
+
+/* ══ sight ════════════════════════════════════════════════════════════
+   A perception refresh is news about visibility and nothing else.
+
+   This used to call `redraw()`, which is a full `sync` of every token on the
+   scene: `stateOf` walking the actor, every condition uniform rewritten,
+   `place`, `setChip`. `sightRefresh` is raised from
+   `canvas.visibility.refresh()`, which a moving vision source asks for every
+   tick -- so this file's own header claim that only `place()` runs during a
+   gesture was false for every client with a token that can see.
+
+   What a perception refresh can actually change is whether this client may
+   see a creature at all, which is one boolean per token. Anything that
+   changes a VALUE arrives on its own hook and always did. */
+let pending = 0;
+
+function revisit(): void {
+  if (!layer || pending) return;
+  /* A macrotask rather than `requestAnimationFrame`, for `swap.js`'s reason:
+     what this wants is "after the current batch", and rAF does not fire at
+     all in a tab that is not painting. Twelve creatures' visibility asked
+     twelve times in one frame is the shape this is here to collapse. */
+  pending = window.setTimeout(() => {
+    pending = 0;
+    if (!layer) return;
+    const gm = isGM();
+    for (const token of canvas.tokens?.placeables ?? []) {
+      const id = token.document?.id ?? token.id;
+      if (!id) continue;
+      const chip = chips.get(id);
+      const hidden = !token.isVisible && !gm;
+      if (chip && hidden) {
+        clearTokenConditionMaterial(token);
+        retire(id, chip, true);
+      } else if (!chip && !hidden) {
+        /* Out of the fog is a creature appearing, and that is the one
+           direction here that genuinely wants the whole build. */
+        sync(token);
+      }
+    }
+  }, 0);
 }
 
 /* ══ the zoom ═════════════════════════════════════════════════════════
@@ -761,6 +842,14 @@ function build(): void {
      those two statements is allowed to be the only one. */
   host.appendChild(layer);
   chips.clear();
+  /* Both maps, and `leaving` is the one that was missed. Its elements were
+     children of the layer just removed, so a chip caught mid-departure
+     stayed in here as a detached node -- and the next `sync` for that id
+     called `reclaim`, got the detached element back, matched its shape, and
+     never appended it to the new layer. The chip then simply never appeared,
+     which is the exact mirror of the drag bug: that one deleted a live chip,
+     this one resurrected a dead one. */
+  leaving.clear();
   lastK = canvas.stage?.scale?.x ?? 1;
   redraw();
 }
@@ -820,6 +909,13 @@ export function registerTokenChips(): void {
      makes a ticker of our own unnecessary rather than merely redundant. */
   Hooks.on("refreshToken", (token: any) => {
     if (!layer) return;
+    /* While a creature is being dragged it is on the board twice and the chip
+       rides the ghost -- so the real token's own refreshes, which Foundry
+       raises for its dimmed drag state, must not pull it back. Both were
+       writing one element every frame. Matched on the preview's KIND rather
+       than on `hasPreview`, which is also true of a sheet's config preview,
+       and that one does not move the token at all. */
+    if (token?._preview?._previewType === "dragging") return;
     const chip = chips.get(token.document?.id ?? token.id);
     if (chip) place(chip, token);
     else sync(token);
@@ -827,10 +923,25 @@ export function registerTokenChips(): void {
 
   Hooks.on("drawToken", (token: any) => sync(token));
   Hooks.on("destroyToken", (token: any) => {
+    /* Keyed by the token object, so a ghost's filter goes and the real
+       creature's stays. */
+    clearTokenConditionMaterial(token);
+
+    /* A ghost being destroyed is a drag ending -- Foundry destroys the clone
+       on a drop and on a cancel alike -- and it carries the creature's own
+       document id, so deleting by id here is what deleted the live chip and
+       made the arrival replay. The chip is handed back to the real placeable
+       instead. A drop also raises `updateToken`; a cancel raises nothing at
+       all, so this is the only hook that can. */
+    if (ghost(token)) {
+      const real = realOf(token);
+      if (real && real !== token) sync(real);
+      return;
+    }
+
     const id = token.document?.id ?? token.id;
     chips.get(id)?.remove();
     chips.delete(id);
-    clearTokenConditionMaterial(token);
   });
 
   /* The state, from every direction it can move. An actor's tracks, a
@@ -853,8 +964,9 @@ export function registerTokenChips(): void {
      changed, so everything is asked again. */
   Hooks.on("daggerheart.tokenChipChanged", () => redraw());
 
-  /* Sight recomputed — a creature stepping out of the fog, or into it. */
-  Hooks.on("sightRefresh", () => redraw());
+  /* Sight recomputed — a creature stepping out of the fog, or into it. That
+     and nothing else: see `revisit`. */
+  Hooks.on("sightRefresh", () => revisit());
 
   /* Already up. See the note above: this is the case `canvasReady` cannot
      answer, because it has genuinely been and gone. */
