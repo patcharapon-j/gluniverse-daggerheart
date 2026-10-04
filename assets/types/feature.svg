@@ -1,19 +1,24 @@
-<!-- Feature: one chevron, apex up.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Feature: a rising spark, a swept chevron with a mote above the apex.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
 
-     The catch-all subtype — a class feature out of a campaign frame, a boon
-     from a session, a homebrew knack — and it borrowed gear.svg too, which
-     said the thing you are is a thing you packed.
+     Nothing sits under the apex. That absence is the whole separation from
+     primary.svg, which is also a pointed upward thing but carries a tang, and
+     at 14px the tang and the empty space are the only difference the eye
+     gets. The mote above the apex is the second half of that cue, so it is
+     kept wide and short rather than fine, or it disappears at chip size.
 
-     A chevron is the charge for something earned and held, which is what
-     every member of this subtype has in common, and it is the only idea here
-     that does not also name a genre. Drawn as a band rather than a solid so
-     it stays clear of primary.svg: that one is a filled point with a tang
-     under it, this is a hollow V with nothing under it, and at 14px the empty
-     middle is the cue that survives.
+     The limbs are two paths meeting along x=125 so each carries its own
+     carved sliver. One evenodd path over the whole chevron would join the two
+     slivers into a single wedge and the mark would go hollow at the centre.
 
-     Limbs 31 across at 45°, tips cut square through the limb. A chamfer on a
-     45° run is a chamfer on a chamfer and goes to mush small. -->
+     The outer edge bows well above the straight line from apex to tip. Drawn
+     straight the limbs read as an arrowhead, and the sweep is what puts this
+     on the same row as the domain marks.
+
+     Tips land on 18 and 232 so the mark holds the full live area. A chevron
+     pulled in from the edges reads as a smaller mark, not a lighter one. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M125 68 217 160 195 182 125 112 55 182 33 160Z"/>
+  <path fill-rule="evenodd" d="M125 64 C84 86 48 138 18 214 C56 184 94 156 125 138 Z M125 86 C108 100 94 130 78 156 C90 146 104 128 125 108 Z"/>
+  <path fill-rule="evenodd" d="M125 64 C166 86 202 138 232 214 C194 184 156 156 125 138 Z M125 86 C142 100 156 130 172 156 C160 146 146 128 125 108 Z"/>
+  <path d="M125 18 C132 29 141 36 141 42 C141 49 134 54 125 54 C116 54 109 49 109 42 C109 36 118 29 125 18 Z"/>
 </svg>

@@ -1,0 +1,13 @@
+<!-- Salve: a squat ointment jar, overhanging lid with a carved band, and a
+     thick dab of salve mounded above the rim and drawn off to a point.
+
+     Lid and pot overlap instead of sitting a few units apart, because a thin
+     gap between two wide fills blurs into one slab at 14px. The rim line below
+     the lid is a crescent that tapers out at both ends rather than a second
+     even band, which is what would turn this into a diagram.
+     Construction rules: art-src/marks/BRIEF.md -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M54,140 C51,152 50,164 52,176 C54,190 60,202 70,210 C82,219 98,224 116,224 C136,225 154,221 168,212 C182,203 191,189 194,172 C197,160 197,150 196,140 Z M62,153 C82,159 102,162 124,162 C146,162 167,159 187,153 C185,163 182,169 178,171 C161,176 143,178 124,178 C104,178 85,176 69,170 C65,168 63,162 62,153 Z"/>
+  <path fill-rule="evenodd" d="M42,106 L206,106 C213,106 219,109 221,115 C223,121 221,128 216,135 C214,139 210,143 205,145 C202,146 199,147 197,147 L51,147 C48,147 45,146 42,145 C38,143 35,140 32,136 C27,130 25,122 27,116 C30,109 35,106 42,106 Z M50,118 C56,117 66,117 76,117 L190,117 C195,117 199,119 198,124 C197,129 194,133 190,134 L60,134 C55,134 51,131 49,127 C48,123 48,120 50,118 Z"/>
+  <path d="M66,112 C62,98 64,84 72,72 C80,61 94,55 110,55 C126,55 144,61 158,70 C148,70 139,74 133,82 C128,89 127,97 130,106 C131,109 131,111 132,112 C124,112 116,111 110,110 C106,109 103,110 100,112 Z"/>
+</svg>

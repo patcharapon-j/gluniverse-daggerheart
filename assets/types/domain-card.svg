@@ -1,16 +1,23 @@
-<!-- Domain card: a card with its sigil voided.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Domain card: a tablet with four corner mounts and an empty faceted socket.
+     Drawn rather than traced, on the construction in art-src/marks/BRIEF.md.
 
-     The third fallback and the rarest: a domain card names a domain by
-     definition, so this is only for one whose domain is not among the
-     thirteen on disk.
+     The third fallback and the rarest. A domain card names a domain by
+     definition, so this is only for one that is not among the thirteen on disk.
 
-     The card's own silhouette at the card's own 0.71 aspect, chamfers and
-     all, with a lozenge voided where the sigil sits. Voided rather than
-     filled is the whole separation from gear.svg — that one is a ring with a
-     core floating in it, this is a solid field with a hole in it, and square
-     against tall carries the rest. -->
+     The corner ornaments are separate shapes with a carved gap, not filled
+     spurs. An ornament sweeping inward over a solid field is invisible, so the
+     field is cut back and the gap does the drawing. At 14px the gaps close up
+     and the silhouette is a plain chamfered tablet, which is the order the two
+     reads are wanted in.
+
+     The socket is the one angular shape in the mark. That is what makes an
+     empty setting read as cut rather than as another hole in the field, and it
+     is empty for the same reason the lozenge on class.svg is. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M75 24H175L197 46V204L175 226H75L53 204V46Z
-                               M125 87 163 125 125 163 87 125Z"/>
+  <path fill-rule="evenodd" d="M86 18H164C170 26 180 38 188 48C196 56 204 64 214 72V178C204 186 196 194 188 202C180 212 170 224 164 232H86C80 224 70 212 62 202C54 194 46 186 36 178V72C46 64 54 56 62 48C70 38 80 26 86 18Z
+                               M125 85L156 105V145L125 165L94 145V105Z"/>
+  <path d="M176 18H190C202 20 214 32 214 44V60C208 50 200 40 192 32C187 26 182 21 176 18Z"/>
+  <path d="M74 18H60C48 20 36 32 36 44V60C42 50 50 40 58 32C63 26 68 21 74 18Z"/>
+  <path d="M176 232H190C202 230 214 218 214 206V190C208 200 200 210 192 218C187 224 182 229 176 232Z"/>
+  <path d="M74 232H60C48 230 36 218 36 206V190C42 200 50 210 58 218C63 224 68 229 74 232Z"/>
 </svg>

@@ -1,0 +1,26 @@
+<!-- Cloak: hung by the shoulders, hood empty, hem torn to three points.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     This one only has to beat cloth-armor.svg at 14px, and both are a shoulder
+     over a fall of cloth, so the difference is carried twice. The hood keeps a
+     void wide enough to stay open at 14px, the one hole in the set, and the hem
+     tears to three points where the robe's hem is a solid bar.
+
+     The cloth is three overlapping panels rather than one notched outline. Cut
+     as notches the tears were straight lines between two edges of the same
+     shape; as panels each one ends in its own point and the tear between them
+     opens on its own. The panels also start below the hood's opening, which is
+     what keeps that void clear.
+
+     The fall is almost straight from the shoulders. Flared, it swept out past
+     the hood, the mark read as a moth, and it put the robe's outline on a cloak. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M94 84 C88 124 96 172 108 200 L125 232 L142 200 C154 172 162 124 156 84 Z
+                               M119 112 C117 142 118 162 120 182 L132 182 C133 162 132 142 130 112 Z"/>
+  <path fill-rule="evenodd" d="M116 88 C80 92 46 102 34 126 C38 158 43 190 50 218 C66 194 84 174 100 158 C94 126 100 106 116 88 Z
+                               M70 130 C66 154 64 172 64 188 L76 190 C76 172 78 154 82 132 Z"/>
+  <path fill-rule="evenodd" d="M134 88 C170 92 204 102 216 126 C212 158 207 190 200 218 C184 194 166 174 150 158 C156 126 150 106 134 88 Z
+                               M180 130 C184 154 186 172 186 188 L174 190 C174 172 172 154 168 132 Z"/>
+  <path fill-rule="evenodd" d="M120 12 C150 16 172 40 166 78 C150 92 92 92 84 78 C80 40 98 16 120 12 Z
+                               M120 32 C140 36 153 54 149 74 C138 82 102 82 97 74 C93 54 102 36 120 32 Z"/>
+</svg>

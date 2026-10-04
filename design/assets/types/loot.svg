@@ -1,21 +1,21 @@
-<!-- Loot: a chest, seam and latch.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Loot: a strongbox, domed lid over a strapped body, latch in the seam.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
 
-     Loot used to borrow gear.svg's ring-and-core, which made every found item
-     look like equipment somebody had chosen to carry — and the two sit side
-     by side on the gear tab, so the borrowing was visible rather than
-     theoretical.
+     The latch is inscribed entirely inside the seam band. A latch that hangs
+     past the band gives an evenodd path two crossings above the band and two
+     below, and it punches two holes in the lid instead of drawing one latch.
+     That is what the previous version did. Rasterize before believing it.
 
-     Wider than tall, which no other mark here is: the aspect alone separates
-     it on a chip before any detail resolves. A chest is also the one
-     container that reads the same in every genre the art has to cover, a
-     strongbox and a cargo case included.
+     The rib carved into the lid stops short of the skirt at both ends. Run it
+     the full width and the dome is cut into two thin arcs and the mark reads
+     as a rainbow, which is what the first two drafts here did.
 
-     The latch is inscribed exactly in the seam band rather than straddling
-     it. A lozenge hanging past the seam would count two crossings above and
-     below and punch two holes in the lid. -->
+     The corner straps are carved out of the body as negative space rather
+     than laid over it, because a strap painted in the same fill as the box is
+     not there at all. The slots stop above the base so the straps taper into
+     a solid foot. Taken to the bottom edge they read as four legs. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M46 62H204L226 84V166L204 188H46L24 166V84Z
-                               M24 110H226V140H24Z
-                               M125 110 140 125 125 140 110 125Z"/>
+  <path fill-rule="evenodd" d="M125 22 C72 22 34 46 24 76 C28 84 54 88 125 88 C196 88 222 84 226 76 C216 46 178 22 125 22 Z M70 72 C76 50 96 40 125 40 C154 40 174 50 180 72 L162 74 C156 58 143 52 125 52 C107 52 94 58 88 74 Z"/>
+  <path fill-rule="evenodd" d="M24 102 C18 114 18 134 24 148 C90 154 160 154 226 148 C232 134 232 114 226 102 C160 96 90 96 24 102 Z M125 110 C133 110 140 116 140 124 C140 129 137 132 134 135 L131 141 C129 144 121 144 119 141 L116 135 C113 132 110 129 110 124 C110 116 117 110 125 110 Z"/>
+  <path fill-rule="evenodd" d="M32 162 C30 190 34 214 48 228 C60 234 190 234 202 228 C216 214 220 190 218 162 Z M72 166 C68 186 68 202 72 214 C80 219 92 219 100 214 C100 202 100 186 102 166 Z M178 166 C182 186 182 202 178 214 C170 219 158 219 150 214 C150 202 150 186 148 166 Z"/>
 </svg>

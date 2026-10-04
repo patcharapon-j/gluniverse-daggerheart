@@ -793,7 +793,7 @@ export default [
     "name": "Workshop Pocket Flintlock",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 1,
@@ -829,7 +829,7 @@ export default [
     "name": "Improved Workshop Pocket Flintlock",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 2,
@@ -865,7 +865,7 @@ export default [
     "name": "Advanced Workshop Pocket Flintlock",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 3,
@@ -901,7 +901,7 @@ export default [
     "name": "Legendary Workshop Pocket Flintlock",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 4,
@@ -937,7 +937,7 @@ export default [
     "name": "Workshop Boarding Pistol",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 1,
@@ -973,7 +973,7 @@ export default [
     "name": "Improved Workshop Boarding Pistol",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 2,
@@ -1009,7 +1009,7 @@ export default [
     "name": "Advanced Workshop Boarding Pistol",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 3,
@@ -1045,7 +1045,7 @@ export default [
     "name": "Legendary Workshop Boarding Pistol",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 4,
@@ -1081,7 +1081,7 @@ export default [
     "name": "Workshop Long Musket",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 1,
@@ -1117,7 +1117,7 @@ export default [
     "name": "Improved Workshop Long Musket",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 2,
@@ -1153,7 +1153,7 @@ export default [
     "name": "Advanced Workshop Long Musket",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 3,
@@ -1189,7 +1189,7 @@ export default [
     "name": "Legendary Workshop Long Musket",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 4,
@@ -1225,7 +1225,7 @@ export default [
     "name": "Workshop Deck Blunderbuss",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 1,
@@ -1261,7 +1261,7 @@ export default [
     "name": "Improved Workshop Deck Blunderbuss",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 2,
@@ -1297,7 +1297,7 @@ export default [
     "name": "Advanced Workshop Deck Blunderbuss",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 3,
@@ -1333,7 +1333,7 @@ export default [
     "name": "Legendary Workshop Deck Blunderbuss",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 4,
@@ -1369,7 +1369,7 @@ export default [
     "name": "Workshop Turning Pepperbox",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 1,
@@ -1405,7 +1405,7 @@ export default [
     "name": "Improved Workshop Turning Pepperbox",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 2,
@@ -1441,7 +1441,7 @@ export default [
     "name": "Advanced Workshop Turning Pepperbox",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 3,
@@ -1477,7 +1477,7 @@ export default [
     "name": "Legendary Workshop Turning Pepperbox",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 4,
@@ -1513,7 +1513,7 @@ export default [
     "name": "Workshop Brace Cannon",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 1,
@@ -1554,7 +1554,7 @@ export default [
     "name": "Improved Workshop Brace Cannon",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 2,
@@ -1595,7 +1595,7 @@ export default [
     "name": "Advanced Workshop Brace Cannon",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 3,
@@ -1636,7 +1636,7 @@ export default [
     "name": "Legendary Workshop Brace Cannon",
     "type": "weapon",
     "folder": "Primary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/primary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 4,
@@ -1677,7 +1677,7 @@ export default [
     "name": "Workshop Sleeve Flintlock",
     "type": "weapon",
     "folder": "Secondary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/secondary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 1,
@@ -1713,7 +1713,7 @@ export default [
     "name": "Improved Workshop Sleeve Flintlock",
     "type": "weapon",
     "folder": "Secondary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/secondary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 2,
@@ -1749,7 +1749,7 @@ export default [
     "name": "Advanced Workshop Sleeve Flintlock",
     "type": "weapon",
     "folder": "Secondary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/secondary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 3,
@@ -1785,7 +1785,7 @@ export default [
     "name": "Legendary Workshop Sleeve Flintlock",
     "type": "weapon",
     "folder": "Secondary Weapons",
-    "img": "systems/gluniverse-daggerheart/assets/types/secondary.svg",
+    "img": "systems/gluniverse-daggerheart/assets/types/firearm.svg",
     "system": {
       "description": "<p>Gunslinger playtest firearm. Physical and nonmagical. Reloading is narrative; no ammunition counter or automatic misfire. Existing firearms retain their own rules. See the Gunslinger Playtest Rules journal for collection rules.</p>",
       "tier": 4,

@@ -1,0 +1,36 @@
+<!-- Mail armor: a hauberk, standing collar, short sleeves, the weave carved out.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     Rounded everywhere plate is angular, so the two never trade places at a
+     glance: the sleeves fall away from the shoulder instead of flaring up off
+     it, and the hem is flat where plate comes to a point.
+
+     The weave is a staggered field of lozenges, not rings. A ring needs a wall
+     and a hole, and at 14px both close up and the torso goes solid grey. A
+     lozenge is one void, holds its 18 by 12 at any size, and the stagger is
+     what says woven rather than drilled.
+
+     Each sleeve is its own path laid over the body. Welded into the outline the
+     shoulder had to be one curve doing two jobs, and the cuff lost its taper,
+     which is the same trade the pauldrons on armor.svg make. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M150 56 C168 62 178 82 181 104 C184 142 184 184 180 226 C156 234 94 234 70 226 C66 184 66 142 69 104 C72 82 82 62 100 56 Z
+                               M86 103 L91 97 L99 97 L104 103 L99 109 L91 109 Z
+                               M116 100 L121 94 L129 94 L134 100 L129 106 L121 106 Z
+                               M146 103 L151 97 L159 97 L164 103 L159 109 L151 109 Z
+                               M101 123 L106 117 L114 117 L119 123 L114 129 L106 129 Z
+                               M131 123 L136 117 L144 117 L149 123 L144 129 L136 129 Z
+                               M86 147 L91 141 L99 141 L104 147 L99 153 L91 153 Z
+                               M116 144 L121 138 L129 138 L134 144 L129 150 L121 150 Z
+                               M146 147 L151 141 L159 141 L164 147 L159 153 L151 153 Z
+                               M101 167 L106 161 L114 161 L119 167 L114 173 L106 173 Z
+                               M131 167 L136 161 L144 161 L149 167 L144 173 L136 173 Z
+                               M86 191 L91 185 L99 185 L104 191 L99 197 L91 197 Z
+                               M116 188 L121 182 L129 182 L134 188 L129 194 L121 194 Z
+                               M146 191 L151 185 L159 185 L164 191 L159 197 L151 197 Z
+                               M101 211 L106 205 L114 205 L119 211 L114 217 L106 217 Z
+                               M131 211 L136 205 L144 205 L149 211 L144 217 L136 217 Z"/>
+  <path d="M102 58 C74 68 46 94 22 148 C46 158 66 156 82 148 C78 116 84 84 102 62 Z"/>
+  <path d="M148 58 C176 68 204 94 228 148 C204 158 184 156 168 148 C172 116 166 84 148 62 Z"/>
+  <path d="M100 24 C116 18 134 18 150 24 C154 38 154 52 152 62 C140 72 110 72 98 62 C96 52 96 38 100 24 Z"/>
+</svg>

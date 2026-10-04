@@ -1,0 +1,29 @@
+<!-- Tome: a closed book at a slight angle. Spine down the left, cover with a
+     hollowed boss, page block carved at the fore edge, two clasps.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     The codex domain sigil is an open book with flame off its pages, so this
+     one has to be shut and fastened. The clasps are the whole distinction
+     and they are therefore in the silhouette, two tongues protruding past
+     the fore edge, not detail painted on the cover.
+
+     The page block is three short slots rather than one long groove. A
+     single groove beside the fore edge mirrored the spine groove and the
+     book lost which edge it opened on.
+
+     The boss is a void with its centre filled back in, three subpaths under
+     evenodd. A plain void here was a dark diamond, which is a label. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M46 32 C36 36 26 48 22 64 C18 104 18 150 22 190 C26 206 36 218 46 222 C52 212 54 190 54 160 C54 112 52 66 48 44 Z"/>
+  <path fill-rule="evenodd" d="M44 44 C44 32 54 24 68 24 L178 30 C190 32 196 40 196 50 L198 196 C198 208 188 216 176 218 L56 224 C46 224 42 216 42 206 Z
+                               M58 56 C58 50 62 46 66 46 C70 46 74 50 74 56 L76 192 C76 198 72 202 68 202 C64 202 60 198 60 192 Z
+                               M110 84 L140 126 L110 168 L80 126 Z
+                               M110 106 L126 126 L110 146 L94 126 Z
+                               M146 86 C160 84 172 84 178 86 L178 98 C172 100 160 100 146 98 Z
+                               M146 110 C160 108 172 108 178 110 L178 122 C172 124 160 124 146 122 Z
+                               M146 134 C160 132 172 132 178 134 L178 146 C172 148 160 148 146 146 Z"/>
+  <path fill-rule="evenodd" d="M184 48 C206 52 222 60 232 74 C232 80 232 82 230 86 C218 102 204 110 184 114 C188 92 188 70 184 48 Z
+                               M198 68 C204 66 212 66 218 68 L218 94 C212 96 204 96 198 94 Z"/>
+  <path fill-rule="evenodd" d="M184 136 C206 140 222 148 232 162 C232 168 232 170 230 174 C218 190 204 198 184 202 C188 180 188 158 184 136 Z
+                               M198 156 C204 154 212 154 218 156 L218 182 C212 184 204 184 198 182 Z"/>
+</svg>

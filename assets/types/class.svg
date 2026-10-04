@@ -1,16 +1,21 @@
-<!-- Class: a banner with a swallow-tail foot.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Class: a standard, for a class whose domain this system has no art for.
+     Drawn to art-src/marks/BRIEF.md.
 
-     Only ever drawn as a fallback. A class card wears its domain's sigil,
-     which says more than a type mark could, and that resolves for all
-     thirteen domains on disk. It does not resolve for a homebrew class that
-     names a domain of its own, and the pennant then drew empty — no mark, no
-     fallback, a blank gem on the seam. This is what goes there.
+     Two failures are designed out of this one. Centred versions read as a
+     crown: a symmetric field with two points at the foot and a spike on top
+     is a coronet before it is a banner. Hanging the cloth off one edge of
+     an off-centre staff fixes that. Then bowing the fly edge outward to get
+     some life into it turned the whole mark into an axe, because a straight
+     shaft with a convex blade beside it is an axe and `axe.svg` is two tiles
+     away. So the fly is held straight and the movement is in the tail and
+     the drop of the head instead.
 
-     A banner is the standard you fight under, so it is on-meaning for a class
-     rather than for items in general. Nothing else here is a tall field of
-     constant width: consumable.svg is the other tall mark and it narrows to a
-     neck, where this keeps its width and takes the bite out of the bottom. -->
+     The device in the field is a void and stays blank on purpose. That is
+     the part a real domain would have filled. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M98 24H152L174 46V226L125 182 76 226V46Z"/>
+  <path d="M51 232 L51 42 C 53 31 58 22 65 12 C 72 22 77 31 79 42 L79 232 Z"/>
+  <path fill-rule="evenodd" d="M77 44 L214 56 L214 176
+    C 190 170 166 158 146 140
+    C 124 162 101 176 77 184 Z
+    M145 86 L169 110 L145 134 L121 110 Z"/>
 </svg>

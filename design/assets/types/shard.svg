@@ -1,0 +1,15 @@
+<!-- Shard: three crystal splinters of uneven length off one base, facets cut as
+     negative slivers.
+
+     Each facet stops below the midpoint, because a sliver run to the tip
+     hollows the splinter into an outline at 24px. Straight edges here on
+     purpose, against the curved house style, because a crystal drawn with
+     sweeps reads as a flame. The base is one path the three splinters sit on
+     rather than three separate feet, so the group reads as one cluster.
+     Construction rules: art-src/marks/BRIEF.md -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M54,216 L62,204 L74,192 L96,191 L118,190 L150,191 L180,192 L190,206 L198,218 C202,229 195,232 184,232 L130,232 L68,232 C60,232 55,230 54,225 C53,221 53,218 54,216 Z"/>
+  <path fill-rule="evenodd" d="M28,62 L40,84 L52,106 L62,120 L70,134 L74,150 L78,166 L82,184 L86,200 L62,200 L40,200 L38,182 L36,166 L34,148 L32,132 Z M50,146 L56,158 L62,170 L66,180 L70,194 L63,194 L56,194 L55,185 L54,176 Z"/>
+  <path fill-rule="evenodd" d="M128,18 L140,42 L150,62 L159,74 L166,86 L164,104 L163,120 L161,140 L160,160 L156,182 L152,204 L130,205 L108,204 L104,182 L102,160 L101,140 L101,120 L102,102 L104,86 Z M128,100 L140,124 L148,142 L147,166 L146,190 L132,190 L124,166 L118,142 Z"/>
+  <path fill-rule="evenodd" d="M228,84 L226,100 L224,114 L222,130 L220,146 L216,158 L212,170 L207,185 L202,200 L184,199 L166,198 L171,182 L176,166 L181,152 L186,138 Z M206,154 L204,161 L202,168 L200,174 L198,180 L194,187 L190,194 L186,193 L182,192 L186,184 L190,176 L193,174 L196,172 Z"/>
+</svg>

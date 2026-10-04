@@ -1,14 +1,23 @@
-<!-- Consumable: a stoppered vessel.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Consumable: a flask, stoppered, with a curl of vapour off the collar.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
 
-     A vial, a canister and a cartridge all resolve to this silhouette, which
-     is the genre-neutrality test the rest of the set has to pass too. Solid
-     rather than outlined: at 14px an outlined vessel fills in and becomes a
-     blob, and the silhouette is carrying it anyway. Having no interior at all
-     is also what tells it from gear.svg's ring-and-core.
+     The collar, the neck and the body are one continuous silhouette, and only
+     the stopper is a separate path. An earlier pass had all three detached and
+     at 14px the gaps closed up and the whole thing went back to being a blob,
+     which is the failure the flat polygon version had in the first place.
 
-     Straight shoulders rather than a flare, because a flare is a curve and
-     nothing in this set has one. Stopper 44 wide, neck 30, body 146. -->
+     The carved level line sits low, where the body is widest. Higher up it
+     crosses the shoulder, the carve narrows with the body, and it stops
+     reading as liquid and starts reading as a crack in the glass.
+
+     The body is widest around two thirds down and draws back in toward the
+     base, so the silhouette tapers the way the domain marks' limbs do rather
+     than sitting there as an oval.
+
+     Vapour on the right only. It is the one asymmetry the brief allows here,
+     and a mirrored pair stops being vapour and reads as a pair of handles. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M103 24H147V52H140V84L198 118V204L176 226H74L52 204V118L110 84V52H103Z"/>
+  <path fill-rule="evenodd" d="M93 58 C110 53 140 53 157 58 L161 77 L142 82 L142 98 C176 104 208 124 216 156 C222 184 206 212 180 226 C160 234 90 234 70 226 C44 212 28 184 34 156 C42 124 74 104 108 98 L108 82 L89 77 Z M50 166 C88 158 162 158 200 166 L201 183 C162 175 88 175 49 183 Z"/>
+  <path d="M125 18 C137 26 149 36 153 46 C141 51 109 51 97 46 C101 36 113 26 125 18 Z"/>
+  <path d="M216 22 C190 44 206 70 192 88 C184 94 174 92 170 84 C186 70 180 48 200 34 C206 29 212 25 216 22 Z"/>
 </svg>

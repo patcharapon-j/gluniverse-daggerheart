@@ -1,0 +1,25 @@
+<!-- Garment: worn gear drawn as a single boot. Tall shaft with a carved cuff
+     fold, two lace eyelets voided through it, sole carved as a band,
+     tapering heel at the back.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     It must not read as armour, so the shaft is one soft curve pinched at
+     the ankle, with no plates, no studs and no straight edges. The armour
+     mark beside it is built from hard overlapping bands, and softness is
+     the whole distinction.
+
+     The cuff fold stops short of both sides. Carved the full width it cut
+     the cuff loose and the top of the boot floated.
+
+     The sole is the fill left under a carved slot rather than a bar laid
+     along the bottom, and the slot ends before the heel so the heel stays
+     part of the boot. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M60 28 C86 20 144 20 170 28 C174 42 174 56 170 68 C144 76 86 76 60 68 C56 56 56 42 60 28 Z
+                               M96 40 C112 36 140 36 148 41 C149 48 149 52 148 58 C132 53 110 53 98 58 C95 52 95 46 96 40 Z"/>
+  <path fill-rule="evenodd" d="M64 68 C88 76 142 76 166 68 C162 94 156 124 152 150 C176 156 202 166 219 179 C229 186 232 197 226 207 C213 219 188 225 150 226 L86 224 C74 222 68 214 68 202 C72 182 76 168 80 152 C72 118 64 92 64 68 Z
+                               M108 96 C116 96 122 102 122 110 C122 118 116 124 108 124 C100 124 94 118 94 110 C94 102 100 96 108 96 Z
+                               M106 136 C114 136 120 142 120 150 C120 158 114 164 106 164 C98 164 92 158 92 150 C92 142 98 136 106 136 Z
+                               M100 194 C134 202 172 200 202 191 L204 202 C172 211 134 213 100 205 Z"/>
+  <path d="M68 194 C78 206 86 218 88 232 L30 232 C30 214 44 200 68 194 Z"/>
+</svg>

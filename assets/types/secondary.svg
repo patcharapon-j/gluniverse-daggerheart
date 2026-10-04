@@ -1,18 +1,28 @@
-<!-- Secondary weapon: the same spearhead, twice.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Secondary weapon: two short blades crossed low, each widening from the point
+     to a bound collar, with the crossing carved open. Drawn, not traced. See
+     art-src/marks/BRIEF.md.
 
-     Count is what this family discriminates by once the archetype is spent —
-     ancestry is two lozenges, community is three hexes — and it is the only
-     cue that survives 14px whole. Two points is also the literal answer: the
-     secondary slot is where a second weapon goes.
+     The crossing is the decision and it was got wrong first. Letting the blades
+     overlap inside one evenodd path unfills the overlap for free, which looks
+     right on paper, but the hole it makes runs out to the background at both
+     ends of its long diagonal. The X is then pinched to two single points and
+     the mark falls into two loose blades. So the X is drawn as one outline
+     around the union of both, with a lozenge carved inside the hub, which
+     leaves 14 units of metal welding the four limbs together.
 
-     Both are drawn at the same weight as each other rather than one shrunk
-     against the other. The old pair put these at 56% of the primary so the
-     two glyphs would differ in size as well as count, which only reads when
-     both are on screen at once — and on a card only one ever is. At 70% of
-     the primary they fill the same live area it does, which is what the grid
-     asks of every mark. The 22-unit gutter is the family's floor. -->
+     Limbs are 48 wide, not the 60 the first solid version used. At 60 the four
+     of them met in a mass with a hole in it rather than reading as two blades
+     laid across each other, because the hub grows as fast as the limbs do.
+
+     The collars are bands across the two lower limbs with a binding groove cut
+     through each, and both sit well below the hub. That is what keeps this off
+     the bone sigil, which crosses at the middle and is knobbed at all four
+     ends. This is two points up, two collars down, nothing on the ends. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M71 54 114 120 102 144 85 152 85 196 57 196 57 152 40 144 28 120Z"/>
-  <path d="M179 54 222 120 210 144 193 152 193 196 165 196 165 152 148 144 136 120Z"/>
+  <path fill-rule="evenodd" d="M20 28C50 50 95 98 125 118C155 98 200 50 230 28C214 56 180 124 159 152C174 166 194 184 205 190L175 226C166 214 145 198 125 186C105 198 84 214 75 226L45 190C56 184 76 166 91 152C70 124 36 56 20 28Z
+                               M125 132C134 139 140 146 145 152C140 158 134 165 125 172C116 165 110 158 105 152C110 146 116 139 125 132Z"/>
+  <path fill-rule="evenodd" d="M187 164L210 183L169 232L146 213Z
+                               M190 176L198 183L166 221L158 214Z"/>
+  <path fill-rule="evenodd" d="M63 164L40 183L81 232L104 213Z
+                               M60 176L52 183L84 221L92 214Z"/>
 </svg>

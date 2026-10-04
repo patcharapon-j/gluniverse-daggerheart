@@ -1,0 +1,24 @@
+<!-- Tool: adventuring kit drawn as a lantern. Tapering ring handle, cage with
+     its bars carved out, a flame inside the cage, flared base.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     One object, not a pile of implements. A hammer and tongs and rope
+     crossed over each other is three silhouettes fighting for the same
+     square, and at 14px it is a smudge with no name.
+
+     Cage, window, two bars and the flame are five subpaths under one evenodd
+     fill, so the flame is an island inside the window. Painted on top of the
+     cage in the same fill it would not exist at all.
+
+     The handle is open at the bottom with both ends tapering, so it reads as
+     a bail hanging on a hook rather than as a solid ring. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M125 16 C146 16 162 30 162 48 C162 62 152 74 138 78 L134 60 C142 58 147 53 147 46 C147 38 138 32 125 32 C112 32 103 38 103 46 C103 53 108 58 116 60 L112 78 C98 74 88 62 88 48 C88 30 104 16 125 16 Z"/>
+  <path d="M70 76 C100 70 150 70 180 76 C186 86 190 92 192 98 C150 104 100 104 58 98 C60 92 64 86 70 76 Z"/>
+  <path fill-rule="evenodd" d="M58 102 C100 96 150 96 192 102 C198 130 198 164 192 190 C150 196 100 196 58 190 C52 164 52 130 58 102 Z
+                               M74 112 C108 108 142 108 176 112 C180 136 180 158 176 180 C142 184 108 184 74 180 C70 158 70 136 74 112 Z
+                               M85 120 C91 119 95 119 97 120 L97 172 C95 173 91 173 85 172 Z
+                               M153 120 C159 119 163 119 165 120 L165 172 C163 173 159 173 153 172 Z
+                               M126 118 C134 134 143 144 142 157 C141 168 134 174 125 174 C116 174 109 168 108 157 C107 148 112 140 116 132 C118 142 122 146 124 142 C126 137 125 128 126 118 Z"/>
+  <path d="M52 192 C100 198 150 198 198 192 C206 206 216 222 222 232 L28 232 C34 222 44 206 52 192 Z"/>
+</svg>

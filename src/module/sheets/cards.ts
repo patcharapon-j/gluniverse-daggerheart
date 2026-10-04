@@ -65,6 +65,7 @@ import { KEEP } from "../ui/keep.js";
 import { PER_PATHS } from "../ui/terms.js";
 import { CLASSES, KINDS, byslug } from "../ui/domains.js";
 import { clazz, glyph, icon } from "../ui/domains.js";
+import { KIND_GLYPHS, kindOf } from "../ui/item-kind.js";
 
 /* ── sigils ───────────────────────────────────────────────────────────
    `icon()` and `glyph()` fetch an SVG and recentre it against its own ink
@@ -99,6 +100,32 @@ export const GLYPHS = [
 ] as const;
 
 export type Sigils = Record<string, string>;
+
+/**
+ * The finer gear mark for an item, with the coarse one as the floor.
+ *
+ * Every weapon in the compendium wore a spearhead or a pair of them, because
+ * `slot` is the only thing the data model records that could pick a mark and
+ * it says which table the book printed the row in. `item-kind.js` reads the
+ * kind off the name instead; what it cannot read, this floors to the mark
+ * that item wears today.
+ *
+ * Two floors, not one. A name the tables know but whose art is missing falls
+ * back the same way a name they do not know does, so a half-finished mark set
+ * degrades to the old behaviour rather than to a blank gem. Same reason as
+ * `sigOf`: the key is what travels to chat, so it is chosen here.
+ */
+const gearSig = (
+  sig: Sigils,
+  type: string,
+  name: string,
+  floor: string,
+): { sig: string; sigKey: string } => {
+  const kind = kindOf(type, name);
+  const k = kind ? `@${kind}` : "";
+  if (k && sig[k]) return { sig: sig[k], sigKey: k };
+  return { sig: sig[`@${floor}`] ?? "", sigKey: `@${floor}` };
+};
 
 /**
  * A class mark's key. `#` for the same reason `@` marks a type glyph — three
@@ -149,6 +176,7 @@ export function loadSigils(): Promise<Sigils> {
     await Promise.all([
       ...DOMAINS.map((s) => safe(s, () => icon(s))),
       ...GLYPHS.map((g) => safe(`@${g}`, () => glyph(g))),
+      ...KIND_GLYPHS.map((g) => safe(`@${g}`, () => glyph(g))),
       ...CLASSES.map((c) => safe(`#${c}`, () => clazz(c))),
     ]);
     return out;
@@ -962,8 +990,7 @@ export function cardOf(
       return {
         ...base,
         d: KINDS.gear,
-        sig: sig[`@${s.slot ?? "primary"}`] ?? sig["@gear"] ?? "",
-        sigKey: `@${s.slot ?? "primary"}`,
+        ...gearSig(sig, "weapon", it.name, s.slot ?? "primary"),
         motif: useOrnaments(KINDS.gear.slug),
         glyph: "weapon",
         tier: tierOf(s.tier ?? 1),
@@ -988,7 +1015,7 @@ export function cardOf(
       return {
         ...base,
         d: KINDS.gear,
-        sig: sig["@armor"] ?? "", sigKey: "@armor",
+        ...gearSig(sig, "armor", it.name, "armor"),
         motif: useOrnaments(KINDS.gear.slug),
         glyph: "armor",
         tier: tierOf(s.tier ?? 1),
@@ -1015,7 +1042,7 @@ export function cardOf(
       return {
         ...base,
         d: KINDS.gear,
-        sig: sig["@consumable"] ?? "", sigKey: "@consumable",
+        ...gearSig(sig, "consumable", it.name, "consumable"),
         motif: useOrnaments(KINDS.gear.slug),
         glyph: "consumable",
         type: "Consumable",
@@ -1028,7 +1055,7 @@ export function cardOf(
       return {
         ...base,
         d: KINDS.gear,
-        sig: sig["@loot"] ?? "", sigKey: "@loot",
+        ...gearSig(sig, "loot", it.name, "loot"),
         motif: useOrnaments(KINDS.gear.slug),
         glyph: "loot",
         type: "Item",

@@ -27,6 +27,22 @@
   line-height: 1.45;
 }
 
+/* Foundry's `h3 { font-family: var(--font-h3) }` sits in its own
+   @layer elements.typography and matches our headings directly, where
+   everything this system says about type it says on an ancestor and lets
+   inherit. A declaration beats an inheritance however far up the
+   inheritance started, so cascade layers and specificity are both beside
+   the point: every card name came out in Signika, Foundry's UI face.
+
+   Only the family was taken. `.dh-name h3` names its own size, weight,
+   colour and width axis, so those survived, and a card name was Google
+   Sans Flex's 850 weight and 130% width axis synthesised onto a static
+   300-700 face that has neither. Hand the family back and the five
+   declarations are describing the font they were written for again. */
+.dh :is(h1, h2, h3, h4, h5, h6) {
+  font-family: inherit;
+}
+
 /* ── the window ──────────────────────────────────────────────────────
    ApplicationV2 draws the frame; we only take the content region and the
    one chamfer that marks a window as ours. 14px, the largest step of the

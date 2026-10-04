@@ -1,0 +1,23 @@
+<!-- Cloth armor: robes, narrow shoulder falling into a skirt that flares to the foot.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     The flare is the whole read, so it runs from a 50 unit shoulder to the full
+     width of the frame at the hem and the two folds follow it rather than
+     dropping straight. Nothing else in the set gets wider on the way down.
+
+     The folds stop 25 units short of the hem. Run to the bottom edge they cut
+     the skirt into three columns, and at 14px that is the ragged hem of
+     cloak.svg, which is the one mark this must never be mistaken for.
+
+     The sash sits high, at the narrow part of the body. Level with the waist it
+     was swallowed by the flare and only the tail showed. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M110 30 C120 27 130 27 140 30 L144 34 C154 40 158 48 160 58 C166 102 192 170 232 230 C190 236 60 236 18 230 C58 170 84 102 90 58 C92 48 96 40 106 34 Z
+                               M112 70 C104 110 98 160 92 206 L107 208 C113 160 117 110 121 72 Z
+                               M138 70 C146 110 152 160 158 206 L143 208 C137 160 133 110 129 72 Z
+                               M116 32 L125 54 L134 32 Z
+                               M70 124 C78 130 86 134 96 138 L94 149 C82 144 72 138 66 133 Z
+                               M180 124 C172 130 164 134 154 138 L156 149 C168 144 178 138 184 133 Z"/>
+  <path d="M46 98 C92 114 158 114 204 94 L200 120 C154 136 96 136 50 122 Z"/>
+  <path d="M196 96 L216 104 L208 166 Z"/>
+</svg>

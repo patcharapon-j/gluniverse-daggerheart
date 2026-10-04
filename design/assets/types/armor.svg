@@ -1,17 +1,30 @@
-<!-- Armor: three bands, tapering downward.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Armor: a cuirass seen front on, two pauldron flares, three banding grooves.
+     Drawn, not traced. See art-src/marks/BRIEF.md.
 
-     Not a shield: the sheet already spends a shield on the Armor Score in the
-     rail, and a second one here would claim the two are the same number when
-     they are not. Not the equipment plate either, whose ring-and-core is the
-     generic gear mark and has to stay free for items.
+     The pauldrons are separate paths overlapping the torso rather than part of
+     its outline. Welded in, the shoulder line had to be one curve doing two
+     jobs and the flare always lost. Overlapped, each sweeps out and tapers to
+     its own point at the frame edge while the torso keeps a clean narrowing
+     silhouette underneath it.
 
-     Tapering is what keeps three stacked bars from reading as a menu icon — a
-     stack that narrows is a torso, a stack that does not is a list. No points
-     anywhere, which is the whole separation from the two weapon marks.
-     Bands 46 deep at 32-unit gutters, widths 202, 166, 122. -->
+     Each point is a long shallow wedge, and the angle it closes at comes from
+     where the two control handles sit rather than from the vertex. The first
+     pass put the edges 90 degrees apart and got a paddle, the second got a
+     horizontal spike. Both tips now rise toward the top of the frame, so the
+     flare reads as a shoulder rather than a wing.
+
+     The neckline is cut deep enough to be a neckline. At the shallow depth it
+     started with it read as a dent in the top edge, and the mark lost its front
+     on reading at 24px.
+
+     Nothing here comes to a point below the shoulders. That is the whole
+     separation from the two weapon marks, so the waist narrows to a round hem
+     and the three grooves arc down with it rather than sitting level. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M24 24H226V48L204 70H46L24 48Z"/>
-  <path d="M42 102H208V126L186 148H64L42 126Z"/>
-  <path d="M64 180H186V204L164 226H86L64 204Z"/>
+  <path fill-rule="evenodd" d="M66 38C84 30 98 36 104 54C112 86 138 86 146 54C152 36 166 30 184 38C202 58 210 84 212 110C210 162 194 202 176 226C158 234 92 234 74 226C56 202 40 162 38 110C40 84 48 58 66 38Z
+                               M58 112C94 126 156 126 192 112L190 128C155 142 95 142 60 128Z
+                               M68 148C102 162 148 162 182 148L180 164C147 178 103 178 70 164Z
+                               M78 184C109 198 141 198 172 184L170 200C140 214 110 214 80 200Z"/>
+  <path d="M18 46C54 36 84 24 112 32C110 58 102 80 88 98C64 84 40 58 18 46Z"/>
+  <path d="M232 46C196 36 166 24 138 32C140 58 148 80 162 98C186 84 210 58 232 46Z"/>
 </svg>

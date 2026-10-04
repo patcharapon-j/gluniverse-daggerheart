@@ -1,17 +1,34 @@
-<!-- Equipment: a plate with a core.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Adventuring gear: a buckled pack, a carry loop over the top, a flap cut
+     across the front and two straps bridging it. Drawn, not traced. See
+     art-src/marks/BRIEF.md.
 
-     The generic mark, so it is the generic shape: the card's own chamfered
-     plate with something set in the middle of it, saying "a thing you carry"
-     without saying which thing. Square, which separates it from the two other
-     plate marks — domain-card.svg is the card's own 0.71 aspect and loot.svg
-     is wider than tall.
+     The flap is not a shape laid over the bag, because two solid paths in one
+     fill have no edge between them. It is a crescent knocked clean out through
+     both sides of the body, so the flap is whatever sits above the cut and the
+     gap is the only thing drawing it.
 
-     Three subpaths, evenodd: plate, inner edge, core. The 34-unit ring and
-     the 33-unit gap either side of the core are what stop the three
-     collapsing into one filled square at 14px. -->
+     The straps are full-length paths, invisible against the body everywhere
+     except where they bridge that gap. Where they sit along it is the whole
+     question. Out at the ends the cut reads as one long void with two ticks on
+     it and no straps at all. Tight to the centre the middle piece shrinks to a
+     rounded pill and reads as a second buckle. At a third of the way in, the
+     cut breaks into three voids of roughly even length and the two bridges
+     between them read as straps.
+
+     The loop replaced two tapering tabs standing off the bag, which read as
+     horns on a helm at every width tried. A limb with a hole in it is hardware
+     and cannot read as a horn. It costs the taper the brief asks of a free
+     limb, which a closed loop does not have.
+
+     The buckle is three subpaths under evenodd: body, frame void, then the
+     tongue filled back in inside it. One void alone would have been a dark
+     square on the flap, which is a label rather than a fastening. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M46 24H204L226 46V204L204 226H46L24 204V46Z
-                               M80 58H170L192 80V170L170 192H80L58 170V80Z
-                               M125 91 159 125 125 159 91 125Z"/>
+  <path fill-rule="evenodd" d="M34 88C70 68 180 68 216 88C228 128 230 196 220 226C176 234 74 234 30 226C20 196 22 128 34 88Z
+                               M14 150C58 180 192 180 236 150L236 172C192 202 58 202 14 172Z
+                               M98 98C98 91 104 86 113 86L137 86C146 86 152 91 152 98L152 142C152 149 146 154 137 154L113 154C104 154 98 149 98 142Z
+                               M112 112C112 109 115 108 119 108L131 108C135 108 138 109 138 112L138 128C138 131 135 132 131 132L119 132C115 132 112 131 112 128Z"/>
+  <path d="M80 92C80 -8 170 -8 170 92L144 92C144 23 106 23 106 92Z"/>
+  <path d="M54 104L94 104C92 150 90 184 89 208L57 208C56 184 55 150 54 104Z"/>
+  <path d="M196 104L156 104C158 150 160 184 161 208L193 208C194 184 195 150 196 104Z"/>
 </svg>

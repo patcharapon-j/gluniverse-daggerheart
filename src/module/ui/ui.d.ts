@@ -304,6 +304,13 @@ declare module "*/ui/domains.js" {
   export function clazz(name: string): Promise<string>;
 }
 
+declare module "*/ui/item-kind.js" {
+  /** Every finer gear mark the name tables can reach. */
+  export const KIND_GLYPHS: string[];
+  /** The kind named by an item's name, or undefined when nothing matches. */
+  export function kindOf(type: string, name: string | undefined): string | undefined;
+}
+
 declare module "*/ui/peek.js" {
   export function peeks(win: Element): void;
   /** Shut every open peek — Escape does this, and so does anything about to
