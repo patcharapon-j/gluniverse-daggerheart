@@ -161,18 +161,6 @@ const ADV = (r: DualityPlate, sz: number): string => {
 export const dualityDie = (r: DualityPlate, side: "h" | "f"): string =>
   (side === "h" ? r.hd : r.fd) ?? "d12";
 
-const DICE = (r: DualityPlate, sz: number): string => {
-  const hd = dualityDie(r, "h");
-  const fd = dualityDie(r, "f");
-  return (
-    PAST(r, "h", shapeOf(hd), sz) +
-    DIE(r.h, `h ${shapeOf(hd)}` + (r.out === "fear" ? "" : " lit"), sz, facesOf(hd), "h") +
-    PAST(r, "f", shapeOf(fd), sz) +
-    DIE(r.f, `f ${shapeOf(fd)}` + (r.out === "hope" ? "" : " lit"), sz, facesOf(fd), "f") +
-    ADV(r, Math.round(sz * 0.76))
-  );
-};
-
 const ADV_TERM = (r: DualityPlate): Term[] =>
   !r.adv
     ? []
@@ -238,16 +226,6 @@ export const VERDICT = (r: DualityPlate): string =>
             result: t(r.hit ? "Success" : "Failure"),
             feeling: t(r.out === "hope" ? "WithHope" : "WithFear"),
           });
-
-/* The name sits beside the portrait, where the face already answers the same
-   question — so the meta line's left slot carries the *kind* of roll, which
-   is a fact the card had nowhere else to put and which damage, reaction and
-   adversary rolls all need. A missing Difficulty is not a fact worth a slot:
-   no chip, no "no difficulty", nothing. */
-const META = (r: { kind?: string; dc: number | null }): string =>
-  `<div class="pl-meta"><span>${esc(r.kind ?? t("KindDuality"))}</span>${
-    r.dc == null ? "" : `<s>${t("Vs", { dc: r.dc })}</s>`
-  }</div>`;
 
 /* The portrait, and nothing at all when there is not one.
 
@@ -369,35 +347,98 @@ const NOTE = (r: DualityPlate): string =>
     ? `<div class="pl-note"><b>${esc(r.note.n)}</b><p>${rich(r.note.t)}</p></div>`
     : "";
 
-/* ══ A · the player's plate ═══════════════════════════════════════════ */
+/* ══ O · the player's plate ═══════════════════════════════════════════
+   Obsidian — see the block of the same name in `design/plate.css`. A dark
+   glass card in both themes where the outcome arrives as light: a glow behind
+   the die that won, a lit lower edge, a luminous numeral. The duality pair
+   sits in the field beside the total it produced; the arithmetic names both
+   dice; the meta line carries the margin.
+
+   It is `o1` and not a restyled `a1` because a posted plate is stored as
+   markup. Every card already in a world's log says `a1`, and `plate.css`
+   keeps drawing those exactly as they were posted. */
 
 /** The class list the whole card wears — the outcome, in one place. */
 const FAMILY = (r: DualityPlate): string =>
   `${r.rxn && r.out !== "crit" ? "flat" : r.out}${r.out === "crit" ? " mat" : ""}`;
 
-/* The field: everything drawn *on* the coloured block, which is also
-   everything the portrait sits behind. Broken out because the sheet's
-   framing preview shows exactly this and nothing below it — see
-   `platePortrait` at the foot of this file. A preview assembled by hand
-   would be a second opinion about a panel that already has one, and the
-   first time the two drifted the framing would silently start lying. */
+/* Where the aura pools: behind whichever die won, and between the two on a
+   critical, which is both. */
+const AX = (r: DualityPlate): string =>
+  r.out === "fear" ? "37%" : r.out === "crit" ? "26%" : "15%";
+
+/* The pair on its own, without the advantage dice — those stay in the strip,
+   where they are a modifier rather than the question. */
+const PAIR = (r: DualityPlate, sz: number): string => {
+  const hd = dualityDie(r, "h");
+  const fd = dualityDie(r, "f");
+  return (
+    PAST(r, "h", shapeOf(hd), sz) +
+    DIE(r.h, `h ${shapeOf(hd)}` + (r.out === "fear" ? "" : " lit"), sz, facesOf(hd), "h") +
+    PAST(r, "f", shapeOf(fd), sz) +
+    DIE(r.f, `f ${shapeOf(fd)}` + (r.out === "hope" ? "" : " lit"), sz, facesOf(fd), "f")
+  );
+};
+
+/* Both dice by name, where A summed them as "dice". The silhouettes always
+   told them apart; the strip is what gets read back in a log, so it does now
+   too. A die a card upgraded says which die it became. */
+const PAIR_TERMS = (r: DualityPlate): Term[] => {
+  const hd = dualityDie(r, "h");
+  const fd = dualityDie(r, "f");
+  return [
+    { k: hd === "d12" ? t("TermHope") : `${t("TermHope")} · ${hd}`, v: r.h },
+    { k: fd === "d12" ? t("TermFear") : `${t("TermFear")} · ${fd}`, v: r.f },
+  ];
+};
+
+/* The verdict with its result wrapped, so the stylesheet can set the result
+   in white and the rest in the outcome's ink. The builder marks it because
+   "the first word" is not something a localised sentence promises to have. */
+const O_VERDICT = (r: DualityPlate): string => {
+  const em = (s: string): string => `<em>${s}</em>`;
+  if (r.out === "crit") return em(t("CriticalSuccess"));
+  if (r.rxn) return r.dc == null ? "" : em(t(r.hit ? "Success" : "Failure"));
+  const feeling = t(r.out === "hope" ? "WithHope" : "WithFear");
+  return r.dc == null
+    ? em(feeling)
+    : t("Outcome", { result: em(t(r.hit ? "Success" : "Failure")), feeling });
+};
+
+/* How far over or under the target number the total landed — a fact the
+   card always had and made the table subtract for. Nothing at all without a
+   target number, for the reason the chip beside it is omitted. */
+const MARGIN = (total: number, dc: number | null | undefined): string => {
+  if (dc == null) return "";
+  const m = total - dc;
+  return `<em class="pl-mg ${m >= 0 ? "up" : "dn"}">${m >= 0 ? "+" : "−"}${Math.abs(m)}</em>`;
+};
+
+/* The field: everything drawn on the glass, which is also everything the
+   portrait sits behind. Broken out because the sheet's framing preview shows
+   exactly this and nothing below it — see `platePortrait`. A preview assembled
+   by hand would be a second opinion about a panel that already has one. */
 const FIELD = (r: DualityPlate): string => {
-  const v = VERDICT(r);
+  const v = O_VERDICT(r);
   return `<div class="p">
+    <span class="pl-aura"></span>
     ${POR(r)}
-    <span class="shards"></span>
+    <span class="pl-glass"></span>
     <span class="pl-gh">${GHOST(r)}</span>
     ${EYE(r)}
-    <span class="row">${v ? `<b class="pl-vb">${v}</b>` : ""}<u class="pl-num">${r.total}</u></span>
+    <span class="pl-hero"><span class="pl-pair">${PAIR(r, 42)}</span><u class="pl-num">${r.total}</u></span>
+    ${v ? `<b class="pl-vb">${v}</b>` : ""}
   </div>`;
 };
 
 export const dualityPlate = (r: DualityPlate, next?: string, nextAct?: string): string => `
-<div class="pl a1 ${FAMILY(r)}">
+<div class="pl o1 ${FAMILY(r)}" style="--ax:${AX(r)}">
   ${CRIT(r.out === "crit")}
   ${FIELD(r)}
-  <div class="pl-st">${DICE(r, 38)}${ARITH(r)}</div>
-  ${NOTE(r)}${META(r)}${ACT(claims(r), next, nextAct)}
+  <div class="pl-st">${ADV(r, 26)}${TERMS([...PAIR_TERMS(r), ...ADV_TERM(r), ...r.mods])}</div>
+  ${NOTE(r)}<div class="pl-meta"><span>${esc(r.kind ?? t("KindDuality"))}</span>${
+    r.dc == null ? "" : `<s>${t("Vs", { dc: r.dc })}${MARGIN(r.total, r.dc)}</s>`
+  }</div>${ACT(claims(r), next, nextAct)}
 </div>`;
 
 /**
@@ -421,7 +462,7 @@ export const dualityPlate = (r: DualityPlate, next?: string, nextAct?: string): 
  * nothing about the answer changes.
  */
 export const platePortrait = (r: DualityPlate): string =>
-  `<div class="pl a1 ${FAMILY(r)}">${FIELD(r)}</div>`;
+  `<div class="pl o1 ${FAMILY(r)}" style="--ax:${AX(r)}">${FIELD(r)}</div>`;
 
 /* ══ damage ═══════════════════════════════════════════════════════════
    No duality axis, no verdict — a damage roll is a quantity, and the only
@@ -439,7 +480,16 @@ export const platePortrait = (r: DualityPlate): string =>
    material. The critical was already announced, loudly, on the attack card
    one message earlier, and a second saturated crit-red plate directly under
    it would read as the same event twice. What this card is saying is "and
-   it hurt more", which is the wound's sentence at the top rung. */
+   it hurt more", which is the wound's sentence at the top rung.
+
+   On Obsidian's glass now, like the roll card above it, so an attack and its
+   damage arrive as one family. The wound is the light. The dice stay in their
+   own strip under the field rather than moving up beside the total: a
+   critical at Proficiency 6 lands twelve of them, and the field has room for a
+   sentence and a number, not twelve chips. So the hero line carries the
+   damage type and the total, the type in white because it is the one fact
+   about the number that changes what happens to it. A critical never floods:
+   it takes the material and keeps the wound's light. */
 
 const sum = (a: number[]): number => a.reduce((x, y) => x + y, 0);
 
@@ -502,14 +552,15 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
       .join("");
 
   return `
-<div class="pl a1 wound blk${crit ? " mat" : ""}">
+<div class="pl o1 wound${crit ? " mat" : ""}">
   ${CRIT(crit)}
   <div class="p">
+    <span class="pl-aura"></span>
     ${POR(r)}
-    <span class="shards"></span>
+    <span class="pl-glass"></span>
     <span class="pl-gh">${t(crit ? "GhostCritical" : "GhostDamage")}</span>
     ${EYE(r)}
-    <span class="row"><b class="pl-vb">${t(crit ? "CriticalDamageType" : "DamageType", { type: esc(r.dtype) })}</b><u class="pl-num">${r.total}</u></span>
+    <span class="pl-hero"><b class="pl-vb">${t(crit ? "CriticalDamageType" : "DamageType", { type: esc(r.dtype) })}</b><u class="pl-num">${r.total}</u></span>
   </div>
   <div class="dmg-st">
     ${
@@ -605,7 +656,7 @@ const FOE_V = (r: FoePlate): string =>
    the number on the right was. An unresolved attack has no chip at all. */
 const FOE_META = (r: FoePlate): string =>
   `<div class="pl-meta"><span>${esc(r.kind ?? t("KindAdversary"))}</span>${
-    r.dc == null ? "" : `<s>${t(r.rxn ? "Vs" : "VsEvasion", { dc: r.dc })}</s>`
+    r.dc == null ? "" : `<s>${t(r.rxn ? "Vs" : "VsEvasion", { dc: r.dc })}${MARGIN(r.total, r.dc)}</s>`
   }</div>`;
 
 /**
@@ -625,20 +676,27 @@ const FOE_META = (r: FoePlate): string =>
  *
  * And the number is white, not red. Red means a quantity of harm and nothing
  * else; a d20 against Evasion is a comparison, and it is set in ink.
+ *
+ * It sits on the player card's glass now (`o1`), so the two sides of the
+ * table are one family told apart by hue, the rail and the cut corner. What
+ * it takes is the light — in the rail's colour — and the hero line, with the
+ * d20 beside the total. Everything above about voice and ink still holds.
  */
 export const foePlate = (r: FoePlate, next?: string, nextAct?: string): string => {
   const crit = foeCrit(r);
   const v = FOE_V(r);
   const landed = r.dc != null && r.hit;
   return `
-<div class="pl g1 ${crit ? "hot mat" : landed ? "hit" : "cold"}">
+<div class="pl g1 ${crit ? "hot mat" : landed ? "hit" : "cold"} o1">
   ${CRIT(crit)}
   <span class="rail"></span>
   <div class="p">
+    <span class="pl-aura"></span><span class="pl-glass"></span>
     ${EYE(r)}
-    <span class="row">${v ? `<b class="pl-vb">${v}</b>` : ""}<u class="pl-num">${r.total}</u></span>
+    <span class="pl-hero"><span class="pl-pair">${D20(r, 40)}</span><u class="pl-num">${r.total}</u></span>
+    ${v ? `<b class="pl-vb">${v}</b>` : ""}
   </div>
-  <div class="pl-st">${D20(r, 32)}${FOE_ARITH(r)}</div>
+  <div class="pl-st">${FOE_ARITH(r)}</div>
   ${FOE_META(r)}${ACT([], next, nextAct)}
 </div>`;
 };

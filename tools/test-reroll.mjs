@@ -120,7 +120,7 @@ const railCase = async (dc, { hit, cls }) => {
   // The mock die always lands on 5, so the reroll takes the d20 from 2 to 5.
   assert.equal(flags.plate.total, 5);
   assert.equal(flags.plate.hit, hit, `vs ${dc}: the reroll did not resettle the verdict`);
-  assert.match(message.content, new RegExp(`class="pl g1 ${cls}"`), `vs ${dc}: the rail did not redraw`);
+  assert.match(message.content, new RegExp(`class="pl g1 ${cls} o1"`), `vs ${dc}: the rail did not redraw`);
 };
 
 await railCase(4, { hit: true, cls: "hit" });

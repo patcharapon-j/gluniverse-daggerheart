@@ -1389,3 +1389,207 @@
 .pl.veil.mat{box-shadow:0 3px 14px -4px rgba(0,0,0,.6),inset 0 0 0 1px var(--line)}
 .g1.veil.mat{box-shadow:0 3px 14px -4px rgba(0,0,0,.7),inset 0 0 0 1px #232830}
 .pl.veil.mat .pl-num,.pl.veil.mat .pl-vb{text-shadow:none}
+
+
+/* ══ O · OBSIDIAN ══════════════════════════════════════════════════
+   The card, since A. Chosen from five candidates on `plate-lab.html`, which
+   is kept as the record of the choice the way B–E are kept above.
+
+   ── colour as light, not paint ─────────────────────────────────────
+   A flooded the field with the outcome's hue. This card is a dark glass
+   surface in both themes, and the outcome arrives as *light*: a glow
+   pooled behind the die that won, a lit lower edge, a luminous numeral,
+   and the portrait toned in the outcome's hue on the right, under the
+   number. Nothing below the critical floods anything — which is D's
+   argument carried through: restraint is what buys the critical its
+   shock, because the one card that does flood red is one you have never
+   seen flood.
+
+   It is also the GM card's substrate, so the two sides of the table stop
+   being two systems and become one family told apart by hue, the rail and
+   the cut corner — which the GM card still does not have.
+
+   ── the dice moved up ──────────────────────────────────────────────
+   The duality pair sits in the field beside the number it produced, so the
+   question the whole roll asks — did gold beat violet — and its answer are
+   on one line. The strip underneath carries the advantage dice and the
+   arithmetic, which now names both dice rather than "dice", and the meta
+   line prints the margin beside the Difficulty.
+
+   ── why o1 and not a restyled a1 ───────────────────────────────────
+   A posted plate is stored as markup. Every card already in a world's log
+   says a1, and a log is a record: restyling a1 would redraw months of chat
+   in a layout its markup was never built for. So a1 and its rules stay
+   exactly as they were, the old cards keep drawing as they were posted,
+   and new cards say o1.
+
+   ── a local substrate ──────────────────────────────────────────────
+   Like .g1, this re-declares the *roles* rather than overriding colours
+   one at a time, so the dice, the strike, the arithmetic, the note and the
+   buttons all resolve against a dark surface in either theme. The currency
+   inks are pinned to their dark-substrate values for the GM card's reason:
+   on the light sheet they flip to values measured against white paper. */
+.o1:not(.g1){--paper:#0c0e12;--sunk:#08090c;--raise:#151920;--line:#1e232a;--line-2:#2c323b;
+  --ink:#e8ecf1;--ink-2:#98a2af;--ink-3:#7f8a97;--xmark-p:#8a939f;
+  --fear-tx:#a688ea;--hope-tx:#e0b647;--crit-tx:#f0705f;--wound-tx:#e2727a;
+  background:var(--paper);color:var(--ink);
+  box-shadow:0 4px 20px -4px rgba(0,0,0,.8),inset 0 0 0 1px #232830}
+/* the card's own halo takes the outcome, faintly — a log of these reads as
+   a column of lit objects rather than a column of black boxes */
+.o1.hope{box-shadow:0 4px 22px -6px rgba(212,167,44,.35),inset 0 0 0 1px #2e2a20}
+.o1.fear{box-shadow:0 4px 22px -6px rgba(123,79,192,.4),inset 0 0 0 1px #2a2436}
+
+.o1 .p{position:relative;overflow:hidden;isolation:isolate;
+  background:linear-gradient(180deg,#11141a 0,#0a0c0f 100%);
+  box-shadow:inset 0 -1.5px 0 var(--o),0 1px 12px -2px color-mix(in srgb,var(--o) 50%,transparent)}
+.o1:not(.g1) .p{padding:11px 12px 13px}
+/* the critical is the one field that floods */
+.o1.crit .p{background:linear-gradient(103deg,#2a0605 0,#5a0d0a 55%,#8f1a14 100%)}
+
+/* ── the light ─────────────────────────────────────────────────────
+   Two pools. The aura sits behind the die that won — --ax is set by the
+   builder, since which die that is depends on the roll — and a second,
+   fainter one lifts the corner the number sits in. Both are radial
+   gradients rather than blurred elements, so neither costs a filter. */
+.pl-aura{position:absolute;left:var(--ax,15%);top:62%;width:250px;height:190px;z-index:0;
+  pointer-events:none;transform:translate(-50%,-50%);
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--o) 70%,transparent),
+    color-mix(in srgb,var(--o) 20%,transparent) 55%,transparent);
+  transition:opacity .7s ease .04s,transform 1s cubic-bezier(.2,.8,.2,1) .04s}
+.o1 .p::before{content:"";position:absolute;right:-40px;bottom:-60px;width:220px;height:160px;z-index:0;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--o) 30%,transparent),transparent);
+  transition:opacity .7s ease .1s}
+/* a specular sweep and a top lip: the two things that make dark read as
+   glass rather than as an absence of colour */
+.pl-glass{position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:linear-gradient(118deg,rgba(255,255,255,.08) 0,rgba(255,255,255,.025) 36%,transparent 36.5%),
+    linear-gradient(180deg,rgba(255,255,255,.07) 0,transparent 22%)}
+
+/* ── the portrait ──────────────────────────────────────────────────
+   Right-hand side, under the number, greyed down and tinted with the
+   outcome by a colour blend — so a Hope roll's face is gold-lit and a Fear
+   roll's violet. Kept dark enough that the luminous numeral in front of it
+   never loses: the brightest pixel the stack can produce is .42 of white
+   before the tint.
+
+   The framing is A's, unchanged: --fdx/--fdy spent as cqw/cqh of this
+   panel, which is why it is a size container. The panel is a different
+   shape from A's (66% wide and anchored right, where A's was 70% and
+   anchored left), so a crop judged against A lands near but not exactly on
+   the same place here — and the sheet's framing preview draws *this*
+   panel, because it is built by the same builder. */
+.o1 .por{position:absolute;right:0;top:0;bottom:0;width:66%;z-index:1;pointer-events:none;
+  container-type:size;
+  -webkit-mask-image:linear-gradient(270deg,#000 15%,rgba(0,0,0,.4) 55%,transparent 92%);
+  mask-image:linear-gradient(270deg,#000 15%,rgba(0,0,0,.4) 55%,transparent 92%)}
+.o1 .por i{position:absolute;inset:0;isolation:isolate}
+.o1 .por u{position:absolute;inset:0;
+  background:var(--pic) no-repeat
+    calc(50% + var(--fdx,0) * 1cqw / var(--fz,1))
+    calc(12% + var(--fdy,0) * 1cqh / var(--fz,1)) / cover;
+  transform:scale(var(--fz,1));
+  filter:grayscale(1) contrast(1.35) brightness(.42)}
+.o1 .por b{position:absolute;inset:0;background:var(--o);mix-blend-mode:color;opacity:.6}
+
+.o1 .p .pl-gh{right:-5%;top:4px;z-index:1;color:color-mix(in srgb,var(--o) 18%,transparent)}
+.o1 .p .pl-eye{position:relative;z-index:4;color:var(--ink-2)}
+.o1 .p .pl-eye b{color:var(--ink)}
+.o1.mat .p .pl-eye{padding-right:92px}
+
+/* ── the hero line: the pair, then what it produced ───────────────── */
+.pl-hero{position:relative;z-index:4;display:flex;align-items:center;gap:10px;margin-top:11px;
+  justify-content:flex-end}
+.pl-pair{display:flex;align-items:center;gap:7px;margin-right:auto}
+.o1.mat .pl-hero{margin-top:16px}
+.o1 .pl-hero .pl-num{flex:none;font-size:54px;color:var(--o-hi);
+  text-shadow:0 0 24px color-mix(in srgb,var(--o) 85%,transparent),
+    0 0 3px color-mix(in srgb,var(--o-hi) 70%,transparent);
+  transition:color .5s ease,text-shadow .6s ease}
+.o1.crit .pl-hero .pl-num{color:#fff;text-shadow:0 0 26px rgba(255,90,60,.95),0 0 4px #ffd8cb}
+
+/* The verdict in the outcome's own ink, with the result in white. The
+   builder marks which part is the result, because "the first word" is an
+   English assumption and the sentence is localised. */
+.o1 .p .pl-vb{position:relative;z-index:4;margin-top:9px;font-size:14px;color:var(--o-tx)}
+.o1 .p .pl-vb em{font-style:normal;color:#fff}
+
+/* the strip has no pair in it any more, so the arithmetic leads */
+.o1 .pl-st .pl-arith{margin-left:0;justify-content:flex-start;text-align:left;max-width:none;flex:1 1 auto}
+.o1 .pl-arith i b{color:var(--ink)}
+.o1 .pl-arith i.sp b{color:var(--hope-tx)}
+.o1 .pl-arith i.fe b{color:var(--fear-tx)}
+
+/* The margin: how far over or under the Difficulty the total landed. A
+   fact the card always had and made you subtract for. */
+.pl-mg{display:inline-block;font:700 8px/1 var(--f-mono);font-style:normal;letter-spacing:.06em;
+  margin-left:6px;padding:2px 4px;vertical-align:1px}
+.pl-mg.up{background:color-mix(in srgb,var(--o) 22%,transparent);color:var(--o-tx)}
+.pl-mg.dn{background:color-mix(in srgb,var(--ink-3) 20%,transparent);color:var(--ink-2)}
+
+.o1:not(.g1) .pl-b{background:var(--raise)}
+.o1:not(.g1) .pl-b.go{background:var(--sunk)}
+.o1 .pl-b:not(.theirs):not(.done):hover{background:var(--o);color:var(--o-ink);
+  box-shadow:0 0 16px -2px color-mix(in srgb,var(--o) 80%,transparent)}
+
+/* ── the GM side ───────────────────────────────────────────────────
+   .g1 keeps its rail, its missing corner and its reporting voice; what it
+   takes from this is the glass, the light and the hero line. The light is
+   the rail's colour — red on a hit, steel on a miss, hot on a critical —
+   and the number stays in ink for .g1's reason: red on this side means a
+   quantity of harm, and a d20 against Evasion is a comparison. */
+.o1.g1 .pl-aura{left:18%;background:radial-gradient(closest-side,color-mix(in srgb,var(--rail) 60%,transparent),
+  color-mix(in srgb,var(--rail) 16%,transparent) 55%,transparent)}
+.o1.g1 .p::before{background:radial-gradient(closest-side,color-mix(in srgb,var(--rail) 26%,transparent),transparent)}
+.o1.g1 .p{box-shadow:inset 0 -1.5px 0 var(--rail)}
+.o1.g1.hot .p{background:linear-gradient(103deg,#1a0504 0,#3d0907 60%,#5a0d0a 100%)}
+.o1.g1 .pl-hero .pl-num{color:var(--ink);font-size:50px;
+  text-shadow:0 0 22px color-mix(in srgb,var(--rail) 75%,transparent)}
+.o1.g1.cold .pl-hero .pl-num{color:var(--ink-2);text-shadow:none}
+.o1.g1 .p .pl-vb{font:700 11.5px/1.15 var(--f-mono);letter-spacing:.13em;color:var(--ink)}
+.o1.g1.cold .p .pl-vb{color:var(--ink-2)}
+.o1.g1 .pl-mg.up{background:color-mix(in srgb,var(--rail) 24%,transparent)}
+
+/* ── damage ────────────────────────────────────────────────────────
+   The damage card on the same glass, so an attack and its damage arrive as
+   one family. The wound is the light — the material a Hit Point is made of,
+   and the one red this card may use for its numeral, because on the damage
+   card the number genuinely is a quantity of harm.
+
+   The dice stay in their own strip under the field. A critical at
+   Proficiency 6 lands twelve of them, and the hero line has room for a
+   sentence and a number, not twelve chips. So it carries the damage type —
+   the one fact about the number that changes what happens to it — in white,
+   and the total. The light pools behind the total rather than behind a die.
+
+   A critical takes the material and does not flood. `.o1.crit .p` is what
+   floods, and critical damage is `.wound.mat`, never `.crit`: the critical
+   was announced one message earlier and a second red card would read as the
+   same event twice. --wound-tx is pinned on the substrate above for the
+   currency inks' reason — the light sheet flips it to a dark red measured
+   against white paper, which on this glass is a target name nobody can read. */
+.o1.wound{box-shadow:0 4px 22px -6px rgba(189,63,71,.4),inset 0 0 0 1px #33201f}
+.o1.wound .pl-aura{left:78%;top:72%}
+/* The ghost word runs behind the numeral, and here both are the wound's red,
+   so at the roll card's 18% the word ate the number's silhouette. */
+.o1.wound .p .pl-gh{color:color-mix(in srgb,var(--o) 9%,transparent)}
+.o1.wound .pl-hero{align-items:flex-end}
+.o1.wound .pl-hero .pl-vb{flex:1 1 auto;min-width:0;margin:0;padding-bottom:5px;color:#fff}
+.o1 .pl-arith.dmg-a{padding:9px 12px 0}
+
+/* ── arrival ───────────────────────────────────────────────────────
+   The light is the answer, so it is what the veil holds back: the aura
+   blooms out from the winning die as the veil lifts, the numeral warms
+   from graphite into its glow, and the lit die pops. Transitions rather
+   than keyframes for the light, so a re-render of a settled card — which
+   wears neither veil nor play — is simply handed the lit state. */
+.o1.veil .pl-aura{opacity:0;transform:translate(-50%,-50%) scale(.35);transition:none}
+.o1.veil .p::before{opacity:0;transition:none}
+.o1.veil .pl-hero .pl-num{color:var(--ink-3);text-shadow:none;transition:none}
+.o1.veil.crit .p{background:linear-gradient(180deg,#11141a 0,#0a0c0f 100%)}
+.pl.o1.play.land .pl-pair .die.lit{animation:o1-pop .5s cubic-bezier(.16,1.2,.3,1) both}
+@keyframes o1-pop{0%{transform:scale(.6);filter:brightness(2.4)}55%{transform:scale(1.16)}
+  100%{transform:scale(1);filter:none}}
+@media (prefers-reduced-motion:reduce){
+  .pl-aura,.o1 .p::before,.o1 .pl-hero .pl-num{transition:none}
+  .pl.o1.play.land .pl-pair .die.lit{animation:none}
+}
