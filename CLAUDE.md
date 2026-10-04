@@ -699,16 +699,21 @@ level 4; here they start at 8. The tool still refuses a card naming a
 nothing else does.
 
 **Each deck owns a mechanic, which is what stops it reading as a recoloured
-printed domain.** Void reads and spends the Fear pool: Reckoning buys a Fear
-back for a Stress, Geometry of Ruin takes one out for every target that fails,
-The Answer pays three in at once, Cold Solution sizes its tokens off how full
-the pool is, and Void-Touched refuses to feed it. Five cards of twenty-one,
-against eight of print's 210 — and counting only the ones that change what is
-in the pool, three of Void's twenty-one against four printed, which is the
-difference between a theme and a signature. Root converts harm into fuel: Feed
-turns a Melee hit into a cleared Hit Point and a Hope, Apex pays a Hit Point
-per kill, Barkskin and The Beast buy scene-long force with Stress up front, the
-World Tree empties the whole party's sheet once.
+printed domain.** Void takes Fear out of the GM's pool: Reckoning buys one back
+for a Stress and Geometry of Ruin takes one out for every target that fails.
+Two cards of twenty-one, where print does it on three of 210 — Know Thy Enemy,
+Dire Strike, Night Terror — and Cold Solution reads the pool on top of that,
+sizing its tokens off whatever is left in it. Two things that look like
+they belong in that count are deliberately outside it: The Answer's three Fear
+is the frame's own cost tripled rather than the card reaching into the pool, and
+Void-Touched refusing to feed it is the `-Touched` pattern both decks share —
+Root-Touched says the same words. Removal is the figure quoted because it is the
+one that survives re-measurement: counting cards that merely *name* the pool
+depends on which phrasings you admit, and two honest passes over the same 210
+came back with different totals. Root converts
+harm into fuel: Feed turns a Melee hit into a cleared Hit Point and a Hope, Apex
+pays a Hit Point per kill, Barkskin and The Beast buy scene-long force with
+Stress up front, the World Tree empties the whole party's sheet once.
 
 `card-resources.mjs` annotates these by **derivation** rather than by hand,
 which every entry above it cannot be: those are readings, where somebody

@@ -43,15 +43,26 @@
  * Threads are the thematic axis; these are the mechanical ones, and they are
  * the reason the decks do not read as recoloured printed domains.
  *
- * **Void reads and spends the Fear pool.** Reckoning buys a Fear back for a
- * Stress, Geometry of Ruin takes one out for every target that fails, and Cold
- * Solution draws its tokens from the pool's size. Print moves that pool from
- * three cards in 210 — Know Thy Enemy, Dire Strike, Night Terror — and Void
- * from three in 21, which is ten times the density and what a signature looks
- * like. Seven more printed cards *name* the pool without moving it, Sigil of
- * Retribution among them, which is why the count is of cards that move it.
- * Void-Touched is not in Void's three: refusing to feed the pool is the
- * `-Touched` pattern both decks share, and Root-Touched says the same words.
+ * **Void takes Fear out of the GM's pool.** Reckoning buys one back for a
+ * Stress and Geometry of Ruin takes one out for every target that fails — two
+ * cards in 21, where print does it on three in 210 (Know Thy Enemy, Dire
+ * Strike, Night Terror). Cold Solution reads the pool on top of that, sizing
+ * its tokens off whatever is left in it.
+ *
+ * Removing is the figure quoted because it is the one that survives being
+ * re-measured. Counting cards that merely *name* the pool depends on which
+ * phrasings you admit — a token count, a duration, a Fear the GM declines —
+ * and two honest passes over the same 210 cards came back with different
+ * totals. Removing is unambiguous: either the pool is smaller afterwards or
+ * it is not.
+ *
+ * Two cards that look like they belong in that count are outside it on
+ * purpose. The Answer gives the GM three Fear, but that is the frame's own
+ * cost tripled rather than the card reaching into the pool, and No More
+ * Waiting does the same on the other deck. Void-Touched refuses to feed the
+ * pool, and so does Root-Touched in the same words, so that is the `-Touched`
+ * pattern rather than this deck's. What is left is the operation print itself
+ * treats as rare: reading or removing what is in the pool.
  *
  * **Root converts harm into fuel.** Feed turns a Melee hit into a cleared Hit
  * Point and a Hope, Apex pays a Hit Point per kill, Barkskin and The Beast buy

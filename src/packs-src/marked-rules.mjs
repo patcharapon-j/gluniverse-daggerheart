@@ -75,9 +75,14 @@
  */
 
 import MARKED from "./marked-cards.mjs";
+import PRINTED_CARDS from "./domain-cards.mjs";
+import DREAD_CARDS from "./dread-cards.mjs";
 import ACTIONS from "./card-actions.mjs";
 import DAMAGE from "./card-damage.mjs";
 import RESOURCES from "./card-resources.mjs";
+
+/** The printed corpus, which is what any claim about "print" is measured on. */
+const PRINTED = [...PRINTED_CARDS, ...DREAD_CARDS];
 
 /* ── the two constructors ─────────────────────────────────────────────
    `variant-rules.mjs`'s pair, and they are copied here rather than moved
@@ -602,15 +607,13 @@ const voidDeck = journalPage(
 <p><strong>Spellcast trait: Knowledge.</strong> Every card on this page casts
 with Knowledge, whatever your sheet says.</p>
 <h2>What the deck owns</h2>
-<p><strong>Void reads and spends the Fear pool.</strong> Reckoning buys a Fear
+<p><strong>Void takes Fear out of the GM's pool.</strong> Reckoning buys one
 back for a Stress, Geometry of Ruin takes one out for every target that fails,
-and Cold Solution draws its tokens from the pool's size. The printed corpus
-moves that pool from three cards in 210; Void does it from three in 21, which is
-ten times the density and what a signature looks like — it means a Void player
-is making decisions about the GM's economy rather than only their own.
-Void-Touched refusing to feed the pool is not part of that count, because
-Root-Touched says the same words: that is the <code>-Touched</code> pattern
-rather than this deck's.</p>
+and Cold Solution sizes its tokens off whatever is left in it. Two cards of
+twenty-one take Fear out of the pool where the printed corpus does it on three
+of 210, and a third reads it. That is what it means to say a Void player is
+making decisions about the GM's economy and not only their own: you will be
+watching the Fear counter the way other players watch their own Hope.</p>
 <h2>The two threads</h2>
 <ul>
 <li><strong>Unmaking</strong> — ends, suppresses, erases and folds space. Ground
