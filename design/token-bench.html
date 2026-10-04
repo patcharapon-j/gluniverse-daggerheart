@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en" class="dh-light-never">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Token chip — what a board of them costs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/token.css">
+
+<!--
+  The chip has never been profiled, and CLAUDE.md names that twice as its one
+  unmeasured worry: nine masked elements and three drop-shadow filters per
+  creature, times however many are on the board, plus three composited loops
+  on every Vulnerable one. Every part of it is cheap by argument and none of
+  it is cheap by measurement.
+
+  This is the measurement, taken BEFORE the restyle so the restyle has a
+  number to be compared against. Without a baseline, any slowness afterwards
+  is unattributable — and if the current chip is already dropping frames at
+  twenty tokens, that is a finding about the component we have rather than a
+  reason to make the next one plainer.
+
+  What it is not: a Foundry profile. There is no PIXI here, no canvas, no
+  condition material on a mesh — so the shader is out of scope and so is
+  Foundry's own per-frame work. What it measures is exactly the part this
+  repo owns and the part the redesign will move: N chips of real markup,
+  under the real ported stylesheet, being panned and zoomed the way
+  `Canvas#pan` moves `#hud` — one transform on the host, which is what the
+  component's whole alignment argument rests on.
+-->
+
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#0b0d11; color:var(--ink,#dbe6f4);
+         font:13px/1.5 "Google Sans Text",system-ui,sans-serif; }
+
+  .wrap { display:grid; grid-template-columns:300px 1fr; height:100vh; }
+
+  /* ── the board ── */
+  #board { position:relative; overflow:hidden; background:#15181e; }
+  /* `#hud`'s own arrangement: absolutely positioned, scaled from top-left,
+     with the chips inside at raw scene coordinates. Nothing of ours writes
+     on a pan; the host moves and the chips ride it. */
+  #hud { position:absolute; left:0; top:0; transform-origin:0 0; }
+  .cell { position:absolute; border-radius:50%; background:
+            radial-gradient(circle at 36% 30%, #6b7488, #2b3139 62%, #1b1f26); }
+
+  /* ── the panel ── */
+  aside { padding:18px 16px; background:#101317; border-right:1px solid #232a33;
+          overflow:auto; }
+  h1 { font:600 14px/1.3 "Google Sans",sans-serif; margin:0 0 4px; }
+  p.sub { margin:0 0 16px; font-size:11px; color:#8c99aa; }
+  fieldset { border:1px solid #232a33; border-radius:0; margin:0 0 14px; padding:10px 12px; }
+  legend { font:600 9.5px/1 "Google Sans Code",monospace; letter-spacing:.09em;
+           text-transform:uppercase; color:#8c99aa; padding:0 5px; }
+  label { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:12px; }
+  label input[type=range] { flex:1; }
+  label .v { width:34px; text-align:right; font:600 11px/1 "Google Sans Code",monospace;
+             color:#d4a72c; }
+  button { width:100%; padding:8px; margin-top:6px; background:#1b212a; color:#dbe6f4;
+           border:1px solid #2e3744; border-radius:0; font:600 12px/1 "Google Sans",sans-serif;
+           cursor:pointer; }
+  button:hover { background:#232b36; }
+  #out { white-space:pre-wrap; font:11px/1.6 "Google Sans Code",monospace;
+         color:#b9c6d6; margin-top:10px; }
+  #out b { color:#e2545e; font-weight:600; }
+  #out i { color:#70cddd; font-style:normal; }
+</style>
+
+<div class="wrap">
+  <aside>
+    <h1>What a board of chips costs</h1>
+    <p class="sub">The baseline, taken before the restyle so the restyle has a number to be compared against.</p>
+
+    <fieldset>
+      <legend>the board</legend>
+      <label>creatures <input id="n" type="range" min="1" max="40" value="20"><span class="v" id="nv">20</span></label>
+      <label><input id="cond" type="checkbox" checked> every creature conditioned</label>
+      <label><input id="sel" type="checkbox"> every creature selected</label>
+      <label>zoom <input id="k" type="range" min="25" max="240" value="100"><span class="v" id="kv">1.00</span></label>
+      <button id="rebuild">rebuild the board</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>the measurement</legend>
+      <label><input id="mpan" type="radio" name="m" value="pan" checked> pan — the camera moves, nothing of ours writes</label>
+      <label><input id="mzoom" type="radio" name="m" value="zoom"> zoom — every chip changes size on screen</label>
+      <label><input id="mmark" type="radio" name="m" value="mark"> marking — setChip drives a rail every frame</label>
+      <button id="run">run for 4 seconds</button>
+      <div id="out">idle.</div>
+    </fieldset>
+  </aside>
+
+  <div id="board"><div id="hud"></div></div>
+</div>
+
+<script type="module">
+import { TOKEN_CHIP, setChip, setTier } from '/design/token.js';
+
+const hud   = document.getElementById('hud');
+const board = document.getElementById('board');
+const out   = document.getElementById('out');
+
+const el = (id) => document.getElementById(id);
+const GRID = 100;
+
+/* A creature, in the shape `stateOf` hands the builder. Deliberately the
+   heavy case: twelve Hit Points is the longest rail in the corpus, and a
+   conditioned creature is the one carrying the rotating sentence with its
+   three chained drop-shadows — which is the most expensive thing here by a
+   margin and the thing the restyle has to answer for. */
+const stateFor = (i, conditioned, selected) => ({
+  actor: 'character',
+  hp:     { max: 12, marked: i % 7 },
+  stress: { max: 6,  marked: i % 5 },
+  armor:  { max: 3,  marked: i % 4 },
+  hope:   { max: 6, value: i % 7 },
+  scars: 0,
+  selected, targeted: false, hidden: false, defeated: false,
+  conditions:   conditioned ? ['Vulnerable'] : [],
+  conditionIds: conditioned ? ['vulnerable'] : [],
+  materialIds:  conditioned ? ['vulnerable'] : [],
+  tints:        conditioned ? ['#9b72e4'] : [],
+  tint:         conditioned ? '#9b72e4'   : undefined,
+});
+
+let chips = [];
+
+function build() {
+  const n = +el('n').value;
+  const conditioned = el('cond').checked;
+  const selected = el('sel').checked;
+
+  hud.innerHTML = '';
+  chips = [];
+
+  /* A square-ish muster, one grid cell apart, which is the spacing the
+     footprint worry is actually about. */
+  const cols = Math.ceil(Math.sqrt(n));
+  for (let i = 0; i < n; i++) {
+    const x = (i % cols) * GRID;
+    const y = Math.floor(i / cols) * GRID;
+
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    Object.assign(cell.style, { left:`${x}px`, top:`${y}px`, width:`${GRID}px`, height:`${GRID}px` });
+    hud.appendChild(cell);
+
+    const st = stateFor(i, conditioned, selected);
+    const host = document.createElement('div');
+    host.innerHTML = TOKEN_CHIP(st);
+    const chip = host.firstElementChild;
+    Object.assign(chip.style, { left:`${x}px`, top:`${y}px`, width:`${GRID}px`, height:`${GRID}px` });
+    hud.appendChild(chip);
+    setChip(chip, st);
+    chips.push({ chip, st });
+  }
+  applyCamera();
+  report();
+}
+
+let panX = 0, panY = 0;
+
+function applyCamera() {
+  const k = +el('k').value / 100;
+  el('kv').textContent = k.toFixed(2);
+  hud.style.transform = `translate(${panX}px,${panY}px) scale(${k})`;
+  /* The one thing the camera still costs us: a question about how large the
+     chip has become ON SCREEN, which only the camera can answer. `setTier`
+     short-circuits unless a threshold was actually crossed. */
+  for (const { chip } of chips) setTier(chip, GRID * k);
+}
+
+function report(extra = '') {
+  const n = chips.length;
+  const nodes = hud.querySelectorAll('*').length;
+  out.innerHTML =
+    `${n} creatures · <i>${nodes}</i> DOM nodes in the layer `
+    + `(<i>${(nodes / Math.max(n, 1)).toFixed(0)}</i> per chip)\n${extra}`;
+}
+
+/* ── the measurement ──────────────────────────────────────────────────
+   Frame deltas off rAF, which is what a dropped frame actually is. The
+   long-task observer is the second opinion: a 60ms layout inside one frame
+   and a 60ms frame are the same event seen from two sides, and having both
+   is what tells a slow frame from a stalled tab. */
+function measure(mode, ms = 4000) {
+  const frames = [];
+  let longest = 0, longTasks = 0, longTaskMs = 0;
+
+  let obs = null;
+  try {
+    obs = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) { longTasks++; longTaskMs += entry.duration; }
+    });
+    obs.observe({ entryTypes: ['longtask'] });
+  } catch { /* not every browser ships it; the frame deltas carry the result */ }
+
+  const t0 = performance.now();
+  let last = t0, i = 0;
+
+  out.textContent = `measuring ${mode}…`;
+
+  const step = (now) => {
+    const dt = now - last;
+    last = now;
+    if (i > 2) { frames.push(dt); longest = Math.max(longest, dt); }
+    i++;
+
+    if (mode === 'pan') {
+      panX = Math.sin(now / 700) * 240;
+      panY = Math.cos(now / 900) * 160;
+      const k = +el('k').value / 100;
+      hud.style.transform = `translate(${panX}px,${panY}px) scale(${k})`;
+    } else if (mode === 'zoom') {
+      const k = 0.35 + (Math.sin(now / 1100) + 1) / 2 * 1.9;
+      hud.style.transform = `translate(${panX}px,${panY}px) scale(${k})`;
+      for (const { chip } of chips) setTier(chip, GRID * k);
+    } else if (mode === 'mark') {
+      /* The write path: a rail diffed and restarted on every creature.
+         Heavier than any real session, on purpose — this is the ceiling. */
+      for (const c of chips) {
+        c.st.hp = { max: 12, marked: (c.st.hp.marked + 1) % 13 };
+        setChip(c.chip, c.st);
+      }
+    }
+
+    if (now - t0 < ms) requestAnimationFrame(step);
+    else finish();
+  };
+
+  const finish = () => {
+    obs?.disconnect();
+    frames.sort((a, b) => a - b);
+    const at = (p) => frames[Math.min(frames.length - 1, Math.floor(frames.length * p))] ?? 0;
+    const mean = frames.reduce((a, b) => a + b, 0) / Math.max(frames.length, 1);
+    const over = frames.filter((f) => f > 16.7).length;
+    const pct = (over / Math.max(frames.length, 1)) * 100;
+
+    report(
+      `\n${mode} · ${frames.length} frames over ${(ms / 1000).toFixed(0)}s\n`
+      + `median <i>${at(.5).toFixed(1)}ms</i>   p95 <i>${at(.95).toFixed(1)}ms</i>   `
+      + `worst ${longest > 33 ? '<b>' : '<i>'}${longest.toFixed(1)}ms${longest > 33 ? '</b>' : '</i>'}\n`
+      + `over 16.7ms: ${pct > 10 ? '<b>' : '<i>'}${over} frames (${pct.toFixed(0)}%)${pct > 10 ? '</b>' : '</i>'}\n`
+      + `mean ${mean.toFixed(1)}ms  ≈ <i>${(1000 / Math.max(mean, .001)).toFixed(0)}fps</i>\n`
+      + (longTasks ? `long tasks: <b>${longTasks}</b> totalling ${longTaskMs.toFixed(0)}ms\n` : '')
+    );
+  };
+
+  requestAnimationFrame(step);
+}
+
+el('n').addEventListener('input', () => { el('nv').textContent = el('n').value; });
+el('n').addEventListener('change', build);
+el('cond').addEventListener('change', build);
+el('sel').addEventListener('change', build);
+el('k').addEventListener('input', applyCamera);
+el('rebuild').addEventListener('click', build);
+el('run').addEventListener('click', () => {
+  const mode = document.querySelector('input[name=m]:checked').value;
+  measure(mode);
+});
+
+build();
+window.bench = { build, measure, chips: () => chips };
+</script>

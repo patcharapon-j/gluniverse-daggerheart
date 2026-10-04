@@ -476,8 +476,32 @@
    divides by the subject scale: a caption a third of a cell out from the
    rails it captions, on every table running Foundry's default ring, and
    drawn perfectly. See THE RING above. */
+/* -- the marquee turns the WRAPPER, and that is a measurement ---------
+   It used to turn the <svg>, which is the obvious place to put it and was
+   the single most expensive thing in this component. Animating a transform
+   on an SVG element re-rasterises the subtree every frame, and the subtree
+   here is text on a path under three chained drop-shadows -- so a board of
+   twenty conditioned creatures idled at 8.4ms a frame where an empty board
+   idles at 4.2, and forty of them at 20.8. Nothing was being written by us
+   and nothing was moving on screen but the words.
+
+   Measured in design/token-bench.html, which is what that page is for.
+   Dropping the three shadows was the obvious fix and buys almost nothing:
+   the median stays at 8.3 and only the tail improves, because the filters
+   were never the cost. Turning this div instead is free -- 4.2ms,
+   indistinguishable from an empty board, filters and all -- because an
+   ordinary element promotes to a composited layer and the GPU rotates a
+   texture it already has.
+
+   The rotate property rather than transform, because it is an independent
+   transform property: it composes with the transform above instead of
+   replacing it, so the subject scale survives with no second element to
+   hang it on. What it costs is that this div's own bounding RECT grows by
+   root two as it turns, which paints nothing -- the glyphs are a circle
+   and sit exactly where they did -- and nothing clips or measures it. */
 .tok .tkcond{position:absolute;inset:-6%;opacity:0;pointer-events:none;
-  transform:scale(var(--tkv,1));transition:opacity .28s ease}
+  transform:scale(var(--tkv,1));transition:opacity .28s ease;
+  animation:tkTurn 46s linear infinite}
 .tok.conditioned .tkcond{opacity:1}
 /* Three separate jobs, and they are three declarations rather than one
    heavier shadow: the stroke gives every glyph its own dark edge against
@@ -492,8 +516,7 @@
 .tok .tkcond .tkwr{position:absolute;inset:0;width:100%;height:100%;
   overflow:visible;filter:drop-shadow(0 0 1.4px rgba(0,0,0,.67))
     drop-shadow(0 .4px .8px rgba(0,0,0,.61))
-    drop-shadow(0 0 3.2px color-mix(in srgb,var(--tkc,var(--fear-tx)) 52%,transparent));
-  animation:tkTurn 46s linear infinite}
+    drop-shadow(0 0 3.2px color-mix(in srgb,var(--tkc,var(--fear-tx)) 52%,transparent))}
 .tok .tkcond .tkwr text{font:790 4.8px/1 var(--f-mono),monospace;
   letter-spacing:.18px;opacity:1;
   fill:color-mix(in srgb,var(--tkc,#dbe6f4) 46%,#ffffff);
@@ -510,7 +533,7 @@
 .tok .tkcond .tkwr tspan.tkw{
   fill:color-mix(in srgb,var(--tkw,var(--tkc,#dbe6f4)) 46%,#ffffff)}
 
-@keyframes tkTurn{to{transform:rotate(360deg)}}
+@keyframes tkTurn{to{rotate:360deg}}
 
 /* ══ ARRIVING AND LEAVING ═══════════════════════════════════════════
    A chip had neither. It was appendChild and remove, so a creature
@@ -612,7 +635,7 @@
 .tok.defeated .er-identity{display:none}
 
 @media (prefers-reduced-motion:reduce){
-  .tok .tkcond .tkwr,
+  .tok .tkcond,
   .tok.is-selected .er-bloom,
   .tok.is-selected .er-crown,
   .tok.is-targeted .er-reticle{animation:none}
