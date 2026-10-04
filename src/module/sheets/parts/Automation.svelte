@@ -683,8 +683,12 @@
     flex: 1 1 116px;
   }
 
+  /* `<s>` is a caption here, as it is in every panel heading — so the
+     browser's strike-through has to come off, or "printed, never enforced"
+     reads as a retracted note. */
   .an :global(s) {
     display: block;
+    text-decoration: none;
     text-transform: none;
     letter-spacing: 0;
     opacity: 0.62;
@@ -740,8 +744,28 @@
     color: var(--ink-3);
   }
 
+  /* `.nw` only reaches a press inside a panel heading, and this one sits under
+     a chain — so unreset it was Foundry's 28px bordered button. It takes the
+     heading press's look instead: a word you can press, not a box. */
   .stpadd {
     justify-self: start;
     margin-left: 14px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding: 2px 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    cursor: pointer;
+    font: 700 calc(8px * var(--dh-sheet-font-scale, 1))/1 var(--f-mono, monospace);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    transition: color 0.12s;
+  }
+
+  .stpadd:hover {
+    color: var(--hope-tx);
   }
 </style>

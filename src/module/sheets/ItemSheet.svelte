@@ -1156,9 +1156,14 @@
                       <button type="button" class="x" title="Remove" onclick={() => dropRow("cardDamage", i)}>×</button>
                     {/if}
                   </div>
-                  <div class="rw">
-                    <label class="lb"
-                      >Count
+                  <!-- The same grid and switches every other block on this
+                       sheet is made of. It was `.rw`/`.lb`, which nothing in
+                       this file styles — and `.lb` already belongs to the
+                       mark and track rows — so it drew as Foundry's own
+                       form chrome with 14px labels. -->
+                  <div class="fields">
+                    <label>
+                      <span>Count</span>
                       <input
                         type="number"
                         min="0"
@@ -1167,16 +1172,16 @@
                         onchange={(e) => editRow("cardDamage", i, "count", num(e))}
                       />
                     </label>
-                    <label class="lb"
-                      >Die
+                    <label>
+                      <span>Die</span>
                       <input
                         value={d.dice ?? "d6"}
                         disabled={!ed}
                         onchange={(e) => editRow("cardDamage", i, "dice", txt(e))}
                       />
                     </label>
-                    <label class="lb"
-                      >Bonus
+                    <label>
+                      <span>Bonus</span>
                       <input
                         type="number"
                         value={d.bonus ?? 0}
@@ -1184,8 +1189,8 @@
                         onchange={(e) => editRow("cardDamage", i, "bonus", num(e))}
                       />
                     </label>
-                    <label class="lb"
-                      >Type
+                    <label>
+                      <span>Type</span>
                       <select
                         disabled={!ed}
                         value={d.type ?? "physical"}
@@ -1196,21 +1201,25 @@
                         {/each}
                       </select>
                     </label>
-                    <label class="lb ck"
-                      ><input
+                  </div>
+                  <div class="sws">
+                    <label class="sw">
+                      <input
                         type="checkbox"
                         checked={!!d.proficiency}
                         disabled={!ed}
                         onchange={(e) => editRow("cardDamage", i, "proficiency", chk(e))}
-                      /> Scales with Proficiency
+                      />
+                      <span>Scales with Proficiency</span>
                     </label>
-                    <label class="lb ck"
-                      ><input
+                    <label class="sw">
+                      <input
                         type="checkbox"
                         checked={!!d.direct}
                         disabled={!ed}
                         onchange={(e) => editRow("cardDamage", i, "direct", chk(e))}
-                      /> Direct
+                      />
+                      <span>Direct</span>
                     </label>
                   </div>
                 </div>
@@ -1311,23 +1320,25 @@
                when a sibling field changes reads as a bug. -->
           <div class="pnl">
             <div class="k">Spent</div>
-            <div class="fields">
-              <label class="sw">
-                <input
-                  type="checkbox"
-                  checked={sys.spent}
-                  disabled={!ed || !!sys.uses}
-                  onchange={(e) => set("system.spent", (e.currentTarget as HTMLInputElement).checked)}
-                />
-                <span>
-                  {#if sys.uses}
-                    Spent when its counter is empty
-                  {:else}
-                    Marked spent
-                  {/if}
-                </span>
-              </label>
-            </div>
+            <!-- A switch, so it sits in the panel and not in `.fields`: that
+                 grid's input rule is written for text boxes and stretched this
+                 checkbox to the full cell, and its caption rule set the label
+                 as an 8px eyebrow. -->
+            <label class="sw">
+              <input
+                type="checkbox"
+                checked={sys.spent}
+                disabled={!ed || !!sys.uses}
+                onchange={(e) => set("system.spent", chk(e))}
+              />
+              <span>
+                {#if sys.uses}
+                  Spent when its counter is empty
+                {:else}
+                  Marked spent
+                {/if}
+              </span>
+            </label>
           </div>
 
           <div class="pnl">
@@ -1790,11 +1801,14 @@
     color: var(--ink-3);
     margin-bottom: 4px;
   }
-  .fields input,
+  /* Text boxes and pickers only: a checkbox caught by `width:100%` is a
+     132px rhombus with a diagonal through the panel. */
+  .fields input:not([type="checkbox"]),
   .fields select,
   .fnm {
     width: 100%;
     border: 0;
+    border-radius: 0;
     background: var(--sunk);
     box-shadow: inset 0 0 0 1px var(--line);
     color: var(--ink);

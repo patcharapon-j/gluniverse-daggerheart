@@ -621,8 +621,10 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    nothing here declares Foundry's layer. See the note in `make.css`, which
    resets this once for a whole window; there are three buttons on this sheet
    that are type rather than controls, and each states its own. */
-.pnl > .k .nw{margin-left:auto;border:0;background:none;padding:0;cursor:pointer;
-  height:auto;min-height:0;max-height:none;
+/* `flex:none` and `nowrap` because a heading with a long note beside it —
+   the item sheet's Actions panel — squeezed "+ action" onto two lines. */
+.pnl > .k .nw{margin-left:auto;border:0;border-radius:0;background:none;padding:0;cursor:pointer;
+  height:auto;min-height:0;max-height:none;flex:none;white-space:nowrap;
   font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--ink-3);
   transition:color .12s}
 .pnl > .k s + .nw{margin-left:0}
@@ -1061,7 +1063,7 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
    thing in its row. */
 .lst{display:flex;flex-direction:column;gap:4px}
 .lst .r{display:flex;align-items:center;gap:6px}
-.lst .r input{min-width:0;padding:6px 8px;border:0;background:var(--sunk);
+.lst .r input{min-width:0;padding:6px 8px;border:0;border-radius:0;background:var(--sunk);
   box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);
   font:400 12px/1.2 var(--f-ui);transition:box-shadow .14s}
 .lst .r input.t{flex:1 1 auto}
@@ -1209,7 +1211,13 @@ input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:none;border:0;cursor:pointer;background:transparent;color:var(--frame-tx-2);
   position:relative;font:700 9px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
-  padding:9px 12px 8px;transition:color .14s,background .14s}
+  padding:9px 12px 8px;transition:color .14s,background .14s;border-radius:0}
+/* Foundry's `elements` layer rounds every button and rings it in its own
+   orange on *mouse* focus, so a clicked tab wore a rounded glow until the next
+   click landed elsewhere. A ring belongs to the keyboard: it comes off `:focus`
+   and goes back on `:focus-visible`, in our own ink. */
+.tabs button:focus{outline:0;box-shadow:none}
+.tabs button:focus-visible{outline:1px solid var(--hope);outline-offset:-3px}
 .tabs button:hover{color:var(--frame-tx)}
 .tabs button.on{color:var(--ink);background:var(--paper)}
 .tabs button.on::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
