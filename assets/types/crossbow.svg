@@ -2,14 +2,16 @@
      Drawn to art-src/marks/BRIEF.md.
 
      The cross is the whole mark. Seen from above a crossbow is a heavy
-     stock crossed by a bow, and that T is what tells it apart from `bow`
-     at 14px, where the recurve of a longbow is gone. An earlier pass drew
-     the prod as a dome over the stock and it read as a mushroom, so the
-     prod is held shallow and its limbs taper out past the stock's width by
-     a long way.
+     stock crossed by a bow, and that T is what tells it apart from `bow` at
+     14px, where a longbow's recurve is gone. Drawn as a dome over the stock
+     it reads as a mushroom, so the prod is held shallow and its limbs taper
+     well past the stock's width on both sides.
 
-     The string is a straight bar behind the prod. It is the only straight
-     line in the mark and it is there to stop the prod reading as a canopy. -->
+     The string is a straight bar behind the prod, and it is the only
+     straight line here. It is what stops the prod reading as a canopy.
+     The prod sits low rather than at the head, so the bolt has room to
+     break past it; with the cross up at the top the mark reads as a
+     crucifix instead. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
   <path d="M16 162 C 70 114 180 114 234 162 C 180 136 70 136 16 162 Z"/>
   <path d="M20 166 L230 166 L230 178 L20 178 Z"/>

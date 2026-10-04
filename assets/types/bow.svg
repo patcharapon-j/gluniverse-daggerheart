@@ -1,13 +1,17 @@
+<!-- Longbow at full draw, arrow pointing left. The one mark in the set that is handed
+     rather than mirrored about x=125, because a bow with no string side stops being a
+     bow. The string is pulled into a V, since a straight string reads as a bracket
+     standing next to an arrow. The limb is built as a deep round crescent and runs far
+     heavier than the string: drawn at similar widths and close to their chords, limb
+     and string closed into a plain diamond at 24px and the bow vanished. The head is
+     drawn wide enough to clear the limb it crosses, because the point is otherwise
+     lost inside it, and the tips are left blunt where the string meets them rather
+     than recurved, which left a hairline that broke at the nock.
+     See art-src/marks/BRIEF.md. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <!-- Longbow at full draw, arrow pointing left. The one mark in the set that is handed
-       rather than mirrored about x=125, because a bow with no string side stops being a
-       bow. The string is pulled into a V rather than left straight: straight, it reads
-       as a bracket standing next to an arrow, and the V is what says drawn. The limb
-       sits well right of the frame edge so the head clears it and still has room to
-       taper. See art-src/marks/BRIEF.md. -->
-  <path d="M 132 18 C 114 50 46 72 40 125 C 46 178 114 200 132 232 C 122 200 84 174 78 125 C 84 76 122 50 132 18 Z"/>
-  <path d="M 132 18 L 222 128 L 132 232 L 132 210 L 202 128 L 132 40 Z"/>
-  <path d="M 214 114 L 66 114 L 66 88 C 48 99 32 112 18 125 C 32 138 48 151 66 162 L 66 136 L 214 136 Z"/>
-  <path d="M 96 114 C 118 110 142 104 158 96 C 148 108 140 112 132 114 Z"/>
-  <path d="M 96 136 C 118 140 142 146 158 154 C 148 142 140 138 132 136 Z"/>
+  <path d="M 140 20 C 124 28 94 38 76 56 C 58 74 54 98 54 125 C 54 152 58 176 76 194 C 94 212 124 222 140 230 C 126 212 110 198 102 180 C 96 162 98 144 98 125 C 98 106 96 88 102 70 C 110 52 126 38 140 20 Z"/>
+  <path d="M 140 20 L 214 128 L 140 230 L 140 218 L 200 128 L 140 34 Z"/>
+  <path fill-rule="evenodd" d="M 212 110 L 92 110 L 92 78 C 68 92 42 108 18 125 C 42 142 68 158 92 172 L 92 140 L 212 140 Z M 80 125 C 68 114 54 112 40 125 C 54 138 68 136 80 125 Z M 212 118 L 194 125 L 212 132 Z"/>
+  <path d="M 104 110 C 128 106 152 98 168 86 C 158 102 148 108 140 110 Z"/>
+  <path d="M 104 140 C 128 144 152 152 168 164 C 158 148 148 142 140 140 Z"/>
 </svg>
