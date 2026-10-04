@@ -286,7 +286,7 @@
 <script type="module">
 /* The plate markup comes from design/plate.js — the accepted source — so what
    is under test here is the *stylesheet* port and nothing else. */
-import { A, DMG, FOE, play } from '/design/plate.js';
+import { O, DMG, FOE_O, play } from '/design/plate.js';
 /* These come from the vendored copies the system actually ships. */
 import { MARKS, DAMAGE, armPolygon } from '/src/module/ui/mark.js';
 import { GEMS } from '/src/module/ui/gem.js';
@@ -345,7 +345,7 @@ const foeMiss = {...foe, d20:[7], total:9, hit:false};
 const framed = {...duality, frame:{x:-25, y:6, scale:1.4}};
 
 document.getElementById('plates').innerHTML =
-  [A(duality), A(crit), A(fear), A(upgraded), DMG(damage), FOE(foe), FOE(foeMiss), A(framed)]
+  [O(duality), O(crit), O(fear), O(upgraded), DMG(damage), FOE_O(foe), FOE_O(foeMiss), O(framed)]
     .map(wrap).join('');
 
 /* ── the envelope ──────────────────────────────────────────────────────
@@ -384,9 +384,9 @@ const MSG = ({ id, who, alias, by, when = '3 minutes ago' }, body) => `
 </li>`;
 
 document.getElementById('log').innerHTML = [
-  MSG({ id: 'm1', who: '#4f9dd9', alias: 'Tabby', by: 'patcharapon' }, wrap(A(duality))),
+  MSG({ id: 'm1', who: '#4f9dd9', alias: 'Tabby', by: 'patcharapon' }, wrap(O(duality))),
   MSG({ id: 'm2', who: '#c8484f', alias: 'Ribbet Bandit', by: 'gamemaster',
-        when: '1 minute ago' }, wrap(FOE(foe))),
+        when: '1 minute ago' }, wrap(FOE_O(foe))),
   MSG({ id: 'm3', who: '#7ddc8f', alias: 'gamemaster', when: 'just now' }, wrap(DMG(damage))),
 ].join('');
 
@@ -1285,14 +1285,38 @@ setTimeout(async () => { try {
         `${upH ? [...upH.classList].join('.') : 'no die'} · mx ${upH?.dataset.mx}`);
 
   /* And the strip says so in words, because that is what gets read back in a
-     log three hours later. It stays "dice" on the printed pair — a card that
-     spelled out 2d12 on every roll would be explaining the game to the table
-     on the ninety-nine rolls where nothing happened. */
+     log three hours later. Obsidian names both dice — "9 hope", "4 fear" —
+     and names the *die* only when a card moved it, so a printed pair reads
+     "hope" and not "hope · d12" on the ninety-nine rolls where nothing
+     happened. */
   const term = (i) => document.querySelectorAll('#plates > .dh')[i]
     ?.querySelector('.pl-arith i')?.textContent.trim();
-  check('the arithmetic names the pair only when it moved',
-        term(0)?.endsWith('dice') && term(3)?.endsWith('d20 + d12'),
+  check('the arithmetic names the die only when it moved',
+        term(0)?.endsWith('hope') && term(3)?.endsWith('hope · d20'),
         `${term(0)} / ${term(3)}`);
+
+  /* Obsidian's whole claim is light rather than paint, and every pool of it
+     is a color-mix() on the outcome's role. An invalid color-mix takes the
+     whole background with it and leaves a card that is merely black — which
+     is exactly what the veil looks like, so nothing on screen would say the
+     answer had never arrived. */
+  const aura = document.querySelector('#plates > .dh .o1.hope .pl-aura');
+  const auraBg = aura ? getComputedStyle(aura).backgroundImage : 'none';
+  check('the Obsidian aura resolves its light', /radial-gradient/.test(auraBg),
+        auraBg.slice(0, 60));
+
+  /* The damage card on the same glass. Its substrate is the card's own and
+     not the sheet's, so it reads the same in both themes — and its numeral is
+     the wound's red, the one card in the family whose number is a quantity
+     of harm. A damage card still wearing the sheet's paper is the half-moved
+     state this guards: the attack on glass and its damage on parchment. */
+  const dmgPl = document.querySelector('#plates > .dh .pl.wound');
+  const dmgBg = dmgPl ? getComputedStyle(dmgPl).backgroundColor : '';
+  const dmgNum = dmgPl?.querySelector('.pl-num');
+  const dmgInk = dmgNum ? getComputedStyle(dmgNum).color : '';
+  check('the damage card sits on the glass, lit by the wound',
+        dmgPl?.classList.contains('o1') && dmgBg === 'rgb(12, 14, 18)' && dmgInk === 'rgb(226, 114, 122)',
+        `${dmgPl ? [...dmgPl.classList].join('.') : 'no card'} · ${dmgBg} · ${dmgInk}`);
 
   const cards = [...document.querySelectorAll('#plates > .dh')];
   const widths = new Set(cards.map(c => Math.round(c.getBoundingClientRect().width)));

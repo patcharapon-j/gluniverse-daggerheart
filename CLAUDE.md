@@ -3286,6 +3286,22 @@ nobody at all, which is the gap this closes. `tools/verify/` draws the whole
 envelope under a stand-in `elements` layer, because the trash is a `<button>`
 and would otherwise be a 28px control on a 26px strip.
 
+**The plate is Obsidian, `o1`, and `a1` is kept on purpose.** A dark glass
+card in both themes where the outcome is light rather than paint — a glow
+behind the die that won, a lit lower edge, a luminous numeral — with the
+duality pair on one line beside the total, the arithmetic naming both dice
+("10 hope + 6 fear"), and the margin beside the Difficulty. Only a critical
+floods. The GM card takes the same glass (`pl g1 … o1`) and keeps its rail,
+its missing corner and its ink numeral. The damage card does too
+(`pl o1 wound`), lit by the wound and with its dice left in their own strip,
+because twelve of them do not fit on the hero line; critical damage takes the
+material and never floods, for the same-event-twice reason above. It was chosen from five candidates on
+`design/plate-lab.html`, which stays as the record. `a1`'s rules are not
+deleted and must not be restyled: a posted plate is stored as markup, so every
+card already in a world's log says `a1` and goes on drawing as it was posted.
+A reroll rebuilds through the current builder, so a rerolled old card arrives
+as Obsidian, which is correct — it is a new statement about the roll.
+
 **Foundry draws every message twice** — once into the log and once as the
 notification that floats over the board — from two separate calls about three
 milliseconds apart. Two elements, one message. Anything keyed on the message

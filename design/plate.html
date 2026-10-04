@@ -199,11 +199,13 @@ where it is hottest.</p>
 Point. This one is hotter, lighter and glows, and it never appears on a mark — but it is a real adjacency,
 so it is written down here rather than discovered in play.</p>
 
-<h2><span>// THE PLATE</span>A, across every state it has</h2>
-<p class="note">Full-bleed field, ghost word running off the frame, the total at <b>48px, alone, and with
-no underline through it</b>. The field's luminance band is set by its own ink now, which is why Hope runs
-light&nbsp;→&nbsp;deep and Fear runs deep&nbsp;→&nbsp;light: one rule, and the near-white stop that used to
-put dark ink on <code>#6d4a08</code> at 2.27:1 is gone.</p>
+<h2><span>// THE PLATE</span>O · Obsidian, across every state it has</h2>
+<p class="note"><b>Colour as light, not paint.</b> A dark glass card in both themes: the outcome is a glow
+pooled behind the die that won, a lit lower edge and a luminous numeral, with the portrait toned in the
+outcome's hue under the number. The duality pair sits on one line with the total it produced, the arithmetic
+names both dice, and the meta line carries the margin. Only the critical floods. Chosen from five candidates on
+<a href="/design/plate-lab.html" style="color:var(--hope)">the lab</a>; the portrait and red studies above are
+A's, which every card already in a log still draws as.</p>
 <div class="tools">
   <button class="btn" id="play">play every card</button>
   <button class="btn" id="reroll">reroll</button>
@@ -219,7 +221,7 @@ it is here so the reason A won stays legible.</p>
 </div></div>
 
 <script type="module">
-import { RENDER, A, DIE, play } from '/design/plate.js';
+import { RENDER, A, O, DIE, play } from '/design/plate.js';
 
 const ART = '/design/assets/art-sample-01.png';
 const TABBY = {who:'Tabby', label:'Agility · parapet run', img:ART,
@@ -290,7 +292,7 @@ const STATES = [
 let seed = 0;
 const paint = () => {
   document.getElementById('states').innerHTML = STATES.map(([lb, mk]) =>
-    `<div class="slot"><s>${lb}</s><div class="stage">${A(mk(), 'Roll damage · 2d8+3')}</div></div>`
+    `<div class="slot"><s>${lb}</s><div class="stage">${O(mk(), 'Roll damage · 2d8+3')}</div></div>`
   ).join('');
 
   document.getElementById('cols').innerHTML = OPTS.map(o => `

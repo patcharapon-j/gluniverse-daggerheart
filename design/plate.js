@@ -331,14 +331,15 @@ export const DMG = (r, next) => {
     ...(r.bonus ? [{k:r.bonus.k, v:r.bonus.v}] : []),
     ...r.mods];
   return `
-<div class="pl a1 wound blk${crit ? ' mat' : ''}">
+<div class="pl o1 wound${crit ? ' mat' : ''}">
   ${CRIT(crit)}
   <div class="p">
+    <span class="pl-aura"></span>
     ${POR(r)}
-    <span class="shards"></span>
+    <span class="pl-glass"></span>
     <span class="pl-gh">${crit ? 'CRITICAL' : 'DAMAGE'}</span>
     ${EYE(r)}
-    <span class="row"><b class="pl-vb">${crit ? 'critical ' : ''}${r.dtype} damage</b><u
+    <span class="pl-hero"><b class="pl-vb">${crit ? 'critical ' : ''}${r.dtype} damage</b><u
       class="pl-num">${r.total}</u></span>
   </div>
   <div class="dmg-st">
@@ -474,6 +475,100 @@ export const FOE = (r, next) => {
   </div>
   <div class="pl-st">${D20(r, 32)}${FOE_ARITH(r)}</div>
   ${FOE_META(r)}${ACT([], next)}
+</div>`;
+};
+
+/* ══ O · OBSIDIAN ══════════════════════════════════════════════════
+   The card, since A — see the block of the same name in plate.css for the
+   argument, and plate-lab.html for the four it was chosen over.
+
+   Three things change in the markup and nothing else does:
+
+   - the duality pair moves up into the field, onto one line with the total
+     it produced. The strip keeps the advantage dice and the arithmetic.
+   - the arithmetic names both dice — "10 hope + 6 fear" — where A said
+     "16 dice". The silhouettes already told them apart and the strip is what
+     gets read back in a log, so it should too. An upgraded die says so:
+     "17 hope · d20".
+   - the meta line prints the margin beside the Difficulty, "+5" or "−3".
+
+   `--ax` is where the aura pools: behind whichever die won. A critical is
+   both dice, so it pools between them. */
+const O_AX = r => r.out === 'fear' ? '37%' : r.out === 'crit' ? '26%' : '15%';
+
+const PAIR = (r, sz) => {
+  const hd = r.hd ?? 'd12', fd = r.fd ?? 'd12';
+  return DIE(r.h, `h ${shapeOf(hd)}` + (r.out === 'fear' ? '' : ' lit'), sz, facesOf(hd)) +
+    DIE(r.f, `f ${shapeOf(fd)}` + (r.out === 'hope' ? '' : ' lit'), sz, facesOf(fd));
+};
+
+const PAIR_TERMS = r => {
+  const hd = r.hd ?? 'd12', fd = r.fd ?? 'd12';
+  return [{k:hd === 'd12' ? 'hope' : `hope · ${hd}`, v:r.h},
+          {k:fd === 'd12' ? 'fear' : `fear · ${fd}`, v:r.f}];
+};
+
+/* The result is wrapped so the stylesheet can set it in white and the rest
+   in the outcome's ink. Marked by the builder rather than found by the
+   stylesheet, because "the first word" is not a thing a localised sentence
+   promises to have. */
+const O_VERDICT = r => r.rxn
+  ? (r.out === 'crit' ? '<em>critical success</em>'
+    : r.dc == null ? '' : `<em>${r.hit ? 'success' : 'failure'}</em>`)
+  : r.out === 'crit' ? '<em>critical success</em>'
+  : r.dc == null ? `<em>${r.out === 'hope' ? 'with Hope' : 'with Fear'}</em>`
+  : `<em>${r.hit ? 'success' : 'failure'}</em> ${r.out === 'hope' ? 'with Hope' : 'with Fear'}`;
+
+const MARGIN = r => {
+  if(r.dc == null) return '';
+  const m = r.total - r.dc;
+  return `<em class="pl-mg ${m >= 0 ? 'up' : 'dn'}">${m >= 0 ? '+' : '−'}${Math.abs(m)}</em>`;
+};
+
+const O_FIELD = r => {
+  const v = O_VERDICT(r);
+  return `<div class="p">
+    <span class="pl-aura"></span>
+    ${POR(r)}
+    <span class="pl-glass"></span>
+    <span class="pl-gh">${GHOST(r)}</span>
+    ${EYE(r)}
+    <span class="pl-hero"><span class="pl-pair">${PAIR(r, 42)}</span><u class="pl-num">${r.total}</u></span>
+    ${v ? `<b class="pl-vb">${v}</b>` : ''}
+  </div>`;
+};
+
+export const O = (r, next) => `
+<div class="pl o1 ${r.rxn && r.out !== 'crit' ? 'flat' : r.out}${r.out === 'crit' ? ' mat' : ''}" style="--ax:${O_AX(r)}">
+  ${CRIT(r.out === 'crit')}
+  ${O_FIELD(r)}
+  <div class="pl-st">${ADV(r, 26)}${TERMS([...PAIR_TERMS(r), ...ADV_TERM(r), ...r.mods])}</div>
+  ${NOTE(r)}
+  <div class="pl-meta"><span>${r.kind ?? 'duality roll'}</span>${
+    r.dc == null ? '' : `<s>vs ${r.dc}${MARGIN(r)}</s>`}</div>
+  ${ACT(claims(r), next)}
+</div>`;
+
+/* The GM card on the same glass. It keeps everything that makes it the GM's
+   — the rail, the missing corner, the mono sentence, the number in ink — and
+   takes the light, which is the rail's colour. */
+export const FOE_O = (r, next) => {
+  const crit = foeCrit(r), v = FOE_V(r);
+  const landed = r.dc != null && r.hit;
+  return `
+<div class="pl g1 ${crit ? 'hot mat' : landed ? 'hit' : 'cold'} o1">
+  ${CRIT(crit)}
+  <span class="rail"></span>
+  <div class="p">
+    <span class="pl-aura"></span><span class="pl-glass"></span>
+    ${EYE(r)}
+    <span class="pl-hero"><span class="pl-pair">${D20(r, 40)}</span><u class="pl-num">${r.total}</u></span>
+    ${v ? `<b class="pl-vb">${v}</b>` : ''}
+  </div>
+  <div class="pl-st">${FOE_ARITH(r)}</div>
+  <div class="pl-meta"><span>${r.kind ?? 'adversary attack'}</span>${
+    r.dc == null ? '' : `<s>vs ${r.rxn ? '' : 'evasion '}${r.dc}${MARGIN(r)}</s>`}</div>
+  ${ACT([], next)}
 </div>`;
 };
 

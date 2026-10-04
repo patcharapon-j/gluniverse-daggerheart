@@ -279,6 +279,8 @@
       "ApplyToTarget": "Apply to target",
       "LandsOn": "lands on",
       "Dice": "dice",
+      "TermHope": "hope",
+      "TermFear": "fear",
       "Advantage": "advantage",
       "Disadvantage": "disadvantage",
       "AdvantageOf": "advantage · highest of {n}",

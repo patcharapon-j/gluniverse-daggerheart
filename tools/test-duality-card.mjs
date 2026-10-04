@@ -48,7 +48,11 @@ const base = { who: "Tabby", label: "Hammer", total: 17, mods: [{ k: "agility", 
 const card = (over) => dualityPlate({ ...base, ...over });
 
 const ghost = (html) => html.match(/<span class="pl-gh">(.*?)<\/span>/)?.[1] ?? "";
-const verdict = (html) => html.match(/<b class="pl-vb">(.*?)<\/b>/)?.[1] ?? "";
+/* The words are the lang file's; the markup around them is the card's. The
+   result is wrapped so the stylesheet can set it apart from the rest of the
+   sentence, and that wrapping is asserted on its own below. */
+const verdictHTML = (html) => html.match(/<b class="pl-vb">(.*?)<\/b>/)?.[1] ?? "";
+const verdict = (html) => verdictHTML(html).replace(/<[^>]+>/g, "");
 const claims = (html) =>
   [...html.matchAll(/class="pl-b[^"]*"[^>]*><i><\/i>([^<]*)/g)].map((m) => m[1]);
 const terms = (html) => [...html.matchAll(/<i[^>]*><b>[^<]*<\/b>\s*([^<]*)<\/i>/g)].map((m) => m[1].trim());
@@ -79,7 +83,27 @@ for (const [name, over, wantGhost, wantVerdict, wantClaims] of states) {
 /* ── a card with no Difficulty prints no chip at all ─────────────────── */
 
 assert.doesNotMatch(card({ out: "hope", dc: null, hit: false }), /pl-meta[^>]*>.*<s>/s, "an unresolved roll drew a chip");
-assert.match(card({ out: "hope", dc: 15, hit: true }), /<s>vs 15<\/s>/, "a resolved roll lost its chip");
+/* The chip carries the margin: 17 against 15 is +2, and 17 against 20 is −3.
+   The table used to do that subtraction itself. */
+assert.match(card({ out: "hope", dc: 15, hit: true }), /<s>vs 15<em class="pl-mg up">\+2<\/em><\/s>/,
+  "a resolved roll lost its chip or its margin");
+assert.match(card({ out: "fear", h: 6, f: 9, dc: 20, hit: false }), /<em class="pl-mg dn">−3<\/em>/,
+  "a missed Difficulty did not say by how much");
+
+/* ── the result is marked by the builder, not found by the stylesheet ──
+   "The first word" is an English assumption and the sentence is localised,
+   so the result arrives wrapped: success/failure inside the Outcome
+   sentence, and the whole of a verdict that is only one thing. */
+assert.equal(verdictHTML(card({ out: "hope", dc: 15, hit: true })), "<em>success</em> with Hope",
+  "the result inside an Outcome sentence was not marked");
+assert.equal(verdictHTML(card({ out: "crit", h: 9, f: 9, dc: 12, hit: true })), "<em>critical success</em>",
+  "a critical's verdict was not marked whole");
+
+/* ── the arithmetic names both dice, and an upgraded one says so ────── */
+assert.deepEqual(terms(card({ out: "hope", dc: null, hit: false })).slice(0, 2), ["hope", "fear"],
+  "the pair was summed rather than named");
+assert.deepEqual(terms(card({ out: "hope", dc: null, hit: false, hd: "d20", h: 17 })).slice(0, 2),
+  ["hope · d20", "fear"], "an upgraded Hope Die did not say which die it became");
 
 /* ── advantage names itself, and says how many when there were several ─ */
 

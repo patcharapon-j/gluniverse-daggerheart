@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Plate Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/plate.css">
+<link rel="stylesheet" href="/design/plate-lab.css">
+<style>
+/* fixed 322: a chat card is 300px in Foundry and does not scale */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,322px);gap:22px 18px;align-items:start}
+.slot > s{display:block;text-decoration:none;font:700 8px/1 var(--f-mono);letter-spacing:.17em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.slot > s em{font-style:normal;color:var(--hope)}
+.stage{background:var(--frame);box-shadow:inset 0 0 0 1px var(--frame-line);padding:11px;cursor:pointer}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px;align-items:center}
+.btn{border:0;cursor:pointer;background:var(--raise);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-2);padding:9px 13px;
+  font:700 8.5px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.btn:hover{background:var(--line-2)}
+.btn.on{background:var(--hope);color:#14161a;box-shadow:none}
+.tools .sep{width:1px;height:20px;background:#2b3038;margin:0 6px}
+.vhead{display:flex;align-items:baseline;gap:14px;margin:58px 0 8px;border-top:1px solid #22272f;padding-top:22px}
+.vhead h3{margin:0;font:700 20px/1 var(--f-display);color:#fff;letter-spacing:-.01em}
+.vhead em{font-style:normal;font:600 9.5px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--hope)}
+.pros{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px 28px;max-width:1100px;margin:6px 0 22px}
+.pros p{margin:0;font:400 12.5px/1.6 var(--f-ui);color:#96a0ac}
+.pros p b{color:#d7dde4;font-weight:600}
+.pros p.cost b{color:#e2727a}
+.log{width:322px}
+.log .stage{display:grid;gap:8px}
+.logs{display:grid;grid-template-columns:repeat(auto-fill,322px);gap:18px}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <b>plate lab</b>
+  <a href="/design/plate.html">plate</a>
+  <a href="/design/gm.html">gm</a>
+  <a href="/design/rolls.html">rolls</a>
+  <a href="/design/plate-lab.html" class="on">lab</a>
+  <label class="tg"><input type="checkbox" id="lt"> light</label>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE LAB</span>Five remakes of the roll card — Obsidian was chosen</h2>
+<p class="note">Every candidate is built from the parts the shipping plate already has — the faceted die, the
+eyebrow, the shards, the ghost word, the chamfer, the critical's red material, the veil — so what differs is
+arrangement and finish, not vocabulary. All of them hold the 300px chat width, use no <code>&lt;svg&gt;</code>
+in their markup, and roll in under the veil exactly as the real card does. <b>Click any card to replay its
+arrival</b>; each candidate brings its own landing beat.</p>
+
+<h2><span>// SIDE BY SIDE</span>One roll, six cards</h2>
+<div class="tools" id="pick"></div>
+<div class="grid" id="compare"></div>
+
+<h2><span>// IN THE LOG</span>A short exchange, as it would stack in chat</h2>
+<p class="note">PC attacks, the adversary answers, the PC reacts badly, the adversary crits. Cards read very
+differently alone and in a column; this is where the GM card's job — <i>not one of yours</i> — is tested.</p>
+<div class="logs" id="logs"></div>
+
+<div id="variants"></div>
+
+<script type="module">
+import { VARIANTS, play } from '/design/plate-lab.js';
+import { advVal } from '/design/plate.js';
+
+const ART = '/design/assets/art-sample-01.png';
+const MODS = [{k:'Agility', v:2}, {k:'Wildborne tracker', v:2, spent:true}];
+const sum = a => a.reduce((x, y) => x + y, 0);
+
+const pc = (out, dc, h, f, over = {}) => {
+  const mods = over.mods ?? MODS, adv = over.adv ?? null;
+  const total = h + f + sum(mods.map(m => m.v)) + advVal({adv});
+  return {who:'Tabby', label:'Agility · parapet run', img:ART, mods, h, f, adv, dc, out, total,
+    hit: out === 'crit' || total >= (dc ?? 0), ...over};
+};
+const ATK = [{k:'attack modifier', v:2}];
+const foe = (d20, over = {}) => {
+  const r = {who:'Ribbet Bandit', label:'Hammer', target:'Tabby', kind:'adversary attack',
+    d20, neg:false, mods:ATK, dc:12, ...over};
+  const keep = r.neg ? Math.min(...r.d20) : Math.max(...r.d20);
+  r.total = keep + sum(r.mods.map(m => m.v));
+  r.hit = (r.d20.includes(20) && keep === 20) ? true : r.total >= r.dc;
+  return r;
+};
+
+const STATES = [
+  {k:'hope', t:'with Hope · no difficulty', side:'pc', mk:() => [pc('hope', null, 10, 6), 'Roll damage · 3d8+3']},
+  {k:'fail', t:'failure with Fear · vs 15', side:'pc', mk:() => [pc('fear', 15, 2, 5)]},
+  {k:'help', t:'success with Fear · two allies help', side:'pc',
+    mk:() => [pc('fear', 15, 4, 11, {adv:{dice:[5, 3], neg:false}}), 'Roll damage · 3d8+3']},
+  {k:'crit', t:'critical success · vs 15', side:'pc', mk:() => [pc('crit', 15, 8, 8), 'Roll damage · 3d8+3']},
+  {k:'long', t:'no portrait · a long name', side:'pc',
+    mk:() => [pc('hope', 15, 10, 6, {img:null, who:'Vaskaryn the Undimmed', label:'Instinct · reading the treeline'})]},
+  {k:'hit', t:'GM · hit vs evasion 12', side:'gm', mk:() => [foe([14]), 'Deal 2d8+2 physical damage']},
+  {k:'miss', t:'GM · miss', side:'gm', mk:() => [foe([3])]},
+  {k:'nat', t:'GM · natural 20, with advantage', side:'gm',
+    mk:() => [foe([20, 7]), 'Deal 2d8+2, starting at maximum']},
+];
+
+const NOTES = {
+  current:[
+    ['', `<b>What shipped before Obsidian, and what every card already in a log still draws as.</b> A full-bleed outcome field with the portrait toned into it, the verdict and
+      the 48px total on the field, the dice and arithmetic on the paper underneath. The GM card is the
+      near-black rail card with no cut corner.`],
+  ],
+  lac:[
+    ['', `<b>Same card, second pass on every surface.</b> A fine grain and a specular lip on the field so it
+      reads as a material rather than a gradient; the total debossed into it; a graduated rule where the field
+      meets the paper; the dice seated in a recessed tray with contact shadows.`],
+    ['', `<b>The equation names both dice</b> — <i>10 hope + 6 fear</i> rather than <i>16 dice</i> — and the
+      meta line prints the <b>margin</b> beside the Difficulty, so "vs 15 · +5" answers "by how much" without
+      arithmetic. The total <b>counts up on an odometer</b> as it lands.`],
+    ['cost', `<b>Lowest risk, smallest change.</b> Nobody at the table will notice it as new; they will notice
+      it as better. Grain is a data-URI in the stylesheet, not markup, so the sanitiser never sees it.`],
+  ],
+  duel:[
+    ['', `<b>The axis, drawn.</b> The whole roll is "did gold beat violet", so the card is gold against
+      violet with a lit blade between them — and the blade lands <b>where the dice put it</b>: a 10 against a
+      6 takes more of the card than an 8 against a 7. The total rides the seam as a needle, and on landing the
+      seam travels from the middle to its answer with a small overshoot.`],
+    ['', `<b>The GM version is attack against Evasion</b>: a crimson half with the d20, a steel half with the
+      target's Evasion as a shield, and the blade pushed by the margin. Same grammar, opposite side.`],
+    ['cost', `<b>The most distinctive and the most opinionated.</b> The portrait drops to a soft-light texture
+      behind the seam, the dice take the hero slot so the strip under it is only the equation, and it is the
+      tallest PC card here by a few pixels.`],
+  ],
+  gauge:[
+    ['', `<b>The margin, measured.</b> An instrument band under the field draws the total as a bar built out
+      of the terms that made it — gold Hope die, violet Fear die, steel advantage, graphite modifier, hatched
+      for anything a currency paid for — against a graduated scale with the Difficulty <b>notched</b> into it.
+      The bar fills term by term on landing.`],
+    ['', `<b>The equation is keyed to the bar</b>, so a reader can see that the Wildborne tracker is what
+      pushed it over the line. The Difficulty notch is visible while the dice are still rolling, because it
+      was true before the roll.`],
+    ['cost', `<b>The most information-dense.</b> It is excellent with a Difficulty and merely decorative
+      without one, which is the common case. A negative modifier has no honest segment yet.`],
+  ],
+  obs:[
+    ['', `<b>Light, not paint.</b> A dark glass card in both themes; the outcome is a glow pooled behind the die
+      that won, a lit lower edge and a luminous numeral, with the portrait rim-lit in the outcome's hue on the
+      right. The dice move up into the hero line beside the number.`],
+    ['', `<b>The critical is the only card that floods</b> — D's "restraint buys the shock" argument, carried
+      through. And the PC and GM cards become one family on one substrate, told apart by hue, the rail and the
+      cut corner.`],
+    ['cost', `<b>Gives up the full-bleed field</b>, which is the single loudest thing the current card has. In
+      a busy log a gold plate is found faster than a gold glow.`],
+  ],
+  head:[
+    ['', `<b>A result screen.</b> The verdict set wide and heavy on Google Sans Flex's width axis — the
+      <code>--w-hero</code> the cards already use for names — over a tracked caption, the total in condensed
+      figures behind a hairline, crop marks on the field and a hazard hatch along its foot.`],
+    ['', `<b>The verdict slams in</b> and the total rises out of a clip on landing. The most cinematic of the
+      five, and the closest to the Endfield key art the system is drawn from.`],
+    ['cost', `<b>Width is finite.</b> CRITICAL at 26px fills the line; a localisation with a longer word for
+      "failure" would need the size to step down. The headline also restates the outcome the field already
+      states in hue.`],
+  ],
+};
+
+const ORDER = ['current', 'lac', 'duel', 'gauge', 'obs', 'head'];
+const card = (vk, st) => { const [r, n] = st.mk(); return VARIANTS[vk][st.side](r, n); };
+const slot = (label, html) => `<div class="slot"><s>${label}</s><div class="stage">${html}</div></div>`;
+
+let pick = 'help';
+const paintCompare = () => {
+  document.getElementById('pick').innerHTML = STATES.map(s =>
+    `<button class="btn${s.k === pick ? ' on' : ''}" data-k="${s.k}">${s.t}</button>`).join('');
+  const st = STATES.find(s => s.k === pick);
+  document.getElementById('compare').innerHTML = ORDER.map(vk =>
+    slot(`<em>${VARIANTS[vk].name}</em> · ${VARIANTS[vk].tag}`, card(vk, st))).join('');
+};
+document.getElementById('pick').addEventListener('click', e => {
+  const b = e.target.closest('[data-k]'); if(!b) return;
+  pick = b.dataset.k; paintCompare();
+  playIn(document.getElementById('compare'));
+});
+
+const LOG = [STATES[2], STATES[5], STATES[1], STATES[7]];
+document.getElementById('logs').innerHTML = ORDER.map(vk => `<div class="log slot"><s><em>${
+  VARIANTS[vk].name}</em></s><div class="stage">${LOG.map(st => card(vk, st)).join('')}</div></div>`).join('');
+
+document.getElementById('variants').innerHTML = ORDER.map(vk => `
+  <div class="vhead"><h3>${VARIANTS[vk].name}</h3><em>${VARIANTS[vk].tag}</em></div>
+  <div class="pros">${NOTES[vk].map(([c, t]) => `<p class="${c}">${t}</p>`).join('')}</div>
+  <div class="tools"><button class="btn" data-play="${vk}">play all</button></div>
+  <div class="grid" id="v-${vk}">${STATES.map(st => slot(st.t, card(vk, st))).join('')}</div>`).join('');
+
+const playIn = root => [...root.querySelectorAll('.pl')].forEach((el, i) =>
+  setTimeout(() => play(el), i * 110));
+
+document.addEventListener('click', e => {
+  const pb = e.target.closest('[data-play]');
+  if(pb) return playIn(document.getElementById('v-' + pb.dataset.play));
+  if(e.target.closest('button')) return;
+  const st = e.target.closest('.stage');
+  if(st) st.querySelectorAll('.pl').forEach((el, i) => setTimeout(() => play(el), i * 160));
+});
+
+paintCompare();
+setTimeout(() => playIn(document.getElementById('compare')), 300);
+
+document.getElementById('lt').addEventListener('change',
+  e => document.documentElement.classList.toggle('light', e.target.checked));
+</script>
+</div>
+</body>
+</html>

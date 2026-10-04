@@ -159,13 +159,13 @@ assert.equal(plateOf(result.message).dc, 10, "the attack did not read the target
 assert.equal(plateOf(result.message).target, "Ranger");
 assert.equal(plateOf(result.message).hit, true, "12 against an Evasion of 10 is a hit");
 assert.match(result.message.content, /hit Ranger/, "the card did not say it landed");
-assert.match(result.message.content, /class="pl g1 hit"/, "the rail stayed cold on a hit");
+assert.match(result.message.content, /class="pl g1 hit o1"/, "the rail stayed cold on a hit");
 
 aim({ ...ranger, system: { evasion: { value: 99 } } });
 result = await rollAdversaryAttack(adversary);
 assert.equal(plateOf(result.message).hit, false);
 assert.match(result.message.content, /missed Ranger/, "the card did not say it missed");
-assert.match(result.message.content, /class="pl g1 cold"/);
+assert.match(result.message.content, /class="pl g1 cold o1"/);
 
 aim();
 result = await rollAdversaryAttack(adversary);
@@ -176,7 +176,7 @@ assert.doesNotMatch(
   /\b(?:hit|miss(?:ed)?)\b/i,
   "an unresolved attack rendered a verdict anyway",
 );
-assert.match(result.message.content, /class="pl g1 cold"/);
+assert.match(result.message.content, /class="pl g1 cold o1"/);
 
 aim(ranger, bard);
 result = await rollAdversaryAttack(adversary);
