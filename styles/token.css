@@ -284,12 +284,31 @@
 .dh.tok[data-actor="adversary"]{--actor:#df5966}
 .dh.tok[data-actor="environment"]{--actor:#8f9bab}
 
+/* ── a ring mask is closest-side, and these three were not ────────────
+   A bare radial-gradient(circle) resolves to farthest-corner, which on a
+   square box is the inscribed circle times root two -- so the opaque band
+   began well outside the disc actually being painted and all three of
+   these elements masked to nothing at all. Measured in a browser rather
+   than inferred: at a 1x1 token the identity hairline wanted r 49.2 and
+   its mask turned black at 68.9, the crown wanted 46.1 and got 65.1, the
+   reticle wanted 22 and got 31.1.
+
+   So the identity hairline, the selection crown and the TARGET RETICLE
+   have never drawn, which is why nothing on the board has ever marked a
+   targeted creature. It reads as a feature nobody built rather than as
+   three broken rules, and that is the whole reason it lasted: every other
+   part of each rule is correct, and the conic gradients underneath them
+   are exactly right.
+
+   Every other ring mask in this repo already says closest-side -- the
+   rails here, ruler.css, chit.css -- so this is the convention arriving
+   at the three rules that missed it rather than a new idea. */
 .dh .er-identity{position:absolute;inset:calc(50% - (50% - .8px) * var(--tkv,1));
   border-radius:50%;opacity:.8;
   background:conic-gradient(from 20deg,var(--actor),transparent 19%,
     transparent 31%,#d7ad42 43%,transparent 51%,transparent 79%,var(--actor));
-  -webkit-mask:radial-gradient(circle,transparent calc(100% - .7px),#000 calc(100% - .6px));
-  mask:radial-gradient(circle,transparent calc(100% - .7px),#000 calc(100% - .6px))}
+  -webkit-mask:radial-gradient(closest-side,transparent calc(100% - .7px),#000 calc(100% - .6px));
+  mask:radial-gradient(closest-side,transparent calc(100% - .7px),#000 calc(100% - .6px))}
 
 .dh .er-ring{position:absolute;border-radius:50%}
 /* --rail is a px width and stays one at every setting, which is the
@@ -415,8 +434,8 @@
   background:conic-gradient(from 11deg,var(--actor) 0 18deg,transparent 18deg 72deg,
     var(--actor) 72deg 90deg,transparent 90deg 162deg,var(--actor) 162deg 180deg,
     transparent 180deg 252deg,var(--actor) 252deg 270deg,transparent 270deg);
-  -webkit-mask:radial-gradient(circle,transparent 94%,#000 95%);
-  mask:radial-gradient(circle,transparent 94%,#000 95%);
+  -webkit-mask:radial-gradient(closest-side,transparent 94%,#000 95%);
+  mask:radial-gradient(closest-side,transparent 94%,#000 95%);
   filter:drop-shadow(0 0 3px color-mix(in srgb,var(--actor) 58%,transparent));
   transition:opacity .19s cubic-bezier(.2,.8,.2,1),transform .19s cubic-bezier(.16,1,.3,1)}
 
@@ -424,8 +443,8 @@
   background:conic-gradient(from 37deg,#ff6777 0 14deg,transparent 14deg 76deg,
     #ff6777 76deg 104deg,transparent 104deg 166deg,#ff6777 166deg 194deg,
     transparent 194deg 256deg,#ff6777 256deg 284deg,transparent 284deg);
-  -webkit-mask:radial-gradient(circle,transparent 72%,#000 74%);
-  mask:radial-gradient(circle,transparent 72%,#000 74%);
+  -webkit-mask:radial-gradient(closest-side,transparent 72%,#000 74%);
+  mask:radial-gradient(closest-side,transparent 72%,#000 74%);
   filter:drop-shadow(0 0 2px rgba(255,79,98,.7));
   transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.16,1,.3,1)}
 
