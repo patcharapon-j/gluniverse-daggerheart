@@ -78,6 +78,7 @@ const SHEETS = [
   "foil.css",
   "token.css",
   "ruler.css",
+  "spotlight.css",
 ];
 
 /**
@@ -299,6 +300,13 @@ function port(name) {
     // against the whole stack rather than merely against the file it is in,
     // which is the naming rule one step past the one that renamed .die.win.
     .replaceAll(".ruler", ".dh.ruler")
+    // The spotlight, eighth: drawn on the body over the board, outside every
+    // root of ours, so the root wears the palette class itself. Checked
+    // against the whole stack before choosing it, for the ruler's reason:
+    // nothing else in any ported sheet begins with these three letters, and
+    // the members take a different prefix so this rewrite reaches only the
+    // root.
+    .replaceAll(".spl", ".dh.spl")
     /* `../assets/`, not `systems/gluniverse-daggerheart/assets/`.
        A relative `url()` resolves against the stylesheet it is written in,
        and these end up in `styles/` — so the absolute-looking form was

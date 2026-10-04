@@ -44,6 +44,7 @@ const MODULES = [
   "make.js",
   "token.js",
   "ruler.js",
+  "spotlight.js",
   /* The ported card: its two builders, their behaviours, the motifs the
      frame wears, the art framing and the term treatment the text uses.
      `compact.js` imports from `./face.js` and `face.js` from

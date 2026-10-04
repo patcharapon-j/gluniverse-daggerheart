@@ -1,0 +1,113 @@
+/* Ported from design/spotlight.css by scripts/port-design-css.mjs — do not edit here.
+   Edit design/spotlight.css and re-run `node scripts/port-design-css.mjs`. */
+/* The spotlight. See spotlight.js for the argument.
+
+   Root is spl and every member is sl-prefixed: the root wears dh because it
+   is drawn on the body, outside every sheet, and the port rewrites the root
+   to the compound form. Members take a prefix that is not a continuation of
+   the root's, for the reason the token chip's do. Do not spell selectors out
+   in prose here: the port's rewrite reaches comments too. */
+
+.dh.spl{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;
+  --sl-head-y:clamp(118px,14vh,170px)}
+.dh.spl *{pointer-events:none}
+.dh.spl .sl-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ---- the headline ------------------------------------------------------ */
+
+.dh.spl .sl-head{position:absolute;left:0;right:0;top:var(--sl-head-y);transform:translateY(-50%);
+  display:flex;justify-content:center;opacity:0}
+.dh.spl .sl-head b{position:relative;display:block;white-space:nowrap;
+  font:700 clamp(30px,4.4vw,62px)/1 var(--f-display);text-transform:uppercase;
+  letter-spacing:.3em;margin-right:-.3em}
+.dh.spl.sl-play .sl-head{opacity:1}
+
+/* Hope resolves out of the flare: wide, soft and white-hot, gathering into
+   gold type. One move in, a hold, and a lift out into the band. */
+.dh.spl[data-side=hope] .sl-head b{color:#fff6dc;
+  text-shadow:0 0 1px #fff,0 0 14px rgba(255,226,150,.9),0 0 38px rgba(212,167,44,.75),0 0 90px rgba(212,167,44,.45)}
+.dh.spl[data-side=hope].sl-play .sl-head b{animation:sl-hope 1.75s cubic-bezier(.2,.7,.2,1) both}
+/* the glint: one band of light crossing the word once it has locked */
+.dh.spl[data-side=hope] .sl-head b::after{content:attr(data-t);position:absolute;inset:0;
+  color:transparent;text-shadow:none;opacity:0;
+  background:linear-gradient(100deg,transparent 0 38%,rgba(255,255,255,.95) 48%,rgba(255,240,200,.6) 52%,transparent 62% 100%) no-repeat;
+  background-size:250% 100%;background-position:120% 0;-webkit-background-clip:text;background-clip:text}
+.dh.spl[data-side=hope].sl-play .sl-head b::after{animation:sl-glint .7s cubic-bezier(.4,0,.2,1) .62s both}
+@keyframes sl-glint{0%{opacity:1;background-position:120% 0}100%{opacity:1;background-position:-30% 0}}
+@keyframes sl-hope{
+  0%  {opacity:0;letter-spacing:1.1em;margin-right:-1.1em;filter:blur(14px) brightness(2.2)}
+  34% {opacity:1;letter-spacing:.3em;margin-right:-.3em;filter:blur(0) brightness(1.25)}
+  50% {filter:blur(0) brightness(1)}
+  80% {opacity:1;transform:none;filter:blur(0)}
+  100%{opacity:0;transform:translateY(-26px) scale(.94);filter:blur(4px)}
+}
+
+/* Fear does not arrive, it breaks in: slices of the word out of register,
+   in two colours that are not quite the word's own, stepping rather than
+   easing, until it locks — and then it is dragged back up by the ink. */
+.dh.spl[data-side=fear] .sl-head b{color:#f1e8ff;
+  text-shadow:0 0 1px #fff,0 0 12px rgba(190,150,255,.85),0 0 34px rgba(123,79,192,.85),0 0 80px rgba(80,30,150,.6)}
+.dh.spl[data-side=fear] .sl-head b::before,
+.dh.spl[data-side=fear] .sl-head b::after{content:attr(data-t);position:absolute;inset:0;opacity:0}
+.dh.spl[data-side=fear] .sl-head b::before{color:#ff4fd8;mix-blend-mode:screen}
+.dh.spl[data-side=fear] .sl-head b::after{color:#5ad8ff;mix-blend-mode:screen}
+.dh.spl[data-side=fear].sl-play .sl-head b{animation:sl-fear 1.75s steps(1,end) both, sl-fear-out 1.75s cubic-bezier(.5,0,.8,.3) both}
+.dh.spl[data-side=fear].sl-play .sl-head b::before{animation:sl-split-a .9s steps(1,end) .18s both}
+.dh.spl[data-side=fear].sl-play .sl-head b::after{animation:sl-split-b .9s steps(1,end) .18s both}
+@keyframes sl-fear{
+  0%  {clip-path:inset(0 0 100% 0);translate:0 0}
+  10% {clip-path:inset(42% 0 38% 0);translate:-14px 0}
+  14% {clip-path:inset(10% 0 70% 0);translate:9px 0}
+  18% {clip-path:inset(60% 0 8% 0);translate:-4px 0}
+  22% {clip-path:inset(0 0 52% 0);translate:6px 0}
+  26% {clip-path:inset(30% 0 0 0);translate:-2px 0}
+  30% {clip-path:inset(0);translate:0 0}
+  56% {clip-path:inset(0 0 0 0);translate:3px 0}
+  57% {translate:0 0}
+}
+@keyframes sl-fear-out{
+  0%,80%{opacity:1;filter:none}
+  100%{opacity:0;transform:translateY(-22px) scaleY(.85);filter:blur(3px)}
+}
+@keyframes sl-split-a{
+  0% {opacity:.9;transform:translate(-7px,1px);clip-path:inset(12% 0 55% 0)}
+  12%{transform:translate(5px,-1px);clip-path:inset(58% 0 10% 0)}
+  24%{transform:translate(-3px,0);clip-path:inset(30% 0 40% 0)}
+  40%{transform:translate(2px,0);clip-path:inset(0 0 70% 0)}
+  60%{opacity:.5;transform:translate(-1px,0);clip-path:inset(70% 0 0 0)}
+  100%{opacity:0}
+}
+@keyframes sl-split-b{
+  0% {opacity:.9;transform:translate(7px,-1px);clip-path:inset(60% 0 12% 0)}
+  12%{transform:translate(-6px,1px);clip-path:inset(8% 0 62% 0)}
+  24%{transform:translate(3px,0);clip-path:inset(45% 0 25% 0)}
+  40%{transform:translate(-2px,0);clip-path:inset(75% 0 0 0)}
+  60%{opacity:.5;transform:translate(1px,0);clip-path:inset(0 0 66% 0)}
+  100%{opacity:0}
+}
+
+/* ---- the band's label -------------------------------------------------- */
+
+.dh.spl .sl-tag{position:absolute;top:var(--sl-tag-y,0);left:var(--sl-tag-x,120px);height:40px;
+  display:flex;align-items:center;gap:9px;opacity:0;transform:translateY(-6px);
+  transition:opacity .38s ease,transform .38s cubic-bezier(.2,.7,.2,1);
+  font:700 10px/1 var(--f-mono);letter-spacing:.26em;text-transform:uppercase;white-space:nowrap}
+.dh.spl .sl-tag i{width:8px;height:8px;flex:none;transform:rotate(45deg)}
+.dh.spl.sl-tagged .sl-tag{opacity:1;transform:none}
+.dh.spl[data-side=off] .sl-tag{opacity:0;transform:translateY(-10px);transition-duration:.22s}
+.dh.spl[data-side=hope] .sl-tag{color:#ffe7a6;text-shadow:0 0 10px rgba(212,167,44,.8),0 1px 2px rgba(0,0,0,.8)}
+.dh.spl[data-side=hope] .sl-tag i{background:#ffe08a;box-shadow:0 0 8px 1px rgba(212,167,44,.95)}
+.dh.spl[data-side=fear] .sl-tag{color:#dccbff;text-shadow:0 0 10px rgba(123,79,192,.95),0 1px 2px rgba(0,0,0,.9)}
+.dh.spl[data-side=fear] .sl-tag i{background:#b796ff;box-shadow:0 0 8px 1px rgba(123,79,192,1);
+  animation:sl-pip 2.6s ease-in-out infinite}
+.dh.spl[data-side=fear].sl-tagged .sl-tag span{animation:sl-flick .5s steps(1,end) 1}
+@keyframes sl-pip{50%{box-shadow:0 0 14px 3px rgba(150,100,230,1)}}
+@keyframes sl-flick{0%{opacity:.2}15%{opacity:1}30%{opacity:.35}45%,100%{opacity:1}}
+
+/* ---- reduced motion: a still glow and a short fade --------------------- */
+.dh.spl.sl-reduced .sl-head b,
+.dh.spl.sl-reduced .sl-head b::before,
+.dh.spl.sl-reduced .sl-head b::after{animation:none !important}
+.dh.spl.sl-reduced.sl-play .sl-head{opacity:0}
+.dh.spl.sl-reduced .sl-tag{transition-duration:.2s;transform:none}
+.dh.spl.sl-reduced .sl-tag *{animation:none !important}

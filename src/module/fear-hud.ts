@@ -79,7 +79,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID } from "./config.ts";
-import { FEAR_MAX, getFear, setFear } from "./settings.ts";
+import { FEAR_MAX, getFear, getSpotlight, setFear, toggleSpotlight } from "./settings.ts";
 import { intensity, setPool } from "./ui/gem.js";
 import { FEAR_HUD } from "./ui/pool.js";
 
@@ -110,6 +110,7 @@ export function registerFearHud(): void {
     gm: !!game.user?.isGM,
     chips: chipsOn(),
     ruler: rulerOn(),
+    spot: getSpotlight(),
   });
   strip = host.firstElementChild as HTMLElement | null;
   if (!strip) return;
@@ -131,6 +132,22 @@ export function registerFearHud(): void {
      reason, and neither knows about the other. */
   Hooks.on("daggerheart.tokenChipChanged", showChips);
   Hooks.on("daggerheart.rangeRulerChanged", showChips);
+  /* The spotlight presses are a reading of the setting too, and a GM
+     spotlight lands on this strip as well as above it: the rim flares once,
+     so the pool and the banner read as one threat. On a change only — a
+     reload rejoins a spotlight already held, and nothing just happened. */
+  Hooks.on("daggerheart.spotlightChanged", showSpot);
+}
+
+function showSpot(): void {
+  const side = getSpotlight();
+  for (const b of strip?.querySelectorAll<HTMLElement>("[data-spot]") ?? []) {
+    b.setAttribute("aria-pressed", b.dataset.spot === side ? "true" : "false");
+  }
+  if (side !== "fear" || !strip) return;
+  strip.classList.remove("flare");
+  void strip.offsetWidth;
+  strip.classList.add("flare");
 }
 
 /** Whether this screen is drawing the token chips. Client-scoped: mine, not the table's. */
@@ -168,6 +185,16 @@ async function onPress(event: Event): Promise<void> {
   if (view) {
     const key = view.hasAttribute("data-chip") ? "tokenChip" : "rangeRuler";
     await game.settings?.set(SYSTEM_ID, key, game.settings.get(SYSTEM_ID, key) === false);
+    return;
+  }
+
+  /* The spotlight: one press per side, the lit one clears it. GM only, for
+     the reason `setSpotlight` gives, and it writes the setting and nothing
+     else — the presses' own state comes back through `showSpot`. */
+  const spot = (event.target as HTMLElement).closest<HTMLElement>("[data-spot]");
+  if (spot) {
+    const side = spot.dataset.spot;
+    if (game.user?.isGM && (side === "hope" || side === "fear")) await toggleSpotlight(side);
     return;
   }
 

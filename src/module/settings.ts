@@ -95,6 +95,35 @@ export function registerSettings(): void {
     onChange: () => Hooks.callAll("daggerheart.rangeRulerChanged"),
   });
 
+  /* The spotlight — whose move it is, said to the whole table. WORLD-scoped
+     and GM-written for the Fear pool's reason: it is a fact about the table,
+     and a client that reloads mid-fight should come back to it rather than to
+     a blank screen. Not in the settings window, because the plinth under the
+     Fear strip and the two keybindings are its controls. See spotlight.ts. */
+  game.settings.register(SYSTEM_ID, "spotlight", {
+    name: "DAGGERHEART.Settings.Spotlight",
+    scope: "world",
+    config: false,
+    type: String,
+    choices: { off: "off", hope: "hope", fear: "fear" },
+    default: "off",
+    onChange: (value: string) => Hooks.callAll("daggerheart.spotlightChanged", value),
+  });
+
+  /* The one switch over it a player may touch, and it does not hide anything:
+     it draws the same light at a lower resolution with fewer octaves, for a
+     machine the full shader costs too much on. Client-scoped, a fact about
+     one screen. */
+  game.settings.register(SYSTEM_ID, "spotlightLite", {
+    name: "DAGGERHEART.Settings.SpotlightLite",
+    hint: "DAGGERHEART.Settings.SpotlightLiteHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => Hooks.callAll("daggerheart.spotlightLiteChanged"),
+  });
+
   /* And the ten supplemental campaign variants, which are content gates
      rather than rules and are registered together in their own module —
      ten near-identical registrations inlined here would bury the four
@@ -338,6 +367,35 @@ const flag = (key: string, fallback: boolean): boolean => {
 };
 
 export const massiveDamage = (): boolean => flag("massiveDamage", true);
+export const spotlightLite = (): boolean => flag("spotlightLite", false);
+
+export type Spot = "off" | "hope" | "fear";
+const SPOTS: readonly string[] = ["off", "hope", "fear"];
+
+/** Who has the spotlight. Tolerates an early call, as `flag` does. */
+export const getSpotlight = (): Spot => {
+  try {
+    const v = String(game.settings?.get(SYSTEM_ID, "spotlight") ?? "off");
+    return (SPOTS.includes(v) ? v : "off") as Spot;
+  } catch {
+    return "off";
+  }
+};
+
+/**
+ * Only a GM moves the spotlight, which is the rule rather than a permission
+ * we chose: it moves on a GM move or a failed roll, and both are the GM's
+ * call. A player's call returns the current side unchanged.
+ */
+export async function setSpotlight(side: Spot): Promise<Spot> {
+  if (!game.user?.isGM || !SPOTS.includes(side)) return getSpotlight();
+  if (side !== getSpotlight()) await game.settings.set(SYSTEM_ID, "spotlight", side);
+  return side;
+}
+
+/** Pressing the lit side again clears it — the plinth's rule and the keys'. */
+export const toggleSpotlight = (side: Exclude<Spot, "off">): Promise<Spot> =>
+  setSpotlight(getSpotlight() === side ? "off" : side);
 export const definedRanges = (): boolean => flag("definedRanges", false);
 
 /** The high water mark of the migrations that have run in this world. */

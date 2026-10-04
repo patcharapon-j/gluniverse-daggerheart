@@ -33,13 +33,17 @@ import {
   applyTheme,
   gainFear,
   getFear,
+  getSpotlight,
   registerSettings,
   setFear,
+  setSpotlight,
   spendFear,
+  toggleSpotlight,
 } from "./settings.ts";
 import { closeCreationForContentChange, openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { registerFearHud } from "./fear-hud.ts";
+import { registerSpotlight, registerSpotlightKeys } from "./spotlight.ts";
 import {
   applyTokenConditions,
   rebuildTokenChips,
@@ -102,6 +106,7 @@ Hooks.once("init", () => {
   /* And the ruler, beside them and for the identical reason — it needs
      `canvasReady`, which has already fired by the time `ready` runs. */
   registerRangeRuler();
+  registerSpotlightKeys();
   /* And the seventeenth condition, which is however many the GM types. This
      one only asks `Hooks.on("renderTokenHUD")` and could wait, but it is the
      other half of `CONFIG.statusEffects` above and belongs beside it. */
@@ -203,6 +208,9 @@ Hooks.once("ready", () => {
      Foundry's own chrome, and `#ui-top` does not exist until the game view
      has been drawn. */
   registerFearHud();
+  /* After the strip, because the spotlight's label and headline are placed
+     against it. */
+  registerSpotlight();
 
   /** Public API for macros and modules: `game.daggerheart.rollTrait(actor, "agility")`. */
   (game as any).daggerheart = {
@@ -265,8 +273,19 @@ Hooks.once("ready", () => {
        "once per scene" come back. Both take an actor because a scope is a
        fact about a character's cards; `endSession()` with no argument does
        every player character in the world, which is what the GM means. */
-    endScene: (actor?: any) => refreshScope("scene", actor),
+    /* A conflict ends when its scene does, so ending the scene for the whole
+       table also clears the spotlight. Not for one actor: that is one
+       character's cards coming back, not the scene ending. */
+    endScene: async (actor?: any) => {
+      const moved = await refreshScope("scene", actor);
+      if (!actor) await setSpotlight("off");
+      return moved;
+    },
     endSession: (actor?: any) => refreshScope("session", actor),
+
+    /* The spotlight. `set` and `toggle` are GM-only and answer a player
+       with the side unchanged; see settings.ts. */
+    spotlight: { get: getSpotlight, set: setSpotlight, toggle: toggleSpotlight },
 
     /* *The Twilight Marked*. A seam rather than a surface, for the reason
        `endScene` is one: the long rest already runs the roll and the loadout

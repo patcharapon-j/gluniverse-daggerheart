@@ -65,7 +65,10 @@
       "DefinedRanges": "Defined Ranges (optional rule)",
       "DefinedRangesHint": "Measures the range rings in the squares the SRD prints for grid play — Melee 1, Very Close 3, Close 6, Far 12 — rather than converting the book’s approximate distances. It moves one band: Very Close goes from 2 squares to 3.",
       "GunslingerContent": "Gunslinger homebrew package",
-      "GunslingerContentHint": "Enable the playtest Gunslinger class, Drifter and Sharpshooter subclasses, Artifice domain, expanded firearms, and rules journal. Changes close open creation and browse windows. Turning this off hides new choices and compendiums; items already owned by characters keep working."
+      "GunslingerContentHint": "Enable the playtest Gunslinger class, Drifter and Sharpshooter subclasses, Artifice domain, expanded firearms, and rules journal. Changes close open creation and browse windows. Turning this off hides new choices and compendiums; items already owned by characters keep working.",
+      "Spotlight": "Spotlight",
+      "SpotlightLite": "Reduce spotlight effects",
+      "SpotlightLiteHint": "Draws the spotlight banner at a lower resolution with less detail, for slower machines. It still shows; this screen only."
     },
     "Theme": {
       "Dark": "Dark",
@@ -295,6 +298,12 @@
       "Hit": "hit {name}",
       "Missed": "missed {name}",
       "CriticalHit": "critical hit {name}"
+    },
+    "Spotlight": {
+      "KeyPlayer": "Player spotlight",
+      "KeyPlayerHint": "Puts the spotlight on the players. Press again to clear it.",
+      "KeyGm": "GM spotlight",
+      "KeyGmHint": "Puts the spotlight on the GM. Press again to clear it."
     }
   }
 }

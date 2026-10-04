@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Spotlight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/pool.css">
+<link rel="stylesheet" href="/design/spotlight.css">
+<style>
+/* Stacked as Foundry stacks them: the board at 0, the spotlight at 1 and
+   the interface at 60, so the strip and sidebar sit over the light.
+   The whole page is a Foundry viewport: a painted board, the scene controls
+   down the left, the Fear strip docked top-centre, and the spotlight drawn
+   over all of it on the body — which is exactly where it lives in the game. */
+body{padding:0;overflow:hidden;height:100vh}
+#board{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+#ui-left{position:fixed;left:10px;top:60px;z-index:60;display:flex;flex-direction:column;gap:4px}
+#ui-left i{display:block;width:34px;height:34px;background:rgba(11,13,17,.82);
+  box-shadow:inset 0 0 0 1px #2a3038;backdrop-filter:blur(8px)}
+#ui-left i:first-child{box-shadow:inset 0 0 0 1px #4a5260;background:rgba(30,34,42,.9)}
+#ui-top{position:fixed;top:8px;left:0;right:0;z-index:60;display:flex;justify-content:center;pointer-events:none}
+#ui-top .hud{pointer-events:auto}
+#sidebar{position:fixed;right:0;top:0;bottom:0;width:300px;z-index:60;
+  background:rgba(11,13,17,.86);box-shadow:inset 1px 0 0 #22272f;backdrop-filter:blur(10px)}
+.spl{right:300px}
+
+/* the studio's own controls, kept off the band */
+.ctl{position:fixed;left:56px;bottom:16px;z-index:60;width:min(560px,calc(100vw - 380px));
+  background:rgba(10,12,15,.9);backdrop-filter:blur(14px);box-shadow:inset 0 0 0 1px #262b32;
+  padding:14px 16px 16px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%)}
+.ctl h1{font:700 10px/1 var(--f-mono);letter-spacing:.22em;text-transform:uppercase;color:#7d8794;margin:0 0 12px;
+  display:flex;justify-content:space-between}
+.ctl h1 a{color:#7d8794;text-decoration:none}
+.ctl h1 a:hover{color:var(--hope)}
+.row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.row button{border:0;cursor:pointer;background:#242931;box-shadow:inset 0 0 0 1px #343b45;
+  color:#c3cbd5;font:700 9.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;
+  padding:10px 13px;transition:background .14s,color .14s,box-shadow .14s;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.row button:hover{background:#2e343e}
+.row button.h:hover,.row button.h.on{background:var(--hope);color:#14161a;box-shadow:none}
+.row button.f:hover,.row button.f.on{background:var(--fear);color:#fff;box-shadow:none}
+.row .tg{margin-left:6px}
+.kbd{font:400 11px/1.5 var(--f-ui);color:#7d8794}
+.kbd b{font:600 10px/1 var(--f-mono);color:#c3cbd5;background:#20252c;padding:2px 5px;box-shadow:inset 0 0 0 1px #343b45}
+.stat{font:500 10px/1 var(--f-mono);color:#59616c;letter-spacing:.08em;margin-top:8px}
+</style>
+</head>
+<body>
+<canvas id="board"></canvas>
+<div id="ui-left"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div id="ui-top"></div>
+<aside id="sidebar"></aside>
+
+<div class="ctl">
+  <h1><span>Spotlight · study</span><a href="/design/">design index</a></h1>
+  <div class="row">
+    <button class="h" data-go="hope">Player</button>
+    <button class="f" data-go="fear">GM</button>
+    <button data-go="off">Off</button>
+    <button data-replay>Replay</button>
+    <button data-stress>Rapid flips ×6</button>
+  </div>
+  <div class="row">
+    <label class="tg"><input type="checkbox" id="rm"> reduced motion</label>
+    <label class="tg"><input type="checkbox" id="lo"> reduce spotlight effects</label>
+    <label class="tg"><input type="checkbox" id="mp" checked> map</label>
+  </div>
+  <div class="row">
+    <label class="tg"><input type="checkbox" id="fz"> freeze at</label>
+    <input type="range" id="sc" min="0" max="3200" step="10" value="500" style="width:220px">
+    <span class="kbd" id="scv">500ms</span>
+  </div>
+  <div class="kbd">Study keys: <b>[</b> player · <b>]</b> GM · press the lit side again for off. The plinth under the Fear strip works too.</div>
+  <div class="stat" id="stat">—</div>
+</div>
+
+<script type="module">
+import {FEAR_HUD} from '/design/pool.js';
+import {SPOTLIGHT, spotlight, NOISE_GLSL, SHIMMER_GLSL} from '/design/spotlight.js';
+
+/* ---- the Fear strip, with the spotlight's two presses on its right plinth */
+const top = document.getElementById('ui-top');
+top.innerHTML = FEAR_HUD({cur: 5, max: 12, gm: true});
+const hud = top.querySelector('.hud');
+
+/* ---- the painted board, and the shimmer pass Foundry will run as a filter */
+const board = document.getElementById('board');
+const paint = () => {
+  const c = document.createElement('canvas');
+  const W = c.width = 2048, H = c.height = 1280, g = c.getContext('2d');
+  g.fillStyle = '#2a2622'; g.fillRect(0, 0, W, H);
+  let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 2600; i++){
+    const x = rnd() * W, y = rnd() * H, r = 6 + rnd() * 40, l = 18 + rnd() * 16;
+    g.fillStyle = `hsla(${28 + rnd() * 14},${10 + rnd() * 12}%,${l}%,.18)`;
+    g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+  // flagstones
+  g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2;
+  for (let y = 0; y < H; y += 46){ const o = (y / 46 % 2) * 40;
+    for (let x = -o; x < W; x += 80){ g.strokeRect(x + rnd() * 3, y + rnd() * 3, 78, 44); } }
+  // water
+  const pool = g.createRadialGradient(1500, 820, 40, 1500, 820, 330);
+  pool.addColorStop(0, '#1d4a55'); pool.addColorStop(.75, '#16343d'); pool.addColorStop(1, 'rgba(22,52,61,0)');
+  g.fillStyle = pool; g.beginPath(); g.ellipse(1500, 820, 360, 240, .3, 0, 7); g.fill();
+  // walls
+  g.fillStyle = '#151311';
+  for (const [x, y, w, h] of [[0,0,2048,90],[0,0,70,1280],[420,90,40,520],[420,760,40,520],[900,380,640,40],[1180,90,40,290]]) g.fillRect(x, y, w, h);
+  g.strokeStyle = 'rgba(255,240,210,.06)'; g.lineWidth = 3;
+  for (const [x, y, w, h] of [[420,90,40,520],[900,380,640,40]]) g.strokeRect(x, y, w, h);
+  // grid
+  g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 1;
+  for (let x = 0; x < W; x += 100){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y < H; y += 100){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  // tokens
+  const tok = (x, y, hue, r = 42) => {
+    const gr = g.createRadialGradient(x - 10, y - 12, 4, x, y, r);
+    gr.addColorStop(0, `hsl(${hue},45%,62%)`); gr.addColorStop(1, `hsl(${hue},45%,24%)`);
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 4; g.stroke();
+  };
+  tok(650, 350, 205); tok(750, 450, 140); tok(650, 550, 30); tok(1350, 250, 0, 90); tok(1450, 550, 280);
+  // torchlight
+  for (const [x, y] of [[640, 260], [1360, 610]]){
+    const t = g.createRadialGradient(x, y, 0, x, y, 300);
+    t.addColorStop(0, 'rgba(255,190,110,.18)'); t.addColorStop(1, 'rgba(255,190,110,0)');
+    g.fillStyle = t; g.fillRect(x - 300, y - 300, 600, 600);
+  }
+  return c;
+};
+const map = paint();
+const bg = board.getContext('webgl2');
+const mk = (t, s) => { const x = bg.createShader(t); bg.shaderSource(x, s); bg.compileShader(x);
+  if (!bg.getShaderParameter(x, bg.COMPILE_STATUS)) throw new Error(bg.getShaderInfoLog(x)); return x; };
+const bp = bg.createProgram();
+bg.attachShader(bp, mk(bg.VERTEX_SHADER, `#version 300 es
+in vec2 a; out vec2 v; void main(){ v = vec2(a.x * .5 + .5, .5 - a.y * .5); gl_Position = vec4(a, 0., 1.); }`));
+bg.attachShader(bp, mk(bg.FRAGMENT_SHADER, `#version 300 es
+precision highp float; in vec2 v; out vec4 o;
+uniform sampler2D m; uniform vec2 res; uniform float t, amt, show; uniform vec2 cover;
+${NOISE_GLSL}${SHIMMER_GLSL}
+vec3 tap(vec2 uv){ vec2 q = (uv - .5) * cover + .5; return texture(m, q).rgb; }
+void main(){
+  vec2 uv = dhShimmer(v, res, t, amt);
+  vec2 d = uv - v;
+  vec3 c = vec3(tap(uv + d * .6).r, tap(uv).g, tap(uv - d * .6).b);
+  o = vec4(mix(vec3(.03,.035,.045), c, show), 1.);
+}`));
+bg.linkProgram(bp); bg.useProgram(bp);
+bg.bindBuffer(bg.ARRAY_BUFFER, bg.createBuffer());
+bg.bufferData(bg.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), bg.STATIC_DRAW);
+bg.enableVertexAttribArray(0); bg.vertexAttribPointer(0, 2, bg.FLOAT, false, 0, 0);
+const tex = bg.createTexture(); bg.bindTexture(bg.TEXTURE_2D, tex);
+bg.texImage2D(bg.TEXTURE_2D, 0, bg.RGBA, bg.RGBA, bg.UNSIGNED_BYTE, map);
+bg.generateMipmap(bg.TEXTURE_2D);
+bg.texParameteri(bg.TEXTURE_2D, bg.TEXTURE_MIN_FILTER, bg.LINEAR_MIPMAP_LINEAR);
+const BU = Object.fromEntries(['res','t','amt','show','cover'].map(n => [n, bg.getUniformLocation(bp, n)]));
+let shim = 0, mapOn = true;
+const t0 = performance.now();
+const drawBoard = now => {
+  const W = innerWidth, H = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
+  if (board.width !== Math.round(W * dpr)){ board.width = Math.round(W * dpr); board.height = Math.round(H * dpr); }
+  bg.viewport(0, 0, board.width, board.height);
+  const s = Math.max(W / map.width, H / map.height) * 1.05;
+  bg.uniform2f(BU.res, W, H);
+  bg.uniform2f(BU.cover, W / (map.width * s), H / (map.height * s));
+  bg.uniform1f(BU.t, (now - t0) / 1000);
+  bg.uniform1f(BU.amt, shim);
+  bg.uniform1f(BU.show, mapOn ? 1 : 0);
+  bg.drawArrays(bg.TRIANGLES, 0, 3);
+};
+let boardRaf = 0;
+const pumpBoard = now => { boardRaf = 0; drawBoard(now); if (shim > 0) boardRaf = requestAnimationFrame(pumpBoard); };
+drawBoard(performance.now());
+addEventListener('resize', () => drawBoard(performance.now()));
+
+/* ---- the spotlight itself -------------------------------------------- */
+document.body.insertAdjacentHTML('beforeend', SPOTLIGHT());
+const root = document.querySelector('.spl');
+const rm = document.getElementById('rm'), lo = document.getElementById('lo');
+rm.checked = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let frozen = null, setAt = 0;
+const clock = () => frozen ?? performance.now();
+const sp = spotlight(root, {
+  clock,
+  anchor: () => hud,
+  reduced: rm.checked,
+  onShimmer: v => { const was = shim; shim = v; if (v > 0 && !boardRaf) boardRaf = requestAnimationFrame(pumpBoard); if (was > 0 && v === 0) drawBoard(performance.now()); },
+  onHit: () => { hud.classList.remove('flare'); void hud.offsetWidth; hud.classList.add('flare'); },
+});
+sp.configure({reduced: rm.checked});
+
+const sync = () => {
+  for (const b of document.querySelectorAll('[data-spot]')) b.setAttribute('aria-pressed', b.dataset.spot === sp.side);
+  for (const b of document.querySelectorAll('[data-go]')) b.classList.toggle('on', b.dataset.go === sp.side);
+};
+const go = s => { if (fz.checked) fz.checked = false, frozen = null; setAt = performance.now(); sp.set(s); sync(); };
+const toggle = s => go(sp.side === s ? 'off' : s);
+
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+document.querySelectorAll('[data-spot]').forEach(b => b.onclick = () => toggle(b.dataset.spot));
+document.querySelector('[data-replay]').onclick = () => { const s = sp.side === 'off' ? 'hope' : sp.side; sp.set('off'); requestAnimationFrame(() => go(s)); };
+document.querySelector('[data-stress]').onclick = () => {
+  const seq = ['hope', 'fear', 'hope', 'fear', 'hope', 'fear'];
+  seq.forEach((s, i) => setTimeout(() => go(s), i * 170));
+};
+addEventListener('keydown', e => {
+  if (e.key === '[') toggle('hope');
+  if (e.key === ']') toggle('fear');
+});
+/* scrub: freeze the clock at a moment after the last press, and park the
+   headline's CSS animations at the same moment, so a frame can be studied */
+const fz = document.getElementById('fz'), sc = document.getElementById('sc'), scv = document.getElementById('scv');
+const scrub = () => {
+  scv.textContent = sc.value + 'ms';
+  if (!fz.checked){ frozen = null; root.getAnimations({subtree: true}).forEach(a => a.play()); sp.configure({}); return; }
+  frozen = setAt + +sc.value;
+  root.getAnimations({subtree: true}).forEach(a => { a.pause(); a.currentTime = +sc.value; });
+  sp.configure({});
+};
+fz.onchange = scrub; sc.oninput = scrub;
+rm.onchange = () => sp.configure({reduced: rm.checked});
+lo.onchange = () => sp.configure({quality: lo.checked ? 'low' : 'high'});
+document.getElementById('mp').onchange = e => { mapOn = e.target.checked; drawBoard(performance.now()); };
+
+/* frame budget readout, so "full fidelity" is a measured claim */
+const stat = document.getElementById('stat');
+let n = 0, acc = 0, prev = performance.now(), worst = 0;
+const meter = now => {
+  const dt = now - prev; prev = now; acc += dt; n++; worst = Math.max(worst, dt);
+  if (acc > 1000){ stat.textContent = `${(n * 1000 / acc).toFixed(0)} fps · worst ${worst.toFixed(1)}ms · side ${sp.side}`; n = 0; acc = 0; worst = 0; }
+  requestAnimationFrame(meter);
+};
+requestAnimationFrame(meter);
+</script>
+</body>
+</html>

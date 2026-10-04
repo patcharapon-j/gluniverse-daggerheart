@@ -111,7 +111,34 @@ declare module "*/ui/pool.js" {
     gm?: boolean;
     chips?: boolean;
     ruler?: boolean;
+    spot?: "off" | "hope" | "fear";
   }): string;
+}
+
+declare module "*/ui/spotlight.js" {
+  export const WORDS: { hope: string; fear: string };
+  export const T: Record<string, number>;
+  export const NOISE_GLSL: string;
+  export const SHIMMER_GLSL: string;
+  export function SPOTLIGHT(): string;
+  export interface SpotlightController {
+    set(side: "off" | "hope" | "fear", opts?: { settled?: boolean }): void;
+    place(): void;
+    readonly side: "off" | "hope" | "fear";
+    configure(opts: { reduced?: boolean; quality?: "high" | "low" }): void;
+    destroy(): void;
+  }
+  export function spotlight(
+    root: HTMLElement,
+    opts?: {
+      reduced?: boolean;
+      quality?: "high" | "low";
+      onShimmer?: (amount: number, now: number) => void;
+      onHit?: () => void;
+      anchor?: () => Element | null | undefined;
+      clock?: () => number;
+    },
+  ): SpotlightController;
 }
 
 declare module "*/ui/card.js" {
