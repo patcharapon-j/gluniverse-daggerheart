@@ -83,8 +83,7 @@
   import { COMPACT } from "../ui/compact.js";
   import { bindFaceFx, sweepChanged } from "../ui/face-fx.js";
   import { cardFitter } from "../apps/fit-cards.ts";
-  import { chitClicks, refuseChits } from "../ui/chit.js";
-  import { keepClicks, refuseKeep } from "../ui/keep.js";
+  import { railClicks, refuseRail } from "../ui/counter.js";
   import { closePeeks, peeks } from "../ui/peek.js";
   import { capture, flip } from "../ui/swap.js";
   import { menu } from "../ui/menu.js";
@@ -93,10 +92,11 @@
   import { stepsOf } from "../apps/creation.ts";
   import {
     cardOf,
+    counterGroups,
     escapeAttr,
+    type CounterGroup,
     featureCard,
     authoredPrice,
-    hasDomainHue,
     hopeCard,
     hopeCost,
     loadSigils,
@@ -113,8 +113,7 @@
   } from "../data/resources.ts";
   import { postCard } from "./post-card.ts";
   import { openTokenStudio, tokenStudioActive } from "../token-studio.ts";
-  import Chits from "./parts/Chits.svelte";
-  import Keep from "./parts/Keep.svelte";
+  import Rail from "./parts/Rail.svelte";
   import { liveDicePools, dicePoolsFor, type LiveDicePool } from "../data/dice-pools.ts";
   import { damageDice } from "../data/damage.ts";
   import Marks from "./parts/Marks.svelte";
@@ -569,27 +568,22 @@
       .map((i) => ({ pk: i.id, card: opt(i), it: i }))
       .filter((r): r is Row => r.card !== null);
 
-  /* ── where a counter row lands on a compact card ───────────────────
-     `COMPACT` draws its `.dh-cc-controls` strip under the card only when it
-     is handed something to put in it, and what we have to put there does not
-     exist yet when the string is built: `Chits` and `Keep` build their rows
-     detached and append them to a selector afterwards — see the note at the
-     head of `Chits.svelte`. So what goes in is an empty comment. It is
-     truthy, it draws nothing, and it is identical across a spend, which is
-     the property that matters: the builder's string has to compare equal or
-     `{@html}` replaces the strip the counter row was appended to.
+  /* ── where a card's counters land on a compact card ────────────────
+     On the card's own rail — the right edge, under the recall chip — which
+     is where `compact.css` drew room for them from the start and where they
+     read as part of the object rather than as something dangling under it.
 
-     Nothing at all for an item with no pool, so a card that counts nothing
-     carries no empty strip under it. The strip rather than `.dh-cc-rail`,
-     which is the rail's own pips and sits absolutely over the painting's top
-     right corner: the sheet's chit row is a horizontal thing the width of a
-     panel, and 100px of card has no room for it on the artwork. */
-  const COUNTER_SLOT = ".dh-cc-controls";
+     What goes into the builder is an empty comment, not the counters. It is
+     truthy, so `COMPACT` draws the rail, and it is identical across a spend,
+     which is the property that matters: the builder's string has to compare
+     equal or `{@html}` replaces the card under the light that is dimming.
+     `Rail.svelte` fills it from beside the `{@html}` — see its head. Nothing
+     at all for an item that keeps nothing, so a card that counts nothing
+     carries no rail. */
+  const RAIL_SLOT = "<!--rail-->";
 
-  const counters = (it: ItemSnapshot): string | undefined =>
-    liveResources(it, doc).length || liveDicePools(it, doc).length
-      ? "<!--counters-->"
-      : undefined;
+  const railOf = (it: ItemSnapshot): string | undefined =>
+    (it.system?.resources?.length || it.system?.dice?.length) ? RAIL_SLOT : undefined;
 
   /* ── the one thing a vaulted card cannot know about itself ─────────
      Whether you can afford to take it back. `cardOf` reads `used` off the
@@ -820,70 +814,37 @@
     if (winEl) peeks(winEl);
   });
 
-  /* Both chit gestures, delegated from the window and bound once for the
-     same reason `peeks` is. The row is the subject and the handler stops the
-     press there — see `chitClicks` — or placing a counter on a domain card
-     would also post that card to chat, which is `onCardClick` doing its job
-     on an event that was never meant for it.
+  /* Every gesture a card's rail has, delegated from the window and bound
+     once for the reason `peeks` is. The rail is the subject and the handler
+     stops the press there — see `railClicks` — or spending a use on a domain
+     card would also post that card to chat.
 
-     Nothing is written here optimistically. `moveResource` clamps and returns
-     false when the pool cannot go that way, and a refusal is the pool
-     flinching rather than a warning: the number that said no is the thing
-     under the pointer. The Item's update is what moves the row, through the
-     `Chits` component's own effect, so a spend looks identical whether it
-     came from this sheet or from a rest three panels away. */
+     Nothing is written here optimistically. Each call on the Item clamps and
+     returns false when the counter cannot go that way, and a refusal is the
+     group flinching rather than a warning: the number that said no is the
+     thing under the pointer. The Item's update is what moves the rail,
+     through `Rail`'s own effect, so a spend looks identical whether it came
+     from this card, from a press on the chat card, or from a rest. */
   $effect(() => {
     if (!winEl) return;
-    chitClicks(winEl, async (row, _next, dir) => {
-      if (!ed) return refuseChits(row);
-      const [id, ix] = (row.dataset.key ?? "").split(":");
+    railClicks(winEl, async (group: HTMLElement, act: string, at?: number) => {
+      if (!ed) return refuseRail(group);
+      const [id, a, b] = (group.dataset.key ?? "").split(":");
       const item: any = doc.items.get(id);
-      if (!item) return refuseChits(row);
-      if (!(await item.moveResource(Number(ix), dir))) refuseChits(row);
-    });
-  });
+      if (!item) return refuseRail(group);
 
-  /* And every gesture a tray of kept dice has, off the same root and by the
-     same rules. Two handlers rather than one because they answer for
-     different rows — `chitClicks` claims `[data-chits]` and this claims
-     `[data-keep]`, and neither can see the other's.
-
-     The five gestures collapse to four calls on the document, and the one
-     that does not is `roll`: `keepClicks` hands the list back *unchanged*
-     for both roll gestures, because the RNG belongs to whoever owns the
-     dice log, and here that is Foundry. Everything else states its own
-     result and the Item decides whether it is allowed.
-
-     `step` is the only one that adds an animation from out here, and it has
-     to: a value changing on a die that did not move is not something the
-     setter can tell apart from a die arriving, so the caller — which knows
-     it pressed the chevron — says so. */
-  $effect(() => {
-    if (!winEl) return;
-    keepClicks(winEl, async (row, _next, how, at) => {
-      if (!ed) return refuseKeep(row);
-      const [id, ix] = (row.dataset.key ?? "").split(":");
-      const item: any = doc.items.get(id);
-      if (!item) return refuseKeep(row);
-      const i = Number(ix);
-
-      if (how === "place") {
-        if (!(await item.placeDie(i))) refuseKeep(row);
+      if (a !== "d") {
+        const dir = act === "spend" ? -1 : 1;
+        if (!(await item.moveResource(Number(a), dir))) refuseRail(group);
         return;
       }
-      if (how === "take") {
-        if (!(await item.spendDie(i, at ?? 0))) refuseKeep(row);
-        return;
-      }
-      if (how === "step") {
-        const kd = row.querySelector(".kd");
-        if (!(await item.stepDie(i))) return refuseKeep(row);
-        kd?.classList.add("step");
-        kd?.addEventListener("animationend", () => kd.classList.remove("step"), { once: true });
-        return;
-      }
-      const rolled = await item.rollTray(i, how === "roll1" ? at : undefined);
-      if (!rolled.length) refuseKeep(row);
+      const i = Number(b);
+      const ok =
+        act === "put" ? await item.placeDie(i)
+        : act === "take" ? await item.spendDie(i, at ?? 0)
+        : act === "step" ? await item.stepDie(i)
+        : (await item.rollTray(i, at)).length > 0;
+      if (!ok) refuseRail(group);
     });
   });
 
@@ -1299,6 +1260,8 @@
      * them would be claiming the use and the die are one fact.
      */
     dice: LiveDicePool[];
+    /** Every counter this rule keeps, as its card's rail draws them. */
+    groups: CounterGroup[];
   }
 
   const abilities = $derived.by(() => {
@@ -1343,6 +1306,7 @@
            document's and is right for a spine or a tile, which stand for the
            document; a row here stands for one feature block. */
         dice: dicePoolsFor(it, o.bind ?? f.name ?? "", doc),
+        groups: counterGroups(it, doc, o.bind ?? f.name ?? ""),
         card:
           o.card !== undefined
             ? o.card
@@ -1354,6 +1318,8 @@
                 foot: o.foot,
                 domains: o.domains,
                 className: o.className,
+                bind: o.bind ?? f.name ?? "",
+                actor: doc,
               }),
       });
     };
@@ -1714,6 +1680,30 @@
         k: "Spend one",
         off: locked ?? (held > 0 ? undefined : "None left."),
         run: () => live?.update({ "system.quantity": held - 1 }),
+      });
+    }
+
+    /* Being used, which every card can be and which the drained face says.
+       A card with a budget is spent by its counter, so the menu moves the
+       counter — the first fixed one, the card's own — and a card without one
+       is spent because somebody says so, which is the `spent` switch. One row
+       either way, worded for the state the card is in now. */
+    const budget = (it.system?.resources ?? []).findIndex(
+      (r: any) => r?.onRefresh === "fill" && r.max?.kind === "fixed" && (r.max.n ?? 0) > 0,
+    );
+    if (budget >= 0) {
+      const r = it.system.resources[budget];
+      const left = Number(r.value ?? 0);
+      rows.push(
+        left > 0
+          ? { k: `Spend a use · ${left} left`, off: locked, run: () => live?.moveResource(budget, -1) }
+          : { k: "Restore a use", off: locked, run: () => live?.moveResource(budget, 1) },
+      );
+    } else if (card) {
+      rows.push({
+        k: it.system?.spent ? "Mark ready" : "Mark spent",
+        off: locked,
+        run: () => live?.update({ "system.spent": !it.system?.spent }),
       });
     }
 
@@ -2406,87 +2396,14 @@
   };
 </script>
 
-<!-- Counters on a card that has any, put into the row the builder already
-     drew. One snippet for every spine and tile on the sheet, because they are
-     the same claim in five places — a loadout card, a vault card, an
-     ancestry, a piece of loot, a subclass tile — and a pool that looked
-     different in the vault from the way it looks in the loadout would read as
-     a different pool. `slot` is what the caller varies, and it varies because
-     a spine's slack is on its meta line and a tile's is on its footer. -->
-{#snippet pools(it: ItemSnapshot, slot: string)}
-  {#each liveResources(it, doc) as p (p.i)}
-    <Chits
-      value={p.res.value}
-      max={p.max}
-      name={(p.res.name || "tokens").toLowerCase()}
-      key="{it.id}:{p.i}"
-      dom={hasDomainHue(it.type)}
-      add={ed}
-      {slot}
-      rev={snap.rev}
-    />
-  {/each}
-  <!-- Kept dice go in the same slot and after the counters, so a card that
-       carries both — the Guardian's Unstoppable is a once-per-long-rest use
-       *and* a die that climbs — reads as a use it spent and a die it is
-       holding, in that order. Two arrays rather than one is the schema
-       saying they are two records; drawing them in one tray would be the
-       sheet arguing with it. -->
-  {#each liveDicePools(it, doc) as p (p.i)}
-    <Keep
-      mode={p.pool.mode}
-      faces={p.pool.faces}
-      dice={p.pool.dice}
-      max={p.max}
-      name={(p.pool.name || "dice").toLowerCase()}
-      key="{it.id}:{p.i}"
-      dom={hasDomainHue(it.type)}
-      add={ed}
-      roll={p.pool.onRefresh !== "reroll"}
-      {slot}
-      rev={snap.rev}
-    />
-  {/each}
-{/snippet}
-
-<!-- The same two trays, for one feature block rather than for a whole
-     document. `pools` above reads `liveResources(it, doc)`, which is every
-     counter the Item carries, and that is right for a card that stands for
-     the document — a weapon, a domain card. A feature card stands for one
-     block on an Item that may carry several, so the arrays are the ones
-     `abilities` already bound by feature name: the Seraph's Prayer Dice sit
-     on Prayer Dice and not on Life Support.
-
-     Keyed on `a.key` and not `a.pk`, for the same reason the peek is: two
-     features off one class Item would otherwise hand their trays the same
-     key, and a key is how a tray keeps its own in-flight state across a
-     repaint. -->
-{#snippet featurePools(a: Ability)}
-  {#each a.res as r (r.i)}
-    <Chits
-      value={r.res.value}
-      max={r.max}
-      name={(r.res.name || "tokens").toLowerCase()}
-      key="{a.key}:{r.i}"
-      add={ed}
-      slot={COUNTER_SLOT}
-      rev={snap.rev}
-    />
-  {/each}
-  {#each a.dice as p (p.i)}
-    <Keep
-      mode={p.pool.mode}
-      faces={p.pool.faces}
-      dice={p.pool.dice}
-      max={p.max}
-      name={(p.pool.name || "dice").toLowerCase()}
-      key="{a.key}:{p.i}"
-      add={ed}
-      roll={p.pool.onRefresh !== "reroll"}
-      slot={COUNTER_SLOT}
-      rev={snap.rev}
-    />
-  {/each}
+<!-- One rail for every compact card on the sheet, because they are the same
+     claim in eight places — a loadout card, a vault card, an ancestry, a
+     piece of loot — and a pool that looked different in the vault from the
+     way it looks in the loadout would read as a different pool. -->
+{#snippet rail(it: ItemSnapshot)}
+  {#if railOf(it)}
+    <Rail groups={counterGroups(it, doc)} live={ed} rev={snap.rev} />
+  {/if}
 {/snippet}
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -3218,8 +3135,8 @@
             <div class="dh-cc-grid">
               {#each loadoutCards as r (r.pk)}
                 <div class="pk" data-pk={r.pk}>
-                  {@html COMPACT({ ...r.card, controls: counters(r.it) })}
-                  {@render pools(r.it, COUNTER_SLOT)}
+                  {@html COMPACT({ ...r.card, rail: railOf(r.it) })}
+                  {@render rail(r.it)}
                 </div>
               {/each}
               {#each Array(Math.max(0, loadoutLimit - loadoutCards.length)) as _, i (i)}
@@ -3315,9 +3232,9 @@
                         >
                           {@html COMPACT({
                             ...a.card,
-                            controls: a.res.length || a.dice.length ? "<!--counters-->" : undefined,
+                            rail: a.groups.length ? RAIL_SLOT : undefined,
                           })}
-                          {@render featurePools(a)}
+                          <Rail groups={a.groups} live={ed} rev={snap.rev} />
                         </div>
                       {/if}
                     {/each}
@@ -3343,8 +3260,8 @@
                   <div class="sub dh-cc-grid">
                     {#each subclassCards as r (r.pk)}
                       <div class="pk" data-pk={r.pk}>
-                        {@html COMPACT({ ...r.card, controls: counters(r.it) })}
-                        {@render pools(r.it, COUNTER_SLOT)}
+                        {@html COMPACT({ ...r.card, rail: railOf(r.it) })}
+                        {@render rail(r.it)}
                       </div>
                     {/each}
                   </div>
@@ -3362,8 +3279,8 @@
             <div class="dh-cc-grid">
               {#each heritageCards as r (r.pk)}
                 <div class="pk" data-pk={r.pk}>
-                  {@html COMPACT({ ...r.card, controls: counters(r.it) })}
-                  {@render pools(r.it, COUNTER_SLOT)}
+                  {@html COMPACT({ ...r.card, rail: railOf(r.it) })}
+                  {@render rail(r.it)}
                 </div>
               {:else}
                 <p class="ach">No ancestry or community yet.</p>
@@ -3415,8 +3332,8 @@
                     recall(armedCard.id, r.pk);
                   }}
                 >
-                  {@html COMPACT({ ...r.card, controls: counters(r.it) })}
-                  {@render pools(r.it, COUNTER_SLOT)}
+                  {@html COMPACT({ ...r.card, rail: railOf(r.it) })}
+                  {@render rail(r.it)}
                   <span class="swp"></span>
                   <button
                     type="button"
@@ -3562,15 +3479,15 @@
                   ondrop={(e) => dropCard(e, "vault", r.pk)}
                 >
                   <!-- The same bay the loadout above draws, with one class
-                       added. `counters` and `COUNTER_SLOT` rather than the
-                       row's flow placement: a compact card has a controls
-                       strip under it and nothing else is competing for it —
+                       added. Its counters ride the card's own rail rather than the
+                       row's flow placement — `.is-vaulted` moves the rail in
+                       past the case's rim —
                        the recall cost lives in the card's own corner chip and
                        the price a card you cannot afford is stamped with goes
                        in the foot, so neither of the two things the old row
                        had to protect is hung here. -->
-                  {@html COMPACT({ ...r.card, cls: "is-vaulted", controls: counters(r.it) })}
-                  {@render pools(r.it, COUNTER_SLOT)}
+                  {@html COMPACT({ ...r.card, cls: "is-vaulted", rail: railOf(r.it) })}
+                  {@render rail(r.it)}
                   <span class="swp"></span>
                   <!-- Arming is a control now, not the row. Every other card
                        row on this sheet posts its card to chat when you click
@@ -3663,8 +3580,10 @@
                         data-pk={s.it.id}
                         data-fk={s.it.id}
                       >
-                        {@html FACE({ ...card, size: "full", cover: equipPress(card) })}
-                        <div class="dh-cc-controls">{@render pools(s.it, "")}</div>
+                        {@html FACE({ ...card, size: "full", cover: equipPress(card), uses: undefined })}
+                        {#if railOf(s.it)}
+                          <div class="dh-cc-controls"><span class="dh-cc-rail is-strip"></span>{@render rail(s.it)}</div>
+                        {/if}
                       </div>
                     {:else}
                       <!-- Too narrow for three whole cards, so the gear
@@ -3675,8 +3594,8 @@
                            `peekRows` therefore carries the equipped items
                            whenever this branch is the one drawn. -->
                       <ul class="dh-equip-card dh-cc-grid is-gear" data-pk={s.it.id} data-fk={s.it.id}>
-                        {@html COMPACT({ ...card, controls: counters(s.it) })}
-                        {@render pools(s.it, COUNTER_SLOT)}
+                        {@html COMPACT({ ...card, rail: railOf(s.it) })}
+                        {@render rail(s.it)}
                       </ul>
                     {/if}
                   </li>
@@ -3735,8 +3654,8 @@
                     data-blocked={no}
                     title={no ? `${primary?.name} is Two-Handed — no free hand` : ""}
                   >
-                    {@html COMPACT({ ...r.card, controls: counters(g) })}
-                    {@render pools(g, COUNTER_SLOT)}
+                    {@html COMPACT({ ...r.card, rail: railOf(g) })}
+                    {@render rail(g)}
                     <button
                       type="button"
                       class="dh-shelve"
@@ -3776,8 +3695,8 @@
                       ? charges(Math.min(CHARGES, src.system.quantity ?? 0), r.pk)
                       : undefined}
                   <div class="pk" data-pk={r.pk} data-fk={r.pk}>
-                    {@html COMPACT({ ...r.card, controls: (aside ?? "") + (counters(r.it) ?? "") })}
-                    {@render pools(r.it, COUNTER_SLOT)}
+                    {@html COMPACT({ ...r.card, controls: aside, rail: railOf(r.it) })}
+                    {@render rail(r.it)}
                   </div>
                 {/each}
               </div>

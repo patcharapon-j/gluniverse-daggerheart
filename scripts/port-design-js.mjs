@@ -32,6 +32,7 @@ const MODULES = [
   "chit.js",
   "die.js",
   "keep.js",
+  "counter.js",
   "ledger.js",
   "activity.js",
   "tile.js",

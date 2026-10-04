@@ -16,7 +16,7 @@
  * System Reference Document 2.0 changes four of the fetched cards, and a
  * correction written into the generated module is a correction the next
  * `node tools/fetch-cards.mjs` silently reverts. So it is an overlay applied
- * here, in the idiom `withDice` and `withDamage` already use — with the
+ * here, in the idiom `withCounters` and `withDamage` already use — with the
  * difference that it runs on the *source* card rather than on the built
  * document, because what it corrects is the card's own markdown and not an
  * annotation about it. `card-errata.mjs`'s header has the argument, including
@@ -33,7 +33,7 @@ import CARDS from "./domain-cards.mjs";
 import DREAD from "./dread-cards.mjs";
 import MARKED from "./marked-cards.mjs";
 import { domainCardItem } from "./_helpers.mjs";
-import { withDice } from "./card-resources.mjs";
+import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
 import { withErrata } from "./card-errata.mjs";
 
@@ -73,7 +73,7 @@ const MARKED_IN_DECK_ORDER = ["root", "void"].flatMap((d) =>
 );
 
 export default withDamage(
-  withDice(
+  withCounters(
     [...withErrata(CARDS), ...DREAD, ...MARKED_IN_DECK_ORDER].map(domainCardItem),
   ),
 );

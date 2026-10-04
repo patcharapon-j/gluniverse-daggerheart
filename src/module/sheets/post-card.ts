@@ -661,6 +661,18 @@ function actionsFor(card: CardOptions, actor: any, options: PostCardOptions): Ca
         .map((step) => resolveAction(step, actor, item, card, from))
         .filter(Boolean) as CardAction[];
       if (!resolved.steps.length) delete resolved.steps;
+      /* A press bound to a budget says so on its face, because the use is the
+         one cost the card's own sentence may not repeat — "Mark a Stress" does
+         not tell you the button also spends tonight's once-per-rest. Only on a
+         derived label: somebody who wrote their own has said what they meant. */
+      const metered = (resolved.steps ?? []).filter(
+        (s) => s.kind === "move-resource" && Number(s.by ?? 0) < 0,
+      );
+      if (metered.length && !action.label) {
+        resolved.label += metered
+          .map((s) => (/^uses?$/i.test(String(s.resource)) ? " · 1 use" : ` · 1 ${s.resource}`))
+          .join("");
+      }
       out.push(resolved);
     }
     appendStructural(out, item, card);

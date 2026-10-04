@@ -730,3 +730,35 @@ declare module "*/ui/face-fx.js" {
   export const PEEK_REST_MS: number;
   export const PEEK_GRACE_MS: number;
 }
+
+declare module "*/ui/counter.js" {
+  /** One thing a card keeps: a budget of uses, a pile of tokens, or kept dice. */
+  interface Group {
+    kind: "uses" | "pile" | "pool";
+    key?: string;
+    name?: string;
+    value?: number;
+    max?: number | null;
+    refresh?: string;
+    mode?: string;
+    faces?: number;
+    dice?: number[];
+  }
+  /** A compact card's rail contents. */
+  export function RAIL(groups: Group[], opts?: { live?: boolean }): string;
+  /** Drive a rendered rail to new groups, animating only what moved. */
+  export function setRail(rail: HTMLElement, groups: Group[], opts?: { live?: boolean }): void;
+  /** The group that could not pay flinches. */
+  export function refuseRail(group: HTMLElement): void;
+  /** Every rail gesture, delegated from a root. */
+  export function railClicks(
+    root: HTMLElement,
+    on: (group: HTMLElement, act: string, at?: number) => void,
+  ): void;
+  /** A full face's header strip: every counter, as a readout. */
+  export function FACE_COUNTERS(groups: Group[]): string;
+  /** The counting die, as an inline SVG. */
+  export function DIE_SVG(n: number, opts?: { numeral?: boolean; label?: string }): string;
+  export const RAIL_LIGHTS: number;
+  export const RAIL_DICE: number;
+}

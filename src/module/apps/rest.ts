@@ -100,7 +100,8 @@ import {
   ruleCardsPanel,
   wireRulePeeks,
 } from "./rule-cards.ts";
-import { plain } from "../sheets/cards.ts";
+import { counterGroups, plain } from "../sheets/cards.ts";
+import { FACE_COUNTERS } from "../ui/counter.js";
 import {
   refreshDicePools,
   refreshResources,
@@ -501,7 +502,13 @@ function refreshing(actor: any, kind: RestKind): RefreshRow[] {
   const seen = new Set<string>();
   const add = (r: RefreshRow) => {
     const key = r.name.toLowerCase();
-    if (seen.has(key)) return;
+    if (seen.has(key)) {
+      /* A card keeping two pools this rest touches — Dark Army's use and its
+         tokens — is one row with both, not one row that forgot the second. */
+      const row = rows.find((x) => x.name.toLowerCase() === key);
+      if (row && r.counters) row.counters = (row.counters ?? "") + r.counters;
+      return;
+    }
     seen.add(key);
     rows.push(r);
   };
@@ -512,11 +519,7 @@ function refreshing(actor: any, kind: RestKind): RefreshRow[] {
       name: it.name,
       source: it.system?.origin || it.system?.domain || it.type,
       text: plain(it.system?.description) || "",
-      pool: {
-        value: lr.res.value,
-        max: lr.max ?? 0,
-        name: (lr.res.name || "tokens").toLowerCase(),
-      },
+      counters: FACE_COUNTERS(counterGroups(it, actor).filter((g) => g.key === `${it.id}:${lr.i}`)),
       itemId: it.id,
     });
   }
@@ -526,11 +529,7 @@ function refreshing(actor: any, kind: RestKind): RefreshRow[] {
       name: it.name,
       source: it.system?.origin || it.system?.domain || it.type,
       text: plain(it.system?.description) || "",
-      pool: {
-        value: lp.pool.dice?.length ?? 0,
-        max: lp.max ?? 0,
-        name: (lp.pool.name || `d${lp.pool.faces ?? 6}s`).toLowerCase(),
-      },
+      counters: FACE_COUNTERS(counterGroups(it, actor).filter((g) => g.key === `${it.id}:d:${lp.i}`)),
       itemId: it.id,
     });
   }

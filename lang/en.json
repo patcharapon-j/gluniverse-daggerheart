@@ -93,6 +93,7 @@
       "NotYours": "That is not your character to spend for.",
       "GMOnly": "Only a GM can change the Fear pool.",
       "CannotPay": "That resource cannot be marked or spent.",
+      "CardSpent": "{name} is spent — it comes back when it refreshes.",
       "AlreadyClaimed": "That has already been taken from this roll.",
       "RollSettled": "Something on this roll has already been claimed, so its dice are settled.",
       "NoTarget": "Target a token first.",

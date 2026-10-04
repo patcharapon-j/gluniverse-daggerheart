@@ -428,8 +428,12 @@ const BUDGETS = {
   "class:Sorcerer": [once("longRest", "Channel Raw Power")],
   "class:Witch": [once("longRest", "Commune")],
 
-  "subclass:Troubadour: Foundation": [once("longRest", "Gifted Performer")],
-  "subclass:Troubadour: Mastery": [once("longRest", "Virtuoso")],
+  /* One budget per song, not one for the feature: "You can play *each* song
+     once per long rest", so the Relaxing Song spent this morning leaves the
+     Epic Song still to play. One shared Use refused the second song. */
+  "subclass:Troubadour: Foundation": ["Relaxing Song", "Epic Song", "Heartbreaking Song"].map(
+    (song) => ({ ...once("longRest", "Gifted Performer"), name: song }),
+  ),
   "subclass:Wordsmith: Foundation": [once("longRest", "Rousing Speech")],
   "subclass:Wordsmith: Specialization": [once("session", "Eloquent")],
   "subclass:Warden of the Elements: Specialization": [once("rest", "Elemental Aura")],
@@ -438,7 +442,6 @@ const BUDGETS = {
   "subclass:Beastbound: Mastery": [once("longRest", "Loyal Friend")],
   "subclass:Syndicate: Specialization": [once("session", "Contacts Everywhere")],
   "subclass:Divine Wielder: Foundation": [once("longRest", "Sparing Touch")],
-  "subclass:Divine Wielder: Specialization": [once("longRest", "Devout")],
   "subclass:Elemental Origin: Mastery": [once("longRest", "Transcendence")],
   "subclass:Primal Origin: Specialization": [once("longRest", "Enchanted Aid")],
   "subclass:Call of the Brave: Foundation": [once("longRest", "Battle Ritual")],
@@ -495,7 +498,12 @@ const BUDGETS = {
   "domainCard:Manifest Wall": [once("rest")],
   "domainCard:Teleport": [once("longRest")],
   "domainCard:Banish": [once("rest")],
-  "domainCard:Book of Homet": [once("longRest")],
+  /* Two spells, two limits, and each sits after its roll. Named for the
+     spell so the card says which of the two has gone. */
+  "domainCard:Book of Homet": [
+    { ...once("rest"), name: "Pass Through" },
+    { ...once("longRest"), name: "Plane Gate" },
+  ],
   "domainCard:Codex-Touched": [once("rest")],
   "domainCard:Book of Vyola": [once("longRest")],
   "domainCard:Book of Ronin": [once("longRest")],
@@ -523,7 +531,6 @@ const BUDGETS = {
   "domainCard:Smite": [once("rest")],
   "domainCard:Zone of Protection": [once("longRest")],
   "domainCard:Splendor-Touched": [once("longRest")],
-  "domainCard:Invigoration": [once("rest")],
   "domainCard:Bold Presence": [once("rest")],
   "domainCard:Critical Inspiration": [once("rest")],
   "domainCard:Lean On Me": [once("longRest")],
@@ -554,6 +561,9 @@ const BUDGETS = {
   "loot:Corrector Sprite": [once("shortRest")],
   "loot:Ring of Resistance": [once("longRest")],
   "loot:Box of Many Goods": [once("longRest")],
+  /* A use limit stated as a lockout rather than as "once per": the prism is
+     used up the moment it is deactivated, and the long rest gives it back. */
+  "loot:Arcane Prism": [once("longRest", "", 1, "can’t be activated again until your next long rest")],
   "loot:Airblade Charm": [once("rest", "", 3, "three times per rest")],
   "loot:Paragon’s Chain": [once("longRest")],
   "loot:Elusive Amulet": [once("longRest")],
@@ -626,6 +636,18 @@ const die = ({
 }) => ({ name, mode, faces, dice: [], max, refresh, onRefresh, feature, grow, onEmpty, said });
 
 export const DICE = {
+  /* Rolled at the start of the session and kept on the card, where its face
+     is the phase you are in — so a tray of one, rerolled each session. The
+     Hope that steps it is a press on the card; this is only where the die
+     lives between steps. */
+  "subclass:Moon: Mastery": [
+    die({
+      name: "Lunar Phase", faces: 6, max: fixed(1),
+      refresh: "session", onRefresh: "reroll", feature: "Lunar Phases",
+      said: "roll a d6 and place it on this card",
+    }),
+  ],
+
   /* ── a bag you spend from ─────────────────────────────────────────── */
 
   /* The only pool in the corpus that arrives **rolled**. "At the beginning
@@ -774,6 +796,16 @@ export const DICE = {
    ══════════════════════════════════════════════════════════════════════ */
 
 export const DECLINED = {
+  "subclass:Troubadour: Mastery":
+    "Virtuoso raises the Foundation card's per-song limit to two; it limits " +
+    "nothing of its own, and a budget here was a counter for a rule on another card.",
+  "subclass:Divine Wielder: Specialization":
+    "Devout lets Sparing Touch be used twice per long rest; the budget is the " +
+    "Foundation card's, and nothing on this card is limited.",
+  "domainCard:Invigoration":
+    "“once per rest or once per session” is an example of somebody " +
+    "else's exhaustion limit, which this card can refund. The card itself is unlimited.",
+
   "consumable:Displacement Token":
     "“Token” is the item's own name. The only limit it states is a duration.",
   "subclass:Poisoners Guild: Specialization":
@@ -907,23 +939,43 @@ const RESOURCES = { ...PILES, ...BUDGETS, ...MARKED };
 export default RESOURCES;
 
 /**
- * Attach only kept-die annotations to a pack's entries.
+ * Attach the counters and the kept dice to a pack's entries.
  *
  * Called at each pack's own `export default` rather than centrally in
  * `build-packs.mjs`, because `tools/verify/` imports these modules directly
  * to draw THE DECK and would otherwise draw cards the game does not have.
  *
- * Counters are deliberately not attached to compendium documents. A player
- * or GM adds the counters they want after the document is on a character
- * sheet; the compendium remains plain rules content. `said` is stripped from
- * dice on the way in because it is checker evidence, not document data.
+ * **Counters ship on the compendium document now**, which reverses an earlier
+ * decision to leave them for the table to add by hand. That decision predates
+ * a card being able to look *spent*: `items.ts` derives `system.uses` off the
+ * card's own budget and the card draws drained and stamped "Used" at zero, and
+ * a card that has to be taught it has a budget before that can happen is a
+ * card that never looks used. A budget arrives full and a pile arrives empty —
+ * `once()`'s note — so a freshly dragged card says nothing until somebody
+ * spends or places something. Copies dragged before this are reached by the
+ * `card-counters` migration step, which only fills an array that is still
+ * empty: a counter somebody added or removed by hand is theirs.
+ *
+ * `said` is stripped on the way in because it is checker evidence, not
+ * document data.
  */
-export function withDice(entries) {
+/* eslint-disable-next-line no-unused-vars */
+const unsaid = ({ said, ...keep }) => ({ ...keep });
+
+/** One document's annotation as document data, or null when it has none. */
+export function countersFor(type, name) {
+  const key = `${type}:${name}`;
+  const resources = RESOURCES[key]?.map(unsaid) ?? null;
+  const dice = DICE[key]?.map(unsaid) ?? null;
+  return resources || dice ? { resources, dice } : null;
+}
+
+export function withCounters(entries) {
   for (const e of entries) {
-    const key = `${e.type}:${e.name}`;
-    const dice = DICE[key];
-    /* eslint-disable-next-line no-unused-vars */
-    if (dice) e.system.dice = dice.map(({ said, ...keep }) => ({ ...keep }));
+    const found = countersFor(e.type, e.name);
+    if (!found) continue;
+    if (found.resources) e.system.resources = found.resources;
+    if (found.dice) e.system.dice = found.dice;
   }
   return entries;
 }

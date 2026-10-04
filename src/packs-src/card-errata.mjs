@@ -25,7 +25,7 @@
  * damage" is a rule, not a typo, and filing it beside "create a a wall" would
  * say that Darrington Press mistyped their own errata.
  *
- * So it is an **overlay**, in exactly the idiom `withDice` and `withDamage`
+ * So it is an **overlay**, in exactly the idiom `withCounters` and `withDamage`
  * already use: a hand-authored table keyed `type:name`, applied downstream at
  * `domains.mjs`'s own `export default`, where a re-fetch cannot reach it. The
  * generated module stays a faithful transcription of the snapshot, the snapshot
@@ -142,7 +142,7 @@ export default ERRATA;
 /**
  * Apply the corrections to a deck's source cards.
  *
- * Called at `domains.mjs`'s own `export default`, beside `withDice` and
+ * Called at `domains.mjs`'s own `export default`, beside `withCounters` and
  * `withDamage` and for the same reason: `tools/verify/` imports these modules
  * directly to draw THE DECK, and a correction applied centrally in
  * `build-packs.mjs` would be a correction that page never sees.

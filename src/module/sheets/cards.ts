@@ -58,11 +58,9 @@ import {
 import { absolute, cssUrl } from "../assets.ts";
 import { type Focus, useArtFocus, useOrnaments } from "./card-style.ts";
 import { damageDice } from "../data/damage.ts";
-import { resourceMax, type Resource } from "../data/resources.ts";
+import { cardSpent, resourceMax, type Resource } from "../data/resources.ts";
 import { poolCapacity, type DiePool } from "../data/dice-pools.ts";
-import { CHITS } from "../ui/chit.js";
-import { KEEP } from "../ui/keep.js";
-import { PER_PATHS } from "../ui/terms.js";
+import { FACE_COUNTERS } from "../ui/counter.js";
 import { CLASSES, KINDS, byslug } from "../ui/domains.js";
 import { clazz, glyph, icon } from "../ui/domains.js";
 import { KIND_GLYPHS, kindOf } from "../ui/item-kind.js";
@@ -278,7 +276,8 @@ export interface CardOptions {
   code?: string;
   text?: string;
   flavour?: string;
-  feats?: { n: string; t: string }[];
+  /** Named rule blocks; `uses` is the feature heading's own counters, drawn. */
+  feats?: { n: string; t: string; uses?: string }[];
   stats?: { k: string; v: string | number }[];
   ramp?: boolean;
   /** The item this was built from, so a row can act on it. */
@@ -405,12 +404,13 @@ export interface CardOptions {
    */
   state?: "rest" | "within-reach" | "out-of-reach" | "used";
   /**
-   * The card's limited uses as charge lights, already drawn.
+   * Everything the card keeps, already drawn for the face's header strip:
+   * budgets as lights, piles as a counting die, kept dice as bone dice.
    *
    * A readout rather than a control, for `chits`'s reason, and drawn by
-   * `cardUses` off the one resource the card's own rule spends. Unset for
-   * the cards that have no budget, which is most of them — an empty row of
-   * lights claims a limit the card does not have.
+   * `faceCounters` — a counter bound to a feature this face prints goes in
+   * that feature's heading instead. Unset for a card that keeps nothing,
+   * which is most of them: an empty strip claims a limit the card lacks.
    */
   uses?: string;
   /**
@@ -533,97 +533,6 @@ const PRINTED = new Set(["ancestry", "community", "transformation", "subclass", 
 const homebrew = (type: string, s: any): boolean | undefined =>
   PRINTED.has(type) ? !s.printing?.code : undefined;
 
-/**
- * The three subtypes whose card has a domain, and therefore a hue.
- *
- * `CHITS` takes this as a statement rather than sniffing `--dom`, because a
- * `var()` fallback asks whether the property is set anywhere up the tree and
- * `tokens.css` sets it at `:root` — so the answer is always yes and every
- * counter on an ancestry card would come out teal. Only the thing drawing the
- * card knows, and this is where that is known.
- */
-const DOMAIN_KINDS = new Set(["domainCard", "class", "subclass"]);
-
-/** Whether an Item's card carries a domain, and therefore a hue for its chits. */
-export const hasDomainHue = (type: string): boolean => DOMAIN_KINDS.has(type);
-
-/**
- * Every pool on a card, drawn as a readout for the plate's lower left.
- *
- * All of them, feature-bound or not: a resource bound to a named feature is
- * bound to a feature block printed on this same card, so the card is where it
- * belongs either way. The row that has to know *which* feature is the one on
- * the Features panel, which is a different surface with a different question.
- */
-export function cardChits(it: ItemSnapshot, actor?: any): string | undefined {
-  const list: Resource[] = it.system?.resources ?? [];
-  const trays: DiePool[] = it.system?.dice ?? [];
-  if (!list.length && !trays.length) return undefined;
-  const domain = DOMAIN_KINDS.has(it.type);
-  const rows = list.map((res) =>
-    CHITS({
-      value: res.value ?? 0,
-      max: resourceMax(res, actor) ?? 0,
-      name: (res.name || "tokens").toLowerCase(),
-      dom: domain,
-      add: false,
-    }),
-  );
-  /* And the kept dice, in the same stack and after the counters, which is
-     the sheet's own order — a use you spent, then a die you are holding.
-     `roll` mode is skipped outright: it holds nothing, so on a card it
-     would be a lone silhouette and the word `d8` making a claim about a
-     control that is not there. It belongs where it can be pressed. */
-  for (const pool of trays) {
-    if (pool.mode === "roll") continue;
-    rows.push(
-      KEEP({
-        mode: pool.mode,
-        faces: pool.faces ?? 6,
-        dice: pool.dice ?? [],
-        max: poolCapacity(pool, actor) ?? 0,
-        name: (pool.name || "dice").toLowerCase(),
-        dom: domain,
-        add: false,
-      }),
-    );
-  }
-  return rows.join("");
-}
-/* ── uses, and being spent ────────────────────────────────────────────
-   A card that says "once per long rest" has a budget, and the budget is
-   already a `resource` with a `max.n` and a `refresh` — `items.ts` derives
-   `system.uses` off the first one that belongs to the document rather than
-   to a feature block, and `refreshUses` in `apps/rest.ts` has cleared them
-   at the right rest since before the card was redrawn. So there is nothing
-   to parse and nothing to store: the card only has to draw what is there.
-
-   Re-derived here rather than taken from `system.uses` alone, because a
-   snapshot does not always carry the derived field. The character sheet's
-   comes off a live document and does; the compendium browser's comes off a
-   pack index and does not, and a browsed card with its lights missing
-   would look like a card with no budget. Same predicate as `items.ts`'s,
-   deliberately — two readings of "which pile is the card's own" is one
-   reading too many. */
-
-/** The card's own budget: the first fixed-ceiling pool that is not a feature's. */
-const budgetOf = (s: any): any =>
-  s?.uses ??
-  (s?.resources ?? []).find(
-    (r: any) => !r.feature && r.max?.kind === "fixed" && r.max.n > 0,
-  ) ??
-  null;
-
-/** How a refresh reads after "back each" — gluvtt's `perWords`, verbatim. */
-const PER_WORDS: Record<string, string> = {
-  rest: "rest",
-  shortRest: "short rest",
-  longRest: "long rest",
-  session: "session",
-  scene: "scene",
-  manual: "use",
-};
-
 /* Text and attribute escaping, because a resource's name is authored.
 
    `escapeAttr` is exported because one caller outside this file builds a
@@ -635,45 +544,105 @@ const escapeText = (s: string): string =>
 
 export const escapeAttr = (s: string): string => escapeText(s).replaceAll('"', "&quot;");
 
-const mark = (path: string): string =>
-  `<svg viewBox="0 0 16 16" class="dh-term-mark" aria-hidden="true" focusable="false">` +
-  `<path d="${path}" fill="currentColor" fill-rule="evenodd"/></svg>`;
+/* ── every counter, as groups ───────────────────────────────────────────
+   `counter.js`'s vocabulary: a *budget* is a pool that refills to a known
+   ceiling — "once per long rest", Deep Dreaming's Instinct-many — and draws
+   as lights; anything else on `resources` is a *pile* of tokens and draws as
+   a counting die; a kept-dice tray is a *pool*. The test is the refresh and
+   the ceiling rather than the name, because "Use" and "Tokens" are only what
+   the annotations happened to call them and a player may call theirs
+   anything. */
+
+export interface CounterGroup {
+  kind: "uses" | "pile" | "pool";
+  key: string;
+  name: string;
+  value?: number;
+  max?: number | null;
+  refresh?: string;
+  mode?: string;
+  faces?: number;
+  dice?: number[];
+  /** The feature block it belongs to; blank for the document's own. */
+  feature: string;
+}
 
 /**
- * A card's limited uses as charge lights, drawn the way gluvtt draws them.
+ * Every counter an Item keeps, resolved against whoever holds it.
  *
- * A **readout**, like `cardChits` and for the same reason: the two surfaces
- * this reaches are the peek layer, which is `pointer-events:none`, and the
- * chat log, where a row of live buttons three hours later is an invitation
- * to spend the same use twice. Where the budget is a control — the features
- * row, the loadout bay — the lights are a `Chits` component instead.
- *
- * One light per use, lit while it is there to spend. The mark says what the
- * budget waits for rather than what spending it costs, which is `PER_PATHS`
- * in `terms.js` and is why a long rest gets a sun and a scene a stage.
+ * `feature` narrows to one block's — blank for the document's own, a name
+ * for a feature's, `undefined` for all of them. `key` is `itemId:i` for a
+ * resource and `itemId:d:i` for a die pool, which is what the sheet's rail
+ * handler splits to find its subject.
  */
-export function cardUses(it: ItemSnapshot): string | undefined {
-  const use = budgetOf(it.system);
-  if (!use) return undefined;
-  const max = use.max?.n ?? 0;
-  if (max <= 0) return undefined;
-  const left = Math.max(0, Math.min(max, use.value ?? 0));
-  const refresh = use.refresh ?? "rest";
-  const name = use.name || "uses";
-  const said =
-    `${name}: ${left} of ${max} ${max === 1 ? "use" : "uses"} left, ` +
-    `back each ${PER_WORDS[refresh] ?? "rest"}`;
-  const lights = Array.from(
-    { length: max },
-    (_, i) => `<i class="dh-charge-light${i < left ? " is-lit" : ""}"></i>`,
-  ).join("");
-  return (
-    `<span class="dh-charge${left === 0 ? " is-spent" : ""}" role="group" ` +
-    `aria-label="${escapeAttr(said)}">` +
-    mark(PER_PATHS[refresh] ?? PER_PATHS.rest) +
-    `<span class="dh-charge-name">${escapeText(name)}</span>` +
-    `<span class="dh-charge-lights">${lights}</span></span>`
-  );
+export function counterGroups(it: ItemSnapshot, actor?: any, feature?: string): CounterGroup[] {
+  const s = it.system ?? {};
+  const keep = (f: string | undefined) => feature === undefined || (f || "") === feature;
+  const out: CounterGroup[] = [];
+  ((s.resources ?? []) as Resource[]).forEach((res, i) => {
+    if (!keep(res.feature)) return;
+    const max = resourceMax(res, actor);
+    out.push({
+      kind: res.onRefresh === "fill" && max !== null && max > 0 ? "uses" : "pile",
+      key: `${it.id}:${i}`,
+      name: res.name || "Tokens",
+      value: Number(res.value ?? 0),
+      max,
+      refresh: res.refresh,
+      feature: res.feature || "",
+    });
+  });
+  ((s.dice ?? []) as DiePool[]).forEach((pool, i) => {
+    if (!keep(pool.feature)) return;
+    out.push({
+      kind: "pool",
+      key: `${it.id}:d:${i}`,
+      name: pool.name || "Dice",
+      mode: pool.mode,
+      faces: pool.faces ?? 6,
+      dice: [...(pool.dice ?? [])],
+      max: poolCapacity(pool, actor),
+      refresh: pool.refresh,
+      feature: pool.feature || "",
+    });
+  });
+  return out;
+}
+
+/**
+ * Whether a feature block has spent everything it budgets.
+ *
+ * The features panel draws one card per rule, and a class whose Hope feature
+ * is untouched must not read as used because its other feature's once-per-
+ * rest has gone — so the question is asked of the block, not the document.
+ * A block with no budget is never spent this way.
+ */
+export function featureSpent(it: ItemSnapshot, feature: string, actor?: any): boolean {
+  const budgets = counterGroups(it, actor, feature).filter((g) => g.kind === "uses");
+  return budgets.length > 0 && budgets.every((g) => (g.value ?? 0) <= 0);
+}
+
+/**
+ * The face's header strip and each feature heading's, from one item.
+ *
+ * A counter bound to a feature the face prints goes in that feature's
+ * heading, beside its rule; anything else — the document's own, or one bound
+ * to a block this face does not draw — goes in the header, so no counter is
+ * ever on the document and missing from its card.
+ */
+export function faceCounters(
+  it: ItemSnapshot,
+  actor: any,
+  printed: string[] = [],
+): { head?: string; byFeature: Record<string, string> } {
+  const groups = counterGroups(it, actor);
+  const head = groups.filter((g) => !g.feature || !printed.includes(g.feature));
+  const byFeature: Record<string, string> = {};
+  for (const name of printed) {
+    const mine = groups.filter((g) => g.feature && g.feature === name);
+    if (mine.length) byFeature[name] = FACE_COUNTERS(mine);
+  }
+  return { head: head.length ? FACE_COUNTERS(head) : undefined, byFeature };
 }
 
 /**
@@ -686,10 +655,7 @@ export function cardUses(it: ItemSnapshot): string | undefined {
  * twice because it is read in two places that cannot share a document.
  */
 export function isSpent(it: ItemSnapshot): boolean {
-  const use = budgetOf(it.system);
-  const max = use?.max?.n ?? 0;
-  if (use && max > 0) return (use.value ?? 0) <= 0;
-  return it.system?.spent === true;
+  return cardSpent(it.system);
 }
 
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -773,8 +739,28 @@ const SLOT_LABEL: Record<string, string> = {
  * Returns `null` for a subtype that has no card — `feature` items are stat
  * block entries, and drawing one as a card would claim it is something you
  * hold.
+ *
+ * Every counter the item keeps is drawn on the face it returns — a feature's
+ * in that feature's heading, the rest in the header strip — so the peek and
+ * the chat card say what the card in your hand is holding. See `faceCounters`.
  */
 export function cardOf(
+  it: ItemSnapshot,
+  sig: Sigils,
+  ctx: CardContext = {},
+): CardOptions | null {
+  const card = baseCard(it, sig, ctx);
+  if (!card) return card;
+  const printed = (card.feats ?? []).map((f) => f.n);
+  const { head, byFeature } = faceCounters(it, ctx.actor, printed);
+  return {
+    ...card,
+    uses: head,
+    feats: card.feats?.map((f) => (byFeature[f.n] ? { ...f, uses: byFeature[f.n] } : f)),
+  };
+}
+
+function baseCard(
   it: ItemSnapshot,
   sig: Sigils,
   ctx: CardContext = {},
@@ -792,14 +778,12 @@ export function cardOf(
     code: s.printing?.code || undefined,
     artist: s.printing?.artist || undefined,
     homebrew: homebrew(it.type, s),
-    chits: cardChits(it, ctx.actor),
     /* The budget and whether it is empty. `state` is the *card's* state and
        nothing else: `used` when it has been spent, and otherwise whatever
        the surface says, because `within-reach` and `out-of-reach` are
        answers about where the card is sitting and only the surface holding
        it knows that. A caller that knows better overrides it — see
        `ctx.state`, which is how the vault marks a card out of reach. */
-    uses: cardUses(it),
     state: (isSpent(it) ? "used" : (ctx.state ?? "rest")) as CardOptions["state"],
   };
 
@@ -1160,6 +1144,13 @@ export interface FeatureCardOptions {
    * swap's FLIP and the peek layer look each other up by.
    */
   slot?: string;
+  /**
+   * Which feature block owns this card's counters, when that is not simply
+   * its name — blank for a whole feature Item, whose pools are its own.
+   */
+  bind?: string;
+  /** The character holding it, for the ceilings that come off them. */
+  actor?: any;
 }
 
 export function featureCard(sig: Sigils, o: FeatureCardOptions): CardOptions | null {
@@ -1195,6 +1186,14 @@ export function featureCard(sig: Sigils, o: FeatureCardOptions): CardOptions | n
     foot: o.foot,
     stats: o.stats,
     text: plain(f.description),
+    /* This rule's counters and nothing else's — a class carries several and
+       only one of them keeps the Prayer Dice — and spent when this rule's own
+       budget is, which is the question the features panel is asking. */
+    uses: (() => {
+      const mine = counterGroups(o.item, o.actor, o.bind ?? f.name ?? "");
+      return mine.length ? FACE_COUNTERS(mine) : undefined;
+    })(),
+    state: featureSpent(o.item, o.bind ?? f.name ?? "", o.actor) ? "used" : "rest",
   };
 }
 

@@ -24,6 +24,7 @@ import {
   TRAITS,
   WEAPON_SLOTS,
 } from "../config.ts";
+import { cardSpent } from "./resources.ts";
 import {
   actionField,
   arr,
@@ -72,7 +73,7 @@ const ItemModel = (): any =>
       fillCardDamage(this, this.parent?.type, this.parent?.name);
       fillCardActions(this, this.parent?.type, this.parent?.name);
       this.uses = usesOf(this);
-      this.isSpent = this.uses ? this.uses.value <= 0 : this.spent === true;
+      this.isSpent = cardSpent(this);
     }
   };
 

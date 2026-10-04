@@ -160,3 +160,41 @@ export function refreshedValue(res: Resource, max: number | null): number {
       return max === null ? (res.value ?? 0) : max;
   }
 }
+
+/**
+ * Whether a card has spent everything it budgets — the one rule behind the
+ * drained, stamped "Used" face, read by `items.ts` for `system.isSpent` and by
+ * `cards.ts` for a snapshot that carries no derived fields.
+ *
+ * A **budget** is a pool that refills (`onRefresh: "fill"`) to a fixed ceiling
+ * the card prints; a pile of tokens running out is not the card being used up.
+ * A card with no budget is spent only when somebody has said so, which is the
+ * `spent` switch on the item sheet.
+ *
+ * A card is spent when every budget on it is empty *and* every rule on it is
+ * budgeted. A domain card's budget is its own, so emptying it spends the card;
+ * an ancestry's once-per-rest belongs to one of its two features, and the
+ * other is still yours to use, so the card stays in play and the empty light
+ * on its rail is what says which half has gone.
+ */
+export function cardSpent(system: any): boolean {
+  /* A fixed ceiling only. A pile that refills to a trait — Strategic
+     Approach's Knowledge-many tokens — arrives empty until the first long
+     rest fills it, and a card taken this minute is not a card used up. */
+  const budgets = ((system?.resources ?? []) as Resource[]).filter(
+    (r) => r?.onRefresh === "fill" && r.max?.kind === "fixed" && (r.max.n ?? 0) > 0,
+  );
+  if (!budgets.length) return system?.spent === true;
+  if (!budgets.every((r) => Number(r.value ?? 0) <= 0)) return false;
+  if (budgets.some((r) => !r.feature)) return true;
+  const bound = new Set(budgets.map((r) => r.feature));
+  const rules = [
+    ...(system.classFeatures ?? []),
+    system.hopeFeature,
+    ...(system.features ?? []),
+    system.topFeature,
+    system.bottomFeature,
+    system.feature,
+  ].filter((b: any) => b?.name && String(b.description ?? "").trim());
+  return rules.length > 0 && rules.every((b: any) => bound.has(b.name));
+}

@@ -64,6 +64,8 @@
  * overwrites a non-empty array: that is somebody's homebrew, and it wins.
  */
 
+import RESOURCES from "./card-resources.mjs";
+
 /* ── entries ─────────────────────────────────────────────────────────────
    Populated per population — see `tools/check-actions.mjs` for what is still
    unread. Each population lands as its own commit with its own ratchet
@@ -792,7 +794,7 @@ export const CARD_ACTIONS = {
       "Sneak Attack": [
         {
           kind: "roll-dice",
-          formula: "1d6",
+          formula: "(@tier)d6",
           when: "a number of d6s equal to your tier",
           said: "add a number of d6s equal to your tier to your damage roll",
         },
@@ -847,6 +849,34 @@ export const CARD_ACTIONS = {
   },
   "class:Warlock": {
     features: {
+      "Favor": [
+        {
+          kind: "move-resource",
+          label: "Gain a Favor (instead of a Hope)",
+          resource: "Favor",
+          by: 1,
+          when: "When you succeed on an action roll with Hope",
+          said: "you can choose to gain a Favor instead of a Hope",
+        }
+      ],
+      "Patron’s Pact": [
+        {
+          kind: "move-resource",
+          label: "Call on your patron",
+          resource: "Favor",
+          by: -1,
+          when: "Before an action roll that relates to your patron’s sphere of influence",
+          said: "you can spend a Favor to call upon their aid",
+          steps: [
+            {
+              kind: "die-pool",
+              resource: "Patron Die",
+              op: "roll",
+              said: "rolling your Patron Die and adding its result to the total",
+            }
+          ],
+        }
+      ],
       "Patron’s Boon": [
         {
           kind: "pay",
@@ -884,14 +914,7 @@ export const CARD_ACTIONS = {
   },
   "class:Witch": {
     features: {
-      "Commune": [
-        {
-          kind: "roll-dice",
-          formula: "1d6",
-          when: "a number of d6s equal to your Spellcast trait",
-          said: "roll a number of <b>d6s</b> equal to your Spellcast trait",
-        },
-      ],
+      "Commune": [],
       "Hex": [
         {
           kind: "pay",
@@ -1178,15 +1201,6 @@ export const CARD_ACTIONS = {
       },
     ],
   },
-  "consumable:Glowmoss Mushroom": {
-    actions: [
-      {
-        kind: "grant-effect",
-        effect: { name: "Glowing", duration: "longRest" },
-        said: "causing it to glow bright blue until your next long rest",
-      },
-    ],
-  },
   "consumable:Green Ooze Oil": {
     actions: [
       {
@@ -1264,8 +1278,8 @@ export const CARD_ACTIONS = {
     actions: [
       {
         kind: "grant-effect",
-        effect: { name: "Mimicking a voice", duration: "rest" },
-        said: "perfectly mimic any voice you’ve heard",
+        effect: { name: "Mimicking a voice", duration: "scene" },
+        said: "perfectly mimic any voice you’ve heard until the end of the scene",
       },
     ],
   },
@@ -2264,6 +2278,13 @@ export const CARD_ACTIONS = {
           }
         ],
       },
+      {
+        kind: "pay",
+        label: "Spend a Hope: target marks an additional Hit Point",
+        amount: { hope: 1 },
+        when: "When you critically succeed on an attack",
+        said: "spend up to 3 Hope",
+      },
     ],
   },
   "domainCard:Chariot of Thought": {
@@ -2541,6 +2562,14 @@ export const CARD_ACTIONS = {
         amount: { stress: 2 },
         when: "to put another token on the card",
         said: "<b>Mark 2 Stress</b> to place a token on this card",
+        steps: [
+          {
+            kind: "move-resource",
+            resource: "Tokens",
+            by: 1,
+            said: "place a token on this card",
+          }
+        ],
       },
     ],
   },
@@ -4524,6 +4553,13 @@ export const CARD_ACTIONS = {
         label: "Mark a Stress to replenish tokens",
         amount: { stress: 1 },
         said: "<b>Mark a Stress</b> to replenish this card with tokens",
+        steps: [
+          {
+            kind: "refresh",
+            resource: "Tokens",
+            said: "replenish this card with tokens (up to your Spellcast trait)",
+          }
+        ],
       },
     ],
   },
@@ -4897,6 +4933,20 @@ export const CARD_ACTIONS = {
         condition: "vulnerable",
         when: "on a successful Finesse Roll (10)",
         said: "blow a bit of sand into a target’s face to make them temporarily <i>Vulnerable</i>",
+      },
+      {
+        kind: "roll-trait",
+        label: "Presence Roll to change its weight",
+        trait: "presence",
+        dc: 10,
+        said: "Presence Roll (10)",
+      },
+      {
+        kind: "roll-trait",
+        label: "Finesse Roll to blind",
+        trait: "finesse",
+        dc: 10,
+        said: "Finesse Roll (10)",
       },
     ],
   },
@@ -5400,6 +5450,14 @@ export const CARD_ACTIONS = {
           when: "Once per rest, on a success",
           said: "<b>mark a Stress</b> to step beyond the veil of death and converse with any nearby spirits",
         },
+        {
+          kind: "move-resource",
+          label: "Remove a token",
+          resource: "Tokens",
+          by: -1,
+          when: "Each time a spirit answers a question",
+          said: "remove one each time a spirit answers a question",
+        },
       ],
     },
   },
@@ -5527,8 +5585,9 @@ export const CARD_ACTIONS = {
     features: {
       "Lunar Phases": [
         {
-          kind: "roll-dice",
-          formula: "1d6",
+          kind: "die-pool",
+          resource: "Lunar Phase",
+          op: "place",
           when: "At the beginning of each session",
           said: "roll a <b>d6</b> and place it on this card",
         },
@@ -5632,6 +5691,14 @@ export const CARD_ACTIONS = {
           when: "spend a token to afflict the target with a poison",
           said: "The target becomes temporarily <i>Vulnerable</i>.",
         },
+        {
+          kind: "move-resource",
+          label: "Spend a token (poison)",
+          resource: "Tokens",
+          by: -1,
+          when: "When you make a successful weapon attack",
+          said: "you can spend a token to afflict the target with a poison",
+        },
       ],
     },
   },
@@ -5671,6 +5738,14 @@ export const CARD_ACTIONS = {
           condition: "charged",
           when: "When you take magic damage",
           said: "When you take magic damage, you become",
+          steps: [
+            {
+              kind: "move-resource",
+              resource: "Charge",
+              by: 1,
+              said: "you become",
+            }
+          ],
         },
         {
           kind: "pay",
@@ -5682,8 +5757,22 @@ export const CARD_ACTIONS = {
               kind: "apply-condition",
               condition: "charged",
               said: "to become",
+            },
+            {
+              kind: "move-resource",
+              resource: "Charge",
+              by: 1,
+              said: "to become",
             }
           ],
+        },
+        {
+          kind: "move-resource",
+          label: "Clear your Charge",
+          resource: "Charge",
+          by: -1,
+          when: "When you successfully make an attack that deals magic damage while Charged",
+          said: "you can clear your <i>Charge</i>",
         },
       ],
     },
@@ -5727,6 +5816,14 @@ export const CARD_ACTIONS = {
   },
   "subclass:School of War: Mastery": {
     features: {
+      "Have No Fear": [
+        {
+          kind: "roll-card-damage",
+          damageName: "",
+          when: "When you succeed with Fear on an attack roll",
+          said: "increases to <b>3d10</b>",
+        }
+      ],
       "Thrive in Chaos": [
         {
           kind: "pay",
@@ -6182,6 +6279,13 @@ export const CARD_ACTIONS = {
           label: "Mark a Stress: regain Ammo",
           amount: { stress: 1 },
           said: "You can mark a Stress to regain spent Ammo tokens",
+          steps: [
+            {
+              kind: "refresh",
+              resource: "Ammo",
+              said: "regain spent Ammo tokens",
+            }
+          ],
         },
       ],
     },
@@ -6398,17 +6502,6 @@ export const CARD_ACTIONS = {
           kind: "pay",
           amount: { stress: 1 },
           said: "you can mark a Stress to target another creature within range",
-        },
-      ],
-    },
-  },
-  "weapon:Echo Blade": {
-    features: {
-      "Doubled Up": [
-        {
-          kind: "roll-damage",
-          when: "When you succeed on an attack with your primary weapon",
-          said: "you can deal damage to another target within Melee range",
         },
       ],
     },
@@ -6682,6 +6775,13 @@ export const CARD_ACTIONS = {
           label: "Mark a Stress: regain Ammo",
           amount: { stress: 1 },
           said: "You can mark a Stress to regain spent Ammo tokens",
+          steps: [
+            {
+              kind: "refresh",
+              resource: "Ammo",
+              said: "regain spent Ammo tokens",
+            }
+          ],
         },
       ],
     },
@@ -6875,6 +6975,13 @@ export const CARD_ACTIONS = {
           label: "Mark a Stress: regain Ammo",
           amount: { stress: 1 },
           said: "You can mark a Stress to regain spent Ammo tokens",
+          steps: [
+            {
+              kind: "refresh",
+              resource: "Ammo",
+              said: "regain spent Ammo tokens",
+            }
+          ],
         },
       ],
     },
@@ -7020,6 +7127,13 @@ export const CARD_ACTIONS = {
           label: "Mark a Stress: regain Ammo",
           amount: { stress: 1 },
           said: "You can mark a Stress to regain spent Ammo tokens",
+          steps: [
+            {
+              kind: "refresh",
+              resource: "Ammo",
+              said: "regain spent Ammo tokens",
+            }
+          ],
         },
       ],
     },
@@ -7274,6 +7388,124 @@ export const CARD_ACTIONS = {
           amount: { stress: 1 },
           said: "Mark a Stress to crack the whip",
         },
+      ],
+    },
+  },
+  "weapon:Storm God’s Greataxe": {
+    features: {
+      "Bouncing": [
+        {
+          kind: "pay",
+          label: "Mark a Stress: one more target",
+          amount: { stress: 1 },
+          said: "Mark any number of Stress",
+        }
+      ],
+    },
+  },
+  "weapon:Arc Wand": {
+    features: {
+      "Bouncing": [
+        {
+          kind: "pay",
+          label: "Mark a Stress: one more target",
+          amount: { stress: 1 },
+          said: "Mark any number of Stress",
+        }
+      ],
+    },
+  },
+  "weapon:Bloodstaff": {
+    features: {
+      "Painful": [
+        {
+          kind: "pay",
+          amount: { stress: 1 },
+          when: "Each time you make a successful attack",
+          said: "you must mark a Stress",
+        }
+      ],
+    },
+  },
+  "weapon:Runes of Ruination": {
+    features: {
+      "Painful": [
+        {
+          kind: "pay",
+          amount: { stress: 1 },
+          when: "Each time you make a successful attack",
+          said: "you must mark a Stress",
+        }
+      ],
+    },
+  },
+  "consumable:Enlighten Potion": {
+    actions: [
+      {
+        kind: "grant-effect",
+        effect: { name: "Enlighten Potion", duration: "temporary", modifiers: [{"target":"trait","trait":"knowledge","value":1}] },
+        when: "your next Knowledge Roll",
+        said: "You gain a +1 bonus to your next Knowledge Roll.",
+      }
+    ],
+  },
+  "consumable:Attune Potion": {
+    actions: [
+      {
+        kind: "grant-effect",
+        effect: { name: "Attune Potion", duration: "temporary", modifiers: [{"target":"trait","trait":"instinct","value":1}] },
+        when: "your next Instinct Roll",
+        said: "You gain a +1 bonus to your next Instinct Roll.",
+      }
+    ],
+  },
+  "consumable:Bolster Potion": {
+    actions: [
+      {
+        kind: "grant-effect",
+        effect: { name: "Bolster Potion", duration: "temporary", modifiers: [{"target":"trait","trait":"strength","value":1}] },
+        when: "your next Strength Roll",
+        said: "You gain a +1 bonus to your next Strength Roll.",
+      }
+    ],
+  },
+  "subclass:School of War: Specialization": {
+    features: {
+      "Fueled by Fear": [
+        {
+          kind: "roll-card-damage",
+          damageName: "",
+          when: "When you succeed with Fear on an attack roll",
+          said: "increases to <b>2d10</b>",
+        }
+      ],
+    },
+  },
+  "subclass:Hedge: Mastery": {
+    features: {
+      "Circle of Power": [
+        {
+          kind: "move-resource",
+          label: "Remove a token",
+          resource: "Tokens",
+          by: -1,
+          when: "Each time you or an ally within the circle makes an action roll or evades an attack",
+          said: "Remove a token each time you or an ally within the circle makes an action roll or evades an attack",
+        }
+      ],
+    },
+  },
+  "subclass:Hedge: Foundation": {
+    features: {
+      "Enchanted Talisman": [
+        {
+          kind: "move-resource",
+          label: "Spend a token",
+          resource: "Tokens",
+          by: -1,
+          when: "When the person holding the talisman takes damage",
+          said: "spend a token to reduce the number of Hit Points they mark by one",
+        }
       ],
     },
   },
@@ -7551,8 +7783,6 @@ export const DECLINED = {
     "Volatile Magic: \"reroll any number of your damage dice\" is not one of the fifteen kinds; a reroll is pressed on the die on the posted plate, which is where the record of it belongs.",
   ],
   "class:Warlock": [
-    "Patron’s Pact: \"you can spend a Favor to call upon their aid\" spends Favor, which is a counter this document does not carry — there is nothing to charge, so the cost cannot be expressed.",
-    "Patron’s Pact: \"rolling your Patron Die and adding its result to the total\" gets no button either, because a `die-pool` roll on its own would hand out the aid without spending the Favor the card charges for it.",
     "Patron’s Pact: \"Your Patron Die starts at a <b>d6</b> and increases to a <b>d8</b> at level 5\" is the pool's die size at a level, not a press.",
     "Favor: \"gain Favor equal to your Spellcast trait\" gains a counter this document does not carry, in an amount the card does not print.",
     "Favor: \"you can choose to gain a Favor instead of a Hope\" is a Hope DECLINED in exchange for Favor. A reader matching on \"gain a…Hope\" here would hand the holder the very Hope the card gives up.",
@@ -7565,6 +7795,7 @@ export const DECLINED = {
   "class:Witch": [
     "Hex: \"the target gains a penalty to their damage rolls and Difficulty equal to your tier\" is a modifier on the TARGET, in an amount the card does not print. It is what being Hexed does, not something the holder presses.",
     "Witch’s Charm: \"change it into a success with Fear instead\" names the roll's OUTCOME, not the GM's Fear pool. Nothing on this card gains Fear.",
+    "Commune: \"roll a number of d6s equal to your Spellcast trait\" counts its dice off a trait, which no formula here can name — a fixed 1d6 changed the odds for anybody with Spellcast 2 or more. The once-per-long-rest use is pressed on its own.",
   ],
   "class:Wizard": [
     "Not This Time: \"reroll an attack or damage roll\" is the ADVERSARY's reroll, forced on them. It is not the holder's roll and gets no button of ours.",
@@ -7595,17 +7826,11 @@ export const DECLINED = {
   "consumable:Armor Stitcher": [
     "\"any number of Hope\" is a variable spend this vocabulary cannot state - the press is authored as the single Hope-for-a-slot unit the card is made of, to be pressed again for each further slot, rather than inventing a total",
   ],
-  "consumable:Attune Potion": [
-    "\"a +1 bonus to your next Instinct Roll\" is a one-roll bonus to one trait's rolls — no per-trait-roll modifier target exists, and a trait bonus would persist past the single roll the card pays for.",
-  ],
   "consumable:Berserker’s Brew": [
     "\"a bonus to your Strength and a penalty to your Finesse and Knowledge equal to your Instinct (minimum 1)\" needs a modifier to name both the trait it changes and the trait it scales off, and there is one `trait` field for both. Written either way the card would silently modify the wrong trait.",
   ],
   "consumable:Blinding Orb": [
     "\"until they mark HP\" is the clause that ENDS the condition on the target - it is the target’s Hit Point and never a cost the holder pays",
-  ],
-  "consumable:Bolster Potion": [
-    "\"a +1 bonus to your next Strength Roll\" is a one-roll bonus to one trait's rolls. The modifier vocabulary has no per-trait-roll target and no scope that expires on use; writing it as a trait bonus would raise every Strength Roll, and anything else sourced on Strength, until somebody took the effect off by hand.",
   ],
   "consumable:Bridge Seed": [
     "\"The vines dissipate on your next short rest.\" is a duration on a created object, not a bonus",
@@ -7642,9 +7867,6 @@ export const DECLINED = {
   "consumable:Emberite Shard": [
     "\"All targets within Close range of that point must succeed on a <b>Reaction Roll (16)</b>\" is the targets’ Reaction Roll and gets no button (rule 7)",
     "\"a creature must roll a <b>d4</b> whenever they make an action roll. On a result of 1, they mark a Hit Point.\" is the TARGET’s roll and the target’s Hit Point, made on their own turn",
-  ],
-  "consumable:Enlighten Potion": [
-    "\"a +1 bonus to your next Knowledge Roll\" is a one-roll bonus to one trait's rolls — no per-trait-roll modifier target exists, and a trait bonus would persist past the single roll the card pays for.",
   ],
   "consumable:Feast of Xuria": [
     "\"clear all HP and Stress\" is an unbounded clear - `amount` carries numbers and cannot say \"all\", and inventing the character’s maxima here would be writing a number the card does not print",
@@ -7903,7 +8125,7 @@ export const DECLINED = {
     "\"the target of their attack marks one fewer Hit Point than they normally would\" is a reduction applied to whoever the Chained creature attacks, on their own sheet.",
   ],
   "domainCard:Champion’s Edge": [
-    "\"The target must mark an additional Hit Point.\" is the target's cost, not the holder's - the third option buys damage on somebody else and must not mark the holder's own track.",
+    "\"The target must mark an additional Hit Point.\" is the target's Hit Point and is never marked from here; only the Hope that buys it is the holder's, and that is pressed.",
   ],
   "domainCard:Chariot of Thought": [
     "\"Attacks made against a creature on the disk from beyond Close range have disadvantage\" applies to whoever is standing on the disk, holder or not, and disadvantage on somebody else's incoming attack has no modifier target here.",
@@ -7970,7 +8192,7 @@ export const DECLINED = {
     "\"roll your weapon damage with a +1 bonus to your Proficiency\" cannot be roll-damage: that kind rolls the equipped weapon's own expression and has nowhere to carry the +1 Proficiency, and the sequence that follows removes a die per target, which nothing here can express",
   ],
   "domainCard:Deep Dreaming": [
-    "\"place a number of tokens on this card equal to your Instinct (minimum 1)\" and \"Spend a token\" move a counter this document does not carry, and the count is the holder's Instinct rather than a printed number. The tray is in `card-resources.mjs`.",
+    "\"place a number of tokens on this card equal to your Instinct (minimum 1)\" is the Tokens counter refilling after a long rest, which the rest does.",
   ],
   "domainCard:Deft Maneuvers": [
     "\"gain a +1 bonus to the attack roll\" is conditional on how the sprint ends and carries no duration anybody grants by pressing, so it is a modifier on that one roll rather than an action.",
@@ -8099,8 +8321,8 @@ export const DECLINED = {
     "\"your next action roll has advantage\" — advantage on a roll you have not made yet, which the roll popover asks about at the moment you make it",
   ],
   "domainCard:Inspirational Words": [
-    "\"place a number of tokens on this card equal to your Presence\" names a counter this document does not carry, and the count is the holder's Presence rather than a printed number.",
     "\"Your ally clears a Stress.\" and \"Your ally gains a Hope.\" land on the ALLY's sheet; nothing here is the holder's to clear or gain.",
+    "\"place a number of tokens on this card equal to your Presence\" is the Tokens counter refilling after a long rest, which the rest does; spending one is its own press.",
   ],
   "domainCard:Invigoration": [
     "\"you can spend any number of Hope and roll that many d6s\" is the holder's price twice over and neither half can be written: the Hope is a number the player chooses and the pool of d6s is that same unknown count",
@@ -8207,9 +8429,9 @@ export const DECLINED = {
     "\"deals an extra <b>2d12</b> damage\" rides on a later weapon attack rather than being an expression this card rolls, and the document carries no damage type for it.",
   ],
   "domainCard:Restoration": [
-    "\"place a number of tokens equal to your Spellcast trait on this card\" counts something this document carries no counter for.",
     "\"spend any number of tokens to clear 2 Hit Points or 2 Stress for each token spent\" clears a touched creature’s tracks, not necessarily the holder’s, in an amount the card leaves open.",
-    "\"spend a token from this card when touching a creature to clear the <i>Vulnerable</i> condition\" removes a condition from somebody else and spends the same absent pool.",
+    "\"place a number of tokens equal to your Spellcast trait on this card\" is the Tokens counter refilling after a long rest, which the rest does; spending one is its own press.",
+    "\"spend a token from this card when touching a creature to clear the <i>Vulnerable</i> condition\" removes a condition from somebody else; the token it costs is the card's own press.",
   ],
   "domainCard:Rise Up": [
     "\"Gain a bonus to your Severe threshold equal to your Proficiency\" is a passive modifier the schema already carries, not a granted effect with a printed duration.",
@@ -8287,9 +8509,9 @@ export const DECLINED = {
     "\"roll an additional damage die\" names no die - it is the equipped weapon's own, which this card cannot print, so the extra die is left to the table.",
   ],
   "domainCard:Strategic Approach": [
-    "\"place a number of tokens equal to your Knowledge on this card (minimum 1)\" names a counter this document does not carry, and the count is the holder's Knowledge rather than a printed number.",
     "\"You clear a Stress on an ally within Melee range of the adversary.\" clears the ALLY's Stress, not the holder's.",
     "\"You add a <b>d8</b> to your damage roll.\" adds a die to a weapon damage roll rather than rolling an expression of its own.",
+    "\"place a number of tokens equal to your Knowledge on this card (minimum 1)\" is the Tokens counter refilling after a long rest, which the rest does; spending one is its own press.",
   ],
   "domainCard:Stunning Sunlight": [
     "\"spend any number of Hope and force that many targets you succeeded against\" is the holder's price, but the amount is chosen at the moment of casting and this shape holds one fixed number",
@@ -8380,9 +8602,8 @@ export const DECLINED = {
     "\"spend a token from this card\" — same missing counter, and it is spent by taking an action rather than by pressing anything",
   ],
   "domainCard:Unleash Chaos": [
-    "\"place a number of tokens equal to your Spellcast trait on this card\" — this document carries no counter in its resources, so there is nothing to place tokens on; inventing one is forbidden",
-    "\"spend any number of tokens\" — same missing counter, and the number is chosen at the moment of casting rather than printed",
     "\"roll a number of <b>d10s</b> equal to the tokens you spent\" — the die count is the tokens spent, so no formula can be written; the card also carries no cardDamage expression",
+    "\"spend any number of tokens\" is chosen at the moment of casting, so it is a press that spends one, made as many times as the caster likes.",
   ],
   "domainCard:Untouchable": [
     "\"Gain a bonus to your Evasion equal to half your Agility.\" is a standing passive with no press and no printed duration; it belongs to the modifier system, not to an authored action.",
@@ -8485,17 +8706,12 @@ export const DECLINED = {
   ],
   "loot:Arcane Prism": [
     "\"All allies within Close range of it gain a +1 bonus to their Spellcast Rolls\" is a bonus on somebody else, not the holder, and its duration is \"while activated\" rather than a printed one.",
-    "\"it can’t be activated again until your next long rest\" is a use limit against a counter this document does not carry.",
   ],
   "loot:Attune Relic": [
     "\"You gain a +1 bonus to your Instinct\" is a passive modifier with no press and no printed duration; it belongs to the modifier system, not to grant-effect",
   ],
   "loot:Augur’s Relic": [
     "\"activate your Hope feature without spending Hope\" waives the Hope feature's cost; reading it as a spend would charge the holder for exactly the payment the card removes",
-  ],
-  "loot:Bag of Ficklesand": [
-    "\"with a successful Presence Roll (10)\" names the holder's roll and a Difficulty, but states it as a condition of success rather than asking for it in the imperative, so it gets no roll button.",
-    "\"on a successful Finesse Roll (10)\" is the same shape — a success being described, not a roll being called for; the Vulnerable it gates is annotated with the clause as its printed precondition.",
   ],
   "loot:Belt of Unity": [
     "\"lead a Tag Team Roll with three PCs\" names a roll this system does not implement and which is not one trait roll by the holder; only the 5 Hope is authored",
@@ -8707,18 +8923,16 @@ export const DECLINED = {
   ],
   "subclass:Hedge: Foundation": [
     "\"Spend any number of Hope to place an equal number of tokens on this card\" has no printed amount; a pay button would have to invent one",
-    "\"place an equal number of tokens on this card\" and \"spend a token\" move a counter this unit does not name; no resource is carried, and inventing one is forbidden",
-    "\"Once per rest\" is a use budget with no counter on this document",
     "\"increase the number cleared by 1\" modifies a clear somebody else's consumable performed — it clears nothing on its own and fires automatically",
+    "\"place an equal number of tokens on this card\" places as many tokens as Hope spent, which no fixed press can state; they are placed by hand on the Tokens counter.",
   ],
   "subclass:Hedge: Mastery": [
-    "\"place a number of tokens equal to your Spellcast trait on this card\" and \"Remove a token each time\" move a counter this unit does not name",
     "\"you and your allies gain a +2 bonus to damage thresholds, attack rolls, and Evasion\" is held only while inside the circle and reaches allies as well as the holder; neither the position nor the party scope can be expressed",
-    "\"Once per rest\" is a use budget with no counter on this document",
+    "\"place a number of tokens equal to your Spellcast trait on this card\" fills the Tokens counter to a trait-sized ceiling, which is done by hand on the card's rail.",
   ],
   "subclass:Hedge: Specialization": [
-    "\"Place a number of tokens equal to your Spellcast trait on this card\" names a counter this document does not declare, and its size is a trait rather than a printed number.",
     "\"You have advantage on attacks against <i>Hexed</i> creatures\" reads a registered condition rather than applying one, and advantage is not a press",
+    "\"Place a number of tokens equal to your Spellcast trait on this card\" fills the Tokens counter to a trait-sized ceiling, which is done by hand on the card's rail.",
   ],
   "subclass:Juggernaut: Foundation": [
     "\"force them to mark a Stress\" is the TARGET's cost; the holder pays only the Hope",
@@ -8745,9 +8959,8 @@ export const DECLINED = {
     "\"adversaries within Close range must mark a Stress to attack you\" is the ADVERSARY's cost, not the holder's",
   ],
   "subclass:Moon: Mastery": [
-    "\"place it on this card\" asks for a die pool this document does not carry, so the d6 is rolled and not kept",
     "\"+2 to damage rolls\", \"+3 to damage thresholds\" and \"+1 to Evasion\" are granted by whichever face the die shows rather than by a press, and which one applies is not something the card lets anybody choose",
-    "\"increase the value of this die by one\" steps a die pool this document does not carry; only the Hope it costs is annotated",
+    "\"increase the value of this die by one\" steps the kept Lunar Phase die, wrapping a 6 to a 1, which the tray's own step cannot say; the face is set by hand and only the Hope it costs is pressed.",
   ],
   "subclass:Moon: Specialization": [
     "\"you and your allies gain a +1 bonus to Spellcast Rolls\" is conditioned on being \"bathed in this moonlight\" — a position, not a duration — and reaches allies as well as the holder, so a scene-long self grant would be wrong the moment anybody steps out",
@@ -8801,9 +9014,9 @@ export const DECLINED = {
     "\"force the target to mark an equal number of Stress\" is the target's cost, not the holder's.",
   ],
   "subclass:Poisoners Guild: Foundation": [
-    "\"place <b>1d4+1</b> tokens on this card\" and \"you can spend a token\" address a counter this document does not carry, and the count is rolled rather than printed; \"clear all unspent tokens\" is the same counter",
     "\"The target must also mark a Stress\" (Grave Spore) is the TARGET's cost, not the holder's",
     "\"You deal an extra <b>1d6</b> damage on this attack\" (Leech Weed) adds to the weapon's damage roll rather than being an expression this card rolls",
+    "\"place <b>1d4+1</b> tokens on this card\" rolls its count, so the tokens are placed by hand on the card's Tokens counter; the Mark-a-Stress press pays for them.",
   ],
   "subclass:Poisoners Guild: Mastery": [
     "\"The target gains a −3 penalty to their damage thresholds until the end of the scene\" (Blight Seed) has a printed duration but lands on the TARGET, and grant-effect grants to the holder",
@@ -8834,10 +9047,8 @@ export const DECLINED = {
   ],
   "subclass:School of War: Mastery": [
     "\"force the target to mark an additional Hit Point\" is the target's cost, not the holder's; only the Stress is charged.",
-    "\"The extra magic damage from your “Face Your Fear” feature increases to <b>3d10</b>\" prints dice but only restates another feature's expression; the roll belongs to that feature",
   ],
   "subclass:School of War: Specialization": [
-    "\"The extra magic damage from your “Face Your Fear” feature increases to 2d10\" prints dice this card never rolls; it edits the damage of a feature printed on another card",
     "\"you add your Proficiency to your Evasion\" is a passive modifier held while a condition is true, with no printed duration and no press",
   ],
   "subclass:Stalwart: Foundation": [
@@ -8961,7 +9172,7 @@ export const DECLINED = {
     "\"you can make a Strength Reaction Roll\" is a Reaction Roll and gets no button.",
   ],
   "weapon:Advanced Revolver": [
-    "\"Place 6 Ammo tokens on your character sheet\" and \"Spend 1 Ammo token to make an attack\" address a counter this document does not carry — there is no Ammo resource on it to move, and inventing one is forbidden.",
+    "\"Place 6 Ammo tokens on your character sheet\" is the Ammo counter arriving full, which it does; spending one per attack is the counter's own press.",
   ],
   "weapon:Advanced Scepter": [
     "\"This weapon can also be used with these statistics\" prints a whole alternate stat line — trait, range and die together — which is somebody else's stat line rather than an expression this card rolls.",
@@ -8977,9 +9188,6 @@ export const DECLINED = {
   ],
   "weapon:Advanced Wooden Stake": [
     "\"Gain a bonus equal to 1 + your tier to primary weapon damage\" is a standing modifier on paired gear, not Hope gained and not a timed effect.",
-  ],
-  "weapon:Arc Wand": [
-    "\"Mark any number of Stress\" is the holder's price and prints no amount. A one-Stress button would understate a press meant to be made several times over, and any number I chose would be invented.",
   ],
   "weapon:Arcane-Frame Wheelchair": [
     "\"Attack with the Spellcast trait your subclass gives you\" names which trait the weapon's own attack already uses; it is a schema fact, not an instruction to make a separate roll",
@@ -9001,9 +9209,6 @@ export const DECLINED = {
   ],
   "weapon:Blitz Hammer": [
     "\"Gain a +1 bonus to your Proficiency on this attack\" is scoped to the single attack this press buys and has no printed duration, so it is not a timed effect anybody grants",
-  ],
-  "weapon:Bloodstaff": [
-    "\"you must mark a Stress\" on every successful attack is an automatic consequence of the attack, not an offer or a bare imperative the holder presses; it fires when the attack lands and a button would charge it at a moment of its own choosing",
   ],
   "weapon:Braveshield": [
     "\"When you mark an Armor Slot\" is a trigger describing a slot marked in the damage flow, not an offer this card makes; a press charging a slot here would charge it twice.",
@@ -9113,7 +9318,7 @@ export const DECLINED = {
     "\"you can make a Strength Reaction Roll\" is a Reaction Roll and gets no button.",
   ],
   "weapon:Improved Revolver": [
-    "\"Place 6 Ammo tokens on your character sheet\" and \"Spend 1 Ammo token to make an attack\" address a counter this document does not carry — there is no Ammo resource on it to move, and inventing one is forbidden.",
+    "\"Place 6 Ammo tokens on your character sheet\" is the Ammo counter arriving full, which it does; spending one per attack is the counter's own press.",
   ],
   "weapon:Improved Scepter": [
     "\"This weapon can also be used with these statistics\" prints a whole alternate stat line — trait, range and die together — which is somebody else's stat line rather than an expression this card rolls.",
@@ -9163,7 +9368,7 @@ export const DECLINED = {
     "\"you can make a Strength Reaction Roll\" is a Reaction Roll and gets no button.",
   ],
   "weapon:Legendary Revolver": [
-    "\"Place 6 Ammo tokens on your character sheet\" and \"Spend 1 Ammo token to make an attack\" address a counter this document does not carry — there is no Ammo resource on it to move, and inventing one is forbidden.",
+    "\"Place 6 Ammo tokens on your character sheet\" is the Ammo counter arriving full, which it does; spending one per attack is the counter's own press.",
   ],
   "weapon:Legendary Scepter": [
     "\"This weapon can also be used with these statistics\" prints a whole alternate stat line - trait, range and die - chosen between rather than rolled. The dice in it are somebody else's stat line, not an expression this card rolls.",
@@ -9202,10 +9407,7 @@ export const DECLINED = {
     "\"The blade can be hidden in the hilt\" describes the weapon being concealed, not the Hidden condition being put on a creature.",
   ],
   "weapon:Revolver": [
-    "\"Place 6 Ammo tokens on your character sheet\" and \"Spend 1 Ammo token to make an attack\" address a counter this document does not carry — there is no Ammo resource on it to move, and inventing one is forbidden.",
-  ],
-  "weapon:Runes of Ruination": [
-    "\"you must mark a Stress\" on every successful attack is an automatic consequence of the attack, not an offer or a bare imperative the holder presses; it fires when the attack lands and a button would charge it at a moment of its own choosing",
+    "\"Place 6 Ammo tokens on your character sheet\" is the Ammo counter arriving full, which it does; spending one per attack is the counter's own press.",
   ],
   "weapon:Scepter": [
     "\"This weapon can also be used with these statistics\" prints a whole alternate stat line - trait, range and die - chosen between rather than rolled. The dice in it are somebody else's stat line, not an expression this card rolls.",
@@ -9246,9 +9448,6 @@ export const DECLINED = {
   "weapon:Steelforged Halberd": [
     "\"the target must mark a Stress\" is the TARGET's cost, not the holder's",
   ],
-  "weapon:Storm God’s Greataxe": [
-    "\"Mark any number of Stress\" is the holder's price and prints no amount. A one-Stress button would understate a press meant to be made several times over, and any number I chose would be invented.",
-  ],
   "weapon:Swinging Ropeblade": [
     "\"Restrain the target or pull them into Melee range\" is a choice of two outcomes for one payment. Restrained is a registered condition, but a single press cannot know which half was chosen, so no apply-condition is authored.",
   ],
@@ -9285,14 +9484,772 @@ export const DECLINED = {
   "weapon:Yutari Bloodbow": [
     "\"roll an additional damage die\" names the weapon's own damage die, whose size this card never prints, so there is no formula to author.",
   ],
+  "weapon:Echo Blade": [
+    "\"you can deal damage to another target within Melee range\" is the same attack's damage applied to a second creature; a damage button would throw a second, independent roll, which the rules do not.",
+  ],
+  "consumable:Glowmoss Mushroom": [
+    "\"causing it to glow bright blue until your next long rest\" is a duration on the broken mushroom, a light source in the world, not an effect on whoever pressed it.",
+  ],
 };
+
+/* ══════════════════════════════════════════════════════════════════════
+   WHAT EACH BUDGET METERS
+
+   A card that says "once per rest" carries a Use counter — see BUDGETS in
+   `card-resources.mjs` — and the card draws drained and stamped "Used" when
+   it is empty. That only means something if using the card spends it, and
+   until now nothing did: Goblin's Danger Sense charged its Stress on the
+   press and the once-per-rest went on being available all night.
+
+   So every budget is bound here to the press it meters, by the press's index
+   in its block, and the binding appends one `move-resource` step taking a
+   use. `runCardAction` checks a spend with the currency, before anything is
+   written, so an empty budget refuses the whole press — the Stress is not
+   taken for a use you did not have. "Standalone" means the limited thing has
+   no press of its own (it was declined, or it is a pure permission, or it
+   sits after a roll "on a success" and a miss must not burn it), so the card
+   gets one press that only spends the use.
+
+   This is a reading, kept apart from the entries above for two reasons. It
+   is a second question about the same text — which of the presses does the
+   limit govern — and answering it inside each entry would scatter 164 of
+   them through nine thousand lines. And it is the one table here whose
+   every reference can be checked mechanically: a budget that no longer
+   exists or an index past the end of its block throws at import, so the
+   build fails rather than a card silently losing its limit. The comment on
+   each entry is the reading, in the words of whoever read it.
+   ══════════════════════════════════════════════════════════════════════ */
+
+export const GATES = {
+  /* ── the token cards whose pile refills to a trait ───────────────────
+     Read by hand after the sweep: each spends one token per press, and where
+     the card spends "any number" the press is made as many times as that. */
+  "domainCard:Unleash Chaos": {
+    /* The roll spends a chosen number of tokens, so the spend is its own press. */
+    "": { "Tokens": { said: "spend any number of tokens", label: "Spend a token" } },
+  },
+  "domainCard:Strategic Approach": {
+    "": { "Tokens": { said: "you can spend one token", label: "Spend a token" } },
+  },
+  "domainCard:Inspirational Words": {
+    "": { "Tokens": { said: "you can spend a token from this card", label: "Spend a token" } },
+  },
+  "domainCard:Restoration": {
+    "": { "Tokens": { said: "spend any number of tokens", label: "Spend a token" } },
+  },
+  "domainCard:Deep Dreaming": {
+    /* "Spend a token and make a Spellcast Roll (15)": the roll is the spend. */
+    "": { "Tokens": [0] },
+  },
+  "loot:Arcane Prism": {
+    /* "it can’t be activated again until your next long rest": the use is spent by deactivating it, and nothing else on the card is pressed. */
+    "": { "Use": "standalone" },
+  },
+  "ancestry:Faerie": {
+    /* The 3-Hope pay is the once-per-session reroll's cost. */
+    "Luckbender": { "Use": [0] },
+  },
+  "ancestry:Goblin": {
+    /* "Once per rest, mark a Stress to force an adversary to reroll": the Stress is the limited use's cost. */
+    "Danger Sense": { "Use": [0] },
+  },
+  "community:Orderborne": {
+    /* The limited thing (roll a d20 as your Hope Die) is declined; the block has no action. */
+    "Dedicated": { "Use": "standalone" },
+  },
+  "community:Wanderborne": {
+    /* "Once per session, you can spend a Hope to reach into this pack": the Hope is the limited use. */
+    "Nomadic Pack": { "Use": [0] },
+  },
+  "ancestry:Aetheris": {
+    /* Changing an ally's Fear roll to Hope is declined; the block has no action. */
+    "Hallowed Aura": { "Use": "standalone" },
+    /* "Once per scene while flying, you can spend a Hope instead of marking an Armor Slot": the Hope pay is the limited use. */
+    "Celestial Wings": { "Use": [0] },
+  },
+  "ancestry:Tidekin": {
+    /* "Once per rest ... you can mark a Stress to clear a Hit Point": the Stress pay is the limited use (the clear itself is declined). */
+    "Lifespring": { "Use": [0] },
+  },
+  "ancestry:Gnome": {
+    /* Teleport costs nothing and has no action. Note the existing decline says 'the document carries no once-per-scene counter to move'; once the budget ships that reason goes stale and should be reworded or dropped. */
+    "Flicker Step": { "Use": "standalone" },
+  },
+  "community:Freeborne": {
+    /* Changing a Fear roll to Hope is declined; the block has no action. */
+    "Unbound": { "Use": "standalone" },
+  },
+  "community:Hearthborne": {
+    /* Both halves (spend any number of Hope, grant an ally that much) are declined; the block has no action. */
+    "Close-Knit": { "Use": "standalone" },
+  },
+  "community:Reborne": {
+    /* "Once per rest, you can spend a Hope to use an ally's Experience": the Hope is the limited use. */
+    "Found Family": { "Use": [0] },
+  },
+  "community:Warborne": {
+    /* "Once per session ... you can spend a Hope instead": the Hope pay is the limited use. */
+    "Brave Face": { "Use": [0] },
+  },
+  "class:Bard": {
+    /* Rally[0] is the once-per-session act (place the Rally Die); [1] is any PC spending their die, not limited. */
+    "Rally": { "Use": [0] },
+  },
+  "subclass:Troubadour: Foundation": {
+    /* "You can play each song once per long rest": one budget per song, and each song's press spends its own. */
+    "Gifted Performer": { "Relaxing Song": [0], "Epic Song": [1], "Heartbreaking Song": [2] },
+  },
+  "subclass:Wordsmith: Foundation": {
+    /* The speech (allies clear 2 Stress) is declined; no action in the block. */
+    "Rousing Speech": { "Use": "standalone" },
+  },
+  "subclass:Wordsmith: Specialization": {
+    /* No actions in the block; the three options are table effects. */
+    "Eloquent": { "Use": "standalone" },
+  },
+  "subclass:Warden of the Elements: Specialization": {
+    /* The limit is on assuming the aura. [0] (Water: mark a Stress to move them) and [1] (Air: reduce damage 1d8) are effects that fire repeatedly while the aura lasts, so gating them would be wrong. */
+    "Elemental Aura": { "Use": "standalone" },
+  },
+  "subclass:Warden of Renewal: Foundation": {
+    /* The serenity space has no action (its clear is declined). */
+    "Clarity of Nature": { "Use": "standalone" },
+  },
+  "subclass:Warden of Renewal: Specialization": {
+    /* The pay 2 Hope is the limited act itself: 'Once per long rest, spend 2 Hope to clear 2 Hit Points...'. */
+    "Warden’s Protection": { "Use": [0] },
+  },
+  "class:Guardian": {
+    /* [0] is 'become Unstoppable' (condition + place the die), the once-per-long-rest act; [1] step and [2] clear happen within the state. */
+    "Unstoppable": { "Use": [0] },
+  },
+  "subclass:Beastbound: Mastery": {
+    /* No action in the block (the damage swap is declined). */
+    "Loyal Friend": { "Use": "standalone" },
+  },
+  "subclass:Syndicate: Specialization": {
+    /* No action in the block; all three benefits are declined or narrative. (Reliable Backup on the Mastery card raises this to three per session, which fixed(1) here cannot reflect.) */
+    "Contacts Everywhere": { "Use": "standalone" },
+  },
+  "subclass:Divine Wielder: Foundation": {
+    /* Block has no action; the clear on the touched creature is declined. Spirit Weapon's Stress is a different block and not limited. */
+    "Sparing Touch": { "Use": "standalone" },
+  },
+  "class:Sorcerer": {
+    /* Whole feature declined (vault move has no kind); no action in the block. */
+    "Channel Raw Power": { "Use": "standalone" },
+  },
+  "subclass:Elemental Origin: Mastery": {
+    /* One transformation = choose TWO of the three grant-effect presses. Gating each press against a 1-use budget would refuse the second pick; a single standalone 'Use -1' press for the transformation is correct, leaving [0]-[2] ungated. */
+    "Transcendence": { "Use": "standalone" },
+  },
+  "subclass:Primal Origin: Specialization": {
+    /* The once-per-long-rest Duality swap is declined; no action in the block. */
+    "Enchanted Aid": { "Use": "standalone" },
+  },
+  "subclass:Call of the Brave: Foundation": {
+    /* [0] is the ritual itself (clear 2 Stress + gain 2 Hope chain). Courage is a different block. */
+    "Battle Ritual": { "Use": [0] },
+  },
+  "subclass:Call of the Slayer: Specialization": {
+    /* The limit governs only 'once per long rest when you roll your Slayer Dice, reroll any 1s' (declined). [0] (spend a Hope to add a secondary-weapon damage die) is unlimited and must NOT be gated. */
+    "Weapon Specialist": { "Use": "standalone" },
+  },
+  "subclass:School of Knowledge: Specialization": {
+    /* The Recall Cost discount is declined; no action in the block. */
+    "Perfect Recall": { "Use": "standalone" },
+  },
+  "subclass:Executioners Guild: Mastery": {
+    /* The Hope spend is the limited act: 'Once per long rest when you fail an attack, you can spend a Hope to make it a success'. */
+    "True Strike": { "Use": [0] },
+  },
+  "subclass:Juggernaut: Specialization": {
+    /* The Stress mark is the limited act: 'Once per rest ... you can mark a Stress to force them...'. */
+    "Eye for an Eye": { "Use": [0] },
+  },
+  "subclass:Martial Artist: Mastery": {
+    /* [0] (gain a Hope + clear a Stress) is the payoff of the once-per-rest feat. */
+    "Limit Breaker": { "Use": [0] },
+  },
+  "subclass:Pact of the Endless: Foundation": {
+    /* No action in the block (Favor spend and Patron Dice are cross-document, declined). */
+    "Deathless Embrace": { "Use": "standalone" },
+  },
+  "subclass:Pact of the Endless: Specialization": {
+    /* No action in the Damage Sink block. Harrowing Invocation is a different, unlimited block. */
+    "Damage Sink": { "Use": "standalone" },
+  },
+  "subclass:Pact of the Endless: Mastery": {
+    /* No action in the Dark Aegis block. Draining Bane's actions are a different, unlimited block. */
+    "Dark Aegis": { "Use": "standalone" },
+  },
+  "subclass:Pact of the Wrathful: Mastery": {
+    /* No action in the block. */
+    "Otherworldly Ire": { "Use": "standalone" },
+  },
+  "class:Witch": {
+    /* Commune's roll counts its dice off the Spellcast trait and is declined, so the once-per-long-rest use is its own press. */
+    "Commune": { "Use": "standalone" },
+  },
+  "subclass:Hedge: Foundation": {
+    /* Imbuing the talisman (spend any Hope, place tokens) has no action. The proposed token-spend press (actionFixes) is per-hit and must not be gated. */
+    "Enchanted Talisman": { "Use": "standalone" },
+  },
+  "subclass:Hedge: Specialization": {
+    /* 'Once per rest on a success, you can mark a Stress to step beyond the veil' = [1]. [0], the Spellcast Roll (13), precedes the limit and is not gated. */
+    "Walk Between Worlds": { "Use": [1] },
+  },
+  "subclass:Hedge: Mastery": {
+    /* Drawing the circle/placing tokens has no action. The proposed token-removal press (actionFixes) is per-roll and must not be gated. */
+    "Circle of Power": { "Use": "standalone" },
+  },
+  "subclass:Moon: Specialization": {
+    /* No action in the block. */
+    "Moonbeam": { "Use": "standalone" },
+  },
+  "subclass:Moon: Mastery": {
+    /* Only 'Once per rest, you can spend a Hope to increase the value of this die by one' is limited = [2]. [0] is the per-session roll and [1] the New-phase Hope spend, neither limited by this budget. */
+    "Lunar Phases": { "Use": [2] },
+  },
+  "domainCard:Rune Ward": {
+    /* Not a per-use limit: the ward is spent only when the Ward Die shows 8, so the Hope + Ward Die press [0] must not consume it; a standalone 'ward spent' press is right. */
+    "": { "Ward": "standalone" },
+  },
+  "domainCard:Premonition": {
+    /* Rescinding a move is declined; the limited act has no press. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Arcana-Touched": {
+    /* The limit governs swapping the Hope and Fear Dice, which is declined; the +1 Spellcast is passive. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Confusing Aura": {
+    /* 'Once per long rest on a success': the only press is the Spellcast Roll (14), which must not burn the use on a miss. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Earthquake": {
+    /* 'Once per rest on a success': the 3d10+8 damage press fires only on a success, so it consumes the use. The Spellcast roll [0] must not, and the Vulnerable press [2] belongs to the same cast (gating it too would charge two uses). */
+    "": { "Use": [1] },
+  },
+  "domainCard:Sensory Projection": {
+    /* 'Once per rest, make a Spellcast Roll (15)': the limit comes before the roll, so the roll press consumes it. */
+    "": { "Use": [0] },
+  },
+  "domainCard:A Soldier’s Bond": {
+    /* The gain-3-Hope press is the limited act. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Scramble": {
+    /* Avoiding the attack is declined; there is no press. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Deadly Focus": {
+    /* The grant-effect is the once-per-rest act. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Battle-Hardened": {
+    /* The press that spends a Hope to clear a Hit Point is the limited act. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Battle Cry": {
+    /* Everything the cry does lands on allies and is declined. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Frenzy": {
+    /* Entering Frenzy is declined (it is not a registered condition and its duration cannot be expressed); there is no press. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Reaper’s Strike": {
+    /* 'Once per long rest, spend a Hope to make an attack roll': the Hope press is the limited use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Deft Maneuvers": {
+    /* 'Once per rest, mark a Stress to sprint': the cost press is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Signature Move": {
+    /* The limit governs rolling a d20 as the Hope Die, which is declined. The clear-a-Stress press [0] fires only on a success, so gating it would leave a failed signature move unspent. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Bone-Touched": {
+    /* Spending 3 Hope to make an attack fail is the limited act; +1 Agility is passive. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Splintering Strike": {
+    /* 'Once per long rest, on a success … roll your weapon's damage': the roll-damage press is the limited act; the Spend-a-Hope attack [0] is repeatable. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Book of Illiat": {
+    /* Only Arcane Barrage is once per rest, and it is wholly declined (variable Hope). Slumber [0] and Telepathy [1] are not limited. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Book of Vagras": {
+    /* Only Runic Lock is limited, 'once per rest on a success'. Its only press is the Spellcast Roll (15) [0], which must not burn the use on a miss. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Book of Exota": {
+    /* Only Repudiate is limited, and its reaction roll is declined. The Create Construct presses [0..2] are unlimited. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Book of Grynn": {
+    /* Arcane Deflection's Spend-a-Hope is the limited act; Time Lock and Wall of Flame are unlimited. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Manifest Wall": {
+    /* 'Once per rest on a success, spend a Hope': the success-only Hope press [1] consumes the use; the roll [0] does not. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Teleport": {
+    /* 'Once per long rest, you can instantly teleport … then make a Spellcast Roll (16)': the teleport happens either way (a failure lands off course), so the roll press consumes the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Banish": {
+    /* 'Once per rest on a failure' is the target's failed reaction roll; no holder press corresponds to the banishment. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Book of Homet": {
+    /* Two spells, two limits, each "on a success" after its roll — so neither roll may spend one, and each limit is its own press. */
+    "": { "Pass Through": "standalone", "Plane Gate": "standalone" },
+  },
+  "domainCard:Codex-Touched": {
+    /* The limit governs the vault swap, which is declined; the Mark-a-Stress press [0] is unlimited. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Book of Vyola": {
+    /* Shared Clarity's Spend-a-Hope is the once-per-long-rest act; Memory Delve [0] is unlimited. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Book of Ronin": {
+    /* 'Eternal Enervation: Once per long rest, make a Spellcast Roll': the limit comes before the roll. Transform [0] is not gated, and neither is the Vulnerable press [2], which belongs to the same cast. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Disintegration Wave": {
+    /* 'Once per long rest on a success': the roll must not burn the use, and the Stress press [1] is pressed once per adversary, so gating it would consume one use per target. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Transcendent Union": {
+    /* 'Once per long rest, spend 5 Hope': the cost press is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Enrapture": {
+    /* 'Once per rest on a success, you can mark a Stress to force …': only the Stress press is limited; the roll and the Enraptured condition are repeatable. */
+    "": { "Use": [2] },
+  },
+  "domainCard:Troublemaker": {
+    /* 'Once per rest on a success, roll a number of d4s' is declined (the die count is the Proficiency); the Presence Roll [0] must not burn the use. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Hypnotic Shimmer": {
+    /* 'Once per rest on a success … Stuns targets': the success-only Stunned press consumes the use; the roll [0] does not. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Share the Burden": {
+    /* The Stress transfer is declined; there is no press. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Astral Projection": {
+    /* 'Once per long rest, mark a Stress': the cost press is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Copycat": {
+    /* The mimic and its variable Hope cost are declined; there is no press. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Midnight-Touched": {
+    /* Only the gain-a-Hope-instead clause is once per rest; the Mark-a-Stress Fear Die press [1] is unlimited. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Night Terror": {
+    /* The limited act is casting the horror. The only press (Horrified, [0]) fires per target and only on a failed Reaction Roll, so a cast where every target succeeds would leave the use unspent. Gating [0] is a defensible alternative. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Eclipse": {
+    /* 'Once per long rest on a success': the only press is the Spellcast Roll (16), which must not burn the use on a miss. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Towering Stalk": {
+    /* 'Use this spell as an attack' is a casting of the once-per-rest conjure, so the Stress+Spellcast press consumes it. The climb-only conjure has no press, so a standalone press would also help. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Healing Field": {
+    /* The base clear and the 2-Hope upgrade are alternatives within one use. Gate both; only one is pressed per use. */
+    "": { "Use": [0,1] },
+  },
+  "domainCard:Thorn Skin": {
+    /* 'Once per rest, spend a Hope to sprout thorns': the Hope pay is the limited use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Sage-Touched": {
+    /* The once-per-rest trait doubling has no action because it is declined. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Wild Surge": {
+    /* 'Once per long rest, mark a Stress ... place a d6': the head press, Stress plus placing the die, is the use. The step and drop presses are not gated. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Rejuvenation Barrier": {
+    /* 'Make a Spellcast Roll (15). Once per rest on a success': the limit sits after the roll, so only the 1d4 clear roll is gated and the Spellcast Roll is not. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Plant Dominion": {
+    /* The limit applies on a success after the roll. The only action is the Spellcast Roll (18), which is not limited, so no action carries the reshaping. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Mending Touch": {
+    /* The once-per-long-rest 2 HP/2 Stress upgrade clears on the other creature and is declined. The 2-Hope pay is the unlimited base heal and must not be gated. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Reassurance": {
+    /* The ally's reroll is declined and there is no action. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Second Wind": {
+    /* 'clear 3 Stress or a Hit Point' are two alternative presses for one use. Gate both. */
+    "": { "Use": [0,1] },
+  },
+  "domainCard:Divination": {
+    /* 'Once per long rest, spend 3 Hope': the pay is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Smite": {
+    /* 'Once per rest, spend 3 Hope to charge your powerful smite': the pay is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Zone of Protection": {
+    /* The limit applies after the Spellcast Roll (16), on a success. Gate placing the Zone Die (index 1), not the roll and not the step. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Splendor-Touched": {
+    /* The HP-to-Stress/Hope substitution is declined because the amount is not printed. There is no action. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Bold Presence": {
+    /* The once-per-rest condition avoidance is declined. Action 0 (spend a Hope to add Strength to a Presence Roll) is unlimited and must not be gated. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Critical Inspiration": {
+    /* The allies' clear/gain is declined and there is no action. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Lean On Me": {
+    /* 'Once per long rest ... you can both clear 2 Stress': the holder's clear is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Rousing Strike": {
+    /* Clearing a Hit Point and the 1d4 Stress roll are alternatives for one use. Gate both. */
+    "": { "Use": [0,1] },
+  },
+  "domainCard:Full Surge": {
+    /* 'Once per long rest, mark 3 Stress' plus the +2 grant-effect chain is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Umbral Veil": {
+    /* 'Once per rest, you can mark a Stress to encase yourself': the pay is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Siphon Essence": {
+    /* 'Make a Spellcast Roll ... Once per long rest on a success, the target takes d12+4': gate the damage press, not the roll. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Shared Trauma": {
+    /* The HP transfer is declined because it affects other creatures and prints no amount. There is no action. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Summon Horror": {
+    /* 'Once per scene, mark a Stress to summon': the pay is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Darkfire": {
+    /* 'Once per scene, spend any number of Hope' is declined (no amount) and the damage is not annotated. There is no action. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Dread-Touched": {
+    /* The once-per-rest bonus equal to Fear is declined. Action 0 (mark 2 Stress to block a Fear) is a separate, unlimited clause and must not be gated. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Dark Army": {
+    /* The limit applies after the Spellcast Roll (14), on a success, and the summoning or token placement has no action. The roll itself is not limited. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:The Root Remembers": {
+    /* The rescind is declined and there is no action. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Bloom": {
+    /* The limit applies after the Spellcast Roll (16), on a success. Gate the 4d8+8 damage press. Action 0's when-label wrongly reads as limiting the roll. */
+    "": { "Use": [1] },
+  },
+  "domainCard:The Long Memory": {
+    /* The limit applies after the Spellcast Roll, on a success. Gate the Horrified press (index 1), not the roll. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Apex": {
+    /* 'Once per long rest, mark a Stress to become what it wants': gate the pay. Action 1 (clear a HP per kill) is a repeatable rider within the form and must not be gated. */
+    "": { "Use": [0] },
+  },
+  "domainCard:The Undergrowth Wakes": {
+    /* The limit applies after the Spellcast Roll (16), on a success. Gate the 4d12+8 damage press. Restrained (index 2) belongs to the same use and must not consume a second one. */
+    "": { "Use": [1] },
+  },
+  "domainCard:No More Waiting": {
+    /* The extra action is declined and there is no action. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:The World Tree": {
+    /* The limit applies after the Spellcast Roll (18), on a success. The tree has no action and the roll is not limited. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:The Hollow Note": {
+    /* The limit applies after the Spellcast Roll (15), on a success. The null-magic zone has no action and the roll is not limited. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Solve": {
+    /* The Hope Die override is declined and there is no action. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Erasure": {
+    /* The limit applies after the Spellcast Roll (16), on a success. Gate the Vulnerable press (index 1), not the roll. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Geometry of Ruin": {
+    /* The limit applies after the Spellcast Roll, on a success. Gate the 5d12+8 damage press. Index 2 (GM loses a Fear, once per failing target) is pressed several times within one use and must not be gated. */
+    "": { "Use": [1] },
+  },
+  "domainCard:Sever": {
+    /* The limit applies after the Spellcast Roll (16), on a success. Naming the feature has no action and the roll is not limited. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Disjunction": {
+    /* The limit applies after the Spellcast Roll (18), on a success. The only post-success action ('mark 2 Stress for each') is pressed once per chosen adversary, so gating it would burn one use per adversary. A standalone press is needed. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Second Silence": {
+    /* The limit applies after the Spellcast Roll (18), on a success. The silence has no action and the roll is not limited. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:The Answer": {
+    /* The extra action is declined and there is no action. */
+    "": { "Use": "standalone" },
+  },
+  "armor:Dragonscale Armor": {
+    /* The Stress-instead-of-last-HP press is the once-per-short-rest use. */
+    "Impenetrable": { "Use": [0] },
+  },
+  "loot:Piercing Arrows": {
+    /* Adding Proficiency to a weapon damage roll is declined; no press in the block. One press per arrow use. (Its decline text 'carries no counter to move' goes stale once the budget ships.) */
+    "": { "Uses": "standalone" },
+  },
+  "loot:Corrector Sprite": {
+    /* Advantage on an attack roll is a pure permission; no action. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Ring of Resistance": {
+    /* Halving damage is declined; no action in the block. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Box of Many Goods": {
+    /* The d12 roll is opening the box, the limited act. */
+    "": { "Use": [0] },
+  },
+  "loot:Airblade Charm": {
+    /* The charm attack is declined; one press per activation. */
+    "": { "Uses": "standalone" },
+  },
+  "loot:Paragon’s Chain": {
+    /* The Hope spend is the once-per-long-rest d20 Hope Die use. */
+    "": { "Use": [0] },
+  },
+  "loot:Elusive Amulet": {
+    /* Becoming Hidden is the activation the limit governs. */
+    "": { "Use": [0] },
+  },
+  "loot:Shard of Memory": {
+    /* The 2-Hope recall is the limited use. */
+    "": { "Use": [0] },
+  },
+  "loot:Ring of Unbreakable Resolve": {
+    /* The 4-Hope cancel is the once-per-session use. */
+    "": { "Use": [0] },
+  },
+  "loot:Belt of Unity": {
+    /* The 5-Hope payment is the once-per-session use. */
+    "": { "Use": [0] },
+  },
+  "armor:Enchanter’s Robes": {
+    /* Free recall is a waived cost; no action in the block. */
+    "Mnemonic": { "Use": "standalone" },
+  },
+  "armor:Stormthread Habit": {
+    /* The Armor Slot clear is the once-per-scene use. */
+    "Absorbing": { "Use": [0] },
+  },
+  "armor:Gilded Sunplate": {
+    /* The Armor Slot clear is the once-per-scene use. */
+    "Resplendent": { "Use": [0] },
+  },
+  "armor:Cloverweave Cloak": {
+    /* Rewriting a roll outcome is declined; no action. */
+    "Fortune-Favored": { "Use": "standalone" },
+  },
+  "armor:Darkweave Shroud": {
+    /* 'Once per rest, mark a Stress to move…' — the Stress is part of the limited use. */
+    "Ghostwalker": { "Use": [0] },
+  },
+  "armor:Hallowed Heroplate": {
+    /* The variable Hope spend is declined; no action. */
+    "Blessed": { "Use": "standalone" },
+  },
+  "loot:Traveler’s Bell": {
+    /* Ringing the bell has no mechanical action. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Kingfisher’s Net": {
+    /* No mechanical action. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Titan’s Girdle": {
+    /* The Proficiency grant is the once-per-scene activation. */
+    "": { "Use": [0] },
+  },
+  "loot:Furball Bag": {
+    /* The 2d20 roll is producing the creatures, the limited act. */
+    "": { "Use": [0] },
+  },
+  "loot:Escher’s Mirrorball": {
+    /* No mechanical action. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Gadiman’s Backpack": {
+    /* The Hope spend is the once-per-rest conjuring. */
+    "": { "Use": [0] },
+  },
+  "loot:Eclipse Coin": {
+    /* One flip per rest; heads and tails are alternative outcomes of the same use, so either press consumes the single Use (never both). */
+    "": { "Use": [0,1] },
+  },
+  "loot:Sorcerer’s Hat": {
+    /* Casting from the vault is declined; no action. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Namer’s Oracle": {
+    /* The runic dice roll is declined (no die printed); no action. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Crucible Frames": {
+    /* Each Hope-for-advantage press is one of the three uses. */
+    "": { "Uses": [0] },
+  },
+  "loot:Two-Faced Aegis Brooch": {
+    /* The coin flip is declined; no action. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Iron Dagger Pendant": {
+    /* The Hope spend to name a creature is the limited use. */
+    "": { "Use": [0] },
+  },
+  "loot:Rings of Alliance": {
+    /* The free Tag Team Roll is declined; no action. */
+    "": { "Use": "standalone" },
+  },
+  "loot:Phobophage’s Circlet": {
+    /* Only the Stress clear on a 4 is once per scene; the d4 roll (index 0) fires on every Fear spent and must stay ungated. */
+    "": { "Use": [1] },
+  },
+  "loot:Warp Pendant": {
+    /* 'Once per rest, mark a Stress to teleport' — the Stress is the limited use. */
+    "": { "Use": [0] },
+  },
+  "loot:Communion Relic": {
+    /* The Hope spend is the once-per-rest use. */
+    "": { "Use": [0] },
+  },
+  "loot:Augur’s Relic": {
+    /* Free Hope feature activation is a waived cost; no action. */
+    "": { "Use": "standalone" },
+  },
+  "weapon:Blitz Hammer": {
+    /* The only action is the Stress paid as part of the once-per-scene move-and-attack; it is the limited use. */
+    "Accelerator": { "Use": [0] },
+  },
+  "weapon:Revolver": {
+    /* Ammo is a pile of a fixed six rather than a once-per limit: each attack spends one, and the reload press (index 0) refills it rather than spending. */
+    "Six Shot": { "Ammo": { said: "Spend 1 Ammo token to make an attack", label: "Spend 1 Ammo: attack" } },
+  },
+  "weapon:Improved Revolver": {
+    /* Ammo is a pile of a fixed six rather than a once-per limit: each attack spends one, and the reload press (index 0) refills it rather than spending. */
+    "Six Shot": { "Ammo": { said: "Spend 1 Ammo token to make an attack", label: "Spend 1 Ammo: attack" } },
+  },
+  "weapon:Advanced Revolver": {
+    /* Ammo is a pile of a fixed six rather than a once-per limit: each attack spends one, and the reload press (index 0) refills it rather than spending. */
+    "Six Shot": { "Ammo": { said: "Spend 1 Ammo token to make an attack", label: "Spend 1 Ammo: attack" } },
+  },
+  "weapon:Legendary Revolver": {
+    /* Ammo is a pile of a fixed six rather than a once-per limit: each attack spends one, and the reload press (index 0) refills it rather than spending. */
+    "Six Shot": { "Ammo": { said: "Spend 1 Ammo token to make an attack", label: "Spend 1 Ammo: attack" } },
+  },
+};
+
+/* What a standalone press is called, off its budget's own scope. */
+const SCOPE_LABELS = {
+  rest: "once per rest",
+  shortRest: "once per short rest",
+  longRest: "once per long rest",
+  scene: "once per scene",
+  session: "once per session",
+};
+
+/**
+ * The annotation as it was read, before any budget was bound to it.
+ *
+ * Kept because a copy dragged before the bindings existed stores that
+ * version, and the migration can only replace a stored list it recognises as
+ * ours — see `card-counters` in `src/module/migration/index.ts`.
+ */
+export const PRE_GATE = structuredClone(CARD_ACTIONS);
+
+function bindGates() {
+  for (const [key, blocks] of Object.entries(GATES)) {
+    const budgets = RESOURCES[key];
+    if (!budgets) throw new Error(`card-actions GATES: ${key} carries no counters`);
+    const entry = (CARD_ACTIONS[key] ??= {});
+    for (const [feature, byName] of Object.entries(blocks)) {
+      const list = feature ? ((entry.features ??= {})[feature] ??= []) : (entry.actions ??= []);
+      const extra = [];
+      for (const [name, gate] of Object.entries(byName)) {
+        const budget = budgets.find((r) => r.name === name && (r.feature || "") === feature);
+        if (!budget) {
+          throw new Error(`card-actions GATES: ${key} · ${feature || "(card)"} has no counter named ${name}`);
+        }
+        const spend = { kind: "move-resource", resource: name, by: -1, said: budget.said };
+        if (Array.isArray(gate)) {
+          for (const i of gate) {
+            const a = list[i];
+            if (!a) throw new Error(`card-actions GATES: ${key} · ${feature || "(card)"} has no press [${i}]`);
+            a.steps = [...(a.steps ?? []), spend];
+          }
+          continue;
+        }
+        const own = typeof gate === "object" ? gate : {};
+        const scope = SCOPE_LABELS[budget.refresh];
+        extra.push({
+          ...spend,
+          label: own.label ?? (/^uses?$/i.test(name) ? `Use${scope ? ` · ${scope}` : ""}` : `${name}${scope ? ` · ${scope}` : ""}`),
+          said: own.said ?? budget.said,
+        });
+      }
+      list.push(...extra);
+    }
+  }
+}
+
+bindGates();
 
 export default CARD_ACTIONS;
 
 /**
  * Attach the reading to a pack's documents, at its own `export default`.
  *
- * Beside `withDice` and `withDamage` and for their reason: no generator emits
+ * Beside `withCounters` and `withDamage` and for their reason: no generator emits
  * this call, because a generated file is an *ingredient* and the wrap is
  * hand-written downstream where the next `cards:fetch` cannot revert it.
  */

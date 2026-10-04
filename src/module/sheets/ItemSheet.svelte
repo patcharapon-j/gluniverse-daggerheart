@@ -76,6 +76,11 @@
 
   const sys = $derived(snap.system);
   const ed = $derived(snap.editable);
+  /* A card with a budget is spent when the budget is — see `cardSpent` — so
+     the switch below says so rather than offering a second answer. */
+  const budgeted = $derived(
+    (sys?.resources ?? []).some((r: any) => r?.onRefresh === "fill" && r.max?.kind === "fixed" && (r.max.n ?? 0) > 0),
+  );
   const set = (path: string, v: unknown) => ed && doc.update({ [path]: v });
 
   /** The hue this item is drawn in, or graphite when it belongs to no domain. */
@@ -1328,11 +1333,11 @@
               <input
                 type="checkbox"
                 checked={sys.spent}
-                disabled={!ed || !!sys.uses}
+                disabled={!ed || budgeted}
                 onchange={(e) => set("system.spent", chk(e))}
               />
               <span>
-                {#if sys.uses}
+                {#if budgeted}
                   Spent when its counter is empty
                 {:else}
                   Marked spent

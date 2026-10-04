@@ -485,6 +485,13 @@ embedded on Actors, and Items on **unlinked tokens** — which are a separate
 Actor each, living in a scene's `actorDelta`, invisible to `game.actors`. A
 linked token is skipped precisely because its Actor was already walked.
 
+**The second step is `card-counters`**, for the same reason as the errata: a
+card dragged before counters shipped stores none, and a card dragged before its
+budget was bound stores presses that never spend it. It fills an empty
+`resources` or `dice` array from the annotation, and replaces a stored action
+list only when it still matches `PRE_GATE` — the reading as it stood before the
+bindings — by kind, words and steps. A list somebody edited is theirs.
+
 **Arrays are rebuilt whole and never addressed by index.** Foundry reads a
 dotted index in an update key as a path into an *object* — the trap the adjust
 tab learned about Experiences and `moveResource` learned about pools — and
@@ -2493,17 +2500,17 @@ is rather than handed a number this system made up.
 ### The annotations, and what checks them
 
 `src/packs-src/card-resources.mjs` is hand-authored and keyed `type:name`.
-Compendium documents deliberately ship without its counter annotations:
-players and GMs add only the counters they want after an Item is embedded on a
-character. `withDice()` attaches the kept-die annotations, because a die tray
-records faces rather than a scalar counter.
+`withCounters()` attaches every annotation — counters and kept dice — to the
+compendium document, and the `card-counters` migration step reaches copies
+dragged before it did. They used to be left for the table to add by hand,
+which was right until a card could be *spent*; see "Spending a card".
 
 It is two blocks and a list. **`PILES`** are the twenty-one cards read
 individually, because what they count is particular — Flight is *your Agility,
 minimum 1*, which is the floor's whole reason; Wild Fortress counts **Hit
 Points** upward, not uses. **`BUDGETS`** are the regular "once per X" majority,
-built by `once()`. They remain checker evidence for the rules reading, not
-runtime compendium data. **`DECLINED`** records matching cards that carry no
+built by `once()`, and each is bound to the press it limits by `GATES` in
+`card-actions.mjs`. **`DECLINED`** records matching cards that carry no
 tracked resource.
 
 `tools/check-resources.mjs` is `fetch-cards.mjs`'s `TYPOS` pattern applied to a
@@ -2589,6 +2596,50 @@ Rally Die *is* a reading, so the four subclass cards that name one and hold
 none are declined by hand.
 
 ### Where the counters are drawn
+
+### The rail, and why the trays left the sheet
+
+The sheet draws gluvtt's compact card, and `compact.css` was ported with a
+**counter rail** — a column down the card's right edge under the recall chip,
+with diamond pips, a counting die and bone dice — that nothing ever built. The
+trays below were hung under the card instead, in `.dh-cc-controls`, where they
+read as loose discs belonging to nothing, and the full face the peek and the
+chat card draw printed only a fixed budget's lights: a pile or a kept die was on
+the sheet and missing from every card that described it.
+
+`design/counter.js` is the port. One group per thing the card keeps, in three
+pictures because each answers a different question: a **budget** is diamond
+lights (can I still do this?), a **pile** is a counting die (how many?), a
+**pool** is bone dice (what does each say?). `RAIL()` draws them live on the
+compact card and `FACE_COUNTERS()` draws the same groups as a readout in the
+face's header strip — a feature-bound counter in its feature's heading instead —
+so the peek, the chat card, the rest dialog's "refreshed" lane and the dialogs'
+peeks all show what the card in your hand is holding. `counterGroups` in
+`cards.ts` is the one place an Item becomes groups. The face's lights are the
+family diamond now rather than dots, so a budget is one mark everywhere.
+
+`parts/Rail.svelte` keeps the render-once contract `Chits` kept: `COMPACT` is
+handed an empty comment as `rail`, so the builder's string is identical across
+a spend and `{@html}` leaves the card alone, and the component fills the rail
+from beside it and drives it through `setRail`, which dims a light in place and
+tumbles the die that is there. Gestures are one delegated `railClicks`: click
+spends a use or places a token, right-click or shift-click does the other, and
+both stop at the rail so a spend never also posts the card or opens its menu.
+The equipped slot's full face takes the same groups as a strip under it.
+
+**`rev` was never enough to keep a hosted row attached**, and the old trays
+had the bug too. The sigils load after the first paint and change the card's
+string, so `{@html}` replaces the rail the holder was standing in — with no
+revision to say so. A sheet just opened sat there with every counter gone until
+the actor next changed. The host now watches its own card with a
+`MutationObserver` and re-attaches, which is a no-op when it is already home.
+
+> **Everything from here to "A card's damage is data" is history.** It
+> describes `Chits.svelte` and `Keep.svelte`, which are deleted, hosting
+> `design/chit.js` and `design/keep.js` rows on the sheet. The two modules
+> remain for the old `CARD`/`TILE`/`SPINE` builders and their study pages, and
+> the arguments below — the die's floored contrast, the d4's optical centre —
+> are still why `keep.css` and `plate.css` draw a die the way they do.
 
 `design/chit.js` is one builder, one setter and one delegated handler.
 `setChits` is the contract `Marks` and `Gems` already keep — the row is
@@ -3084,6 +3135,75 @@ the reader's job, and `said` is what makes it a job a human can finish.
 negative-controlled: removing the early return that suppresses the parse fails
 its first assertion, and making the `spellcast` pointer fall back to Finesse
 fails its fifth.
+
+## Spending a card
+
+A card draws **used** — drained to grey, swept by a line of its domain's
+light, stamped — and for a long time almost nothing could make it so. The
+counters that say "once per rest" stayed out of the compendium on the reading
+that a table should add only the counters it wants, and no press ever touched
+one, so Goblin's Danger Sense charged its Stress and went on being available
+all night. Three changes close it, and each is one of the places the fact has
+to live.
+
+**The counters ship.** `withCounters` in `card-resources.mjs` attaches
+`BUDGETS`, `PILES` and the marked decks' derivations to the compendium document
+as well as `DICE`, and the `card-counters` migration step gives a copy that was
+dragged earlier the counters its card prints — only into an array that is still
+empty, because a counter somebody added or deleted by hand is theirs. A budget
+arrives full and a pile arrives empty, which was always `once()`'s note.
+
+**The press spends it.** `GATES` in `card-actions.mjs` binds every budget to
+the presses it limits, by index within its block, and `bindGates` appends one
+`move-resource` step taking a use. Where the limited thing has no press of its
+own — it was declined, it is a permission, or it sits after a roll "on a
+success" and a miss must not burn it — the budget is **standalone** and the card
+gets one press that only spends the use ("Use · once per rest"). A gated press
+says so on its face ("Once per rest · Spend 1 Stress · 1 use") because the
+card's own sentence does not repeat that the button also spends tonight's use.
+Every entry carries the reading as a comment; `bindGates` throws on a budget or
+index that does not resolve, and `check-actions.mjs` fails on a budget that
+meters nothing, so the table is checked in both directions.
+
+The bindings were read card by card against the text, and the readings are
+worth knowing. Grimoires gate only the spell the limit is printed on. "Make a
+Spellcast Roll. Once per rest on a success, …" gates the success press, never
+the roll. Alternatives within one use — Second Wind's Stress *or* Hit Point,
+both faces of the Eclipse Coin — each spend it. Troubadour's songs are three
+budgets, not one, because each song is once per long rest; Virtuoso, Devout
+and Invigoration lost a budget that was a counter for somebody else's limit.
+
+**A spend is checked with the currency.** `runCardAction` used to run a
+`move-resource` as an effect, after the Hope and Stress had been written — so an
+empty use would have refused after charging for it. Spending steps are now
+checked with the purse, before anything moves, and refuse the whole press with
+"X is spent — it comes back when it refreshes"; they land beside the currency,
+ahead of any roll the press opens. Placing a counter is not a cost and still
+runs in order.
+
+**One rule says what spent means.** `cardSpent` in `data/resources.ts` is read
+by `system.isSpent` and by the cards: spent when every *fixed-ceiling* budget is
+empty and every rule on the card is budgeted. A domain card's budget is its own,
+so emptying it spends the card; an ancestry's once-per-rest belongs to one of
+its two features, so the card stays in play and its rail shows which half has
+gone. A pile refilling to a trait — Strategic Approach's Knowledge-many — is not
+a budget for this purpose, because it arrives empty until the first long rest
+and a card taken this minute is not a card used up. A feature card on the
+Features panel asks the question of its own block (`featureSpent`). A card with
+no budget is spent when somebody says so: the item sheet's switch, or the
+right-click menu's "Mark spent", which on a budgeted card is "Spend a use"
+instead.
+
+The rest gives it back through the refresh it always had — and a rest with no
+move taken is a cancelled rest and refreshes nothing, which is easy to mistake
+for a bug while testing.
+
+**What is still not modelled**, from the same audit: cards that send themselves
+to the vault after use (Counterspell, Encore, Shrug It Off, Unbreakable,
+Disjunction, Vitality, Master of the Craft, Resurrection) have no "vault this
+card" kind; the Reloading weapons' "can't fire until you mark a Stress" is a
+lockout paid off rather than refreshed; and the Hopekeeper Locket and the Fire
+Jar are spent until re-imbued or regenerated. All of them can use "Mark spent".
 
 ## Rolling
 
