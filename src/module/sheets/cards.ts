@@ -88,6 +88,14 @@ export const GLYPHS = [
   "armor",
   "gear",
   "consumable",
+  "loot",
+  "feature",
+  /* The last three are only ever reached by `sigOf`'s floor. A class,
+     subclass or domain card names a domain and wears that domain's sigil;
+     these are what it wears when the domain is one the table wrote itself. */
+  "class",
+  "subclass",
+  "domain-card",
 ] as const;
 
 export type Sigils = Record<string, string>;
@@ -102,6 +110,28 @@ export const classKey = (name?: string): string | undefined => {
   // Membership, not just a lowercase — a homebrew class has no mark on disk,
   // and a key pointing at a fetch that 404'd is worse than no key at all.
   return CLASSES.includes(slug) ? `#${slug}` : undefined;
+};
+
+/**
+ * A seam gem's key and markup, with a type mark as the floor.
+ *
+ * `sig` used to be read straight off the domain slug, and a domain the books
+ * do not print is not on disk: a homebrew class, its subclass and its cards
+ * all resolved to `""` and drew an *empty* gem. Not a default mark — nothing,
+ * on a card whose plate is the picture.
+ *
+ * The floor has to be chosen here rather than at the draw, because the key is
+ * what travels. A card posted to chat stores `sigKey` and the reader resolves
+ * it against their own assets (`dice/chat.ts`), so a value patched in without
+ * moving the key would come back empty on every other screen.
+ */
+export const sigOf = (
+  sig: Sigils,
+  key: string | undefined,
+  fallback: (typeof GLYPHS)[number],
+): { sig: string; sigKey: string } => {
+  const k = key && sig[key] ? key : `@${fallback}`;
+  return { sig: sig[k] ?? "", sigKey: k };
 };
 
 let pending: Promise<Sigils> | null = null;
@@ -756,7 +786,7 @@ export function cardOf(
         cls: marked(s.domain),
         code: base.code ?? markedCode(s.domain),
         d: dom(s.domain),
-        sig: sig[s.domain] ?? "", sigKey: s.domain,
+        ...sigOf(sig, s.domain, "domain-card"),
         motif: useOrnaments(dom(s.domain).slug),
         // Not the kind word — `glyph` is a family and `type` is the printed
         // noun. A Grimoire and an Ability are both abilities to a stylesheet.
@@ -790,7 +820,7 @@ export function cardOf(
         cls: it.name === "Gunslinger" ? "grow" : undefined,
         d: dom(p),
         d2: q ? dom(q) : undefined,
-        sig: sig[p] ?? "", sigKey: p,
+        ...sigOf(sig, p, "class"),
         sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
         fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? it.name : undefined,
         motif: useOrnaments(dom(p).slug),
@@ -843,7 +873,7 @@ export function cardOf(
         ...base,
         d: dom(p),
         d2: q ? dom(q) : undefined,
-        sig: sig[p as string] ?? "", sigKey: p,
+        ...sigOf(sig, p as string, "subclass"),
         sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
         fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? s.className : undefined,
         motif: useOrnaments(dom(p).slug),
@@ -998,7 +1028,7 @@ export function cardOf(
       return {
         ...base,
         d: KINDS.gear,
-        sig: sig["@gear"] ?? "", sigKey: "@gear",
+        sig: sig["@loot"] ?? "", sigKey: "@loot",
         motif: useOrnaments(KINDS.gear.slug),
         glyph: "loot",
         type: "Item",
@@ -1027,7 +1057,7 @@ export function cardOf(
       return {
         ...base,
         d: KINDS.gear,
-        sig: sig["@gear"] ?? "", sigKey: "@gear",
+        sig: sig["@feature"] ?? "", sigKey: "@feature",
         motif: useOrnaments(KINDS.gear.slug),
         glyph: s.kind || "passive",
         type: FEATURE_KIND_LABELS[s.kind] ?? "Feature",
@@ -1124,7 +1154,7 @@ export function featureCard(sig: Sigils, o: FeatureCardOptions): CardOptions | n
     noart: true,
     d: dom(p),
     d2: q ? dom(q) : undefined,
-    sig: (p && sig[p]) || "", sigKey: p,
+    ...sigOf(sig, p, "feature"),
     sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
     fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? o.className : undefined,
     motif: useOrnaments(dom(p).slug),

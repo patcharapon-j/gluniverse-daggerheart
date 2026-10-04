@@ -1,0 +1,16 @@
+<!-- Domain card: a card with its sigil voided.
+     Drawn on the set's shared grid — see art-src/types/GRID.md.
+
+     The third fallback and the rarest: a domain card names a domain by
+     definition, so this is only for one whose domain is not among the
+     thirteen on disk.
+
+     The card's own silhouette at the card's own 0.71 aspect, chamfers and
+     all, with a lozenge voided where the sigil sits. Voided rather than
+     filled is the whole separation from gear.svg — that one is a ring with a
+     core floating in it, this is a solid field with a hole in it, and square
+     against tall carries the rest. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M75 24H175L197 46V204L175 226H75L53 204V46Z
+                               M125 87 163 125 125 163 87 125Z"/>
+</svg>

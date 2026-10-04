@@ -1,12 +1,18 @@
-<!-- Secondary weapon: the same spearhead, twice, at 56%. Count is what this
-     glyph family already discriminates by — Ancestry is two lozenges and
-     Community is three hexes — and it is the only cue that survives 14px
-     intact, where a size difference needs the other icon present to be read
-     at all. Two points also happens to be the literal answer: the secondary
-     slot is where a second weapon goes.
-     The 22-unit gutter is the same clearance the community hexes keep, which
-     is what stops them blobbing into one shape when the chip is small. -->
+<!-- Secondary weapon: the same spearhead, twice.
+     Drawn on the set's shared grid — see art-src/types/GRID.md.
+
+     Count is what this family discriminates by once the archetype is spent —
+     ancestry is two lozenges, community is three hexes — and it is the only
+     cue that survives 14px whole. Two points is also the literal answer: the
+     secondary slot is where a second weapon goes.
+
+     Both are drawn at the same weight as each other rather than one shrunk
+     against the other. The old pair put these at 56% of the primary so the
+     two glyphs would differ in size as well as count, which only reads when
+     both are on screen at once — and on a card only one ever is. At 70% of
+     the primary they fill the same live area it does, which is what the grid
+     asks of every mark. The 22-unit gutter is the family's floor. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M80 44 114 120 106 143 89 150 89 209 71 209 71 150 54 143 46 120Z"/>
-  <path d="M170 44 204 120 196 143 179 150 179 209 161 209 161 150 144 143 136 120Z"/>
+  <path d="M71 54 114 120 102 144 85 152 85 196 57 196 57 152 40 144 28 120Z"/>
+  <path d="M179 54 222 120 210 144 193 152 193 196 165 196 165 152 148 144 136 120Z"/>
 </svg>

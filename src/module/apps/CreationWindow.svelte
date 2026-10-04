@@ -55,7 +55,7 @@
     takeWeapon,
     weaponRefusal,
   } from "./creation.ts";
-  import { cardOf, classKey, loadSigils, plain, type Sigils } from "../sheets/cards.ts";
+  import { cardOf, classKey, loadSigils, plain, sigOf, type Sigils } from "../sheets/cards.ts";
   import { postCard } from "../sheets/post-card.ts";
   import { rich } from "../ui/card.js";
   import { FACE } from "../ui/face.js";
@@ -1029,8 +1029,7 @@
       noart: true,
       d: domainAsKind(p),
       d2: q ? domainAsKind(q) : undefined,
-      sig: (p && sigils[p]) || "",
-      sigKey: p,
+      ...sigOf(sigils, p, "class"),
       sig2: q ? (sigils[q] ?? "") : undefined,
       sig2Key: q,
       fbsig: ck ? sigils[ck] : undefined,

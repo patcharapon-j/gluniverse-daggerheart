@@ -1,0 +1,19 @@
+<!-- Feature: one chevron, apex up.
+     Drawn on the set's shared grid — see art-src/types/GRID.md.
+
+     The catch-all subtype — a class feature out of a campaign frame, a boon
+     from a session, a homebrew knack — and it borrowed gear.svg too, which
+     said the thing you are is a thing you packed.
+
+     A chevron is the charge for something earned and held, which is what
+     every member of this subtype has in common, and it is the only idea here
+     that does not also name a genre. Drawn as a band rather than a solid so
+     it stays clear of primary.svg: that one is a filled point with a tang
+     under it, this is a hollow V with nothing under it, and at 14px the empty
+     middle is the cue that survives.
+
+     Limbs 31 across at 45°, tips cut square through the limb. A chamfer on a
+     45° run is a chamfer on a chamfer and goes to mush small. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M125 68 217 160 195 182 125 112 55 182 33 160Z"/>
+</svg>

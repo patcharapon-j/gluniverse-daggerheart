@@ -1,0 +1,16 @@
+<!-- Class: a banner with a swallow-tail foot.
+     Drawn on the set's shared grid — see art-src/types/GRID.md.
+
+     Only ever drawn as a fallback. A class card wears its domain's sigil,
+     which says more than a type mark could, and that resolves for all
+     thirteen domains on disk. It does not resolve for a homebrew class that
+     names a domain of its own, and the pennant then drew empty — no mark, no
+     fallback, a blank gem on the seam. This is what goes there.
+
+     A banner is the standard you fight under, so it is on-meaning for a class
+     rather than for items in general. Nothing else here is a tall field of
+     constant width: consumable.svg is the other tall mark and it narrows to a
+     neck, where this keeps its width and takes the bite out of the bottom. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M98 24H152L174 46V226L125 182 76 226V46Z"/>
+</svg>
