@@ -1,12 +1,36 @@
 /**
  * Foundry Item → the option object the design's card builders take.
  *
- * `CARD`, `TILE` and `SPINE` all accept the same shape, which is the whole
- * point of them: one item definition drives the full card in the peek layer,
- * the tile in a gear slot and the spine in a list row, and none of the three
- * can drift from the other two. Nothing in `design/` knows what a Foundry
- * Item is, and nothing here draws anything — this file is the only place the
- * two vocabularies meet.
+ * `FACE`, `COMPACT`, `VAULT_ROW`, `CARD`, `TILE` and `SPINE` all accept the
+ * same shape, which is the whole point of them: one item definition drives
+ * the illuminated card in the peek layer, the compact card in a loadout bay,
+ * the row in a vault list, the tile in a gear slot and the spine in a list
+ * row, and none of them can drift from the others. Nothing in `design/`
+ * knows what a Foundry Item is, and nothing here draws anything — this file
+ * is the only place the two vocabularies meet.
+ *
+ * ── the port ──────────────────────────────────────────────────────────
+ * The shape below is the one `design/face.js` and `design/compact.js` take,
+ * and the old builders still read it because the port was deliberately given
+ * the same vocabulary. Seven fields are new and none of them is a rename:
+ * `motif`, `glyph`, `tier`, `doms`, `artist`, `homebrew` and `focus`. What
+ * each Item subtype *reads* off itself has not changed by a line; only the
+ * shape it is said in has.
+ *
+ * One field changed meaning, and it is `art`:
+ *
+ *   - `art` is now the painting's URL, which is what `FACE()` and
+ *     `COMPACT()` take and wrap in `url()` themselves;
+ *   - `artCss` is the old `--art:url("…")` declaration a surface sets on a
+ *     row wrapper, which is what `art` used to hold.
+ *
+ * `noart` is unchanged and still says the same thing, because the old
+ * stylesheets cannot branch on a custom property's value while the new ones
+ * take `has-art`/`no-art` off `art` being set at all. **The callers still
+ * reading `card.art` as a style attribute want `card.artCss` now** — the
+ * character sheet's `.pk`/`.pkc` wrappers, `post-card.ts`, `rule-cards.ts`
+ * and `domain-cards.ts`. That is the one edit this pass owes the surfaces,
+ * and it is in files this pass was told to leave alone.
  *
  * The colours come from the *vendored* `ui/domains.js` rather than from
  * `config.ts`'s `DOMAIN_CONFIG`, even though the two hold the same nine
@@ -28,14 +52,17 @@ import {
   RESOURCE_REFRESH_LABELS,
   isMarkedDomain,
   rangeLabel,
+  tierOf,
   traitLabel,
 } from "../config.ts";
-import { cssUrl } from "../assets.ts";
+import { absolute, cssUrl } from "../assets.ts";
+import { type Focus, useArtFocus, useOrnaments } from "./card-style.ts";
 import { damageDice } from "../data/damage.ts";
 import { resourceMax, type Resource } from "../data/resources.ts";
 import { poolCapacity, type DiePool } from "../data/dice-pools.ts";
 import { CHITS } from "../ui/chit.js";
 import { KEEP } from "../ui/keep.js";
+import { PER_PATHS } from "../ui/terms.js";
 import { CLASSES, KINDS, byslug } from "../ui/domains.js";
 import { clazz, glyph, icon } from "../ui/domains.js";
 
@@ -61,6 +88,14 @@ export const GLYPHS = [
   "armor",
   "gear",
   "consumable",
+  "loot",
+  "feature",
+  /* The last three are only ever reached by `sigOf`'s floor. A class,
+     subclass or domain card names a domain and wears that domain's sigil;
+     these are what it wears when the domain is one the table wrote itself. */
+  "class",
+  "subclass",
+  "domain-card",
 ] as const;
 
 export type Sigils = Record<string, string>;
@@ -75,6 +110,28 @@ export const classKey = (name?: string): string | undefined => {
   // Membership, not just a lowercase — a homebrew class has no mark on disk,
   // and a key pointing at a fetch that 404'd is worse than no key at all.
   return CLASSES.includes(slug) ? `#${slug}` : undefined;
+};
+
+/**
+ * A seam gem's key and markup, with a type mark as the floor.
+ *
+ * `sig` used to be read straight off the domain slug, and a domain the books
+ * do not print is not on disk: a homebrew class, its subclass and its cards
+ * all resolved to `""` and drew an *empty* gem. Not a default mark — nothing,
+ * on a card whose plate is the picture.
+ *
+ * The floor has to be chosen here rather than at the draw, because the key is
+ * what travels. A card posted to chat stores `sigKey` and the reader resolves
+ * it against their own assets (`dice/chat.ts`), so a value patched in without
+ * moving the key would come back empty on every other screen.
+ */
+export const sigOf = (
+  sig: Sigils,
+  key: string | undefined,
+  fallback: (typeof GLYPHS)[number],
+): { sig: string; sigKey: string } => {
+  const k = key && sig[key] ? key : `@${fallback}`;
+  return { sig: sig[k] ?? "", sigKey: k };
 };
 
 let pending: Promise<Sigils> | null = null;
@@ -131,6 +188,17 @@ export interface CardContext {
    * is the honest reading rather than a gap.
    */
   actor?: any;
+  /**
+   * Where the surface is holding the card, when that is part of its state.
+   *
+   * `rest` on a card in hand, `within-reach`/`out-of-reach` in the vault,
+   * and never `used` — being used up is a fact about the document and
+   * `cardOf` reads it off the budget itself. So this is the half of `state`
+   * the card cannot know, and a card that *is* spent keeps `used` whatever
+   * is passed here, because "out of reach" and "already gone" is one claim
+   * too many to put on one stamp.
+   */
+  state?: "rest" | "within-reach" | "out-of-reach";
 }
 
 export interface CardOptions {
@@ -190,21 +258,133 @@ export interface CardOptions {
   /** Stable identity for the swap's FLIP — never the index, which a swap changes. */
   k?: string;
   /**
-   * An inline `--art` declaration for the row wrapper.
+   * The painting's URL, absolute, or nothing at all when there is none.
    *
-   * The builders draw `<div class="img">` and read `--art` off it, so the
-   * variable is set on the wrapper and inherits in — which is also the only
-   * way to vary it per card without editing `design/`. `tokens.css` ships a
-   * sample image as the default, and inheriting *that* is the bug this
-   * closes: every card on the sheet wearing one stock photograph.
+   * `FACE()` and `COMPACT()` take the bare URL and build `--dh-art` from it
+   * themselves, and they read "is there a painting" off this field being set
+   * — `has-art` against `no-art`, which is what decides between a painting
+   * and the domain's designed field. So an unset `art` is load-bearing and
+   * an empty string is not the same thing.
+   *
+   * Absolute via `absolute()` rather than raw, for `cssUrl`'s reason: the
+   * builders drop this into a custom property, and a relative `url()` in a
+   * substituted property resolves against the stylesheet that substituted
+   * it rather than against the document.
    */
   art?: string;
   /**
-   * No artwork, so the builders' own fallback plate — the domain sigil at
-   * plate size — stands in for it. A class rather than a consequence of
-   * `--art:none`, because CSS cannot branch on a custom property's value.
+   * The same painting as an inline `--art` declaration, for a row wrapper.
+   *
+   * The old builders draw `<div class="img">` and read `--art` off an
+   * ancestor, so the variable is set on the wrapper and inherits in — which
+   * is also the only way to vary it per card without editing `design/`.
+   * `tokens.css` ships a sample image as the default, and inheriting *that*
+   * is the bug this closes: every card on the sheet wearing one stock
+   * photograph.
+   *
+   * It is a second field rather than `art`'s only form because the new
+   * builders need the URL and the old surfaces need the declaration, and a
+   * caller that has to convert between them per builder is a caller that
+   * will convert the wrong one.
+   */
+  artCss?: string;
+  /**
+   * No artwork, so a fallback plate — the sigil at plate size — stands in
+   * for it. A class rather than a consequence of `--art:none`, because the
+   * old stylesheets cannot branch on a custom property's value. The new
+   * builders do not read it; they branch on `art` instead.
    */
   noart?: boolean;
+  /**
+   * Where the painting should be framed, when somebody has marked it.
+   *
+   * `assets/cards/card-focus.json` holds a point per painting and
+   * `design/framing.js` is the arithmetic that spends it. The cheap half is
+   * already spent by the time this is returned — `useArtFocus` has put a
+   * `background-position` rule in the document, so the painting is cropped
+   * onto its point rather than onto its middle on every surface that draws
+   * it as a background. The point travels anyway, because the *measured*
+   * crop is better and only a surface that has laid the frame out can take
+   * it: `framedRegion(art, frame, focus)` then `regionCss`, which is also
+   * the only way a `scale` close-up is honoured.
+   *
+   * Unset for a card with no painting, and for a painting nobody has marked
+   * — which draws centred, the way it drew before any of this existed.
+   */
+  focus?: Focus;
+  /**
+   * The ornament family the card's corners and seam wear — `data-motif`.
+   *
+   * A motif per corebook domain, plus this repo's three, plus `plain` for
+   * everything past them; `design/ornaments.js` draws all thirteen and
+   * `useOrnaments` puts the one this card needs in the document. Derived
+   * from the domain slug, so a card with no domain wears `plain` rather
+   * than nothing — the frame, the wear and the gem still draw either way.
+   */
+  motif?: string;
+  /**
+   * `data-glyph`: which *kind* of thing this is, for the rules that tint a
+   * card with no domain.
+   *
+   * A domain's hue says everything about a domain card, and gear and
+   * heritage have no domain — so the six that have no hue are told apart by
+   * this instead: `weapon`, `armor`, `consumable`, `loot`, `ancestry`,
+   * `community`. The rest set it too, truthfully, and the stylesheets
+   * simply have nothing to say about them yet.
+   */
+  glyph?: string;
+  /**
+   * `data-tier`: 1–4, which silvers the frame at 3 and golds it at 4.
+   *
+   * A tier is not the same question as a level. Gear states its own; a
+   * domain card's comes off the level printed on it, by the same `tierOf`
+   * the rest of the system advances by, so a level 8 card wears the metal
+   * its level has earned. Everything else leaves it unset, because nothing
+   * about a class or a heritage card has a tier.
+   */
+  tier?: 1 | 2 | 3 | 4;
+  /**
+   * `data-domains`, when the count the builders derive is wrong.
+   *
+   * They derive it from `d2` and from `d.ramp` — two domains, one, or the
+   * graphite nothing that `ramp:false` already marks on a `KINDS` entry —
+   * and that derivation is right for every subtype here, so nothing sets
+   * this. It is declared because the one card that is an exception to its
+   * own token is the reason the override exists, and a surface holding such
+   * a card should set it here rather than invent a second channel.
+   */
+  doms?: number;
+  /** Who painted it, for the printed foot. */
+  artist?: string;
+  /**
+   * Made at the table, which the kind line, the foot and a quill all say.
+   *
+   * Answerable only for the five subtypes that carry a `printing` at all —
+   * ancestry, community, transformation, subclass and domainCard — where a
+   * missing code means nobody printed this. A homebrew weapon or feature
+   * has no field to be missing, so it is left unset rather than guessed:
+   * flagging every weapon in the system as homebrew is worse than flagging
+   * none. A surface that knows better may set it.
+   */
+  homebrew?: boolean;
+  /**
+   * `data-state`: what the card is doing, which is the stamp over the art.
+   *
+   * Four values and only two of them speak: `used` prints "Used" and
+   * `out-of-reach` prints what recalling it costs. `rest` and
+   * `within-reach` are the quiet ones, and the difference between them is
+   * the vault's own treatment rather than a word on the painting.
+   */
+  state?: "rest" | "within-reach" | "out-of-reach" | "used";
+  /**
+   * The card's limited uses as charge lights, already drawn.
+   *
+   * A readout rather than a control, for `chits`'s reason, and drawn by
+   * `cardUses` off the one resource the card's own rule spends. Unset for
+   * the cards that have no budget, which is most of them — an empty row of
+   * lights claims a limit the card does not have.
+   */
+  uses?: string;
   /**
    * Counter rows, already drawn, for the plate's lower left.
    *
@@ -224,11 +404,12 @@ export interface CardOptions {
   /**
    * Extra classes for the card's own root, which `CARD` joins onto `.card`.
    *
-   * **Read by `CARD` and by neither `TILE` nor `SPINE`**, which is the
-   * boundary that decides what may go in here: a class naming a *frame* is
-   * a claim about the card as a printed object, and a tile and a spine are
-   * handles for one rather than smaller copies of it. Today one thing sets
-   * it — see `marked` below.
+   * **Read by `CARD`, `FACE` and `COMPACT`, and by neither `TILE` nor
+   * `SPINE`**, which is the boundary that decides what may go in here: a
+   * class naming a *frame* is a claim about the card as a printed object,
+   * and a tile and a spine are handles for one rather than smaller copies
+   * of it. Today two things set it — see `marked` below, and the Gunslinger
+   * class card's `grow`.
    */
   cls?: string;
 }
@@ -299,7 +480,30 @@ const STOCK = [
 ];
 
 const hasArt = (img?: string): boolean => !!img && !STOCK.some((rx) => rx.test(img));
-const art = (img?: string): string => `--art:${hasArt(img) ? cssUrl(img) : "none"}`;
+
+/** The painting as a URL for the new builders, or nothing when there is none. */
+const artUrl = (img?: string): string | undefined =>
+  hasArt(img) ? absolute(img as string) : undefined;
+
+/** The same painting as the `--art` declaration an old row wrapper takes. */
+const artDecl = (img?: string): string => `--art:${hasArt(img) ? cssUrl(img) : "none"}`;
+
+/* ── homebrew ─────────────────────────────────────────────────────────
+   The five subtypes that exist as a physical card carry a `printing`, and
+   `tools/fetch-cards.mjs` fills its `code` for every one the books print.
+   So on those five "no code" is a real answer: nobody printed this, somebody
+   made it, and the card should say so rather than pass for Library content.
+
+   On the other six there is no `printing` field at all, so the question is
+   not unanswerable *for this card* — it is unanswerable, full stop. A
+   homebrew weapon and a corebook weapon are the same shape. Guessing would
+   quill all 28 Gunslinger weapons and every sword in the book, which is a
+   worse answer than quilling none, so this says nothing and leaves the
+   field for a surface that knows. */
+const PRINTED = new Set(["ancestry", "community", "transformation", "subclass", "domainCard"]);
+
+const homebrew = (type: string, s: any): boolean | undefined =>
+  PRINTED.has(type) ? !s.printing?.code : undefined;
 
 /**
  * The three subtypes whose card has a domain, and therefore a hue.
@@ -358,6 +562,108 @@ export function cardChits(it: ItemSnapshot, actor?: any): string | undefined {
   }
   return rows.join("");
 }
+/* ── uses, and being spent ────────────────────────────────────────────
+   A card that says "once per long rest" has a budget, and the budget is
+   already a `resource` with a `max.n` and a `refresh` — `items.ts` derives
+   `system.uses` off the first one that belongs to the document rather than
+   to a feature block, and `refreshUses` in `apps/rest.ts` has cleared them
+   at the right rest since before the card was redrawn. So there is nothing
+   to parse and nothing to store: the card only has to draw what is there.
+
+   Re-derived here rather than taken from `system.uses` alone, because a
+   snapshot does not always carry the derived field. The character sheet's
+   comes off a live document and does; the compendium browser's comes off a
+   pack index and does not, and a browsed card with its lights missing
+   would look like a card with no budget. Same predicate as `items.ts`'s,
+   deliberately — two readings of "which pile is the card's own" is one
+   reading too many. */
+
+/** The card's own budget: the first fixed-ceiling pool that is not a feature's. */
+const budgetOf = (s: any): any =>
+  s?.uses ??
+  (s?.resources ?? []).find(
+    (r: any) => !r.feature && r.max?.kind === "fixed" && r.max.n > 0,
+  ) ??
+  null;
+
+/** How a refresh reads after "back each" — gluvtt's `perWords`, verbatim. */
+const PER_WORDS: Record<string, string> = {
+  rest: "rest",
+  shortRest: "short rest",
+  longRest: "long rest",
+  session: "session",
+  scene: "scene",
+  manual: "use",
+};
+
+/* Text and attribute escaping, because a resource's name is authored.
+
+   `escapeAttr` is exported because one caller outside this file builds a
+   string of card markup: the character sheet's equipped slot hands `FACE` a
+   `cover` press carrying the card's name as its accessible label, and a card
+   named by a player is a card that can be named `"` — see `equipPress`. */
+const escapeText = (s: string): string =>
+  String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c] as string);
+
+export const escapeAttr = (s: string): string => escapeText(s).replaceAll('"', "&quot;");
+
+const mark = (path: string): string =>
+  `<svg viewBox="0 0 16 16" class="dh-term-mark" aria-hidden="true" focusable="false">` +
+  `<path d="${path}" fill="currentColor" fill-rule="evenodd"/></svg>`;
+
+/**
+ * A card's limited uses as charge lights, drawn the way gluvtt draws them.
+ *
+ * A **readout**, like `cardChits` and for the same reason: the two surfaces
+ * this reaches are the peek layer, which is `pointer-events:none`, and the
+ * chat log, where a row of live buttons three hours later is an invitation
+ * to spend the same use twice. Where the budget is a control — the features
+ * row, the loadout bay — the lights are a `Chits` component instead.
+ *
+ * One light per use, lit while it is there to spend. The mark says what the
+ * budget waits for rather than what spending it costs, which is `PER_PATHS`
+ * in `terms.js` and is why a long rest gets a sun and a scene a stage.
+ */
+export function cardUses(it: ItemSnapshot): string | undefined {
+  const use = budgetOf(it.system);
+  if (!use) return undefined;
+  const max = use.max?.n ?? 0;
+  if (max <= 0) return undefined;
+  const left = Math.max(0, Math.min(max, use.value ?? 0));
+  const refresh = use.refresh ?? "rest";
+  const name = use.name || "uses";
+  const said =
+    `${name}: ${left} of ${max} ${max === 1 ? "use" : "uses"} left, ` +
+    `back each ${PER_WORDS[refresh] ?? "rest"}`;
+  const lights = Array.from(
+    { length: max },
+    (_, i) => `<i class="dh-charge-light${i < left ? " is-lit" : ""}"></i>`,
+  ).join("");
+  return (
+    `<span class="dh-charge${left === 0 ? " is-spent" : ""}" role="group" ` +
+    `aria-label="${escapeAttr(said)}">` +
+    mark(PER_PATHS[refresh] ?? PER_PATHS.rest) +
+    `<span class="dh-charge-name">${escapeText(name)}</span>` +
+    `<span class="dh-charge-lights">${lights}</span></span>`
+  );
+}
+
+/**
+ * Whether the card has been used up, by whichever rule applies to it.
+ *
+ * A card with a budget is spent when the budget is empty; a card without one
+ * is spent when somebody has said so. `items.ts` derives exactly this as
+ * `system.isSpent` and this is the same answer re-derived, for `cardUses`'s
+ * reason: a pack-index snapshot has no derived fields. One rule, written
+ * twice because it is read in two places that cannot share a document.
+ */
+export function isSpent(it: ItemSnapshot): boolean {
+  const use = budgetOf(it.system);
+  const max = use?.max?.n ?? 0;
+  if (use && max > 0) return (use.value ?? 0) <= 0;
+  return it.system?.spent === true;
+}
+
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* ── prose ────────────────────────────────────────────────────────────
@@ -449,10 +755,24 @@ export function cardOf(
   const base = {
     id: it.id,
     k: it.id,
-    art: art(it.img),
+    art: artUrl(it.img),
+    artCss: artDecl(it.img),
     noart: !hasArt(it.img),
+    // Only a real painting has a marking, and only a marking puts a rule in
+    // the document — see `useArtFocus`.
+    focus: useArtFocus(hasArt(it.img) ? it.img : undefined),
     code: s.printing?.code || undefined,
+    artist: s.printing?.artist || undefined,
+    homebrew: homebrew(it.type, s),
     chits: cardChits(it, ctx.actor),
+    /* The budget and whether it is empty. `state` is the *card's* state and
+       nothing else: `used` when it has been spent, and otherwise whatever
+       the surface says, because `within-reach` and `out-of-reach` are
+       answers about where the card is sitting and only the surface holding
+       it knows that. A caller that knows better overrides it — see
+       `ctx.state`, which is how the vault marks a card out of reach. */
+    uses: cardUses(it),
+    state: (isSpent(it) ? "used" : (ctx.state ?? "rest")) as CardOptions["state"],
   };
 
   switch (it.type) {
@@ -466,10 +786,18 @@ export function cardOf(
         cls: marked(s.domain),
         code: base.code ?? markedCode(s.domain),
         d: dom(s.domain),
-        sig: sig[s.domain] ?? "", sigKey: s.domain,
+        ...sigOf(sig, s.domain, "domain-card"),
+        motif: useOrnaments(dom(s.domain).slug),
+        // Not the kind word — `glyph` is a family and `type` is the printed
+        // noun. A Grimoire and an Ability are both abilities to a stylesheet.
+        glyph: s.cardType || "ability",
+        tier: tierOf(s.level ?? 1),
         lvl: s.level ?? 1,
         rc: s.recallCost ?? 0,
-        type: (CARD_TYPE_LABELS[s.cardType] ?? "Ability").toUpperCase(),
+        // Title case, not shouted. `.dh-kind` and `.ty` both uppercase it in
+        // CSS, so the casing stored here is the casing a screen reader says —
+        // and `COMPACT`'s kind line tests `type === "Class"` exactly.
+        type: CARD_TYPE_LABELS[s.cardType] ?? "Ability",
         name: it.name,
         foot: dom(s.domain).name,
         text: plain(s.description),
@@ -492,10 +820,12 @@ export function cardOf(
         cls: it.name === "Gunslinger" ? "grow" : undefined,
         d: dom(p),
         d2: q ? dom(q) : undefined,
-        sig: sig[p] ?? "", sigKey: p,
+        ...sigOf(sig, p, "class"),
         sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
         fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? it.name : undefined,
-        type: "CLASS",
+        motif: useOrnaments(dom(p).slug),
+        glyph: "class",
+        type: "Class",
         name: it.name,
         foot: [dom(p).name, q && dom(q).name].filter(Boolean).join(" · "),
         stats: [
@@ -543,10 +873,12 @@ export function cardOf(
         ...base,
         d: dom(p),
         d2: q ? dom(q) : undefined,
-        sig: sig[p as string] ?? "", sigKey: p,
+        ...sigOf(sig, p as string, "subclass"),
         sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
         fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? s.className : undefined,
-        type: "SUBCLASS",
+        motif: useOrnaments(dom(p).slug),
+        glyph: "subclass",
+        type: "Subclass",
         // The rank *is* the fact you want off this row: which of the three
         // cards of this subclass you are holding.
         name: s.subclassName || it.name,
@@ -572,7 +904,9 @@ export function cardOf(
         ...base,
         d: KINDS.ancestry,
         sig: sig["@ancestry"] ?? "", sigKey: "@ancestry",
-        type: "ANCESTRY",
+        motif: useOrnaments(KINDS.ancestry.slug),
+        glyph: "ancestry",
+        type: "Ancestry",
         name: it.name,
         foot: "Heritage",
         flavour: plain(s.description) || undefined,
@@ -587,7 +921,9 @@ export function cardOf(
         ...base,
         d: KINDS.community,
         sig: sig["@community"] ?? "", sigKey: "@community",
-        type: "COMMUNITY",
+        motif: useOrnaments(KINDS.community.slug),
+        glyph: "community",
+        type: "Community",
         name: it.name,
         foot: "Heritage",
         flavour: plain(s.description) || undefined,
@@ -609,7 +945,9 @@ export function cardOf(
         ...base,
         d: KINDS.transformation,
         sig: sig["@transformation"] ?? "", sigKey: "@transformation",
-        type: "TRANSFORMATION",
+        motif: useOrnaments(KINDS.transformation.slug),
+        glyph: "transformation",
+        type: "Transformation",
         name: it.name,
         foot: "Heritage",
         flavour: plain(s.description) || undefined,
@@ -626,9 +964,12 @@ export function cardOf(
         d: KINDS.gear,
         sig: sig[`@${s.slot ?? "primary"}`] ?? sig["@gear"] ?? "",
         sigKey: `@${s.slot ?? "primary"}`,
+        motif: useOrnaments(KINDS.gear.slug),
+        glyph: "weapon",
+        tier: tierOf(s.tier ?? 1),
         lvl: s.tier ?? 1,
         pre: "T",
-        type: "WEAPON",
+        type: "Weapon",
         name: it.name,
         foot: SLOT_LABEL[s.slot] ?? "Weapon",
         stats: [
@@ -648,9 +989,12 @@ export function cardOf(
         ...base,
         d: KINDS.gear,
         sig: sig["@armor"] ?? "", sigKey: "@armor",
+        motif: useOrnaments(KINDS.gear.slug),
+        glyph: "armor",
+        tier: tierOf(s.tier ?? 1),
         lvl: s.tier ?? 1,
         pre: "T",
-        type: "ARMOR",
+        type: "Armor",
         name: it.name,
         foot: "Armor",
         stats: [
@@ -672,7 +1016,9 @@ export function cardOf(
         ...base,
         d: KINDS.gear,
         sig: sig["@consumable"] ?? "", sigKey: "@consumable",
-        type: "CONSUMABLE",
+        motif: useOrnaments(KINDS.gear.slug),
+        glyph: "consumable",
+        type: "Consumable",
         name: it.name,
         foot: s.quantity > 1 ? `×${s.quantity}` : "Consumable",
         text: plain(s.description) || undefined,
@@ -682,8 +1028,10 @@ export function cardOf(
       return {
         ...base,
         d: KINDS.gear,
-        sig: sig["@gear"] ?? "", sigKey: "@gear",
-        type: "ITEM",
+        sig: sig["@loot"] ?? "", sigKey: "@loot",
+        motif: useOrnaments(KINDS.gear.slug),
+        glyph: "loot",
+        type: "Item",
         name: it.name,
         foot: s.quantity > 1 ? `×${s.quantity}` : "Item",
         text: plain(s.description) || undefined,
@@ -709,8 +1057,10 @@ export function cardOf(
       return {
         ...base,
         d: KINDS.gear,
-        sig: sig["@gear"] ?? "", sigKey: "@gear",
-        type: (FEATURE_KIND_LABELS[s.kind] ?? "Feature").toUpperCase(),
+        sig: sig["@feature"] ?? "", sigKey: "@feature",
+        motif: useOrnaments(KINDS.gear.slug),
+        glyph: s.kind || "passive",
+        type: FEATURE_KIND_LABELS[s.kind] ?? "Feature",
         name: it.name,
         foot: s.origin || "Feature",
         stats: featureCosts(s),
@@ -796,13 +1146,23 @@ export function featureCard(sig: Sigils, o: FeatureCardOptions): CardOptions | n
   return {
     id: o.item.id,
     k: `${o.item.id}:${o.slot ?? "feature"}`,
-    art: "--art:none",
+    // There is no printed card for a page in a book, so there is no painting
+    // and no marking either: `art` unset is what the new builders read as
+    // `no-art`, and `artCss` is the old surfaces' same answer.
+    art: undefined,
+    artCss: "--art:none",
     noart: true,
     d: dom(p),
     d2: q ? dom(q) : undefined,
-    sig: (p && sig[p]) || "", sigKey: p,
+    ...sigOf(sig, p, "feature"),
     sig2: q ? (sig[q] ?? "") : undefined, sig2Key: q,
     fbsig: ck ? sig[ck] : undefined, fbsigKey: ck, fbname: ck ? o.className : undefined,
+    motif: useOrnaments(dom(p).slug),
+    /* A class feature is a passive fact about what you are, which is the word
+       the design uses for it. It only reaches a stylesheet on a feature whose
+       class we could not find a domain pair for — the graphite case — and the
+       graphite case is exactly where a kind has to stand in for a hue. */
+    glyph: "passive",
     type: o.type,
     name: f.name || "Feature",
     foot: o.foot,

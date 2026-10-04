@@ -1,8 +1,14 @@
-<!-- Ancestry: two interlocking lozenges — two lineages joined. The lozenge is
-     the heraldic charge for descent, which is both on-meaning and genre-neutral.
-     Taller than wide so it reads as heraldry rather than as a UI diamond.
-     One evenodd path, so the overlap knocks through: a stroked outline would
-     fill in solid at the ~14px the corner plate renders at. -->
+<!-- Ancestry: two interlocking lozenges, two lineages joined.
+     Drawn on the set's shared grid — see art-src/types/GRID.md.
+
+     The lozenge is the heraldic charge for descent, which is both on-meaning
+     and genre-neutral. Taller than wide so it reads as heraldry rather than
+     as a UI diamond, and interlocking rather than merely adjacent because
+     adjacent would be a count and the count is community's cue.
+
+     One evenodd path, so the 24-unit overlap knocks through: a stroked
+     outline fills in solid at 14px. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M88 20 146 125 88 230 30 125Z M162 20 220 125 162 230 104 125Z"/>
+  <path fill-rule="evenodd" d="M83 24 137 125 83 226 29 125Z
+                               M167 24 221 125 167 226 113 125Z"/>
 </svg>

@@ -84,30 +84,47 @@
 .spine .meta em{flex:none;font-style:normal;color:#fff;background:var(--dom-dk);
   padding:.9cqw 1.3cqw .9cqw 1.5cqw;letter-spacing:.18em}
 .spine .meta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* ── the meta line's aside ─────────────────────────────────────────
-   A consumable's charges. The boxes are the sheet's own mark at row scale,
-   crossed as they are spent — which is the same direction Hit Points and
-   Stress read in, so nobody has to learn a second convention for "gone".
-   `flex:none` and `margin-left:auto`: the rarity word ellipses before the
-   charges give up a pixel, because the word is the thing you can guess. */
-.spine .meta .chg{flex:none;margin-left:auto;display:flex;gap:.7cqw;align-items:center}
-.spine .meta .chg > i{position:relative;display:block;width:3.4cqw;height:3.4cqw;cursor:pointer}
-.spine .meta .chg > i > u{position:absolute;inset:0;display:block;background:var(--sunk);
+/* ── a consumable's charges ────────────────────────────────────────
+   The boxes are the sheet's own mark at row scale, crossed as they are
+   spent — the same direction Hit Points and Stress read in, so nobody has
+   to learn a second convention for "gone".
+
+   **Keyed on `.chg` alone, and that is the change rather than an oversight.**
+   Every rule here used to begin `.spine .meta`, which was true while the
+   spine was the only row a consumable appeared on and stopped being true
+   the moment the vault row took over: the boxes still rendered, at 0x0,
+   still clickable and completely invisible, which is the worst of the
+   three possible outcomes. The aside is a control and a control should not
+   care what row it is standing in.
+
+   Pixels rather than `cqw` for the same reason. `cqw` resolved against the
+   spine's own container, and a vault row is not a container at all, so the
+   boxes measured nothing. 10px is what the spine's 3.4cqw came to at the
+   width a loadout column actually gave it.
+
+   The flex aside — `margin-left:auto`, the rarity word ellipsing first
+   because the word is the thing you can guess — stays keyed to the meta
+   line, because that is a fact about the spine's layout and not about the
+   control. */
+.chg{flex:none;display:flex;gap:2px;align-items:center}
+.spine .meta .chg{margin-left:auto}
+.chg > i{position:relative;display:block;width:10px;height:10px;cursor:pointer}
+.chg > i > u{position:absolute;inset:0;display:block;background:var(--sunk);
   box-shadow:inset 0 0 0 1px var(--line);
-  clip-path:polygon(0 0,100% 0,100% calc(100% - .7cqw),calc(100% - .7cqw) 100%,0 100%);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%);
   transition:background .16s,box-shadow .16s}
-.spine .meta .chg > i:hover > u{box-shadow:inset 0 0 0 1px var(--line-2)}
-.spine .meta .chg > i.on > u{background:var(--sunk-2);box-shadow:inset 0 0 0 1px transparent}
-.spine .meta .chg > i > .x{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.chg > i:hover > u{box-shadow:inset 0 0 0 1px var(--line-2)}
+.chg > i.on > u{background:var(--sunk-2);box-shadow:inset 0 0 0 1px transparent}
+.chg > i > .x{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 /* the core is a facet and there is no facet at 10px; the bloom is a transient
    that belongs to a resource you lose, not one you spend on purpose */
-.spine .meta .chg .cr,.spine .meta .chg > i > b{display:none}
-.spine .meta .chg > i > .x .ar > g{transform-box:fill-box;transform-origin:50% 50%;
+.chg .cr,.chg > i > b{display:none}
+.chg > i > .x .ar > g{transform-box:fill-box;transform-origin:50% 50%;
   opacity:0;transform:scale(.3);
   transition:opacity .1s linear,transform .18s cubic-bezier(.16,1.05,.3,1)}
-.spine .meta .chg > i.on > .x .ar > g{opacity:1;transform:none}
-.spine .meta .chg > i.on > .x .ar.b > g{transition-delay:.06s}
-.spine .meta .chg > i:not(.on) > .x .ar.a > g{transition-delay:.05s}
+.chg > i.on > .x .ar > g{opacity:1;transform:none}
+.chg > i.on > .x .ar.b > g{transition-delay:.06s}
+.chg > i:not(.on) > .x .ar.a > g{transition-delay:.05s}
 
 /* A crop, not a wash. Art bled behind the name would cost the name more
    than it gains the row; held to its own chamfered plate it stays art. */

@@ -1,0 +1,355 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH PACK — the gear tab: what is in hand, and what is carried
+
+   PORT from gluniverse-vtt, one file, partially:
+     apps/web/src/rulesets/daggerheart/sheets/character/pack.css
+
+   Deliberately off this repo's house style, the same two ways and for
+   the same reason as face.css, compact.css and vault.css: gluvtt's class
+   names verbatim (.dh-equip-slot, .dh-equip-empty, .dh-line-name, not
+   .eq, .eqe, .ln) and gluvtt's one-declaration-per-line formatting, so a
+   `diff` against the upstream file still lines up and a fix made there
+   can be read straight across. Nothing here is scoped by hand:
+   scripts/port-design-css.mjs rewrites the palette root to `.dh` and
+   prefixes every other selector on the way into styles/.
+
+   ── what came across ─────────────────────────────────────────────
+   The tab's own grid (.dh-pack and the two panels that span it), the
+   equip slots whole (.dh-equip-slots, .dh-equip-slot, .dh-equip-head,
+   .dh-equip-card, .dh-equip-press, .dh-equip-empty and the blocked
+   state), the carried panel's count (.dh-pack-count), and the lines the
+   things with no rules are drawn as (.dh-lines, .dh-line, .dh-line-name
+   and the count beside it).
+
+   `.dh-pack-carried` carries no rules of its own, here or upstream: the
+   grid inside it is `.dh-cc-grid.is-gear` and compact.css draws that.
+   The one upstream rule that did name it suppressed a Compact card's
+   corner count when the card also carried a quantity fieldset, and that
+   fieldset is not in this port (below), so the suppression went with it.
+   The class is kept in the markup as the panel's hook and as the ancestor
+   the next rule that needs one will hang off.
+
+   `.is-empty` likewise. Upstream's markup puts it on an empty slot's
+   `<li>` and upstream's stylesheet never reads it — the empty state is
+   drawn entirely by `.dh-equip-empty` being the child that is there
+   instead of a card. Ported as found: the class is a hook, not a rule.
+
+   ── what did not, and why ────────────────────────────────────────
+     the purse        .dh-purse, .dh-gold-rows, .dh-gold-row,
+                      .dh-gold-label, .dh-gold-count, .dh-coins, .dh-coin
+                      and the dh-coin-flip keyframes. This system does not
+                      draw gold anywhere: the only --vtt-dh-gold in
+                      design/ is tier 4's metal on a card's rim, which is
+                      a different thing wearing the same hue. Handfuls,
+                      bags and chests as a row of pressable coins is a
+                      whole component, and it belongs in the pass that
+                      gives this system a purse rather than sitting here
+                      styling markup nothing writes.
+     the quantity     .dh-qty and its stepper. Nothing in this repo
+                      renders one — `grep -rn dh-qty design/ src/` is
+                      empty — and a three-button fieldset with a disabled
+                      state is not worth vendoring blind.
+     the filter row   .dh-pack-filters. The parent's carried panel has no
+                      filter row. Its header has a "+ add" press, which is
+                      this repo's own panel chrome and not upstream's
+                      inline form, so .dh-pack-line-add did not come
+                      across either.
+     panel chrome     .dh-pack .dh-panel-head h3, .dh-panel-sub and the
+                      two .dh-panel-tools rules. Those reach into gluvtt's
+                      Panel component, and this repo has no .dh-panel-*
+                      set at all — face.css's `.dh-panel[data-over]` is
+                      the single exception and it is a drop target, not a
+                      header. Porting four rules that would match nothing
+                      is how a stylesheet starts lying about what it does.
+     reduced motion   Upstream's trailing @media block. The motion scale
+                      in face-tokens.css already takes every duration
+                      here to zero under the same query, and a hard
+                      `transition: none` makes the system's Card motion
+                      setting's "Full" impossible to honour. Same call,
+                      same reasoning, as the block taken out of
+                      compact.css — see the note there.
+
+   ── at-risk CSS, kept and flagged ────────────────────────────────
+     container query  The stack at the foot. Upstream names its container
+                      `dh-pane`; nothing in this repo names a container at
+                      all, so the query is UNNAMED here and resolves to
+                      the nearest query container, which is `.win .pane`
+                      in sheet.css. That is the element upstream meant.
+                      A Pack drawn outside a pane simply never reaches the
+                      stacked form, which is the same graceful miss
+                      vault.css's narrow row has.
+     aspect-ratio     The empty slot's 100/140, which is the card's own
+                      shape and the reason an empty slot and a filled one
+                      are the same size without either naming a height.
+     --vtt-size-body  Does NOT exist in this port and is therefore NOT
+                      used. Upstream sets it on .dh-line; face-tokens.css
+                      publishes --vtt-size-small and --vtt-size-label and
+                      nothing between them, so the line inherits its
+                      pane's body size instead. A token that is not
+                      defined fails silently, which has already cost this
+                      port once.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the tab ──────────────────────────────────────────────────────────── */
+
+/* Two columns, and both of the panels that matter span them. The narrow
+   column is there for the short panels that sit side by side under the
+   gear — upstream's purse beside its lines, here just the lines — and it
+   is capped rather than fractional so a wide pane gives its extra width
+   to the carried grid, which is the part that can use it. */
+.dh-pack {
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.dh-pack-equipped,
+.dh-pack-carried-panel {
+  grid-column: 1 / -1;
+}
+
+/* ── what is in hand ─────────────────────────────────────────────────── */
+
+/* A row of slots that wraps, not a grid: a character has two hands and a
+   suit of armour, and a grid would have had to decide how many columns
+   that is at every pane width. 18px down and 22px across — wider across,
+   because two cards side by side need more air between them than a card
+   needs from the slot name under it. */
+.dh-equip-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The slot is as wide as the card in it, and `--dh-equip-w` is the host's
+   knob for that. The fallback is compact.css's large Compact card, which
+   is the width the slot falls back to drawing when the pane is too narrow
+   for whole cards — so an unset knob gives the narrow form rather than
+   nothing, which is the right way round. */
+.dh-equip-slot {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  width: var(--dh-equip-w, var(--dh-cc-l-w));
+}
+
+.dh-equip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vtt-space-1);
+  min-height: 22px;
+  color: var(--vtt-text-2);
+  font-family: var(--vtt-font-ui);
+  font-size: var(--vtt-size-small);
+  font-weight: 750;
+}
+
+/* Taking gear off is a quiet word by its slot, plain once the slot is in
+   hand: the chip's border, fill and caps all come off, so what is left is
+   a label that happens to be pressable. The full .dh-shelve chip is in
+   face.css — this is the one place in the system that undresses it, and
+   it does so because the press sits *inside* a slot heading rather than
+   under a card, where a lit chip would outweigh the heading it is in. */
+.dh-equip-head .dh-shelve {
+  height: 20px;
+  padding: 0 7px;
+  border-color: transparent;
+  background: none;
+  color: var(--vtt-text-3);
+  font-size: var(--vtt-size-small);
+  font-weight: 650;
+  text-transform: none;
+}
+
+.dh-equip-slot:hover .dh-equip-head .dh-shelve {
+  color: var(--vtt-text-2);
+}
+
+.dh-equip-card {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The width, and the one divergence from upstream in this file.
+   face.css's --dh-w defaults to 100cqi, so a face needs either a
+   container-typed ancestor or a pixel width written onto it; a face in a
+   plain block gets 0 and draws nothing. Upstream takes the pixel route
+   and writes it from React — `width={EQUIPPED_WIDTH}` puts --dh-w: 190px
+   inline on the face — which means upstream's stylesheet never has to say
+   anything and upstream's markup can never forget.
+
+   This port cannot rely on that: the slot already publishes its width as
+   --dh-equip-w, so the face reads the slot's own number and the markup has
+   nothing to remember. A host that still wants to size the card from
+   script writes --dh-w inline and wins on specificity, exactly as the
+   Peek and Card Window rules in face.css expect. The fallback chain is the
+   slot's, so the two can never disagree. */
+.dh-equip-card .dh-face {
+  --dh-w: var(--dh-equip-w, var(--dh-cc-l-w));
+}
+
+/* The whole card lifts off the pane, the gear in hand above the rest. A
+   drop-shadow filter and not a box-shadow: the face is a cut silhouette,
+   not a rectangle, and a box-shadow would have drawn the corners the card
+   does not have. */
+.dh-equip-card .dh-face {
+  filter: drop-shadow(0 18px 22px color-mix(in oklab, var(--vtt-opaque) 55%, transparent));
+  transition: translate var(--vtt-motion-snap) var(--vtt-ease-out);
+}
+
+.dh-equip-card .dh-face:hover {
+  translate: 0 -3px;
+}
+
+/* The press over the whole card, which Posts it; its uses and die take
+   their own presses. z-index 3 puts it over the painting and the plate
+   and under nothing that is pressable, so a click anywhere on the card
+   that is not a counter is a Post. */
+.dh-equip-press {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.dh-equip-press:focus-visible {
+  outline: 2px solid var(--vtt-accent-line);
+  outline-offset: -2px;
+}
+
+/* The two things on a card that are live have to come back out above the
+   cover, or the cover eats them. `position: relative` is what gives them
+   a z-index to raise at all. */
+.dh-equip-card :is(.dh-uses, .dh-face-die) {
+  position: relative;
+  z-index: 4;
+}
+
+/* ── the empty slot ──────────────────────────────────────────────────── */
+
+/* A place, drawn at the card's own proportions so the row does not reflow
+   when something goes into it. The hatch is the slot's own ink against
+   nothing at 1.8% of white, which is a texture you read as "empty" and
+   not as a pattern. */
+.dh-equip-empty {
+  display: grid;
+  place-content: center;
+  gap: 3px;
+  width: var(--dh-equip-w, var(--dh-cc-l-w));
+  aspect-ratio: 100 / 140;
+  padding: var(--vtt-space-2);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--vtt-white) 1.8%, transparent) 0 6px,
+      transparent 6px 12px
+    ),
+    var(--vtt-ink-1);
+  box-shadow:
+    inset 0 0 0 1px var(--vtt-ink-5),
+    inset 0 2px 10px color-mix(in oklab, var(--vtt-opaque) 60%, transparent);
+  color: var(--vtt-text-3);
+  font-family: var(--vtt-font-ui);
+  font-size: var(--vtt-size-small);
+  text-align: center;
+}
+
+/* --dh-empty-ink rather than a colour, so the blocked state below can
+   repoint one word's ink without restating the rule. */
+.dh-equip-empty b {
+  color: var(--dh-empty-ink, var(--vtt-text-2));
+  font-weight: 750;
+}
+
+/* Blocked: a slot that cannot take anything because the other hand has a
+   two-handed weapon in it. Fear's violet, at 8% in the field and 45% on
+   the edge — the same hue the rest of the system uses for "the game is
+   saying no", and faint enough that a Pack with one blocked slot does not
+   read as a Pack with a problem. */
+.dh-equip-slot[data-blocked="true"] .dh-equip-empty {
+  --dh-empty-ink: var(--vtt-dh-fear);
+  background: color-mix(in oklab, var(--vtt-dh-fear) 8%, var(--vtt-ink-1));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--vtt-dh-fear) 45%, var(--vtt-line));
+}
+
+/* ── the carried grid ────────────────────────────────────────────────── */
+
+/* The count beside the carried panel's title. Tabular figures because the
+   number changes as things are added and a proportional 1 would shift the
+   word beside it. */
+.dh-pack-count {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+/* ── the things with no rules ────────────────────────────────────────── */
+
+/* A rope, a ration, fifty feet of chain. These print no rules, so a card
+   would be a picture frame round a word — they get lines instead, and the
+   whole list is one grid with no gap: the hairline under each row is the
+   separator, so a gap would have made the rule float. */
+.dh-lines {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dh-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 30px;
+  padding: 0 4px 0 10px;
+  box-shadow: inset 0 -1px 0 var(--vtt-ink-4);
+  color: var(--vtt-text);
+  /* Upstream sets `font-size: var(--vtt-size-body)` here. That token does
+     not exist in this port, so the line inherits instead — see the header.
+     The family is named because these sheets are authored standalone. */
+  font-family: var(--vtt-font-ui);
+}
+
+.dh-line:focus-visible {
+  outline: 2px solid var(--vtt-accent-line);
+  outline-offset: -2px;
+}
+
+.dh-line-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The count, right-aligned on a fixed 22px so a column of them lines up
+   whatever the names beside them do. */
+.dh-line > b {
+  min-width: 22px;
+  padding-right: 6px;
+  font-size: var(--vtt-size-small);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ── narrow ───────────────────────────────────────────────────────────── */
+
+/* Under 560px of pane everything stacks in one column. Unnamed query: see
+   the header — upstream asks for `dh-pane` by name and this repo names no
+   containers, so this resolves to `.win .pane`, which is the element
+   upstream meant. */
+@container (width < 560px) {
+  .dh-pack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

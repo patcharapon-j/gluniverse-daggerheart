@@ -1,6 +1,6 @@
 {
   "id": "gluniverse-daggerheart",
-  "title": "GLUniverse — Daggerheart",
+  "title": "GLUniverse \u2014 Daggerheart",
   "description": "An unofficial Foundry VTT game system for Daggerheart: duality dice, Hope and Fear, domain card loadouts, and a sheet built for the table rather than the rulebook.",
   "version": "1.15.2",
   "compatibility": {
@@ -25,6 +25,11 @@
     "styles/pool.css",
     "styles/tile.css",
     "styles/card.css",
+    "styles/face-tokens.css",
+    "styles/face.css",
+    "styles/compact.css",
+    "styles/vault.css",
+    "styles/pack.css",
     "styles/chit.css",
     "styles/keep.css",
     "styles/ledger.css",
@@ -39,6 +44,7 @@
     "styles/make.css",
     "styles/browse.css",
     "styles/marked.css",
+    "styles/foil.css",
     "styles/token.css",
     "styles/ruler.css",
     "styles/daggerheart-components.css",

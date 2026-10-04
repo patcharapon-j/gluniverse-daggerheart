@@ -1,9 +1,14 @@
-<!-- Consumable: a stoppered vessel. A vial, a canister and a cartridge all
-     resolve to this silhouette, which is the genre-neutrality test the rest of
-     the set has to pass too — narrow stoppered neck, shoulders, chamfered
-     base. Solid rather than outlined: at 13px an outlined vessel fills in and
-     becomes a blob, and the silhouette is doing all the work anyway.
-     Distinct from gear.svg's ring-and-core by having no interior at all. -->
+<!-- Consumable: a stoppered vessel.
+     Drawn on the set's shared grid — see art-src/types/GRID.md.
+
+     A vial, a canister and a cartridge all resolve to this silhouette, which
+     is the genre-neutrality test the rest of the set has to pass too. Solid
+     rather than outlined: at 14px an outlined vessel fills in and becomes a
+     blob, and the silhouette is carrying it anyway. Having no interior at all
+     is also what tells it from gear.svg's ring-and-core.
+
+     Straight shoulders rather than a flare, because a flare is a curve and
+     nothing in this set has one. Stopper 44 wide, neck 30, body 146. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M92 18 158 18 158 40 150 40 150 70 198 140 198 206 174 230 76 230 52 206 52 140 100 70 100 40 92 40Z"/>
+  <path d="M103 24H147V52H140V84L198 118V204L176 226H74L52 204V118L110 84V52H103Z"/>
 </svg>

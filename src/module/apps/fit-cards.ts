@@ -32,13 +32,42 @@
  * spelt it out differently. And **width**, because a card solved at one
  * width is not solved at another; that one stays with the caller, because
  * only the caller knows whether its cards can change width at all. The peek
- * layer's cannot: a `.pkc` is a fixed 262px.
+ * layer's cannot: a peeked `.dh-face` is a fixed 264px.
+ *
+ * ── two ladders, one scheduler ────────────────────────────────────────
+ * There are two cards in this system now and each brought its own ladder.
+ * `ui/card.js`'s `fit()` steps `--plate` against the old `.card`; `face-fx.js`
+ * has the ported pair — eleven steps of painting height and type scale against
+ * `.dh-face-plate`, and five steps of name scale on a compact card's heading.
+ * The *ladders* differ; everything above — don't re-solve, spread the solves,
+ * throw them all away once the fonts land — is the same problem either way, so
+ * this dispatches on the element rather than forking the scheduler per builder.
+ * `fitOne` is the whole of that seam.
+ *
+ * ── and the measured crop, for the same reason ────────────────────────
+ * `frameArt` is here too, and it is here because it is the same *kind* of
+ * work: the thing a card can only be given once it has a box. `framing.js`
+ * says it outright — a region computed on first paint is wrong by the time
+ * anybody looks at it — so a surface that wants the measured crop wants a
+ * ResizeObserver and an image load, which is a second thing to tear down per
+ * card. Two surfaces want it, a chat card and the peek layer, and neither is
+ * the other's business; so the shared answer lives where the other shared
+ * after-layout answer already lives.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID } from "../config.ts";
 import { fit } from "../ui/card.js";
+import { fit as faceFit, nameFit as faceNameFit } from "../ui/face-fx.js";
+import {
+  type Box,
+  coverCss,
+  type Focus,
+  followSize,
+  framedRegion,
+  regionCss,
+} from "../ui/framing.js";
 
 /** Cards solved per frame. Six is about a frame's worth at card size. */
 const CHUNK = 6;
@@ -68,14 +97,42 @@ export interface CardFitter {
 const only = (card: Element) => ({ querySelectorAll: () => [card] }) as any;
 
 /**
+ * Solve one card, whichever card it is.
+ *
+ * The new builders draw `.dh-face` and `.dh-cc` and the old one draws `.card`,
+ * and the three ladders live in two vendored modules that know nothing about
+ * each other. The element says which it is, so nothing above has to.
+ *
+ * `.dh-cc` is handed the element *itself* as the scope while the other two go
+ * through `only()`, and the asymmetry is real rather than sloppy: `nameFit`
+ * looks for `.dh-cc-foot h3` **inside** the scope, so a scope that answers
+ * every query with the card would hand it the card as its own heading. The two
+ * plate ladders look for the card, which is exactly what `only()` is for.
+ *
+ * It also quietly suppresses `face-fx`'s own second pass after the fonts land:
+ * `only()`'s scope has no `ownerDocument` and is not `document`, so the guard
+ * there declines. That is wanted. The font invalidation belongs to the fitter
+ * below, which throws every mark away and re-solves rather than re-solving one
+ * card eleven steps deep on a frame nobody asked it to.
+ */
+function fitOne(card: Element): void {
+  const el = card as HTMLElement;
+  if (el.matches?.(".dh-cc")) faceNameFit(el);
+  else if (el.matches?.(".dh-face")) faceFit(only(card));
+  else fit(only(card));
+}
+
+/**
  * @param scope  the root to search, read fresh each pass — a `bind:this`
  *               target is undefined until the component mounts.
- * @param select which cards this fitter owns. Defaults to every card in
- *               scope; the browse window narrows it to the grid's own.
+ * @param select which cards this fitter owns. Defaults to either card this
+ *               system draws; the browse window narrows it to the grid's own,
+ *               and the peek layer to `.dh-face` because the dialog around it
+ *               has no business being swept for cards.
  */
 export function cardFitter(
   scope: () => HTMLElement | null | undefined,
-  select = ".card",
+  select = ".card, .dh-face",
 ): CardFitter {
   /** Supersedes any pass still walking, so a change abandons the old one
       rather than racing it. */
@@ -83,6 +140,14 @@ export function cardFitter(
   /** Whether a font-driven invalidation is still owed. Once only: the faces
       land once per session, and re-arming would re-solve on every run. */
   let awaitingFonts = true;
+
+  /* A qualifier onto *every* alternative in `select`, not onto the last one.
+     `select` is a selector list now that the default names two cards, and
+     `".card, .dh-face:not([data-fit])"` is a list whose first half matches
+     every card it has already solved — so the pass never terminates and the
+     log fills with the same six cards being re-fitted a frame apart. */
+  const each = (suffix: string): string =>
+    select.split(",").map((one) => `${one.trim()}${suffix}`).join(",");
 
   const run = (): void => {
     const root = scope();
@@ -106,7 +171,7 @@ export function cardFitter(
 
        Superseding is safe when there is work, because `todo` is everything
        still unmarked — including whatever the abandoned pass had left. */
-    const todo = [...root.querySelectorAll(`${select}:not([data-fit])`)];
+    const todo = [...root.querySelectorAll(each(":not([data-fit])"))];
     if (!todo.length) return;
     const mine = ++pass;
 
@@ -115,7 +180,7 @@ export function cardFitter(
       if (mine !== pass) return;
       for (const end = Math.min(i + CHUNK, todo.length); i < end; i++) {
         const card = todo[i]!;
-        fit(only(card));
+        fitOne(card);
         (card as HTMLElement).dataset.fit = "1";
       }
       if (i < todo.length) requestAnimationFrame(step);
@@ -126,7 +191,7 @@ export function cardFitter(
   const reset = (): void => {
     const root = scope();
     if (!root) return;
-    for (const el of root.querySelectorAll<HTMLElement>(`${select}[data-fit]`)) {
+    for (const el of root.querySelectorAll<HTMLElement>(each("[data-fit]"))) {
       delete el.dataset.fit;
     }
     run();
@@ -167,7 +232,7 @@ function drain(): void {
        card posted afterwards silently unfitted, for the rest of the
        session. */
     try {
-      fit(only(card));
+      fitOne(card);
       done?.();
     } catch (err) {
       console.error(`${SYSTEM_ID} | could not fit a card`, err);
@@ -187,4 +252,114 @@ export function fitSoon(card: Element | null | undefined, done?: () => void): vo
   if (draining) return;
   draining = true;
   requestAnimationFrame(drain);
+}
+
+/* ── the measured crop ─────────────────────────────────────────────────
+   Every painting in the corpus is a wide landscape and no frame that shows
+   one is, so something is always thrown away; `assets/cards/card-focus.json`
+   is a human's answer to *which part*, and `framing.js` is the arithmetic
+   that spends it. There are two ways to spend it and the difference is
+   whether anything has been measured.
+
+   `card-style.ts`'s `useArtFocus` takes the cheap one at build time: a
+   generated rule that moves `.dh-art-paint`'s cover crop onto the point
+   instead of onto the middle. It is one rule per painting, it needs nothing
+   laid out, and it cannot close in — `background-position` slides a cover
+   crop, it does not magnify one, so a marking that carries a `scale` is
+   honoured only as far as cover.
+
+   This is the other one, and it is the port of gluvtt's `FramedArt`: the
+   painting as an `<img>` inside `.dh-art-paint`, laid out larger than the
+   frame and pulled up and left so exactly the marked region covers it. It
+   needs the painting's natural size and the frame's box, which is why it is
+   not available to a builder returning a string, and it is the only form in
+   which a close-up happens at all.
+
+   **An `<img>` over the background rather than instead of it.** gluvtt drops
+   `--dh-art` when it frames, because it controls both ends. Here `face.css`
+   is an authored file and `--dh-art` is how `FACE` states that there is a
+   painting at all, so the background stays and the image covers it — which
+   also means a painting that fails to load falls back to the crop it would
+   have had rather than to a hole. `.dh-art-paint` is already
+   `position:absolute`, so it is the image's containing block; `.dh-art` is
+   what clips the overflow, exactly as it clips the background's own 3u bleed.
+
+   The URL is read back off `--dh-art` rather than passed in, for the reason
+   `useArtFocus` keys its rule on the same string: that property is where the
+   painting is, by construction, and a second channel for it is a second
+   thing that can disagree with the card. */
+
+/** A painting's URL as `FACE` wrote it into `--dh-art`, or nothing. */
+const paintingOf = (face: HTMLElement): string | undefined =>
+  /^\s*url\((["']?)(.*)\1\)\s*$/.exec(face.style.getPropertyValue("--dh-art"))?.[2] || undefined;
+
+/**
+ * A focus point as an attribute, for a card whose crop is taken by a surface
+ * that did not build it.
+ *
+ * The peek layer is that surface: `dialog-peek.ts` is handed a layer and a
+ * selector and deliberately knows nothing about what the rows mean, so the
+ * point has to travel on the markup rather than alongside it. Three numbers
+ * and a comma, because the alternative is JSON in an attribute.
+ */
+export const focusAttr = (focus?: Focus): string => {
+  if (!focus) return "";
+  const parts = [focus.x, focus.y, ...(focus.scale === undefined ? [] : [focus.scale])];
+  return ` data-focus="${parts.join(",")}"`;
+};
+
+/** The point back off the attribute, or nothing where nobody marked one. */
+export function focusFrom(el: HTMLElement | null | undefined): Focus | undefined {
+  const parts = el?.dataset.focus?.split(",").map(Number);
+  if (!parts || parts.length < 2 || parts.some((n) => !Number.isFinite(n))) return undefined;
+  const [x, y, scale] = parts as [number, number, number?];
+  return scale === undefined ? { x, y } : { x, y, scale };
+}
+
+/**
+ * Frames `face`'s painting on its marked point, measured.
+ *
+ * Returns the teardown, and the caller owes it: this holds a ResizeObserver on
+ * an element inside a surface that gets replaced wholesale — a message
+ * redrawn, a dialog closed — and an observer on a detached node is a retained
+ * card. A face with no painting or no marking gets nothing at all and keeps
+ * the crop `useArtFocus` already gave it.
+ */
+export function frameArt(face: HTMLElement, focus?: Focus): () => void {
+  const paint = face.querySelector<HTMLElement>(".dh-art-paint");
+  const painting = paintingOf(face);
+  if (!focus || !paint || !painting) return () => {};
+
+  const img = document.createElement("img");
+  img.alt = "";
+  img.draggable = false;
+  img.setAttribute("aria-hidden", "true");
+
+  let art: Box | undefined;
+  let frame: Box | undefined;
+  /* Until both are known, `framing.js`'s own pre-measurement answer: cover,
+     anchored on the point. It is close enough to the measured region that the
+     switch is not a visible jump, which is the whole requirement for the one
+     paint it covers. */
+  const place = (): void => {
+    img.style.cssText = `position:absolute;${
+      art && frame ? regionCss(framedRegion(art, frame, focus)) : `left:0;top:0;${coverCss(focus)}`
+    }`;
+  };
+  place();
+  img.addEventListener("load", () => {
+    art = { width: img.naturalWidth, height: img.naturalHeight };
+    place();
+  });
+  img.src = painting;
+  paint.append(img);
+
+  const unfollow = followSize(paint, (size) => {
+    frame = size;
+    place();
+  });
+  return () => {
+    unfollow();
+    img.remove();
+  };
 }

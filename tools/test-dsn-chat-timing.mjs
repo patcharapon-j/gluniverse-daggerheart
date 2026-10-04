@@ -43,10 +43,20 @@ const plate = {
   insertAdjacentHTML() {},
 };
 
+/* `spin` picks a face at random inside the die's own range, so "the face was
+   scrambled" cannot be asserted as "the face is not 9": one run in twelve
+   scrambles a d12 to the number it already showed and the gate fails for no
+   reason. Pinning Math.random keeps the assertion the one that was meant —
+   spin ran, and it rewrote the face — without weakening it to a range check,
+   which "9" would pass even if spin never ran at all. */
+const random = Math.random;
+Math.random = () => 0;
+
 hold(plate, settled);
 assert.ok(classes.has("veil"), "the chat result must be veiled while 3D dice roll");
 assert.ok(classes.has("rolling"));
-assert.notEqual(face.textContent, "9");
+assert.equal(face.textContent, "1", "the die must tumble inside its own range while it rolls");
+Math.random = random;
 assert.equal(total.textContent, "·");
 assert.ok(!classes.has("play"), "a reroll must not replay the whole card arrival");
 

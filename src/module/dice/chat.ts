@@ -15,7 +15,10 @@ import { damageRecipients, noRecipientKey } from "../apps/targets.ts";
 import { getFear, setFear } from "../settings.ts";
 import { payMark } from "../marked.ts";
 import { watchChatCard } from "../apps/chat-card-fit.ts";
+import { frameArt } from "../apps/fit-cards.ts";
 import { loadSigils } from "../sheets/cards.ts";
+import { useOrnaments } from "../sheets/card-style.ts";
+import { bindFaceFx, stillCards } from "../ui/face-fx.js";
 import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
 import { refreshedValue } from "../data/resources.ts";
 import { rollAdversaryDamage, rollWeaponDamage } from "./actions.ts";
@@ -155,35 +158,98 @@ async function applyFear(message: any): Promise<void> {
   await applyFearClaim(1);
 }
 
+/* ── the pointer, bound once ───────────────────────────────────────────
+   `bindFaceFx` delegates the tilt from a scope root, and `face-fx.js` says
+   why: a re-render replaces a message outright, so a listener bound to
+   anything inside one goes with it, and the replacement arrives with no
+   `data-touched` and snaps from a stale angle. The right scope is therefore
+   not the card and not the message — it is the container Foundry keeps, and
+   there are two of them, the log and the notification stack that floats over
+   the board. Fifty messages must not mean fifty bindings, and a WeakSet is
+   all the bookkeeping that needs: the teardown is discarded because the roots
+   outlive the session, and a root that somehow does not is collected with its
+   entry. */
+const tilted = new WeakSet<Node>();
+
+function bindTilt(host: HTMLElement): void {
+  const root = host.closest("#chat-notifications, #chat-log, .chat-log, #chat") ??
+    host.ownerDocument.body;
+  if (tilted.has(root)) return;
+  tilted.add(root);
+  bindFaceFx(root);
+}
+
+/**
+ * The card's arrival: it rises a little and settles, once.
+ *
+ * `card.css` writes this for the old `.card` as `@keyframes card-in`, and the
+ * note above it is the argument — a card is a static object being handed to
+ * you, so one motion and nothing inside it moving on its own. The same
+ * distance, curve and duration, driven from here because `.dh-face` has no
+ * rule of its own yet; the class goes on as well, so a stylesheet that grows
+ * one takes over without this changing.
+ *
+ * Not ported with it: `.card.arrive .plate::after`, the sheen across the
+ * artwork. It names the old builder's `.plate`, which no face has at any size
+ * — the ported card's is `.dh-face-plate` — and the new card already has its
+ * own light in `.dh-glare` and `.dh-sweep`, so a second band crossing the
+ * painting would be two greetings. That holds now that a posted card is the
+ * full face and does have a plate of its own to put one on.
+ */
+const RISE_MS = 340;
+
+function rise(face: HTMLElement): void {
+  face.classList.add("arrive");
+  /* `stillCards`, not `still` above and not `matchMedia` again. This is the
+     card's own motion and it answers to the Card motion setting along with
+     the tilt, the sweep and the peek; `still()` is the duality plate's and
+     reads the OS alone, which is what its own ratchet asserts. */
+  if (stillCards()) return;
+  face.animate(
+    [{ opacity: 0, transform: "translateY(-8px)" }, { opacity: 1, transform: "none" }],
+    { duration: RISE_MS, easing: "cubic-bezier(.2,.8,.28,1)", fill: "both" },
+  );
+}
+
 /**
  * Draw a posted card from its options rather than from its stored HTML.
  *
  * The stored HTML has had every `<svg>` removed by Foundry's own sanitiser
- * on the way into the database — see `sheets/post-card.ts`. So the two
- * corner sigils, the recall bolt and the art fallback's technical plate are
- * all missing from it, and no amount of styling brings them back. The
- * options survived in a flag; the sigils are local files. Redraw.
+ * on the way into the database — see `sheets/post-card.ts`. So the sigils on
+ * the pennant and the seam, the recall bolt, the charge lights and the whole
+ * no-art field are missing from it, and no amount of styling brings them
+ * back. The options survived in a flag; the sigils are local files. Redraw.
  *
- * Then fit, in the same pass: `fit` steps the type scale down until the body
- * stops overflowing, which means measuring a laid-out box. Two frames,
- * because the first is before the chat log has given the message its width
- * and the card's container query has nothing to resolve against yet.
+ * Two more things the flag carries have to be *re-resolved* rather than
+ * merely read, because each of them is a rule in the poster's document and a
+ * document is not a thing a message carries:
  *
- * And after the fonts, which the sheet gets for free and this does not. A
- * sheet is opened by hand, long after the client finished loading; a chat
- * card is very often drawn during it, and `fit` measured against a fallback
- * face is measuring the wrong text. It runs exactly once — nothing re-fits a
- * message — so a card that measured early stays wrong for the session, which
- * is the difference the peek layer never shows.
+ *   `motif` back through `useOrnaments`, which puts the corner and seam masks
+ *   in this reader's document and hands the same name back. Idempotent on a
+ *   motif, so the stored name is both the key and the answer.
  *
- * The redraw is guarded for the same reason. `fit` is what makes a long card
- * readable and the sigils are decoration; a fetch that fails should not be
- * able to take the layout with it, and `void drawCard(…)` at the call site
- * would swallow the rejection without a word.
+ *   `focus` into `frameArt`, which is the *measured* crop — the painting's
+ *   natural size against the frame's own box — rather than the cover crop
+ *   `useArtFocus` can state without measuring. A chat card is one of the two
+ *   surfaces that has laid the frame out, so it is one of the two that can
+ *   take the better answer.
  *
- * The arrival goes on last, after the fit: `fit` steps the plate's height,
- * and a card that started animating before it was measured would be
- * animating one shape into another mid-flight.
+ * Then fit, in the same pass: the ladder steps the painting's height and then
+ * the type scale down until the body stops overflowing, which means measuring
+ * a laid-out box. And after the fonts, which the sheet gets for free and this
+ * does not — a sheet is opened by hand, long after the client finished
+ * loading; a chat card is very often drawn during it, and a fit measured
+ * against a fallback face is measuring the wrong text. It runs exactly once,
+ * because nothing re-fits a message.
+ *
+ * The redraw is guarded for the same reason it always was. The fit and the
+ * crop are what make the card readable and the sigils are decoration; a fetch
+ * that fails should not be able to take the layout with it, and
+ * `void drawCard(…)` at the call site would swallow the rejection in silence.
+ *
+ * The arrival goes on last, after the measurement, because a card that
+ * started animating before it was measured would be animating one shape into
+ * another mid-flight.
  */
 async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promise<void> {
   const card = message.getFlag(SYSTEM_ID, "card");
@@ -195,17 +261,16 @@ async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promis
         sig: sigils[card.sigKey] ?? "",
         sig2: card.sig2Key ? (sigils[card.sig2Key] ?? "") : undefined,
         fbsig: card.fbsigKey ? (sigils[card.fbsigKey] ?? "") : undefined,
+        // The name is the key; the call is for its side effect on this
+        // reader's document. A card posted without one simply has no motif.
+        motif: card.motif ? useOrnaments(card.motif) : undefined,
       });
       const next = document.createRange().createContextualFragment(drawn)
         .firstElementChild as HTMLElement | null;
       if (next) {
         // The wrapper is the element we are standing in, so take the redrawn
-        // one's children rather than nesting a second wrapper inside the first
-        // — and take its class and `--art` too. Those are the wrapper's own two
-        // facts and they do not survive storage either: Foundry's sanitiser
-        // drops a `style` carrying a `url()`, so a card with real artwork
-        // arrived wearing whatever `--art` it inherited, which is the sample
-        // photograph in `tokens.css`. Every framed card, one stock image.
+        // one's children rather than nesting a second wrapper inside the
+        // first, and its class with them.
         host.className = next.className;
         host.style.cssText = next.style.cssText;
         host.replaceChildren(...next.childNodes);
@@ -215,15 +280,18 @@ async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promis
     }
   }
   bindActions(message, host);
+  bindTilt(host);
   await document.fonts?.ready?.catch(() => {});
   // Observe width because the hook can run while chat is hidden. The shared
-  // fitting queue still spreads a backlog across frames, and arrival waits
-  // until the card has actually been measured.
+  // fitting queue still spreads a backlog across frames, and the arrival waits
+  // until the card has actually been measured. `frameArt`'s observer is handed
+  // over with it, so the one answer to "has this card been detached" releases
+  // both — see `apps/chat-card-fit.ts`.
   requestAnimationFrame(() => {
-    const card = host.querySelector<HTMLElement>(".card");
-    if (card) watchChatCard(card, () => {
-      if (fresh) card.classList.add("arrive");
-    });
+    const face = host.querySelector<HTMLElement>(".dh-face");
+    if (!face) return;
+    const unframe = frameArt(face, card?.focus);
+    watchChatCard(face, () => { if (fresh) rise(face); }, unframe);
   });
 }
 

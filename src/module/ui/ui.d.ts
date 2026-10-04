@@ -553,3 +553,146 @@ declare module "*/ui/ruler.js" {
   /** How long that collapse takes, stated once. */
   export const TTL: number;
 }
+
+/* ── the ported card ──────────────────────────────────────────────────
+   gluniverse-vtt's shipped card, brought over module for module. The face
+   is the card at any of its four sizes, the compact card is the same card
+   with the body taken off, and `face-fx.js` is every behaviour the two
+   share: the pointer tilt, the two fit ladders, the reveal sweep and the
+   peek. `terms.js` is the colour and symbol the card's own text wears,
+   `ornaments.js` the motif its frame wears, `framing.js` the arithmetic
+   that crops a painting onto its marked point. */
+
+declare module "*/ui/terms.js" {
+  /** Card text with every term it names given its colour and its symbol. */
+  export function rich(text?: string): string;
+
+  /** The same, without the `**bold**` and `*italic*` pass. */
+  export function terms(text?: string): string;
+
+  /** A term's mark, as path data, keyed by the term the scanner found. */
+  export const MARK_PATHS: Record<string, string>;
+
+  /**
+   * What a use limit waits for, as path data: a sun, a book, a stage, a
+   * crescent. `rest` is stated so a caller can fall back on it without
+   * having to prove the index hit — every refresh a card can name is in
+   * here, and `rest` is what an unknown one means.
+   */
+  export const PER_PATHS: Record<string, string | undefined> & { rest: string };
+
+  export const DIE_PATH: string;
+}
+
+declare module "*/ui/ornaments.js" {
+  /** The motif a domain wears: its own set, or `plain` past the corebook. */
+  export function motifOf(domain?: string): string;
+
+  /**
+   * A motif's corner and seam as `url("data:image/svg+xml,…")` strings, for
+   * the CSS masks `--dh-orn-corner` and `--dh-orn-seam` read.
+   */
+  export function ornamentImages(motif: string): { corner: string; seam: string };
+}
+
+declare module "*/ui/framing.js" {
+  /** A hand-marked focus point: shares across and down, and how close in. */
+  export interface Focus {
+    x: number;
+    y: number;
+    scale?: number;
+  }
+
+  /** The part of a painting a frame should show, in shares of the painting. */
+  export interface Region {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+
+  export interface Box {
+    width: number;
+    height: number;
+  }
+
+  export function framedRegion(art: Box, frame: Box, focus: Focus): Region;
+  export function regionStyle(region: Region): {
+    width: string;
+    height: string;
+    left: string;
+    top: string;
+  };
+  export function regionCss(region: Region): string;
+  export function coverCss(focus: Focus): string;
+  export function focusOnArt(focus: Focus): Focus;
+  export const SMALLEST_CROP: number;
+  export function followSize(frame: Element, onSize: (size: Box) => void): () => void;
+}
+
+declare module "*/ui/face.js" {
+  /** The card at `full`, `slot`, `bay` or `chip`. */
+  export function FACE(opts: any): string;
+
+  /** The words a kind puts in the card's header. */
+  export function kindWords(opts: any): { kind: string; sub?: string };
+
+  /** The stamp a state puts over the painting, when the state speaks. */
+  export function stateWords(opts: any): string | undefined;
+
+  /** The card's own accessible label. */
+  export function cardLabel(opts: any): string;
+
+  /** A named block of rules, with its charge lights. */
+  export function rulesText(text?: string, cls?: string): string;
+
+  export const DH_BOLT: string;
+  export const DH_QUILL: string;
+}
+
+declare module "*/ui/compact.js" {
+  /** The card with its body taken off: painting, name, kind, stamp. */
+  export function COMPACT(opts: any): string;
+
+  /** The vault's own row, with the painting as a lens over the words. */
+  export function VAULT_ROW(opts: any): string;
+
+  /** The `--dh-w` a compact card wants at a given size. */
+  export function compactSize(opts: any): string;
+
+  /** The stamp a state puts on a compact card. */
+  export function compactStamp(opts: any): string | undefined;
+}
+
+declare module "*/ui/face-fx.js" {
+  /** Binds the tilt, both fit ladders, the sweep and the peek within a scope. */
+  export function bindFaceFx(scope?: ParentNode): () => void;
+
+  export function tilt(scope?: ParentNode): () => void;
+  export function fit(scope?: ParentNode): void;
+  export function nameFit(scope?: ParentNode): void;
+  export function sweep(card: Element): void;
+  export function sweepChanged(scope?: ParentNode): void;
+
+  /**
+   * Whether a card should hold still — the one reading every card surface
+   * shares. `--vtt-motion-speed` when a person has stated a preference, the
+   * OS's `prefers-reduced-motion` when nobody has.
+   */
+  export function stillCards(): boolean;
+
+  /** The tilt a pointer at (x, y) over `rect` asks for, in degrees and shares. */
+  export function tiltAt(
+    rect: DOMRect,
+    x: number,
+    y: number,
+  ): { rx: number; ry: number; px: number; py: number };
+
+  export const MAX_TILT: number;
+  export const FIT: number[][];
+  export const NAME_FIT: number[];
+  export const REVEAL_MS: number;
+  export const SWEEP_MS: number;
+  export const PEEK_REST_MS: number;
+  export const PEEK_GRACE_MS: number;
+}

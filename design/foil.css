@@ -1,0 +1,624 @@
+/* ══════════════════════════════════════════════════════════════════
+   TWILIGHT FOIL — the campaign decks on the ported card
+
+   marked.css is the argument; this is the same argument carried onto the
+   card that replaced the one it was written for. Every rule in that file
+   is scoped to `.card`, the old builder. The new surfaces are `.dh-face`
+   (`full` and `slot`), `.dh-cc` and `.dh-vrow`, `cards.ts` already puts
+   `mk mk-root mk-trim mk-cut mk-edge mk-motif` on all three, and until
+   this file existed none of it matched anything: a Root card and a
+   Grace card were the same object on every new surface.
+
+   Its own file rather than more of face.css, and not only to keep that
+   file stable while it is being screenshotted. face.css and compact.css
+   are a *port* — they are kept byte-comparable with gluniverse-vtt so a
+   fix made upstream can be read straight across, and this is not
+   upstream's. It is a campaign frame two domains belong to, which gluvtt
+   has never heard of.
+
+   ── what carries over and what does not ───────────────────────────
+   marked.css offers five stackable signals and `cards.ts` stamps four.
+   Of those four:
+
+     mk-trim   survives as the metal on the rim. The new card has no
+               `--trim` to repoint, so the edge takes it directly.
+     mk-cut    does NOT survive, and that is deliberate rather than
+               unfinished. The old card's second chamfer worked because
+               `.card` is a flat box with a 15px corner; `.dh-face-tilt`
+               is an `overflow: hidden` box carrying the painting, the
+               plate, the pennant and a float shadow, and a `clip-path`
+               on it cuts the shadow off at the corner and leaves the
+               card looking cheaply die-cut. The silhouette signal is
+               worth having and it wants its own pass on the markup, not
+               a clip bolted onto a layer that is already doing three
+               jobs. Reported rather than forced.
+     mk-edge   survives, and is the one signal below that is not new.
+     mk-motif  does not survive *as a motif*. It drew one picture in the
+               panel behind the prose; what replaces it is the weave,
+               which is the same idea taken to its conclusion — the
+               deck's line-work is in the card's stock rather than
+               printed on one region of it.
+
+   `mk-stock` and `mk-marque` are unstamped, there and here, for the
+   reasons marked.css gives.
+
+   ── what the foil is ──────────────────────────────────────────────
+   Three parts, and only one of them moves.
+
+     1. THE WEAVE, static. A seamless tile of the deck's own drawing,
+        used as a mask over the set's metal, over the whole card. This
+        is what makes the card foil rather than lit: it is in the stock,
+        it is there at rest, and it is the part that survives at every
+        size including the ones too small to animate.
+     2. THE SHEEN, the one animation. A soft raked band of light that
+        crosses the painting and nothing else.
+     3. THE POINTER. A real foil answers the angle you hold it at, and
+        the card already tracks the pointer — face-fx.js writes
+        --dh-px/--dh-py and `.dh-glare` reads them. So a marked card's
+        glare is masked by the weave: move the hand and the pattern
+        lights under it. No new element, no new listener, no second
+        animation that could fight the first.
+
+   ── good, but not overwhelming ────────────────────────────────────
+   This sits behind rules people read at the table, and the taste
+   constraint decided three things that an impressive screenshot would
+   have decided the other way.
+
+   The motion is CONTINUOUS and slow rather than a sweep every few
+   seconds. A periodic flash is the more striking effect and it is the
+   wrong one: a motion *onset* is what the eye is built to catch, so a
+   card that flashed every eight seconds would reclaim your attention
+   every eight seconds forever. A constant low-amplitude drift is
+   something you stop seeing after one pass, which is what a foil in the
+   hand actually does.
+
+   The motion is CONFINED TO THE PAINTING. `.dh-art` already clips, the
+   rules plate is a separate box below it, and keeping the band inside
+   the one means there is no moving light over the prose at all — not
+   dimmed over it, not masked away from it, not there. That is a
+   stronger guarantee than any opacity number, and it costs nothing,
+   because the painting is where a card's gloss is anyway.
+
+   The weave is SELF-LIMITING ON PAPER, and this is the trick the whole
+   file leans on. It paints at `mix-blend-mode: screen`, and screen
+   against the plate (`--dh-plate`, which resolves near #f1f2f6) is
+   arithmetically almost the identity. So one rule over the whole card
+   puts the weave on the painting, on the name, on the compact card's
+   dark foot and on the vault strip, and all but takes it off the rules
+   plate — without a falloff mask, a size query or a second selector. The
+   alternative was marked.css's intersected falloff, which is correct
+   there because that motif sits *in* the panel; here the substrate
+   answers the question by itself.
+
+   Measured rather than asserted, by diffing two full-page renders with
+   the weave on and off (the script is in the session's scratchpad):
+
+     region            mean lift   worst pixel
+     Root painting        3.9          44
+     Void painting        2.0          72
+     Root plate           0.8          22
+     Void plate           0.4          21
+     a Grace card         0            0
+
+   of 255, and every one of them is a LIFT — screen cannot darken. On the
+   plate that moves the quietest ink's contrast the right way: 3.30 to
+   4.34 on Root's worst pixel, 9.21 to 11.57 on Void's. The Grace row is
+   the control, and a zero there is the other thing worth proving: an
+   ordinary card is untouched by every rule in this file.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the deck tokens ───────────────────────────────────────────────
+   `--mk-metal` is marked.css's `--metal`, the same hex and the same
+   argument: one silver for both decks, because what has to read is "not
+   a corebook card", which is a fact about the frame. The deck is
+   already said by the hue and by the weave, which differ.
+
+   `--mk-u` is the one piece of plumbing in this file and it is here
+   because the three surfaces do not agree on a unit. A face is 100
+   units wide and writes every length as a multiple of `--u`; a compact
+   card is a *known pixel size* (100 or 124) and writes px, deliberately,
+   because it is never asked to draw at an arbitrary width; a vault row
+   is a row and has no card width at all. So the foil declares its own
+   unit, defined once per surface, and every length below is written in
+   it. A px glow radius would have been right at one size and wrong at
+   the other four, which is the note at the top of face.css restated.
+
+   `--mk-cell` is the weave's tile size in `--mk-u`, and it is the knob
+   the size steps below turn. */
+.mk {
+  --mk-metal: #c3ced9;
+  --mk-cell: 26;
+  /* Both decks state their own, and this is the floor a third would land
+     on if the frame ever grew one. */
+  --mk-ink: 0.17;
+}
+
+/* Which deck. `mk-root` and `mk-void` and not the bare words, for
+   marked.css's reason: `.root` and `.void` would both load into the one
+   `.dh` root the whole ported stack shares, where scoping does nothing.
+
+   `--mk-ink` differs between them because the two drawings differ in
+   coverage, not because one deck is meant to be louder: Root's filaments
+   put about 14% ink in the tile and Void's lattice about 4%, so an equal
+   opacity would have made Void a rumour. Measured, not guessed — see the
+   coverage readout in the generator's preview. */
+.mk-root {
+  --mk-weave: url("/design/assets/foil/root.svg");
+  --mk-ink: 0.22;
+}
+
+.mk-void {
+  --mk-weave: url("/design/assets/foil/void.svg");
+  --mk-ink: 0.38;
+}
+
+/* The unit, once per surface. */
+.dh-face.mk {
+  --mk-u: var(--u);
+}
+
+.dh-cc.mk {
+  /* The compact card is 100 × 140 px at S and 124 × 174 at L, the same
+     100:140 proportion as the face. So its hundredth is its width over
+     100, and every number below means the same thing on both cards and
+     on the face. Named --mk-u and not --u: compact.css uses no unit
+     system and declaring one there, even on a marked card, would be
+     this file reaching into a file it does not own. */
+  --mk-u: calc(var(--dh-cc-w) / 100);
+}
+
+.dh-vrow.mk {
+  /* A row has no card width to be a hundredth of — the lens is 60px of
+     a row of whatever length the sheet gives it. So the unit is simply a
+     pixel here and the cell below is read as px. */
+  --mk-u: 1px;
+  /* The ladder's last step. A row is 44px tall, so the cell is read
+     against the row's height rather than a card's width, and the ink is
+     the highest in the file: a 60px strip of painting behind a name is
+     the smallest piece of foil the system draws and it still has to say
+     which deck the row came from. */
+  --mk-cell: 26;
+  --mk-ink: 0.5;
+}
+
+/* ══ THE WEAVE ═════════════════════════════════════════════════════
+   The deck's drawing, tiled, as a mask over the set's metal, across the
+   whole card.
+
+   ── where it lives, which took four tries ────────────────────────
+   Three surfaces, three hosts, and the reasons the simpler answers lost
+   are worth keeping because each of them looks right until it is drawn
+   and measured.
+
+   `.dh-face-tilt::before` is the natural home — the box that clips, that
+   is rounded, that turns. It is taken: face.css draws the homebrew
+   dashed rule on it, and **every marked card is homebrew**. A campaign
+   frame's cards carry no printing, `homebrew()` in cards.ts answers
+   `!s.printing?.code` for a domainCard, so every one of these already
+   wears `.is-homebrew` and already uses that pseudo-element.
+
+   `.dh-sweep::before` was the next answer and it is the one that had to
+   be measured to be rejected. It is inside the tilt, it spans the card,
+   its ::before is free — and on a FACE it silently breaks the blend.
+   `.dh-sweep` carries a `backdrop-filter`, a filtered element isolates,
+   and `mix-blend-mode: screen` inside an isolated group has no backdrop
+   to screen against, so it degenerates to painting the metal flat. A mid
+   grey at 22% over the rules plate does not lift the paper, it DARKENS
+   it: the diff said 31 values down at the worst pixel, which is the one
+   thing this effect may not do. On a COMPACT card the same selector is
+   correct, because compact.css turns that backdrop-filter off — "what
+   stops the small card paying for a full-size compositor pass on every
+   card in a grid" — so the sweep there isolates nothing and the weave
+   below uses it.
+
+   For the face the weave therefore sits on `.dh-face::after`, on the
+   host, outside the tilt, where the backdrop is the whole card and
+   screen means what it says. The objection to that is real and is
+   answered rather than ignored: a pattern that stays flat while the card
+   turns to 6° reads as a screen door in front of the card. So it is
+   given the tilt's own rotation off the same two variables, under the
+   host's own `perspective`, with the same transition. It is not inside
+   the turning box; it turns by the same amount, which is the same
+   picture and a correct blend.
+
+   ── what it does NOT read ────────────────────────────────────────
+   --dh-px and --dh-py. The weave is the card's own stock, so it answers
+   the card's angle and not the light's position; only the sheen and the
+   glare below answer the light. At the motion setting's Off the tilt
+   listener never writes any of the four, every use here and in face.css
+   falls back to 0, and the weave sits flat and still — which is the
+   correct still card rather than a degraded one.
+
+   ── and it stops on a spent card ─────────────────────────────────
+   The used-sweep greys a card with a `backdrop-filter`, which filters
+   what is behind it and so would not have touched a foil layered over
+   it in any case. Rather than fight that, the foil simply goes: a card
+   that has been spent is not showing off. That also means a loadout of
+   five used cards costs nothing, which is the cheap half of the same
+   decision. */
+.dh-face.mk::after,
+.dh-cc.mk .dh-sweep::before,
+.dh-vrow.mk::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  /* The metal, raked. Mostly `--mk-metal` with the domain only tinting
+     it: an even mix read as a coloured haze rather than as silver, and
+     on Root, whose hue is a green close to its own paintings, it
+     disappeared into them entirely. A foil is a metal that has taken a
+     colour, not a colour that happens to be shiny. */
+  background: linear-gradient(
+    118deg,
+    color-mix(in oklab, var(--mk-metal) 70%, var(--dh-dom, #8a93a4)) 0%,
+    var(--mk-metal) 26%,
+    color-mix(in oklab, var(--mk-metal) 68%, var(--dh-dom-dk, #000)) 48%,
+    var(--mk-metal) 72%,
+    color-mix(in oklab, var(--mk-metal) 70%, var(--dh-dom, #8a93a4)) 100%
+  );
+  -webkit-mask-image: var(--mk-weave);
+  mask-image: var(--mk-weave);
+  -webkit-mask-size: calc(var(--mk-cell) * var(--mk-u)) calc(var(--mk-cell) * var(--mk-u));
+  mask-size: calc(var(--mk-cell) * var(--mk-u)) calc(var(--mk-cell) * var(--mk-u));
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  mix-blend-mode: screen;
+  opacity: var(--mk-ink);
+}
+
+/* The face's copy: the card's own box, its own corner radius clipping
+   its own background, and the tilt's rotation mirrored exactly. z-index
+   1 puts it over `.dh-face-tilt`, which is the only child the host has.
+
+   `rotateX`/`rotateY` and not the shorthand, and in this order, because
+   that is the order `.dh-face-tilt` writes them in and a transform list
+   is not commutative. */
+.dh-face.mk::after {
+  inset: 0;
+  z-index: 1;
+  border-radius: calc(3 * var(--u));
+  transform: rotateX(var(--dh-rx, 0deg)) rotateY(var(--dh-ry, 0deg));
+  transition: transform var(--vtt-motion-snap) var(--vtt-ease-out);
+}
+
+/* Under the hand the weave keeps step with the card it is on, the same
+   way the painting and the edge do. */
+.dh-face.mk[data-touched]::after {
+  transition-duration: var(--vtt-motion-instant);
+}
+
+/* The compact card's copy. `.dh-sweep` is `height: 0` at rest and grows
+   to 100% when the card is spent, so this takes an explicit height in
+   `--mk-u` rather than `inset: 0` and does not move when the card is
+   marked used. z-index 0 keeps it under the glare at 5 and the edge at
+   7, both of which are things on top of the stock rather than in it. */
+.dh-cc.mk .dh-sweep::before {
+  inset: 0 0 auto;
+  z-index: 0;
+  height: calc(140 * var(--mk-u));
+}
+
+/* Spent cards carry no foil. */
+.dh-face.mk[data-state="used"]::after,
+.dh-cc.mk[data-state="used"] .dh-sweep::before {
+  display: none;
+}
+
+/* ══ THE SHEEN ═════════════════════════════════════════════════════
+   One soft raked band of light crossing the painting, continuously.
+
+   ── what is animated, and why it is cheap ────────────────────────
+   `transform` and `opacity`, and nothing else. The band is a real
+   element wider than tall and taller than the box, tilted once in the
+   keyframes and translated along its own axis; `.dh-art` is
+   `overflow: hidden`, so the box it leaves through is the clip that was
+   already there. That is one compositor layer per marked card, moved on
+   the GPU, with no paint after the first frame and no layout at all.
+
+   The rejected alternatives are the usual three. An animated
+   `background-position` on a card-sized element repaints the element
+   every frame. An animated `filter: blur()` or `drop-shadow()` repaints
+   and re-filters it. `box-shadow` keyframes repaint it twice. A loadout
+   tab draws a dozen cards and a browse grid draws hundreds, and all
+   three of those scale with the number of cards times the number of
+   pixels; this one scales with neither.
+
+   `will-change` is deliberately absent. Chromium promotes an element
+   with a running transform animation by itself, and declaring it would
+   pin a layer per marked card for as long as the sheet is open, which
+   on a browse grid is the cost the whole file is trying not to pay.
+
+   ── the shape of the loop ────────────────────────────────────────
+   Continuous and slow, for the reason in the header. The band fades in
+   over the first fifth of the cycle and out over the last, so the loop
+   has no seam — a band that popped into existence at its start point
+   would be exactly the motion onset the continuous drift exists to
+   avoid. `linear` and not an ease, because an ease has a fast part, and
+   a fast part is a thing you notice.
+
+   ── and the gate ────────────────────────────────────────────────
+   The duration is `calc(16s * var(--vtt-motion-speed))`, which is the
+   house form from face-tokens.css and does the whole job in both
+   directions. At the Card motion setting's Off the scale is 0, the
+   duration is 0s, and an animation of zero duration with no fill holds
+   no keyframe — the band sits at its base style, which is transparent.
+   Under an OS reduced-motion preference with no setting declared, the
+   block at the foot of face-tokens.css sets the same 0. And at Full the
+   person has overridden their OS and gets 16s, which a
+   `@media (prefers-reduced-motion: reduce)` block in here would have
+   made impossible — that is the bug that was just taken out of face.css
+   and compact.css, and this file must not put it back. */
+.mk .dh-art::before,
+.mk .dh-cc-art::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: calc(-60 * var(--mk-u));
+  left: 0;
+  width: calc(34 * var(--mk-u));
+  height: calc(260 * var(--mk-u));
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--mk-metal) 40%, transparent) 38%,
+    color-mix(in oklab, var(--vtt-white) 52%, transparent) 50%,
+    color-mix(in oklab, var(--mk-metal) 40%, transparent) 62%,
+    transparent 100%
+  );
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: dh-mk-sheen calc(16s * var(--vtt-motion-speed)) linear infinite;
+}
+
+/* The band's travel is written in --mk-u, so it crosses the same
+   fraction of the card at 264px and at 100px. -70 to 170 is one card
+   width of overshoot at each end, which is what keeps the fade in and
+   the fade out off the card rather than on it. */
+@keyframes dh-mk-sheen {
+  0% {
+    opacity: 0;
+    transform: rotate(-14deg) translate3d(calc(-70 * var(--mk-u)), 0, 0);
+  }
+  20% {
+    opacity: 0.3;
+  }
+  80% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(-14deg) translate3d(calc(170 * var(--mk-u)), 0, 0);
+  }
+}
+
+/* A spent card's sheen goes with its weave, and for the same reason. */
+.mk[data-state="used"] .dh-art::before,
+.mk[data-state="used"] .dh-cc-art::before {
+  display: none;
+}
+
+/* ══ THE POINTER ═══════════════════════════════════════════════════
+   `.dh-glare` is already a radial highlight whose centre tracks
+   --dh-px/--dh-py at 45% of the card's half-width, already blended
+   `screen`, already faded in only while the card is touched. On a
+   marked card it is masked by the weave, so what the hand lights is the
+   deck's own pattern rather than a smooth patch of glass — which is
+   exactly what a foil does and costs one declaration.
+
+   Nothing here assumes the pointer variables are live. They are unset
+   until face-fx.js writes them, every use site in face.css already
+   carries a `, 0` fallback, and at the motion setting's Off the tilt
+   listener returns before writing any of them — so the resting state is
+   a centred highlight at opacity 0, which is to say nothing at all.
+   That is the correct still card, not a degraded one.
+
+   The glare is deliberately NOT given a second, slower loop of its own.
+   Two lights moving on one card at two rates is the thing that reads as
+   a graphics demo; the loop owns the sheen, the hand owns the glare,
+   and they never run at the same time because the glare is only visible
+   while the card is touched. */
+.mk .dh-glare,
+.mk .dh-cc-glare {
+  -webkit-mask-image: var(--mk-weave);
+  mask-image: var(--mk-weave);
+  -webkit-mask-size: calc(var(--mk-cell) * var(--mk-u)) calc(var(--mk-cell) * var(--mk-u));
+  mask-size: calc(var(--mk-cell) * var(--mk-u)) calc(var(--mk-cell) * var(--mk-u));
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+/* A masked glare loses most of its area, so it is given the brightness
+   back in the gradient rather than in `opacity` — opacity clamps at 1
+   and these two are already there when the card is touched. The radial's
+   centre and falloff are face.css's and compact.css's own numbers,
+   unchanged; only the light in it is stronger, and it is the set's metal
+   rather than plain white so the hand lights silver on a silver card. */
+.mk .dh-glare {
+  background: radial-gradient(
+    circle at calc(50% + var(--dh-px, 0) * 45%) calc(50% + var(--dh-py, 0) * 45%),
+    color-mix(in oklab, var(--mk-metal) 70%, var(--vtt-white)),
+    transparent 60%
+  );
+}
+
+.mk .dh-cc-glare {
+  background: radial-gradient(
+    circle at calc(50% + var(--dh-px, -0.5) * 40%) calc(50% + var(--dh-py, -0.7) * 40%),
+    color-mix(in oklab, var(--mk-metal) 72%, var(--vtt-white)),
+    transparent 55%
+  );
+}
+
+/* ══ THE RIM ═══════════════════════════════════════════════════════
+   marked.css's section D, carried across. No corebook card has an edge;
+   this one is bounded, in the set's metal, with a dark line under it so
+   the metal has something to sit on and the domain's own light bleeding
+   inward off it.
+
+   It overrides `.dh-face-tilt::after` rather than adding a layer,
+   because that element already *is* the card's edge and a second ring
+   half a unit inside the first reads as a printing fault. The gear-tier
+   gradient border further down face.css claims the same pseudo-element
+   and is not in danger of colliding: it is gated on
+   `[data-domains="0"]`, and a marked card is a domain card. */
+.dh-face.mk .dh-face-tilt::after {
+  box-shadow:
+    inset 0 0 0 max(1px, calc(0.55 * var(--u)))
+      color-mix(in oklab, var(--mk-metal) 70%, var(--dh-edge)),
+    inset 0 0 0 calc(1.5 * var(--u)) color-mix(in oklab, var(--vtt-ink-0) 45%, transparent),
+    inset 0 0 calc(16 * var(--u)) calc(-7 * var(--u))
+      color-mix(in oklab, var(--dh-dom) 72%, transparent),
+    inset 0 calc(-11 * var(--u)) calc(18 * var(--u)) calc(-14 * var(--u))
+      color-mix(in oklab, var(--dh-dom) 80%, transparent);
+}
+
+.dh-cc.mk .dh-cc-face::after {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--mk-metal) 70%, var(--dh-edge)),
+    inset 0 0 0 2px color-mix(in oklab, var(--vtt-ink-0) 55%, transparent),
+    inset 0 0 10px -4px color-mix(in oklab, var(--dh-dom) 75%, transparent);
+}
+
+/* ══ THE SIZES ═════════════════════════════════════════════════════
+   What reads as a weave across a 264px card is a grey haze on a 100px
+   one, because the tile shrinks with --mk-u and the filaments go under
+   a pixel. So the cell is stepped UP at every smaller size: fewer, bigger
+   cells, which keeps one root or one lattice junction legible as a shape
+   instead of resolving into noise. The ink is stepped up with it,
+   because a sparser pattern over the same area is a quieter one.
+
+   The ladder is in --mk-u and not in px, so a slot face drawn at 110px
+   in a browse grid and one drawn at 132px in chat get the same drawing
+   at two scales rather than two different drawings.
+
+   There is no `bay` or `chip` face size in this codebase — `FACE` takes
+   `full` and `slot`, `COMPACT` takes `s` and `l`, and the vault row has
+   a wide and a narrow form. Six forms, and all six are below. */
+
+/* A slot face is the painting and the name, with no rules plate: the
+   whole card is `.dh-art`, so the sheen crosses all of it rather than
+   stopping at a seam. Nothing has to be said for that to happen, and
+   this note is here so the next reader does not go looking for the rule
+   that makes it happen. */
+.dh-face[data-size="slot"].mk {
+  --mk-cell: 34;
+  --mk-ink: 0.26;
+}
+
+.dh-face[data-size="slot"].mk-void {
+  --mk-ink: 0.42;
+}
+
+.dh-cc.mk {
+  --mk-cell: 38;
+  --mk-ink: 0.36;
+}
+
+.dh-cc.mk-void {
+  --mk-ink: 0.5;
+}
+
+/* ══ THE VAULT ROW ═════════════════════════════════════════════════
+   The row keeps the weave and gives up the other two, which is the same
+   bargain vault.css already struck for itself: no pennant, no tier
+   metal, no glare and no tilt, because all of those are things you do to
+   a picture of a card and a row is not one. A travelling light in a list
+   of thirty rows is thirty travelling lights, and the vault is a surface
+   you search rather than read.
+
+   So the weave goes over the lens — the 60px strip of painting at the
+   row's left — and nowhere else. The name never has a pattern behind it
+   at any row width.
+
+   ── on the row and not in the lens ───────────────────────────────
+   `.dh-vrow-lens::before` is the obvious host and it fails the same way
+   `.dh-sweep::before` fails on a face, for a different reason: the lens
+   carries the strip's fade as a `mask-image`, a masked element isolates,
+   and `screen` inside an isolated group has nothing to screen against.
+   So the weave sits on the row, which has an opaque background and makes
+   no stacking context, and is clipped by the `overflow: hidden` the row
+   already has to make the strip a strip.
+
+   It therefore has to carry the fade itself, which is marked.css's own
+   trick: two mask layers composited `intersect`, the drawing and the
+   falloff. The falloff is vault.css's gradient to the value, so the
+   weave dissolves into the row exactly where the painting does.
+
+   `.dh-vrow` is `display: grid` and not positioned, so the marked row
+   takes a `position: relative` here. Setting it on `.mk` alone is what
+   keeps this file out of a file it does not own. */
+.dh-vrow.mk {
+  position: relative;
+  /* The row's metal. One hairline, inside the row's own, because a row is
+     a line of type with a picture at the end of it and a glowing frame
+     round it would make the vault a wall of frames. */
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--mk-metal) 46%, transparent),
+    inset 0 0 0 2px var(--vtt-ink-1);
+}
+
+/* 60px here and 44px in the narrow block are vault.css's own lens column,
+   copied rather than derived because a pseudo-element on the row cannot
+   read the width of a grid track inside it. Change one and change both. */
+.dh-vrow.mk::before {
+  inset: 0 auto 0 0;
+  z-index: 0;
+  width: 60px;
+  -webkit-mask-image: var(--mk-weave), linear-gradient(90deg, var(--vtt-opaque) 70%, transparent);
+  mask-image: var(--mk-weave), linear-gradient(90deg, var(--vtt-opaque) 70%, transparent);
+  -webkit-mask-size: calc(var(--mk-cell) * var(--mk-u)) calc(var(--mk-cell) * var(--mk-u)), 100% 100%;
+  mask-size: calc(var(--mk-cell) * var(--mk-u)) calc(var(--mk-cell) * var(--mk-u)), 100% 100%;
+  -webkit-mask-repeat: repeat, no-repeat;
+  mask-repeat: repeat, no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.dh-vrow.mk-void {
+  --mk-ink: 0.7;
+}
+
+/* Used and out-of-reach drain the lens with a filter, and the weave is
+   not inside the lens to be drained with it. So it goes, for the face's
+   reason: a row you cannot recall is not a row that should be the
+   brightest thing in the list. */
+.dh-vrow.mk[data-state="used"]::before,
+.dh-vrow.mk[data-state="out-of-reach"]::before {
+  display: none;
+}
+
+/* Narrow: the lens drops to 44px and the row sheds its mark, kind line
+   and stamp. The weave stays — it is the only thing left saying which
+   deck the row came from, now that the mark has gone — but the cell
+   steps up again, because 30px of tile in a 44px strip is two cells and
+   two cells is not a pattern.
+
+   The query is `width < 460px` to match vault.css's own, and the
+   container is `.dh-vrows`, which declares `container-type` there. A row
+   drawn outside that list never reaches this, exactly as it never
+   reaches the narrow layout. */
+@container (width < 460px) {
+  .dh-vrow.mk::before {
+    width: 44px;
+    --mk-cell: 22;
+  }
+}
+
+/* ══ LIGHT ═════════════════════════════════════════════════════════
+   Nothing. And that is a finding rather than an omission.
+
+   marked.css carries a `:root.light` block because the old card's
+   `mk-stock` takes the *other* theme's paper, so it has to know which
+   theme is on. This card does not: face-tokens.css states at length that
+   a Daggerheart card is a printed object whose ink is dark and whose
+   plate is light in both themes, the way a physical card does not turn
+   inside out when you carry it into a dark room. Every token the foil
+   reads — --vtt-paper, --vtt-white, --vtt-ink-0, --dh-dom, --dh-edge,
+   --dh-plate — is in that un-themed ramp. The sheet behind the card
+   flips; the card, and so the foil on it, does not.
+
+   Checked rather than assumed: both themes were rendered side by side
+   and the two cards are identical to the pixel. If a future token the
+   foil reads is ever wired to a themed house role, this block is where
+   the correction goes and this paragraph is the warning that it will be
+   needed. */

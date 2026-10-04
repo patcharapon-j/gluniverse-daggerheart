@@ -1,0 +1,318 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH FACE TOKENS — the adapter under the ported card
+
+   PORT. This file, face.css and compact.css came across from
+   gluniverse-vtt (apps/web/src/rulesets/daggerheart/cards/): cards.css
+   and illuminated.css merged into face.css, compact.css as it stood,
+   and the `--vtt-*` custom properties they lean on gathered here.
+
+   All three are deliberately off this repo's house style. The class
+   names stay as gluvtt spells them (.dh-face, .dh-cc, .dh-art-paint,
+   .dh-pennant, .dh-glare …) and so does gluvtt's one-declaration-per-
+   line formatting, so a future `diff` against the upstream files still
+   lines up and a fix made there can be read straight across. Terse
+   house names (.rc, .fb, .nm) would have made that diff useless, and
+   these three files are the one place in design/ where keeping the
+   upstream readable beats matching the neighbours.
+
+   ── why the --vtt-* names survive at all ──────────────────────────
+   They could all have been substituted away at the point of use. They
+   were not, and this file is the reason: it is the single seam between
+   two palettes. Anything that changes about how gluvtt's card meets
+   this system's colours changes *here*, in one block, and face.css and
+   compact.css stay byte-comparable with upstream. Substituting at the
+   use sites would have spread the same decision over two thousand
+   lines and made every later port a merge.
+
+   ── the three kinds of value below ────────────────────────────────
+   1. MAPPED. The system already had the same role under its own name,
+      so the token points at it and the card changes colour with the
+      rest of the sheet. Every one of these is listed in the mapping
+      block further down.
+   2. KEPT, because the role does not exist here. Silver, bone, the six
+      gear tints, the motion scale. New facts, not renames.
+   3. KEPT ON PURPOSE, although a same-named house token exists —
+      because the house token *flips with the theme* and the card does
+      not. This is the trap in the whole port and it is worth stating
+      plainly: a Daggerheart card is a printed object. Its ink is dark
+      and its plate is light in both themes, the same way a physical
+      card does not turn inside out when you carry it into a dark room.
+      The house roles (--paper, --ink, --line, --sunk) are *sheet*
+      roles: they invert under .light by design, which is the whole
+      point of them. Wiring --vtt-paper to --paper would have made the
+      rules plate go dark-on-dark in the dark theme, and wiring
+      --vtt-text to --ink would have put near-black body text on the
+      card's own near-black ink under .light. So the card's substrate
+      ramp is its own, stated once here and never themed.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the card's ink: its own substrate, deliberately un-themed ─────
+   gluvtt's seven-step near-black ramp, kept verbatim. 0 is the deepest
+   and is what every scrim and shadow on a card mixes toward; 1-6 climb
+   to the colour a chip or a feature row is made of. The house has dark
+   surfaces at similar values (--frame, --sunk, --paper) but all of them
+   either flip under .light or mean "the Foundry window", and a card is
+   neither. Seven steps is more than this system would normally spend,
+   and they are kept because the card's dressing mixes between adjacent
+   ones constantly — collapsing them would have meant rewriting a few
+   hundred color-mix() calls by eye. */
+:root{
+  --vtt-ink-0:#05060a;
+  --vtt-ink-1:#0a0b11;
+  --vtt-ink-2:#0f1017;
+  --vtt-ink-3:#15171f;
+  --vtt-ink-4:#1c1e28;
+  --vtt-ink-5:#272a36;
+  --vtt-ink-6:#353846;
+
+  /* Hairlines on that ink. Aliases of the ramp upstream, kept as
+     aliases rather than flattened to hex, because that is the fact
+     being stated: a line on a card is the next surface up showing
+     through, not a colour of its own. Not the house --line/--line-2,
+     for the theme reason in the header. */
+  --vtt-line:var(--vtt-ink-5);
+  --vtt-line-strong:var(--vtt-ink-6);
+
+  /* Text on that ink, in three weights of presence, plus the three
+     greys the dressing reaches for when something is quiet rather than
+     dim. --text-2 and --text-3 stay aliases of the fog for the same
+     reason the lines do. */
+  --vtt-text:#f4f4f7;
+  --vtt-fog-1:#6a6d7c;
+  --vtt-fog-2:#8e91a0;
+  --vtt-fog-3:#b3b5c2;
+  --vtt-text-2:var(--vtt-fog-3);
+  --vtt-text-3:var(--vtt-fog-2);
+
+  /* The printed plate: light in both themes, because it is paper.
+     NOT var(--paper) — see the header. --paper is the sheet, and the
+     sheet is dark by default. */
+  --vtt-paper:#ecedf2;
+  --vtt-paper-text:var(--vtt-ink-1);
+
+  /* Blend identities and the two absolutes. --white is what every
+     lightening color-mix() mixes toward and --opaque what every
+     shadow mixes from, so neither may be a theme colour: a mix toward
+     "the current paper" is a different picture in each theme, which is
+     exactly what these must not be. */
+  --vtt-white:#ffffff;
+  --vtt-opaque:#000;
+  --vtt-shade:rgb(5 6 10 / 0.78);
+  --vtt-glint:rgb(255 255 255 / 0.22);
+
+  /* ── type ──
+     --f-ui with the fallbacks appended, which tokens.css leaves to the
+     use site and the ported files do not spell.
+
+     The three width tokens are font-stretch percentages and they only
+     bite on a font with a width axis. Upstream they are driven by
+     "Google Sans Flex Variable"; this system asks for "Google Sans
+     Text", which as installed may have no such axis — in which case
+     every font-stretch in face.css and compact.css is inert and the
+     numerals and the hero titles simply draw at normal width. That is
+     a graceful nothing rather than a break, so the tokens stay: the
+     day the flex family is available the card tightens its figures by
+     itself. */
+  /* --f-flex, not --f-ui. The card's type is the one place in the system that
+     drives a width axis: the name sets at --w-hero (130%) and every numeral at
+     --w-figures (82%). --f-ui is Google Sans, which has a weight axis and
+     nothing else, so pointing this at it would leave every font-stretch in
+     face.css and compact.css silently inert and the card would read at one
+     width throughout. --f-flex is Google Sans Flex, bundled for exactly this,
+     and it falls back to Google Sans for the subsets Flex has no cut of. */
+  --vtt-font-ui:var(--f-flex),system-ui,sans-serif;
+  --vtt-width-condensed:90%;
+  --vtt-width-figures:82%;
+  --vtt-width-hero:130%;
+
+  --vtt-size-small:12px;
+  --vtt-size-label:11px;
+  --vtt-space-1:4px;
+  --vtt-space-2:8px;
+  --vtt-space-3:12px;
+
+  /* ── shape ──
+     The bevelled chip. `corner-shape` is Chrome 139+ and nothing else
+     yet, so every use of it in the ported files sits inside an
+     @supports and the border-radius beside it is the fallback: a
+     browser without corner-shape rounds those two corners slightly
+     instead of cutting them, which is the same silhouette read at a
+     glance. --cut-corner is only ever read inside that @supports. */
+  --vtt-radius:2px;
+  --vtt-cut-corner:bevel;
+  --vtt-cut-chip:4px 0;
+
+  /* ── shadows ──
+     Kept as whole shadow lists rather than parts, because a float
+     shadow is a composition and tuning it one layer at a time is how
+     it stops looking like one object. */
+  --vtt-shadow-float:0 18px 44px -12px rgb(0 0 0 / 0.7),0 0 0 1px rgb(0 0 0 / 0.4);
+  --vtt-shadow-text:0 1px 3px rgb(0 0 0 / 0.8);
+
+  /* ── motion ──
+     One scale and five durations off it. The indirection is the point:
+     the reduced-motion block at the foot of this file sets the scale to
+     0 once, and every transition and animation on a card collapses to
+     nothing without a single rule being duplicated. face.css and
+     compact.css also carry their own prefers-reduced-motion blocks,
+     ported verbatim, which switch the handful of transitions off
+     outright — belt and braces, and kept because upstream has them. */
+  --vtt-motion-speed:1;
+  --vtt-motion-instant:calc(80ms * var(--vtt-motion-speed));
+  --vtt-motion-fast:calc(160ms * var(--vtt-motion-speed));
+  --vtt-motion-base:calc(240ms * var(--vtt-motion-speed));
+  --vtt-motion-snap:calc(380ms * var(--vtt-motion-speed));
+  --vtt-motion-reveal:calc(620ms * var(--vtt-motion-speed));
+  --vtt-ease:cubic-bezier(0.2, 0, 0, 1);
+  --vtt-ease-out:cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── the metals ──
+      Tier 3 is silver and tier 4 gold, each needed from shadow to
+      light. The golds are the system's own two (see the mapping block);
+      silver has no house equivalent at all, so it arrives as new fact.
+      --critical is the near-white flash at the top of tier 4's pennant
+      and is not a gold — it is the light *on* the gold. */
+  --vtt-dh-silver:#e4e7ef;
+  --vtt-dh-silver-deep:#7d8191;
+  --vtt-dh-critical:#fff1c2;
+
+  /* ── bone ──
+     A Die Pool's dice are bone, which is how they read as not-the-
+     card's: every other die on a card takes the domain's colour. No
+     house equivalent; the sheet's dice are drawn another way. */
+  --vtt-dh-bone:#efe7d6;
+  --vtt-dh-bone-edge:#6d5f48;
+  --vtt-dh-bone-ink:#2a2118;
+
+  /* ── the six gear tints ──
+     An Item with no domain still has to be told from the one beside it
+     at Compact size, where the name is two lines of 11px and the mark
+     is doing most of the work. So kind becomes colour: weapon oxblood,
+     armor steel, consumable verdigris, loot brass, ancestry dusk,
+     community umber. Each with a deep partner, because the field these
+     paint is a gradient from the tint to its own shadow.
+
+     --dh-armor is NOT the system's --plate. --plate is the material an
+     Armor Slot mark is made of, which is a mark under pressure on a
+     sheet; this is the field colour of an armour *card*, which is a
+     picture. Same word, two jobs, and merging them would have tied the
+     look of the vault to the look of the damage track. */
+  --vtt-dh-weapon:#8a4b38;
+  --vtt-dh-weapon-deep:#4a2219;
+  --vtt-dh-armor:#4f6577;
+  --vtt-dh-armor-deep:#24323e;
+  --vtt-dh-consumable:#3f7a62;
+  --vtt-dh-consumable-deep:#1d3c30;
+  --vtt-dh-loot:#8a6c34;
+  --vtt-dh-loot-deep:#433212;
+  --vtt-dh-ancestry:#5f5480;
+  --vtt-dh-ancestry-deep:#2e2742;
+  --vtt-dh-community:#6f5c45;
+  --vtt-dh-community-deep:#372b1e;
+
+  /* ── status colours with no house role ──
+     --negative is a status hue: the colour a Condition term is printed
+     in. The system's reds (--wound, --wound-gl) are deliberately *not*
+     that — they are the substance of a wound on the damage track, and
+     the token block in tokens.css says so at length. Pointing a status
+     at a material would have made "the GM moved you to Vulnerable" and
+     "you took a Major" the same colour, which is the confusion that
+     whole section exists to prevent. So it arrives as new fact.
+     --positive is the confirmation light that runs round a card the
+     moment it posts; nothing here has a success colour yet. */
+  --vtt-negative:#ff4d5a;
+  --vtt-positive:#2fb672;
+
+  /* ── Stress, twice ──
+     Upstream carries two: --bar-stress, the violet of the Stress bar,
+     and --dh-stress, the cyan of a Stress mark. The ported files
+     disagree about which the recall cost is — face.css uses the violet
+     and compact.css the cyan for the same bolt. Both are kept rather
+     than reconciled, so the port is faithful and the disagreement
+     stays visible and fixable in one place. --dh-stress is mapped;
+     the violet bar has no house equivalent. */
+  /* Reconciled, deliberately. Upstream draws the recall bolt violet on a full
+     card and cyan on a compact one, because gluvtt has a violet Stress bar and
+     a cyan Stress mark and the two sizes reached for different ones. This
+     system has a single Stress, --strain, and a card that changes the colour of
+     its own price when it shrinks is a bug wearing a token's clothes. Violet
+     here is also this system's Fear, which is the one thing recall is not. */
+  --vtt-bar-stress:var(--strain);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   THE MAPPINGS
+
+   Every place a `--vtt-*` token was pointed at a name this system
+   already had. Short list on purpose: most of what the card needs is
+   either its own un-themed substrate (see the header) or a role the
+   sheet never had.
+
+     --vtt-font-ui      → --f-flex        the one face with a width axis
+     --vtt-dh-hope      → --hope          Hope's gold, the fill
+     --vtt-dh-fear      → --fear          Fear's violet
+     --vtt-dh-stress    → --strain        a Stress mark. Same hex both
+                                          sides (#8fd0e0) before this
+                                          port, which is how the role
+                                          was identified.
+     --vtt-bar-health   → --wound         Hit Points
+     --vtt-bar-armour   → --plate         Armor Slots
+     --vtt-dh-gold      → --gold-on-dark  tier 4's metal, lit
+     --vtt-dh-gold-deep → --gold-on-pale  tier 4's metal, in shadow
+     --vtt-accent-line  → --hope          the lit outline: a panel a
+                                          dragged card would land in, a
+                                          loadout card an armed vault
+                                          card could replace.
+
+   Four of those want a word.
+
+   --wound, --strain and --plate all flip under .light, so the three
+   mark colours are the one part of a card that *does* follow the
+   theme. That is on purpose and it is the reason mapping them was
+   worth doing: a Stress term printed in a card's rules and a Stress
+   mark on the character sheet beside it are the same fact, and they
+   should not be two different cyans because one of them is on a card.
+   Both uses survive the flip — on the light plate the terms mix toward
+   the plate's ink and get darker, and on the card's own ink the darker
+   values are quieter but still legible. Nothing else about the card
+   moves with the theme.
+
+   --plate for --bar-armour. tokens.css declares --plate as a colour
+   (steel) and card.css declares --plate again, on .card, as a *length*
+   (the art plate's share of the card's height). Same name, two types,
+   and that is survivable here only because custom properties resolve
+   where they are declared: --vtt-bar-armour is declared on the palette
+   root, so it resolves against the root's --plate, which is the steel.
+   It would not survive being moved onto a selector inside a .card.
+   Leave it where it is.
+
+   The two golds for the metal. The system has exactly two golds, named
+   for the fill they sit on rather than for a light and a shadow, and
+   tier 4's metal needs a light and a shadow. The values line up
+   (#e9cf83 / #8a6810 against upstream's #f2c76a / #9a6a17) and the
+   intent survives, so they are reused rather than duplicated. If a
+   real metal ramp is ever wanted, it belongs in tokens.css and these
+   two lines are the whole change.
+
+   --hope for --accent-line. Upstream derives this from a per-campaign
+   accent with `oklch(from var(--vtt-accent) max(l, 0.72) c h)`. This
+   system has no campaign accent, and relative colour syntax is newer
+   than anything else the port relies on — so the attention colour is
+   simply the system's attention colour, which is gold. One at-risk
+   property avoided and one concept not imported.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --vtt-dh-hope:var(--hope);
+  --vtt-dh-fear:var(--fear);
+  --vtt-dh-stress:var(--strain);
+  --vtt-bar-health:var(--wound);
+  --vtt-bar-armour:var(--plate);
+  --vtt-dh-gold:var(--gold-on-dark);
+  --vtt-dh-gold-deep:var(--gold-on-pale);
+  --vtt-accent-line:var(--hope);
+}
+
+/* One rule, and every duration on a card goes to zero. */
+@media (prefers-reduced-motion: reduce){
+  :root{--vtt-motion-speed:0}
+}

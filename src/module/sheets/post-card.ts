@@ -7,7 +7,7 @@
  * already knows how to draw.
  *
  * So this takes the *same option object* the sheet built for the row and the
- * peek and hands it to the same `CARD` builder. Nothing here re-derives
+ * peek and hands it to the same `FACE` builder. Nothing here re-derives
  * anything from the Item. A card in chat that disagreed with the card on the
  * sheet would be a worse bug than not having one, and the only way to
  * guarantee it cannot is to have one source and no second path to it.
@@ -18,7 +18,7 @@
 import {
   CONDITIONS, SYSTEM_ID, TRAITS, isMarkedDomain, markedSpellcast, traitLabel, type Trait,
 } from "../config.ts";
-import { CARD } from "../ui/card.js";
+import { FACE } from "../ui/face.js";
 import { isFree, type CardOptions, type Price } from "./cards.ts";
 
 export interface CardAction {
@@ -102,18 +102,23 @@ export interface PostCardOptions {
 }
 
 /**
- * The wrapper's two facts: whether there is artwork, and where it is.
+ * The wrapper the chat hook finds the card by, and the palette it draws in.
  *
- * Kept as a pair because the render side has to restate both — see
- * `dice/chat.ts`. `--art` holds a `url("…")` with double quotes in it, which
- * is why the attribute is escaped rather than interpolated: unescaped, the
- * first `"` inside the url ends the `style=` attribute, the rest of the
- * declaration becomes stray attributes, and the card silently falls back to
- * the sample photograph `tokens.css` ships as the default `--art`. It looks
- * like the wrong picture, not like broken markup.
+ * It used to carry two more things and carries neither now, which is the whole
+ * of the `--art` hazard being closed rather than escaped. It held
+ * `card.artCss` — `--art:url("…")`, double quotes and all — because the old
+ * `CARD` draws `<div class="img">` and reads the variable off an ancestor; so
+ * the declaration went into a double-quoted `style="…"`, where the first `"`
+ * inside the url ends the attribute, the rest becomes stray attributes, and
+ * the card silently falls back to the sample photograph `tokens.css` ships as
+ * the default. It read as the wrong picture rather than as broken markup,
+ * which is why it survived twice. `FACE` builds its own `--dh-art` on the
+ * article, single-quoted with `%27` escaping, so there is no declaration here
+ * to escape and no inherited default to fall back to. And `noart` went with
+ * it: the new builder reads "is there a painting" off `art` being set and says
+ * so itself, as `no-art` on the face.
  */
-export const wrapperClass = (card: CardOptions): string =>
-  `dh dh-card${card.noart ? " noart" : ""}`;
+export const WRAPPER_CLASS = "dh dh-card";
 
 const attr = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
@@ -137,9 +142,77 @@ const actionRow = (actions?: CardAction[]): string =>
         `${a.said ? ` title="${attr(a.said)}"` : ""}><i></i>${attr(a.label)}</button>`,
       ).join("")}</div>`;
 
+/**
+ * The posted card: the full face, its counters, and its row of presses.
+ *
+ * ── the full face, which is the whole point of posting one ────────────
+ * `FACE` with no `size` draws the painting, the pennant, the recall chip, the
+ * name, the kind line **and the plate with the rules printed on it** — the
+ * same face the hover peek shows. That is what gluvtt's own feed draws:
+ * `PostedCard.tsx` hands Chat a plain `<CardFace card={view} …/>` and keeps
+ * `size="slot"` for the ticker, which is a 132px row in a strip and not a
+ * card in a log.
+ *
+ * This file drew the ticker's face for a while, on the argument that the
+ * question a posted card answers at a table is *which card*. It is not. A
+ * card on a sheet is **recognised**, because the reader is holding it already;
+ * a card in the log is **read**, by somebody who has never seen it and is
+ * being told what it does. A face with no plate answers that with a picture
+ * and a name, and then everyone goes and asks the owner anyway.
+ *
+ * The 300px column is not the objection it looks like, because the plate
+ * solves itself. `FIT` in `face-fx.js` is eleven steps measured against
+ * `plate.scrollHeight`: the painting gives way through six of them, thirty-one
+ * points of card height, before the type scale moves at all, and only then
+ * does the type step five times to 0.72. A paragraph that would have
+ * overflowed ends up on a letterboxed card at a legible size. That ladder
+ * needs `.dh-face-plate` to exist — `fit()` is `if (!plate) continue` — so on
+ * the slot face it did precisely nothing: the one machine that makes rules
+ * text fit a narrow card was being run, every post, against the one face with
+ * no rules text on it.
+ *
+ * ── the container, which is not optional ──────────────────────────────
+ * `--dh-w` defaults to `100cqi`, so a face in a plain block resolves to zero
+ * and draws nothing at all. The old `.card` declared `container-type` itself;
+ * `.dh-face` does not, by design — the Peek and Card Window rules in
+ * `face.css` give it a pixel width instead, and the two routes are the only
+ * two there are. A chat card takes the container route, because the log's
+ * column is the one number it should scale from. `frame.css` owns both halves:
+ * `container-type: inline-size` on this `.dh-card-face` host, and the width on
+ * `.dh-card` above it. Nothing is declared inline here, which is why the
+ * sanitiser ratchet asserts the class and the rule together — either one
+ * missing collapses the card to nothing.
+ *
+ * ── the counters, under the card rather than on it ────────────────────
+ * `chits` is the pre-drawn counter readout, and the full face does now have a
+ * plate to park it on — but nothing parks it there. `chit.css` writes
+ * `.dh .card .chitstack`, which is the *old* builder's class on an ancestor
+ * this wrapper does not have, and `cardChits` returns bare `CHITS`/`KEEP` rows
+ * with no `.chitstack` around them. So there is no competing rule to collide
+ * with and no second copy to clip: the readout is drawn once, under the face,
+ * which is also where gluvtt puts a card's die pools — `<CardDiePools>` after
+ * `<CardFace>`, not on top of the painting.
+ *
+ * Under is the answer we want anyway. The plate is now carrying the rules, and
+ * counters sitting over the lower left of a 300px plate would be sitting on
+ * the sentence that explains what they count. Outside the face they fall back
+ * to `.chits`'s own 22px `--sz`, which is about right beside a 300px card. It
+ * stays a **readout**: a row of live buttons three hours later is an
+ * invitation to spend the same use twice.
+ */
 export const cardWrapper = (card: CardOptions & { actions?: CardAction[] }): string =>
-  `<div class="${wrapperClass(card)}" style="${attr(card.art ?? "")}">` +
-  `${CARD(card)}${actionRow(card.actions)}</div>`;
+  `<div class="${WRAPPER_CLASS}">` +
+  `<div class="dh-card-face">${
+    /* `size` stated rather than left to `FACE`'s default, because the default
+       is the thing being relied on and a reader who finds no `size` here
+       cannot tell whether that was a decision. It is also what the sanitiser
+       ratchet reads back off `data-size`. */
+    FACE({ ...card, size: "full" })
+  }</div>` +
+  (card.chits
+    ? `<div class="dh-card-chits">${card.chits}</div>`
+    : "") +
+  `${actionRow(card.actions)}</div>`;
 
 /**
  * The card's prose, in the blocks it is printed in.
@@ -638,20 +711,44 @@ function actionsFor(card: CardOptions, actor: any, options: PostCardOptions): Ca
  * player now renders at the recipient's theme rather than the poster's.
  *
  * `fit` is deliberately not run here either. It measures a card that is
- * already laid out — `scrollHeight` against `clientHeight`, stepping the type
- * scale down until the body fits. At create time the markup is a string with
- * no box, so every measurement is zero and the pass bakes wrong values into
- * stored content. Both the fit and the redraw happen in `dice/chat.ts`.
+ * already laid out — `scrollHeight` against `clientHeight`, stepping the
+ * painting's height and then the type scale down until the body fits. At
+ * create time the markup is a string with no box, so every measurement is
+ * zero and the pass bakes wrong values into stored content. Both the fit and
+ * the redraw happen in `dice/chat.ts`.
+ *
+ * ── what has to travel, and in what form ──────────────────────────────
+ * Three kinds of thing cannot make the round trip, and they fail three
+ * different ways, so they answer it three different ways.
+ *
+ *   **inline `<svg>`** — the sigils. Stripped out of stored content outright,
+ *   so they are not stored: `sigKey`, `sig2Key` and `fbsigKey` are, and the
+ *   render side resolves them against the reader's own copy of the assets.
+ *   `fbsig` is a sigil too, and the class card is the one card that is
+ *   *entirely* fallback plate, so leaving it out of this list posts a class to
+ *   chat with a blank one.
+ *
+ *   **a generated CSS rule** — the ornament motif. `useOrnaments` injects the
+ *   corner and seam masks into the poster's document, and a document is not a
+ *   thing a message carries. What travels is `motif` itself, and it is the key
+ *   as well as the value: `motifOf` is idempotent on a motif, so the render
+ *   side hands the stored name straight back to `useOrnaments` and gets the
+ *   same name with the rule now in *its* document.
+ *
+ *   **a measurement** — the focus crop. `focus` is three numbers and survives
+ *   storage as itself; what does not survive is `useArtFocus`'s generated
+ *   `background-position` rule, and that is the pre-measurement answer anyway.
+ *   The render side takes the measured one instead — `framedRegion` against
+ *   the painting's natural size and the frame's own box, which is also the
+ *   only form in which a marking's `scale` closes in at all. See `frameArt`.
  */
 export async function postCard(
   card: CardOptions,
   actor?: any,
   options: PostCardOptions = {},
 ): Promise<any> {
-  // The sigils are the one part that cannot survive storage, so they are not
-  // stored — `sigKey` is, and the render side resolves it. `fbsig` is a sigil
-  // too, and the class card is the one card that is *entirely* fallback plate,
-  // so leaving it out of this list posts a class to chat with a blank one.
+  // The three keys and the two values the doc above accounts for: only the
+  // sigils are dropped, because only they cannot be stored at all.
   const actions = actionsFor(card, actor, options);
   const actionable = { ...card, actions };
   const { sig: _sig, sig2: _sig2, fbsig: _fbsig, ...stored } = actionable;

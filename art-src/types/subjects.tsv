@@ -1,0 +1,29 @@
+# The -Subject line each item type mark is generated from, so a regeneration
+# matches, and a short note for the mark's own header.
+#
+# Written in the voice gluniverse-vtt's own subjects.tsv uses for the class
+# sigils: a noun phrase describing what is in the picture, not a brief. The
+# style paragraph in gen-type-marks.sh carries everything else, and it is the
+# one the class sigils and the Artifice, Root and Void domain marks were drawn
+# to — which is the whole point of this set existing. The thirteen hand-drawn
+# geometric marks these replaced held at 14px but sat beside a domain plate
+# looking like a different product.
+#
+# One archetype each, so no two marks share a silhouette. Where count is the
+# cue, it is the only difference: one spearhead against two, two lozenges
+# against three shields.
+#
+# Name	Subject	Note
+ancestry	two interlocking heraldic lozenges, one overlapping the other, the overlap cut out as a negative-space slit	The lozenge is the heraldic charge for descent, and two of them joined is two lineages.
+community	three pointed shields clustered in a triangle, their edges almost meeting	Three is the smallest count that reads as a group rather than a pair.
+transformation	a tall lozenge splitting open down its spine with a second lozenge turning out of it	Ancestry is two lozenges side by side; this is one that became another.
+class	a war banner on a short staff, its foot cut into a deep swallow-tail	The standard you fight under. Only ever drawn where a homebrew class names a domain of its own and the domain sigil cannot resolve.
+subclass	a heavy stem forking into two tapering arms, each ending in a hooked point	A branch is the literal relation: a subclass is one of the ways a class goes. The same fallback as the class mark.
+domain-card	a tall card with cut corners and a sharp lozenge pierced clean through its centre	The card's own silhouette with its sigil voided. The rarest fallback of the three.
+primary	a single broad spearhead, apex up, with swept shoulders and a short tang	A point is the one weapon idea that is not also a genre.
+secondary	two slender spearheads side by side, points up, their shoulders swept outward	The same idea twice, which is both the count cue and the literal answer: the secondary slot is where a second weapon goes.
+armor	a segmented breastplate of three tapering bands, the lowest narrowest	Not a shield — the rail already spends one on the Armor Score, and a second would claim the two are the same number.
+consumable	a stoppered flask with a faceted body and a narrow neck	A vial, a canister and a cartridge all land on this silhouette.
+gear	a buckled strap-plate with a lozenge boss at its centre	The generic mark, so the generic shape: a thing you carry, without saying which thing.
+loot	a strongbox with a heavy lid band and a lozenge latch	Loot used to borrow the gear mark, and the two sit side by side on the gear tab.
+feature	a broad upward chevron with barbed tapering tips	The charge for something earned and held, which is what this catch-all subtype's members have in common.

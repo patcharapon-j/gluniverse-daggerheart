@@ -1,0 +1,16 @@
+<!-- Subclass: a fork, one stem into two arms.
+     Drawn on the set's shared grid — see art-src/types/GRID.md.
+
+     The same fallback as class.svg and for the same reason: a subclass card
+     wears its class's domain sigil until the domain is the table's own, and
+     then it wore nothing.
+
+     A branch is the literal relation — a subclass is one of the ways a class
+     goes. Next to the banner it does not read as a matched pair, and it is
+     not meant to: ancestry and community are not a matched pair either. What
+     the family shares is the grid, not a motif.
+
+     Arms at 45° off a 30-wide stem, 31 across, tips cut through the limb. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M110 211H140V125L204 61 182 39 125 96 68 39 46 61 110 125Z"/>
+</svg>

@@ -1,8 +1,15 @@
-<!-- Community: three pointy-top hexes in a triangle — a group, not a person.
-     Hexagons are already in the Endfield vocabulary. Gaps are ~20 units at
-     250, so they stay separated rather than blobbing together at small sizes. -->
+<!-- Community: three hexes in a triangle, a group rather than a person.
+     Drawn on the set's shared grid — see art-src/types/GRID.md.
+
+     Three is the smallest count that reads as a group instead of a pair, and
+     a triangle is the arrangement that fills a square frame without one of
+     them having to shrink. Pointy-top, so the trio has the same vertical
+     emphasis as the lozenge marks.
+
+     22-unit gutters on both axes, the family floor, which is what stops the
+     three blobbing into one rounded mass on a small chip. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M125 20 166.6 44 166.6 92 125 116 83.4 92 83.4 44Z"/>
-  <path d="M72 122 113.6 146 113.6 194 72 218 30.4 194 30.4 146Z"/>
-  <path d="M178 122 219.6 146 219.6 194 178 218 136.4 194 136.4 146Z"/>
+  <path d="M125 24 164 47 164 92 125 114 86 92 86 47Z"/>
+  <path d="M75 136 114 159 114 204 75 226 36 204 36 159Z"/>
+  <path d="M175 136 214 159 214 204 175 226 136 204 136 159Z"/>
 </svg>

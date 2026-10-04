@@ -34,9 +34,9 @@
  * armour you are wearing — is a printed object, sitting in a loadout the
  * player has been looking at all session. The question the damage dialog is
  * actually asking — *is there something in my hand that gets me out of this* —
- * is a question about objects. So those lines open **the card**: the 5:7
- * playing card, `card.js`'s `CARD` and `sheet.css`'s `.pkc`, which is exactly
- * what hovering that card's spine on the character sheet gives you.
+ * is a question about objects. So those lines open **the card**: the printed
+ * card, `face.js`'s `FACE` at full size in `face.css`'s `.dh-peek`, which is
+ * exactly what hovering that card's spine on the character sheet gives you.
  *
  * It is the sheet's peek and not a copy of it. Same component, same layer
  * class, same geometry — right of the row, flipped when there is no room,
@@ -68,30 +68,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { Rule } from "./rules.ts";
-import { type CardContext, cardOf, loadSigils } from "../sheets/cards.ts";
-import { CARD, rich } from "../ui/card.js";
+import { type CardContext, type CardOptions, cardOf, loadSigils } from "../sheets/cards.ts";
+import { rich } from "../ui/card.js";
 import { CHITS } from "../ui/chit.js";
+import { FACE } from "../ui/face.js";
 import { dialogPeeks } from "./dialog-peek.ts";
+import { focusAttr } from "./fit-cards.ts";
 
 const esc = (s: string) => foundry.utils.escapeHTML(s);
-
-/**
- * An attribute value, escaped — and it is `--art` that needs it.
- *
- * `art` is `--art:url("systems/…/x.webp")`, double quotes and all, and it was
- * being interpolated straight into `style="…"`. The first `"` inside the url
- * ends the attribute, the rest of the declaration is parsed as stray
- * attributes, and the tile falls back to whatever `--art` it inherits — which
- * is the sample photograph `tokens.css` ships as the default. It reads as a
- * card with the wrong picture rather than as broken markup, which is why it
- * survived: the panel looked like it was working.
- *
- * `post-card.ts` has had exactly this escaper, with exactly this note, since
- * cards were first posted to chat. This file was written later and did not
- * have it.
- */
-const attr = (s: string): string =>
-  s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 /**
  * The Item a rule came off, found back from what `rules.ts` recorded about it.
@@ -207,6 +191,31 @@ const line = (o: {
   ${o.peek ? "" : `<p>${rich(o.text ?? "")}</p>`}
 </div>`;
 
+/**
+ * One card in a dialog's peek layer: the full face, and its counters beside it.
+ *
+ * `.dh-peek` is `face.css`'s own peek host and the only host in the system
+ * that needs no container — it states `--dh-w:264px` on the face outright, so
+ * a card here is the printed size whatever the dialog around it is doing.
+ *
+ * No `style` attribute, and that is the `--art` hazard closed rather than
+ * escaped: `FACE` writes its own `--dh-art` onto the article, single-quoted
+ * with `%27` escaping, so there is no `url("…")` to terminate an attribute and
+ * no inherited `tokens.css` default to fall back to. Pass `art`, never
+ * `artCss`.
+ *
+ * The counters go in `.dh-peek-side`, which is where gluvtt puts a peeked
+ * card's live controls, and they stay a **readout**: the layer is
+ * `pointer-events:none`, so nothing on this card could take a press even if
+ * somebody drew a button there. A card with no budget gets no panel, because
+ * an empty one is 184px of furniture claiming there is something to track.
+ */
+export const peekCard = (key: string, card: CardOptions): string =>
+  `<div class="dh-peek" data-peek="${key}"${focusAttr(card.focus)}>` +
+  `<div class="dh-peek-face">${FACE({ ...card, size: "full" })}</div>` +
+  (card.chits ? `<div class="dh-peek-side">${card.chits}</div>` : "") +
+  `</div>`;
+
 export interface RuleCard {
   rule: Rule;
   /**
@@ -280,11 +289,7 @@ export async function ruleCardsPanel(
     if (!card) return undefined;
 
     const key = `p${cards.length}`;
-    cards.push(
-      `<div class="pkc${card.noart ? " noart" : ""}" data-peek="${key}" style="${attr(
-        card.art ?? "",
-      )}">${CARD(card)}</div>`,
-    );
+    cards.push(peekCard(key, card));
     return key;
   };
 

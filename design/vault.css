@@ -1,0 +1,444 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH VAULT — the recall press, and the wide form a vaulted card takes
+
+   PORT from gluniverse-vtt, one file, partially:
+     apps/web/src/rulesets/daggerheart/sheets/character/vault.css
+   The `.dh-vrow` block and the list around it, and the press that recalls
+   a card (`.dh-recall-press`, `.dh-recall-price`, `.dh-recall-free`).
+
+   Two things from the head of that file stayed out.
+
+   The grid/rows switch (`.dh-layout-switch`) is out because this sheet
+   does not offer the choice: the Vault tab is a grid of Compact cards and
+   that is the only layout it has. A segmented control that toggles between
+   one layout and itself is worse than no control. The row form below is
+   still kept, because it is a *form* this port publishes for the hosts
+   that want it, not a mode this tab switches into.
+
+   The native drag proxy (`.dh-drag-image`) is out because it styles the
+   off-screen copy a `setDragImage()` call hands the browser, which is the
+   host's drag code's business and not the card's. A sheet that wants one
+   writes those four declarations beside that code, where the next reader
+   will look for them.
+
+   An earlier version of this header said the recall press was out because
+   it was sheet furniture that "belongs wherever the Vault tab itself gets
+   built". The Vault tab is being built, with upstream's grid layout, so
+   the press is here.
+
+   Deliberately off this repo's house style, the same two ways and for
+   the same reason as face.css and compact.css: gluvtt's class names
+   verbatim (.dh-vrow, .dh-vrow-lens, .dh-vrow-cost, not .vr, .vrl,
+   .vrc) and gluvtt's one-declaration-per-line formatting, so a `diff`
+   against the upstream file still lines up and a fix made there can be
+   read straight across. Nothing here is scoped by hand:
+   scripts/port-design-css.mjs rewrites the palette root to `.dh` and
+   prefixes every other selector on the way into styles/.
+
+   ── why a row at all, when there is already a Compact card ────────
+   A loadout holds five cards and a vault holds dozens. The Compact
+   card is 100×140 and it is the right object for five: the painting is
+   the thing you recognise, and a grid of them reads like a hand of
+   cards because that is what it is. Thirty of them is a wall, and
+   scanning a wall for one name means reading thirty 8.5px two-line
+   titles.
+
+   So the row inverts the priority. The name sets at the row's own font
+   size on one line and gets every pixel the row does not need for
+   anything else; the painting shrinks to a 60px strip at the left and
+   fades out under the type. That strip is the whole trick — it is
+   enough picture to recognise a card you already know, placed where
+   the eye starts the line anyway, and it costs the name nothing
+   because it fades rather than stops. A hard-edged thumbnail would
+   have put a vertical seam down the list and made the rows read as a
+   two-column table of pictures and words.
+
+   The row is therefore a different *form*, not a Compact card laid on
+   its side, and the price of that is one more builder and one more
+   stylesheet rather than a flag. The two share their option object
+   (see the note at the top of VAULT_ROW in compact.js) and nothing
+   else: no pennant, no counter rail, no tier metal, no glare, no tilt.
+   All four of those are things you do to a picture of a card, and a
+   row is not one.
+
+   ── sigils are boxes here, not masks ─────────────────────────────
+   Same divergence from upstream as face.css and compact.css, same
+   reason: this system's domain and kind art arrives as inline svg
+   already authored `fill="currentColor"`, so .dh-vrow-lens's fallback
+   mark and .dh-vrow-mark are *boxes* carrying a size and a `color`.
+   The rule that makes the svg inside fill the box is face.css's
+   `.dh-sigil > svg`, which every mark in this file wears, so there is
+   no second copy of it here. Nothing reads --dh-sigil and nothing in
+   this file masks.
+
+   ── at-risk CSS, kept and flagged ────────────────────────────────
+     mask-image       The lens's fade, and the row does not read as a
+                      row without it. It is a mask
+                      rather than a gradient overlay because the row's
+                      background changes on hover, so an overlay would
+                      have had to be told the new colour and a mask
+                      does not care.
+     corner-shape     Chrome 139+ only. The one use sits inside an
+                      @supports with the border-radius beside it as the
+                      fallback, exactly as face.css does it.
+     container query  The narrow layout at the foot. The list declares
+                      `container-type: inline-size` for it, so a host
+                      that draws rows without .dh-vrows gets the wide
+                      grid at every width.
+     font-stretch %   Inert unless the UI font carries a width axis.
+                      See face-tokens.css.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the recall press ─────────────────────────────────────────────────── */
+
+/* The press under a vault card, saying its price: Stress in the Stress
+   colour, or the word "free".
+
+   There is no `.dh-recall-press` rule of its own, here or upstream, and
+   that is not an omission. The press *is* a `.dh-shelve` — the markup
+   wears both classes — and face.css draws the chip. What this class adds
+   is the one state a shelve chip has nowhere else: `data-short`, for a
+   price you cannot currently pay. So the three rules below are a price,
+   a word, and a warning, and nothing restates the chip. */
+
+/* The number and the Stress bolt, set tight: 1px of gap, because the
+   glyph is the unit and a unit wants to touch its figure. 900 rather than
+   the chip's 750 — the price is the thing being read off a press whose
+   own word ("recall") is already known from the ten above it. */
+.dh-recall-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 6px;
+  color: var(--vtt-dh-stress);
+  font-weight: 900;
+  font-stretch: var(--vtt-width-figures);
+}
+
+.dh-recall-price svg {
+  width: 9px;
+  height: 9px;
+}
+
+/* No price. Lowercase and graphite, against the price's caps-height
+   figures in Stress colour: free is the absence of a cost, so it is drawn
+   as the absence of emphasis rather than as good news. `text-transform`
+   is there to beat .dh-shelve's own `uppercase`, which would otherwise
+   have made "FREE" the loudest word on a vault of thirty cards. */
+.dh-recall-free {
+  margin-left: 6px;
+  color: var(--vtt-text-3);
+  font-size: inherit;
+  font-weight: 650;
+  text-transform: lowercase;
+}
+
+/* Short of Stress. The border takes the Stress colour at 55% and the word
+   steps back, so the press reads as "you cannot pay this yet" without
+   being disabled — the card is still postable, still readable, still
+   draggable. A `:disabled` chip would have said "this is not a thing you
+   do", and recalling a card is very much a thing you do. */
+.dh-recall-press[data-short="true"] {
+  border-color: color-mix(in oklab, var(--vtt-dh-stress) 55%, var(--vtt-line-strong));
+  color: var(--vtt-text-3);
+}
+
+/* ── the row list ─────────────────────────────────────────────────────── */
+
+/* The container for the narrow layout at the foot of this file lives here
+   rather than on the row, because a query container cannot be the element
+   being queried. A row drawn outside this list is not broken by that, it
+   just never reaches the narrow form. */
+.dh-vrows {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  container-type: inline-size;
+}
+
+/* ── the row ──────────────────────────────────────────────────────────── */
+
+/* Two columns, not the face's seven: the whole press, then whatever the host
+   hung beside it. `overflow: hidden` is what makes the lens a strip — the
+   painting fills the full height of the row and the row clips it, so the
+   strip gets the row's corner cut for free rather than needing its own. */
+.dh-vrow {
+  /* --dh-art has no fallback at its use site and a `background` shorthand
+     holding an invalid custom property drops the *whole* shorthand, which
+     would take the domain wash and the ink under it with it. So the
+     no-painting case is a declared default here rather than a fallback
+     there. The two hues keep their fallbacks, which is why they are not
+     defaulted alongside it: an undefined hue is a real state (a card with
+     no domain) and the lens has a grey for it. */
+  --dh-art: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  padding-right: 8px;
+  background: var(--vtt-ink-2);
+  box-shadow: inset 0 0 0 1px var(--vtt-line);
+  border-radius: var(--vtt-cut-chip);
+  color: var(--vtt-text);
+  font-family: var(--vtt-font-ui);
+  list-style: none;
+  transition: background var(--vtt-motion-fast) var(--vtt-ease-out);
+}
+
+@supports (corner-shape: bevel) {
+  .dh-vrow {
+    corner-shape: var(--vtt-cut-corner);
+  }
+}
+
+.dh-vrow:hover {
+  background: var(--vtt-ink-3);
+}
+
+/* `minmax(0, 1fr)` for the name's column and not `1fr`, because `1fr` is
+   `minmax(auto, 1fr)` and `auto` floors at the content's minimum width — a
+   long name would push the kind line and the cost chip off the row instead
+   of ellipsing. The three trailing `auto`s are the stamp, the kind line and
+   the cost; each collapses to nothing when its element is absent, which is
+   why the column count does not change with the row's state.
+
+   44px of min-height is the hit target, and it is a minimum rather than a
+   height so a row in a narrow sheet can grow if its type wraps. */
+.dh-vrow-face {
+  display: grid;
+  grid-template-columns: 60px 14px 16px minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px 0 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dh-vrow-face:focus-visible {
+  outline: 2px solid var(--vtt-accent-line);
+  outline-offset: -2px;
+}
+
+/* ── the lens ─────────────────────────────────────────────────────────── */
+
+/* The painting in a strip, framed a little above centre and fading into the
+   row. `center 30%` rather than `center`: a card's painting is a portrait
+   and the subject's head is in the top third, so a centred crop of a 60px
+   strip is reliably a picture of a torso.
+
+   Three background layers under the mask, and the order is the whole
+   no-painting case: the art on top, a radial wash of the domain's light
+   under it, and the domain's dark under that. With a painting you see only
+   the first; without one the other two are a designed field rather than a
+   hole, which is why there is no `.no-art` rule in this file at all. */
+.dh-vrow-lens {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  overflow: hidden;
+  background:
+    var(--dh-art) center 30% / cover no-repeat,
+    radial-gradient(
+      circle at 50% 40%,
+      color-mix(in oklab, var(--dh-dom, var(--vtt-fog-3)) 45%, transparent),
+      transparent 70%
+    ),
+    var(--dh-dom-dk, var(--vtt-ink-1));
+  /* The fade. Opaque for the first 70% of the strip, gone by its right
+     edge, so the painting dissolves into the row instead of ending at a
+     seam. --vtt-opaque and not `black`: a mask reads the alpha channel, so
+     the colour is nominal, but the token is the one the rest of the port
+     uses for "fully present" and keeping it here means the strip is
+     greppable with every other mask and scrim on a card. */
+  mask-image: linear-gradient(90deg, var(--vtt-opaque) 70%, transparent);
+  transition: filter var(--vtt-motion-base) var(--vtt-ease);
+}
+
+/* `.vtt-framed-art` is gluvtt's own art component, which is not part of
+   this port. The rule is kept because it costs nothing and because a
+   Foundry-side equivalent will want the same treatment: fill the strip
+   absolutely rather than flow inside it. */
+.dh-vrow-lens .vtt-framed-art {
+  position: absolute;
+  inset: 0;
+}
+
+/* The mark a card with no painting shows in the strip, centred by the lens's
+   own `place-items`. White rather than the domain's colour, because it is
+   sitting on the domain's colour. */
+.dh-vrow-sigil {
+  width: 20px;
+  height: 20px;
+  color: var(--vtt-white);
+}
+
+/* ── the type ─────────────────────────────────────────────────────────── */
+
+/* 14px of column for one or two figures, which is why the unit never prints
+   here: a tier card's "T3" does not fit and `cardLabel()` already says
+   "tier 3" to a screen reader, so the numeral stands alone and nothing is
+   lost that was not already said. */
+.dh-vrow-level {
+  color: var(--vtt-text);
+  font-size: 15px;
+  font-weight: 900;
+  font-stretch: var(--vtt-width-figures);
+  text-align: center;
+}
+
+/* The domain's mark at the size of the type beside it, in the domain's own
+   colour — the one place on the row that carries the hue as ink rather than
+   as a wash. Grey when there is no domain, which is a weapon or a piece of
+   loot and is drawn in graphite everywhere else too. */
+.dh-vrow-mark {
+  width: 16px;
+  height: 16px;
+  color: var(--dh-dom, var(--vtt-text-3));
+}
+
+/* The name takes the row's one flexible column and ellipses. 750 rather than
+   bold: the row is a list item and a list of bold names has no hierarchy in
+   it, so the weight is just enough to beat the kind line beside it. */
+.dh-vrow-name {
+  overflow: hidden;
+  color: var(--vtt-text);
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dh-vrow-kind {
+  color: var(--vtt-text-3);
+  font-size: var(--vtt-size-label);
+  white-space: nowrap;
+}
+
+/* What the recall needs, in the Stress colour, and only on the one state
+   that has to be read rather than glanced at — see the note on VAULT_ROW. */
+.dh-vrow-stamp {
+  color: var(--vtt-dh-stress);
+  font-size: var(--vtt-size-label);
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── the cost ─────────────────────────────────────────────────────────── */
+
+/* The Recall Cost, as the Compact card's coin: same bevel, same figures,
+   smaller. It is drawn only when the host hung no press on the row, because
+   a press that says the price and a chip that says the price are the price
+   twice.
+
+   The bevel is a clip-path here rather than the chip's border-radius plus
+   corner-shape, because this one is cut on *two* opposite corners and
+   `--vtt-cut-chip` is the single-corner chip. Ported as upstream has it. */
+.dh-vrow-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: 18px;
+  padding: 0 4px 0 5px;
+  background: color-mix(in oklab, var(--vtt-ink-0) 86%, transparent);
+  box-shadow: inset 0 0 0 1px var(--vtt-line-strong);
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+  color: var(--vtt-white);
+  font-size: 12px;
+  font-weight: 900;
+  font-stretch: var(--vtt-width-figures);
+}
+
+.dh-vrow-cost svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* ── the states ───────────────────────────────────────────────────────── */
+
+/* Within reach: the chip lights. Nothing else changes, and nothing says the
+   price in words — the lit chip is the whole message, and a row that
+   announced "you can afford this" on every affordable row in a vault of
+   thirty would be announcing nothing. */
+.dh-vrow[data-state="within-reach"] .dh-vrow-cost {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--vtt-dh-stress) 70%, transparent),
+    0 0 8px -2px var(--vtt-dh-stress);
+}
+
+/* Out of reach: the painting drains, the name steps back a weight of
+   presence, and the chip inverts to the Stress colour with the stamp beside
+   it. The row stays entirely legible — it is a card you cannot recall now,
+   not a card you cannot read. */
+.dh-vrow[data-state="out-of-reach"] .dh-vrow-lens {
+  filter: saturate(0.25) brightness(0.7);
+}
+
+.dh-vrow[data-state="out-of-reach"] .dh-vrow-name {
+  color: var(--vtt-text-2);
+}
+
+.dh-vrow[data-state="out-of-reach"] .dh-vrow-cost {
+  color: var(--vtt-dh-stress);
+  box-shadow: inset 0 0 0 1px var(--vtt-dh-stress);
+}
+
+/* Used goes further than out of reach, and the difference is the point:
+   grey is spent, drained is priced. */
+.dh-vrow[data-state="used"] .dh-vrow-lens {
+  filter: grayscale(1) brightness(0.55);
+}
+
+/* The hollow a dragged row leaves. The hatch is the row's own two surfaces
+   against each other, so it reads as a gap in the list rather than as a new
+   kind of object in it. */
+.dh-vrow[data-state="socket"] {
+  background: repeating-linear-gradient(135deg, var(--vtt-ink-2) 0 6px, var(--vtt-ink-1) 6px 12px);
+}
+
+.dh-vrow[data-state="socket"] > * {
+  opacity: 0.35;
+}
+
+/* ── narrow ───────────────────────────────────────────────────────────── */
+
+/* Under 460px the row drops to four columns and sheds the mark, the kind
+   line and the stamp. Which three go is not arbitrary: everything dropped
+   is said somewhere else. The mark's domain is the lens's colour, the kind
+   line's words are in the `aria-label`, and the stamp's number is on the
+   chip that stays. The name and the price are the two things a vault row
+   exists to show, so they are the two that survive — and the lens narrows
+   to 44px rather than going with them, because a row of names with no
+   pictures is a different object again. */
+@container (width < 460px) {
+  .dh-vrow-face {
+    grid-template-columns: 44px 14px minmax(0, 1fr) auto;
+  }
+
+  .dh-vrow-mark,
+  .dh-vrow-kind,
+  .dh-vrow-stamp {
+    display: none;
+  }
+}
+
+/* The lens's fade and the drain are both transitions off --vtt-motion-*,
+   which the scale at the foot of face-tokens.css already zeroes under
+   reduced motion. This block is belt and braces, and it is here because
+   face.css and compact.css both carry one and a file in this set that did
+   not would read as an oversight. */
+@media (prefers-reduced-motion: reduce) {
+  .dh-vrow,
+  .dh-vrow-lens {
+    transition: none;
+  }
+}

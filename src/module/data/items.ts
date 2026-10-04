@@ -71,8 +71,29 @@ const ItemModel = (): any =>
       super.prepareBaseData();
       fillCardDamage(this, this.parent?.type, this.parent?.name);
       fillCardActions(this, this.parent?.type, this.parent?.name);
+      this.uses = usesOf(this);
+      this.isSpent = this.uses ? this.uses.value <= 0 : this.spent === true;
     }
   };
+
+/**
+ * The resource a card spends when it is used, if it keeps one.
+ *
+ * A card's uses are not a new kind of thing: they are a `resource` with a
+ * ceiling and a `refresh`, which this system has had since before the card
+ * was redrawn, and which `refreshUses` in `apps/rest.ts` already clears at
+ * the right rest. So "three times per long rest" is authored, not parsed —
+ * `max.n` is three and `refresh` is `longRest` — and nothing here reads the
+ * card's English to find that out.
+ *
+ * The first resource that belongs to the document rather than to one of its
+ * feature blocks wins. A card that keeps two piles, a budget and a tally, is
+ * a card whose *first* pile is the one its own rule spends; the rest are the
+ * feature's and are drawn beside it.
+ */
+const usesOf = (data: any): any =>
+  (data.resources ?? []).find((r: any) => !r.feature && r.max?.kind === "fixed" && r.max.n > 0) ??
+  null;
 
 /**
  * Numbers this document asks you to keep — see `resourceField`.
@@ -125,6 +146,23 @@ const ItemModel = (): any =>
  * because a weapon's *feature* can print one.
  */
 const tracked = () => ({
+  /**
+   * Marked spent — the card greyed out, swept over by a line of its domain's
+   * light, until something gives it back.
+   *
+   * A flag and not a counter, because it answers a different question from
+   * `resources`. A card with limited uses already says how many it has left,
+   * and for that card spent is not stored at all: it is `uses.value === 0`,
+   * read by `isSpent` below. Storing both would be two places to be wrong
+   * about one fact, and the one that drifts is always the one nothing writes
+   * to. This field is for the cards with no counter — most of them — where
+   * "I have used this" is the whole of what there is to remember.
+   *
+   * On the Item rather than on the sheet, because spending a card is a fact
+   * about the fiction and not about a browser tab: it has to survive a reload
+   * and it has to be visible to the GM, who is looking at the same document.
+   */
+  spent: bool(false),
   resources: arr(resourceField()),
   dice: arr(diePoolField()),
   /** Damage this document's rules text prints — see `damageField`. */

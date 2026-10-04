@@ -32,9 +32,9 @@ import { contentChoiceAllowed } from "../gunslinger.ts";
 
 import { DOMAIN_CONFIG, LOADOUT_LIMIT } from "../config.ts";
 import { cardOf, loadSigils } from "../sheets/cards.ts";
-import { CARD } from "../ui/card.js";
 import { fromPack } from "./creation.ts";
 import { dialogPeeks } from "./dialog-peek.ts";
+import { peekCard } from "./rule-cards.ts";
 import { dhDialog } from "./dialog.ts";
 
 /**
@@ -241,9 +241,9 @@ export const addDomainCard = (actor: any): Promise<TakenCard | null> =>
    is not — its whole identity is a paragraph of rules text, and the row cannot
    carry that at any width without becoming a card badly.
 
-   So it becomes a card, properly: the sheet's own peek, `CARD` into `.pkc`
-   through `sheet.css`'s `.peeklayer`, hover to show and click to pin, exactly
-   as hovering a spine in the loadout behaves. This is the rules panel's
+   So it becomes a card, properly: the sheet's own peek, `FACE` at full size
+   into `face.css`'s `.dh-peek` through `sheet.css`'s `.peeklayer`, hover to
+   show, exactly as hovering a spine in the loadout behaves. This is the rules panel's
    argument in `rule-cards.ts` reaching a second surface, and it is the same
    machinery rather than a copy — see `dialog-peek.ts`.
 
@@ -259,20 +259,18 @@ async function pickCard(cap: number, held: any[], pool: any[]): Promise<string |
   const sig = await loadSigils();
 
   /* The layer, built alongside the rows so a row and its card share a key.
-     `attr` and not raw interpolation: `art` is `--art:url("…")`, quotes and
-     all, and the first one inside would end the style attribute — the failure
-     `rule-cards.ts` documents, which reads as a card with the wrong picture
-     rather than as broken markup. */
+     `peekCard` is the rules panel's own, imported rather than copied: a card
+     in this picker that drew differently from the same card in the damage
+     dialog would be two cards, and the pointer gesture over them is one
+     mechanism already. It is also what keeps the `--art` hazard closed —
+     `FACE` writes its own single-quoted `--dh-art` and there is no style
+     attribute here to terminate. */
   const cards: string[] = [];
   const peekFor = (c: any): string => {
     const opts = cardOf(snapshotOf(c), sig);
     if (!opts) return "";
     const key = `c${cards.length}`;
-    cards.push(
-      `<div class="pkc${opts.noart ? " noart" : ""}" data-peek="${key}" style="${attr(
-        opts.art ?? "",
-      )}">${CARD(opts)}</div>`,
-    );
+    cards.push(peekCard(key, opts));
     return key;
   };
 
@@ -349,7 +347,3 @@ const snapshotOf = (c: any): any => ({
   sort: 0,
   system: c.system,
 });
-
-/** See the note on the identical escaper in `rule-cards.ts`. */
-const attr = (s: string): string =>
-  s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");

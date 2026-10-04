@@ -27,7 +27,13 @@
    stay visible is that you must be able to change your mind about which
    card you are holding. */
 html.dh-light .dh .pnl.swap.armed .pk.mute{opacity:.44}
-.dh .pk.arm .spine{filter:none;transform:translateX(4px)}
+/* The armed nudge, on whichever form the row takes. `.spine` is the old
+   one and the two ported ones are listed beside it rather than replacing
+   it, because the spine is still what a surface that has not been switched
+   draws. On a compact card the transform is safe to set here: `.dh-cc` is
+   the flat host face-fx.js writes the pointer variables onto, and the box
+   that actually turns is inside it. */
+.dh .pk.arm .spine,.dh .pk.arm .dh-cc,.dh .pk.arm .dh-vrow{filter:none;transform:translateX(4px)}
 .dh .pk.arm::after{content:"";position:absolute;inset:-1.5px;z-index:7;pointer-events:none;
   box-shadow:0 0 0 1.5px var(--hope)}
 
@@ -121,7 +127,7 @@ html.dh-light .dh .pnl.swap.armed .pk.mute{opacity:.44}
 /* What is left behind. A hatch rather than an empty box, because an empty
    box is a state this list already has — an unfilled loadout slot — and the
    hole a dragged card leaves is not that. */
-.dh .pk.lift > .spine,.dh .pk.lift > .shv{opacity:0}
+.dh .pk.lift > .spine,.dh .pk.lift > .dh-cc,.dh .pk.lift > .dh-vrow,.dh .pk.lift > .shv{opacity:0}
 .dh .pk.lift::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
   clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
   background:repeating-linear-gradient(45deg,transparent 0 5px,
@@ -156,7 +162,7 @@ html.dh-light .dh .pnl.swap.armed .pk.mute{opacity:.44}
   filter:saturate(1) drop-shadow(0 16px 26px rgba(0,0,0,.55))}
 .dh.dragproxy .in::after{content:"";position:absolute;inset:-1.5px;pointer-events:none;
   box-shadow:0 0 0 1.5px var(--hope)}
-.dh.dragproxy .spine{transform:none!important;box-shadow:none}
+.dh.dragproxy .spine,.dh.dragproxy .dh-cc,.dh.dragproxy .dh-vrow{transform:none!important;box-shadow:none}
 @keyframes dp-lift{from{transform:scale(1)}to{transform:scale(1.035)}}
 
 /* a peek that follows a card being dragged is a card you cannot see past */
@@ -213,7 +219,7 @@ html.dh-light .dh .pnl.swap.armed .pk.mute{opacity:.44}
   100%{opacity:0}}
 
 /* colour returning as the card comes to hand, and draining as it goes back */
-.dh .pk.recalled .spine{animation:sat-up .34s ease-out both}
+.dh .pk.recalled .spine,.dh .pk.recalled .dh-cc,.dh .pk.recalled .dh-vrow{animation:sat-up .34s ease-out both}
 @keyframes sat-up{from{filter:saturate(.22)}to{filter:saturate(1)}}
 
 .dh .pk.shelved .swp::before{width:46%;
@@ -224,11 +230,15 @@ html.dh-light .dh .pnl.swap.armed .pk.mute{opacity:.44}
   16%{opacity:1}
   84%{opacity:1}
   100%{opacity:0;transform:translateX(-115%)}}
-.dh .pk.shelved .spine{animation:sat-dn .42s ease-in both}
+.dh .pk.shelved .spine,.dh .pk.shelved .dh-cc,.dh .pk.shelved .dh-vrow{animation:sat-dn .42s ease-in both}
 @keyframes sat-dn{from{filter:saturate(1)}to{filter:saturate(.22)}}
 /* the hatch settling over the artwork, rather than simply being there on the
    next frame — it arrives *after* the colour has finished draining, because
-   the two say the same thing and saying it twice at once says it once */
+   the two say the same thing and saying it twice at once says it once.
+
+   Spine only, deliberately. The vault row draws the painting as a lens that
+   drains as the card goes back, which is already this sentence; a hatch on
+   top of it would be the third time one shelving says one thing. */
 .dh .pk.shelved .spine .thumb::after{animation:hatch-in .3s ease-out .2s both}
 @keyframes hatch-in{from{opacity:0}to{opacity:1}}
 

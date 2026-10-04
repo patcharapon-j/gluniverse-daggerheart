@@ -9,10 +9,37 @@
  * it besides, which is the exact bug that put the sheet's cards in a layer to
  * begin with, arriving from the other direction.
  *
- * So the frame is the **viewport**, and everything else is the same: `CARD`,
- * `.peeklayer`, `.pkc`, the 262px 5:7 card, right of the row and flipped when
- * there is no room, centred on the row and clamped, hover to show. A player who
- * learned that gesture on a spine has learned it here.
+ * So the frame is the **viewport**, and everything else is the same gesture:
+ * right of the row and flipped when there is no room, centred on the row and
+ * clamped, hover to show. A player who learned that on a spine has learned it
+ * here.
+ *
+ * ── what it draws now, and its timings ────────────────────────────────
+ * The card is `FACE` at full size in gluvtt's own `.dh-peek`, which is where
+ * `face.css` already gives a peeked face its 264px outright — the one host in
+ * the system that needs no `container-type`, because it states `--dh-w` itself.
+ * Three numbers come with it from `pins.tsx`, and they are the feel rather than
+ * an implementation detail of the window manager that file is mostly about:
+ *
+ *   `PEEK_REST_MS` 140 — the rest before a card peeks at all. Long enough that
+ *   sweeping the pointer down a list of forty opens nothing, short enough that
+ *   stopping on one feels like it opened immediately. Once something *is*
+ *   peeked the next row opens at once, which is gluvtt's rule and the right
+ *   one: the rest is there to stop a sweep, and a sweep is already over.
+ *
+ *   `PEEK_GRACE_MS` 250 — the grace after the pointer leaves. In gluvtt it
+ *   exists so the peek can be reached, since its own counters and Pin take
+ *   presses. Here the layer is `pointer-events:none` and there is nothing on
+ *   the card to reach, so what the grace buys is steadiness: a pointer
+ *   crossing the gap between two rows, or clipping a row's edge on its way
+ *   down, no longer flickers the layer shut and open again.
+ *
+ *   240ms, `motion.ts`'s `base`, for the growth itself. It is not a face-fx
+ *   export — `REVEAL_MS` is the sweep's, not the peek's — so it is written out
+ *   here with the curve beside it.
+ *
+ * The growth is `pins.tsx`'s verbatim: the card comes out of the row it
+ * belongs to, from the row's side, at the row's own scale.
  *
  * ── why this is its own file ──────────────────────────────────────────
  * It lived inside `rule-cards.ts` while there was one caller, and the name it
@@ -33,7 +60,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { cardFitter } from "./fit-cards.ts";
+import { PEEK_GRACE_MS, PEEK_REST_MS, bindFaceFx, stillCards } from "../ui/face-fx.js";
+import { cardFitter, focusFrom, frameArt } from "./fit-cards.ts";
 
 export interface DialogPeekOptions {
   /** The dialog, where the rows live and every listener is delegated. */
@@ -50,7 +78,7 @@ export interface DialogPeekOptions {
    * fine for "which card is this" and useless for "read this card".
    *
    * False where the row is **the control**. In the domain-card picker a click
-   * chooses the card, and a click that both chose a card and parked a 262px
+   * chooses the card, and a click that both chose a card and parked a 264px
    * copy of it over the list would be one gesture doing two things, one of
    * them in the way. Hover answers "which card is this", which is the whole
    * question a list of names raises; the answer to wanting to read it for
@@ -67,6 +95,26 @@ export interface DialogPeekOptions {
 const GAP = 14;
 const EDGE = 12;
 
+/** How wide a peeked face is — `face.css`'s own `--dh-w` for `.dh-peek`. */
+const PEEK_WIDTH = 264;
+
+/** `motion.ts`'s `base` and `out`: how the card comes out of its row. */
+const GROW_MS = 240;
+const GROW_EASE = "cubic-bezier(.16,1,.3,1)";
+
+/* How a card sits while nothing is peeking it, and it is `visibility` rather
+   than `display` for the reason `sheet.css` gave for the layer it replaces:
+   the fitter has to measure these, and a card with no box measures zero height
+   and every step of the ladder "overflows". Off to the side as well, because a
+   `.dh-peek` is `position:fixed` and an unplaced one would otherwise sit over
+   the top left of the screen taking the layer's drop shadow with it. */
+const PARKED = "left:-9999px;top:0;visibility:hidden;opacity:0";
+
+/* The card's own reading, shared with the tilt, the sweep and the chat
+   card's arrival, so a person who chose Off gets a peek that appears rather
+   than one that grows while the card under it holds still. */
+const reduced = (): boolean => stillCards();
+
 export function dialogPeeks({ root, layer, rows, pin = true }: DialogPeekOptions): void {
   /* Onto <body>, and it is not optional. `position:fixed` was the obvious
      answer and it does not work: Foundry gives every `.window-content` a
@@ -77,9 +125,9 @@ export function dialogPeeks({ root, layer, rows, pin = true }: DialogPeekOptions
      `fixed` and the dialog's own box.
 
      The host carries `dh` for the palette; the layer stays a descendant of it,
-     so every rule `sheet.css` writes for `.peeklayer` and `.pkc` lands
-     untouched. That is the difference between hosting the sheet's peek and
-     restyling a copy of it. */
+     so every rule `sheet.css` writes for `.peeklayer` and `face.css` for
+     `.dh-peek` lands untouched. That is the difference between hosting the
+     sheet's peek and restyling a copy of it. */
   const host = document.createElement("div");
   host.className = "dh peekhost";
   host.append(layer);
@@ -107,35 +155,90 @@ export function dialogPeeks({ root, layer, rows, pin = true }: DialogPeekOptions
      peek can happen is a hover after the dialog is on screen. The fitter also
      owns the font pass that used to be spelt out here: metrics taken against
      a fallback face are wrong by enough to cost a line. See
-     `apps/fit-cards.ts`. */
-  cardFitter(() => layer).run();
+     `apps/fit-cards.ts`.
+
+     `.dh-face` rather than the default list, and narrowly: the layer holds
+     nothing else, and naming it is what picks the ported eleven-step ladder
+     against `.dh-face-plate` over the old card's. */
+  cardFitter(() => layer, ".dh-face").run();
+
+  /* The pointer tilt, bound once on the layer. It is delegated from a scope
+     root for `face-fx.js`'s own reason, and the layer is the right root here:
+     it outlives every peek inside it and goes with the host. */
+  bindFaceFx(layer);
+
+  /* Every card parked, and every painting cropped onto its marked point. The
+     measured crop is available here for the reason it is available to a chat
+     card and nowhere else: this surface has laid the frame out. `data-focus`
+     is how the point reaches a file that deliberately does not know what the
+     rows mean — see `focusAttr`. */
+  for (const card of layer.querySelectorAll<HTMLElement>(".dh-peek")) {
+    card.style.cssText = PARKED;
+    const face = card.querySelector<HTMLElement>(".dh-face");
+    if (face) frameArt(face, focusFrom(card));
+  }
 
   let open: HTMLElement | null = null;
   let pinned = false;
+  /* The rest before a peek opens and the grace before it closes. One timer
+     each, and any new intention cancels both: a pointer that reaches a second
+     row while the first is still resting must not open the first one 140ms
+     later over the second one's card. */
+  let resting: number | undefined;
+  let closing: number | undefined;
+  const hold = (): void => {
+    window.clearTimeout(resting);
+    window.clearTimeout(closing);
+  };
 
   const cardFor = (row: HTMLElement) =>
-    layer.querySelector<HTMLElement>(`.pkc[data-peek="${row.dataset.peek}"]`);
+    layer.querySelector<HTMLElement>(`.dh-peek[data-peek="${row.dataset.peek}"]`);
 
   /* Only `close(true)` clears a pin, so pointer traffic cannot dismiss one. */
+  /* A pinned card has to *look* pinned or it reads as a hover that forgot
+     to close. The class is the whole of it: `face.css` carries `.dh-peek.pin`
+     — the deeper shadow and the gold rule — the way `sheet.css` carried
+     `.pkc.pin` for the peek this one replaces. */
+  const markPinned = (card: HTMLElement): void => {
+    card.classList.add("pin");
+    pinned = true;
+  };
+
   const close = (force?: boolean): void => {
     if (pinned && !force) return;
-    open?.classList.remove("on", "pin");
+    if (open) {
+      open.classList.remove("pin");
+      open.style.cssText = PARKED;
+    }
     open = null;
     pinned = false;
   };
 
-  const show = (row: HTMLElement, hold?: boolean): void => {
-    const card = cardFor(row);
-    if (!card) return;
-    if (card === open) {
-      if (hold) {
-        pinned = true;
-        card.classList.add("pin");
-      }
-      return;
-    }
-    close(true);
+  /**
+   * The card comes out of the row it belongs to, from the row's side.
+   *
+   * `pins.tsx`'s own `fromTo`, with the one clamp its anchors never needed:
+   * there the anchor is a compact card about 100px wide, so `width / 264` is
+   * always a fraction. Here the anchor is a line of text that can be wider
+   * than the card it opens, and a start scale above 1 would be the card
+   * shrinking into place, which is not what growing out of something looks
+   * like.
+   */
+  const grow = (card: HTMLElement, from: DOMRect, side: string): void => {
+    card.style.transformOrigin = side === "center" ? "center center" : `${side} center`;
+    if (reduced()) return;
+    const scale = Math.min(1, Math.max(0.35, from.width / PEEK_WIDTH));
+    const shift = side === "right" ? 30 : -30;
+    card.animate(
+      [
+        { opacity: 0.2, transform: `translateX(${shift}px) scale(${scale})` },
+        { opacity: 1, transform: "translateX(0) scale(1)" },
+      ],
+      { duration: GROW_MS, easing: GROW_EASE },
+    );
+  };
 
+  const place = (row: HTMLElement, card: HTMLElement, pinning?: boolean): void => {
     const r = row.getBoundingClientRect();
     const w = card.offsetWidth;
     const h = card.offsetHeight;
@@ -159,26 +262,65 @@ export function dialogPeeks({ root, layer, rows, pin = true }: DialogPeekOptions
     const mid = r.top + r.height / 2 - h / 2;
     const top = Math.min(Math.max(EDGE, mid), Math.max(EDGE, vh - h - EDGE));
 
-    card.style.left = `${Math.round(left)}px`;
-    card.style.top = `${Math.round(top)}px`;
-    // Grows out of the row it belongs to, so the flip reads as a flip.
-    card.style.transformOrigin = side === "center" ? "center center" : `${side} center`;
-    card.classList.add("on");
-    if (hold) card.classList.add("pin");
-    open = card;
-    pinned = !!hold;
+    /* `data-from` is what `face.css` reads to put a peek's controls on the
+       side away from its card. There are none in a dialog, but it is the
+       card's own statement about which way it opened and the growth reads the
+       same answer. */
+    card.dataset.from = side === "right" ? "right" : "left";
+    card.style.cssText =
+      `left:${Math.round(left)}px;top:${Math.round(top)}px;visibility:visible;opacity:1`;
+    if (pinning) markPinned(card);
+
+    grow(card, r, side);
+  };
+
+  const show = (row: HTMLElement, pinning?: boolean): void => {
+    const card = cardFor(row);
+    if (!card) return;
+    hold();
+    if (card === open) {
+      if (pinning) markPinned(card);
+      return;
+    }
+    /* A rest, so sweeping a list of forty opens nothing — unless something is
+       already peeked, in which case the sweep is over and the next row the
+       pointer reaches opens at once. A pin is a deliberate press and never
+       waits. A row gone by the time its rest is up peeks nothing. */
+    const run = (): void => {
+      if (!row.isConnected) return;
+      close(true);
+      open = card;
+      place(row, card, pinning);
+    };
+    if (pinning || open) run();
+    else resting = window.setTimeout(run, PEEK_REST_MS);
+  };
+
+  /** Let it go after its grace, unless the pointer reaches something first. */
+  const leave = (): void => {
+    hold();
+    closing = window.setTimeout(() => close(), PEEK_GRACE_MS);
   };
 
   /* Delegated, and `pointerover` rather than `pointerenter`, because only a
      delegating listener can be one listener. The layer is
-     `pointer-events:none`, so moving onto anything that is not a row closes. */
+     `pointer-events:none`, so moving onto anything that is not a row leaves. */
   root.addEventListener("pointerover", (e) => {
     const t = e.target instanceof Element ? e.target : null;
     if (!t) return;
     const row = t.closest<HTMLElement>(rows);
     if (row) show(row);
-    else close();
+    else leave();
   });
+
+  /* And leaving the dialog outright, which `pointerover` cannot see: there is
+     no row under the pointer to report, and no event on this root at all. The
+     peek used to stay up until something else in the dialog was hovered —
+     survivable while a peek closed on any stray move, and not once there is a
+     grace, because a grace with nothing to end it is a card parked over the
+     board. `pointerleave` does not bubble, which is exactly right here: it is
+     bound on the root and fires for the root. */
+  root.addEventListener("pointerleave", () => leave());
 
   /* Hover shows, click pins — where the row has nothing else for a click to
      mean. A hover peek dies the moment you move toward it, which is fine for
@@ -205,11 +347,14 @@ export function dialogPeeks({ root, layer, rows, pin = true }: DialogPeekOptions
     root.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && open) {
         e.stopPropagation();
+        hold();
         close(true);
       }
     });
   }
-  // A scroll under an open peek leaves it pointing at the wrong row.
-  root.addEventListener("scroll", () => close(true), true);
-  window.addEventListener("resize", () => close(true));
+  // A scroll under an open peek leaves it pointing at the wrong row. Both of
+  // these cancel a rest as well: a card about to open at coordinates taken
+  // before the scroll would open in the wrong place.
+  root.addEventListener("scroll", () => { hold(); close(true); }, true);
+  window.addEventListener("resize", () => { hold(); close(true); });
 }

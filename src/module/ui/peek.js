@@ -146,7 +146,15 @@ export function peeks(win){
     if(!t) return;
     const pk = t.closest('[data-pk]');
     if(!pk){ close(true); return; }
-    if(t.closest('button,input,select,textarea,[data-act]')) return;
+    /* The ported card draws its own face as a <button>, so the guard above
+       stopped matching "a control beside the card" and started matching the
+       card itself: hover still opened a peek, and clicking to pin it did
+       nothing at all. The face is excused by name rather than the guard
+       loosened, because everything else the card hangs off it — the shelve
+       press, the counter strip, the charge boxes — is still a control and
+       still has to win. */
+    const face = t.closest('.dh-cc-face,.dh-vrow-face,.dh-face-tilt');
+    if(!face && t.closest('button,input,select,textarea,[data-act]')) return;
     /* In the vault tab a click on a row means "move this card", so the pin
        stands down there — hover still opens the card, which is the gesture
        that tab is actually for. Two meanings for one click on one row is
