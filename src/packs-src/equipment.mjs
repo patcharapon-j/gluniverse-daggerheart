@@ -44,7 +44,7 @@ import {
   SECONDARY as HF_SECONDARY,
 } from "./hf-equipment-tables.mjs";
 import { CONSUMABLES as HF_CONSUMABLES, ITEMS as HF_ITEMS } from "./hf-loot-tables.mjs";
-import { withDice } from "./card-resources.mjs";
+import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
 
 const TIERS = [1, 2, 3, 4];
@@ -55,7 +55,7 @@ const tiered = (table, fn) => TIERS.flatMap((tier) => (table[tier] ?? []).map((r
 const primary = (magic) => (row, tier) =>
   weaponItem({ ...row, tier, slot: "primary", magic });
 
-export default withDamage(withDice([
+export default withDamage(withCounters([
   ...tiered(PRIMARY_PHYSICAL, primary(false)),
   ...tiered(PRIMARY_MAGIC, primary(true)),
 

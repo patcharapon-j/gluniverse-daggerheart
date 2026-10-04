@@ -70,7 +70,6 @@
 import type { Rule } from "./rules.ts";
 import { type CardContext, type CardOptions, cardOf, loadSigils } from "../sheets/cards.ts";
 import { rich } from "../ui/card.js";
-import { CHITS } from "../ui/chit.js";
 import { FACE } from "../ui/face.js";
 import { dialogPeeks } from "./dialog-peek.ts";
 import { focusAttr } from "./fit-cards.ts";
@@ -171,7 +170,8 @@ const line = (o: {
   peek?: string;
   note?: string;
   uses?: string;
-  pool?: { value: number; max: number; name: string };
+  /** The row's counters, already drawn — see `RefreshRow.counters`. */
+  counters?: string;
 }): string => `<div class="ln" tabindex="0"${o.peek ? ` data-peek="${o.peek}"` : ""}>
   <span class="hd"><b>${esc(o.name)}</b><em>${esc(o.source)}</em>${
     o.note
@@ -182,8 +182,8 @@ const line = (o: {
            the thing you have been looking at all session. A readout: this is a
            forecast of what Done will do, and pressing it here would be
            spending a use inside the dialog that is about to refill it. */
-        o.pool
-        ? CHITS({ ...o.pool, add: false })
+        o.counters
+        ? `<span class="dh-counter-strip">${o.counters}</span>`
         : o.uses
           ? `<s>${esc(o.uses)}</s>`
           : ""
@@ -213,7 +213,6 @@ const line = (o: {
 export const peekCard = (key: string, card: CardOptions): string =>
   `<div class="dh-peek" data-peek="${key}"${focusAttr(card.focus)}>` +
   `<div class="dh-peek-face">${FACE({ ...card, size: "full" })}</div>` +
-  (card.chits ? `<div class="dh-peek-side">${card.chits}</div>` : "") +
   `</div>`;
 
 export interface RuleCard {
@@ -240,11 +239,12 @@ export interface RefreshRow {
    */
   uses?: string;
   /**
-   * A pool the sheet is really tracking, drawn as its counters. A **fact**
+   * A pool the sheet is really tracking, drawn as its counters — the same
+   * lights and dice the card carries, through `FACE_COUNTERS`. A **fact**
    * where `uses` is a reading, which is the distinction the two lanes were
    * built around and this is the same distinction one row further in.
    */
-  pool?: { value: number; max: number; name: string };
+  counters?: string;
   /** The owned Item this row came from, when there is one. */
   itemId?: string;
 }

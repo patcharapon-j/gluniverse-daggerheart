@@ -35,7 +35,7 @@ import { ancestryItem, communityItem, feat } from "./_helpers.mjs";
 import HOPE_AND_FEAR from "./hf-heritage.mjs";
 import TRANSFORMATIONS from "./transformations.mjs";
 import GLUNIVERSE from "./gluniverse-heritage.mjs";
-import { withDice } from "./card-resources.mjs";
+import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -447,7 +447,7 @@ const communities = [
    at the table, one line on the sheet: see above), so insertion order is the
    only grouping there is, and "the eighteen you know, then the six that are
    new" is the one a reader can use. */
-export default withDamage(withDice([
+export default withDamage(withCounters([
   ...ancestries,
   ...communities,
   ...HOPE_AND_FEAR,

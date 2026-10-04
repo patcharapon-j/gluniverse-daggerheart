@@ -40,7 +40,7 @@
  * problem.
  *
  * `said` is checker evidence and not document data, and `withDamage` strips it
- * on the way in exactly as `withDice` strips it off a die pool.
+ * on the way in exactly as `withCounters` strips it off a die pool.
  */
 
 /**
@@ -1018,7 +1018,7 @@ export default DAMAGE;
 /**
  * Attach the printed damage expressions to a pack's entries.
  *
- * Called at each pack's own `export default` beside `withDice`, and for the
+ * Called at each pack's own `export default` beside `withCounters`, and for the
  * same reason: `tools/verify/` imports these modules directly to draw THE DECK
  * and would otherwise draw cards the game does not have.
  *

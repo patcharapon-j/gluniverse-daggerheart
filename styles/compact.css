@@ -944,6 +944,132 @@
   opacity: 0.45;
 }
 
+/* ── what the rail holds (counter.js) ─────────────────────────────────
+   One group per thing the card keeps, stacked down the edge in the order
+   the item lists them. The rail sits on the painting, so every group gets a
+   dark plinth: a lit diamond on a pale sky is otherwise a diamond nobody
+   can find, and a column that read on one card and vanished on the next
+   would be worse than no column. */
+.dh .dh-cc-ctr {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 2px 0;
+  background: color-mix(in oklab, var(--vtt-ink-0) 62%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--vtt-line-strong) 70%, transparent);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%);
+}
+
+.dh .dh-cc-pips {
+  gap: 0;
+}
+
+/* A spent light is a socket, not an absence: the column keeps its length
+   so "one of three left" reads as a fact about the card rather than as a
+   card that has fewer uses than it did this morning. */
+.dh .dh-cc-pip:not(.is-lit)::before {
+  background: color-mix(in oklab, var(--vtt-ink-0) 70%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--dh-edge) 55%, var(--vtt-line-strong));
+}
+
+.dh .dh-cc-pip.is-spent::before {
+  animation: dh-cc-pip-spend var(--vtt-motion-base) var(--vtt-ease-out);
+}
+
+.dh .dh-cc-pip.is-back::before {
+  animation: dh-cc-pip-back var(--vtt-motion-base) var(--vtt-ease-out);
+}
+
+@keyframes dh-cc-pip-spend {
+  0% {
+    scale: 1.35;
+    background: var(--vtt-white);
+    box-shadow: 0 0 10px var(--dh-light);
+  }
+}
+
+@keyframes dh-cc-pip-back {
+  0% {
+    scale: 0.4;
+  }
+  60% {
+    scale: 1.25;
+  }
+}
+
+.dh .dh-cc-count.is-out {
+  color: var(--vtt-text-3);
+}
+
+/* A pile's ceiling, printed under its die when the card states one. The die
+   says how many; the tally says how many more it can take. */
+.dh .dh-cc-tally {
+  color: var(--vtt-white);
+  font-size: 9px;
+  font-weight: 850;
+  font-stretch: var(--vtt-width-figures);
+  line-height: 1;
+  text-shadow: var(--vtt-shadow-text);
+}
+
+.dh .dh-cc-token.is-out .dh-cc-die,
+.dh .dh-cc-count.is-out {
+  opacity: 0.45;
+}
+
+.dh .dh-cc-pool-die.is-blank .dh-cc-die-body {
+  fill: color-mix(in oklab, var(--vtt-dh-bone) 45%, var(--vtt-ink-1));
+}
+
+.dh .dh-cc-pool-die.is-blank .dh-cc-die-number {
+  font-size: 9px;
+}
+
+.dh :is(.dh-cc-token, .dh-cc-pool-die).is-tumbling .dh-cc-die {
+  animation: dh-cc-tumble var(--vtt-motion-reveal) var(--vtt-ease-out);
+}
+
+@keyframes dh-cc-tumble {
+  0% {
+    rotate: -90deg;
+    scale: 0.6;
+  }
+  60% {
+    rotate: 12deg;
+    scale: 1.12;
+  }
+}
+
+/* The refusal: the group that could not pay flinches. */
+.dh .dh-cc-ctr.is-denied {
+  animation: dh-cc-deny 0.32s var(--vtt-ease-out);
+}
+
+@keyframes dh-cc-deny {
+  20%,
+  60% {
+    translate: -2px 0;
+  }
+  40%,
+  80% {
+    translate: 2px 0;
+  }
+}
+
+/* A used card's rail stays lit enough to read: the card is drained so the
+   reader can see it is spent, and the rail is where they look to see how. */
+.dh .dh-cc[data-state="used"] .dh-cc-rail {
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dh .dh-cc-pip::before,
+  .dh .dh-cc-die,
+  .dh .dh-cc-ctr {
+    animation: none !important;
+  }
+}
+
 /* ── the controls under it ────────────────────────────────────────────── */
 
 /* Wider than the card by 16px, so a row of two chips can overhang
@@ -1504,4 +1630,18 @@
 
 .dh .dh-cc .dh-term {
   font-size: 1em;
+}
+
+/* The equipped slot draws a full face rather than a compact card, so its rail
+   is a strip under the face instead of a column down an edge: same groups,
+   same gestures, laid out the long way. */
+.dh .dh-cc-rail.is-strip {
+  position: static;
+  grid-auto-flow: column;
+  align-items: center;
+}
+
+.dh .dh-cc-rail.is-strip .dh-cc-ctr {
+  grid-auto-flow: column;
+  padding: 0 3px;
 }

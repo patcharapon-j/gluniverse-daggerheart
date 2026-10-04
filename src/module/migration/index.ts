@@ -51,6 +51,10 @@
 import { SYSTEM_ID } from "../config.ts";
 import { getDataVersion, setDataVersion } from "../settings.ts";
 import { SRD2_ERRATA, type Erratum } from "./errata.ts";
+// @ts-expect-error - content module, deliberately untyped
+import { countersFor } from "../../packs-src/card-resources.mjs";
+// @ts-expect-error - content module, deliberately untyped
+import { CARD_ACTIONS, PRE_GATE } from "../../packs-src/card-actions.mjs";
 
 /** What a run did, for the console and the notification. */
 export interface MigrationReport {
@@ -248,6 +252,109 @@ async function applyErrata(report: MigrationReport, dryRun: boolean): Promise<vo
   );
 }
 
+/* ── the counters pass ───────────────────────────────────────────────── */
+
+/**
+ * Give a copy the counters its card has always asked for.
+ *
+ * Compendium documents carry their counters now — see `withCounters` in
+ * `card-resources.mjs` — and a card dragged before that arrived with none, so
+ * its "once per rest" can never read as spent. That is content that was
+ * copied, which is what this file is for.
+ *
+ * **Gated on an empty array, per array.** A counter somebody added by hand, or
+ * a pool somebody deleted because their table does not track it and then
+ * replaced with their own, is theirs; only a copy that still holds nothing is
+ * filled. That is also what makes the step idempotent: once filled, the array
+ * is not empty. Matched by subtype and name, which is the annotation's own
+ * key and the one `fillCardActions` already reads — a renamed card is a card
+ * that has said it is not that card.
+ */
+/** What a list of actions says, for telling ours from somebody's edit. */
+const actionSig = (list: any[] | undefined): string =>
+  JSON.stringify(
+    (list ?? []).map((a: any) => [
+      a?.kind, a?.said ?? "", a?.when ?? "",
+      (a?.steps ?? []).map((s: any) => [s?.kind, s?.resource ?? "", Number(s?.by ?? 0)]),
+    ]),
+  );
+
+const BLOCK_ARRAYS = ["classFeatures", "features"] as const;
+const BLOCK_ONES = ["hopeFeature", "topFeature", "bottomFeature", "feature"] as const;
+
+/**
+ * The stored action lists on a copy, brought up to the version that spends
+ * its budget — but only a list that is still exactly what we wrote.
+ *
+ * A copy dragged off the compendium stores the actions it was dragged with,
+ * so a pack rebuild never reaches it and its once-per-rest press would go on
+ * leaving the counter alone. `PRE_GATE` is the reading as it stood before the
+ * bindings, and a stored list matching it by kind, words and steps is ours to
+ * replace. Anything else — a press somebody added, a label they changed — is
+ * theirs, and stays.
+ */
+function gatedActions(type: string, name: string, source: any): Record<string, any> {
+  const key = `${type}:${name}`;
+  const now = (CARD_ACTIONS as any)?.[key];
+  const was = (PRE_GATE as any)?.[key];
+  if (!now || !was) return {};
+  const out: Record<string, any> = {};
+  const swap = (stored: any[] | undefined, before: any[] | undefined, after: any[] | undefined) =>
+    stored?.length && after && actionSig(stored) === actionSig(before) && actionSig(stored) !== actionSig(after)
+      ? structuredClone(after)
+      : null;
+
+  const own = swap(source.actions, was.actions, now.actions);
+  if (own) out["system.actions"] = own;
+
+  for (const field of BLOCK_ARRAYS) {
+    const blocks: any[] = source[field] ?? [];
+    let moved = false;
+    const next = blocks.map((b: any) => {
+      const fresh = swap(b?.actions, was.features?.[b?.name], now.features?.[b?.name]);
+      if (!fresh) return b;
+      moved = true;
+      return { ...b, actions: fresh };
+    });
+    if (moved) out[`system.${field}`] = next;
+  }
+  for (const field of BLOCK_ONES) {
+    const b = source[field];
+    const fresh = b ? swap(b.actions, was.features?.[b.name], now.features?.[b.name]) : null;
+    if (fresh) out[`system.${field}`] = { ...b, actions: fresh };
+  }
+  return out;
+}
+
+async function addCounters(report: MigrationReport, dryRun: boolean): Promise<void> {
+  let changed = 0;
+  for (const group of itemGroups()) {
+    const list: Record<string, any>[] = [];
+    for (const item of group.items) {
+      const found = countersFor(item.type, item.name);
+      if (!found) continue;
+      const source = item._source?.system ?? item.system ?? {};
+      const update: Record<string, any> = { ...gatedActions(item.type, item.name, source) };
+      if (found.resources && !source.resources?.length) update["system.resources"] = found.resources;
+      if (found.dice && !source.dice?.length) update["system.dice"] = found.dice;
+      if (Object.keys(update).length) list.push({ ...update, _id: item.id });
+    }
+    if (!list.length) continue;
+    changed += list.length;
+    if (dryRun) continue;
+    try {
+      if (group.owner) await group.owner.updateEmbeddedDocuments("Item", list);
+      else await Item.updateDocuments(list);
+    } catch (err) {
+      report.failed.push(`counters on ${group.label}: ${(err as Error).message}`);
+    }
+  }
+  report.changed += changed;
+  report.notes.push(
+    `Card counters — ${changed} document${changed === 1 ? "" : "s"} given the counters their card prints`,
+  );
+}
+
 /* ── the steps ───────────────────────────────────────────────────────── */
 
 interface MigrationStep {
@@ -266,6 +373,11 @@ const STEPS: MigrationStep[] = [
     to: 1,
     id: "srd-2.0-errata",
     run: applyErrata,
+  },
+  {
+    to: 2,
+    id: "card-counters",
+    run: addCounters,
   },
 ];
 

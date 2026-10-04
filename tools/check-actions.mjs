@@ -297,6 +297,28 @@ for (const u of units) {
   }
 }
 
+/* ── every budget meters a press ──────────────────────────────────────────
+   A budget nobody's press spends is a card that can never read as used, and
+   it looks exactly like a card that has been read: the counter is there, the
+   lights are lit, and they stay lit all night. So every refilling pool with a
+   ceiling must be named in `GATES`, either against the presses it governs or
+   as standalone. `bindGates` already throws on a reference that does not
+   resolve; this is the other direction. */
+const { GATES } = await import(pathToFileURL(join(SRC, "card-actions.mjs")).href);
+const RESOURCES = (await import(pathToFileURL(join(SRC, "card-resources.mjs")).href)).default;
+let budgets = 0;
+for (const [key, list] of Object.entries(RESOURCES)) {
+  for (const r of list) {
+    if (r.onRefresh !== "fill" || !r.max || r.max.kind === "open") continue;
+    budgets += 1;
+    if (GATES[key]?.[r.feature || ""]?.[r.name] === undefined) {
+      bad(`${key}${r.feature ? ` · ${r.feature}` : ""}`,
+        `the budget "${r.name}" meters no press`, r.said,
+        "an entry in GATES in card-actions.mjs — the presses it limits, or \"standalone\"");
+    }
+  }
+}
+
 /* ── the report ───────────────────────────────────────────────────────── */
 
 if (REPORT && unread.length) {
@@ -329,5 +351,6 @@ if (fail.length) {
 
 console.log(
   `check-actions: ${units.length} rule units on ${byKey.size} documents; ` +
-    `${annotated} carry authored actions, ${declinedUnits} declined, nothing unread.`,
+    `${annotated} carry authored actions, ${declinedUnits} declined, nothing unread; ` +
+    `${budgets} budgets, each metering a press.`,
 );

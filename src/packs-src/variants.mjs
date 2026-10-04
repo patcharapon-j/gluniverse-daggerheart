@@ -41,7 +41,7 @@
  *
  * ── counters and damage, and the order the wrapping had to happen in ──
  * `card-resources.mjs` and `card-damage.mjs` are keyed `type:name` and attached
- * by `withDice`/`withDamage` at the pack's own export, exactly as `equipment.mjs`
+ * by `withCounters`/`withDamage` at the pack's own export, exactly as `equipment.mjs`
  * does it. Both sweeps' `PACKS` lists now include this pack, so this is
  * genuine coverage rather than a wrap that implies it.
  *
@@ -53,7 +53,7 @@
  * expression is on the card whether anybody wants it or not, so `withDamage`
  * attaches it and the posted card grows its own "Roll 1d20+5" button.
  *
- * **The Revolver's six Ammo tokens do not.** `withDice` attaches the *die*
+ * **The Revolver's six Ammo tokens do not.** `withCounters` attaches the *die*
  * annotations and never the counter ones, because a counter is something a
  * player decides to keep: compendium documents ship without them and the
  * player adds the ones they want once the Item is on a character. So the
@@ -69,7 +69,7 @@
 
 import { armorItem, lootItem, weaponItem } from "./_helpers.mjs";
 import { TIER_PREFIX, VARIANT_GEAR, splitPrinted } from "./variant-tables.mjs";
-import { withDice } from "./card-resources.mjs";
+import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
 
 /**
@@ -152,7 +152,7 @@ const lootDocs = (row) => [lootItem({ name: row.name, description: row.descripti
 const BUILD = { weapon: weaponDocs, armor: armorDocs, consumable: lootDocs };
 
 export default withDamage(
-  withDice(
+  withCounters(
     Object.entries(VARIANT_GEAR).flatMap(([variant, tables]) =>
       Object.entries(tables).flatMap(([group, rows]) => {
         const spec = GROUPS[group];

@@ -644,6 +644,24 @@ async function runCardAction(
 
   if (actor && any(cost) && !canPay(actor, cost)) return warn("CannotPay");
 
+  /* A card's own counters are currency too, when the press *spends* them. A
+     once-per-rest card's gated press carries a `move-resource` step taking one
+     Use, and that step has to be able to refuse the whole chain exactly as a
+     short Stress track does — checked here, before any Hope or Stress moves,
+     rather than discovered in `runEffect` after they have. Placing a counter
+     is not a cost and is left to run in order with the rest. */
+  const spends = chain.filter((a) => a.kind === "move-resource" && Number(a.by ?? 0) < 0);
+  for (const s of spends) {
+    const item = s.itemId ? actor?.items?.get?.(s.itemId) : null;
+    const live = item?.liveResources?.[s.resourceIndex ?? -1];
+    if (!live || Number(live.res?.value ?? 0) + Number(s.by) < 0) {
+      ui.notifications?.warn(
+        game.i18n.format("DAGGERHEART.Warning.CardSpent", { name: item?.name ?? s.resource ?? "" }),
+      );
+      return;
+    }
+  }
+
   const claims = chain.some((a) => CLAIMS.has(a.kind));
   if (claims && !(await claimOnce(message, key))) return;
 
@@ -656,7 +674,14 @@ async function runCardAction(
   if (cost.fear) await setFear(getFear() - cost.fear);
   if (gain.fear) await setFear(getFear() + gain.fear);
 
+  /* The spends land beside the currency and ahead of everything else, so a
+     roll the press opens is a roll whose use has already gone — cancelling the
+     popover does not hand the use back, any more than it hands back the Hope. */
+  for (const s of spends) {
+    if (!(await runEffect(s, ctx))) return;
+  }
   for (const step of chain) {
+    if (spends.includes(step)) continue;
     if (!(await runEffect(step, ctx))) return;
   }
 

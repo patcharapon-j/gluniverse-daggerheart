@@ -41,7 +41,7 @@ import { classItem, feat, subclassCards } from "./_helpers.mjs";
    list rather than merged alphabetically, so the compendium's folder order says
    which nine arrived together. */
 import HOPE_AND_FEAR from "./hf-classes.mjs";
-import { withDice } from "./card-resources.mjs";
+import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1347,7 +1347,7 @@ const schoolOfWar = subclassCards({
    reads the way the book's chapter does.
    ══════════════════════════════════════════════════════════════════════ */
 
-export default withDamage(withDice([
+export default withDamage(withCounters([
   bard,
   ...troubadour,
   ...wordsmith,

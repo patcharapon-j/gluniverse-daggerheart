@@ -371,8 +371,61 @@ assert.equal(report.changed, 1, "a dry run counts what it would do");
 assert.ok(!dry.items[0].system.description.includes(NEW_TAIL), "and writes nothing");
 assert.equal(version(), 0, "and does not stamp");
 
+/* ── a copy gets the counters its card prints, once ───────────────────── */
+
+reset(1);
+const goblin = (id, resources = []) =>
+  item(id, "ancestry", "Goblin", { resources, dice: [] });
+const mine = [{ name: "Mine", value: 2, max: { kind: "open" } }];
+const bare = goblin("g1");
+const kept = goblin("g2", mine);
+actors = [actor("Pip", [bare, kept])];
+report = await migrateWorld();
+assert.equal(bare.system.resources.length, 1, "an empty copy is given the card's budget");
+assert.equal(bare.system.resources[0].name, "Use", "and it is the card's own pool");
+assert.equal(bare.system.resources[0].value, 1, "and a budget arrives full");
+assert.ok(!("said" in bare.system.resources[0]), "and carries no checker evidence");
+assert.equal(kept.system.resources, mine, "a copy holding its own counters is left alone");
+assert.ok(
+  !writtenKeys.some((k) => k.endsWith(".dice")),
+  "an annotation with no dice writes no dice key",
+);
+bare.system.resources[0].value = 0;
+await migrateWorld({ force: true });
+assert.equal(bare.system.resources[0].value, 0, "running again does not refill a spent use");
+
+/* ── a stored press that is still ours learns to spend its use ────────── */
+
+const { PRE_GATE } = await import("../src/packs-src/card-actions.mjs");
+reset(1);
+const block = (actions) => ({ name: "Danger Sense", description: "", actions });
+const oldPress = structuredClone(PRE_GATE["ancestry:Goblin"].features["Danger Sense"]);
+const ours = item("g3", "ancestry", "Goblin", {
+  resources: [{ name: "Use" }], dice: [], features: [], topFeature: block(oldPress),
+});
+const edited = item("g4", "ancestry", "Goblin", {
+  resources: [{ name: "Use" }], dice: [], features: [],
+  topFeature: block([{ ...oldPress[0], said: "my own wording" }]),
+});
+actors = [actor("Rook", [ours, edited])];
+await migrateWorld();
+const steps = ours.system.topFeature.actions[0].steps ?? [];
+assert.ok(
+  steps.some((s) => s.kind === "move-resource" && s.resource === "Use" && s.by === -1),
+  "a stored press matching the old reading now spends the card's use",
+);
+assert.equal(
+  edited.system.topFeature.actions[0].said,
+  "my own wording",
+  "a press somebody edited is theirs and is left alone",
+);
+assert.ok(
+  !writtenKeys.some((k) => /\.\d+(\.|$)/.test(k)),
+  "and the blocks are written whole, never by index",
+);
+
 console.log(
   `test-migration: ${LATEST_DATA_VERSION} step(s) — who writes, idempotence, homebrew, ` +
     `shared feature names, array paths, all three populations, failure, empty world, ` +
-    `dry run.`,
+    `dry run, card counters, gated presses.`,
 );
