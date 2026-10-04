@@ -762,6 +762,15 @@
 .dh .abl{display:flex;flex-direction:column;gap:8px}
 .dh .abl .cols{display:flex;flex-wrap:wrap;gap:var(--run, 8px) 12px;align-items:flex-start}
 .dh .abl .runs{flex:1 1 268px;min-width:0;display:flex;flex-direction:column;gap:6px}
+/* The features are cards now, and a grid of 100px tracks has no width of its
+   own: as a bare flex item it shrinks to one track and stacks every feature
+   in a single column, which is how a class with two of them looked like a
+   class with one and something cut off underneath. So the grid takes the
+   basis the run of rows used to hold, and `auto-fill` does the rest —
+   beside the subclass column it fits two cards a line, wrapped under it the
+   panel's full width fits six. `.runs` keeps its own rule because the empty
+   state is still a sentence in a box, not a grid. */
+.dh .abl .dh-features{flex:1 1 268px;min-width:0}
 /* A grid inside the column, not a second flex row, and `auto-fill` is the
    whole reason. Beside the rules the column is ~257px and holds one tile
    per line; wrapped underneath them it is the panel's full width and holds
