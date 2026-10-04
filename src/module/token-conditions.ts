@@ -124,11 +124,10 @@ export function conditionMaterialsFor(
   return out;
 }
 const MARK = Symbol("daggerheartConditionMaterial");
-/* When each condition in each slot started being drawn, and which slot holds
-   which, so `tick` can advance the onset without re-deriving any of it. Held
-   on the filter rather than in a second map keyed by token, because the
-   filter is already the per-token object this module owns and `detach`
-   already throws it away. */
+/* Which slot holds which material, and when each started being drawn, so
+   `tick` can advance the onset without re-deriving any of it. The slot list
+   belongs to the filter; the onsets do not, and that is the correction --
+   see `onsets` below. */
 const AGES = Symbol("daggerheartConditionAges");
 const SLOTS = Symbol("daggerheartConditionSlots");
 /** Long enough that smoothstep is saturated: a condition that is just there. */
@@ -165,6 +164,40 @@ function tokenSeed(token: any): number {
 }
 
 const filters = new Map<any, any>();
+
+/* ── when a condition started, and why that cannot live on the filter ──
+   It used to. The note above it read "held on the filter rather than in a
+   second map keyed by token, because the filter is already the per-token
+   object this module owns" -- and every word of that was true, which is what
+   made it the bug. A filter is per token *object*, and one creature has more
+   than one of those.
+
+   Foundry's drag ghost is `document.clone({keepId: true})` drawn as a second
+   placeable, so dragging a creature built a brand-new filter with an empty
+   age map and every condition on it restarted its onset from zero -- on the
+   one copy of the creature the person dragging is actually looking at. The
+   same shape of fault as the chip's, in the same gesture: identity keyed to
+   the placeable rather than to the document.
+
+   Keyed by document id, the onsets outlive every placeable that draws them.
+   That also answers, from the other side, the case the old note was written
+   to defend: `"delta" in changed` makes Foundry destroy and redraw a token
+   outright, so damage on any unlinked token was throwing the ages away too.
+
+   Which means `detach` may NOT clear them, because it also runs on a
+   redraw. They are dropped on the two events that genuinely end a creature's
+   presence: the scene going away, and the document being deleted. */
+const onsets = new Map<string, Map<string, number>>();
+
+const documentId = (token: any): string => String(token?.document?.id ?? token?.id ?? "");
+
+function agesFor(token: any): Map<string, number> {
+  const id = documentId(token);
+  let ages = onsets.get(id);
+  if (!ages) onsets.set(id, (ages = new Map<string, number>()));
+  return ages;
+}
+
 let FilterClass: any;
 let registered = false;
 let warned = false;
@@ -1915,7 +1948,7 @@ export function syncTokenConditionMaterial(
        frame has to stay the object's own bounds for `tokenUv` to be stable. */
     filter.autoFit = false;
     filter.uniforms.uSeed = tokenSeed(token);
-    filter[AGES] = new Map<string, number>();
+    filter[AGES] = agesFor(token);
     filter[SLOTS] = [] as string[];
     filters.set(token, filter);
   }
@@ -1934,7 +1967,7 @@ export function syncTokenConditionMaterial(
      onset because somebody panned the canvas. Keyed by the material id, which
      is what a slot actually holds — all the ad-hoc conditions share one. */
   const now = clock();
-  const ages: Map<string, number> = filter[AGES] ?? (filter[AGES] = new Map());
+  const ages: Map<string, number> = filter[AGES] ?? (filter[AGES] = agesFor(token));
   const live = new Set(keys);
   for (const key of [...ages.keys()]) if (!live.has(key)) ages.delete(key);
   for (const key of keys) if (!ages.has(key)) ages.set(key, now);
@@ -2029,6 +2062,11 @@ export function registerTokenConditionMaterials(): void {
   Hooks.on("canvasTearDown", () => {
     (canvas as any)?.app?.ticker?.remove?.(tick);
     for (const token of [...filters.keys()]) detach(token);
+    onsets.clear();
   });
+  /* The other end of a creature's presence. `detach` deliberately does not
+     reach the onsets, since it also runs on a redraw -- so the one moment a
+     creature is genuinely finished with is its document being deleted. */
+  Hooks.on("deleteToken", (doc: any) => onsets.delete(String(doc?.id ?? "")));
   if ((canvas as any)?.ready) (canvas as any)?.app?.ticker?.add?.(tick);
 }
