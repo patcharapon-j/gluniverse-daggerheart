@@ -800,6 +800,14 @@ function build(): void {
      those two statements is allowed to be the only one. */
   host.appendChild(layer);
   chips.clear();
+  /* Both maps, and `leaving` is the one that was missed. Its elements were
+     children of the layer just removed, so a chip caught mid-departure
+     stayed in here as a detached node -- and the next `sync` for that id
+     called `reclaim`, got the detached element back, matched its shape, and
+     never appended it to the new layer. The chip then simply never appeared,
+     which is the exact mirror of the drag bug: that one deleted a live chip,
+     this one resurrected a dead one. */
+  leaving.clear();
   lastK = canvas.stage?.scale?.x ?? 1;
   redraw();
 }
