@@ -523,6 +523,103 @@ if (!classClaims) {
   bad(`"The Frame" no longer names a class's two domains, so the contrast it draws is unchecked`);
 }
 
+/* ── Void's comparative claim ─────────────────────────────────────────
+   The Void page says the deck reaches into the GM's Fear pool far more often
+   than print does, and gives four numbers for it. A comparative claim fails in
+   a way a flat one cannot: count the movers on one side and the readers on the
+   other and the ratio is fiction while every individual number is defensible.
+   This is what stops that, and it is here because that exact mistake was in
+   the paragraph twice before it was caught.
+
+   The page's counts are interpolated from `marked-rules.mjs`'s own predicate,
+   so asserting the numbers against the predicate would prove nothing. What is
+   checked is the **set** the predicate selects, against the names below —
+   `check-marked.mjs`'s `AHEAD` shape, failing in both directions. A card
+   joining the set fails as an unannotated addition and a name here with no
+   card fails as a reading nobody re-took, which is right: whether a newly
+   worded card belongs in "engages the pool" is not a thing a regex decides.
+
+   Read off the 210 printed cards and the 21 Void cards, one phrase at a time.
+   `Umbral Veil` and `Avatar of Terror` size something off the pool without
+   moving it; `Dread-Touched` and `Midnight-Touched` stop a gain reaching it;
+   `Sigil of Retribution` and `The Answer` are the only two on either side that
+   put Fear *in*. What is excluded is the duality dice and the "until the GM
+   spends a Fear on their turn" duration, which between them account for every
+   other printed mention of the word. */
+const POOL_SETS = {
+  printedOut: ["Know Thy Enemy", "Dire Strike", "Night Terror"],
+  printedAny: [
+    "Know Thy Enemy",
+    "Sigil of Retribution",
+    "Midnight-Touched",
+    "Night Terror",
+    "Umbral Veil",
+    "Dire Strike",
+    "Dread-Touched",
+    "Avatar of Terror",
+  ],
+  voidOut: ["Reckoning", "Geometry of Ruin"],
+  voidAny: ["Reckoning", "Cold Solution", "Void-Touched", "Geometry of Ruin", "The Answer"],
+};
+
+const { takesFear, poolCards, POOL_COUNTS } = await import(
+  pathToFileURL(join(ROOT, "src", "packs-src", "marked-rules.mjs")).href
+);
+
+const PRINTED_CORPUS = [
+  ...(await import(pathToFileURL(join(ROOT, "src", "packs-src", "domain-cards.mjs")).href)).default,
+  ...(await import(pathToFileURL(join(ROOT, "src", "packs-src", "dread-cards.mjs")).href)).default,
+];
+const VOID_CARDS = CARDS.filter((c) => c.domain === "void");
+
+const ratchet = (label, got, want) => {
+  const names = got.map((c) => c.name);
+  for (const name of names) {
+    if (!want.includes(name)) {
+      bad(`${name} now counts as "${label}" and POOL_SETS does not list it — somebody has to read it`);
+    }
+  }
+  for (const name of want) {
+    if (!names.includes(name)) {
+      bad(`POOL_SETS lists ${name} under "${label}" and it no longer counts — the reading is stale`);
+    }
+  }
+};
+
+ratchet("printedOut", takesFear(PRINTED_CORPUS), POOL_SETS.printedOut);
+ratchet("printedAny", poolCards(PRINTED_CORPUS), POOL_SETS.printedAny);
+ratchet("voidOut", takesFear(VOID_CARDS), POOL_SETS.voidOut);
+ratchet("voidAny", poolCards(VOID_CARDS), POOL_SETS.voidAny);
+
+if (POOL_COUNTS.printedOf !== PRINTED_CORPUS.length) {
+  bad(
+    `the Void page measures print as ${POOL_COUNTS.printedOf} cards and there are ` +
+      `${PRINTED_CORPUS.length}`,
+  );
+}
+
+/* And that the page still prints them, rather than having had the sentence
+   rewritten around a different pair of numbers. */
+const voidText = page("Void");
+states(
+  "Void",
+  voidText,
+  `${POOL_COUNTS.voidOut} cards of ${POOL_COUNTS.voidOf} take Fear out of the pool`,
+  "how often Void takes Fear out",
+);
+states(
+  "Void",
+  voidText,
+  `${POOL_COUNTS.printedOut} of ${POOL_COUNTS.printedOf}`,
+  "how often print takes Fear out",
+);
+states(
+  "Void",
+  voidText,
+  `${POOL_COUNTS.voidAny} of ${POOL_COUNTS.voidOf} against ${POOL_COUNTS.printedAny} of ${POOL_COUNTS.printedOf}`,
+  "the wider comparison",
+);
+
 /* ── the deck listings ────────────────────────────────────────────────── */
 
 const DECK_COLUMNS = 6;

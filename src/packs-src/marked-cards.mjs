@@ -49,12 +49,14 @@
  * Strike, Night Terror). Cold Solution reads the pool on top of that, sizing
  * its tokens off whatever is left in it.
  *
- * Removing is the figure quoted because it is the one that survives being
- * re-measured. Counting cards that merely *name* the pool depends on which
- * phrasings you admit — a token count, a duration, a Fear the GM declines —
- * and two honest passes over the same 210 cards came back with different
- * totals. Removing is unambiguous: either the pool is smaller afterwards or
- * it is not.
+ * Widen it to every card that engages the pool as a quantity and it is five in
+ * 21 against eight in 210. Both figures come from **one predicate applied to
+ * both corpora**, which `marked-rules.mjs` exports and
+ * `tools/check-marked-rules.mjs` ratchets as a set in both directions. That
+ * machinery exists because this paragraph was written wrong three times the
+ * same way: counting print's movers against our readers, which invents a
+ * density ratio out of two defensible numbers. The duality dice and the
+ * "until the GM spends a Fear on their turn" duration are out on both sides.
  *
  * Two cards that look like they belong in that count are outside it on
  * purpose. The Answer gives the GM three Fear, but that is the frame's own

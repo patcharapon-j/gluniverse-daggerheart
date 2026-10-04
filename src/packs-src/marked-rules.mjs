@@ -256,6 +256,63 @@ const offering = (kind) => MARKED.filter((c) => presses(c).includes(kind));
 const nameList = (cards) =>
   cards.map((c) => `<strong>${escapeHtml(c.name)}</strong>`).join(", ");
 
+/* ── Void's signature, measured on both sides of the comparison ───────
+   The Void page's claim is comparative — the deck reaches into the GM's Fear
+   pool far more often than print does — and a comparative claim has one
+   failure mode worth engineering against: counting one thing on our side and
+   a different thing on print's. A sentence saying "four printed cards" where
+   four means the movers, beside "four Void cards" where four means the
+   readers, makes a density ratio out of nothing, and it reads perfectly.
+
+   So the predicate is one list applied to both corpora, and it is **exported**
+   so that `tools/check-marked-rules.mjs` can hold the set it selects as a
+   named two-way ratchet rather than re-deriving it with a second copy of these
+   regexes. That is `check-marked.mjs`'s `AHEAD` shape: a card entering or
+   leaving the set fails the build, because the only thing that can decide
+   whether a new card belongs in a reading is a person.
+
+   "Engages the pool" means the pool as a **quantity**: takes Fear out of it,
+   puts Fear into it, stops a gain reaching it, or reads its size. The two
+   idioms it deliberately excludes are the ones that make the word "Fear"
+   common without the pool being touched — the duality dice ("roll with Fear",
+   "your Fear Die"), and the duration idiom ("until the GM spends a Fear on
+   their turn"), which is the GM's own move and sits on a dozen printed
+   cards. */
+/** Takes Fear *out* of the pool. The narrowest and least arguable reading,
+    and the one `check-marked.mjs` already enforces as `takesFear`. */
+const OUT_PHRASES = [/\b(?:remove|steal|loses?)\s+(?:a|\d+|any number of|a number of)\s+Fear/i];
+
+/** Engages the pool at all: takes out, puts in, blocks a gain, reads its size. */
+const POOL_PHRASES = [
+  ...OUT_PHRASES,
+  /GM (?:gains?|would gain) (?:a|\d+) Fear/i,
+  /(?:doesn[’']t|does not|prevent the GM from) gain(?:ing)? a Fear/i,
+  /number of Fear in the GM[’']s (?:pool|Fear Pool)/i,
+  /for each Fear in the GM[’']s pool/i,
+];
+
+/** Rules text with our emphasis off, so a regex reads words. */
+const spoken = (c) => String(c.text).replace(/\*\*|__|\*|_/g, "").replace(/\s+/g, " ");
+
+const matching = (phrases) => (cards) =>
+  cards.filter((c) => phrases.some((r) => r.test(spoken(c))));
+
+/** Exported so the check can ratchet the sets rather than copy the regexes. */
+export const takesFear = matching(OUT_PHRASES);
+export const poolCards = matching(POOL_PHRASES);
+
+const voidCards = MARKED.filter((c) => c.domain === "void");
+
+/** Both readings, applied to both corpora. Nothing here is typed in. */
+export const POOL_COUNTS = {
+  printedOut: takesFear(PRINTED).length,
+  printedAny: poolCards(PRINTED).length,
+  printedOf: PRINTED.length,
+  voidOut: takesFear(voidCards).length,
+  voidAny: poolCards(voidCards).length,
+  voidOf: voidCards.length,
+};
+
 /* What a refresh scope is called in a sentence. A label table and therefore a
    reading, in the sense this file's header draws the line: `card-resources.mjs`
    keys the scope as `longRest` and only a person can decide that the English
@@ -609,11 +666,19 @@ with Knowledge, whatever your sheet says.</p>
 <h2>What the deck owns</h2>
 <p><strong>Void takes Fear out of the GM's pool.</strong> Reckoning buys one
 back for a Stress, Geometry of Ruin takes one out for every target that fails,
-and Cold Solution sizes its tokens off whatever is left in it. Two cards of
-twenty-one take Fear out of the pool where the printed corpus does it on three
-of 210, and a third reads it. That is what it means to say a Void player is
-making decisions about the GM's economy and not only their own: you will be
-watching the Fear counter the way other players watch their own Hope.</p>
+and Cold Solution sizes its tokens off whatever is left in it.
+${POOL_COUNTS.voidOut} cards of ${POOL_COUNTS.voidOf} take Fear out of the pool
+where the printed corpus does it on ${POOL_COUNTS.printedOut} of
+${POOL_COUNTS.printedOf}. Widen it to every card that engages the pool at all —
+takes from it, adds to it, blocks a gain, or reads its size — and it is
+${POOL_COUNTS.voidAny} of ${POOL_COUNTS.voidOf} against
+${POOL_COUNTS.printedAny} of ${POOL_COUNTS.printedOf}.</p>
+<p>Both numbers are counted the same way on both sides, which is the only thing
+that makes the comparison mean anything: cards that merely say "roll with Fear"
+or that wait for the GM to spend one on their turn are in neither figure, on
+either side. That is what it means to say a Void player is making decisions
+about the GM's economy and not only their own — you will be watching the Fear
+counter the way other players watch their own Hope.</p>
 <h2>The two threads</h2>
 <ul>
 <li><strong>Unmaking</strong> — ends, suppresses, erases and folds space. Ground

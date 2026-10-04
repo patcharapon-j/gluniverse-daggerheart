@@ -707,10 +707,22 @@ sizing its tokens off whatever is left in it. Two things that look like
 they belong in that count are deliberately outside it: The Answer's three Fear
 is the frame's own cost tripled rather than the card reaching into the pool, and
 Void-Touched refusing to feed it is the `-Touched` pattern both decks share —
-Root-Touched says the same words. Removal is the figure quoted because it is the
-one that survives re-measurement: counting cards that merely *name* the pool
-depends on which phrasings you admit, and two honest passes over the same 210
-came back with different totals. Root converts
+Root-Touched says the same words. Widen it to every card that engages the pool
+as a quantity — takes from it, adds to it, blocks a gain, reads its size — and
+it is five of twenty-one against eight of 210.
+
+**Both of those are one predicate applied to both corpora, and that is the
+point.** Three separate attempts at this paragraph got it wrong the same way:
+counting the cards that *move* the pool on print's side and the ones that merely
+*read* it on ours, which manufactures a density ratio while every individual
+number stays defensible. So `marked-rules.mjs` exports the predicate, the Void
+journal page interpolates its counts rather than stating them, and
+`check-marked-rules.mjs` ratchets the **set** it selects against hand-read names
+in both directions — `AHEAD`'s shape, because whether a newly worded card
+belongs in "engages the pool" is not something a regex decides. The duality dice
+and "until the GM spends a Fear on their turn" are excluded on both sides, and
+between them they account for every other printed mention of the word. Root
+converts
 harm into fuel: Feed turns a Melee hit into a cleared Hit Point and a Hope, Apex
 pays a Hit Point per kill, Barkskin and The Beast buy scene-long force with
 Stress up front, the World Tree empties the whole party's sheet once.
