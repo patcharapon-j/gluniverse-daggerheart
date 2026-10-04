@@ -1,3 +1,7 @@
+> **Superseded.** The marks are now generated with Midjourney and traced; see
+> `../types/README.md`. The floor and the failure-to-watch-for below still
+> describe what a good pick looks like.
+
 # How an item mark is drawn
 
 The thirteen domain sigils and the fourteen class sigils in `design/assets` are

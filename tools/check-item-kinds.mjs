@@ -32,12 +32,12 @@
 
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const report = process.argv.includes("--report");
 
-const { KIND_GLYPHS, kindOf } = await import(join(root, "src/module/ui/item-kind.js"));
+const { KIND_GLYPHS, kindOf } = await import(pathToFileURL(join(root, "src/module/ui/item-kind.js")).href);
 
 /* The floors, which are `GLYPHS` members and are checked for a file too: a
    name the tables cannot read is far more common than one they can. */
@@ -52,7 +52,7 @@ const tables = await Promise.all(
     "hf-equipment-tables.mjs",
     "loot-tables.mjs",
     "hf-loot-tables.mjs",
-  ].map((f) => import(join(root, "src/packs-src", f))),
+  ].map((f) => import(pathToFileURL(join(root, "src/packs-src", f)).href)),
 );
 
 /* The four files nest their rows differently and none of them exports a flat

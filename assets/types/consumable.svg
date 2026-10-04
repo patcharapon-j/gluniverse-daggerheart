@@ -1,23 +1,49 @@
-<!-- Consumable: a flask, stoppered, with a curl of vapour off the collar.
-     Drawn rather than traced, see art-src/marks/BRIEF.md.
+<!-- Consumable. Three bottles, so it never reads as the single-vial or potion marks.
 
-     The collar, the neck and the body are one continuous silhouette, and only
-     the stopper is a separate path. An earlier pass had all three detached and
-     at 14px the gaps closed up and the whole thing went back to being a blob,
-     which is the failure the flat polygon version had in the first place.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a trio of small bottles emblem, three stoppered vials of different heights clustered together" — with the style tail in
+     art-src/types/mj-prompts.mjs; job 4b333733-cf08-491b-a49e-e2667b12b3d9, variant 1.
+     The art is white on black, so its brightness is the shape.
 
-     The carved level line sits low, where the body is widest. Higher up it
-     crosses the shoulder, the carve narrows with the body, and it stops
-     reading as liquid and starts reading as a crack in the glass.
-
-     The body is widest around two thirds down and draws back in toward the
-     base, so the silhouette tapers the way the domain marks' limbs do rather
-     than sitting there as an oval.
-
-     Vapour on the right only. It is the one asymmetry the brief allows here,
-     and a mirrored pair stops being vapour and reads as a pair of handles. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M93 58 C110 53 140 53 157 58 L161 77 L142 82 L142 98 C176 104 208 124 216 156 C222 184 206 212 180 226 C160 234 90 234 70 226 C44 212 28 184 34 156 C42 124 74 104 108 98 L108 82 L89 77 Z M50 166 C88 158 162 158 200 166 L201 183 C162 175 88 175 49 183 Z"/>
-  <path d="M125 18 C137 26 149 36 153 46 C141 51 109 51 97 46 C101 36 113 26 125 18 Z"/>
-  <path d="M216 22 C190 44 206 70 192 88 C184 94 174 92 170 84 C186 70 180 48 200 34 C206 29 212 25 216 22 Z"/>
+<g transform="translate(-80.150685,330.150685) scale(0.040068,-0.040068)">
+<path d="M6458 8029 c-164 -12 -236 -34 -282 -89 -50 -60 -33 -140 64 -306 33
+-55 60 -103 60 -106 0 -3 -60 -7 -132 -10 -100 -3 -142 -9 -171 -23 -67 -32
+-85 -102 -46 -183 25 -51 76 -88 163 -117 l56 -19 0 -43 c0 -24 9 -69 19 -100
+42 -124 36 -446 -13 -732 l-23 -134 23 -35 c39 -57 33 -113 -24 -224 -57 -113
+-115 -189 -217 -287 l-77 -75 15 -31 c43 -90 180 -219 432 -405 77 -57 172
+-136 212 -174 63 -63 72 -76 78 -119 5 -34 3 -60 -10 -95 -40 -108 -75 -269
+-86 -392 -16 -161 -14 -174 91 -736 44 -236 98 -526 120 -644 23 -118 52 -269
+65 -336 14 -67 25 -125 25 -129 0 -4 87 -5 193 -2 291 9 531 51 618 110 33 22
+34 26 62 167 187 976 357 2062 357 2280 0 73 -33 142 -96 201 -28 25 -128 98
+-224 162 -403 266 -529 436 -624 837 -66 277 -97 780 -58 919 18 64 19 65 68
+81 64 20 103 49 137 97 85 122 12 183 -220 183 l-112 0 64 132 c36 72 73 156
+81 186 15 50 15 58 1 87 -10 21 -31 40 -62 55 -82 40 -335 63 -527 49z"/>
+<path d="M5105 6731 c-172 -13 -215 -40 -215 -137 0 -45 8 -70 50 -150 28 -53
+50 -102 50 -109 0 -9 -28 -14 -102 -17 -71 -3 -113 -9 -135 -21 -39 -21 -83
+-82 -83 -117 0 -55 74 -123 172 -158 26 -9 50 -24 53 -32 10 -33 34 -284 40
+-425 7 -165 -6 -318 -31 -368 -59 -116 -200 -257 -414 -411 -66 -48 -124 -95
+-129 -105 -8 -14 0 -27 38 -65 30 -29 51 -61 55 -80 3 -17 32 -98 63 -181 55
+-144 57 -154 56 -240 -1 -49 -12 -164 -26 -255 -14 -91 -42 -273 -62 -405 -20
+-132 -65 -411 -101 -620 -87 -512 -81 -457 -47 -476 44 -26 177 -67 286 -90
+460 -93 1085 -82 1472 27 192 54 316 119 356 189 16 28 16 35 -1 130 -11 55
+-46 249 -80 430 -34 182 -83 449 -110 595 -123 664 -124 683 -40 982 38 132
+40 126 -87 224 -135 104 -221 174 -281 229 -66 60 -208 233 -223 272 -28 73
+-21 397 12 590 11 60 12 62 67 96 139 86 203 213 135 267 -27 21 -34 22 -180
+15 -84 -4 -153 -5 -153 -3 0 3 23 69 50 147 53 151 59 184 35 217 -31 45 -80
+57 -240 60 -82 1 -195 -1 -250 -5z"/>
+<path d="M3233 6189 c-101 -17 -173 -69 -173 -123 0 -9 17 -51 39 -94 38 -77
+91 -213 91 -235 0 -9 -31 -12 -107 -12 -100 0 -112 -2 -154 -27 -114 -67 -73
+-169 97 -243 l79 -34 9 -63 c5 -35 10 -130 10 -213 1 -131 -2 -158 -22 -216
+-45 -130 -94 -193 -324 -410 -371 -352 -478 -496 -539 -726 -42 -159 -36 -387
+16 -586 112 -430 396 -660 888 -718 149 -17 693 -7 772 15 33 9 65 22 72 29 6
+7 32 145 58 307 38 246 118 737 226 1390 l21 125 -73 65 c-283 251 -373 346
+-423 445 -37 72 -49 188 -36 362 5 76 10 152 10 169 0 29 4 33 52 49 120 39
+189 91 203 154 8 39 -16 76 -69 104 -36 19 -56 22 -154 21 l-113 -1 7 31 c9
+45 63 173 97 231 42 71 45 104 14 141 -46 54 -106 67 -327 70 -107 1 -219 -1
+-247 -7z"/>
+</g>
 </svg>

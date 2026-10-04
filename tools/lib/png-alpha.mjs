@@ -26,7 +26,9 @@ const paeth = (a, b, c) => {
   return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
 };
 
-export function pngAlpha(buf) {
+/* `luminance`: for an opaque PNG, read the ink off brightness rather than
+   returning 255s. Midjourney draws white on black and has no alpha to give. */
+export function pngAlpha(buf, { luminance = false } = {}) {
   if (!buf.subarray(0, 8).equals(SIG)) throw new Error("not a PNG");
   let width = 0;
   let height = 0;
@@ -71,7 +73,11 @@ export function pngAlpha(buf) {
       else if (filter !== 0) throw new Error(`filter ${filter}`);
     }
     for (let x = 0; x < width; x++) {
-      out[y * width + x] = opaque ? 255 : line[x * bpp + bpp - 1];
+      out[y * width + x] = !opaque
+        ? line[x * bpp + bpp - 1]
+        : !luminance ? 255
+        : colour === 0 ? line[x]
+        : Math.round(0.299 * line[x * 3] + 0.587 * line[x * 3 + 1] + 0.114 * line[x * 3 + 2]);
     }
     prev = line;
   }

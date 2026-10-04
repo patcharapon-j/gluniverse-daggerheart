@@ -1,21 +1,41 @@
-<!-- Bag: a drawstring pouch. Round bottomed sack, cinched neck, the
-     drawstring and both cord ends carved as one void, body bulging unevenly
-     so it reads as full.
-     Drawn rather than traced, see art-src/marks/BRIEF.md.
+<!-- Bag. Bags, pouches, quivers and cases.
 
-     The drawstring and the two tails are a single Y shaped subpath. Drawn as
-     three overlapping voids the overlaps crossed back to filled under
-     evenodd, and two black wedges appeared inside the drawstring.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a satchel emblem, a cinched adventurer's satchel with a flap and buckle" — with the style tail in
+     art-src/types/mj-prompts.mjs; job 9d8fbdc3-0dac-42c8-8d93-86554d7ce318, variant 3.
+     The art is white on black, so its brightness is the shape.
 
-     The tails are carved into the body rather than hung outside it. A sack
-     this wide leaves no clear air at its sides, and a cord drawn in the same
-     fill as the sack it crosses does not exist.
-
-     The small flick off the knot is the one asymmetry. A matched pair there
-     read as horns and turned the neck into a head. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M104 72 C98 58 99 42 108 32 C116 24 134 24 142 32 C151 42 152 58 146 72 C134 67 116 67 104 72 Z"/>
-  <path d="M143 44 C155 38 165 30 172 20 C170 34 162 46 150 54 C147 50 145 47 143 44 Z"/>
-  <path fill-rule="evenodd" d="M104 74 C94 84 88 94 86 104 C62 118 36 146 32 176 C28 206 58 232 96 232 L162 232 C206 230 224 194 216 162 C204 134 184 114 162 100 C159 90 152 80 142 72 C130 68 116 68 104 74 Z
-                               M94 108 C112 100 138 100 156 108 L154 124 C160 140 166 158 169 174 C168 182 159 182 157 174 C153 158 146 140 138 122 C132 119 118 119 112 122 C104 140 97 158 93 174 C91 182 82 182 81 174 C83 158 87 140 96 124 C95 119 94 114 94 108 Z"/>
+<g transform="translate(-77.918782,327.324873) scale(0.039594,-0.039594)">
+<path d="M5895 7375 c-803 -67 -1782 -148 -2175 -179 -699 -56 -716 -58 -770
+-84 -30 -15 -80 -52 -110 -84 -98 -100 -118 -154 -230 -605 -55 -222 -100
+-409 -100 -417 0 -20 42 -55 735 -616 220 -178 423 -343 452 -367 28 -24 54
+-40 57 -35 3 6 28 110 56 233 l50 224 128 122 c70 68 136 125 147 127 17 4
+182 11 711 29 l71 2 126 -110 127 -109 0 -183 0 -183 -165 0 -164 0 -3 57 c-3
+56 -4 58 -58 101 l-54 45 -216 -7 -215 -7 -53 -53 -54 -53 -63 -254 c-54 -221
+-67 -290 -95 -527 -18 -150 -31 -275 -28 -277 5 -5 741 -24 747 -19 2 2 17
+133 32 291 16 159 34 347 41 418 l13 130 183 2 183 2 187 114 c230 140 352
+215 792 487 190 117 397 244 460 283 63 38 117 71 118 73 6 4 90 512 168 1014
+10 62 25 119 37 140 91 154 264 298 456 377 l56 23 -60 -1 c-33 -1 -717 -56
+-1520 -124z"/>
+<path d="M7402 6990 c-69 -43 -82 -55 -87 -83 -30 -177 -77 -470 -130 -801
+-35 -219 -67 -402 -72 -406 -4 -4 -262 -164 -573 -355 -311 -192 -639 -394
+-730 -450 -91 -55 -266 -164 -390 -240 -124 -76 -226 -139 -227 -139 -1 -1
+-73 -774 -73 -788 0 -10 -123 -10 -295 1 -229 15 -784 35 -791 29 -3 -4 -26
+-174 -51 -380 -38 -319 -43 -376 -31 -394 7 -12 62 -76 122 -142 l109 -121 31
+14 c92 40 382 178 389 185 6 5 57 376 67 488 0 1 65 2 145 2 96 0 145 -4 145
+-11 0 -5 -12 -116 -26 -245 -14 -130 -24 -237 -22 -238 1 -2 203 -24 448 -51
+245 -26 616 -67 825 -91 l380 -43 66 67 c37 37 377 389 757 783 l690 717 -8
+43 c-5 24 -38 181 -75 349 -72 333 -249 1167 -351 1650 -96 459 -146 684 -153
+692 -4 5 -44 -15 -89 -42z"/>
+<path d="M2479 5478 c-6 -24 -78 -281 -160 -573 l-148 -530 72 -95 c39 -52
+151 -198 247 -325 97 -126 276 -363 399 -525 123 -162 227 -299 231 -303 9
+-10 63 -18 399 -56 145 -17 266 -29 269 -26 7 7 93 717 88 723 -3 2 -92 9
+-198 14 -106 6 -195 12 -197 14 -2 1 17 191 43 421 25 230 46 421 46 425 0 3
+-91 80 -202 171 -112 91 -353 287 -536 436 -183 149 -334 271 -337 271 -2 0
+-9 -19 -16 -42z"/>
+</g>
 </svg>

@@ -1,25 +1,35 @@
-<!-- Subclass: one stem rising and splitting into two arms.
-     Drawn to art-src/marks/BRIEF.md.
+<!-- Subclass. A branch: a subclass is one of the ways a class goes.
 
-     The arms are unequal, and that is the fix rather than a flourish. Every
-     symmetric version of this read as an animal's face: two upward limbs
-     either side of a centred void is a pair of ears over a muzzle, and the
-     eye finds that before it finds a fork. Dropping the right arm shorter
-     and shallower than the left breaks the mirror, and with it the read.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a branching emblem, a heavy stem forking into two tapering curved arms each ending in a hooked point, like a split antler" — with the style tail in
+     art-src/types/mj-prompts.mjs; job 0f71e9e2-59d9-4379-a4d2-cd8288ef1224, variant 3.
+     The art is white on black, so its brightness is the shape.
 
-     The right arm is also much the shorter of the two, which is doing a
-     second job. `staff.svg` is a pole under a symmetric crown, and at 14px
-     a symmetric fork on a stem is the same silhouette. Lopsided, this one
-     cannot be mistaken for it.
-
-     Stem and arms are three overlapping paths rather than one outline. Run
-     as a single outline the two edges of an arm start a hand apart at the
-     fork and converge all the way up, so the top half is a hairline that is
-     gone at 14px. As its own shape an arm can be widest in its middle,
-     which is where a limb carries, and spend the taper in the last third. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M101 232 L101 158 L149 158 L149 232 Z
-    M125 178 L138 192 L125 206 L112 192 Z"/>
-  <path d="M100 188 C 82 138 56 90 20 26 C 66 88 110 134 138 174 Z"/>
-  <path d="M140 178 C 158 146 178 122 206 100 C 196 136 174 166 146 202 Z"/>
+<g transform="translate(-49.64723,295.553936) scale(0.034111,-0.034111)">
+<path d="M2596 8348 c-146 -144 -250 -332 -306 -553 -79 -311 -63 -706 41
+-1001 80 -228 165 -359 469 -729 187 -227 337 -424 379 -496 73 -128 56 -239
+-38 -239 -45 0 -184 46 -265 88 -164 84 -263 204 -296 360 -16 79 -30 69 -37
+-29 -6 -82 11 -169 48 -241 70 -137 289 -288 759 -523 322 -161 334 -170 498
+-387 269 -357 552 -820 745 -1218 289 -597 454 -1144 510 -1685 15 -142 20
+-139 37 30 39 378 150 811 312 1220 132 331 275 620 480 967 164 279 423 657
+567 827 61 72 120 110 366 234 534 270 710 394 783 547 37 79 56 176 47 244
+-11 79 -20 84 -34 19 -37 -166 -139 -287 -314 -373 -124 -60 -249 -91 -291
+-72 -55 25 -58 109 -7 210 36 72 143 216 310 421 346 422 408 509 485 671 114
+243 166 516 153 810 -14 298 -86 536 -225 743 -44 66 -205 237 -223 237 -5 0
+9 -33 31 -72 94 -177 140 -364 147 -604 8 -249 -17 -433 -89 -659 l-32 -100
+-13 123 c-25 242 -86 393 -219 541 -44 49 -176 151 -195 151 -5 0 9 -24 32
+-52 54 -71 124 -215 151 -313 19 -70 22 -105 22 -275 1 -168 -2 -209 -22 -297
+-61 -271 -173 -519 -365 -808 -258 -388 -673 -844 -1052 -1155 -287 -236 -320
+-277 -363 -455 -16 -66 -49 -169 -72 -228 -75 -187 -232 -450 -339 -567 l-51
+-55 -54 57 c-72 76 -173 230 -256 392 -81 155 -132 289 -155 406 -10 47 -26
+103 -36 125 -31 65 -112 148 -272 279 -671 546 -1237 1270 -1414 1806 -92 280
+-112 511 -63 741 25 115 68 215 140 322 l59 87 -40 -22 c-60 -34 -185 -153
+-231 -220 -89 -132 -144 -305 -155 -487 l-6 -104 -19 49 c-27 68 -75 269 -93
+389 -17 114 -20 394 -5 500 22 150 87 353 145 449 18 31 30 56 25 56 -5 0 -47
+-37 -94 -82z"/>
+</g>
 </svg>

@@ -1,28 +1,46 @@
-<!-- Secondary weapon: two short blades crossed low, each widening from the point
-     to a bound collar, with the crossing carved open. Drawn, not traced. See
-     art-src/marks/BRIEF.md.
+<!-- Secondary. The same idea twice: the secondary slot is where a second weapon goes.
 
-     The crossing is the decision and it was got wrong first. Letting the blades
-     overlap inside one evenodd path unfills the overlap for free, which looks
-     right on paper, but the hole it makes runs out to the background at both
-     ends of its long diagonal. The X is then pinched to two single points and
-     the mark falls into two loose blades. So the X is drawn as one outline
-     around the union of both, with a lozenge carved inside the hub, which
-     leaves 14 units of metal welding the four limbs together.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a twin spearhead emblem, two slender spearheads side by side points up, shoulders swept outward" — with the style tail in
+     art-src/types/mj-prompts.mjs; job be8b820b-4a9d-4c35-bffe-a417e6cb4ea8, variant 4.
+     The art is white on black, so its brightness is the shape.
 
-     Limbs are 48 wide, not the 60 the first solid version used. At 60 the four
-     of them met in a mass with a hole in it rather than reading as two blades
-     laid across each other, because the hub grows as fast as the limbs do.
-
-     The collars are bands across the two lower limbs with a binding groove cut
-     through each, and both sit well below the hub. That is what keeps this off
-     the bone sigil, which crosses at the middle and is knobbed at all four
-     ends. This is two points up, two collars down, nothing on the ends. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M20 28C50 50 95 98 125 118C155 98 200 50 230 28C214 56 180 124 159 152C174 166 194 184 205 190L175 226C166 214 145 198 125 186C105 198 84 214 75 226L45 190C56 184 76 166 91 152C70 124 36 56 20 28Z
-                               M125 132C134 139 140 146 145 152C140 158 134 165 125 172C116 165 110 158 105 152C110 146 116 139 125 132Z"/>
-  <path fill-rule="evenodd" d="M187 164L210 183L169 232L146 213Z
-                               M190 176L198 183L166 221L158 214Z"/>
-  <path fill-rule="evenodd" d="M63 164L40 183L81 232L104 213Z
-                               M60 176L52 183L84 221L92 214Z"/>
+<g transform="translate(-22.221402,272.509225) scale(0.028782,-0.028782)">
+<path d="M4382 9080 c-68 -331 -239 -1047 -356 -1485 -228 -856 -314 -1304
+-332 -1722 l-7 -151 -39 -18 c-46 -21 -79 -58 -114 -125 -44 -88 -30 -119 104
+-227 200 -162 267 -246 366 -454 191 -399 391 -1056 771 -2528 47 -179 91
+-345 99 -370 l14 -45 -4 60 c-33 459 -119 1911 -139 2360 -18 384 -19 395 -39
+395 -8 0 -51 18 -96 41 -56 28 -88 51 -101 72 -42 68 -123 367 -171 627 -19
+109 -22 159 -23 382 0 173 4 261 11 268 8 8 21 -1 46 -32 49 -61 180 -259 276
+-418 44 -74 87 -144 95 -154 8 -11 -12 59 -44 155 -115 347 -173 691 -219
+1309 -39 528 -69 1304 -73 1885 l-2 290 -23 -115z"/>
+<path d="M5831 8895 c-2 -480 -27 -1180 -62 -1700 -51 -761 -132 -1237 -276
+-1625 -15 -41 32 28 127 185 111 185 217 344 259 388 l26 28 8 -28 c18 -62 20
+-374 3 -513 -27 -219 -113 -585 -168 -712 -24 -57 -52 -79 -157 -124 l-76 -33
+-12 -218 c-62 -1166 -82 -1502 -123 -2127 -17 -247 -28 -451 -27 -453 2 -2 28
+88 56 199 303 1175 439 1663 595 2133 218 658 307 818 576 1042 102 84 150
+137 150 164 0 58 -74 168 -136 201 l-44 23 0 70 c-1 347 -100 898 -295 1635
+-193 729 -283 1095 -370 1518 -25 120 -47 222 -49 227 -3 6 -5 -120 -5 -280z"/>
+<path d="M3251 6239 c-231 -243 -369 -432 -479 -654 -139 -280 -254 -664 -321
+-1070 -37 -225 -36 -234 8 -115 102 277 194 453 298 570 l40 45 7 -120 c18
+-303 64 -567 146 -840 141 -466 330 -855 795 -1640 399 -672 570 -972 724
+-1270 22 -43 41 -75 41 -70 0 14 -139 445 -194 603 -47 133 -120 332 -339 912
+-266 709 -404 1199 -438 1560 -30 326 39 470 228 470 32 0 73 -4 91 -9 17 -5
+32 -7 32 -4 0 18 -94 181 -141 243 -63 83 -111 130 -278 270 -139 117 -181
+163 -225 251 -49 98 -59 160 -53 324 4 117 11 162 40 275 34 129 88 284 122
+350 9 18 15 33 13 35 -2 2 -54 -50 -117 -116z"/>
+<path d="M6873 6340 c3 -8 21 -52 41 -96 43 -97 101 -295 121 -412 20 -112 19
+-278 -1 -355 -20 -77 -62 -160 -109 -215 -21 -24 -92 -89 -159 -145 -176 -148
+-213 -184 -275 -267 -47 -63 -141 -225 -141 -243 0 -3 17 -1 37 5 64 17 165 6
+209 -23 124 -82 142 -311 59 -725 -73 -361 -195 -749 -425 -1359 -223 -589
+-250 -664 -317 -855 -69 -200 -185 -562 -180 -566 1 -1 42 72 91 164 144 270
+299 543 572 1004 552 932 712 1249 862 1709 100 305 152 573 172 879 6 90 13
+166 15 168 4 5 76 -87 125 -158 70 -103 164 -306 216 -465 29 -91 31 -53 4
+110 -39 239 -95 476 -165 693 -138 430 -316 722 -633 1042 -68 69 -122 118
+-119 110z"/>
+</g>
 </svg>

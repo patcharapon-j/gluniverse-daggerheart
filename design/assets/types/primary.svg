@@ -1,31 +1,42 @@
-<!-- Primary weapon: a leaf-bladed spearhead, two barbs off the shoulders, a
-     bound collar running into a tang. Drawn, not traced. See the construction
-     in art-src/marks/BRIEF.md.
+<!-- Primary. A point is the one weapon idea that is not also a genre.
 
-     The mark has to narrow below its widest point, and that is the decision
-     five drafts were spent finding. A rocket is a cone over fins that spread as
-     they fall, and every version where the barbs swept down and out to the
-     frame edge read as one, no matter how the barbs were tapered, notched or
-     hooked. The barbs now reach the edge almost level with the blade shoulders
-     and the tang falls away narrow beneath them, so the silhouette widens, then
-     closes. Nothing that closes downward reads as a rocket.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a spearhead emblem, a single broad leaf spearhead point up with swept barbed shoulders and a socket" — with the style tail in
+     art-src/types/mj-prompts.mjs; job 6bff12ff-6687-43c7-aab6-7f982cfbe359, variant 4.
+     The art is white on black, so its brightness is the shape.
 
-     The barbs are separate paths laid over the blade rather than part of its
-     outline. In the outline they could only continue the leaf's own sweep,
-     which is how the rocket kept coming back.
-
-     Each barb tip is shaped by its control handles rather than its vertex, both
-     handles inboard of the point so the two edges arrive close to parallel.
-     Vertices alone gave a lobe every time.
-
-     Collar and tang are one path with the binding carved through it. Split in
-     two they read as a pill and a stub, which is three objects stacked rather
-     than a shaft with a wrap on it. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M125 18C144 42 160 62 172 84C174 110 170 142 154 172L96 172C80 142 76 110 78 84C90 62 106 42 125 18Z
-                               M125 48C134 76 136 100 134 122C129 127 121 127 117 122C115 100 117 76 125 48Z"/>
-  <path d="M150 82C186 92 214 114 232 146C212 150 190 144 170 134C162 120 154 100 150 90Z"/>
-  <path d="M100 82C64 92 36 114 18 146C38 150 60 144 80 134C88 120 96 100 100 90Z"/>
-  <path fill-rule="evenodd" d="M86 184C108 180 142 180 164 184C160 194 157 203 153 212C149 221 145 228 142 233C131 235 119 235 108 233C105 228 101 221 97 212C93 203 90 194 86 184Z
-                               M98 194C114 191 136 191 152 194L150 205C135 202 115 202 100 205Z"/>
+<g transform="translate(-7.401549,257.789823) scale(0.025885,-0.025885)">
+<path d="M5058 9498 c-298 -810 -624 -1969 -808 -2874 -128 -632 -290 -1556
+-315 -1804 l-6 -55 52 -40 c82 -64 265 -251 352 -359 391 -490 646 -1144 758
+-1944 13 -93 26 -156 30 -145 3 10 12 59 19 108 137 1004 507 1803 1061 2293
+60 53 109 99 109 103 0 33 -99 678 -141 914 -214 1220 -480 2288 -838 3362
+-113 340 -203 593 -211 593 -3 0 -31 -69 -62 -152z"/>
+<path d="M6520 6157 c0 -3 19 -36 42 -73 126 -208 278 -586 352 -879 59 -235
+71 -325 70 -555 0 -252 -11 -310 -94 -476 -82 -168 -209 -289 -421 -405 -171
+-93 -259 -159 -420 -319 -328 -325 -576 -748 -748 -1272 -80 -246 -112 -391
+-156 -698 -14 -101 -27 -185 -29 -187 -1 -1 -8 52 -15 120 -82 798 -450 1605
+-949 2078 -121 115 -224 190 -379 275 -143 79 -250 159 -313 235 -214 257
+-261 582 -159 1093 61 304 245 783 385 1004 19 28 30 52 26 52 -15 0 -147
+-114 -243 -210 -430 -428 -807 -1059 -1028 -1720 -119 -354 -180 -767 -152
+-1028 51 -479 273 -916 676 -1331 95 -98 275 -261 288 -261 2 0 -29 50 -69
+111 -204 309 -344 675 -404 1059 -11 74 -24 153 -28 175 l-8 40 -28 -54 c-17
+-34 -30 -77 -34 -113 -2 -32 -9 -61 -15 -65 -6 -4 -8 53 -5 158 4 133 9 175
+26 222 50 138 136 257 216 300 36 19 56 22 156 21 127 0 229 -18 380 -66 237
+-76 451 -208 665 -413 84 -81 80 -81 -28 -2 -140 102 -328 195 -477 236 -115
+32 -269 44 -391 31 -94 -10 -204 -32 -215 -43 -2 -2 44 -7 103 -10 170 -10
+326 -55 528 -151 233 -112 377 -216 585 -425 82 -82 185 -198 236 -266 342
+-457 580 -1051 655 -1637 7 -54 14 -97 15 -95 2 2 17 82 33 179 49 286 136
+592 238 838 57 139 187 388 268 516 205 321 465 590 750 777 167 109 399 212
+570 253 l30 7 -40 13 c-61 19 -198 17 -290 -5 -215 -52 -466 -185 -665 -352
+l-75 -64 42 50 c310 372 801 629 1203 630 100 0 120 -3 156 -22 86 -46 174
+-176 210 -308 20 -73 31 -358 16 -395 -9 -21 -11 -16 -11 36 -1 65 -30 176
+-55 209 -15 19 -15 18 -16 -17 0 -67 -31 -261 -60 -383 -76 -321 -211 -635
+-381 -888 -69 -103 -60 -99 93 36 408 365 691 821 791 1272 19 88 22 129 22
+345 -1 208 -4 265 -23 373 -136 786 -609 1695 -1161 2235 -91 89 -241 219
+-241 209z"/>
+</g>
 </svg>
