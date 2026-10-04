@@ -52,6 +52,28 @@ import { withErrata } from "./card-errata.mjs";
  * on all 231 documents that 189 of them can never answer.
  * `tools/check-marked.mjs` is the only thing that reads it.
  */
+/* Root before Void, and the order is taken **here** rather than in
+   `marked-cards.mjs`.
+
+   This file is where the folder order is claimed, three paragraphs up, and the
+   claim was false until now: `marked-cards.mjs` authors the Void deck first, so
+   the built folder list read "…Dread, Void, Root" while `config.ts`'s
+   `MARKED_DOMAINS`, `check-marked.mjs`'s own closed set and the comment above
+   all say root then void. An accident of authoring order was outvoting four
+   deliberate statements, and the campaign is called *Root and Void*.
+
+   It cannot be fixed by importing `MARKED_DOMAINS`: nothing in `packs-src`
+   imports `src/module/`, and `scripts/build-packs.mjs` runs on bare `node`, so
+   one TypeScript import here would make every consumer of this module a
+   TypeScript consumer. So the two slugs are written out, next to the sentence
+   they make true, and `tools/check-marked.mjs` asserts they still match
+   `config.ts` rather than trusting that they do. */
+const MARKED_IN_DECK_ORDER = ["root", "void"].flatMap((d) =>
+  MARKED.filter((c) => c.domain === d),
+);
+
 export default withDamage(
-  withDice([...withErrata(CARDS), ...DREAD, ...MARKED].map(domainCardItem)),
+  withDice(
+    [...withErrata(CARDS), ...DREAD, ...MARKED_IN_DECK_ORDER].map(domainCardItem),
+  ),
 );

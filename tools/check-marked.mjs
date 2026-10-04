@@ -34,7 +34,8 @@
  *
  * ── the rules ─────────────────────────────────────────────────────────
  *  1. Closed sets, deck shape, unique names, legal conditions, printed
- *     difficulty range, and no reference to a player's turn.
+ *     difficulty range, no reference to a player's turn, and the two decks'
+ *     order in the built compendium against `config.ts`'s `MARKED_DOMAINS`.
  *  2. **A damage card carries a usage limit or a cost**, because 25 of print's
  *     29 damage cards do, and **single-target damage scales; area damage may be
  *     flat.** 10 of print's 15 single-target damage cards write `using your
@@ -80,9 +81,14 @@ const MARKED = await load("marked-cards.mjs");
 const LEADS = await load("marked-leads.mjs");
 const PRINTED = [...(await load("domain-cards.mjs")), ...(await load("dread-cards.mjs"))];
 
-const CONDITIONS = (
-  await import(pathToFileURL(join(ROOT, "src", "module", "config.ts")).href)
-).CONDITIONS;
+const { CONDITIONS, MARKED_DOMAINS } = await import(
+  pathToFileURL(join(ROOT, "src", "module", "config.ts")).href
+);
+
+/* The built pack, for the one assertion that is about the compendium rather
+   than about a card. Imported last because it pulls the damage and resource
+   annotators in behind it. */
+const BUILT = await load("domains.mjs");
 
 const findings = [];
 const fail = (card, what) => findings.push(`${card.name} (${card.domain} L${card.level}) — ${what}`);
@@ -199,6 +205,49 @@ for (const c of MARKED) {
 
   const legal = [...(THREADS[c.domain] ?? []), "both"];
   if (!legal.includes(c.thread)) fail(c, `thread "${c.thread}" is not one of ${legal.join(", ")}`);
+}
+
+/* The decks' order in the compendium, which is the one thing here that is
+   about the pack rather than about a card.
+
+   It was wrong and silently so. `marked-cards.mjs` authors Void first, and
+   `src/packs-src/domains.mjs` used to concatenate it as authored, so the built
+   folder list read "…Dread, Void, Root" while `config.ts`'s `MARKED_DOMAINS`,
+   this file's own `DOMAINS` and `domains.mjs`'s own comment all said root then
+   void. Nothing on screen says which of two orders is the intended one, which
+   is `check-variant-rules.mjs`'s folder-name problem in a new place: a reader
+   sees a list and has no way to know it is the wrong list.
+
+   So both halves are asserted. `DOMAINS` here has to match `config.ts`, or
+   this file is checking the decks against a closed set the system does not
+   have; and the built pack's folder sequence has to match it too, or the
+   constant is right and the compendium still is not. */
+if (DOMAINS.join() !== MARKED_DOMAINS.join()) {
+  note(
+    `the deck order here is ${DOMAINS.join(", ")} and config.ts's MARKED_DOMAINS ` +
+      `is ${MARKED_DOMAINS.join(", ")} — one of the two is wrong`,
+  );
+}
+
+{
+  const folders = [...new Set(BUILT.map((d) => d.folder))];
+  const theirs = folders.filter((f) => MARKED_DOMAINS.some((d) => f?.toLowerCase() === d));
+  const want = MARKED_DOMAINS.map((d) => d[0].toUpperCase() + d.slice(1));
+  if (theirs.join() !== want.join()) {
+    note(
+      `the built domains pack folders the marked decks ${theirs.join(", ") || "nowhere"} ` +
+        `and config.ts puts them ${want.join(", ")} — see the deck ordering in domains.mjs`,
+    );
+  }
+  /* Order is the check above; this one is only about *position*, so it
+     compares the last two as a set. Otherwise one wrong order reports twice
+     and the second message reads as a separate defect. */
+  if ([...folders.slice(-2)].sort().join() !== [...want].sort().join()) {
+    note(
+      `the built domains pack ends ${folders.slice(-3).join(", ")} — the two marked ` +
+        `decks go last, after Dread`,
+    );
+  }
 }
 
 for (const d of DOMAINS) {
