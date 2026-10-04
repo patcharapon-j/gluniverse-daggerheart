@@ -541,8 +541,25 @@
   text-transform: uppercase;
 }
 
+/* `color: inherit` is this port's, and it is a fix rather than a flourish.
+   Upstream states no colour here and does not need to: a `dd` inherits, and
+   the plate it sits on has already said what colour its ink is. Foundry
+   gives `dd` a colour of its own in its `elements` layer — the application
+   chrome's cream, which is correct for a window and wrong for a printed card
+   on a paper plate — and a declaration beats an inheritance however specific
+   the inheritance's source. So every weapon's Trait, Range, Damage and
+   Burden set in near-white on near-white, with only the dark `dt` labels
+   above them visible: a stat block that looked like it had no values.
+
+   Invisible until the gear tab drew a whole card, because a value only
+   appears on the full face's plate and nothing on the sheet drew one. The
+   peek and the chat card have the same plate and had the same bug.
+
+   `inherit` and not a token, because the answer is already on the plate and
+   naming a second one is how the two drift apart. */
 .dh .dh-stats dd {
   margin: 0;
+  color: inherit;
   font-weight: 750;
   font-stretch: var(--vtt-width-figures);
 }
