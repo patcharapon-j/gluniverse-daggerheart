@@ -4205,6 +4205,61 @@ of both and only one of them means it. A departure interrupted is a departure
 that did not happen: the element is handed back rather than left to fade under
 its own replacement, which is `capture()`'s rule about a travel still in flight.
 
+**Every sentence of that paragraph was true and the code under it did none of
+it**, which is worth recording as a class of failure rather than as a bug that
+has been fixed. `fresh` was a single local set on the way out of *both*
+branches, so every shape change played the full 460ms arrival. And a much
+larger hole sat underneath: **Foundry's drag ghost is
+`document.clone({keepId: true})`**, so it answers to the creature's own
+document id — and `destroyToken` for the ghost, which fires on a drop and on
+a cancel alike, deleted the *live* chip by that id, with no departure
+animation and no entry in `leaving` for `reclaim` to find. The next hook
+built a new one, and the arrival replayed on **every drag**.
+
+The ghost is not an edge case to exclude. It is the copy the person dragging
+is looking at, and the readout belongs on the creature, so the chip rides it:
+one element, placed onto whichever placeable is live. What could not survive
+was **identity taken from the placeable** — `_original` answers who this is,
+and the object the hook was handed answers where to draw. Three smaller faults
+were the same mistake wearing other hats. A ghost is created `visible = false`
+and turned on a frame later, so reading visibility off it retired a living
+creature's chip on the frame a drag started. The real token goes on raising
+`refreshToken` for its own dimmed drag state, so two placeables were writing
+one element every frame. And the condition material's onset ages lived on the
+filter, which is per token *object*, so a drag restarted every condition's
+onset from zero — they are keyed by document id now, which also stops
+`"delta" in changed` throwing them away on damage to an unlinked token.
+
+Two more, found in the same read. `build()` cleared `chips` and not
+`leaving`, so a chip caught mid-departure when the layer was rebuilt stayed
+in there as a **detached** node, was handed back by `reclaim`, matched its
+shape, and was never appended to the new layer — the exact mirror of the drag
+bug, one deleting a live chip and one resurrecting a dead one. And
+`sightRefresh` called `redraw()`, a full `sync` of every token on the
+scene, from a hook `canvas.visibility.refresh()` raises every tick a vision
+source moves — so this component's own claim that only `place()` runs during
+a gesture was false for every client with a token that can see. It re-asks
+visibility and nothing else now, coalesced to a macrotask.
+
+`tools/test-token-chip-lifecycle.mjs` is the ratchet, and it carries a
+**positive control**: coming out of the fog must still animate. A file that
+only ever asserts silence passes just as happily on a component that has
+stopped animating at all.
+
+**And three of the chip's elements had never drawn.** `.er-identity`,
+`.er-crown` and `.er-reticle` masked with a bare
+`radial-gradient(circle…)`, which resolves to **farthest-corner** — the
+inscribed circle times root two — so the opaque band began well outside the
+disc being painted. Measured rather than inferred: at a 1×1 token the identity
+hairline wants r 49.2 and its mask turned black at 68.9, the crown wants 46.1
+and got 65.1, the reticle wants 22 and got 31.1. So **nothing on the board has
+ever marked a targeted creature**, and it reads as a feature nobody built
+rather than as three broken rules, because every other part of each rule is
+correct and the conic gradients under them are exactly right. Every other ring
+mask in this repo already says `closest-side` — the rails themselves,
+`ruler.css`, `chit.css` — so the fix is the convention reaching the three
+rules that missed it.
+
 **`after()` is settle.js's arithmetic without settle.js's event path**, and both
 departures are forced by what a chip is. It *skips* a non-finite animation
 rather than substituting a floor for one, because a chip is very often selected
