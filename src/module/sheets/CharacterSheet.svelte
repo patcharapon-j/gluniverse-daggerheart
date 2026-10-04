@@ -68,12 +68,19 @@
   /* The ported card, and it is three builders rather than one because the
      three forms do not share a class name — see the note at the head of
      `ui/face.js`. What they share is the option object, which is `cardOf`'s:
-     `FACE` is the full card the peek layer holds, `COMPACT` the small card a
-     loadout bay and a heritage card take, and `VAULT_ROW` the lens row a
-     list of dozens takes — the vault, and the gear tab, whose panels were
-     landscape rows already. */
+     `FACE` is the full card — the peek layer holds one per row, and the gear
+     tab draws one per equipped slot — and `COMPACT` is the small card every
+     other surface here takes: a loadout bay, a heritage card, a feature, a
+     vaulted card, a thing carried.
+
+     `VAULT_ROW` is the third builder in the port and this file no longer
+     calls it. It stays in `ui/compact.js` and stays worth having: it is the
+     right form for a list of dozens read by name rather than by painting,
+     which is what the vault was before the two grids were put side by side
+     and the comparison turned out to matter more than the scanning. See the
+     Vault panel below for that argument. */
   import { FACE } from "../ui/face.js";
-  import { COMPACT, VAULT_ROW } from "../ui/compact.js";
+  import { COMPACT } from "../ui/compact.js";
   import { bindFaceFx, sweepChanged } from "../ui/face-fx.js";
   import { cardFitter } from "../apps/fit-cards.ts";
   import { chitClicks, refuseChits } from "../ui/chit.js";
@@ -86,6 +93,7 @@
   import { stepsOf } from "../apps/creation.ts";
   import {
     cardOf,
+    escapeAttr,
     featureCard,
     authoredPrice,
     hasDomainHue,
@@ -578,21 +586,6 @@
      panel, and 100px of card has no room for it on the artwork. */
   const COUNTER_SLOT = ".dh-cc-controls";
 
-  /* ── a gear row ────────────────────────────────────────────────────
-     The gear tab's three panels were landscape rows already — three labelled
-     slots, a carried list and the loot — so what they want is `VAULT_ROW`,
-     the painting as a thumbnail with the name on a line of its own, rather
-     than a 124px portrait in a 262px column.
-
-     The one thing to undo is the price. `VAULT_ROW` defaults `rc` to 0 and
-     says why: a vault list is the one place the cost has to be on every row,
-     and a card with no recall cost cannot be vaulted. Nothing on this tab has
-     one, so handing the card's own `rc` straight back — undefined, for every
-     kind of gear — is what stops a breastplate advertising that it recalls
-     for free. Spreading the card is not enough on its own: the key has to be
-     present to beat the default. */
-  const gearRow = (card: CardOptions, controls?: string): string =>
-    VAULT_ROW({ ...card, rc: card.rc, controls });
   const counters = (it: ItemSnapshot): string | undefined =>
     liveResources(it, doc).length || liveDicePools(it, doc).length
       ? "<!--counters-->"
@@ -662,6 +655,66 @@
      them be true at once. */
   const armor = $derived(snap.of("armor").find((a) => a.system.equipped) ?? null);
 
+  /* ── a whole card in hand ──────────────────────────────────────────
+     Three slots, and there are only ever three, which is the argument for
+     drawing them as whole cards: a weapon's rules are a sentence you read
+     mid-turn — its range, its burden, what it does on a success — and a
+     100px bay says only which weapon it is. Everything else you own stays a
+     small card, because everything else is a list.
+
+     That is upstream's arrangement rather than ours. `PackTab.tsx` draws the
+     equipped item as the full `CardFace` at 190px and the carried ones as
+     gear compact cards in a `.dh-cc-grid.is-gear`, and it switches the
+     equipped card back down to a compact one when the panel is too narrow to
+     stand three whole cards side by side. The threshold is written as what it
+     measures — three cards, the two gaps between them, and the panel's own
+     padding — so changing the card's width moves it on its own.
+
+     Measured rather than asked of a container query, because the two answers
+     are different *builders* and a stylesheet cannot choose between them.
+     Width only, for the reason `BrowseWindow` gives: the fit ladder writes
+     `--dh-art-h`, so a card's height moves every time a fit runs and
+     observing it would be a loop. */
+  const EQUIPPED_W = 190;
+  const WHOLE_FROM = 3 * EQUIPPED_W + 2 * 22 + 32;
+  let packEl: HTMLElement | undefined = $state();
+  /* Optimistic: a sheet at its default width clears the threshold, and
+     starting at the whole card means the common case never draws the small
+     one for a frame and then replaces it. */
+  let packW = $state(WHOLE_FROM);
+  const wholeGear = $derived(packW >= WHOLE_FROM);
+
+  $effect(() => {
+    if (!packEl) return;
+    const el = packEl;
+    packW = el.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth !== packW) packW = el.clientWidth;
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+
+  /* The press over the painting, which is what makes a whole card behave
+     like a small one. A compact card's face *is* a button — the whole
+     painting is one press — and a full face is an `<article>` with a plate
+     of rules on it, so upstream hands `CardFace` a `cover` and the port's
+     `FACE` takes the same option: raw HTML over the painting, under the
+     furniture. The click is the sheet's own delegated one, found by the
+     `data-pk` on the wrapper, so this needs no handler of its own.
+
+     It never peeks, and that is deliberate upstream too (`peeks: false` on
+     the equipped card's gestures): the peek exists to show you the rules a
+     small card has no room for, and this card is already showing them. The
+     peek pairs a host's `data-pk` against a `data-peek` in the layer, so the
+     way to say "this one does not peek" is to leave the equipped items out of
+     `peekRows` — which is what the gear tab's entry does. Nothing is suppressed
+     on the card; there is simply no face in the layer to find. */
+  const equipPress = (card: CardOptions): string =>
+    `<button type="button" class="dh-equip-press" aria-label="${escapeAttr(
+      `Show ${card.name} to the table`,
+    )}"></button>`;
+
   /** What the "equip ·" hint on a carried tile names. */
   const SLOT_CAP: Record<string, string> = {
     primary: "Primary",
@@ -696,6 +749,14 @@
     snap.items.filter((i) => (i.type === "consumable" || i.type === "loot") && hasText(i)),
   );
   const lootCards = $derived(rows(lootItems));
+  const carriedCards = $derived(rows(carried));
+  /* Only for the peek, and only on the narrow branch — see `equipPress`. A
+     whole card is already showing its rules, so the gear tab's `peekRows`
+     leaves these out when `wholeGear` is true and there is nothing in the
+     layer to find. */
+  const equippedCards = $derived(
+    rows(slots.map((s) => s.it).filter((i): i is ItemSnapshot => !!i)),
+  );
   const inventory = $derived(
     snap.items.filter((i) => (i.type === "consumable" || i.type === "loot") && !hasText(i)),
   );
@@ -745,18 +806,6 @@
     item(id)?.update({ "system.quantity": CHARGES - (n === crossed ? n - 1 : n) });
   }
 
-  /* Every card on screen, for the peek layer. It renders them all once,
-     outside every scroller — see peek.js: an absolutely positioned card is
-     clipped by any ancestor that scrolls, and no z-index fixes a clip. */
-  const peekRows = $derived(
-    tab === "main"
-      ? [...loadoutCards, ...subclassCards, ...heritageCards]
-      : tab === "vault"
-        ? [...loadoutCards, ...vaultCards]
-        : tab === "gear"
-          ? lootCards
-          : [],
-  );
 
   /* ── the window ───────────────────────────────────────────────────
      `peeks` delegates from the window and binds once, because Svelte keeps
@@ -1048,6 +1097,23 @@
      later is wired the moment it is drawn. The alternative was the same
      `onclick` copied onto eight `{#each}` bodies, which is eight places for
      the ninth to be forgotten. */
+
+  /* ── when a pk is not quite an item id ─────────────────────────────
+     One surface breaks the rule above, and it has to: a class carries
+     several features, and each of them is now a card of its own in the
+     Features grid. `peek.js` finds a card's full face by matching the host's
+     `data-pk` against the layer's `data-peek`, so two features off one class
+     Item sharing a pk would peek each other — the second card would show the
+     first one's rule, which is the kind of wrong that reads as correct.
+
+     So a feature's pk is `itemId:slot`, and the three handlers that resolve a
+     pk back to a document go through here. Nothing else changes: the
+     right-click menu still acts on the Item the feature arrived on, and the
+     drag still carries that Item's uuid, which is what the menu's own note
+     has always said is correct. A Foundry id is 16 alphanumerics and can
+     never contain a colon, so splitting at the first one is exact rather
+     than a guess. */
+  const itemIdOf = (pk: string): string => pk.split(":")[0]!;
   /* One card, not a map of all of them. Both callers are gestures — a click
      that posts a row and a right-click that opens its menu — and each wants
      exactly the card under the pointer, so building every item's options to
@@ -1055,7 +1121,7 @@
      press has to feel instant. A map would earn its keep if something
      iterated it; nothing ever has. */
   const cardFor = (pk: string): CardOptions | null =>
-    opt(snap.items.find((i) => i.id === pk));
+    opt(snap.items.find((i) => i.id === itemIdOf(pk)));
 
   /* ── rolling ────────────────────────────────────────────────────────
      Every roll on this sheet goes through the popover, and the popover
@@ -1331,6 +1397,33 @@
     return out;
   });
 
+  /* ── a feature's full card, for the layer ──────────────────────────
+     The Features grid draws compact cards, which print no rules by
+     construction, so the rule is one hover away exactly as it is for a card
+     in the loadout. These are the faces that hover finds.
+
+     Keyed by `a.key` and not `a.pk`, which is the whole reason `itemIdOf`
+     exists: a class carries several features and they all arrive on one
+     Item, so a pk per Item would have two cards claiming one key and the
+     second would show the first one's rule. A feature whose card did not
+     build has no face and correctly does not peek. */
+  const featurePeeks = $derived(
+    abilities.flatMap((a) => (a.card ? [{ pk: a.key, card: a.card }] : [])),
+  );
+
+  /* Every card on screen, for the peek layer. It renders them all once,
+     outside every scroller — see peek.js: an absolutely positioned card is
+     clipped by any ancestor that scrolls, and no z-index fixes a clip. */
+  const peekRows = $derived(
+    tab === "main"
+      ? [...loadoutCards, ...subclassCards, ...heritageCards, ...featurePeeks]
+      : tab === "vault"
+        ? [...loadoutCards, ...vaultCards]
+        : tab === "gear"
+          ? [...(wholeGear ? [] : equippedCards), ...carriedCards, ...lootCards]
+          : [],
+  );
+
   /* The one fact the class card carried that has nowhere else on this sheet
      to live. Every class, not just the first — multiclassing hands you a
      third domain and the sheet should say which. */
@@ -1539,7 +1632,11 @@
     // card's face is excused by name, and everything hung beside it (the
     // shelve press, the counter strip, the charge boxes) is outside it and
     // still guarded.
-    const face = t.closest?.(".dh-cc-face, .dh-vrow-face");
+    // `.dh-equip-press` is excused for the same reason and it is the same
+    // thing: an equipped card is drawn as a full face, which is an `<article>`
+    // with no press of its own, so the gear slot hands `FACE` a `cover` button
+    // that *is* the painting. See `equipPress`.
+    const face = t.closest?.(".dh-cc-face, .dh-vrow-face, .dh-equip-press");
     if (!face && t.closest?.("button, input, label, a, [data-act]")) return;
     const pk = t.closest<HTMLElement>("[data-pk]")?.dataset.pk;
     if (pk) toChat(cardFor(pk));
@@ -1630,7 +1727,7 @@
 
   function onCardMenu(event: MouseEvent) {
     const pk = (event.target as Element | null)?.closest?.<HTMLElement>("[data-pk]")?.dataset.pk;
-    const it = pk ? snap.items.find((i) => i.id === pk) : null;
+    const it = pk ? snap.items.find((i) => i.id === itemIdOf(pk)) : null;
     if (!it) return;
     // A peek is a full card hovering over the rows; the menu is about to
     // open on top of one of them. Two floating objects describing the same
@@ -1734,7 +1831,7 @@
 
   function onDragStart(event: DragEvent) {
     const pk = (event.target as Element | null)?.closest?.<HTMLElement>("[data-pk]")?.dataset.pk;
-    const live = pk ? item(pk) : null;
+    const live = pk ? item(itemIdOf(pk)) : null;
     if (!live) return;
     closePeeks();
     event.dataTransfer?.setData(
@@ -2347,6 +2444,46 @@
       add={ed}
       roll={p.pool.onRefresh !== "reroll"}
       {slot}
+      rev={snap.rev}
+    />
+  {/each}
+{/snippet}
+
+<!-- The same two trays, for one feature block rather than for a whole
+     document. `pools` above reads `liveResources(it, doc)`, which is every
+     counter the Item carries, and that is right for a card that stands for
+     the document — a weapon, a domain card. A feature card stands for one
+     block on an Item that may carry several, so the arrays are the ones
+     `abilities` already bound by feature name: the Seraph's Prayer Dice sit
+     on Prayer Dice and not on Life Support.
+
+     Keyed on `a.key` and not `a.pk`, for the same reason the peek is: two
+     features off one class Item would otherwise hand their trays the same
+     key, and a key is how a tray keeps its own in-flight state across a
+     repaint. -->
+{#snippet featurePools(a: Ability)}
+  {#each a.res as r (r.i)}
+    <Chits
+      value={r.res.value}
+      max={r.max}
+      name={(r.res.name || "tokens").toLowerCase()}
+      key="{a.key}:{r.i}"
+      add={ed}
+      slot={COUNTER_SLOT}
+      rev={snap.rev}
+    />
+  {/each}
+  {#each a.dice as p (p.i)}
+    <Keep
+      mode={p.pool.mode}
+      faces={p.pool.faces}
+      dice={p.pool.dice}
+      max={p.max}
+      name={(p.pool.name || "dice").toLowerCase()}
+      key="{a.key}:{p.i}"
+      add={ed}
+      roll={p.pool.onRefresh !== "reroll"}
+      slot={COUNTER_SLOT}
       rev={snap.rev}
     />
   {/each}
@@ -3122,92 +3259,69 @@
                    the rule the Beastbound tile is for. The tile is the
                    printed thing; it keeps its own rules. -->
               <div class="cols">
-                <!-- A feature is a card laid on its side, which is what
-                     `.dh-feature-card` in the ported `face.css` is for: a
-                     kind-coloured edge carrying the class's mark, then the
-                     name, the price and the rule. The rule stays *on* the
-                     row — that is the whole argument above and nothing about
-                     the card look changes it — so this is the one surface on
-                     the sheet that is not a `{@html}` string. There is no
-                     builder for this form in the port, and writing one would
-                     mean editing `design/`, so the markup is the stylesheet's
-                     own contract written out in Svelte, which also means the
-                     chit rows and the dice trays stay native components in
-                     their own slot instead of being re-parented into a
-                     builder's output.
+                <!-- Features are cards, in the same bays as everything else
+                     on this sheet, and that is upstream's arrangement rather
+                     than a departure from it: `PlayTab.tsx` draws every
+                     feature a character has as a held card in a
+                     `.dh-cc-grid.dh-features`.
 
-                     `.dh-feature-name` is the press rather than the whole
-                     row, which is the design's answer to the wall `.ap` hit:
-                     a chit is a button and a button inside a button is not
-                     markup a browser keeps. -->
+                     This replaced a run of `.dh-feature-card` rows that
+                     printed each rule in full, and the argument for those
+                     rows is worth keeping where anyone changing this can
+                     read it: a class is not an object you hold, the only
+                     question anybody asks of a feature is what it says, and
+                     a rule you have to reveal is a rule you will not read.
+                     All three are still true. What they add up to is weaker
+                     than it looked, because the run answered them by being
+                     the one surface on this sheet that was a different shape
+                     from every other — and a feature really is printed on a
+                     card, in the same book, at the same size as the domain
+                     card beside it. Reading it is a hover, which is the
+                     bargain every other card here already makes.
+
+                     The kind still speaks, and it says it on the card
+                     rather than beside it: `featureCard` sets `glyph` to
+                     `passive`, `action` or `reaction`, which lands as
+                     `data-glyph` on the card and is what `compact.css` tints
+                     a card with no domain by. That is the one thing the old
+                     row's coloured edge said, said by the object itself.
+
+                     The press is the whole card rather than the name,
+                     because a compact card's face *is* a button. That also
+                     retires the wall the run hit: there is no `<h4>` with a
+                     button in it for a chit to be nested inside, since the
+                     trays hang under the card in its own controls strip. -->
                 {#if abilities.length}
-                  <ul class="runs">
+                  <div class="dh-cc-grid dh-features">
                     {#each abilities as a (a.key)}
-                      <li class="dh-feature-card" data-kind={a.kind} data-pk={a.pk}>
-                        <span class="dh-feature-edge" aria-hidden="true">
-                          <span class="dh-sigil dh-feature-mark"
-                            >{@html a.card?.fbsig || a.card?.sig || ""}</span
-                          >
-                        </span>
-                        <div class="dh-feature-body">
-                          <div class="dh-feature-head">
-                            <h4>
-                              <button
-                                type="button"
-                                class="dh-feature-name"
-                                title={a.cost
-                                  ? `Pay ${a.cost} and show ${a.name} to the table`
-                                  : `Show ${a.name} to the table`}
-                                onclick={() => useAbility(a)}>{a.name}</button
-                              >
-                            </h4>
-                            {#if a.cost}
-                              <span class="dh-feature-cost" class:is-fear={a.price.fear > 0}
-                                >{a.cost}</span
-                              >
-                            {/if}
-                            <s>{a.origin}</s>
-                          </div>
-                          {#if a.text}
-                            <div class="dh-feature-text"><p>{@html a.text}</p></div>
-                          {/if}
-                          <!-- Counters first, then dice, which is the order the
-                               `pools` snippet uses on a card — a feature
-                               carrying both spent a use and is holding a die,
-                               and that is the order it happened in. Neither
-                               takes a `slot`: the design gives this form its
-                               own strip, so the trays draw in flow in it
-                               rather than being re-parented anywhere. -->
-                          {#if a.res.length || a.dice.length}
-                            <div class="dh-feature-controls">
-                              {#each a.res as r (r.i)}
-                                <Chits
-                                  value={r.res.value}
-                                  max={r.max}
-                                  name={(r.res.name || "tokens").toLowerCase()}
-                                  key="{a.pk}:{r.i}"
-                                  add={ed}
-                                />
-                              {/each}
-                              {#each a.dice as p (p.i)}
-                                <Keep
-                                  mode={p.pool.mode}
-                                  faces={p.pool.faces}
-                                  dice={p.pool.dice}
-                                  max={p.max}
-                                  name={(p.pool.name || "dice").toLowerCase()}
-                                  key="{a.pk}:{p.i}"
-                                  add={ed}
-                                  roll={p.pool.onRefresh !== "reroll"}
-                                  rev={snap.rev}
-                                />
-                              {/each}
-                            </div>
-                          {/if}
+                      {#if a.card}
+                        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+                        <div
+                          class="pk"
+                          data-pk={a.key}
+                          title={a.cost
+                            ? `Pay ${a.cost} and show ${a.name} to the table`
+                            : `Show ${a.name} to the table`}
+                          onclick={(e) => {
+                            /* The sheet's delegated click posts whatever card
+                               a `data-pk` resolves to, and for a feature that
+                               is the Item it arrived on — a class, which is
+                               not what you pressed. `useAbility` posts the
+                               feature and charges what it costs, so it takes
+                               the click before the delegate sees it. */
+                            e.stopPropagation();
+                            useAbility(a);
+                          }}
+                        >
+                          {@html COMPACT({
+                            ...a.card,
+                            controls: a.res.length || a.dice.length ? "<!--counters-->" : undefined,
+                          })}
+                          {@render featurePools(a)}
                         </div>
-                      </li>
+                      {/if}
                     {/each}
-                  </ul>
+                  </div>
                 {:else}
                   <div class="runs">
                     <p class="ach">No class yet. Drag one in from the compendium.</p>
@@ -3341,13 +3455,39 @@
             </div>
           </div>
 
-          <!-- The vault's own form, and it is the one place on this sheet
-               where a card is not drawn as a card. The loadout above it is
-               five bays you read; this is dozens you search, and `VAULT_ROW`
-               is what the design does about that — same option object, same
-               card, laid on its side. What used to say "filed, not held" was
-               a desaturated spine under a hatch; now it is the lens, which
-               drains on the rows you cannot afford. -->
+          <!-- The vault, drawn as cards, which is upstream's own answer and
+               was the half of it this port left behind.
+
+               gluvtt's Vault tab offers two layouts and ships the grid as
+               one of them — `VaultTab.tsx` renders `<ul className="dh-vrows">`
+               or `<ul className="dh-cc-grid">` off a Seat setting, and the
+               grid's cards carry `className="is-vaulted"`. We ported the rows
+               and wrote a long argument for them: a loadout is five bays you
+               read, a vault is dozens you search, and thirty two-line 8.5px
+               titles is a wall. That argument is sound and it is not the only
+               consideration. The cost of the row is that the one object this
+               tab exists to compare against the five above it stops looking
+               like them, and comparing is the whole gesture: you are deciding
+               whether the card in the vault is better than the worst card in
+               your hand. Two forms for one comparison means reading a
+               painting on one side and a line of type on the other.
+
+               So the grid, at the compact card's own smallest size — the same
+               100×140 bay the loadout uses, so the two panels are one shelf
+               with a line through it. `VAULT_ROW` stays in the port and stays
+               in use: the gear tab's slots are genuinely a list, and the
+               builder is still the right form there.
+
+               What says "filed, not held" is `is-vaulted`. Upstream uses that
+               class only to keep a vaulted card out of the armed crosshair
+               and gives it no treatment of its own, which is fine on a tab
+               that can switch layouts and not fine on one that cannot: with
+               both grids drawn in the same bays, the class has to carry the
+               difference. See `design/compact.css` for what it draws. The two
+               states underneath it are unchanged and still come off
+               `reachRows` — within reach says nothing, out of reach drains
+               the painting and stamps the price in the foot. -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
             class="pnl swap vaultp"
@@ -3400,11 +3540,11 @@
               {/if}
             </div>
 
-            <div class="dh-vrows">
+            <div class="dh-cc-grid">
               {#each vaultCards as r (r.pk)}
                 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
                 <div
-                  class="pk vl"
+                  class="pk"
                   class:arm={armed === r.pk}
                   class:mute={!!armedCard && armed !== r.pk}
                   class:lift={dragId === r.pk}
@@ -3421,23 +3561,16 @@
                   ondragover={(e) => dragOver(e, "vault", r.pk)}
                   ondrop={(e) => dropCard(e, "vault", r.pk)}
                 >
-                  <!-- The row, not the card. A loadout holds five paintings
-                       and a vault holds dozens, and thirty of them is a wall
-                       you search rather than a shelf you read — so the card
-                       turns on its side, the name gets a whole line and the
-                       painting shrinks to a lens at the left. The two states
-                       are the whole panel and they come off `reachRows`:
-                       within reach lights the cost chip and says nothing,
-                       out of reach drains the lens and stamps the price.
-
-                       The counters draw in flow under the row rather than
-                       into it. A row has no rail — a rail is something you
-                       do to a picture of a card — so there is nowhere in the
-                       builder's output to put them, and `controls` is spoken
-                       for: anything hung there stands the cost chip down,
-                       and the cost is the one number this panel exists for. -->
-                  {@html VAULT_ROW(r.card)}
-                  {@render pools(r.it, "")}
+                  <!-- The same bay the loadout above draws, with one class
+                       added. `counters` and `COUNTER_SLOT` rather than the
+                       row's flow placement: a compact card has a controls
+                       strip under it and nothing else is competing for it —
+                       the recall cost lives in the card's own corner chip and
+                       the price a card you cannot afford is stamped with goes
+                       in the foot, so neither of the two things the old row
+                       had to protect is hung here. -->
+                  {@html COMPACT({ ...r.card, cls: "is-vaulted", controls: counters(r.it) })}
+                  {@render pools(r.it, COUNTER_SLOT)}
                   <span class="swp"></span>
                   <!-- Arming is a control now, not the row. Every other card
                        row on this sheet posts its card to chat when you click
@@ -3470,55 +3603,104 @@
                rule is exactly the kind of thing a sheet should enforce
                silently and explain loudly, since the alternative is a table
                argument in session four. -->
-          <div class="pnl">
+          <div class="pnl dh-pack-equipped" bind:this={packEl}>
             <div class="k">
               Equipped<s>armor score {sys.armorScore?.value ?? 0}</s>
               {#if ed}
                 <button type="button" class="nw" onclick={onNewItem}>+ new</button>
               {/if}
             </div>
-            <div class="slots3">
+            <!-- `--dh-equip-w` only when there is room for three whole cards.
+                 Unset, `pack.css`'s own default sizes the slot for the gear
+                 compact card, which is the branch below that draws one. -->
+            <ul
+              class="dh-equip-slots"
+              aria-label="Equip slots"
+              style={wholeGear ? `--dh-equip-w:${EQUIPPED_W}px` : undefined}
+            >
               {#each slots as s (s.key)}
                 {@const card = opt(s.it ?? undefined)}
                 {#if s.it && card}
-                  <div class="slot" data-slot={s.key} data-pk={s.it.id}>
-                    <div class="sh">
+                  <li class="dh-equip-slot" aria-label={s.label} data-slot={s.key}>
+                    <span class="dh-equip-head">
                       <span>{s.label}</span>
-                      <button type="button" onclick={() => toggleGear(s.it!.id)}>
-                        unequip
-                      </button>
-                    </div>
-                    <!-- `data-fk` on the row's own wrapper rather than on
-                         the slot, because the slot carries a header the
-                         row does not: the rect that flies has to be the
-                         rect of the thing you watched leave.
+                      {#if ed}
+                        <button
+                          type="button"
+                          class="dh-shelve"
+                          title="Take it off"
+                          onclick={() => toggleGear(s.it!.id)}>unequip</button
+                        >
+                      {/if}
+                    </span>
+                    {#if wholeGear}
+                      <!-- The whole card. `data-pk` and `data-fk` on this
+                           wrapper and not on the slot, because the slot
+                           carries a header the card does not: the rect the
+                           flight animation measures has to be the rect of the
+                           thing you watched leave.
 
-                         `.dh-vrows` is that wrapper, and it earns the place:
-                         it is the list box the row's own narrow form is a
-                         container query against, so a row in a 262px slot
-                         sheds its mark and its kind line instead of
-                         crushing them — see the foot of `design/vault.css`. -->
-                    <div class="dh-vrows" data-fk={s.it.id}>
-                      {@html gearRow(card)}
-                      {@render pools(s.it, "")}
-                    </div>
-                  </div>
+                           No `w` on the face, which is the one place this
+                           differs from the peek layer below. `.dh-face`
+                           defaults `--dh-w` to `100cqi`, so a face whose host
+                           is not a container draws at zero and somebody has
+                           to state a width — and here the slot states it:
+                           `design/pack.css` has `.dh-equip-card .dh-face`
+                           read `--dh-equip-w`, so the card and the slot it
+                           sits in cannot disagree about how wide they are.
+                           Upstream writes the number on the face instead,
+                           because React has it in hand at that point; the
+                           port has only one number and publishes it once.
+
+                           `.dh-cc-controls` by hand around the trays, which
+                           is what upstream does here too: the strip is part
+                           of the compact card's own output and a full face
+                           has no equivalent, so the host draws the box and
+                           puts the counters in it. -->
+                      <div
+                        class="dh-equip-card"
+                        data-card={card.id}
+                        data-pk={s.it.id}
+                        data-fk={s.it.id}
+                      >
+                        {@html FACE({ ...card, size: "full", cover: equipPress(card) })}
+                        <div class="dh-cc-controls">{@render pools(s.it, "")}</div>
+                      </div>
+                    {:else}
+                      <!-- Too narrow for three whole cards, so the gear
+                           compact card, which is the same object the Carried
+                           grid below draws. This one does want its peek: a
+                           small card has no rules on it, so hovering is the
+                           only way to read them, and the gear tab's
+                           `peekRows` therefore carries the equipped items
+                           whenever this branch is the one drawn. -->
+                      <ul class="dh-equip-card dh-cc-grid is-gear" data-pk={s.it.id} data-fk={s.it.id}>
+                        {@html COMPACT({ ...card, controls: counters(s.it) })}
+                        {@render pools(s.it, COUNTER_SLOT)}
+                      </ul>
+                    {/if}
+                  </li>
                 {:else}
                   {@const blocked = s.key === "secondary" && twoHanded}
-                  <div class="slot empty" class:blocked data-slot={s.key}>
-                    <div class="sh"><span>{s.label}</span></div>
-                    <div class="ph">
+                  <li
+                    class="dh-equip-slot is-empty"
+                    aria-label={s.label}
+                    data-slot={s.key}
+                    data-blocked={blocked}
+                  >
+                    <span class="dh-equip-head"><span>{s.label}</span></span>
+                    <span class="dh-equip-empty">
                       <b>{blocked ? "No free hand" : "Empty"}</b>
                       <span>
                         {blocked
                           ? `${primary?.name} is Two-Handed — no free hand`
                           : "Nothing equipped in this slot."}
                       </span>
-                    </div>
-                  </div>
+                    </span>
+                  </li>
                 {/if}
               {/each}
-            </div>
+            </ul>
           </div>
 
           <!-- Everything owned that is not in a slot. A weapon that cannot be
@@ -3526,38 +3708,44 @@
                it would make the shield look lost rather than shelved. -->
           {#if carried.length}
             <div class="pnl">
-              <div class="k">Carried<s>click to show · equip on the strip</s></div>
-              <div class="grid2">
-                {#each carried as g (g.id)}
-                  {@const card = opt(g)}
+              <div class="k">Carried<s>hover to read · equip on the press</s></div>
+              <!-- Small cards in the gear grid, which is upstream's own form
+                   for this panel: `PackTab.tsx` draws everything carried and
+                   not in hand as held cards in a `.dh-cc-grid.is-gear`. The
+                   `is-gear` track is the wider one, because `compactSize`
+                   answers `l` for a weapon, armour, a consumable and loot —
+                   gear has no domain and a landscape painting, and 100px of
+                   portrait crops a sword to its hilt.
+
+                   The equip press is `.dh-shelve`, which is upstream's class
+                   and the one the slot above unequips with. The loadout and
+                   the vault keep `.shv` instead, and that is not an oversight
+                   to tidy: `.shv` is what `swap.css` hides when a card lifts
+                   out of a list, so the two names mark the two jobs. A press
+                   on this tab changes what you are wearing; a press on that
+                   one moves a card between two lists and flies. -->
+              <div class="dh-cc-grid is-gear dh-pack-carried">
+                {#each carriedCards as r (r.pk)}
+                  {@const g = r.it}
                   {@const no = g.type === "weapon" && g.system.slot === "secondary" && twoHanded}
-                  {#if card}
-                    <div
-                      class="eqp"
-                      class:no
-                      data-pk={g.id}
-                      data-fk={g.id}
-                      title={no ? `${primary?.name} is Two-Handed — no free hand` : ""}
+                  <div
+                    class="pk"
+                    data-pk={r.pk}
+                    data-fk={r.pk}
+                    data-blocked={no}
+                    title={no ? `${primary?.name} is Two-Handed — no free hand` : ""}
+                  >
+                    {@html COMPACT({ ...r.card, controls: counters(g) })}
+                    {@render pools(g, COUNTER_SLOT)}
+                    <button
+                      type="button"
+                      class="dh-shelve"
+                      disabled={no}
+                      onclick={() => !no && toggleGear(r.pk)}
                     >
-                      <div class="dh-vrows">
-                        {@html gearRow(card)}
-                      </div>
-                      {@render pools(g, "")}
-                      <!-- The strip was a label over a tile that was itself
-                           the button. Now it is the button and the row is a
-                           card like every other card here — which also means
-                           the one gesture that changes your equipment is no
-                           longer the same gesture as reading it. -->
-                      <button
-                        type="button"
-                        class="act"
-                        disabled={no}
-                        onclick={() => !no && toggleGear(g.id)}
-                      >
-                        {no ? "needs a free hand" : `equip · ${SLOT_CAP[g.type === "armor" ? "armor" : g.system.slot]}`}
-                      </button>
-                    </div>
-                  {/if}
+                      {no ? "no free hand" : `equip · ${SLOT_CAP[g.type === "armor" ? "armor" : g.system.slot]}`}
+                    </button>
+                  </div>
                 {/each}
               </div>
             </div>
@@ -3571,24 +3759,25 @@
                 Loot<s>{lootCards.length} carried · {chargeTotal} charges</s>
               </div>
               <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-              <!-- The charges go in `controls`, which is the slot beside the
-                   press a row keeps for whatever the host hangs there. That
-                   is the one place on the row they can go — the lens is 60px
-                   of painting and the name's column ellipses — and it costs
-                   nothing here, because what `controls` otherwise stands
-                   down is the recall cost chip and loot has no recall cost.
+              <!-- Small cards, in the same gear grid the Carried panel above
+                   draws, because a potion is a thing you own exactly as a
+                   shield is. The charges go in `controls`, the strip under
+                   the card, beside whatever counters the item carries — the
+                   two belong together: both are "how much of this is left",
+                   and a consumable with a use pool and a stack count is
+                   saying it twice about two different things.
                    `data-act` on each box is still what keeps the click off
-                   the card: a control inside a row is a control first. -->
-              <div class="dh-vrows" onclick={onCharge}>
+                   the card: a control on a card is a control first. -->
+              <div class="dh-cc-grid is-gear" onclick={onCharge}>
                 {#each lootCards as r (r.pk)}
                   {@const src = lootItems.find((i) => i.id === r.pk)}
                   {@const aside =
                     src?.type === "consumable"
                       ? charges(Math.min(CHARGES, src.system.quantity ?? 0), r.pk)
                       : undefined}
-                  <div class="pk" data-pk={r.pk}>
-                    {@html gearRow(r.card, aside)}
-                    {@render pools(r.it, "")}
+                  <div class="pk" data-pk={r.pk} data-fk={r.pk}>
+                    {@html COMPACT({ ...r.card, controls: (aside ?? "") + (counters(r.it) ?? "") })}
+                    {@render pools(r.it, COUNTER_SLOT)}
                   </div>
                 {/each}
               </div>
@@ -4050,46 +4239,19 @@
 </div>
 
 <style>
-  /* There is no bespoke row style here any more, and that is the point:
-     every card on this sheet is a FACE, a COMPACT or a VAULT_ROW from
-     `design/`, so there is nothing left for this sheet to invent a look for.
-     What is left is the three rules below, and none of them draws a card —
-     they say where a list's box is and what colour is behind one. */
+  /* There is no bespoke card style here, and that is the point: every card
+     on this sheet is a FACE or a COMPACT from `design/`, so there is nothing
+     left for this sheet to invent a look for. What is left below draws no
+     card — it is the chrome Foundry puts on a `button` or an `input`, taken
+     back off the controls `design/` already draws.
 
-  /* The feature list is a list now, because `.dh-feature-card` is an `<li>`.
-     `design/sheet.css` already gives `.runs` its column width and its gap;
-     this is only the user agent's own bullets and indent taken off. */
-  ul.runs {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  /* The origin line — "Class · Bard" — which is the one thing the design's
-     feature head has no slot for: it carries a name, a price and a Homebrew
-     tag, and whose card the rule came off is none of the three. Drawn as
-     every other label of its kind on this sheet is, so it reads as a caption
-     rather than as a second heading. */
-  .dh-feature-head s {
-    flex: none;
-    text-decoration: none;
-    color: var(--vtt-text-3);
-    font: 700 8px/1.3 var(--f-mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  /* The equip bar, given room. `design/sheet.css` hangs `.eqp .act`
-     absolutely off the bottom edge of the cell, which was right when the
-     cell held a 100px tile — the bar rises out of the artwork on hover and
-     covers nothing you were reading. The cell holds a 44px row now, and the
-     one case where the bar is always up, a weapon with no free hand, was
-     burying the name it exists to explain. The cell leaves it a strip of its
-     own instead; the bar is still absolute against the cell and still rises
-     from the same edge, so the gesture is untouched. */
-  .eqp {
-    padding-bottom: 20px;
-  }
+     Three blocks went with the forms they belonged to. `ul.runs` reset the
+     user agent's bullets on the feature run, which is a grid of cards now;
+     `.dh-feature-head s` drew the origin line on that run's rows, and the
+     kind line on a card's own foot says the same thing in the design's own
+     type; `.eqp` and `.eqp .act` gave the equip strip a reserved strip under
+     a landscape row, and the strip is `.dh-shelve` on a card now, which
+     `design/` sizes itself. */
 
     /* The feature card, grounded on the rail. `.dh-feature-card` is drawn for
      ink — it is the form a feature takes in the dark panels this card was
@@ -4163,22 +4325,7 @@
     background: none;
     box-shadow: none;
   }
-  /* The equip strip is the one that must *not* join the group above.
-     `design/sheet.css` already gives `.eqp .act` its padding, font, colour,
-     background and centring — it was always drawn as a strip, it just was
-     not a button. So the only thing to strip here is the chrome a button
-     brings with it, and declaring `padding:0` or `font:inherit` alongside
-     the others collapsed it to a zero-height sliver: this rule is more
-     specific than the ported one and wins every property it names. Name
-     less. */
-  .eqp .act {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    border: 0;
-    cursor: pointer;
-  }
-  /* Same reasoning as `.eqp .act`, and the same discipline: `design/` draws
+  /* The same discipline as the design-drawn controls above: `design/` draws
      these two, so name only the chrome that has to go. The level plate is
      the one place an input has to disappear entirely into a shape — Foundry
      gives every input a box, a border and a focus ring, and all three of
@@ -4210,7 +4357,7 @@
     border-radius: 0;
     background: transparent;
   }
-  /* The three fields edit mode adds, and the same discipline as `.eqp .act`:
+  /* The three fields edit mode adds, and the same discipline:
      `design/sheet.css` draws all three — face, ground, focus ring — so the
      only thing to take away here is what Foundry gives an `<input>` and the
      design does not name. For the two on the diorama that is the fixed
@@ -4246,10 +4393,7 @@
     min-height: 0;
     border-radius: 0;
   }
-  .eqp .act:disabled {
-    cursor: default;
-  }
-  /* Same discipline as `.eqp .act`, and the same reason it is short: every
+  /* Same discipline, and the same reason it is short: every
      one of these is *drawn* in `design/sheet.css` — padding, hairline,
      background, font, clip — and those rules land in Foundry's `system`
      layer, which is declared after its own, so they already win. What they
@@ -4262,7 +4406,6 @@
      `border-radius` because Foundry rounds both and nothing in this system
      is rounded — every surface here is chamfered. */
   .hact,
-  .dh-feature-name,
   .acts button,
   .cfg .f input,
   .lst .r input,

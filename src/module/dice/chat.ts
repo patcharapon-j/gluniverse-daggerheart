@@ -190,9 +190,11 @@ function bindTilt(host: HTMLElement): void {
  * one takes over without this changing.
  *
  * Not ported with it: `.card.arrive .plate::after`, the sheen across the
- * artwork. It is a `.plate` rule and a slot face has no plate — and the new
- * card has its own light in `.dh-glare` and `.dh-sweep`, so a second band
- * crossing the painting would be two greetings.
+ * artwork. It names the old builder's `.plate`, which no face has at any size
+ * — the ported card's is `.dh-face-plate` — and the new card already has its
+ * own light in `.dh-glare` and `.dh-sweep`, so a second band crossing the
+ * painting would be two greetings. That holds now that a posted card is the
+ * full face and does have a plate of its own to put one on.
  */
 const RISE_MS = 340;
 

@@ -573,12 +573,15 @@
 }
 
 /* ── a posted card ───────────────────────────────────────────────────
-   The same 5:7 card the peek layer draws, at the log's width rather than the
-   peek's 262px.
+   The full 5:7 card the peek layer draws, rules and all, at the log's width
+   rather than the peek's fixed 264px — so a posted card is the widest the
+   face is ever drawn, and the roomiest the rules ever get.
 
-   Only a width is set. `.card` is its own inline-size container and every
-   measurement inside it is in `cqw`, so this wrapper's job is to be the one
-   number the card scales from — and nothing else. */
+   Only a width is set. The face is `width: var(--dh-w)` with every length on
+   it a share of the same number, so this wrapper's job is to be the one
+   number the card scales from — and nothing else. 300px is the chat column's
+   own ceiling, the same one `.dh-plate` takes above, so a popped-out log gets
+   a card the size of the plates around it instead of a 480px poster. */
 .chat-message .dh-card {
   width: 100%;
   max-width: 300px;
@@ -600,11 +603,21 @@
   container-type: inline-size;
 }
 
-/* The counters sit under the face, not on it. `chit.css` parks the stack on
-   a plate and a card posted at slot size has no plate: its rules are the
-   peek's job. Under the face is also where gluniverse-vtt's own posted card
-   puts a die pool, so this is upstream's answer rather than a workaround. A
-   readout and never a control, which `post-card.ts` argues. */
+/* The counters sit under the face, not on it — and they still do now that
+   the posted card is the full face with a plate.
+
+   Two reasons, one mechanical and one about reading. `chit.css` parks the
+   stack with `.dh .card .chitstack`, which names the *old* builder's class on
+   an ancestor this wrapper does not have, and `cardChits` returns bare
+   `CHITS`/`KEEP` rows with no `.chitstack` around them — so there was never a
+   rule here to inherit and there is no second copy to clip. And the plate is
+   carrying the rules now: counters over its lower left would be sitting on
+   the sentence that says what they count.
+
+   Under the face is also where gluniverse-vtt's own posted card puts a die
+   pool — `<CardDiePools>` after `<CardFace>` — so this is upstream's answer
+   rather than a workaround. A readout and never a control, which
+   `post-card.ts` argues. */
 .chat-message .dh-card-chits {
   display: grid;
   gap: 4px;

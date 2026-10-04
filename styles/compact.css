@@ -1104,6 +1104,24 @@
   grid-template-columns: repeat(auto-fill, 124px);
 }
 
+/* The Features grid, and the whole of it upstream: one line, in play.css,
+   giving the bays a little more air than a loadout's. It earns that — a
+   loadout is five cards read as one hand, and the features are a dozen
+   unrelated rules that happen to be printed the same size, so the gap is
+   what stops them reading as a run.
+
+   PORT from gluniverse-vtt, partially:
+     apps/web/src/rulesets/daggerheart/sheets/character/play.css
+   The `.is-reading` variant came with the `.dh-features` block upstream and
+   is left out: it is a second layout, a card beside its own rules in two
+   columns, switched by a Seat setting this system has no equivalent of. The
+   rules a reader wants are one hover away in the peek layer, which is the
+   bargain every other card on the sheet already makes. `.dh-feature-rules`
+   went with it, being that layout's own prose box. */
+.dh .dh-features {
+  gap: 16px 14px;
+}
+
 /* An empty place in a grid, the size of the card it waits for. */
 .dh .dh-cc-empty {
   display: grid;
@@ -1150,6 +1168,121 @@
 
 .dh [data-armed="true"] .dh-cc-grid .dh-cc:not(.is-vaulted) .dh-cc-face:hover {
   box-shadow: 0 0 0 2px var(--vtt-accent-line);
+}
+
+/* ── vaulted: filed, not held ─────────────────────────────────────────
+
+   The two rules above are the only thing upstream does with
+   `.is-vaulted`: it uses the class to exclude vault cards from the armed
+   crosshair and gives it no appearance at all. That works upstream because
+   its Vault tab can be switched to rows, so the two collections become two
+   different objects whenever it matters. This sheet has no switch — the
+   grid is the only layout — so here the loadout's grid and the vault's grid
+   are the same object at the same size, stacked one above the other, and
+   the panel headings are all that says which is which. A heading is read
+   once and then forgotten. The card has to carry it.
+
+   ── what it is ──────────────────────────────────────────────────
+   Two layers and no badge. The word "vaulted" is already said by the panel
+   heading and again by the recall press under every card in the grid, so a
+   third saying of it would be the loudest thing on the tab and the least
+   informative. This wants to be texture.
+
+     the sleeve   A hairline of ink on the card's own edge, a pale lip just
+                  inside it, and a soft vignette drawing in from all four
+                  sides. That is a card in a sleeve seen from the front:
+                  the lip is the fold catching the light, the vignette is
+                  the card sitting a millimetre behind plastic. Inset
+                  rather than a surround, because a surround would have
+                  grown the grid's cell and made the two grids different
+                  sizes, which is the one thing that must not happen here.
+     the file     A fine 45° rule across the painting, one pixel of ink
+                  every seven. At that pitch it is a surface rather than a
+                  pattern: at a glance the vault's paintings read very
+                  slightly dulled and the loadout's read clean, and only on
+                  looking do you see what is doing it. 45° is deliberately
+                  the opposite lean to the 135° hatch that socket and
+                  .dh-cc-empty use, so a vaulted card can never be taken
+                  for a hole in a grid.
+
+   ── how it composes ─────────────────────────────────────────────
+   Three other things draw on this card, and the two hosts below are picked
+   so that none of them is touched.
+
+   `reachRows` writes data-state="within-reach" / "out-of-reach" on the
+   same `<li>`. Within-reach lights `.dh-cc-face::after` (z 7) and the
+   recall chip; out-of-reach drains `.dh-cc-art` with a filter and paints
+   `.dh-cc-static`'s own background. So the sleeve goes on
+   `.dh-cc-static::after` and the file on `.dh-cc-art::after`, both of which
+   are free. Nothing is restated, nothing is overridden, and no rule here
+   competes on specificity with a state rule — which is why none of this had
+   to be ordered carefully. Out-of-reach's filter does reach the file,
+   because a filter applies to descendants: the hatch dims with the painting
+   it is on, which is the right answer and is why it is on the art rather
+   than above it.
+
+   The foil (foil.css) puts its weave on `.dh-cc.mk` and its sheen on
+   `.dh-cc-art::before` at z 2. `.dh-cc-art` carries a `translate` for the
+   parallax, so it is its own stacking context: the file at z 1 sits over
+   the painting and under the sheen, and the whole art box still sits under
+   `.dh-cc-fade`, `.dh-cc-foot` (z 3) and the edge (z 7). A vaulted Root
+   card therefore keeps its weave, keeps its travelling light, and gains a
+   sleeve. It reads as both, with the metal of the one and the ink of the
+   other on different layers.
+
+   The sleeve is on `.dh-cc-static` and not on the art for one more reason:
+   the art translates up to 1.6px under the pointer, and an edge that
+   drifted 1.6px against the fixed domain hairline above it would have read
+   as a printing fault every time a hand passed over the grid.
+
+   ── restraint ───────────────────────────────────────────────────
+   This is a list of dozens, so the amplitude is set where it stops being
+   noticeable per card and starts being noticeable per grid. And the one
+   card you are actually looking at comes out of the sleeve: on hover the
+   file fades most of the way out, so the painting you are inspecting is the
+   painting and not the painting through a screen. The sleeve stays, because
+   that is the part carrying the meaning.
+
+   The fade is off --vtt-motion-base, which is
+   `calc(240ms * var(--vtt-motion-speed))`, so the system's Card motion
+   setting governs it at Full, Reduced and Off. There is deliberately no
+   `@media (prefers-reduced-motion: reduce)` block — the note below says why
+   one here would break that setting's Full.
+
+   The press under each of these cards is `.dh-shelve`, with
+   `.dh-recall-press` over it; the chip lives in face.css and its recall
+   state in vault.css. Nothing about it is restated here. */
+.dh .dh-cc.is-vaulted .dh-cc-static::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--vtt-ink-0) 72%, transparent),
+    inset 0 0 0 3px color-mix(in oklab, var(--vtt-fog-3) 9%, transparent),
+    inset 0 0 16px -5px color-mix(in oklab, var(--vtt-ink-0) 82%, transparent);
+  pointer-events: none;
+}
+
+/* z-index 1 and not left at auto: a pseudo-element would paint above the
+   art's own background either way, but saying 1 puts this layer's place in
+   the art's stack on the page next to the foil's sheen at 2. */
+.dh .dh-cc.is-vaulted .dh-cc-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--vtt-ink-0) 30%, transparent) 0 1px,
+    transparent 1px 7px
+  );
+  pointer-events: none;
+  transition: opacity var(--vtt-motion-base) var(--vtt-ease-out);
+}
+
+.dh .dh-cc.is-vaulted .dh-cc-face:hover .dh-cc-art::after {
+  opacity: 0.25;
 }
 
 /* Upstream's reduced-motion block stood here and has been taken out.

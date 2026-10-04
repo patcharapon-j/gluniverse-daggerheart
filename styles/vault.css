@@ -1,15 +1,32 @@
 /* Ported from design/vault.css by scripts/port-design-css.mjs — do not edit here.
    Edit design/vault.css and re-run `node scripts/port-design-css.mjs`. */
 /* ══════════════════════════════════════════════════════════════════
-   DH VAULT ROW — the wide form a vaulted card takes
+   DH VAULT — the recall press, and the wide form a vaulted card takes
 
    PORT from gluniverse-vtt, one file, partially:
      apps/web/src/rulesets/daggerheart/sheets/character/vault.css
-   Only the `.dh-vrow` block and the list around it came across. The
-   grid/rows switch (`.dh-layout-switch`), the recall press
-   (`.dh-recall-press`, `.dh-recall-price`, `.dh-recall-free`) and the
-   native drag proxy at the head of that file are sheet furniture, not
-   the row, and they belong wherever the Vault tab itself gets built.
+   The `.dh-vrow` block and the list around it, and the press that recalls
+   a card (`.dh-recall-press`, `.dh-recall-price`, `.dh-recall-free`).
+
+   Two things from the head of that file stayed out.
+
+   The grid/rows switch (`.dh-layout-switch`) is out because this sheet
+   does not offer the choice: the Vault tab is a grid of Compact cards and
+   that is the only layout it has. A segmented control that toggles between
+   one layout and itself is worse than no control. The row form below is
+   still kept, because it is a *form* this port publishes for the hosts
+   that want it, not a mode this tab switches into.
+
+   The native drag proxy (`.dh-drag-image`) is out because it styles the
+   off-screen copy a `setDragImage()` call hands the browser, which is the
+   host's drag code's business and not the card's. A sheet that wants one
+   writes those four declarations beside that code, where the next reader
+   will look for them.
+
+   An earlier version of this header said the recall press was out because
+   it was sheet furniture that "belongs wherever the Vault tab itself gets
+   built". The Vault tab is being built, with upstream's grid layout, so
+   the press is here.
 
    Deliberately off this repo's house style, the same two ways and for
    the same reason as face.css and compact.css: gluvtt's class names
@@ -73,6 +90,60 @@
      font-stretch %   Inert unless the UI font carries a width axis.
                       See face-tokens.css.
    ══════════════════════════════════════════════════════════════════ */
+
+/* ── the recall press ─────────────────────────────────────────────────── */
+
+/* The press under a vault card, saying its price: Stress in the Stress
+   colour, or the word "free".
+
+   There is no `.dh-recall-press` rule of its own, here or upstream, and
+   that is not an omission. The press *is* a `.dh-shelve` — the markup
+   wears both classes — and face.css draws the chip. What this class adds
+   is the one state a shelve chip has nowhere else: `data-short`, for a
+   price you cannot currently pay. So the three rules below are a price,
+   a word, and a warning, and nothing restates the chip. */
+
+/* The number and the Stress bolt, set tight: 1px of gap, because the
+   glyph is the unit and a unit wants to touch its figure. 900 rather than
+   the chip's 750 — the price is the thing being read off a press whose
+   own word ("recall") is already known from the ten above it. */
+.dh .dh-recall-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 6px;
+  color: var(--vtt-dh-stress);
+  font-weight: 900;
+  font-stretch: var(--vtt-width-figures);
+}
+
+.dh .dh-recall-price svg {
+  width: 9px;
+  height: 9px;
+}
+
+/* No price. Lowercase and graphite, against the price's caps-height
+   figures in Stress colour: free is the absence of a cost, so it is drawn
+   as the absence of emphasis rather than as good news. `text-transform`
+   is there to beat .dh-shelve's own `uppercase`, which would otherwise
+   have made "FREE" the loudest word on a vault of thirty cards. */
+.dh .dh-recall-free {
+  margin-left: 6px;
+  color: var(--vtt-text-3);
+  font-size: inherit;
+  font-weight: 650;
+  text-transform: lowercase;
+}
+
+/* Short of Stress. The border takes the Stress colour at 55% and the word
+   steps back, so the press reads as "you cannot pay this yet" without
+   being disabled — the card is still postable, still readable, still
+   draggable. A `:disabled` chip would have said "this is not a thing you
+   do", and recalling a card is very much a thing you do. */
+.dh .dh-recall-press[data-short="true"] {
+  border-color: color-mix(in oklab, var(--vtt-dh-stress) 55%, var(--vtt-line-strong));
+  color: var(--vtt-text-3);
+}
 
 /* ── the row list ─────────────────────────────────────────────────────── */
 

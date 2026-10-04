@@ -143,15 +143,33 @@ const actionRow = (actions?: CardAction[]): string =>
       ).join("")}</div>`;
 
 /**
- * The posted card: the slot face, its counters, and its row of presses.
+ * The posted card: the full face, its counters, and its row of presses.
  *
- * ── why the slot face ─────────────────────────────────────────────────
- * `FACE` at `slot` is the painting, the pennant, the recall chip, the name and
- * the kind line, and no plate — the rules live on the full face and the full
- * face lives in the peek. That is gluvtt's own division for a card on a feed
- * and it is the right one for a log: the question a posted card answers at a
- * table is *which card*, and the one thing a 300px column cannot do is a
- * paragraph of rules text at a legible size next to a painting.
+ * ── the full face, which is the whole point of posting one ────────────
+ * `FACE` with no `size` draws the painting, the pennant, the recall chip, the
+ * name, the kind line **and the plate with the rules printed on it** — the
+ * same face the hover peek shows. That is what gluvtt's own feed draws:
+ * `PostedCard.tsx` hands Chat a plain `<CardFace card={view} …/>` and keeps
+ * `size="slot"` for the ticker, which is a 132px row in a strip and not a
+ * card in a log.
+ *
+ * This file drew the ticker's face for a while, on the argument that the
+ * question a posted card answers at a table is *which card*. It is not. A
+ * card on a sheet is **recognised**, because the reader is holding it already;
+ * a card in the log is **read**, by somebody who has never seen it and is
+ * being told what it does. A face with no plate answers that with a picture
+ * and a name, and then everyone goes and asks the owner anyway.
+ *
+ * The 300px column is not the objection it looks like, because the plate
+ * solves itself. `FIT` in `face-fx.js` is eleven steps measured against
+ * `plate.scrollHeight`: the painting gives way through six of them, thirty-one
+ * points of card height, before the type scale moves at all, and only then
+ * does the type step five times to 0.72. A paragraph that would have
+ * overflowed ends up on a letterboxed card at a legible size. That ladder
+ * needs `.dh-face-plate` to exist — `fit()` is `if (!plate) continue` — so on
+ * the slot face it did precisely nothing: the one machine that makes rules
+ * text fit a narrow card was being run, every post, against the one face with
+ * no rules text on it.
  *
  * ── the container, which is not optional ──────────────────────────────
  * `--dh-w` defaults to `100cqi`, so a face in a plain block resolves to zero
@@ -159,23 +177,37 @@ const actionRow = (actions?: CardAction[]): string =>
  * `.dh-face` does not, by design — the Peek and Card Window rules in
  * `face.css` give it a pixel width instead, and the two routes are the only
  * two there are. A chat card takes the container route, because the log's
- * column is the one number it should scale from, and `frame.css` already sets
- * that width on `.dh-card`. The declaration is inline because the rule it
- * wants is one line in a stylesheet this file does not own; see the report.
+ * column is the one number it should scale from. `frame.css` owns both halves:
+ * `container-type: inline-size` on this `.dh-card-face` host, and the width on
+ * `.dh-card` above it. Nothing is declared inline here, which is why the
+ * sanitiser ratchet asserts the class and the rule together — either one
+ * missing collapses the card to nothing.
  *
  * ── the counters, under the card rather than on it ────────────────────
- * `chits` is the pre-drawn counter readout, and `chit.css` parks it on the
- * plate's lower left — `.dh .card .chitstack`, in `cqw` of the card. A slot
- * face has no plate to park it on, so it goes under the face, which is where
- * gluvtt's own posted card puts a card's die pools. Outside the face it falls
- * back to `.chits`'s own 22px `--sz`, which is about right for a readout
- * beside a 300px card. It stays a **readout**: a row of live buttons three
- * hours later is an invitation to spend the same use twice.
+ * `chits` is the pre-drawn counter readout, and the full face does now have a
+ * plate to park it on — but nothing parks it there. `chit.css` writes
+ * `.dh .card .chitstack`, which is the *old* builder's class on an ancestor
+ * this wrapper does not have, and `cardChits` returns bare `CHITS`/`KEEP` rows
+ * with no `.chitstack` around them. So there is no competing rule to collide
+ * with and no second copy to clip: the readout is drawn once, under the face,
+ * which is also where gluvtt puts a card's die pools — `<CardDiePools>` after
+ * `<CardFace>`, not on top of the painting.
+ *
+ * Under is the answer we want anyway. The plate is now carrying the rules, and
+ * counters sitting over the lower left of a 300px plate would be sitting on
+ * the sentence that explains what they count. Outside the face they fall back
+ * to `.chits`'s own 22px `--sz`, which is about right beside a 300px card. It
+ * stays a **readout**: a row of live buttons three hours later is an
+ * invitation to spend the same use twice.
  */
 export const cardWrapper = (card: CardOptions & { actions?: CardAction[] }): string =>
   `<div class="${WRAPPER_CLASS}">` +
   `<div class="dh-card-face">${
-    FACE({ ...card, size: "slot" })
+    /* `size` stated rather than left to `FACE`'s default, because the default
+       is the thing being relied on and a reader who finds no `size` here
+       cannot tell whether that was a decision. It is also what the sanitiser
+       ratchet reads back off `data-size`. */
+    FACE({ ...card, size: "full" })
   }</div>` +
   (card.chits
     ? `<div class="dh-card-chits">${card.chits}</div>`

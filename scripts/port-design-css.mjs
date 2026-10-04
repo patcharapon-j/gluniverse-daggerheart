@@ -60,6 +60,7 @@ const SHEETS = [
   "face.css",
   "compact.css",
   "vault.css",
+  "pack.css",
   "chit.css",
   "keep.css",
   "ledger.css",

@@ -200,9 +200,11 @@ assert.ok(
    Two halves, because the rule lives in a stylesheet and the class lives in
    the markup, and a card collapses if either goes missing. The markup half
    is asserted here against the posted content; the stylesheet half is read
-   out of `styles/chat.css`, which is the generated copy `port-design-css.mjs`
-   writes and the one Foundry actually serves — so this also catches a
-   `design/chat.css` edit that was never ported. */
+   out of `styles/frame.css`, which is hand-authored rather than ported —
+   `design/chat.css` is a study page's own stylesheet and is not among the
+   sheets `port-design-css.mjs` carries over, so these three rules about what
+   a Foundry chat message does to a card live in `frame.css` with the rest of
+   the application's furniture. */
 const host = surviving(content).find((n) => n.attrs.class === "dh-card-face");
 assert.ok(host, "the face must sit in a host of its own");
 const frameCss = readFileSync(new URL("../styles/frame.css", import.meta.url), "utf8");
@@ -231,7 +233,33 @@ assert.ok(
   `an apostrophe in a filename must be escaped: ${quotedFace.attrs.style}`,
 );
 
-/* ── 4. the presses, and the readouts beside them ───────────────────── */
+/* ── 4. the full face, which is what a posted card is for ───────────────
+   A posted card draws the same face the hover peek shows, rules and all —
+   `PostedCard.tsx` upstream hands its feed a plain `<CardFace>` and keeps
+   `size="slot"` for the 132px ticker. This file carried the ticker's face for
+   a while and it read as a design choice rather than as a wrong branch, which
+   is why it is a ratchet now and not a comment.
+
+   Three things are asserted and each one is a different way the regression
+   comes back. `data-size` is the branch itself. `.dh-face-plate` is what the
+   branch *buys*: `fit()` in `face-fx.js` is `if (!plate) continue`, so a slot
+   face silently skips all eleven steps of the ladder and the one machine that
+   makes rules text fit a 300px column never runs. And the card's own sentence
+   has to actually be on the plate, because a plate with no prose in it would
+   satisfy both of the other two. */
+
+const plate = surviving(content).find((n) => n.attrs.class?.includes("dh-face-plate"));
+assert.equal(face.attrs["data-size"], "full", "a posted card must be the FULL face, not `slot`");
+assert.ok(plate, "the full face must carry a plate, or the FIT ladder skips the card entirely");
+assert.ok(
+  content.includes("to gain advantage on a roll to deceive someone"),
+  "the card's rules must be printed on the plate: that is why the full face is posted",
+);
+/* The printed foot goes with the plate, and it is the other half of "this is
+   a card somebody can read" — a card number is how a reader finds it again. */
+assert.ok(content.includes(card.code), "the printed foot travels with the full face");
+
+/* ── 5. the presses, and the readouts beside them ───────────────────── */
 
 const act = { kind: "pay-cost", label: "Spend 1 Hope", said: 'say "when"', hope: 1 };
 const withRow = cardWrapper({ ...card, actions: [act] });
@@ -247,7 +275,7 @@ assert.ok(
   "the counter readout must be drawn beside the card, not lost with the plate",
 );
 
-/* ── 5. the redraw, which is what makes all of it honest ─────────────── */
+/* ── 6. the redraw, which is what makes all of it honest ─────────────── */
 
 const sigils = { grace: SIGIL, codex: SIGIL, primary: SIGIL };
 const redrawn = cardWrapper({
@@ -266,5 +294,6 @@ console.log(
   "chat card round trip: the sigils are the only tags Foundry's allow-list takes, their keys "
     + "and the motif, focus, painting and readouts all travel in the flag, every surviving "
     + "attribute is one Foundry keeps, --dh-art stays single-quoted and well formed, the host "
-    + "keeps its container, and the redraw restores what the clean removed",
+    + "keeps its container, the posted card is the FULL face with its plate and its rules "
+    + "printed on it, and the redraw restores what the clean removed",
 );

@@ -566,11 +566,16 @@ const PER_WORDS: Record<string, string> = {
   manual: "use",
 };
 
-/* Text and attribute escaping, because a resource's name is authored. */
+/* Text and attribute escaping, because a resource's name is authored.
+
+   `escapeAttr` is exported because one caller outside this file builds a
+   string of card markup: the character sheet's equipped slot hands `FACE` a
+   `cover` press carrying the card's name as its accessible label, and a card
+   named by a player is a card that can be named `"` — see `equipPress`. */
 const escapeText = (s: string): string =>
   String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c] as string);
 
-const escapeAttr = (s: string): string => escapeText(s).replaceAll('"', "&quot;");
+export const escapeAttr = (s: string): string => escapeText(s).replaceAll('"', "&quot;");
 
 const mark = (path: string): string =>
   `<svg viewBox="0 0 16 16" class="dh-term-mark" aria-hidden="true" focusable="false">` +

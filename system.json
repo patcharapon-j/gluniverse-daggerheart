@@ -29,6 +29,7 @@
     "styles/face.css",
     "styles/compact.css",
     "styles/vault.css",
+    "styles/pack.css",
     "styles/chit.css",
     "styles/keep.css",
     "styles/ledger.css",
