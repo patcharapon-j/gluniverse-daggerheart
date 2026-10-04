@@ -437,6 +437,12 @@ against a pool with one space is 1 Fear and 2 Stress.</p>
 <p><strong>While <em>Surging</em>, the Fear doubles.</strong> Not the Mark — the
 Fear. A use costs 1 Mark and 2 Fear, and one of those level 10 cards costs 3 Mark
 and 6 Fear. See rule 2 for where <em>Surging</em> comes from.</p>
+<p><strong>Void-Touched and Root-Touched change who pays, never whether.</strong>
+While one is live — 4 or more of your loadout's domain cards from its deck — you
+can pay a use's Fear yourself instead: in Stress under <em>Void-Touched</em>, in
+Hit Points under <em>Root-Touched</em>, the whole amount, <em>Surging</em>'s
+doubling included. You still gain the Mark. The <code>-Touched</code> cards are
+loadout bonuses, so they never carry a toll of their own.</p>
 <h2>2 · The Mark is rolled off at every long rest</h2>
 <p>At the end of every long rest, a character with any Mark at all rolls it off.
 It is a duality roll against <strong>Difficulty 8 + your Mark</strong>, with
@@ -492,6 +498,10 @@ often as you play it, so posting charges nothing.</p>
 <strong>Use · Mark</strong>, or <strong>Use · 3 Mark</strong> on the two cards
 that cost triple. <em>That</em> is the use. It sits first in the row because it
 is the one action there that is not optional.</p>
+<p>Under a live <em>Void-Touched</em> or <em>Root-Touched</em> the row carries a
+second one beside it — <strong>Use · Mark · Stress, not Fear</strong> or
+<strong>· Hit Points, not Fear</strong> — which charges you and leaves the GM
+nothing. The two are one toll: pressing either spends both.</p>
 <p>Pressing it does three things:</p>
 <ul>
 <li>Writes the Mark onto your sheet.</li>

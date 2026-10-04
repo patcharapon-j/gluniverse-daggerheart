@@ -41,20 +41,20 @@ export default {
     why: "Gifted Tracker answers only about a creature you are already tracking, and Know Thy Enemy (Bone 5) gives one set of facts behind an Instinct Roll. This gives two facts at level 1 with no roll, and carries Know Thy Enemy's remove-a-Fear clause four levels early.",
   },
   Fold: {
-    over: "Book of Vagras",
-    axis: "cost",
-    why: "Arcane Door, on this grimoire at the same level, requires no adversary within Melee range and closes after one creature passes. Fold works mid-fight and carries everyone you're touching.",
+    over: "Blink Out",
+    axis: "effect",
+    why: "Blink Out (Arcana 4), two levels later, charges a Hope for you and another for every creature you bring. Fold charges one Hope for everyone you're touching, and like Arcane Door (Book of Vagras, same level) only after the roll succeeds — but it works with adversaries in Melee range, which Arcane Door refuses.",
   },
   "Weight of the Void": { over: "Conjure Swarm", axis: "damage" },
   "Silence the Song": {
     over: "Hush",
     axis: "effect",
-    why: "Hush is the printed Silenced card and charges exactly the same Hope on top of its Spellcast Roll, two levels later. Hush silences an area around the target and follows them, which this does not; what this does is arrive at level 3.",
+    why: "Hush (Midnight 5) is the printed Silenced card: a Hope on top of the roll, lasting until the GM spends a Fear, you recast, or you take Major damage. This holds for exactly that long, two levels earlier, and charges no Hope. What Hush keeps is the area around the target that follows them.",
   },
   Vector: {
-    over: "Book of Korvax",
+    over: "Telekinesis",
     axis: "effect",
-    why: "Levitation, on this grimoire at the same level, lifts a target and moves them within Close range of where they were. Vector moves them in any direction including up, and the fall is damage with no second roll — Telekinesis (Arcana 6) needs a second Spellcast Roll to weaponise the same idea three levels later.",
+    why: "Telekinesis (Arcana 6) moves a target and needs a second Spellcast Roll against a second target to deal d12+4. Vector moves the target and drops them for d10+3 using your Proficiency on the one roll, three levels earlier. Corrosive Projectile, at this level, is d6+4 with no movement.",
   },
   "Cold Solution": {
     over: "Support Tank",
@@ -64,7 +64,7 @@ export default {
   Unmake: {
     over: "Book of Grynn",
     axis: "effect",
-    why: "Time Lock, on this grimoire at the same level, freezes an object where it is. Nothing in print destroys matter outright.",
+    why: "Time Lock, on this grimoire at the same level, freezes an object where it is. Nothing in print destroys matter outright; Shape Material (Splendor 5) only reshapes natural material no larger than you, which is this card's free size a level earlier — and a Stress takes it to a section of wall.",
   },
   Crush: {
     over: "Telekinesis",
@@ -79,22 +79,22 @@ export default {
   Elsewhere: {
     over: "Banish",
     axis: "effect",
-    why: "Banish, same level, displaces one target and only once per rest, on a failed reaction roll against your highest of several d20s. This moves three every time it lands, with no roll for them to pass, and a Hope leaves them Vulnerable where they come down.",
+    why: "Banish, same level, displaces one target and only once per rest, on a failed reaction roll against your highest of several d20s. This moves three every time it lands, with no roll for them to pass, brings willing allies along for nothing, and a Hope leaves the adversaries Vulnerable where they come down.",
   },
   Solve: {
     over: "Premonition",
     axis: "effect",
-    why: "Adjust Reality (Arcana 10) is print's card for setting a die result, four levels later and for 5 Hope. Premonition, one level below this, spends its once-per-long-rest on undoing a GM move rather than guaranteeing a roll.",
+    why: "Adjust Reality (Arcana 10) is print's card for setting a die result, four levels later and for 5 Hope. This guarantees a roll with Hope once per long rest for you or any ally in Far range; Premonition, one level below, spends its once-per-long-rest on undoing a GM move rather than guaranteeing a roll, and only your own.",
   },
   Erasure: {
     over: null,
     axis: "novel",
-    why: "no printed card takes memory from a group. Recant, on Book of Korvax at level 3, is the nearest thing and takes a minute of *conversation* from one target behind a Reaction Roll. This takes the minute itself from everyone within Close range, and because they no longer know you were in it, each of them loses their next chance to come after you.",
+    why: "no printed card takes memory from a group. Recant, on Book of Korvax at level 3, takes a minute of *conversation* from one target behind a Reaction Roll. This takes the minute itself from every adversary within Close range, leaves them Vulnerable while they reorient, and costs each of them their next chance to come after you.",
   },
   "Void-Touched": {
-    over: "Arcana-Touched",
+    over: "Bone-Touched",
     axis: "effect",
-    why: "every printed -Touched card gives a loadout bonus plus one small break in the game's economy. This one breaks the frame's own economy instead, which is the only thing a campaign domain has worth breaking.",
+    why: "Bone-Touched gives +1 to the trait its deck leans on and one economy break. This gives +1 to the trait the mark casts with, and lets you pay the frame's toll in Stress rather than handing the GM a Fear — on every use, not once per rest. It never makes a use free; it decides who pays.",
   },
   "Geometry of Ruin": { over: "Ground Pound", axis: "damage" },
   Sever: {
@@ -110,7 +110,7 @@ export default {
   Disjunction: {
     over: "Disintegration Wave",
     axis: "effect",
-    why: "Disintegration Wave, same level and same Recall, caps at Difficulty 18 but hits every adversary under it. Disjunction takes one target and reaches Difficulty 20, which is the highest Difficulty print writes anywhere — and pays for overreaching by vaulting itself.",
+    why: "Disintegration Wave, same level and same Recall, kills every adversary in Far range at Difficulty 18 or lower for a Stress each. Disjunction reaches Difficulty 20 — the highest print writes anywhere — for 2 Stress each, so it is the one card that can end a tier 4 solo outright. Choosing wrong vaults it, which is what Reckoning is for.",
   },
   "Second Silence": {
     over: null,
@@ -120,7 +120,7 @@ export default {
   "The Answer": {
     over: null,
     axis: "novel",
-    why: "no printed card in 210 grants an additional action. Priced at 3 Mark and 3 Fear, because the biggest thing you can do must not also be the cheapest per unit of what it does.",
+    why: "no printed card in 210 grants an additional action, and none turns an action roll into a success without rolling — Adjust Reality sets a result after the fact for 5 Hope. Priced at 3 Mark and 3 Fear, because the biggest thing you can do must not also be the cheapest per unit of what it does.",
   },
 
   /* ── ROOT ───────────────────────────────────────────────────────── */
@@ -141,9 +141,9 @@ export default {
     why: "Bolt Beacon, same level, charges exactly the same Hope on success and buys Vulnerable with it. This buys Ablaze, which recurs at 2d6 every time the target is spotlighted — the cadence Cinder Grasp (Arcana 2) sets with On Fire, one level earlier and at Close range instead of Melee.",
   },
   "The Pack Knows": {
-    over: "Inspirational Words",
+    over: "Tactician",
     axis: "effect",
-    why: "Tactician (Bone 3) adds one Experience and needs you in reach to Help an Ally. This adds a full trait at Far range with no line of sight and no proximity. Inspirational Words, a level below, spends a token per benefit and needs you to be speaking with them.",
+    why: "Help an Ally costs a Hope and adds a d6 from beside them; Tactician (Bone 3) lets them spend another Hope to add an Experience too. This adds a d6 and a whole trait for no Hope at all, at Far range, with no line of sight — the frame's Fear is the whole price.",
   },
   "Thorn Spray": {
     over: "Conjure Swarm",
@@ -153,28 +153,25 @@ export default {
   Amber: {
     over: "Book of Illiat",
     axis: "effect",
-    why: "Slumber, on this grimoire at level 1, ends the instant the target takes damage. Banish (Codex 6) needs a reaction roll and lands once per rest on a failure. Amber removes a target outright at level 3 and the GM has to spend a Fear to end it.",
+    why: "Slumber, on this grimoire at level 1, ends the instant the target takes damage. Amber removes a target from the fight outright — nobody can hurt it and it can't act — on the same roll, holds until the GM spends a Fear, and only one at a time. Banish (Codex 6) needs a reaction roll and lands once per rest.",
   },
   "The Beast": {
     over: "Reckless",
     axis: "effect",
     why: "Reckless (level 2) buys advantage on one attack for a Stress. This buys a bonus to every attack roll and every damage roll for the whole scene for the same Stress, against a real fictional cost.",
   },
-  Rend: {
-    over: "Boost",
-    axis: "damage",
-  },
+  Rend: { over: "Boost", axis: "damage" },
   "The Root Remembers": {
     over: "Premonition",
     axis: "effect",
-    why: "Premonition is the printed card that rescinds a GM move, one level later and at the same once-per-long-rest. This one is a level earlier and one Recall cheaper.",
+    why: "Premonition (Arcana 5) rescinds the consequences of a roll you made, once per long rest. This rescinds them for a roll you or any ally within Far range made, a level earlier and at the same Recall.",
   },
   Regrow: {
     over: "Healing Field",
     axis: "effect",
     why: "Healing Field, a level below, clears 1 Hit Point for every ally at once but only once per long rest. This is one target at a time and repeatable all session, clears 2 and a temporary condition, and has none of Healing Hands' (Splendor 2) lock against touching the same target twice before a long rest.",
   },
-  Wildfire: { over: "Book of Korvax", axis: "damage" },
+  Wildfire: { over: "Chain Lightning", axis: "damage" },
   Alpha: {
     over: "Battle Cry",
     axis: "effect",
@@ -185,11 +182,11 @@ export default {
     axis: "effect",
     why: "Divination (Splendor 4) answers one yes-or-no question once per long rest for 3 Hope. This answers open questions as often as the Undergrowth has memory to spend, and Stress buys more memory.",
   },
-  Bloom: { over: "Book of Korvax", axis: "damage" },
+  Bloom: { over: "Earthquake", axis: "damage" },
   "Root-Touched": {
-    over: "Sage-Touched",
+    over: "Bone-Touched",
     axis: "effect",
-    why: "every printed -Touched card gives a loadout bonus plus one small break in the game's economy. This one breaks the frame's own economy instead.",
+    why: "Bone-Touched gives +1 to the trait its deck leans on and one economy break. This gives +1 to the trait the mark casts with, and lets you pay the frame's toll in Hit Points rather than handing the GM a Fear — which Feed, Apex and Regrow can then buy back.",
   },
   Feed: {
     over: "Gore and Glory",
@@ -204,17 +201,17 @@ export default {
   Apex: {
     over: "Frenzy",
     axis: "effect",
-    why: "Frenzy (Blade 8) gives +10 damage but locks your Armor Slots for the duration. Force of Nature (Sage 10) gives +10 but charges a Hope before every action roll. Apex charges 2 Stress once, adds a d12, and feeds you a Hit Point per kill.",
+    why: "Frenzy (Blade 8) gives +10 damage and +8 to Severe but locks your Armor Slots for the duration. Apex gives 2d12 (13 on average) with your armour intact, feeds you a Hit Point per kill and frees you from Restrained, for one Stress.",
   },
   "The Undergrowth Wakes": { over: "Earthquake", axis: "damage" },
   "No More Waiting": {
     over: null,
     axis: "novel",
-    why: "no printed card in 210 grants an additional action. Triggered off damage dealt rather than off a success, so it reads as Hunger rather than as Void's The Answer.",
+    why: "no printed card in 210 grants an additional action. Triggered off damage dealt rather than off a success, and it pays out in Proficiency on the follow-up attack, so it reads as Hunger rather than as Void's The Answer.",
   },
   "The World Tree": {
     over: "Resurrection",
     axis: "effect",
-    why: "print's biggest heal is a long-rest downtime move for one character, or Salvation Beam (Splendor 9) trading your Stress for allies' Hit Points. This empties Hit Points *and* Stress for everyone who touches it, once each, in the middle of a scene.",
+    why: "print's biggest heal is a long-rest downtime move for one character, or Salvation Beam (Splendor 9) trading your Stress for allies' Hit Points. This empties Hit Points *and* Stress for you and every ally who touches it, once each, in the middle of a scene.",
   },
 };

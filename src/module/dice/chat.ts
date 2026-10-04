@@ -615,7 +615,14 @@ async function runCardAction(
   ctx: ActionContext,
 ): Promise<void> {
   const { actor, message, el } = ctx;
-  const key = `card-action-${index}`;
+  /* Every `mark-use` on a message is one toll with up to two payers — the GM,
+     or the holder under a live `-Touched` card — so they share one claim and
+     pressing either spends both. A message posted before there could be two
+     claimed its toll under the per-index key, and that claim still counts. */
+  const key = action.kind === "mark-use" ? "card-action-mark" : `card-action-${index}`;
+  if (action.kind === "mark-use" && message?.getFlag?.(SYSTEM_ID, `claimed.card-action-${index}`)) {
+    return warn("AlreadyClaimed");
+  }
   const chain: CardAction[] = [action, ...(action.steps ?? [])];
 
   const cost = sum(chain, "pay-cost");
@@ -864,15 +871,17 @@ async function runEffect(action: CardAction, ctx: ActionContext): Promise<boolea
          pool at this moment, and a label written when the card was posted
          would state a price that has since changed. `payMark` decides and the
          notification says which it was — the button cannot. */
-      const price = await payMark(actor, message, action.mark ?? 1);
+      const price = await payMark(actor, message, action.mark ?? 1, action.payer);
       if (!price) {
         warn("CannotPay");
         return false;
       }
+      const instead = " instead of the GM's Fear";
       ui.notifications?.info(
         `${actor.name} gains ${price.mark} Mark` +
           (price.fear ? ` · the GM gains ${price.fear} Fear` : "") +
-          (price.stress ? ` · ${price.stress} Stress (the pool is full)` : ""),
+          (price.stress ? ` · ${price.stress} Stress${action.payer ? instead : " (the pool is full)"}` : "") +
+          (price.hitPoints ? ` · ${price.hitPoints} Hit Point${price.hitPoints === 1 ? "" : "s"}${instead}` : ""),
       );
       return true;
     }

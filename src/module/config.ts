@@ -238,6 +238,35 @@ export const MARKED_DOMAINS = ["root", "void"] as const;
 export const isMarkedDomain = (d?: string): boolean =>
   (MARKED_DOMAINS as readonly string[]).includes(String(d));
 
+/** Who pays a use's toll instead of the GM, when a `-Touched` card allows it. */
+export type MarkPayer = "stress" | "hitPoints";
+
+/**
+ * The second payer a loadout offers for one of this deck's cards, if any.
+ *
+ * Void-Touched and Root-Touched are live when 4 or more of the loadout's
+ * domain cards are from their domain, the `-Touched` card itself included.
+ * Found by the words the card prints rather than by its name, which is
+ * the 3-Mark read in `post-card.ts` for the same reason: a player can rename the
+ * document, and the sentence is the rule. Returns null for the `-Touched`
+ * card itself, which is a loadout bonus and never a use.
+ */
+export function touchedPayer(actor: any, domain?: string, item?: any): MarkPayer | null {
+  if (!isMarkedDomain(domain)) return null;
+  /* A card's rules are its description, which is HTML on a document. */
+  const rule = (i: any): string =>
+    String(i?.system?.description ?? "").replace(/<[^>]+>|\*\*/g, "").replace(/\s+/g, " ");
+  const waiver = /instead of the GM gaining a Fear/i;
+  if (item && waiver.test(rule(item))) return null;
+  const held = (actor?.items ?? []).filter(
+    (i: any) => i?.type === "domainCard" && i.system?.inLoadout && i.system?.domain === domain,
+  );
+  if (held.length < 4) return null;
+  const touched = held.find((i: any) => waiver.test(rule(i)));
+  if (!touched) return null;
+  return /mark a Hit Point/i.test(rule(touched)) ? "hitPoints" : "stress";
+}
+
 /** What the campaign frame calls itself, in the one cell that says so. */
 export const MARKED_SET = "TM";
 

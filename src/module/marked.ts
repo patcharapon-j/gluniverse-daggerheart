@@ -51,7 +51,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SYSTEM_ID, isMarkedDomain } from "./config.ts";
+import { SYSTEM_ID, isMarkedDomain, type MarkPayer } from "./config.ts";
 import { FEAR_MAX, gainFear, getFear } from "./settings.ts";
 import { rollDuality } from "./dice/rolls.ts";
 
@@ -66,7 +66,7 @@ import { rollDuality } from "./dice/rolls.ts";
  * scope: reaching the trait for a card being drawn would otherwise cost every
  * card-drawing surface a live `foundry`.
  */
-export { MARKED_SPELLCAST, markedSpellcast } from "./config.ts";
+export { MARKED_SPELLCAST, markedSpellcast, touchedPayer, type MarkPayer } from "./config.ts";
 
 /** The flag a press leaves for the GM's client to answer. */
 const FEAR_OWED = "markedFear";
@@ -89,16 +89,29 @@ const markOf = (actor: any): number => Number(actor?.system?.mark ?? 0);
  * them one Fear would make the biggest thing you can do the cheapest per unit
  * of what it does.
  */
-export function markPrice(actor: any, n = 1): { mark: number; fear: number; stress: number } {
+export function markPrice(
+  actor: any,
+  n = 1,
+  payer?: MarkPayer,
+): { mark: number; fear: number; stress: number; hitPoints: number } {
   /* Surging doubles the Fear rather than adding a rule of its own. A failed
      long-rest roll used to leave a state with no mechanical teeth at all —
      "you can't hide that you're Marked" — and the honest teeth are the ones
      the frame already has: the mark is louder, so it costs the table more. */
   const want = actor?.system?.surging ? n * 2 : n;
+
+  /* Void-Touched and Root-Touched let the holder pay what the GM would have
+     gained, in Stress or in Hit Points. The whole amount moves, Surging's
+     doubling included, because it is the same toll with a different payer;
+     the Mark is gained either way. */
+  if (payer === "stress") return { mark: n, fear: 0, stress: want, hitPoints: 0 };
+  if (payer === "hitPoints") return { mark: n, fear: 0, stress: 0, hitPoints: want };
+
   const room = Math.max(0, FEAR_MAX - getFear());
   const fear = Math.min(want, room);
-  return { mark: n, fear, stress: want - fear };
+  return { mark: n, fear, stress: want - fear, hitPoints: 0 };
 }
+
 
 /**
  * Spend it.
@@ -111,16 +124,19 @@ export async function payMark(
   actor: any,
   message: any,
   n = 1,
-): Promise<false | { mark: number; fear: number; stress: number }> {
+  payer?: MarkPayer,
+): Promise<false | { mark: number; fear: number; stress: number; hitPoints: number }> {
   if (!marked(actor)) return false;
-  const price = markPrice(actor, n);
+  const price = markPrice(actor, n, payer);
 
   const stress = actor.system?.resources?.stress;
-  const free = Number(stress?.max ?? 0) - Number(stress?.marked ?? 0);
-  if (price.stress > free) return false;
+  const hp = actor.system?.resources?.hitPoints;
+  const left = (track: any) => Number(track?.max ?? 0) - Number(track?.marked ?? 0);
+  if (price.stress > left(stress) || price.hitPoints > left(hp)) return false;
 
   const update: Record<string, number> = { "system.mark": markOf(actor) + price.mark };
   if (price.stress) update["system.resources.stress.marked"] = Number(stress.marked) + price.stress;
+  if (price.hitPoints) update["system.resources.hitPoints.marked"] = Number(hp.marked) + price.hitPoints;
   await actor.update(update);
 
   /* The flag rather than the setting, because a player cannot write a world

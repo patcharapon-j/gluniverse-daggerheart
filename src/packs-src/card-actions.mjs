@@ -1633,9 +1633,7 @@ export const CARD_ACTIONS = {
       {
         kind: "roll-trait",
         trait: "spellcast",
-        dc: 14,
-        when: "Once per rest",
-        said: "make a <b>Spellcast Roll (14)</b>",
+        said: "Make a <b>Spellcast Roll</b> against a target within Close range",
       },
     ],
   },
@@ -1643,9 +1641,9 @@ export const CARD_ACTIONS = {
     actions: [
       {
         kind: "pay",
-        amount: { stress: 2 },
+        amount: { stress: 1 },
         when: "Once per long rest",
-        said: "<b>mark 2 Stress</b>",
+        said: "<b>mark a Stress</b> to become what it wants",
       },
       {
         kind: "clear",
@@ -1714,7 +1712,7 @@ export const CARD_ACTIONS = {
         kind: "roll-card-damage",
         damageName: "",
         when: "While hardened — unarmed attacks",
-        said: "your unarmed attacks deal <b>d8+1</b> physical damage using your Proficiency",
+        said: "unarmed attacks within Melee range using Instinct that deal <b>d8+1</b> physical damage using your Proficiency",
       },
     ],
   },
@@ -1809,14 +1807,14 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 16,
-        when: "Once per rest",
-        said: "Spellcast Roll (16)",
+        when: "Once per rest on a success",
+        said: "Make a <b>Spellcast Roll (16)</b>",
       },
       {
         kind: "roll-card-damage",
         damageName: "",
         when: "Targets who fail",
-        said: "4d8+5",
+        said: "take <b>4d8+8</b> physical damage",
       },
     ],
   },
@@ -2604,14 +2602,14 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 18,
-        when: "Once per long rest",
-        said: "make a <b>Spellcast Roll (18)</b>",
+        when: "Once per long rest on a success",
+        said: "Make a <b>Spellcast Roll (18)</b>",
       },
       {
         kind: "pay",
         amount: { stress: 2 },
-        when: "On a success, against a Difficulty of 20 or lower",
-        said: "<b>mark 2 Stress</b>",
+        when: "On a success, once for each adversary you choose",
+        said: "<b>mark 2 Stress</b> for each",
       },
     ],
   },
@@ -2690,18 +2688,18 @@ export const CARD_ACTIONS = {
       {
         kind: "roll-trait",
         trait: "spellcast",
-        said: "Make a <b>Spellcast Roll</b> against up to three targets within Close range",
+        said: "Make a <b>Spellcast Roll</b> against up to three adversaries within Close range",
       },
       {
         kind: "pay",
         amount: { hope: 1 },
-        said: "<b>Spend a Hope</b> to leave them temporarily <i>Vulnerable</i> where they land",
+        said: "<b>Spend a Hope</b> to leave the adversaries temporarily <i>Vulnerable</i> where they land",
         steps: [
           {
             kind: "apply-condition",
             subject: "targets",
             condition: "vulnerable",
-            said: "leave them temporarily <i>Vulnerable</i> where they land",
+            said: "leave the adversaries temporarily <i>Vulnerable</i> where they land",
           }
         ],
       },
@@ -2758,8 +2756,15 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 16,
-        when: "Once per long rest, against all targets within Close range",
-        said: "make a <b>Spellcast Roll (16)</b> against all targets within Close range",
+        when: "Once per long rest on a success",
+        said: "Make a <b>Spellcast Roll (16)</b> against all adversaries within Close range",
+      },
+      {
+        kind: "apply-condition",
+        subject: "targets",
+        condition: "vulnerable",
+        when: "Targets you succeed against",
+        said: "They're temporarily <i>Vulnerable</i>",
       },
     ],
   },
@@ -2774,8 +2779,8 @@ export const CARD_ACTIONS = {
       {
         kind: "pay",
         amount: { stress: 1 },
-        when: "to end a requirement-gated effect instead",
-        said: "<b>Mark a Stress</b> to instead end an effect that would otherwise be cleared only by meeting a specific requirement",
+        when: "to end a special condition instead",
+        said: "<b>Mark a Stress</b> to end a special condition instead",
       },
     ],
   },
@@ -2855,17 +2860,16 @@ export const CARD_ACTIONS = {
   "domainCard:Fold": {
     actions: [
       {
+        kind: "roll-trait",
+        trait: "spellcast",
+        dc: 13,
+        said: "Make a <b>Spellcast Roll (13)</b>",
+      },
+      {
         kind: "pay",
         amount: { hope: 1 },
-        said: "<b>Spend a Hope</b> and make a <b>Spellcast Roll (13)</b>",
-        steps: [
-          {
-            kind: "roll-trait",
-            trait: "spellcast",
-            dc: 13,
-            said: "make a <b>Spellcast Roll (13)</b>",
-          }
-        ],
+        when: "On a success",
+        said: "<b>spend a Hope</b> to teleport yourself",
       },
     ],
   },
@@ -2956,14 +2960,14 @@ export const CARD_ACTIONS = {
       {
         kind: "roll-trait",
         trait: "spellcast",
-        when: "Once per long rest, against all targets within Far range",
-        said: "make a <b>Spellcast Roll</b>",
+        when: "Once per long rest on a success",
+        said: "Make a <b>Spellcast Roll</b> against all adversaries within Far range",
       },
       {
         kind: "roll-card-damage",
         damageName: "",
         when: "Targets who fail",
-        said: "take <b>4d12+8</b> magic damage",
+        said: "take <b>5d12+8</b> magic damage",
       },
       {
         kind: "pay",
@@ -3552,20 +3556,23 @@ export const CARD_ACTIONS = {
         when: "On a success",
         said: "they take <b>d10+3</b> magic damage using your Proficiency",
       },
-      /* Vicious Entangle's shape: the damage lands on a success and the
-         condition is a second press the holder pays for, so the Hope is the
-         action and the condition is its step. Authoring the condition on its
-         own would apply it for free. */
+      {
+        kind: "apply-condition",
+        subject: "targets",
+        condition: "restrained",
+        when: "On a success",
+        said: "leaving them temporarily <i>Restrained</i>",
+      },
       {
         kind: "pay",
         amount: { hope: 1 },
-        said: "<b>Spend a Hope</b> to also lock geometric force around them, leaving them temporarily <i>Restrained</i>",
+        said: "<b>Spend a Hope</b> to make them temporarily <i>Vulnerable</i> as well",
         steps: [
           {
             kind: "apply-condition",
             subject: "targets",
-            condition: "restrained",
-            said: "leaving them temporarily <i>Restrained</i>",
+            condition: "vulnerable",
+            said: "make them temporarily <i>Vulnerable</i>",
           }
         ],
       },
@@ -3786,8 +3793,8 @@ export const CARD_ACTIONS = {
     actions: [
       {
         kind: "pay",
-        amount: { hope: 1 },
-        said: "<b>Spend a Hope.</b>",
+        amount: { stress: 1 },
+        said: "<b>Mark a Stress.</b>",
       },
     ],
   },
@@ -3905,8 +3912,8 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 18,
-        when: "Once per long rest",
-        said: "Spellcast Roll (18)",
+        when: "Once per long rest on a success",
+        said: "Make a <b>Spellcast Roll (18)</b>",
       },
     ],
   },
@@ -3944,8 +3951,8 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 16,
-        when: "Once per rest",
-        said: "Spellcast Roll (16)",
+        when: "Once per rest on a success",
+        said: "Make a <b>Spellcast Roll (16)</b>",
       },
     ],
   },
@@ -4042,23 +4049,16 @@ export const CARD_ACTIONS = {
   "domainCard:Silence the Song": {
     actions: [
       {
-        kind: "pay",
-        amount: { hope: 1 },
-        said: "<b>Spend a Hope</b> and make a <b>Spellcast Roll</b> against a target within Close range",
-        steps: [
-          {
-            kind: "roll-trait",
-            trait: "spellcast",
-            said: "make a <b>Spellcast Roll</b> against a target within Close range",
-          }
-        ],
+        kind: "roll-trait",
+        trait: "spellcast",
+        said: "Make a <b>Spellcast Roll</b> against a target within Close range",
       },
       {
         kind: "apply-condition",
         subject: "targets",
         condition: "silenced",
         when: "On a success",
-        said: "they're temporarily <i>Silenced</i>",
+        said: "they're <i>Silenced</i>",
       },
     ],
   },
@@ -4327,8 +4327,8 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 15,
-        when: "Once per long rest",
-        said: "Spellcast Roll (15)",
+        when: "Once per long rest on a success",
+        said: "Make a <b>Spellcast Roll (15)</b>",
       },
     ],
   },
@@ -4337,8 +4337,8 @@ export const CARD_ACTIONS = {
       {
         kind: "roll-trait",
         trait: "spellcast",
-        when: "Once per long rest",
-        said: "Spellcast Roll",
+        when: "Once per long rest on a success",
+        said: "Make a <b>Spellcast Roll</b> against a target within Far range",
       },
       {
         kind: "apply-condition",
@@ -4349,23 +4349,14 @@ export const CARD_ACTIONS = {
       },
     ],
   },
-  "domainCard:The Pack Knows": {
-    actions: [
-      {
-        kind: "pay",
-        amount: { hope: 1 },
-        said: "<b>spend a Hope</b> to add your Instinct to their roll",
-      },
-    ],
-  },
   "domainCard:The Undergrowth Wakes": {
     actions: [
       {
         kind: "roll-trait",
         trait: "spellcast",
-        dc: 18,
-        when: "Once per long rest",
-        said: "make a <b>Spellcast Roll (18)</b>",
+        dc: 16,
+        when: "Once per rest on a success",
+        said: "Make a <b>Spellcast Roll (16)</b>",
       },
       {
         kind: "roll-card-damage",
@@ -4388,8 +4379,8 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 18,
-        when: "Once per long rest",
-        said: "Spellcast Roll (18)",
+        when: "Once per long rest on a success",
+        said: "Make a <b>Spellcast Roll (18)</b>",
       },
     ],
   },
@@ -4428,7 +4419,7 @@ export const CARD_ACTIONS = {
       {
         kind: "roll-card-damage",
         damageName: "Thorns",
-        when: "For a creature that enters or acts within Very Close range of you",
+        when: "For an adversary that enters or acts within Very Close range of you",
         said: "takes <b>1d8</b> physical damage",
       },
     ],
@@ -4539,17 +4530,15 @@ export const CARD_ACTIONS = {
   "domainCard:Unmake": {
     actions: [
       {
+        kind: "roll-trait",
+        trait: "spellcast",
+        dc: 15,
+        said: "Make a <b>Spellcast Roll (15)</b>",
+      },
+      {
         kind: "pay",
         amount: { stress: 1 },
-        said: "<b>Mark a Stress</b> and make a <b>Spellcast Roll (15)</b>",
-        steps: [
-          {
-            kind: "roll-trait",
-            trait: "spellcast",
-            dc: 15,
-            said: "make a <b>Spellcast Roll (15)</b>",
-          }
-        ],
+        said: "<b>Mark a Stress</b> to unmake something as large as a cart or a section of wall instead",
       },
     ],
   },
@@ -4583,16 +4572,15 @@ export const CARD_ACTIONS = {
   "domainCard:Vector": {
     actions: [
       {
-        kind: "pay",
-        amount: { hope: 1 },
-        said: "<b>Spend a Hope</b> and make a <b>Spellcast Roll</b>",
-        steps: [
-          {
-            kind: "roll-trait",
-            trait: "spellcast",
-            said: "make a <b>Spellcast Roll</b> against a target within Far range",
-          }
-        ],
+        kind: "roll-trait",
+        trait: "spellcast",
+        said: "Make a <b>Spellcast Roll</b> against a target within Far range",
+      },
+      {
+        kind: "roll-card-damage",
+        damageName: "",
+        when: "If you leave them in the air",
+        said: "they fall and take <b>d10+3</b> physical damage using your Proficiency",
       },
     ],
   },
@@ -4697,16 +4685,9 @@ export const CARD_ACTIONS = {
   "domainCard:Weight of the Void": {
     actions: [
       {
-        kind: "pay",
-        amount: { hope: 1 },
-        said: "<b>Spend a Hope</b> and make a <b>Spellcast Roll</b> against all targets within Close range",
-        steps: [
-          {
-            kind: "roll-trait",
-            trait: "spellcast",
-            said: "make a <b>Spellcast Roll</b> against all targets within Close range",
-          }
-        ],
+        kind: "roll-trait",
+        trait: "spellcast",
+        said: "Make a <b>Spellcast Roll</b> against all adversaries within Close range",
       },
       {
         kind: "roll-card-damage",
@@ -4783,24 +4764,30 @@ export const CARD_ACTIONS = {
   "domainCard:Wildfire": {
     actions: [
       {
-        kind: "roll-trait",
-        trait: "spellcast",
-        dc: 15,
-        when: "Once per long rest",
-        said: "Spellcast Roll (15)",
+        kind: "pay",
+        amount: { stress: 1 },
+        said: "<b>Mark a Stress</b> and make a <b>Spellcast Roll (15)</b>",
+        steps: [
+          {
+            kind: "roll-trait",
+            trait: "spellcast",
+            dc: 15,
+            said: "make a <b>Spellcast Roll (15)</b>",
+          }
+        ],
       },
       {
         kind: "roll-card-damage",
         damageName: "",
         when: "Targets who fail",
-        said: "3d10+4",
+        said: "take <b>3d10+4</b> magic damage",
       },
       {
         kind: "apply-condition",
         subject: "targets",
         condition: "ablaze",
         when: "Targets who fail",
-        said: "Ablaze",
+        said: "are temporarily <i>Ablaze</i>",
       },
     ],
   },
@@ -7297,6 +7284,15 @@ export const CARD_ACTIONS = {
    holder of this card, with the reason. */
 
 export const DECLINED = {
+  "domainCard:Elsewhere": [
+    "\"Any willing creatures within Close range can go with them, without a roll\" is movement, which is the map's job rather than a sheet's.",
+  ],
+  "domainCard:Weight of the Void": [
+    "\"you can pull them into Very Close range of you or push them back to Far range\" moves tokens, which is the map's job rather than a sheet's.",
+  ],
+  "domainCard:Silence the Song": [
+    "\"until the GM spends a Fear on their turn to clear this condition\" is the GM's Fear, spent to take the condition off — not the holder's press.",
+  ],
   "ancestry:Aetheris": [
     "\"instead of marking an Armor Slot\" is the cost this feature lets you avoid, not a cost it charges.",
     "\"you can change it into a roll with Hope instead\" rewrites an ally's completed duality roll; it is not a Hope gain and no action kind covers it",
@@ -7811,7 +7807,8 @@ export const DECLINED = {
     "\"the GM spends a Fear on their turn to end it\" is the GM's Fear, not the holder's press.",
   ],
   "domainCard:Apex": [
-    "\"your attacks deal an extra <b>d12</b> damage\" has a printed duration but its value is a die rather than a number, and a modifier carries a number.",
+    "\"your attacks deal an extra <b>2d12</b> damage\" has a printed duration but its value is dice rather than a number, and a modifier carries a number; the dice ride on each weapon roll.",
+    "\"you can't be <i>Restrained</i>\" is an immunity for the scene, not a condition to put on anybody.",
   ],
   "domainCard:Arcana-Touched": [
     "\"+1 bonus to your Spellcast Rolls\" is a standing bonus conditional on your loadout with no printed duration and nobody presses it — a passive modifier, not a grant-effect",
@@ -7851,8 +7848,9 @@ export const DECLINED = {
     "\"+2 bonus to your attack rolls\" and \"+4 bonus to your Severe damage threshold\" are standing bonuses conditional on your loadout, with no printed duration and no press — passive modifiers, not grant-effect",
   ],
   "domainCard:Bloom": [
-    "\"Targets you succeed against must make a Reaction Roll (15)\" is the TARGETS' roll, not the holder's",
     "\"Targets who succeed take half damage\" is what happens to a target after the dice land; halving is not encoded on a damage expression",
+    "\"all adversaries within Far range must make a <b>Reaction Roll (15)</b>\" is the targets' roll, not the holder's.",
+    "\"All terrain within Far range becomes difficult to move through\" is terrain, which no sheet carries.",
   ],
   "domainCard:Body Basher": [
     "\"gain a bonus to your damage roll equal to your Strength\" — a standing passive on melee attacks: nothing is pressed and no duration is printed",
@@ -8163,6 +8161,7 @@ export const DECLINED = {
     "\"immediately after you deal damage to an adversary, you can take an additional action\" hands the holder a second turn off damage they have already dealt. There is no kind for granting an action and the trigger is a thing that happened at the table, so the press would be a button that does nothing beside a sentence the GM has to adjudicate anyway.",
     "\"you gain <b>3 Mark</b> instead of 1\" changes the Marked deck’s toll, which the system applies automatically and which must never be authored.",
     "\"the GM gains <b>3 Fear</b> instead of 1\" is the same toll seen from the GM’s side — a gain button here would charge the pool a second time on top of the automatic one.",
+    "\"gain a <b>+2</b> bonus to your Proficiency for it\" rides on one follow-up attack the holder chose to take, which is a bonus on that roll rather than a state a sheet carries.",
   ],
   "domainCard:Not Good Enough": [
     "\"you can reroll any 1s or 2s\" rerolls dice already on a posted damage plate; that is the plate's own reroll handle, not a press that spends or gains anything.",
@@ -8204,8 +8203,8 @@ export const DECLINED = {
     "\"clear 1d4 Hit Points\" is not authored as a clear: the amount is a rolled die rather than a printed number, and the sentence clears it on you and every ally inside the barrier, which is several sheets. The d4 is offered as a roll and the clearing is left to the table",
   ],
   "domainCard:Rend": [
-    "\"deals an extra <b>1d12+3</b> damage\" rides on a later weapon attack rather than being an expression this card rolls, and the document carries no cardDamage entry for it.",
     "\"the target temporarily gains a <b>−1</b> penalty to their damage thresholds\" moves a number on the TARGET's sheet.",
+    "\"deals an extra <b>2d12</b> damage\" rides on a later weapon attack rather than being an expression this card rolls, and the document carries no damage type for it.",
   ],
   "domainCard:Restoration": [
     "\"place a number of tokens equal to your Spellcast trait on this card\" counts something this document carries no counter for.",
@@ -8216,8 +8215,8 @@ export const DECLINED = {
     "\"Gain a bonus to your Severe threshold equal to your Proficiency\" is a passive modifier the schema already carries, not a granted effect with a printed duration.",
   ],
   "domainCard:Root-Touched": [
-    "\"<b>+1</b> bonus to your Spellcast Rolls\" is a passive bonus with no printed duration and nothing to press.",
-    "\"the GM doesn't gain a Fear and you don't gain a Mark\" waives the Marked deck’s toll, which the system applies by itself.",
+    "\"<b>+1</b> bonus to your Instinct\" is a loadout-conditional trait bonus, which `passive-modifiers.mjs` applies by itself; a press would add it twice.",
+    "\"you can <b>mark a Hit Point</b> instead of the GM gaining a Fear\" changes who pays the Marked deck's toll, so it is the toll's own second button — `post-card.ts` offers it on every Root card while this one is live. A press here would charge a Hit Point with the GM's Fear still owed.",
   ],
   "domainCard:Rousing Strike": [
     "\"you and all allies who can see or hear you can clear a Hit Point or 1d4 Stress\" also clears on every ally in earshot; only the holder's own clear is authored, and the 1d4 is offered as a roll rather than as a clear whose amount is a die",
@@ -8268,7 +8267,7 @@ export const DECLINED = {
     "\"double the result of your damage roll\" multiplies a roll made later by the weapon; nothing in the vocabulary carries a multiplier onto the next attack's damage",
   ],
   "domainCard:Solve": [
-    "\"Treat your Hope Die as though it rolled a 12\" overrides the face of a die in a roll the player has not made yet; there is no kind for setting a result and roll-dice would post a second, unrelated die.",
+    "\"Treat their Hope Die as though it rolled a 12\" overrides the face of a die in a roll nobody has made yet, on you or an ally; there is no kind for setting a die's result, and the roll's own plate is where the 12 goes.",
   ],
   "domainCard:Soothing Speech": [
     "\"clear an additional Hit Point on that character\" — that Hit Point is cleared on the character being tended, and clear has no way to name somebody else",
@@ -8326,6 +8325,7 @@ export const DECLINED = {
     "\"immediately after you succeed on an action roll, you can take an additional action\" is No More Waiting's reading off the other deck's trigger — the extra action is not a kind this vocabulary has, and the roll it rides on has already resolved somewhere a posted card cannot see.",
     "\"you gain <b>3 Mark</b> instead of 1\" changes the Marked deck’s toll, which the system applies automatically and which must never be authored.",
     "\"the GM gains <b>3 Fear</b> instead of 1\" is the same toll seen from the GM’s side — a gain button here would charge the pool a second time on top of the automatic one.",
+    "\"it succeeds with Hope without rolling\" settles a roll that is never made; there is no plate to press, and the Hope it gains is the duality rule's, not this card's.",
   ],
   "domainCard:The Beast": [
     "\"a <b>d6</b> bonus to your damage rolls\" — a die rather than a value, and a grant-effect modifier carries a number; it is left off the effect rather than guessed at",
@@ -8334,15 +8334,18 @@ export const DECLINED = {
     "\"must make a Reaction Roll (16)\" is the TARGET's roll, not the holder's",
     "\"they mark 4 Hit Points\" and \"they mark 2 Hit Points\" are the TARGET's cost, not the holder's — the exact shape the old parser charged the wielder for",
   ],
+  "domainCard:The Pack Knows": [
+    "\"you can add your Instinct and a <b>d6</b> to their roll\" lands on an ally's roll already in flight and charges the holder nothing; the frame's Fear is the toll button's, and a press here would be a second copy of it",
+  ],
   "domainCard:The Root Remembers": [
-    "\"The GM's move is rescinded as though it never happened\" — Premonition's rule in the Root deck, declined for its reason",
+    "\"The move and its consequences are rescinded as though they never happened\" — Premonition's rule in the Root deck, declined for its reason",
   ],
   "domainCard:The Undergrowth Wakes": [
-    "\"All targets in the area must make a <b>Reaction Roll (18)</b>\" is the targets' roll, not the holder's.",
+    "\"all adversaries within Very Far range must make a <b>Reaction Roll (18)</b>\" is the targets' roll, not the holder's.",
     "\"Targets who succeed take half damage\" is halving applied to a target after the dice land, not part of the expression the caster rolls.",
   ],
   "domainCard:The World Tree": [
-    "\"Any creature that touches it clears all their Hit Points and Stress\" lands on whichever creature touches the tree, holder or not, and \"all\" is not an amount this shape can hold",
+    "\"When you or an ally touches it, that creature clears all their Hit Points and Stress\" lands on whoever touches the tree, holder or not, and \"all\" is not a number a clear press can carry.",
   ],
   "domainCard:Thorn Skin": [
     "\"place a number of tokens equal to your Spellcast trait on this card\" moves a counter this document does not carry, and the count scales off a trait rather than being printed.",
@@ -8391,9 +8394,6 @@ export const DECLINED = {
   "domainCard:Valor-Touched": [
     "\"+1 bonus to your Armor Score\" is a passive bonus with no printed duration and nothing to press.",
   ],
-  "domainCard:Vector": [
-    "\"take <b>1d10</b> physical damage for each range increment fallen\" repeats an unknown number of times, so the expression the card prints is not the one anybody rolls, and the document carries no cardDamage entry for it.",
-  ],
   "domainCard:Veil of Night": [
     "\"You’re considered <i>Hidden</i> to adversaries on the other side of the veil\" — a state relative to one side of the curtain rather than a condition the card puts on you; applying Hidden outright would claim more than the card says",
   ],
@@ -8408,8 +8408,8 @@ export const DECLINED = {
     "\"you gain a +1 bonus to your Proficiency for damage rolls\" — a standing conditional bonus while every Stress slot is marked: nothing is pressed and no duration is printed",
   ],
   "domainCard:Void-Touched": [
-    "\"<b>+1</b> bonus to your Spellcast Rolls\" is a passive bonus with no printed duration and nothing to press.",
-    "\"the GM doesn't gain a Fear and you don't gain a Mark\" waives the Marked deck’s toll, which the system applies by itself; a button here would be a second opinion about a charge nobody made by pressing.",
+    "\"<b>+1</b> bonus to your Knowledge\" is a loadout-conditional trait bonus, which `passive-modifiers.mjs` applies by itself; a press would add it twice.",
+    "\"you can <b>mark a Stress</b> instead of the GM gaining a Fear\" changes who pays the Marked deck's toll, so it is the toll's own second button — `post-card.ts` offers it on every Void card while this one is live. A press here would charge a Stress with the GM's Fear still owed.",
   ],
   "domainCard:Wall of Hunger": [
     "\"A creature inside the wall when it appears or that passes through it must <b>mark 2 Stress</b>\" is the creature’s cost, not the holder’s — exactly the reading that once charged the wielder for somebody else’s Stress.",
@@ -8418,8 +8418,9 @@ export const DECLINED = {
     "\"lasts until it marks 3 Hit Points. Place tokens on this card to represent marking Hit Points\" counts the dome's Hit Points, not the holder's, and this document carries no resource to hold them",
   ],
   "domainCard:Wildfire": [
-    "\"All targets within Close range of it must make a Reaction Roll (15)\" is the TARGETS' roll, not the holder's",
     "\"Targets who succeed take half damage\" is what happens to a target after the dice land; halving is not encoded on a damage expression",
+    "\"All adversaries within Close range of it must make a <b>Reaction Roll (15)</b>\" is the targets' roll, not the holder's.",
+    "\"an <i>Ablaze</i> creature takes an extra <b>2d6</b> magic damage each time it's spotlighted\" fires on the burning creature's own spotlight, not on anybody pressing this card — Hungry Fire's rider, declined for its reason.",
   ],
   "domainCard:Words of Discord": [
     "\"the target must mark a Stress\" is the TARGET's cost on a successful cast, not the holder's — this is exactly the shape the old parser charged the wielder for",
