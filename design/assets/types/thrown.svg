@@ -1,0 +1,10 @@
+<!-- Three thrown blades in flight, three-fold rotation about an empty centre. Each
+     blade is canted off its own spoke, which is what reads as spin; an earlier pass
+     curved them much further round the circle to fill the square corners and they
+     stopped being blades and became leaves. Count is the cue, so all three are drawn
+     at one weight rather than stepped in size. See art-src/marks/BRIEF.md. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M 115.6 177.2 C 87.1 182.7 55.8 181.9 21.3 179.9 C 34.4 158.2 52.1 124.2 80.4 123.9 C 96.1 124.3 105.1 138.2 110.9 156.1 Z M 85.6 162.8 C 74.7 178.2 58.9 183.0 39.1 179.3 C 50.1 158.7 66.9 156.0 85.6 162.8 Z"/>
+  <path fill-rule="evenodd" d="M 179.3 146.2 C 198.3 168.0 213.2 195.6 228.7 226.5 C 203.4 225.9 165.1 227.6 150.7 203.3 C 143.2 189.5 150.7 174.7 163.4 160.7 Z M 181.8 179.3 C 200.6 181.1 212.6 192.4 219.3 211.4 C 196.0 212.1 185.2 198.9 181.8 179.3 Z"/>
+  <path fill-rule="evenodd" d="M 120.5 106.5 C 130.0 79.1 146.4 52.4 165.4 23.5 C 177.5 45.7 198.2 78.0 184.3 102.7 C 176.1 116.0 159.6 116.9 141.1 113.0 Z M 148.0 87.8 C 140.1 70.6 143.9 54.5 157.0 39.2 C 169.3 59.1 163.2 75.0 148.0 87.8 Z"/>
+</svg>

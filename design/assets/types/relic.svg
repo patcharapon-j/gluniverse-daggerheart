@@ -1,0 +1,25 @@
+<!-- Relic: a reliquary. Plinth, chambered body with an arched niche, a crown
+     of three tapering spikes, tapering arms at the shoulders.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     The spike bases run down to y=100, well behind the body's top. Sitting
+     them on the shoulder line left only sixteen units of each side spike
+     showing, and at 24px the three of them closed into one bump.
+
+     The arms are horizontal rather than swept. Swept back they turned the
+     body and the niche into an aircraft, which is the one thing a reliquary
+     must not look like, and horizontal arms read as a shrine instead.
+
+     The base is a plinth with vertical sides, not a flared wedge. A wedge
+     that wide and that shallow reads as the hill the object stands on. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M80 100 C82 76 86 56 92 38 C100 56 106 76 110 100 Z
+           M104 100 C108 62 116 36 125 14 C134 36 142 62 146 100 Z
+           M140 100 C144 76 150 56 158 38 C164 56 168 76 170 100 Z"/>
+  <path fill-rule="evenodd" d="M125 70 C139 70 149 75 155 84 L172 98 C176 126 176 154 172 178 C148 184 102 184 78 178 C74 154 74 126 78 98 L95 84 C101 75 111 70 125 70 Z
+                               M125 94 C138 94 146 104 146 116 L146 152 C138 157 112 157 104 152 L104 116 C104 104 112 94 125 94 Z
+                               M92 162 C110 166 140 166 158 162 L158 174 C140 178 110 178 92 174 Z"/>
+  <path d="M88 100 C70 102 48 108 28 116 C23 118 20 120 20 123 C44 127 68 127 86 122 C84 114 84 106 88 100 Z"/>
+  <path d="M162 100 C180 102 202 108 222 116 C227 118 230 120 230 123 C206 127 182 127 164 122 C166 114 166 106 162 100 Z"/>
+  <path d="M98 178 C104 188 108 196 108 206 C88 210 70 215 60 223 L58 232 L192 232 L190 223 C180 215 162 210 142 206 C142 196 146 188 152 178 C138 184 112 184 98 178 Z"/>
+</svg>

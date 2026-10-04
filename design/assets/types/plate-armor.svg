@@ -1,0 +1,25 @@
+<!-- Plate armor: a cuirass with flaring pauldrons, a centre keel, a pointed hem.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     All five armor marks are a torso, so the silhouette has to say which cut
+     before any interior detail arrives. This one owns the widest shoulder in
+     the set and the only hem that comes to a point.
+
+     Each pauldron is an ogee rather than a triangle. A triangle wide enough to
+     have mass at the shoulder closed at nearly sixty degrees and read as a
+     paddle, so the lower edge now swells away from the body in a curve and
+     comes back almost level into the tip, which closes near thirty.
+
+     The chest seams are vertical, not banded. Two nested chevrons across the
+     waist looked right at full size and turned into a mouth at 24px, with the
+     pauldrons as a hat brim above it. Running the seams down the keel and out
+     to the hem kills that read and says ridged breastplate instead. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M103 32 C112 24 138 24 147 32 L154 62 L184 56 L192 104 L185 154 L168 184 L125 232 L82 184 L65 154 L58 104 L66 56 L96 62 Z
+                               M110 78 L101 150 L111 156 L120 82 Z
+                               M140 78 L149 150 L139 156 L130 82 Z
+                               M90 176 L108 212 L118 205 L100 172 Z
+                               M160 176 L142 212 L132 205 L150 172 Z"/>
+  <path d="M106 44 L18 78 C30 80 44 92 58 104 C74 118 92 126 108 128 L114 84 Z"/>
+  <path d="M144 44 L232 78 C220 80 206 92 192 104 C176 118 158 126 142 128 L136 84 Z"/>
+</svg>

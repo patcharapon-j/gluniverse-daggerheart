@@ -1,0 +1,18 @@
+<!-- Hammer: a drum head and a beak on a full haft.
+     Drawn to art-src/marks/BRIEF.md.
+
+     Nothing on the head comes to an edge. That is the whole separation from
+     `axe`, which hangs a bit off the same kind of haft, so the head here is
+     mass on both sides of the eye rather than a blade on one: a long flat
+     face left, a short stout beak right, and the haft running through the
+     middle of it instead of past one side.
+
+     As with the axe, the haft is deliberately thin. A head sitting flush
+     against a thick pole reads as a flag whatever shape the head is. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M112 232 L112 30 L134 30 L134 232 Z"/>
+  <path fill-rule="evenodd" d="M44 36 L150 36 L150 116 L44 116
+    C 32 90 32 62 44 36 Z
+    M64 58 L64 94 L84 94 L84 58 Z"/>
+  <path d="M150 48 L216 72 L150 104 Z"/>
+</svg>

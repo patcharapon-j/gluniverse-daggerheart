@@ -1,18 +1,22 @@
-<!-- Transformation: one lozenge caught turning through itself.
-     Drawn on the set's shared grid — see art-src/types/GRID.md.
+<!-- Transformation: one form caught turning into another.
+     Drawn to art-src/marks/BRIEF.md.
 
-     Ancestry is two lozenges side by side because two lineages sit beside
-     each other. This is the same charge rotated through itself, because a
-     transformation is one thing that became a different one rather than two
-     things held at once.
+     A single ribbon that leaves the foot heavy and smooth, carries through
+     one turn and comes out the top as a point, with a shard already broken
+     off ahead of it. Nothing about it mirrors, which is the point: every
+     symmetric attempt at this subject grew two horns over a centred void
+     and read as a beast's skull, which is both wrong and the `dread` domain
+     sigil's own territory.
 
-     Both lozenges are voided with a smaller copy of themselves. Filled, the
-     pair covers most of the live area and lands as a solid star — the voids
-     are what keep the ink inside the family's range and what keep the two
-     orientations tellable from each other. Evenodd per path. -->
+     The sliver carved inside the turn is what keeps the mass from reading
+     as a solid comma. It follows the turn rather than cutting across it. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M125 24 195 125 125 226 55 125Z
-                               M125 69 164 125 125 181 86 125Z"/>
-  <path fill-rule="evenodd" d="M24 125 125 55 226 125 125 195Z
-                               M69 125 125 86 181 125 125 164Z"/>
+  <path fill-rule="evenodd" d="M36 230
+    C 18 140 64 60 158 36
+    C 196 26 218 24 234 18
+    C 200 48 158 76 120 104
+    C 84 130 74 176 84 230 Z
+    M98 190 C 106 144 134 110 186 78
+    C 144 124 116 154 110 198 Z"/>
+  <path d="M182 106 L232 54 L206 124 Z"/>
 </svg>

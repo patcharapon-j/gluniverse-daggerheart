@@ -1,0 +1,23 @@
+<!-- Ring: a worn band at three quarters, raised setting, faceted stone, two
+     shoulders flaring from the band up into the setting.
+     Drawn rather than traced, see art-src/marks/BRIEF.md.
+
+     The band is an ellipse. A circle with a stone on it is a lollipop, and
+     the foreshortening is the only thing saying this is worn on a hand.
+
+     The gap between the two shoulders, the band and the bezel is left open
+     on purpose. Filled in, the whole top became one solid dome and the mark
+     read as a chess piece rather than as jewellery.
+
+     The stone is a lozenge with a point at the top, where the gem mark is a
+     brilliant with a flat table. Pointed against flat is what tells the two
+     apart at 14px, since neither one keeps its facets at that size. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M125 116 C178 116 221 141 221 172 C221 203 178 228 125 228 C72 228 29 203 29 172 C29 141 72 116 125 116 Z
+                               M125 144 C162 144 187 157 187 172 C187 187 162 200 125 200 C88 200 63 187 63 172 C63 157 88 144 125 144 Z"/>
+  <path d="M58 134 C66 112 82 94 104 82 C107 88 109 94 110 100 C94 110 82 126 76 144 C68 142 62 139 58 134 Z"/>
+  <path d="M192 134 C184 112 168 94 146 82 C143 88 141 94 140 100 C156 110 168 126 174 144 C182 142 188 139 192 134 Z"/>
+  <path d="M100 62 C112 70 138 70 150 62 C150 74 143 84 131 88 L119 88 C107 84 100 74 100 62 Z"/>
+  <path fill-rule="evenodd" d="M125 16 C136 30 152 42 158 52 C152 64 136 76 125 90 C114 76 98 64 92 52 C98 42 114 30 125 16 Z
+                               M108 48 L116 40 L125 56 L134 40 L142 48 L125 78 Z"/>
+</svg>

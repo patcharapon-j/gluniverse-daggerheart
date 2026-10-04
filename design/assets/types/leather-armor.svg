@@ -1,0 +1,21 @@
+<!-- Leather armor: a jerkin, laced, with a belt.
+     Drawn to art-src/marks/BRIEF.md.
+
+     The shoulders are square and the sleeves are stubs, which is the fix.
+     Tapering shoulder straps read as ears and turned the whole mark into a
+     hooded face, which is both wrong and `cloak`'s territory. Nothing above
+     the chest line comes to a point now.
+
+     The lace runs down a V cut out of the top edge rather than drawn on the
+     chest, so it survives in silhouette. That is also what separates this
+     from `cloth-armor`, whose opening is closed and whose read is the flare
+     at the hem. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M66 44 L184 44 L208 62 L208 104 L178 104 L178 148
+    C 178 178 174 200 168 214 L82 214 C 76 200 72 178 72 148 L72 104 L42 104 L42 62 Z
+    M104 44 L125 118 L146 44 Z"/>
+  <path d="M110 62 L140 62 L140 72 L110 72 Z
+    M114 86 L136 86 L136 96 L114 96 Z"/>
+  <path fill-rule="evenodd" d="M70 150 L180 150 L180 176 L70 176 Z
+    M96 156 L154 156 L154 170 L96 170 Z"/>
+</svg>

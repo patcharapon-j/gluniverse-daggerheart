@@ -1,0 +1,18 @@
+<!-- Axe: a bearded bit on a full haft, with a reverse spike.
+     Drawn to art-src/marks/BRIEF.md.
+
+     The haft is thin and the bit hangs well off it, which is the fix. A
+     head drawn as a slab flush against the pole is a flag, not an axe, and
+     that is what the first several passes were. The beard dropping below
+     the eye and the concave throat between the horns are what make it read
+     as a bit, so both are exaggerated past what a real axe carries.
+
+     The edge is near straight between two horns rather than one crescent
+     sweep, because the `blade` domain sigil is itself a crescent-bladed
+     axe head and the two sit on the same sheets. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M110 232 L110 26 L132 20 L132 232 Z"/>
+  <path d="M130 44 L190 24 C 222 52 230 104 214 150 L176 168
+    C 162 128 150 82 130 44 Z"/>
+  <path d="M112 70 L52 92 L112 110 Z"/>
+</svg>

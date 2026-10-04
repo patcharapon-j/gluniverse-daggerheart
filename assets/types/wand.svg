@@ -1,0 +1,16 @@
+<!-- Wand: a faceted gem carved hollow, two collar barbs, a tapering handle.
+     Drawn, not traced. See art-src/marks/BRIEF.md.
+
+     Laid on the diagonal. Stood upright it could only fill the live area by
+     growing as long as the staff, and length is the one cue the staff owns.
+     On the diagonal it reaches both corners while staying a short wand, and
+     the gem lands in the top corner with nothing beside it to share the read.
+     The hollow is the gem's own outline at forty per cent, so the carved edge
+     repeats the facets instead of rounding them off. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path d="M64 231C66.7 226.8 74.1 214.9 80.3 205.9C86.5 197 94.5 187 101.4 177.4C108.4 167.9 115.2 157.8 122.1 148.6C129.1 139.4 142.2 128.6 143.3 122.1C144.4 115.7 135 107.7 128.7 109.9C122.5 112.1 113.6 126.6 105.9 135.4C98.2 144.2 90.3 153.5 82.6 162.6C74.9 171.7 66.8 181.7 59.7 190.1C52.6 198.5 43.3 209.2 40 213Z"/>
+  <path d="M38 205C38.8 207.4 40.3 215.5 42.6 219.4C44.8 223.2 48 225.8 51.5 228.1C54.9 230.3 59.1 232.8 63.1 232.7C67.2 232.7 74.4 230.9 76 228C77.6 225.1 74.8 218.6 72.9 215.3C70.9 211.9 67.8 210 64.5 207.9C61.3 205.8 57.9 203.1 53.4 202.6C49 202.1 40.6 204.6 38 205Z"/>
+  <path d="M128.6 139.2C131.8 140.5 141.5 147.1 147.8 147.4C154 147.7 163 142.1 166 141C169 139.9 168 142.7 166 141C164 139.3 158.4 134.3 154.2 130.6C150.1 126.9 143.5 120.8 141.4 118.8Z"/>
+  <path d="M129.6 125.4C126.3 124.2 116 118.3 109.6 118.4C103.2 118.5 94.1 124.7 91 126C87.9 127.3 88.8 124.4 91 126C93.2 127.6 99.8 132.2 104.4 135.6C109 139 116.1 144.8 118.4 146.6Z"/>
+  <path fill-rule="evenodd" d="M201 18L214.8 71.4L188.3 113.9L136.3 121.5L120.4 71.5L146.9 29ZM181.9 48.5L186.4 67.8L177.9 81.4L160.2 83.3L154.1 66.6L162.6 53Z"/>
+</svg>

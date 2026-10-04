@@ -1,0 +1,14 @@
+<!-- Fist: an armoured gauntlet from the knuckle side, four lobes, the thumb a
+     separate plate, a flared cuff. Drawn, not traced. See
+     art-src/marks/BRIEF.md.
+
+     The thumb is its own path standing nine units clear of the fingers
+     rather than a seam carved into one mass. Carved, the seam filled in at
+     14px and the hand went back to a mitten. As a gap it is the last piece of
+     interior to close, so the thumb keeps reading as a thumb down to the chip
+     size. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <path fill-rule="evenodd" d="M26 152C21 118 21 82 26 46A18 18 0 0 1 62 46A18 18 0 0 1 98 46A18 18 0 0 1 134 46A18 18 0 0 1 170 46C178 82 178 120 168 154C118 166 70 162 26 152ZM57 40C57 44 56.8 56.3 57 64C57.2 71.7 56.5 82.3 58 86C59.5 89.7 64.5 89.7 66 86C67.5 82.3 66.8 71.7 67 64C67.2 56.3 67 44 67 40ZM93 40C93 44 92.8 56.3 93 64C93.2 71.7 92.5 82.3 94 86C95.5 89.7 100.5 89.7 102 86C103.5 82.3 102.8 71.7 103 64C103.2 56.3 103 44 103 40ZM129 40C129 44 128.8 56.3 129 64C129.2 71.7 128.5 82.3 130 86C131.5 89.7 136.5 89.7 138 86C139.5 82.3 138.8 71.7 139 64C139.2 56.3 139 44 139 40ZM58 136C63.6 136.3 81.3 137.7 91.4 137.9C101.6 138.1 110 137.8 119.1 137C128.2 136.1 145.7 136.3 146 133C146.3 129.7 130.5 119.5 120.9 117C111.3 114.6 99 114.9 88.6 118.1C78.1 121.3 63.1 133 58 136Z"/>
+  <path d="M186 60C208 66 224 92 222 120C220 150 202 166 184 158C191 124 191 92 186 60Z"/>
+  <path d="M26 148C22 170 20 200 18 230C52 208 78 197 100 192C118 188 132 188 150 192C174 199 202 211 228 226C231 196 225 166 202 146C150 160 74 160 26 148Z"/>
+</svg>

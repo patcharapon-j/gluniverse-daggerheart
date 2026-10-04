@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
+  <!-- Longbow at full draw, arrow pointing left. The one mark in the set that is handed
+       rather than mirrored about x=125, because a bow with no string side stops being a
+       bow. The string is pulled into a V rather than left straight: straight, it reads
+       as a bracket standing next to an arrow, and the V is what says drawn. The limb
+       sits well right of the frame edge so the head clears it and still has room to
+       taper. See art-src/marks/BRIEF.md. -->
+  <path d="M 132 18 C 114 50 46 72 40 125 C 46 178 114 200 132 232 C 122 200 84 174 78 125 C 84 76 122 50 132 18 Z"/>
+  <path d="M 132 18 L 222 128 L 132 232 L 132 210 L 202 128 L 132 40 Z"/>
+  <path d="M 214 114 L 66 114 L 66 88 C 48 99 32 112 18 125 C 32 138 48 151 66 162 L 66 136 L 214 136 Z"/>
+  <path d="M 96 114 C 118 110 142 104 158 96 C 148 108 140 112 132 114 Z"/>
+  <path d="M 96 136 C 118 140 142 146 158 154 C 148 142 140 138 132 136 Z"/>
+</svg>
