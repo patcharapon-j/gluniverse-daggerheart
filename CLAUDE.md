@@ -123,7 +123,7 @@ not know about is never mounted, and nothing says so.
 | --- | --- |
 | `classes` | 9 classes and 54 subclass cards, foldered by class |
 | `heritage` | 18 ancestries and 9 communities |
-| `domains` | 189 domain cards, foldered by domain, in deck order |
+| `domains` | 252 domain cards — the printed 189, Dread's 21, Root and Void's 42 — foldered by domain, in deck order |
 | `equipment` | 358 documents: 204 weapons, 34 armour, 60 consumables, 60 items |
 
 A subclass is three documents, not one — Foundation, Specialization, Mastery —
@@ -603,7 +603,8 @@ squares.
 them at the end of `DOMAINS` rather than filed alphabetically, because the
 printed ten are a closed set somebody else owns and reading them as one block
 is worth more than one alphabetised list. `design/marked.css` is the frame the
-cards wear, `src/packs-src/marked-cards.mjs` is the forty-two, and
+cards wear, `src/packs-src/marked-cards.mjs` is the forty-two,
+`marked-leads.mjs` is the argument for each one of them, and
 `src/module/marked.ts` is the mechanic around them.
 
 **The frame is stamped by `cardOf`, so every surface gets it at once** — sheet
@@ -622,37 +623,117 @@ because the Card Creator publishes the corebook only; these have none because
 nobody published them. So `check-cards.mjs` skips them by construction, and
 what replaces the audit is `tools/check-marked.mjs` — `check-equipment.mjs`'s
 argument arriving at a deck: when there is nothing to compare a line to, assert
-that the line obeys the rules every printed line obeys.
+that the line obeys the rules every printed line obeys. Eight rules now, and
+every constant in them is measured off the 210 printed cards inside the tool
+itself, so a claim about the corpus can be re-taken rather than believed.
 
-    node tools/check-marked.mjs --report
+    npm run marked:check
+    node --disable-warning=ExperimentalWarning \
+      --experimental-strip-types tools/check-marked.mjs --report
 
-**Two of those rules were measured off the 210 printed cards, not asserted.**
-*A repeatable damage card scales with Proficiency; a flat-dice card is gated* —
-every printed card dealing flat dice pays a Hope, Stress or a once-per-rest,
-and every one castable again for nothing writes `dN+M using your Proficiency`.
-And *area damage above level 4 takes a Reaction Roll and halves on a success* —
-below that the idiom is "Spellcast Roll against all targets", and from Chain
-Lightning up it is always a save-for-half. Six cards broke one or the other and
-were rewritten. The tool also refuses a card that names a **player's turn**:
-this game has a spotlight, and the printed corpus says "your turn" zero times
-in 210 cards while saying "the GM spends a Fear on their turn" freely.
+**Every use of a marked card costs the GM a Fear, so a usage limit on top of
+that is double-charging.** No printed domain charges anything per use, so a
+card that merely matches a printed card of its own level is a card nobody
+should take, and the shape that follows is: no usage limit, a real resource
+cost, and a lead over the best printed card at or below its level. Nineteen of
+the forty-two still carry a limit — 45%, against print's 31% of 210 — and the
+cap is **50%**, because a limit is still the honest lever for a card that
+reshapes a whole scene. Part of why they once reached for one everywhere is
+that neither deck had a **token card**: a pile is the printed way to say
+"repeatable, but not all night", twelve printed cards use one, and the Homebrew
+Kit allows one per domain. Cold Solution is Void's and Deep Dreaming is Root's,
+and the check holds each deck to exactly one.
 
-**The damage band is `check-resources.mjs`'s ratchet in a new place.** A card
-over the largest printed average *at or below its level*, for its own kind
-(save-for-half or not), must be listed in `AHEAD` with the reading that put it
-there — and a card listed there that is no longer over its band fails too,
-because a justification for a number that has since changed is one nobody has
-re-read. Three are listed, and all three are the same finding: print has **no
-save-for-half area card between levels 4 and 7**, so the band at level 7 is
-still quoting a level 3 grimoire. A measurement cannot know that; a reader can.
+**Two rules this section stated as measurements are false, and the false
+versions are why the dice on these cards were too small.** *Every printed card
+dealing flat dice pays for it* — `Cinder Grasp`, Arcana 2, `1d20+3`, is flat
+and completely unlimited, and so is `Tempest` at Sage 10. What survives
+re-measurement is weaker and true: **a damage card carries a usage limit or a
+cost**, which all but four of print's 29 damage cards do, and of those four
+two scale with a trait and the other two are the outliers above. And
+**single-target damage scales where area damage may be flat**: 10 of print's
+15 single-target damage cards write `using your Proficiency` or `using your
+Spellcast trait`, four of the other five are costed, and on area cards flat
+dice are the norm. That false reading put Hungry Fire and Crush on Proficiency
+scaling and then pinned them to the printed baseline; they still scale, but
+they lead on their riders now.
 
-`card-resources.mjs` annotates these by **derivation** rather than by hand, and
-that is a departure from every entry above it. Those are readings — somebody
-decided whether "until your next rest" was a duration or a use limit. These we
-wrote, to a rule the check enforces, so there is no reading to record and
-listing them would be a second copy of what `marked-cards.mjs` already says.
-The provenance survives: `once()` takes its `said` from the scope, so an entry
-is still evidenced by the words being on the card.
+**So the ceiling is four ceilings, split by shape and by save class**, because
+one global band compares a single-target spell against a grimoire's wall of
+flame. Single-target no-save tops out at 13.5 and never rises past level 2,
+since every higher one scales; area no-save at 29 (`Tempest`, 10); area
+save-for-half at 47 (`Stunning Sunlight`, 8). Single-target save-for-half print
+never prints, so a card of that shape fails for having no band rather than
+passing for want of one. Reading the area ceiling as 30 off `Ground Pound` is
+what pulled The Undergrowth Wakes down from 34 to 27.5 for nothing; 34 is
+restored. *Area damage above level 4 offers a Reaction Roll and halves* keeps
+its two printed exceptions, `Falling Sky` and `Tempest`, both level 10, and is
+enforced anyway — they are the top of the book and we are not.
+
+**The band was a ceiling, and what these decks needed was a floor.** Both false
+rules pushed their damage *down*, and a ceiling-only check could never notice,
+because the decks' problem was never that they were too strong. So `AHEAD` —
+the cards that exceeded the band, with the reading that excused them — is gone,
+and `LEADS` in `src/packs-src/marked-leads.mjs` inverts it: not a list of
+exceptions but a floor all forty-two clear. An entry names a printed card and
+the axis it beats it on, and `axis: "novel"` with no card at all is the
+strongest claim available — print has nothing that does this at any level,
+which seven of these claim. A `damage` claim is settled arithmetically against
+the card it names; the rest are readings, and `why` is the reading, which is
+`check-resources.mjs`'s pattern arriving where a measurement cannot make the
+call. **Naming a card above your own level is the stronger claim, not a
+violation** — "ahead by one tier" is exactly that — so the report counts those
+five apart rather than refusing them. Naming one more than two levels *below*
+fails: print's tiers are three levels wide, so a card does compete with the
+tier under it, but a level 9 card beating a level 3 grimoire line has not shown
+it is worth level 9.
+
+Two smaller rules close it, and both are about what a campaign deck can reach
+for and a printed one cannot. A card that takes Fear out of the pool has to be
+gated, or the deck pays its own cost in a loop — the Homebrew Kit warns about
+that shape on an adversary, and on a PC card it is worse because the PC picks
+the moment. And Recall 3 and 4 sit no lower than print puts them, which is
+level 4; here they start at 8. The tool still refuses a card naming a
+**player's turn**: print says "your turn" zero times in 210 cards while saying
+"until the GM spends a Fear on their turn" freely, so that phrase passes and
+nothing else does.
+
+**Each deck owns a mechanic, which is what stops it reading as a recoloured
+printed domain.** Void reads and spends the Fear pool: Reckoning buys a Fear
+back for a Stress, Geometry of Ruin takes one out for every target that fails,
+The Answer pays three in at once, Cold Solution sizes its tokens off how full
+the pool is, and Void-Touched refuses to feed it. Five cards of twenty-one,
+against eight of print's 210 — and counting only the ones that change what is
+in the pool, three of Void's twenty-one against four printed, which is the
+difference between a theme and a signature. Root converts harm into fuel: Feed
+turns a Melee hit into a cleared Hit Point and a Hope, Apex pays a Hit Point
+per kill, Barkskin and The Beast buy scene-long force with Stress up front, the
+World Tree empties the whole party's sheet once.
+
+`card-resources.mjs` annotates these by **derivation** rather than by hand,
+which every entry above it cannot be: those are readings, where somebody
+decided whether "until your next rest" was a duration or a use limit. A gate is
+a phrase, so a regex finds it, and the provenance survives anyway because
+`once()` takes its `said` from the scope. What a derivation cannot reach is a
+**pile** — a token card states where its tokens come from, how many and what
+clears them, which is a reading — so the two of those are written by hand and
+are the only hand-written marked entries in the file.
+
+**These decks are argued for in two other places, and the difference is who is
+reading.** `tools/sync-marked-note.mjs` writes the deck listing and the
+per-card audit into the campaign vault's own note, between markers the note
+already claimed were machine-written. The vault is a Google Drive folder
+outside this repo, so the path is an absolute default `TM_VAULT` overrides, and
+every authored string inside the region sits in one `PROSE` object, so reading
+that tells you everything in there a human wrote. `npm run marked:check` runs
+the audit and that tool's `--check` together, so a card edited without the note
+regenerated fails the build exactly as a card with no `LEADS` entry does. The
+`marked-rules` pack is the other: a JournalEntry compendium labelled "The
+Twilight Marked", the frame's rules as the pages a GM opens mid-session, with
+its deck listings and automation inventory derived from the same modules rather
+than transcribed and `tools/check-marked-rules.mjs` holding it to them. This
+section argues the design to somebody about to change the code; the journal is
+what somebody reads with a card in their hand.
 
 **The mechanic is four rules and two of them are automated on purpose.**
 
