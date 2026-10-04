@@ -492,7 +492,15 @@ function place(chip: HTMLElement, token: any): void {
    would be the readout blinking every time a maximum moved.
 
    So `fresh` is threaded through rather than inferred, because "there was
-   no chip a moment ago" is true of both and only one of them means it. */
+   no chip a moment ago" is true of both and only one of them means it.
+
+   That paragraph was aspirational for as long as it has been here. The code
+   under it set one local on the way out of BOTH branches, so every shape
+   change played the full 460ms arrival: a level-up, a scar, an adversary
+   becoming visible. It survived because each half reads correctly on its
+   own -- the teardown is right, the build is right, and the flag they share
+   is the only place the two are told apart. It is threaded now, and the
+   flag is named `appeared` for the claim rather than for the timing. */
 
 /* ── settle, and why this one is a deadline and nothing else ──────
    settle.js's arithmetic — read the end off the animations themselves, so
@@ -627,15 +635,20 @@ function sync(token: any): void {
 
   /* Before anything is built: a creature that is back inside its own
      departure keeps the element it already had. */
-  let fresh = false;
   if (!chip) chip = reclaim(id);
 
+  /* Three ways to arrive holding a chip and only one of them is an
+     appearance, so the distinction is carried rather than read back off
+     "there was no chip a moment ago", which is true of two of the three. */
   const shape = shapeOf(state);
+  let rebuilt = false;
   if (chip && chip.dataset.shape !== shape) {
     retire(id, chip, false);
     chip = undefined;
+    rebuilt = true;
   }
 
+  let appeared = false;
   if (!chip) {
     const host = document.createElement("div");
     host.innerHTML = TOKEN_CHIP(state);
@@ -644,7 +657,7 @@ function sync(token: any): void {
     chip.dataset.shape = shape;
     chips.set(id, chip);
     layer?.appendChild(chip);
-    fresh = true;
+    appeared = !rebuilt;
   } else {
     chips.set(id, chip);
   }
@@ -656,7 +669,7 @@ function sync(token: any): void {
      scale about the chip's own centre, and a chip that has not been placed
      yet is a 0x0 box at the top-left of the scene. It would grow there and
      jump. */
-  if (fresh) {
+  if (appeared) {
     const el = chip;
     el.classList.add("arrive");
     after(el, () => el.classList.remove("arrive"));
