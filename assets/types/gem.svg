@@ -1,26 +1,43 @@
-<!-- Gem: one cut stone face on. Table and crown above, girdle, pavilion
-     tapering to a point at the bottom.
-     Drawn rather than traced, see art-src/marks/BRIEF.md.
+<!-- Gem. Gems, coins and other valuables.
 
-     Crown and pavilion are two separate shapes with the girdle as the air
-     between them, rather than one outline with a facet line carved across
-     it. A carved line that thin fills in at 14px, where a gap of twelve
-     units still reads as the break in the stone.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a gemstone emblem, a single large faceted cut gemstone with a sparkle" — with the style tail in
+     art-src/types/mj-prompts.mjs; job b45b72b1-d56d-4bae-8773-ed9475554b05, variant 2.
+     The art is white on black, so its brightness is the shape.
 
-     The two spurs at the girdle take the mark out to the live edge and put
-     the widest point where a brilliant is actually widest, so they earn
-     their place twice.
-
-     The pavilion slots stop well short of the tip. Run all the way down they
-     left a splinter of fill between them and the point went soft. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M84 24 L166 24 C192 40 208 66 214 92 C170 100 80 100 36 92 C42 66 58 40 84 24 Z
-                               M100 44 L150 44 L150 56 L100 56 Z
-                               M88 40 L102 36 L70 86 L52 88 Z
-                               M162 40 L148 36 L180 86 L198 88 Z"/>
-  <path fill-rule="evenodd" d="M38 104 C82 112 168 112 212 104 C186 150 150 194 125 232 C100 194 64 150 38 104 Z
-                               M62 120 L78 116 L116 176 L110 190 Z
-                               M188 120 L172 116 L134 176 L140 190 Z"/>
-  <path d="M42 84 C28 90 20 98 18 108 C26 114 34 116 46 116 C40 106 39 94 42 84 Z"/>
-  <path d="M208 84 C222 90 230 98 232 108 C224 114 216 116 204 116 C210 106 211 94 208 84 Z"/>
+<g transform="translate(-30.594805,280.594805) scale(0.03039,-0.03039)">
+<path d="M4941 8752 c-369 -459 -707 -879 -986 -1222 -159 -197 -351 -433
+-425 -526 -151 -188 -256 -316 -579 -712 -184 -226 -221 -276 -216 -295 7 -21
+1462 -2925 1610 -3212 40 -77 175 -342 300 -590 381 -754 469 -925 474 -925 8
+0 143 265 1078 2115 314 619 1213 2417 1282 2562 l34 71 -179 219 c-98 120
+-248 304 -333 408 -85 105 -192 236 -238 293 -46 56 -88 102 -93 102 -36 0
+-76 -129 -145 -473 -21 -103 -40 -185 -42 -184 -2 2 -26 114 -53 248 -63 306
+-72 342 -107 392 -42 60 -119 114 -189 131 -32 8 -161 29 -286 47 -125 18
+-226 35 -224 36 2 2 99 12 217 23 265 25 359 42 414 75 88 51 117 110 162 334
+9 45 18 79 21 76 3 -2 -1 -73 -7 -157 -13 -153 -13 -154 12 -224 22 -62 26
+-95 31 -255 4 -101 9 -213 12 -248 l6 -63 22 63 c42 119 95 202 158 245 62 43
+186 73 437 104 129 17 235 31 237 33 2 1 -104 18 -234 36 -130 18 -265 42
+-299 52 -70 22 -152 89 -183 150 -18 34 -78 310 -126 574 l-18 100 -12 -60
+c-7 -33 -29 -145 -49 -248 -44 -228 -69 -325 -88 -344 -12 -12 -21 -5 -69 49
+-67 77 -567 696 -898 1110 -135 169 -247 307 -250 307 -3 1 -83 -97 -179 -217z
+m128 -1068 c33 -142 85 -365 116 -494 30 -129 67 -283 81 -341 28 -118 12 -92
+341 -562 67 -95 95 -144 81 -136 -13 7 -133 80 -268 164 -135 83 -261 161
+-281 173 -29 17 -38 30 -42 60 -9 55 -75 673 -83 775 -4 48 -11 90 -15 93 -5
+3 -9 -7 -9 -23 0 -88 -73 -722 -87 -756 -35 -81 -47 -85 -630 -213 -290 -63
+-643 -140 -783 -170 -140 -29 -266 -57 -280 -60 -79 -18 27 19 351 121 200 64
+450 144 556 178 l191 62 224 209 c123 115 233 219 246 231 20 19 36 82 118
+466 108 513 104 493 109 487 3 -2 31 -121 64 -264z m1826 -1673 c-6 -4 -242
+-131 -525 -281 -283 -150 -538 -285 -567 -301 l-51 -29 -26 -113 c-14 -61 -77
+-339 -140 -617 -63 -278 -178 -777 -256 -1110 -78 -333 -153 -654 -167 -715
+-14 -60 -31 -132 -38 -160 l-12 -50 -6 65 c-4 36 -11 162 -17 280 -6 118 -13
+237 -16 264 -4 33 -56 154 -166 390 -152 325 -276 590 -394 848 -40 88 -113
+205 -290 470 l-237 353 -86 58 c-47 32 -260 171 -473 309 -213 139 -386 253
+-384 255 1 2 50 -10 107 -26 57 -17 219 -62 359 -101 380 -106 706 -198 1185
+-335 l430 -123 149 142 c82 77 242 230 355 338 l206 197 535 0 c303 1 530 -3
+525 -8z"/>
+</g>
 </svg>

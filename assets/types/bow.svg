@@ -1,17 +1,35 @@
-<!-- Longbow at full draw, arrow pointing left. The one mark in the set that is handed
-     rather than mirrored about x=125, because a bow with no string side stops being a
-     bow. The string is pulled into a V, since a straight string reads as a bracket
-     standing next to an arrow. The limb is built as a deep round crescent and runs far
-     heavier than the string: drawn at similar widths and close to their chords, limb
-     and string closed into a plain diamond at 24px and the bow vanished. The head is
-     drawn wide enough to clear the limb it crosses, because the point is otherwise
-     lost inside it, and the tips are left blunt where the string meets them rather
-     than recurved, which left a hairline that broke at the nock.
-     See art-src/marks/BRIEF.md. -->
+<!-- Bow. Longbows, shortbows and greatbows.
+
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a recurve longbow emblem, drawn string and a single nocked arrow" — with the style tail in
+     art-src/types/mj-prompts.mjs; job 4622f0b1-d101-4b7b-968d-17249e6fadc4, variant 4.
+     The art is white on black, so its brightness is the shape.
+
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M 140 20 C 124 28 94 38 76 56 C 58 74 54 98 54 125 C 54 152 58 176 76 194 C 94 212 124 222 140 230 C 126 212 110 198 102 180 C 96 162 98 144 98 125 C 98 106 96 88 102 70 C 110 52 126 38 140 20 Z"/>
-  <path d="M 140 20 L 214 128 L 140 230 L 140 218 L 200 128 L 140 34 Z"/>
-  <path fill-rule="evenodd" d="M 212 110 L 92 110 L 92 78 C 68 92 42 108 18 125 C 42 142 68 158 92 172 L 92 140 L 212 140 Z M 80 125 C 68 114 54 112 40 125 C 54 138 68 136 80 125 Z M 212 118 L 194 125 L 212 132 Z"/>
-  <path d="M 104 110 C 128 106 152 98 168 86 C 158 102 148 108 140 110 Z"/>
-  <path d="M 104 140 C 128 144 152 152 168 164 C 158 148 148 142 140 140 Z"/>
+<g transform="translate(-57.477064,308.550459) scale(0.03578,-0.03578)">
+<path d="M8015 8335 c-47 -84 -74 -107 -208 -170 -356 -167 -889 -370 -1583
+-600 -641 -213 -815 -280 -1116 -431 -352 -176 -669 -395 -877 -607 l-74 -76
+6 -145 c6 -123 39 -365 63 -461 l7 -28 -94 5 c-167 10 -283 77 -311 181 -7 26
+-17 46 -23 44 -19 -7 -146 -171 -230 -297 -201 -303 -358 -622 -495 -1011
+-106 -299 -181 -578 -385 -1429 -148 -616 -254 -971 -354 -1185 -58 -123 -94
+-166 -176 -206 -55 -27 -62 -33 -50 -45 7 -8 33 -14 57 -14 84 0 116 17 203
+103 72 73 88 96 142 207 107 218 165 386 402 1162 237 772 448 1220 784 1662
+155 203 411 453 545 533 24 14 44 24 46 22 2 -2 23 -68 49 -146 25 -77 60
+-172 78 -210 l34 -68 6 116 c33 596 430 1227 1049 1667 381 271 679 420 1455
+725 598 236 937 402 1058 518 38 37 47 52 47 80 0 30 5 58 25 145 4 18 1 22
+-21 20 -20 -1 -32 -14 -59 -61z"/>
+<path d="M7624 7708 c-699 -755 -954 -1035 -1613 -1768 -305 -338 -630 -700
+-725 -804 -94 -104 -174 -194 -178 -199 -4 -8 -16 -7 -35 2 -28 13 -28 13 -9
+-8 19 -21 19 -22 -1 -44 -11 -12 -129 -146 -263 -297 -134 -151 -278 -313
+-320 -360 -475 -528 -1879 -2130 -1867 -2130 4 0 88 92 552 605 322 356 1427
+1581 1662 1841 149 166 276 305 282 309 6 3 129 -112 279 -263 294 -296 408
+-405 1259 -1201 652 -610 607 -557 620 -723 l6 -77 271 -142 c584 -306 543
+-286 521 -253 -412 618 -510 759 -524 756 -45 -7 -154 -3 -199 7 -46 12 -75
+35 -364 298 -442 403 -1642 1475 -1762 1575 -36 29 -65 58 -65 64 -1 6 148
+177 330 380 661 736 1172 1308 1573 1764 225 256 472 537 550 625 169 191 189
+215 184 215 -3 0 -77 -78 -164 -172z"/>
+</g>
 </svg>

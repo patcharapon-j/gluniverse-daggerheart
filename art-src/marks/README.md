@@ -1,8 +1,10 @@
 # The item marks
 
-`design/assets/types` holds every mark an Item can wear. `BRIEF.md` next to
-this file is how they are drawn; this is what they are and how they are
-reached.
+`design/assets/types` holds every mark an Item can wear. They are generated
+with Midjourney and traced (see `../types/README.md`); `BRIEF.md` next to this
+file is how the hand-drawn set before them was built, and its floor (judge at
+14px and 24px) still applies to picking a variant. This file is what the marks
+are and how they are reached.
 
 ## Two sets
 

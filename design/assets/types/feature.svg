@@ -1,24 +1,37 @@
-<!-- Feature: a rising spark, a swept chevron with a mote above the apex.
-     Drawn rather than traced, see art-src/marks/BRIEF.md.
+<!-- Feature. The charge for something earned and held.
 
-     Nothing sits under the apex. That absence is the whole separation from
-     primary.svg, which is also a pointed upward thing but carries a tang, and
-     at 14px the tang and the empty space are the only difference the eye
-     gets. The mote above the apex is the second half of that cue, so it is
-     kept wide and short rather than fine, or it disappears at chip size.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a rank chevron emblem, a broad upward chevron with barbed tapering tips crowned by a small four-pointed star" — with the style tail in
+     art-src/types/mj-prompts.mjs; job 0d7ec4b0-8ab9-4534-8e90-420919033b29, variant 4.
+     The art is white on black, so its brightness is the shape.
 
-     The limbs are two paths meeting along x=125 so each carries its own
-     carved sliver. One evenodd path over the whole chevron would join the two
-     slivers into a single wedge and the mark would go hollow at the centre.
-
-     The outer edge bows well above the straight line from apex to tip. Drawn
-     straight the limbs read as an arrowhead, and the sweep is what puts this
-     on the same row as the domain marks.
-
-     Tips land on 18 and 232 so the mark holds the full live area. A chevron
-     pulled in from the edges reads as a smaller mark, not a lighter one. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M125 64 C84 86 48 138 18 214 C56 184 94 156 125 138 Z M125 86 C108 100 94 130 78 156 C90 146 104 128 125 108 Z"/>
-  <path fill-rule="evenodd" d="M125 64 C166 86 202 138 232 214 C194 184 156 156 125 138 Z M125 86 C142 100 156 130 172 156 C160 146 146 128 125 108 Z"/>
-  <path d="M125 18 C132 29 141 36 141 42 C141 49 134 54 125 54 C116 54 109 49 109 42 C109 36 118 29 125 18 Z"/>
+<g transform="translate(-23.277228,273.856436) scale(0.02896,-0.02896)">
+<path d="M1380 9173 c0 -5 4 -13 9 -18 5 -6 56 -91 114 -190 339 -585 460
+-794 667 -1156 l230 -402 958 -965 c826 -832 958 -969 964 -1001 4 -20 48
+-261 97 -536 335 -1857 485 -2683 570 -3125 43 -228 90 -475 103 -547 12 -73
+26 -133 29 -133 4 0 9 17 12 38 3 20 17 100 32 177 63 331 448 2439 660 3615
+53 294 100 541 104 548 4 7 313 320 687 695 373 375 805 811 959 967 l280 285
+227 400 c226 397 328 575 625 1084 84 145 152 265 150 267 -3 3 -117 -83 -642
+-486 -302 -231 -472 -361 -850 -651 -788 -604 -1851 -1423 -2182 -1681 l-61
+-48 -140 109 c-76 60 -267 207 -423 327 -669 513 -983 754 -1119 859 -430 331
+-863 662 -1080 828 -344 263 -455 347 -700 536 -255 197 -280 215 -280 204z"/>
+<path d="M5000 8632 l-116 -407 -403 -115 c-273 -78 -397 -117 -384 -122 19
+-8 722 -207 760 -215 26 -6 14 30 159 -475 54 -192 101 -348 104 -348 3 0 56
+179 119 399 62 219 116 403 120 408 3 5 114 40 246 77 323 91 549 157 552 160
+2 1 -138 42 -310 90 -299 85 -363 103 -452 130 l-40 13 -115 406 c-63 224
+-117 407 -120 407 -3 0 -57 -184 -120 -408z"/>
+<path d="M1914 7055 c73 -159 209 -454 301 -655 583 -1268 652 -1408 855
+-1730 332 -526 732 -1192 1055 -1758 98 -171 180 -310 182 -308 5 5 -92 569
+-382 2204 l-73 413 -153 157 c-1148 1171 -1609 1642 -1837 1882 l-81 85 133
+-290z"/>
+<path d="M8204 7083 c-339 -352 -928 -955 -1411 -1445 -221 -224 -404 -415
+-407 -425 -3 -10 -35 -189 -71 -398 -37 -209 -100 -571 -141 -805 -163 -932
+-244 -1405 -242 -1412 2 -4 34 48 72 115 203 359 489 848 661 1132 275 453
+377 619 410 670 212 328 279 445 395 690 279 590 992 2135 985 2135 -1 0 -114
+-116 -251 -257z"/>
+</g>
 </svg>

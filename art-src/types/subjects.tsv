@@ -1,29 +1,63 @@
-# The -Subject line each item type mark is generated from, so a regeneration
+# The Midjourney subject each item mark is generated from, so a regeneration
 # matches, and a short note for the mark's own header.
 #
-# Written in the voice gluniverse-vtt's own subjects.tsv uses for the class
-# sigils: a noun phrase describing what is in the picture, not a brief. The
-# style paragraph in gen-type-marks.sh carries everything else, and it is the
-# one the class sigils and the Artifice, Root and Void domain marks were drawn
-# to — which is the whole point of this set existing. The thirteen hand-drawn
-# geometric marks these replaced held at 14px but sat beside a domain plate
-# looking like a different product.
+# `mj-prompts.mjs` wraps each subject as "an icon of <subject>, <style>", and
+# the style tail is the same for every mark — the one the class sigils and the
+# domain marks read as. The subject is the only thing that varies, so it says
+# what is in the picture and nothing about how it is drawn.
 #
 # One archetype each, so no two marks share a silhouette. Where count is the
-# cue, it is the only difference: one spearhead against two, two lozenges
-# against three shields.
+# cue it is the only difference: one spearhead against two, one vial against
+# three.
 #
-# Name	Subject	Note
-ancestry	two interlocking heraldic lozenges, one overlapping the other, the overlap cut out as a negative-space slit	The lozenge is the heraldic charge for descent, and two of them joined is two lineages.
-community	three pointed shields clustered in a triangle, their edges almost meeting	Three is the smallest count that reads as a group rather than a pair.
-transformation	a tall lozenge splitting open down its spine with a second lozenge turning out of it	Ancestry is two lozenges side by side; this is one that became another.
-class	a war banner on a short staff, its foot cut into a deep swallow-tail	The standard you fight under. Only ever drawn where a homebrew class names a domain of its own and the domain sigil cannot resolve.
-subclass	a heavy stem forking into two tapering arms, each ending in a hooked point	A branch is the literal relation: a subclass is one of the ways a class goes. The same fallback as the class mark.
-domain-card	a tall card with cut corners and a sharp lozenge pierced clean through its centre	The card's own silhouette with its sigil voided. The rarest fallback of the three.
-primary	a single broad spearhead, apex up, with swept shoulders and a short tang	A point is the one weapon idea that is not also a genre.
-secondary	two slender spearheads side by side, points up, their shoulders swept outward	The same idea twice, which is both the count cue and the literal answer: the secondary slot is where a second weapon goes.
-armor	a segmented breastplate of three tapering bands, the lowest narrowest	Not a shield — the rail already spends one on the Armor Score, and a second would claim the two are the same number.
-consumable	a stoppered flask with a faceted body and a narrow neck	A vial, a canister and a cartridge all land on this silhouette.
-gear	a buckled strap-plate with a lozenge boss at its centre	The generic mark, so the generic shape: a thing you carry, without saying which thing.
-loot	a strongbox with a heavy lid band and a lozenge latch	Loot used to borrow the gear mark, and the two sit side by side on the gear tab.
-feature	a broad upward chevron with barbed tapering tips	The charge for something earned and held, which is what this catch-all subtype's members have in common.
+# `Pick` is which of the four Midjourney variants (1–4) was traced. `Job` is
+# the Midjourney job it came from, so the exact art can be fetched again.
+#
+# Name	Subject	Pick	Job	Note
+ancestry	a heritage emblem, two interlocking lozenges braided into a lineage knot with roots twining beneath	1	343e7b7b-9a94-494a-9cbc-a924ddc40aa0	A knot over roots: two lineages bound, and where they come from.
+community	a community emblem, a cluster of three separate small heraldic heater shields, one above and two below, edges almost touching, each shield with a carved chevron	4	09e5d8b9-f0b1-4b1e-be91-72e1844da0e9	Three is the smallest count that reads as a group rather than a pair.
+transformation	a transformation emblem, a cracked chrysalis lozenge splitting open down its spine with swirling flame-like wings unfurling out of it	3	a744c3a7-c4a0-471e-b020-08d60c609345	One thing breaking open into another.
+class	a war banner emblem, a pennant flag on a spear staff, its cloth cut into a deep swallow-tail and rippling	3	8506cb36-e04b-49fe-8217-5a477596bff7	The standard you fight under. Only drawn where a homebrew class's domain sigil cannot resolve.
+subclass	a branching emblem, a heavy stem forking into two tapering curved arms each ending in a hooked point, like a split antler	3	0f71e9e2-59d9-4379-a4d2-cd8288ef1224	A branch: a subclass is one of the ways a class goes.
+domain-card	a tarot card emblem, a tall upright card with cut corners and a pierced diamond star at its centre	4	e0438f46-b0a1-4e9b-a9ab-49e4f50fe53a	The card's own silhouette with its sigil voided.
+feature	a rank chevron emblem, a broad upward chevron with barbed tapering tips crowned by a small four-pointed star	4	0d7ec4b0-8ab9-4534-8e90-420919033b29	The charge for something earned and held.
+primary	a spearhead emblem, a single broad leaf spearhead point up with swept barbed shoulders and a socket	4	6bff12ff-6687-43c7-aab6-7f982cfbe359	A point is the one weapon idea that is not also a genre.
+secondary	a twin spearhead emblem, two slender spearheads side by side points up, shoulders swept outward	4	be8b820b-4a9d-4c35-bffe-a417e6cb4ea8	The same idea twice: the secondary slot is where a second weapon goes.
+armor	a knight helm emblem, a crested great helm with a visor slit and flared cheek guards, front view	3	dd745dc0-ffcb-43c4-8a32-5f534da0ab64	A helm rather than a torso, so the generic armour mark is not mistaken for plate.
+consumable	a trio of small bottles emblem, three stoppered vials of different heights clustered together	1	4b333733-cf08-491b-a49e-e2667b12b3d9	Three bottles, so it never reads as the single-vial or potion marks.
+gear	a buckled strap emblem, a crossed pair of leather straps with an ornate square buckle and diamond boss at the centre	1	458bfee9-1ea9-4165-ba64-29d1b0b978bd	A thing you carry, without saying which thing.
+loot	a treasure chest emblem, an ornate strongbox with a domed lid, heavy iron bands and a lozenge latch	4	6c23def5-6655-4499-9235-f651c7e57c8e	Loot is what goes in the chest.
+shield	a heater shield emblem, a pointed kite shield with a raised heraldic chevron boss and flared top corners	1	b0615437-92b8-4e22-8aa8-243bfec99f7a	Shields, bucklers and aegises.
+fist	an armored gauntlet emblem, a clenched plated fist raised upright with spiked knuckles and a flared cuff	2	bad8e584-4f48-48c0-aa3b-67881e6744a0	Gauntlets, knuckles and claws.
+thrown	a throwing star emblem, a four-bladed chakram with curved hooked blades around a pierced ring	1	4536595c-cf25-41e0-b6ea-5db22712b145	Chakrams, javelins, darts and knives meant to leave the hand.
+whip	a barbed whip emblem, a braided lash coiling in a sweeping spiral from a short wrapped handle to a hooked tip	4	cf26609d-07c9-43f7-81ec-06133de746bc	Whips, chains, flails and nets.
+crossbow	a crossbow emblem, front-facing stock with drawn string and a loaded bolt	1	f0c599c8-c19a-4aa3-a08c-bc1738655516	Front-on, so the stock is what tells it from the bow.
+bow	a recurve longbow emblem, drawn string and a single nocked arrow	4	4622f0b1-d101-4b7b-968d-17249e6fadc4	Longbows, shortbows and greatbows.
+firearm	a flintlock pistol emblem, ornate hammer and curling barrel scrollwork	2	3fddfd5a-42f2-46dd-96f8-1ad323c7d6c4	Everything with powder in it.
+polearm	a halberd polearm emblem, a spearhead with an axe blade and a back spike	1	ba6e1130-ba7f-420a-ac46-1e25f0ae48e5	Spears, halberds, scythes and pikes.
+axe	a double-bitted battle axe head emblem, two crescent bits on a haft	1	d26f9a31-6560-4d74-be14-03a43da336da	Axes, hatchets and cleavers.
+hammer	a war maul hammer head emblem, a flanged head on a banded haft	1	4f1e8be3-41b1-488f-8ea7-dc8f1376d30b	Hammers, maces and mauls.
+dagger	an upright dagger emblem, a leaf shaped blade with a winged crossguard	1	8db992c5-4164-492b-bd0f-fa7f8ad1543d	Daggers, knives and anything short enough to hide.
+blade	an upright longsword emblem, a fullered blade with a swept crossguard and faceted pommel	1	ec265cae-aaac-42c3-8b2d-ccaa1ada2d93	Swords, sabres and rapiers.
+staff	a wizard quarterstaff emblem, a knotted stave crowned with a carved finial	1	0246d9a5-1a5b-457a-aadd-c93e58918668	Staves and quarterstaves.
+wand	a magic wand emblem, a slender carved wand held diagonally with a crystal tip and spiralling sparks	4	cb78f56f-dcd3-483d-936d-c6cf685ddb4d	Wands, sceptres and rods.
+focus	a spell focus emblem, a floating crystal orb cradled in curling claws of an ornate pendant setting	2	b36ccb64-1d53-4558-a601-558d84dc2987	Orbs, runes, gems and charms held to cast through.
+cloak	a hooded cloak emblem, an empty hooded cloak with flowing pointed hem and a clasp at the throat	1	a00f462a-2647-4f4e-bccb-f0970db13140	Cloaks, mantles and shrouds.
+plate-armor	a plate armour emblem, a heavy plate cuirass with flared spiked pauldrons and riveted bands	2	679b8bec-7f7f-40db-b976-b389a26b4972	Plate, brigandine, splint and banded.
+mail-armor	a chainmail emblem, a mail hauberk shirt with short sleeves and a scalloped hem, scale pattern carved through	2	cba58a5f-7bd3-4cc1-8dcf-f1d92e4c9a10	Chain, mail, scale and lamellar.
+leather-armor	a leather armour emblem, a laced leather jerkin vest with stitched panels and a buckled collar	3	fc167b13-3647-4075-9433-4b400a8bdf80	Leather, hide and harness.
+cloth-armor	a robe emblem, a flowing mage robe with wide bell sleeves and a sash at the waist	3	b79479ab-84ff-4ea9-98cd-1fece0bfed85	Robes, tunics and gambesons.
+bomb	a bomb emblem, a round iron bomb with a riveted band and a sparking curled fuse	4	c1bdb35b-1fef-4bb3-98d3-cbfb93c7ea23	Bombs, flares and anything that goes off.
+potion	a potion emblem, a round-bottomed alchemical flask with a corked neck and curling vapour rising from it	3	f1b66a3f-0d71-4b4c-a6b0-73f6528efe53	Potions, tonics and brews.
+vial	a vial emblem, a slender tall test-tube vial with a stopper and a wax seal dripping	3	ed1b2be2-d9a8-4663-b8be-0babb3aec415	Vials, phials and bottles: tall, where a potion is round.
+salve	a salve jar emblem, a small round ointment pot with a domed lid and a leaf on top	3	820fb1d2-c410-4e4e-8e28-ab6ffd8e4f83	Salves, oils, pastes and poisons.
+powder	a powder pouch emblem, a drawstring pouch spilling a swirl of glittering dust	2	632682d0-0869-4a38-9194-fa3fbe65020e	Powders, dusts and salts.
+shard	a crystal shard emblem, a cluster of three jagged crystal shards rising from a rock	3	972cfbd7-9464-444a-b1da-05db989ca6ba	Shards, stones and crystals used up.
+herb	a herb bundle emblem, a tied bundle of leafy herb sprigs with roots	4	cd224a55-304b-4618-b6f7-3fa64399a515	Leaves, roots, mushrooms and flowers.
+relic	a reliquary emblem, an ornate reliquary idol with a radiant halo of rays	1	33934bef-4ad1-40b4-8f73-d14b5b007a6f	Relics and reliquaries.
+garment	a winged boot emblem, a single tall boot with a small feathered wing at the heel	2	c2b3131f-3681-4176-8f80-2af82266465e	Boots, gloves, hats and anything else worn.
+ring	a ring emblem, an ornate signet ring with a large faceted gem set in claws	3	b10f5450-3e1e-41b1-a0ae-c333afc09c1b	Rings, amulets, pendants and charms.
+tome	a spellbook emblem, an ornate closed tome with corner guards, a clasp and a bookmark ribbon	1	c3df0c6f-9c7c-467f-a8a7-a9d9496d9a43	Books, maps, scrolls and journals.
+bag	a satchel emblem, a cinched adventurer's satchel with a flap and buckle	3	9d8fbdc3-0dac-42c8-8d93-86554d7ce318	Bags, pouches, quivers and cases.
+gem	a gemstone emblem, a single large faceted cut gemstone with a sparkle	2	b45b72b1-d56d-4bae-8773-ed9475554b05	Gems, coins and other valuables.
+tool	a skeleton key emblem, an ornate key upright with a filigree bow and notched bit	1	b2148cbe-b41d-4208-aa8c-0c2bec7dc56f	Keys, torches, ropes and compasses.

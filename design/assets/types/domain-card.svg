@@ -1,23 +1,45 @@
-<!-- Domain card: a tablet with four corner mounts and an empty faceted socket.
-     Drawn rather than traced, on the construction in art-src/marks/BRIEF.md.
+<!-- Domain card. The card's own silhouette with its sigil voided.
 
-     The third fallback and the rarest. A domain card names a domain by
-     definition, so this is only for one that is not among the thirteen on disk.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a tarot card emblem, a tall upright card with cut corners and a pierced diamond star at its centre" — with the style tail in
+     art-src/types/mj-prompts.mjs; job e0438f46-b0a1-4e9b-a9ab-49e4f50fe53a, variant 4.
+     The art is white on black, so its brightness is the shape.
 
-     The corner ornaments are separate shapes with a carved gap, not filled
-     spurs. An ornament sweeping inward over a solid field is invisible, so the
-     field is cut back and the gap does the drawing. At 14px the gaps close up
-     and the silhouette is a plain chamfered tablet, which is the order the two
-     reads are wanted in.
-
-     The socket is the one angular shape in the mark. That is what makes an
-     empty setting read as cut rather than as another hole in the field, and it
-     is empty for the same reason the lozenge on class.svg is. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M86 18H164C170 26 180 38 188 48C196 56 204 64 214 72V178C204 186 196 194 188 202C180 212 170 224 164 232H86C80 224 70 212 62 202C54 194 46 186 36 178V72C46 64 54 56 62 48C70 38 80 26 86 18Z
-                               M125 85L156 105V145L125 165L94 145V105Z"/>
-  <path d="M176 18H190C202 20 214 32 214 44V60C208 50 200 40 192 32C187 26 182 21 176 18Z"/>
-  <path d="M74 18H60C48 20 36 32 36 44V60C42 50 50 40 58 32C63 26 68 21 74 18Z"/>
-  <path d="M176 232H190C202 230 214 218 214 206V190C208 200 200 210 192 218C187 224 182 229 176 232Z"/>
-  <path d="M74 232H60C48 230 36 218 36 206V190C42 200 50 210 58 218C63 224 68 229 74 232Z"/>
+<g transform="translate(-24.386534,274.386534) scale(0.029177,-0.029177)">
+<path d="M3088 9123 c-17 -4 -18 -204 -18 -4009 l0 -4004 2050 0 2050 0 0
+4010 0 4010 -2032 -1 c-1118 -1 -2041 -3 -2050 -6z m887 -241 c-151 -79 -264
+-160 -370 -266 -134 -135 -243 -293 -306 -446 -12 -30 -26 -59 -31 -65 -4 -5
+-8 179 -8 408 l0 417 403 0 402 -1 -90 -47z m3005 -369 c0 -239 -4 -413 -9
+-408 -5 6 -21 39 -37 75 -69 160 -177 316 -303 440 -104 102 -210 179 -351
+254 l-105 56 403 0 402 0 0 -417z m-1850 -125 c0 -22 17 -146 164 -1213 36
+-258 92 -666 125 -905 69 -498 83 -594 86 -598 2 -2 111 51 244 117 132 67
+245 121 251 121 5 0 -5 -24 -24 -52 -54 -85 -245 -414 -248 -428 -2 -9 155
+-60 487 -160 270 -82 483 -151 475 -154 -8 -3 -130 -39 -270 -81 -246 -74
+-661 -200 -688 -210 -15 -6 -7 -21 165 -309 62 -104 113 -190 113 -191 0 -2
+-110 53 -244 121 -134 68 -248 124 -253 124 -11 0 0 77 -158 -1100 -164 -1229
+-227 -1672 -236 -1663 -11 13 -101 652 -253 1798 -25 187 -54 405 -65 485 -12
+80 -31 220 -43 313 -12 92 -26 167 -30 167 -4 0 -116 -54 -248 -120 -132 -66
+-240 -117 -240 -113 0 3 31 58 69 122 180 305 209 356 203 362 -4 4 -222 71
+-484 150 -263 79 -478 147 -478 150 0 3 170 57 378 119 207 62 426 129 485
+147 l108 34 -33 57 c-17 31 -81 140 -141 240 -60 101 -107 185 -105 187 2 2
+108 -48 236 -111 128 -63 238 -115 245 -117 14 -3 7 -44 122 788 53 380 102
+735 110 790 8 55 37 264 64 465 90 656 95 690 103 690 4 0 8 -10 8 -22z
+m-1804 -6373 c132 -279 351 -502 649 -657 l90 -47 -402 -1 -403 0 1 423 c0
+321 3 416 12 397 6 -14 30 -65 53 -115z m3654 -290 l0 -415 -402 0 -403 0 93
+50 c309 164 507 368 653 673 28 59 52 107 55 107 2 0 4 -187 4 -415z"/>
+<path d="M5081 5983 c-18 -93 -46 -235 -62 -317 -22 -110 -43 -181 -81 -273
+-59 -145 -32 -125 -290 -214 -87 -30 -158 -56 -158 -59 1 -3 89 -34 197 -70
+l196 -65 27 -60 c52 -114 98 -281 151 -552 29 -150 56 -269 60 -265 4 4 21 81
+39 172 68 354 80 407 103 475 32 92 78 207 88 220 4 6 95 39 203 75 107 36
+195 68 196 71 0 3 -19 12 -42 18 -24 7 -113 38 -199 68 l-156 55 -15 42 c-93
+241 -98 257 -154 541 -31 160 -60 293 -63 298 -4 4 -22 -68 -40 -160z m49
+-444 c0 -38 50 -191 90 -274 34 -71 73 -112 126 -130 33 -11 36 -14 19 -20
+-52 -17 -89 -43 -114 -80 -49 -72 -121 -266 -121 -327 0 -15 -4 -28 -10 -28
+-5 0 -10 13 -10 29 0 42 -55 204 -97 284 -37 69 -69 101 -116 112 -32 9 -46
+25 -20 25 30 0 80 36 111 82 38 56 99 210 114 293 13 68 28 87 28 34z"/>
+</g>
 </svg>

@@ -1,15 +1,17 @@
 /* Traces the item type marks from their generated art into design/assets/types.
  *
- * The set used to be hand-authored geometry — a lozenge, a hexagon, three bars
- * — which held at 14px but sat beside the domain plates and the class sigils
- * looking like a different product. These come off the pipeline those do: the
- * Codex CLI's image tool against the style paragraph in `gen-type-marks.sh`,
- * then the trace `design/assets/domains/dread.svg` documents and Artifice,
- * Root and Void already went through.
+ * The art is Midjourney's: `art-src/types/mj-prompts.mjs` wraps each subject in
+ * `subjects.tsv` in the one style tail every mark shares, Midjourney draws four
+ * variants, and the one named in the `Pick` column is saved as
+ * `art-src/types/generated/<name>.png`. The set before this was drawn by hand
+ * to `art-src/marks/BRIEF.md`, and beside the class sigils and the domain marks
+ * it was the flatter family — taper and point drawn as geometry rather than
+ * carved, which is what the sigils are.
  *
- * The art is white on a transparent ground, so the *alpha* is the shape and no
- * colour is keyed anywhere. Alpha >= 128 to a bitmap, then potrace at turdSize
- * 40 / alphaMax 1.0 / optTolerance 0.2 / turnPolicy minority.
+ * Midjourney draws white on black and its PNGs carry no alpha, so the shape is
+ * read off *luminance*; art with an alpha channel is still read by alpha.
+ * Either way, >= 128 to a bitmap, then potrace at turdSize 40 / alphaMax 1.0 /
+ * optTolerance 0.2 / turnPolicy minority.
  *
  * potrace's path data is kept **verbatim** and only its wrapping transform is
  * recomputed. The alternative — walking the path and rewriting every
@@ -26,16 +28,22 @@
  *
  *   node tools/make-type-marks.mjs            # every PNG in the art folder
  *   node tools/make-type-marks.mjs loot gear  # just these
+ *
+ * `ART`, `OUT` and `POTRACE` override the art folder, the output folder and
+ * the potrace binary, so a batch of candidates can be traced somewhere other
+ * than the shipped set.
  */
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { pngAlpha } from "./lib/png-alpha.mjs";
 
-const HERE = new URL("..", import.meta.url).pathname;
-const ART = join(HERE, "art-src/types/generated");
-const OUT = join(HERE, "design/assets/types");
+const HERE = fileURLToPath(new URL("..", import.meta.url));
+const ART = process.env.ART ?? join(HERE, "art-src/types/generated");
+const OUT = process.env.OUT ?? join(HERE, "design/assets/types");
+const POTRACE = process.env.POTRACE ?? "potrace";
 const SUBJECTS = join(HERE, "art-src/types/subjects.tsv");
 
 /** The long axis every mark is refitted to, inside the 250 box. */
@@ -49,8 +57,8 @@ const subjects = new Map(
     .split("\n")
     .filter((l) => l.trim() && !l.startsWith("#"))
     .map((l) => {
-      const [name, subject, note] = l.split("\t");
-      return [name.trim(), { subject: subject?.trim(), note: note?.trim() }];
+      const [name, subject, pick, job, note] = l.split("\t").map((c) => c?.trim());
+      return [name, { subject, pick, job, note }];
     }),
 );
 
@@ -82,7 +90,7 @@ const bounds = ({ width, height, alpha }) => {
 const trace = (pbm) => {
   const dir = mkdtempSync(join(tmpdir(), "typemark-"));
   writeFileSync(join(dir, "in.pbm"), pbm);
-  execFileSync("potrace", [
+  execFileSync(POTRACE, [
     join(dir, "in.pbm"), "--svg", "--output", join(dir, "out.svg"),
     "--turdsize", "40", "--alphamax", "1.0",
     "--opttolerance", "0.2", "--turnpolicy", "minority",
@@ -109,18 +117,17 @@ const names = process.argv.slice(2).length
   : readdirSync(ART).filter((f) => f.endsWith(".png")).map((f) => f.slice(0, -4)).sort();
 
 for (const name of names) {
-  const img = pngAlpha(readFileSync(join(ART, `${name}.png`)));
+  const img = pngAlpha(readFileSync(join(ART, `${name}.png`)), { luminance: true });
   const ds = trace(toPbm(img));
-  const { subject, note } = subjects.get(name) ?? {};
+  const { subject, pick, job, note } = subjects.get(name) ?? {};
   const title = name[0].toUpperCase() + name.slice(1).replace(/-/g, " ");
   const head = [
     `<!-- ${title}.${note ? ` ${note}` : ""}`,
     ``,
-    `     Generated with the Codex CLI's image tool from this mark's subject in`,
-    `     art-src/types/subjects.tsv — "${subject}" — against the style`,
-    `     paragraph the class sigils and the Artifice, Root and Void domain`,
-    `     marks were drawn to, so a type mark beside a domain mark reads as one`,
-    `     family. The art is white on transparent, so the alpha is the shape.`,
+    `     Generated with Midjourney from this mark's subject in`,
+    `     art-src/types/subjects.tsv — "${subject}" — with the style tail in`,
+    `     art-src/types/mj-prompts.mjs${job ? `; job ${job}, variant ${pick}` : ""}.`,
+    `     The art is white on black, so its brightness is the shape.`,
     ``,
     `     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and`,
     `     only refits the transform. Do not edit the path: change the subject`,

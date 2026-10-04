@@ -1,18 +1,46 @@
-<!-- Axe: a bearded bit on a full haft, with a reverse spike.
-     Drawn to art-src/marks/BRIEF.md.
+<!-- Axe. Axes, hatchets and cleavers.
 
-     The haft is thin and the bit hangs well off it, which is the fix. A
-     head drawn as a slab flush against the pole is a flag, not an axe, and
-     that is what the first several passes were. The beard dropping below
-     the eye and the concave throat between the horns are what make it read
-     as a bit, so both are exaggerated past what a real axe carries.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a double-bitted battle axe head emblem, two crescent bits on a haft" — with the style tail in
+     art-src/types/mj-prompts.mjs; job d26f9a31-6560-4d74-be14-03a43da336da, variant 1.
+     The art is white on black, so its brightness is the shape.
 
-     The edge is near straight between two horns rather than one crescent
-     sweep, because the `blade` domain sigil is itself a crescent-bladed
-     axe head and the two sit on the same sheets. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M110 232 L110 26 L132 20 L132 232 Z"/>
-  <path d="M130 44 L190 24 C 222 52 230 104 214 150 L176 168
-    C 162 128 150 82 130 44 Z"/>
-  <path d="M112 70 L52 92 L112 110 Z"/>
+<g transform="translate(-13.506358,263.371098) scale(0.027052,-0.027052)">
+<path d="M5110 9418 c0 -14 -25 -214 -56 -444 -30 -230 -68 -522 -85 -649 -84
+-649 -91 -672 -232 -800 l-58 -53 34 -21 c54 -33 126 -116 155 -179 24 -50 27
+-69 26 -152 0 -103 -13 -145 -75 -255 l-31 -55 -48 35 c-26 19 -52 35 -57 35
+-5 0 -14 -19 -20 -42 -42 -156 -275 -243 -514 -193 -350 74 -611 386 -669 800
+-74 530 308 1091 995 1457 39 21 64 38 57 38 -23 0 -212 -50 -327 -87 -317
+-102 -615 -252 -858 -431 -593 -437 -919 -1019 -1009 -1797 -16 -145 -16 -616
+1 -765 45 -401 158 -741 354 -1067 319 -530 856 -943 1521 -1172 65 -23 120
+-40 122 -39 1 2 -25 35 -58 73 -393 458 -584 971 -513 1378 47 268 190 457
+413 544 59 24 81 27 192 27 105 0 135 -3 185 -22 88 -32 111 -62 118 -153 3
+-41 11 -95 17 -122 l12 -47 28 57 c16 32 40 72 54 88 l26 30 -5 -35 c-2 -19
+-9 -71 -15 -115 -14 -102 -27 -142 -57 -183 -24 -32 -25 -34 -6 -54 10 -11 38
+-34 63 -51 25 -17 47 -32 49 -34 11 -8 -160 -165 -190 -175 -8 -3 13 -42 60
+-113 82 -123 129 -211 177 -337 l34 -87 0 -1061 c0 -1049 0 -1061 -21 -1123
+-27 -82 -78 -163 -144 -233 -32 -34 -51 -62 -47 -70 10 -17 62 -59 96 -76 l28
+-15 -48 -28 c-67 -39 -139 -94 -139 -107 0 -6 30 -20 66 -32 115 -37 167 -91
+244 -251 47 -98 125 -315 145 -408 12 -53 30 -78 30 -41 0 25 59 218 96 316
+90 238 166 338 289 378 102 33 104 36 42 79 -28 20 -74 49 -100 65 l-48 28 43
+27 c24 16 53 40 66 54 l24 25 -46 42 c-58 53 -128 165 -155 247 -21 62 -21 76
+-21 1122 l0 1060 26 73 c38 104 102 228 175 338 35 52 67 100 72 107 4 7 -9
+23 -35 42 -24 18 -71 59 -106 93 l-62 61 42 24 c24 14 55 36 70 50 l26 25 -29
+46 c-27 45 -45 123 -63 277 l-6 50 25 -30 c14 -16 38 -56 54 -88 l28 -59 12
+46 c6 25 14 81 18 123 6 70 10 81 38 110 40 40 116 63 230 70 113 7 184 -7
+283 -57 173 -87 285 -233 344 -445 31 -114 31 -356 0 -502 -70 -325 -220 -611
+-494 -940 -38 -46 -67 -83 -65 -83 3 0 57 18 121 40 437 151 814 376 1113 664
+329 316 568 718 688 1159 67 246 102 598 91 912 -9 286 -32 459 -91 690 -154
+606 -511 1104 -1040 1451 -264 173 -532 295 -856 387 -242 69 -253 69 -124 -3
+660 -369 1016 -898 956 -1418 -16 -137 -43 -228 -101 -347 -117 -241 -314
+-405 -555 -465 -113 -28 -235 -24 -340 11 -91 31 -168 101 -186 172 -7 26 -19
+47 -25 47 -7 0 -31 -16 -54 -35 -23 -19 -43 -35 -45 -35 -11 0 -67 117 -90
+185 -22 66 -26 93 -23 150 8 115 73 226 175 296 l45 31 -58 51 c-71 63 -124
+144 -147 223 -18 60 -79 502 -198 1424 -18 140 -36 259 -41 265 -4 5 -8 -2 -8
+-17z"/>
+</g>
 </svg>

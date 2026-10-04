@@ -1,21 +1,39 @@
-<!-- Class: a standard, for a class whose domain this system has no art for.
-     Drawn to art-src/marks/BRIEF.md.
+<!-- Class. The standard you fight under. Only drawn where a homebrew class's domain sigil cannot resolve.
 
-     Two failures are designed out of this one. Centred versions read as a
-     crown: a symmetric field with two points at the foot and a spike on top
-     is a coronet before it is a banner. Hanging the cloth off one edge of
-     an off-centre staff fixes that. Then bowing the fly edge outward to get
-     some life into it turned the whole mark into an axe, because a straight
-     shaft with a convex blade beside it is an axe and `axe.svg` is two tiles
-     away. So the fly is held straight and the movement is in the tail and
-     the drop of the head instead.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a war banner emblem, a pennant flag on a spear staff, its cloth cut into a deep swallow-tail and rippling" — with the style tail in
+     art-src/types/mj-prompts.mjs; job 8506cb36-e04b-49fe-8217-5a477596bff7, variant 3.
+     The art is white on black, so its brightness is the shape.
 
-     The device in the field is a void and stays blank on purpose. That is
-     the part a real domain would have filled. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path d="M51 232 L51 42 C 53 31 58 22 65 12 C 72 22 77 31 79 42 L79 232 Z"/>
-  <path fill-rule="evenodd" d="M77 44 L214 56 L214 176
-    C 190 170 166 158 146 140
-    C 124 162 101 176 77 184 Z
-    M145 86 L169 110 L145 134 L121 110 Z"/>
+<g transform="translate(-26.97048,269.918819) scale(0.028782,-0.028782)">
+<path d="M2171 8441 c-24 -368 -40 -672 -36 -690 4 -19 28 -65 53 -104 68
+-106 96 -193 97 -302 0 -78 -3 -97 -27 -145 -15 -30 -52 -83 -83 -117 -30 -33
+-55 -64 -55 -67 0 -3 17 -14 38 -25 58 -30 128 -97 145 -140 65 -162 236
+-1230 376 -2346 98 -781 140 -1271 126 -1455 -7 -91 -28 -179 -52 -221 -15
+-26 -15 -29 24 -87 103 -154 138 -287 344 -1297 49 -242 93 -449 98 -460 6
+-13 10 270 10 760 1 429 6 834 11 899 13 151 32 195 96 227 43 20 44 22 25 36
+-59 41 -94 158 -151 503 -16 102 -32 197 -35 212 -4 24 2 30 50 57 240 136
+446 108 930 -124 463 -222 772 -314 1168 -345 446 -36 818 85 1172 382 102 85
+160 145 132 135 -60 -22 -241 -70 -338 -91 -348 -75 -637 -55 -909 64 -162 71
+-373 205 -560 356 -127 101 -298 259 -290 266 3 3 59 -10 125 -29 582 -164
+861 -235 1014 -258 122 -19 320 -19 388 -1 125 33 189 83 327 255 123 154 177
+200 312 265 209 102 313 132 600 171 489 67 721 174 973 451 53 57 174 234
+167 242 -2 2 -37 -22 -77 -53 -175 -135 -354 -211 -579 -245 -41 -6 -219 -15
+-395 -20 -528 -16 -679 -48 -1150 -248 -259 -110 -458 -160 -582 -148 -132 14
+-270 72 -453 193 -178 118 -408 313 -369 313 32 0 268 -32 514 -69 342 -52
+485 -64 606 -51 204 23 279 61 476 241 198 181 298 229 495 237 106 4 192 -1
+498 -27 52 -5 96 -7 98 -6 6 6 -308 125 -393 150 -160 46 -251 59 -410 59
+-125 1 -164 -3 -234 -22 -114 -31 -224 -85 -372 -183 -68 -45 -145 -91 -172
+-101 -131 -50 -265 -1 -560 204 -696 485 -1012 628 -1752 794 -390 87 -546
+125 -620 151 -160 57 -278 141 -291 207 -12 68 43 215 111 293 l32 37 -71 46
+c-100 65 -151 127 -177 213 -26 82 -22 147 18 304 l25 102 -212 648 c-117 356
+-216 651 -219 655 -3 4 -26 -289 -50 -651z m714 -2162 c268 -182 499 -595 581
+-1041 25 -131 25 -375 1 -488 -36 -167 -118 -327 -222 -434 -59 -60 -144 -126
+-163 -126 -5 0 -12 19 -15 43 -4 23 -20 125 -37 227 -57 351 -129 816 -160
+1035 -36 252 -100 786 -100 828 l0 29 38 -23 c20 -12 55 -35 77 -50z"/>
+</g>
 </svg>

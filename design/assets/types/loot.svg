@@ -1,21 +1,50 @@
-<!-- Loot: a strongbox, domed lid over a strapped body, latch in the seam.
-     Drawn rather than traced, see art-src/marks/BRIEF.md.
+<!-- Loot. Loot is what goes in the chest.
 
-     The latch is inscribed entirely inside the seam band. A latch that hangs
-     past the band gives an evenodd path two crossings above the band and two
-     below, and it punches two holes in the lid instead of drawing one latch.
-     That is what the previous version did. Rasterize before believing it.
+     Generated with Midjourney from this mark's subject in
+     art-src/types/subjects.tsv — "a treasure chest emblem, an ornate strongbox with a domed lid, heavy iron bands and a lozenge latch" — with the style tail in
+     art-src/types/mj-prompts.mjs; job 6c23def5-6655-4499-9235-f651c7e57c8e, variant 4.
+     The art is white on black, so its brightness is the shape.
 
-     The rib carved into the lid stops short of the skirt at both ends. Run it
-     the full width and the dome is cut into two thin arcs and the mark reads
-     as a rainbow, which is what the first two drafts here did.
-
-     The corner straps are carved out of the body as negative space rather
-     than laid over it, because a strap painted in the same fill as the box is
-     not there at all. The slots stop above the base so the straps taper into
-     a solid foot. Taken to the bottom edge they read as four legs. -->
+     Traced by tools/make-type-marks.mjs, which keeps potrace's curve and
+     only refits the transform. Do not edit the path: change the subject
+     or the art and re-run the tool. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="currentColor">
-  <path fill-rule="evenodd" d="M125 22 C72 22 34 46 24 76 C28 84 54 88 125 88 C196 88 222 84 226 76 C216 46 178 22 125 22 Z M70 72 C76 50 96 40 125 40 C154 40 174 50 180 72 L162 74 C156 58 143 52 125 52 C107 52 94 58 88 74 Z"/>
-  <path fill-rule="evenodd" d="M24 102 C18 114 18 134 24 148 C90 154 160 154 226 148 C232 134 232 114 226 102 C160 96 90 96 24 102 Z M125 110 C133 110 140 116 140 124 C140 129 137 132 134 135 L131 141 C129 144 121 144 119 141 L116 135 C113 132 110 129 110 124 C110 116 117 110 125 110 Z"/>
-  <path fill-rule="evenodd" d="M32 162 C30 190 34 214 48 228 C60 234 190 234 202 228 C216 214 220 190 218 162 Z M72 166 C68 186 68 202 72 214 C80 219 92 219 100 214 C100 202 100 186 102 166 Z M178 166 C182 186 182 202 178 214 C170 219 158 219 150 214 C150 202 150 186 148 166 Z"/>
+<g transform="translate(-85.764499,330.418278) scale(0.041125,-0.041125)">
+<path d="M3244 7406 c-279 -103 -560 -441 -748 -898 -115 -280 -197 -648 -213
+-954 l-6 -121 59 -7 c96 -10 1234 -116 1253 -116 10 0 59 47 110 105 50 58
+187 202 303 320 174 178 213 213 225 203 62 -51 314 -379 461 -600 86 -128 93
+-136 129 -142 41 -6 249 -27 873 -85 l405 -39 935 235 c514 129 935 235 936
+236 4 7 -19 227 -36 337 -30 196 -65 345 -121 512 -112 338 -255 560 -437 679
+-147 97 -272 124 -522 116 -165 -6 -285 -23 -357 -53 -331 -138 -648 -736
+-767 -1449 -14 -82 -27 -161 -28 -175 -4 -30 28 -30 -402 11 -169 16 -324 29
+-342 29 -42 0 -43 3 -3 139 74 255 208 581 321 785 218 394 411 582 678 662
+41 13 68 23 59 23 -9 1 -106 10 -215 21 -880 86 -1073 102 -1189 97 -198 -7
+-318 -60 -465 -207 -254 -252 -481 -703 -635 -1260 -32 -115 -32 -115 -61
+-112 -236 20 -678 63 -680 65 -6 5 35 191 66 302 101 364 255 653 461 869 242
+254 470 372 779 404 71 7 52 10 -315 50 -214 23 -403 42 -420 42 -16 -1 -57
+-11 -91 -24z m3968 -662 c128 -66 253 -297 322 -595 17 -73 57 -302 53 -305
+-1 -1 -243 -64 -537 -139 -294 -75 -543 -139 -552 -141 -25 -7 -23 10 12 179
+61 286 163 574 265 746 86 143 198 249 288 272 40 10 113 1 149 -17z"/>
+<path d="M4014 5378 c-105 -106 -196 -203 -203 -216 -11 -21 -2 -41 90 -210
+112 -206 209 -371 262 -445 l34 -48 70 108 c118 184 226 385 257 480 l17 51
+-149 214 c-83 117 -158 223 -168 236 l-19 23 -191 -193z"/>
+<path d="M7015 5045 l-930 -234 -285 29 c-706 72 -983 100 -1004 100 -21 0
+-27 -12 -56 -102 -54 -171 -150 -347 -271 -494 -56 -69 -244 -254 -258 -254
+-4 0 -41 31 -83 70 -83 76 -199 215 -272 325 -86 128 -193 357 -250 533 -10
+28 -22 52 -28 52 -23 0 -1234 120 -1261 125 -27 4 -28 3 -23 -23 3 -15 24
+-139 45 -277 37 -235 159 -992 200 -1244 l19 -114 -65 -131 c-36 -72 -77 -160
+-90 -195 -22 -58 -66 -223 -60 -226 2 -2 427 -52 1019 -120 479 -55 2500 -282
+2628 -295 l115 -12 110 32 c182 53 630 188 785 236 327 102 692 217 793 251
+l108 35 -7 32 c-20 96 -97 251 -170 342 l-33 42 40 253 c100 635 229 1471 229
+1486 0 7 -3 13 -7 12 -5 0 -426 -106 -938 -234z m581 -322 c-5 -24 -39 -247
+-178 -1146 l-21 -137 33 -61 c17 -33 30 -62 28 -64 -1 -1 -192 -57 -423 -124
+-231 -66 -464 -133 -518 -150 l-97 -29 2 726 3 726 310 77 c417 103 848 208
+858 208 5 1 6 -11 3 -26z m-4621 -28 c88 -9 182 -19 209 -23 l50 -7 41 -110
+c109 -285 259 -493 512 -703 102 -85 305 -229 376 -266 l36 -18 105 56 c230
+121 461 291 616 452 103 107 158 186 217 311 43 94 44 94 76 88 39 -6 399 -45
+421 -45 14 0 16 -74 16 -730 l0 -730 -22 0 c-13 0 -185 18 -383 40 -198 21
+-820 87 -1382 147 -662 70 -1023 112 -1023 119 0 6 18 55 40 109 l40 98 -30
+191 c-16 105 -57 362 -90 571 -33 209 -64 402 -67 429 l-6 49 44 -6 c24 -3
+116 -13 204 -22z"/>
+</g>
 </svg>
