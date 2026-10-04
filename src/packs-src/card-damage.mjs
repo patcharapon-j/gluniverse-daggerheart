@@ -87,12 +87,12 @@ const dmg = ({
    ONE EXPRESSION
 
    The card prints a single set of dice, so the mode has no name and the
-   button that rolls it needs none either. Forty-one of the fifty-two.
+   button that rolls it needs none either. Forty-one of the fifty-three.
    ══════════════════════════════════════════════════════════════════════ */
 
 const PRINTED = {
   /* ── domain cards ───────────────────────────────────────────────────
-     Twenty-three, and the majority of the corpus. A domain card is one rule,
+     Twenty-two, and the majority of the corpus. A domain card is one rule,
      so the expression belongs to the document and the mode stays unnamed —
      the same reason none of the domain-card budgets names a feature. */
   "domainCard:Cinder Grasp": [
@@ -179,24 +179,27 @@ const PRINTED = {
   ],
 
   "domainCard:Null Grip": [
-    dmg({ count: 2, dice: "d8", type: "magic", said: "they take 2d8 magic damage" }),
+    dmg({
+      count: 1, dice: "d10", bonus: 3, proficiency: true, type: "magic",
+      said: "they take d10+3 magic damage using your Proficiency",
+    }),
   ],
   "domainCard:Weight of the Void": [
     dmg({
-      count: 2, dice: "d8", bonus: 4, type: "magic",
-      said: "Targets you succeed against take 2d8+4 magic damage",
+      count: 2, dice: "d8", bonus: 5, type: "magic",
+      said: "Targets you succeed against take 2d8+5 magic damage",
     }),
   ],
   "domainCard:Crush": [
     dmg({
       count: 1, dice: "d12", bonus: 4, proficiency: true, type: "magic",
-      said: "they take d12+4 magic damage using your Proficiency.",
+      said: "they take d12+4 magic damage using your Proficiency",
     }),
   ],
   "domainCard:Geometry of Ruin": [
     dmg({
-      count: 4, dice: "d10", bonus: 6, type: "magic",
-      said: "Targets who fail take 4d10+6 magic damage.",
+      count: 4, dice: "d12", bonus: 8, type: "magic",
+      said: "Targets who fail take 4d12+8 magic damage.",
     }),
   ],
   "domainCard:Barkskin": [
@@ -207,9 +210,9 @@ const PRINTED = {
   ],
 
   /* Hungry Fire is in both blocks of this file, and that is a reading rather
-     than a mistake. The d8+2 is what casting it deals; the extra 1d8 an
+     than a mistake. The d8+2 is what casting it deals; the extra 2d6 an
      Ablaze creature takes is declined below, because it fires on the
-     target's next spotlight and not on anybody pressing this card. */
+     target's own spotlight and not on anybody pressing this card. */
   "domainCard:Hungry Fire": [
     dmg({
       count: 1, dice: "d8", bonus: 2, proficiency: true, type: "magic",
@@ -217,12 +220,6 @@ const PRINTED = {
     }),
   ],
 
-  "domainCard:Thorn Spray": [
-    dmg({
-      count: 2, dice: "d8", bonus: 4, type: "physical",
-      said: "Targets you succeed against take 2d8+4 physical damage",
-    }),
-  ],
   "domainCard:Wildfire": [
     dmg({
       count: 3, dice: "d10", bonus: 4, type: "magic",
@@ -237,8 +234,8 @@ const PRINTED = {
   ],
   "domainCard:The Undergrowth Wakes": [
     dmg({
-      count: 3, dice: "d12", bonus: 8, type: "physical",
-      said: "Targets who fail take 3d12+8 physical damage",
+      count: 4, dice: "d12", bonus: 8, type: "physical",
+      said: "Targets who fail take 4d12+8 physical damage",
     }),
   ],
 
@@ -422,7 +419,7 @@ const PRINTED = {
 /* ══════════════════════════════════════════════════════════════════════
    SEVERAL, AND THE NAME IS WHICH
 
-   Eleven documents print more than one expression, and `name` is what tells
+   Twelve documents print more than one expression, and `name` is what tells
    them apart. Two shapes, and both need it for the same reason.
 
    The grimoires and Conjure Swarm print three or four features of which one
@@ -512,6 +509,28 @@ const MODAL = {
     dmg({
       name: "Fire Flies", count: 2, dice: "d8", bonus: 3, type: "magic",
       said: "Spend a Hope to deal 2d8+3 magic damage to targets you succeeded against.",
+    }),
+  ],
+
+  /* Wall of Flame's shape on a marked card, and it is here rather than
+     beside Hungry Fire's declined rider for the reason that separates those
+     two. The thorns are terrain the cast left behind: they stay until your
+     next rest and anything entering the area takes the 1d8, which is what
+     "anything that subsequently passes through the wall" is one grimoire
+     along. Hungry Fire's 2d6 rides on the burning creature's own spotlight
+     instead, which is Red Ooze Oil's reading and stays declined.
+
+     Two names, both the card's own words — the burst is the Thorn Spray and
+     the hazard is the thorns that remain — because a card printing two
+     expressions and naming neither is two identical buttons. */
+  "domainCard:Thorn Spray": [
+    dmg({
+      name: "Spray", count: 2, dice: "d8", bonus: 3, type: "physical",
+      said: "Targets you succeed against take 2d8+3 physical damage",
+    }),
+    dmg({
+      name: "Thorns", count: 1, dice: "d8", type: "physical",
+      said: "A creature that enters or acts within Very Close range of you takes 1d8 physical damage.",
     }),
   ],
 
@@ -773,10 +792,11 @@ export const DECLINED = {
   ],
   "domainCard:Hungry Fire": [
     {
-      said: "An Ablaze creature takes an extra 1d8 magic damage the first time it's spotlighted in a scene.",
+      said: "An Ablaze creature takes an extra 2d6 magic damage each time it's spotlighted.",
       why:
-        "The rider fires on the target's next spotlight rather than on pressing the card. " +
-        "Hungry Fire's own d8+2 is annotated above.",
+        "The rider fires on the target's own spotlight rather than on pressing the card, " +
+        "and now on every one of them rather than the first. Hungry Fire's own d8+2 is " +
+        "annotated above.",
     },
   ],
   "domainCard:Rejuvenation Barrier": [

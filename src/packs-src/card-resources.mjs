@@ -822,19 +822,60 @@ export const DECLINED = {
    whole `said` ratchet is for — of the thirty-eight cards matching
    `until…rest`, thirty-six are durations and two are use limits.
 
-   These forty-two we wrote, to a rule `tools/check-marked.mjs` enforces: a
-   card is either gated or it scales with Proficiency, and where it is gated it
-   says so in the corpus's own words at the head of its text. So there is no
-   reading to record, and listing them would be a second copy of a fact
-   `marked-cards.mjs` already states — `equipment.mjs`'s argument arriving on a
-   deck. Add a card and it is annotated by construction; miss the gate and
-   `check-marked.mjs` fails the build before this ever runs.
+   These forty-two we wrote, to a rule `tools/check-marked.mjs` enforces: where
+   a marked card is gated at all it says so in the corpus's own words at the
+   head of its text, `Once per rest` or `Once per long rest` and nothing else.
+   So there is no reading to record, and listing them would be a second copy of
+   a fact `marked-cards.mjs` already states — `equipment.mjs`'s argument
+   arriving on a deck. Add a card and it is annotated by construction; write
+   the gate in words of your own and `check-marked.mjs` fails the build before
+   this ever runs.
+
+   It used to say the rule was *either gated or scaling with Proficiency*, and
+   that disjunction is retired: these decks charge the GM a Fear per use, so a
+   usage limit on top is double-charging, and nineteen of the forty-two are
+   gated where the old shape gated thirty-four. What this file needs from the
+   rule was never the disjunction anyway — it is that the gate, when there is
+   one, is a **phrase** and therefore findable.
 
    The provenance survives the derivation, which is the part that matters:
    `once()` takes its `said` from the refresh scope, so an entry here is still
    evidenced by the words "once per rest" being on the card, and still fails
    the drift check the day they leave it.
+
+   **What the derivation cannot reach is a pile.** A gate is a phrase, so a
+   regex can find it; a token card states where its tokens come from, how
+   many, and what clears them, and reading that is the job every entry above
+   this one is. So the decks' two token cards — one per deck, which is the
+   Homebrew Kit's allowance — are read by hand and folded in, and they are the
+   only two hand-written marked entries in this file.
    ══════════════════════════════════════════════════════════════════════ */
+
+/* `Umbral Veil` is the printed precedent for the first and `Strategic
+   Approach` for the second, and the distance between them is why a pile
+   cannot be derived. Cold Solution's count is the Fear pool at the moment the
+   session starts — a number this system *has*, and still `open`, because a
+   ceiling is a standing fact and the pool moves every roll. Deep Dreaming's
+   is a trait, which `trait` says exactly, with the card's own parenthesis as
+   the floor. */
+const MARKED_PILES = {
+  "domainCard:Cold Solution": [
+    res({
+      max: open(),
+      refresh: "session",
+      said: "place a number of tokens on this card equal to the number of Fear in the GM's Fear Pool (minimum 1)",
+    }),
+  ],
+
+  "domainCard:Deep Dreaming": [
+    res({
+      max: trait("instinct", 1),
+      refresh: "longRest",
+      onRefresh: "fill",
+      said: "place a number of tokens on this card equal to your Instinct (minimum 1)",
+    }),
+  ],
+};
 
 const MARKED = Object.fromEntries(
   MARKED_CARDS.flatMap((c) => {
@@ -850,6 +891,14 @@ const MARKED = Object.fromEntries(
     return scope ? [[`domainCard:${c.name}`, [once(scope)]]] : [];
   }),
 );
+
+/* Folded in after the derivation rather than inside it, so a key naming no
+   card in the deck reaches `check-resources.mjs` as rot instead of quietly
+   never landing. A card could one day be gated *and* carry a pile; this keeps
+   both. */
+for (const [key, list] of Object.entries(MARKED_PILES)) {
+  MARKED[key] = [...(MARKED[key] ?? []), ...list];
+}
 
 /* ══════════════════════════════════════════════════════════════════════ */
 
