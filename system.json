@@ -167,6 +167,17 @@
         "PLAYER": "OBSERVER",
         "ASSISTANT": "OWNER"
       }
+    },
+    {
+      "name": "marked-rules",
+      "label": "The Twilight Marked",
+      "path": "packs/marked-rules",
+      "type": "JournalEntry",
+      "system": "gluniverse-daggerheart",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
     }
   ],
   "documentTypes": {
