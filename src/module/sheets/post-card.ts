@@ -20,7 +20,10 @@ import {
   type MarkPayer, type Trait,
 } from "../config.ts";
 import { FACE } from "../ui/face.js";
-import { isFree, type CardOptions, type Price } from "./cards.ts";
+import { FACE_COUNTERS } from "../ui/counter.js";
+import {
+  counterGroups, faceCounters, featureSpent, isFree, isSpent, type CardOptions, type Price,
+} from "./cards.ts";
 
 export interface CardAction {
   kind:
@@ -454,9 +457,26 @@ const authoredActions = (item: any, feature?: string): { action: any; from: stri
   ];
 };
 
-/** A counter or die pool's index, by the name the card prints on it. */
-const poolIndex = (list: any[], name: string): number =>
-  list.findIndex((r: any) => String(r?.name ?? "").toLowerCase() === name.toLowerCase());
+/**
+ * A counter or die pool's index, by the name the card prints on it **and the
+ * rule it belongs to**.
+ *
+ * The name alone is not a key. Every budget `once()` writes is called "Use",
+ * so Aetheris carries two — Hallowed Aura's and Celestial Wings' — and a
+ * name-only lookup handed Celestial Wings' press the first one it found: the
+ * press spent the other feature's use and left its own card unspent. The block
+ * an action was read from is the tiebreak, then the document's own counters,
+ * then any counter of that name, so a counter somebody moved between blocks by
+ * hand still resolves rather than drawing no button.
+ */
+const poolIndex = (list: any[], name: string, from = ""): number => {
+  const named = (r: any) => String(r?.name ?? "").toLowerCase() === name.toLowerCase();
+  const at = (f: string) => list.findIndex((r: any) => named(r) && (r?.feature || "") === f);
+  const own = at(from);
+  if (own >= 0) return own;
+  const doc = from ? at("") : -1;
+  return doc >= 0 ? doc : list.findIndex(named);
+};
 
 const AMOUNT_WORDS: Array<[string, string]> = [
   ["hope", "Hope"],
@@ -494,7 +514,13 @@ function resolveAction(
 ): CardAction | null {
   const prefix = from ? `${from} · ` : "";
   const when = a.when ? `${a.when} · ` : "";
-  const named = (derived: string): string => a.label || `${prefix}${when}${derived}`;
+  /* An authored label still says which rule it is on, when the card has more
+     than one: the standalone "Use · once per long rest" press on Aetheris is
+     Hallowed Aura's, and the row has no other way to say so. */
+  const named = (derived: string): string =>
+    a.label
+      ? (prefix && !String(a.label).startsWith(prefix) ? `${prefix}${a.label}` : a.label)
+      : `${prefix}${when}${derived}`;
   const base = { said: a.said || undefined, subject: a.subject || "self" };
 
   switch (a.kind) {
@@ -535,7 +561,7 @@ function resolveAction(
          to be decided by testing the counter's *name* against `/^uses?$/i`,
          which is a guess about English on data whose author already knew the
          answer. */
-      const index = poolIndex(item?.system?.resources ?? [], a.resource || "");
+      const index = poolIndex(item?.system?.resources ?? [], a.resource || "", from);
       if (index < 0) return null;
       const by = Number(a.by) || 0;
       const name = String(a.resource).replace(/s$/i, "");
@@ -550,7 +576,7 @@ function resolveAction(
       };
     }
     case "die-pool": {
-      const index = poolIndex(item?.system?.dice ?? [], a.resource || "");
+      const index = poolIndex(item?.system?.dice ?? [], a.resource || "", from);
       if (index < 0) return null;
       const name = String(a.resource);
       const verb: Record<string, string> = {
@@ -791,9 +817,51 @@ export async function postCard(
         kind: "card",
         actorUuid: actor?.uuid ?? null,
         itemId: card.id ?? null,
+        feature: options.feature || null,
         card: stored,
         cardActions: actions,
       },
     },
   });
+}
+
+/**
+ * The posted card's counters and spent state, re-read off the live Item.
+ *
+ * A posted card is a record, and everything on it stays as it was posted —
+ * except the one thing the presses under it exist to change. Pressing "Once
+ * per rest · Spend 1 Stress · 1 use" spends the use, and a card that went on
+ * showing its light lit and no stamp read as the press having charged the
+ * Stress and forgotten the rest. So after a press moves one of the card's own
+ * counters, its `state` and its counter readouts are redrawn from the Item,
+ * and nothing else is: the text, the art and the buttons are the record.
+ *
+ * A feature post answers for its own rule — `featureCard`'s question — and
+ * every other post for the whole document, `cardOf`'s. A message posted
+ * before the flag recorded which rule it was is told apart by its key, which
+ * `featureCard` writes as `id:slot`, and binds by the rule's own name.
+ *
+ * A readout that has gone is an empty string rather than `undefined`, because
+ * the result is written into a flag and a flag update merges: an absent key
+ * would leave the old readout standing.
+ */
+export function livePostedCard(card: any, item: any, actor: any, feature?: string | null): any {
+  const bind = feature || (String(card.k ?? "").includes(":") ? String(card.name ?? "") : "");
+  const settle = (spent: boolean) => (spent ? "used" : card.state === "used" ? "rest" : card.state);
+  if (bind) {
+    const mine = counterGroups(item, actor, bind);
+    return {
+      ...card,
+      uses: mine.length ? FACE_COUNTERS(mine) : "",
+      state: settle(featureSpent(item, bind, actor)),
+    };
+  }
+  const printed = ((card.feats ?? []) as any[]).map((f) => f.n);
+  const { head, byFeature } = faceCounters(item, actor, printed);
+  return {
+    ...card,
+    uses: head ?? "",
+    feats: card.feats?.map((f: any) => ({ ...f, uses: byFeature[f.n] ?? "" })),
+    state: settle(isSpent(item)),
+  };
 }
