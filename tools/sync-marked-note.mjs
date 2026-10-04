@@ -17,8 +17,23 @@
  *
  * The note already claimed the region between its `decks:start` and
  * `decks:end` markers was machine-written. This is the machine. The module is
- * the source, the note's region is the view, and `--check` is how CI says the
- * view is behind.
+ * the source, the note's region is the view, and `--check` reports that the
+ * view is behind without writing.
+ *
+ * ── it is hand-run, and that is not a shortcut ────────────────────────
+ * `--check` shipped inside `marked:check`, which `build:packs` runs, which the
+ * release workflow runs — and the note is a file in somebody's Google Drive,
+ * which a GitHub runner cannot have. So every release failed here, on a
+ * missing path rather than on anything about the decks. It is the committed
+ * snapshot's rule arriving somewhere new: `check-cards.mjs` reads a snapshot
+ * precisely so the build never touches the network, and a build that reads a
+ * file outside the repo is the same dependency wearing a different hat.
+ *
+ * So this is `npm run marked-note:check`, run by the person who has the vault,
+ * and nothing in `build:packs` reaches for it. A missing note is still a hard
+ * failure when you run it deliberately — you asked for a specific vault, and a
+ * check that shrugs when its subject is absent is a check that goes green on a
+ * system it no longer describes.
  *
  * ── what is derived and what is authored ──────────────────────────────
  * Everything inside the region comes from the card array except four strings:

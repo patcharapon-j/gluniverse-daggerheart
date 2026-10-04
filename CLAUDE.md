@@ -742,9 +742,19 @@ per-card audit into the campaign vault's own note, between markers the note
 already claimed were machine-written. The vault is a Google Drive folder
 outside this repo, so the path is an absolute default `TM_VAULT` overrides, and
 every authored string inside the region sits in one `PROSE` object, so reading
-that tells you everything in there a human wrote. `npm run marked:check` runs
-the audit and that tool's `--check` together, so a card edited without the note
-regenerated fails the build exactly as a card with no `LEADS` entry does. The
+that tells you everything in there a human wrote.
+
+**It is `npm run marked-note:check` and it is hand-run**, which it was not at
+first: `--check` shipped inside `marked:check`, which `build:packs` runs, which
+the release workflow runs — and a GitHub runner has no Google Drive, so every
+release failed on the missing path rather than on anything about the decks.
+That is the committed snapshot's rule arriving somewhere new. `check-cards.mjs`
+reads a snapshot precisely so the build never touches the network, and a build
+that reads a file outside the repo is the same dependency wearing another hat —
+one that fails on *every* machine but the author's, which is the worse
+direction. So the audit stays in the build and the note sync left it. A missing
+note is still a hard failure when the tool is run deliberately, because then
+somebody named a vault. The
 `marked-rules` pack is the other: a JournalEntry compendium labelled "The
 Twilight Marked", the frame's rules as the pages a GM opens mid-session, with
 its deck listings and automation inventory derived from the same modules rather
