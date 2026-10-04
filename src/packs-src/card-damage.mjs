@@ -198,14 +198,20 @@ const PRINTED = {
   ],
   "domainCard:Geometry of Ruin": [
     dmg({
-      count: 4, dice: "d12", bonus: 8, type: "magic",
-      said: "Targets who fail take 4d12+8 magic damage.",
+      count: 5, dice: "d12", bonus: 8, type: "magic",
+      said: "Targets who fail take 5d12+8 magic damage.",
+    }),
+  ],
+  "domainCard:Vector": [
+    dmg({
+      count: 1, dice: "d10", bonus: 3, proficiency: true, type: "physical",
+      said: "they fall and take d10+3 physical damage using your Proficiency",
     }),
   ],
   "domainCard:Barkskin": [
     dmg({
       count: 1, dice: "d8", bonus: 1, proficiency: true, type: "physical",
-      said: "your unarmed attacks deal d8+1 physical damage using your Proficiency.",
+      said: "unarmed attacks within Melee range using Instinct that deal d8+1 physical damage using your Proficiency.",
     }),
   ],
 
@@ -228,8 +234,8 @@ const PRINTED = {
   ],
   "domainCard:Bloom": [
     dmg({
-      count: 4, dice: "d8", bonus: 5, type: "physical",
-      said: "Targets who fail take 4d8+5 physical damage.",
+      count: 4, dice: "d8", bonus: 8, type: "physical",
+      said: "Targets who fail take 4d8+8 physical damage.",
     }),
   ],
   "domainCard:The Undergrowth Wakes": [
@@ -530,7 +536,7 @@ const MODAL = {
     }),
     dmg({
       name: "Thorns", count: 1, dice: "d8", type: "physical",
-      said: "A creature that enters or acts within Very Close range of you takes 1d8 physical damage.",
+      said: "An adversary that enters or acts within Very Close range of you takes 1d8 physical damage.",
     }),
   ],
 
@@ -674,12 +680,6 @@ export const DECLINED = {
       why: "Falling Sky's shape: the expression repeats once per handful of gold, a count only the table knows.",
     },
   ],
-  "domainCard:Vector": [
-    {
-      said: "they fall and take 1d10 physical damage for each range increment fallen.",
-      why: "Falling Sky's shape: the dice repeat once per range increment, a count only the table knows.",
-    },
-  ],
   "domainCard:Book of Illiat": [
     {
       said: "Roll a number of d6s equal to the Hope spent and deal that much magic damage to the target.",
@@ -780,14 +780,20 @@ export const DECLINED = {
   ],
   "domainCard:Rend": [
     {
-      said: "Your next successful attack this scene deals an extra 1d12+3 damage",
+      said: "Your next successful attack this scene deals an extra 2d12 damage",
       why: "Additive on an attack already rolled, and no damage type is printed for it.",
     },
   ],
   "domainCard:Apex": [
     {
-      said: "your attacks deal an extra d12 damage",
+      said: "your attacks deal an extra 2d12 damage",
       why: "Additive on every attack for the scene; the dice ride on the weapon's roll.",
+    },
+  ],
+  "domainCard:Wildfire": [
+    {
+      said: "an Ablaze creature takes an extra 2d6 magic damage each time it's spotlighted.",
+      why: "Hungry Fire's rider on the other card that prints it: it fires on the burning creature's own spotlight, not on pressing the card.",
     },
   ],
   "domainCard:Hungry Fire": [

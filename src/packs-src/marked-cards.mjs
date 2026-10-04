@@ -29,12 +29,17 @@
  * That is the whole design. The printed corpus gates 31% of its 210 cards
  * once per rest, long rest or session; a Fear-taxed deck that also gated four
  * cards in five — which these did, at 81% — ends up *weaker* than print while
- * also strangling the Fear economy the frame is built on. Nineteen of the 42
- * are gated now, and every one of them is a card whose effect reshapes a whole
- * scene. Everything else is repeatable and priced in Fear.
+ * also strangling the Fear economy the frame is built on. Fifteen of the 42
+ * are gated now (36%), every one of them a card whose effect reshapes a whole
+ * scene, and where a gated card rolls the limit sits *after* the roll — the
+ * Homebrew Kit's Splintering Strike placement — because a miss has already
+ * cost a Fear and a Mark and must not burn the use too. Everything else is
+ * repeatable and priced in Fear.
  *
- * So the shape of a Root or Void card is: **no usage limit, a real resource
- * cost, and a lead over the best printed card at or below its level.** That
+ * So the shape of a Root or Void card is: **the Fear is the price — standing
+ * in for the one Hope a printed card of the level would charge — and a lead
+ * over the best printed card at or below its level.** A Hope or a Stress on
+ * top buys something past that lead, never the lead itself. That
  * lead is the brief — *ahead by one tier, through capability rather than
  * arithmetic* — and `check-marked.mjs`'s `LEADS` block records it per card and
  * fails the build when a card cannot name one.
@@ -49,7 +54,7 @@
  * Strike, Night Terror). Cold Solution reads the pool on top of that, sizing
  * its tokens off whatever is left in it.
  *
- * Widen it to every card that engages the pool as a quantity and it is five in
+ * Widen it to every card that engages the pool as a quantity and it is four in
  * 21 against eight in 210. Both figures come from **one predicate applied to
  * both corpora**, which `marked-rules.mjs` exports and
  * `tools/check-marked-rules.mjs` ratchets as a set in both directions. That
@@ -61,13 +66,11 @@
  * Two cards that look like they belong in that count are outside it on
  * purpose. The Answer gives the GM three Fear, but that is the frame's own
  * cost tripled rather than the card reaching into the pool, and No More
- * Waiting does the same on the other deck. Void-Touched refuses to feed the
- * pool, and so does Root-Touched in the same words, so that is the `-Touched`
- * pattern rather than this deck's. What is left is the operation print itself
- * treats as rare: reading or removing what is in the pool.
+ * Waiting does the same on the other deck. What is left is the operation
+ * print itself treats as rare: reading or removing what is in the pool.
  *
  * **Root converts harm into fuel.** Feed turns a Melee hit into a cleared Hit
- * Point and a Hope, Apex pays a Hit Point per kill, Barkskin and The Beast buy
+ * Point and a Hope, Apex pays a Hit Point per kill, Barkskin, The Beast and Rend buy
  * scene-long force with Stress up front, and the World Tree empties the whole
  * party's sheet once. The Dreaming Root pays Stress for the Undergrowth's
  * memory and keeps that memory on a card as tokens.
@@ -149,12 +152,16 @@ const V = (name, thread, level, type, recall, text) =>
 const R = (name, thread, level, type, recall, text) =>
   card(name, "root", thread, level, type, recall, text);
 
-/** The `-Touched` pair. One card, two decks, one argument — so it is written
-    once. Both printed `-Touched` cards give a loadout-conditional bonus and
-    one small economy break; ours breaks the frame's own economy instead of the
-    game's, which is the only thing a campaign domain has that is worth
-    breaking. */
-const touched = (domain) => {
+/** The `-Touched` pair. One shape, two decks: a +1 to the deck's casting
+    trait, which is `Bone-Touched`'s +1 Agility arriving where the mark is the
+    casting organ, and a second payer for the frame's toll.
+
+    It used to waive the toll once per rest, and that was the one place either
+    deck let a use cost nobody anything — which the frame says never happens.
+    So the waiver is gone and the choice of *who pays* replaces it: Void spends
+    the mind and Root spends the body, which is each deck's own currency. The
+    Mark is still gained either way. */
+const touched = (domain, trait, payment) => {
   const Name = domain[0].toUpperCase() + domain.slice(1);
   return card(
     `${Name}-Touched`,
@@ -166,9 +173,8 @@ const touched = (domain) => {
     `When 4 or more of the domain cards in your loadout are from the ${Name} domain, ` +
       "gain the following benefits:\n" +
       "\n" +
-      "- **+1** bonus to your Spellcast Rolls.\n" +
-      `- Once per rest, when you use a ${Name} card, the GM doesn't gain a Fear and you ` +
-      "don't gain a Mark.",
+      `- **+1** bonus to your ${trait}.\n` +
+      `- When you use a ${Name} card, you can ${payment} instead of the GM gaining a Fear.`,
   );
 };
 
@@ -191,9 +197,8 @@ export default [
     "Make a **Spellcast Roll (13)**. On a success, end one temporary condition or " +
       "temporary effect on a target within Far range.\n" +
       "\n" +
-      "**Mark a Stress** to instead end an effect that would otherwise be cleared only " +
-      "by meeting a specific requirement. Excise can't end a permanent condition or a " +
-      "Mark.",
+      "**Mark a Stress** to end a special condition instead. Excise can't end a " +
+      "permanent condition or a Mark.",
   ),
 
   V(
@@ -203,10 +208,10 @@ export default [
     "spell",
     1,
     "Make a **Spellcast Roll** against a target within Far range. On a success, they " +
-      "take **d10+3** magic damage using your Proficiency.\n" +
+      "take **d10+3** magic damage using your Proficiency and geometric force locks " +
+      "around them, leaving them temporarily _Restrained_.\n" +
       "\n" +
-      "**Spend a Hope** to also lock geometric force around them, leaving them " +
-      "temporarily _Restrained_.",
+      "**Spend a Hope** to make them temporarily _Vulnerable_ as well.",
   ),
 
   V(
@@ -230,8 +235,8 @@ export default [
     2,
     "spell",
     1,
-    "**Spend a Hope** and make a **Spellcast Roll (13)**. On a success, you and any " +
-      "willing creatures you're touching teleport to a point within Far range you can see.",
+    "Make a **Spellcast Roll (13)**. On a success, **spend a Hope** to teleport yourself " +
+      "and any willing creatures you're touching to a point within Far range you can see.",
   ),
 
   V(
@@ -240,9 +245,9 @@ export default [
     2,
     "spell",
     1,
-    "**Spend a Hope** and make a **Spellcast Roll** against all targets within Close " +
-      "range. Targets you succeed against take **2d8+5** magic damage and are pulled into " +
-      "Very Close range of you.",
+    "Make a **Spellcast Roll** against all adversaries within Close range. Targets you " +
+      "succeed against take **2d8+5** magic damage, and you can pull them into Very Close " +
+      "range of you or push them back to Far range.",
   ),
 
   /* ── level 3 ─────────────────────────────────────────────────────── */
@@ -253,9 +258,10 @@ export default [
     3,
     "spell",
     1,
-    "**Spend a Hope** and make a **Spellcast Roll** against a target within Close " +
-      "range. On a success, they're temporarily _Silenced_. While _Silenced_, they can't " +
-      "make noise and can't cast spells.",
+    "Make a **Spellcast Roll** against a target within Close range. On a success, " +
+      "they're _Silenced_ until the GM spends a Fear on their turn to clear this " +
+      "condition, you cast Silence the Song again, or you take Major damage. While " +
+      "_Silenced_, they can't make noise and can't cast spells.",
   ),
 
   V(
@@ -264,10 +270,10 @@ export default [
     3,
     "spell",
     1,
-    "**Spend a Hope** and make a **Spellcast Roll** against a target within Far range. " +
-      "On a success, move them up to Close range in any direction, including up. If they " +
-      "end that movement in the air, they fall and take **1d10** physical damage for each " +
-      "range increment fallen.",
+    "Make a **Spellcast Roll** against a target within Far range. On a success, move " +
+      "them anywhere within Close range of where they stand, including straight up. If " +
+      "you leave them in the air, they fall and take **d10+3** physical damage using your " +
+      "Proficiency.",
   ),
 
   /* ── level 4 ─────────────────────────────────────────────────────── */
@@ -299,8 +305,9 @@ export default [
     4,
     "spell",
     2,
-    "**Mark a Stress** and make a **Spellcast Roll (15)**. On a success, an object " +
-      "within Far range that isn't held or worn ceases to exist. If it was holding " +
+    "Make a **Spellcast Roll (15)**. On a success, an object within Far range no larger " +
+      "than you that isn't held or worn ceases to exist. **Mark a Stress** to unmake " +
+      "something as large as a cart or a section of wall instead. If it was holding " +
       "something up, the GM describes what falls.",
   ),
 
@@ -324,7 +331,7 @@ export default [
     5,
     "spell",
     2,
-    "Once per long rest, make a **Spellcast Roll (15)**. On a success, everything " +
+    "Make a **Spellcast Roll (15)**. Once per long rest on a success, everything " +
       "within Very Close range of a point within Far range becomes a stationary zone " +
       "where magic doesn't function. Spells and magical features fail inside it, " +
       "including yours. It lasts until your next rest.",
@@ -338,10 +345,11 @@ export default [
     6,
     "spell",
     2,
-    "Make a **Spellcast Roll** against up to three targets within Close range. Targets " +
-      "you succeed against are teleported to a point within Far range you can see.\n" +
+    "Make a **Spellcast Roll** against up to three adversaries within Close range. " +
+      "Targets you succeed against are teleported to points within Far range you can see. " +
+      "Any willing creatures within Close range can go with them, without a roll.\n" +
       "\n" +
-      "**Spend a Hope** to leave them temporarily _Vulnerable_ where they land.",
+      "**Spend a Hope** to leave the adversaries temporarily _Vulnerable_ where they land.",
   ),
 
   V(
@@ -350,8 +358,9 @@ export default [
     6,
     "ability",
     2,
-    "Once per long rest, before you make an action roll, declare that you've already " +
-      "worked it out. Treat your Hope Die as though it rolled a 12.",
+    "Once per long rest, before you or an ally within Far range makes an action roll, " +
+      "declare that you've already worked it out. Treat their Hope Die as though it " +
+      "rolled a 12.",
   ),
 
   /* ── level 7 ─────────────────────────────────────────────────────── */
@@ -362,15 +371,16 @@ export default [
     7,
     "spell",
     2,
-    "Once per long rest, make a **Spellcast Roll (16)** against all targets within " +
-      "Close range. Targets you succeed against lose the last minute entirely, including " +
-      "any memory that you were there. The next time each of them is spotlighted, they " +
-      "can't target you.\n" +
+    "Make a **Spellcast Roll (16)** against all adversaries within Close range. Once " +
+      "per long rest on a success, targets you succeed against lose the last minute " +
+      "entirely, including any memory that you were there. They're temporarily " +
+      "_Vulnerable_, and the next time each of them is spotlighted, they can't target " +
+      "you.\n" +
       "\n" +
       "This fails against a target who has marked Hit Points from you this scene.",
   ),
 
-  touched("void"),
+  touched("void", "Knowledge", "**mark a Stress**"),
 
   /* ── level 8 ─────────────────────────────────────────────────────── */
 
@@ -380,9 +390,10 @@ export default [
     8,
     "spell",
     3,
-    "Once per long rest, make a **Spellcast Roll** against all targets within Far " +
-      "range. Targets you succeed against must make a **Reaction Roll (16)**. Targets who " +
-      "fail take **4d12+8** magic damage. Targets who succeed take half damage.\n" +
+    "Make a **Spellcast Roll** against all adversaries within Far range. Once per long " +
+      "rest on a success, targets you succeed against must make a **Reaction Roll (16)**. " +
+      "Targets who fail take **5d12+8** magic damage. Targets who succeed take half " +
+      "damage.\n" +
       "\n" +
       "The GM loses a Fear for each target that fails.",
   ),
@@ -393,9 +404,8 @@ export default [
     8,
     "spell",
     2,
-    "Once per rest, make a **Spellcast Roll (16)**. On a success, name a feature " +
-      "you've seen an adversary within Far range use. They can't use it until your next " +
-      "rest.",
+    "Make a **Spellcast Roll (16)**. Once per rest on a success, name a feature you've " +
+      "seen an adversary within Far range use. They can't use it until your next rest.",
   ),
 
   /* ── level 9 ─────────────────────────────────────────────────────── */
@@ -419,12 +429,12 @@ export default [
     9,
     "spell",
     4,
-    "Once per long rest, make a **Spellcast Roll (18)**. On a success, choose an " +
-      "adversary within Far range whose Difficulty is 20 or lower and **mark 2 Stress**. " +
-      "It's unmade and can't be returned by any means.\n" +
+    "Make a **Spellcast Roll (18)**. Once per long rest on a success, choose any number " +
+      "of adversaries within Far range and **mark 2 Stress** for each. Each one whose " +
+      "Difficulty is 20 or lower is unmade and can't be returned by any means.\n" +
       "\n" +
-      "If the adversary's Difficulty is higher than 20, the spell fails and you place " +
-      "this card in your vault.",
+      "If any adversary you chose has a Difficulty higher than 20, it's unharmed and you " +
+      "place this card in your vault.",
   ),
 
   /* ── level 10 ────────────────────────────────────────────────────── */
@@ -435,7 +445,7 @@ export default [
     10,
     "spell",
     3,
-    "Once per long rest, make a **Spellcast Roll (18)**. On a success, until the scene " +
+    "Make a **Spellcast Roll (18)**. Once per long rest on a success, until the scene " +
       "ends, nothing within Far range of you can cast spells, use magical features, or " +
       "benefit from magical effects. This includes you.\n" +
       "\n" +
@@ -454,7 +464,8 @@ export default [
     4,
     "Once per long rest, immediately after you succeed on an action roll, you can take " +
       "an additional action. When you do, you gain **3 Mark** instead of 1 and the GM " +
-      "gains **3 Fear** instead of 1.",
+      "gains **3 Fear** instead of 1. If that action calls for an action roll, it " +
+      "succeeds with Hope without rolling; you still roll any damage.",
   ),
 
   /* ══ ROOT ═══════════════════════════════════════════════════════════
@@ -472,8 +483,8 @@ export default [
     "ability",
     1,
     "**Mark a Stress** to harden. Until your next rest, gain a **+2** bonus to your " +
-      "damage thresholds, and your unarmed attacks deal **d8+1** physical damage using " +
-      "your Proficiency.",
+      "damage thresholds, and you can make unarmed attacks within Melee range using " +
+      "Instinct that deal **d8+1** physical damage using your Proficiency.",
   ),
 
   R(
@@ -510,8 +521,8 @@ export default [
     2,
     "ability",
     1,
-    "When an ally within Far range makes an action roll, you can **spend a Hope** to " +
-      "add your Instinct to their roll. You don't need to be able to see or hear them.",
+    "When an ally within Far range makes an action roll, you can add your Instinct and " +
+      "a **d6** to their roll. You don't need to be able to see or hear them.",
   ),
 
   /* Deliberately not Weight of the Void with different dice. That one gathers
@@ -526,7 +537,7 @@ export default [
     "**Mark a Stress** and make a **Spellcast Roll** against all targets within Very " +
       "Close range. Targets you succeed against take **2d8+3** physical damage.\n" +
       "\n" +
-      "The thorns remain until your next rest. A creature that enters or acts within " +
+      "The thorns remain until your next rest. An adversary that enters or acts within " +
       "Very Close range of you takes **1d8** physical damage.",
   ),
 
@@ -538,10 +549,10 @@ export default [
     3,
     "spell",
     2,
-    "Once per rest, make a **Spellcast Roll (14)** against a target within Close " +
-      "range. On a success, they're held outside of time — they can't act and can't be " +
-      "damaged. This lasts until you release them, you take Major damage, or the GM " +
-      "spends a Fear on their turn to end it.",
+    "Make a **Spellcast Roll** against a target within Close range. On a success, " +
+      "they're held outside of time — they can't act and can't be damaged. This lasts " +
+      "until you release them, you take Major damage, or the GM spends a Fear on their " +
+      "turn to end it. You can hold Amber on only one creature at a time.",
   ),
 
   R(
@@ -563,8 +574,8 @@ export default [
     4,
     "ability",
     1,
-    "**Spend a Hope.** Your next successful attack this scene deals an extra " +
-      "**1d12+3** damage, and the target temporarily gains a **−1** penalty to their " +
+    "**Mark a Stress.** Your next successful attack this scene deals an extra " +
+      "**2d12** damage, and the target temporarily gains a **−1** penalty to their " +
       "damage thresholds.",
   ),
 
@@ -574,9 +585,10 @@ export default [
     4,
     "ability",
     2,
-    "Once per long rest, immediately after the GM makes a move in response to a roll " +
-      "you made, you can say the Undergrowth had already shown you this. The GM's move is " +
-      "rescinded as though it never happened, and they make a different one instead.",
+    "Once per long rest, immediately after the GM conveys the consequences of a roll " +
+      "made by you or an ally within Far range, you can say the Undergrowth already " +
+      "showed you this. The move and its consequences are rescinded as though they never " +
+      "happened, and whoever rolled makes another move instead.",
   ),
 
   /* ── level 5 ─────────────────────────────────────────────────────── */
@@ -598,13 +610,13 @@ export default [
     5,
     "spell",
     2,
-    "Once per long rest, make a **Spellcast Roll (15)**. On a success, fire takes hold " +
-      "at a point within Far range. All targets within Close range of it must make a " +
-      "**Reaction Roll (15)**. Targets who fail take **3d10+4** magic damage and are " +
-      "temporarily _Ablaze_. Targets who succeed take half damage.\n" +
+    "**Mark a Stress** and make a **Spellcast Roll (15)**. On a success, fire takes " +
+      "hold at a point within Far range. All adversaries within Close range of it must " +
+      "make a **Reaction Roll (15)**. Targets who fail take **3d10+4** magic damage and " +
+      "are temporarily _Ablaze_. Targets who succeed take half damage.\n" +
       "\n" +
-      "The fire hunts. Each time you're spotlighted, it moves Very Close toward the " +
-      "nearest creature.",
+      "The fire hunts: an _Ablaze_ creature takes an extra **2d6** magic damage each time " +
+      "it's spotlighted.",
   ),
 
   /* ── level 6 ─────────────────────────────────────────────────────── */
@@ -649,15 +661,15 @@ export default [
     7,
     "spell",
     2,
-    "Once per rest, make a **Spellcast Roll (16)** against all targets within Far " +
-      "range. Targets you succeed against must make a **Reaction Roll (15)**. Targets who " +
-      "fail take **4d8+5** physical damage. Targets who succeed take half damage.\n" +
+    "Make a **Spellcast Roll (16)**. Once per rest on a success, all adversaries within " +
+      "Far range must make a **Reaction Roll (15)**. Targets who fail take **4d8+8** " +
+      "physical damage. Targets who succeed take half damage.\n" +
       "\n" +
       "All terrain within Far range becomes difficult to move through until your next " +
       "rest.",
   ),
 
-  touched("root"),
+  touched("root", "Instinct", "**mark a Hit Point**"),
 
   /* ── level 8 ─────────────────────────────────────────────────────── */
 
@@ -677,11 +689,11 @@ export default [
     8,
     "spell",
     3,
-    "Once per long rest, make a **Spellcast Roll** against a target within Far range. " +
-      "On a success, they experience every death they've caused and must make a " +
-      "**Reaction Roll (16)**. On a failure, they mark **4 Hit Points** and are " +
-      "permanently _Horrified_. On a success, they mark **2 Hit Points** and are " +
-      "temporarily _Horrified_.",
+    "Make a **Spellcast Roll** against a target within Far range. Once per long rest on " +
+      "a success, they experience every death they've caused and must make a **Reaction " +
+      "Roll (16)**. On a failure, they mark **4 Hit Points** and are permanently " +
+      "_Horrified_. On a success, they mark **2 Hit Points** and are temporarily " +
+      "_Horrified_. While _Horrified_, they're _Vulnerable_.",
   ),
 
   /* ── level 9 ─────────────────────────────────────────────────────── */
@@ -692,9 +704,10 @@ export default [
     9,
     "ability",
     3,
-    "Once per long rest, **mark 2 Stress** to become what it wants. Until the scene " +
-      "ends, your attacks deal an extra **d12** damage, you clear a Hit Point whenever " +
-      "you defeat an adversary, and you can't use features that require speech.",
+    "Once per long rest, **mark a Stress** to become what it wants. Until the scene " +
+      "ends, your attacks deal an extra **2d12** damage, you clear a Hit Point whenever " +
+      "you defeat an adversary, you can't be _Restrained_, and you can't use features " +
+      "that require speech.",
   ),
 
   R(
@@ -703,12 +716,12 @@ export default [
     9,
     "spell",
     3,
-    "Once per long rest, make a **Spellcast Roll (18)**. On a success, the ground opens " +
-      "within Very Far range. All targets in the area must make a **Reaction Roll (18)**. " +
-      "Targets who fail take **4d12+8** physical damage and are temporarily _Restrained_. " +
-      "Targets who succeed take half damage.\n" +
+    "Make a **Spellcast Roll (16)**. Once per rest on a success, the ground opens and " +
+      "all adversaries within Very Far range must make a **Reaction Roll (18)**. Targets " +
+      "who fail take **4d12+8** physical damage and are temporarily " +
+      "_Restrained_. Targets who succeed take half damage.\n" +
       "\n" +
-      "The terrain is permanently changed.",
+      "The terrain within Very Far range is permanently changed.",
   ),
 
   /* ── level 10 ────────────────────────────────────────────────────── */
@@ -721,7 +734,8 @@ export default [
     4,
     "Once per long rest, immediately after you deal damage to an adversary, you can " +
       "take an additional action. When you do, you gain **3 Mark** instead of 1 and the " +
-      "GM gains **3 Fear** instead of 1.",
+      "GM gains **3 Fear** instead of 1. If that action is an attack, gain a **+2** bonus " +
+      "to your Proficiency for it.",
   ),
 
   R(
@@ -730,9 +744,9 @@ export default [
     10,
     "spell",
     3,
-    "Once per long rest, make a **Spellcast Roll (18)**. On a success, a tree erupts " +
-      "within Far range and stands until it's felled. Any creature that touches it clears " +
-      "all their Hit Points and Stress. A creature can benefit from the World Tree only " +
-      "once.",
+    "Make a **Spellcast Roll (18)**. Once per long rest on a success, a tree erupts " +
+      "within Far range and stands until it's felled. When you or an ally touches it, " +
+      "that creature clears all their Hit Points and Stress. Each creature can benefit " +
+      "from the World Tree only once.",
   ),
 ].map((c) => ({ ...c, art: c.art || domainIcon(c.domain) }));

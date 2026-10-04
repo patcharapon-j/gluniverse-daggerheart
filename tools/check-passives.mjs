@@ -54,8 +54,8 @@ const DECLINED = {
  * worth a word because they arrive as one block rather than one at a time.
  *
  * Two of the forty-two *are* automated and are therefore absent: Root-Touched
- * and Void-Touched each carry a `spellcastRoll` modifier in
- * `passive-modifiers.mjs`, which is what the printed `-Touched` cards do and
+ * and Void-Touched each carry a +1 trait modifier in
+ * `passive-modifiers.mjs`, which is what Bone-Touched does and
  * the only thing on either deck that ownership alone can truthfully activate.
  *
  * The rest fail the candidate test for two reasons and neither is a passive.
@@ -74,13 +74,10 @@ const DECLINED = {
  * moves a number on anybody's sheet.
  *
  * The Answer and No More Waiting are the same card in two decks — a once-per-
- * long-rest extra action — and only one of them is on this list, which is the
- * STAT/EFFECT pair being a reading of *wording* rather than of rules. The
- * Answer fires "after you succeed on an action roll" and STAT knows the words
- * action roll; No More Waiting fires "after you deal damage to an adversary"
- * and STAT knows none of them, so it is never a candidate to classify.
- * Neither is a passive: an extra action you choose to take, once per long
- * rest, is as activated as a state you paid for.
+ * long-rest extra action — and both are on this list. The Answer's action roll
+ * succeeds without rolling and No More Waiting's attack gains +2 Proficiency,
+ * and both of those ride on an extra action you chose to take, which is as
+ * activated as a state you paid for.
  */
 const REVIEWED_MANUAL = new Set([
   ...Object.keys(DECLINED),
@@ -398,6 +395,7 @@ domainCard:Sever
 domainCard:Disjunction
 domainCard:Second Silence
 domainCard:The Answer
+domainCard:No More Waiting
 domainCard:Barkskin
 domainCard:Hungry Fire
 domainCard:The Pack Knows

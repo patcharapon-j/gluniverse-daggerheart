@@ -16,7 +16,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
-  CONDITIONS, SYSTEM_ID, TRAITS, isMarkedDomain, markedSpellcast, traitLabel, type Trait,
+  CONDITIONS, SYSTEM_ID, TRAITS, isMarkedDomain, markedSpellcast, touchedPayer, traitLabel,
+  type MarkPayer, type Trait,
 } from "../config.ts";
 import { FACE } from "../ui/face.js";
 import { isFree, type CardOptions, type Price } from "./cards.ts";
@@ -64,6 +65,8 @@ export interface CardAction {
   steps?: CardAction[];
   /** `mark-use` only: how much Mark this press costs. 3 on the two level 10s. */
   mark?: number;
+  /** `mark-use` only: who pays the toll instead of the GM, under a `-Touched` card. */
+  payer?: MarkPayer;
   hope?: number;
   stress?: number;
   armor?: number;
@@ -366,13 +369,28 @@ function appendStructural(out: CardAction[], item: any, card: CardOptions): void
     out.push({ kind: "use-item", label: `Use ${item.name}`, itemId: item.id });
   }
   if (item?.type === "domainCard" && isMarkedDomain(item.system?.domain)) {
+    /* The `-Touched` pair is a loadout bonus, not something you use, so it
+       carries no toll of its own — the card says as much and always did. */
+    if (/instead of the GM gaining a Fear/i.test(String(card.text ?? ""))) return;
+
     /* The two level 10 cards buy an extra action and cost 3, and it is read
        off the text rather than listed because the cards say it in the words
        the frame uses — a second list of two names is a second thing to keep
        true. This is the one prose read that survives, and it survives because
        its subject is the frame rather than the card. */
     const mark = /gain \*\*?3 Mark/i.test(String(card.text ?? "")) ? 3 : 1;
-    out.unshift({ kind: "mark-use", label: mark === 1 ? "Use · Mark" : `Use · ${mark} Mark`, mark });
+    const base = mark === 1 ? "Use · Mark" : `Use · ${mark} Mark`;
+
+    /* Under a live Void-Touched or Root-Touched the holder may pay the toll
+       instead of the GM, so the row offers both. They are one toll with two
+       payers, which is why `runCardAction` gives every `mark-use` on a
+       message the same claim: whichever is pressed, the other is spent. */
+    const payer = touchedPayer(item.parent, item.system?.domain, item);
+    if (payer) {
+      const what = payer === "stress" ? "Stress" : "Hit Points";
+      out.unshift({ kind: "mark-use", label: `${base} · ${what}, not Fear`, mark, payer });
+    }
+    out.unshift({ kind: "mark-use", label: base, mark });
   }
 }
 

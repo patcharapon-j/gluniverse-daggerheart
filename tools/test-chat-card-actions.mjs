@@ -260,6 +260,36 @@ if (answerActions[0]?.mark !== 3) {
   throw new Error(`The extra-action card should cost 3 Mark: ${JSON.stringify(answerActions)}`);
 }
 
+/* Void-Touched live: 4 Void cards in the loadout, the -Touched one among them.
+   The row then offers the toll twice — the GM's Fear, or the holder's Stress —
+   and the -Touched card itself carries no toll at all. */
+const voidHand = [
+  item("vt", "domainCard", {
+    domain: "void", inLoadout: true,
+    description: "<p>When you use a Void card, you can <b>mark a Stress</b> instead of the GM gaining a Fear.</p>",
+  }),
+  ...["v1", "v2", "v3"].map((id) => item(id, "domainCard", { domain: "void", inLoadout: true, description: "<p>Void.</p>" })),
+];
+const voidOwner = { items: voidHand };
+for (const card of voidHand) card.parent = voidOwner;
+const touchedRow = await actionsFor({ id: "v1", type: "DOMAIN CARD", name: "Excise", text: "End one temporary condition." }, voidHand);
+const tolls = touchedRow.filter((a) => a.kind === "mark-use");
+if (tolls.length !== 2 || tolls[0].payer || tolls[1].payer !== "stress") {
+  throw new Error(`A live Void-Touched should offer the GM's toll and a Stress toll: ${JSON.stringify(tolls)}`);
+}
+const ownRow = await actionsFor({
+  id: "vt", type: "DOMAIN CARD", name: "Void-Touched",
+  text: "When you use a Void card, you can **mark a Stress** instead of the GM gaining a Fear.",
+}, voidHand);
+if (ownRow.some((a) => a.kind === "mark-use")) {
+  throw new Error(`A -Touched card is a loadout bonus and must not carry a toll: ${JSON.stringify(ownRow)}`);
+}
+voidHand[3].system.inLoadout = false;
+const deadRow = await actionsFor({ id: "v1", type: "DOMAIN CARD", name: "Excise", text: "End one temporary condition." }, voidHand);
+if (deadRow.filter((a) => a.kind === "mark-use").length !== 1) {
+  throw new Error(`Three Void cards do not make Void-Touched live: ${JSON.stringify(deadRow)}`);
+}
+
 const plainCard = item("plain", "domainCard", { domain: "grace" });
 const plainActions = await actionsFor({ id: plainCard.id, type: "DOMAIN CARD", name: "Plain" }, [plainCard]);
 if (plainActions.some((a) => a.kind === "mark-use")) {

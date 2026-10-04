@@ -329,22 +329,15 @@ for (const c of MARKED) {
 for (const c of MARKED) {
   if (!damages(c).length) continue;
 
-  /* Four of print's 29 damage cards carry neither a limit nor a cost, and two
-     of those four — Preservation Blast and Telekinesis — pay for it by scaling
-     with a trait instead. That leaves `Cinder Grasp` and `Tempest` dealing flat
-     dice for free and without limit, two cards out of 210. So a damage card
-     here carries a usage limit or a resource cost, and this is the rule that
-     catches a card whose limit was lifted without a cost replacing it. Five
-     cards failed it the first time, which is why it exists. */
-  if (!gated(c)) {
-    fail(
-      c,
-      "deals damage with no usage limit and no cost — 25 of print's 29 damage " +
-        "cards carry one or the other, so put the price on the rider the way Bolt " +
-        "Beacon and Vicious Entangle do",
-    );
-  }
-
+  /* 25 of print's 29 damage cards carry a usage limit or a resource cost.
+     Every card here already carries one: the frame's Fear, charged on every
+     use, which no printed card pays. This used to demand a Hope or a Stress on
+     top of it, and that was the double-charge the whole deck design argues
+     against arriving through the back door — Weight of the Void and Vector
+     both charged a Hope *and* a Fear for what Fire Flies and Telekinesis do for
+     one or nothing. So the price is the Fear, and what is still enforced is the
+     shape print gives the dice: single-target damage that carries no price of
+     its own beyond that scales with Proficiency. */
   if (!area(c) && !scales(c) && !gated(c)) {
     fail(
       c,

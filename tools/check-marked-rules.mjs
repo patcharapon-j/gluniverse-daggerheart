@@ -403,6 +403,19 @@ states(
   "what a use costs while Surging",
 );
 
+/* 3b · the -Touched second payer. The whole toll moves, Surging included, and
+   the Mark stays — "who pays, never whether". */
+fear = 0;
+const viaStress = MARKED.markPrice(stubActor(), 1, "stress");
+if (viaStress.fear !== 0 || viaStress.stress !== 1 || viaStress.mark !== 1) {
+  bad(`paying in Stress costs ${JSON.stringify(viaStress)} and the journal describes 1 Mark, 1 Stress, no Fear`);
+}
+const viaBody = MARKED.markPrice(stubActor({ surging: true }), 3, "hitPoints");
+if (viaBody.fear !== 0 || viaBody.hitPoints !== 6 || viaBody.mark !== 3) {
+  bad(`a Surging 3-Mark use paid in Hit Points costs ${JSON.stringify(viaBody)}, not 3 Mark and 6 Hit Points`);
+}
+states(RULES_PAGE, rulesText, "change who pays, never whether", "the -Touched second payer");
+
 /* 4 · the long-rest roll. Driven twice, because the two outcomes differ and
    the difference is the whole of what the page promises. */
 const rollOff = async (mark, bought, total) => {
@@ -559,7 +572,7 @@ const POOL_SETS = {
     "Avatar of Terror",
   ],
   voidOut: ["Reckoning", "Geometry of Ruin"],
-  voidAny: ["Reckoning", "Cold Solution", "Void-Touched", "Geometry of Ruin", "The Answer"],
+  voidAny: ["Reckoning", "Cold Solution", "Geometry of Ruin", "The Answer"],
 };
 
 const { takesFear, poolCards, POOL_COUNTS } = await import(

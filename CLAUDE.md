@@ -634,11 +634,19 @@ itself, so a claim about the corpus can be re-taken rather than believed.
 **Every use of a marked card costs the GM a Fear, so a usage limit on top of
 that is double-charging.** No printed domain charges anything per use, so a
 card that merely matches a printed card of its own level is a card nobody
-should take, and the shape that follows is: no usage limit, a real resource
-cost, and a lead over the best printed card at or below its level. Nineteen of
-the forty-two still carry a limit — 45%, against print's 31% of 210 — and the
-cap is **50%**, because a limit is still the honest lever for a card that
-reshapes a whole scene. Part of why they once reached for one everywhere is
+should take, and the shape that follows is: **the Fear is the price** — it
+stands in for the one Hope a printed card of the same level would charge — and
+the card leads the best printed card at or below its level. A Hope or a Stress
+on top buys something *past* that lead, never the lead itself; `check-marked.mjs`
+used to demand one on every damage card and that was the double-charge arriving
+through the back door. Fifteen of the forty-two carry a usage limit — 36%,
+against print's 31% of 210 — and the cap is **50%**, because a limit is still
+the honest lever for a card that reshapes a whole scene. **When a gated card
+rolls, the limit sits after the roll** ("Make a Spellcast Roll (16). Once per
+rest on a success, …"), which is the Homebrew Kit's Splintering Strike
+placement: a miss already costs a Fear and a Mark, so it must not burn the use
+as well. Only the cards with no roll at all (Solve, The Root Remembers, Apex,
+the two extra-action capstones) lead with it. Part of why they once reached for one everywhere is
 that neither deck had a **token card**: a pile is the printed way to say
 "repeatable, but not all night", twelve printed cards use one, and the Homebrew
 Kit allows one per domain. Cold Solution is Void's and Deep Dreaming is Root's,
@@ -703,13 +711,20 @@ printed domain.** Void takes Fear out of the GM's pool: Reckoning buys one back
 for a Stress and Geometry of Ruin takes one out for every target that fails.
 Two cards of twenty-one, where print does it on three of 210 — Know Thy Enemy,
 Dire Strike, Night Terror — and Cold Solution reads the pool on top of that,
-sizing its tokens off whatever is left in it. Two things that look like
-they belong in that count are deliberately outside it: The Answer's three Fear
-is the frame's own cost tripled rather than the card reaching into the pool, and
-Void-Touched refusing to feed it is the `-Touched` pattern both decks share —
-Root-Touched says the same words. Widen it to every card that engages the pool
-as a quantity — takes from it, adds to it, blocks a gain, reads its size — and
-it is five of twenty-one against eight of 210.
+sizing its tokens off whatever is left in it. The Answer's three Fear look like
+they belong in that count and are deliberately outside it: that is the frame's
+own cost tripled rather than the card reaching into the pool. Widen it to every
+card that engages the pool as a quantity — takes from it, adds to it, blocks a
+gain, reads its size — and it is four of twenty-one against eight of 210.
+
+**The `-Touched` pair never waives the toll.** They used to — once per rest a
+use cost nobody anything — and that was the one place either deck broke the
+frame's own sentence, *neither is optional and neither can be declined*. Now
+each gives +1 to the trait the mark casts with (Bone-Touched's shape, and the
+only half `passive-modifiers.mjs` can automate) and a second payer: Void-Touched
+lets you mark a Stress instead of the GM gaining the Fear, Root-Touched a Hit
+Point. Somebody always pays; the card decides who, and each deck pays in its own
+currency — Void the mind, Root the body that Feed, Apex and Regrow buy back.
 
 **Both of those are one predicate applied to both corpora, and that is the
 point.** Three separate attempts at this paragraph got it wrong the same way:
@@ -777,6 +792,14 @@ what somebody reads with a card in their hand.
   reason. **A full pool does not make the deck free**: Fear caps at 12 and the
   cost lands as Stress instead, or the cards would cost nothing exactly when
   the table is in the most trouble.
+- **A live `-Touched` adds a second payer, not a waiver.** `touchedPayer` in
+  `config.ts` (beside `isMarkedDomain`, so `post-card.ts` can reach it without
+  importing the roll engine) finds the card by the sentence it prints — "instead
+  of the GM gaining a Fear" — and counts 4 of its deck in the loadout. The row
+  then carries two `mark-use` presses, the second with a `payer`, and every
+  `mark-use` on a message shares the claim `card-action-mark`: one toll, two
+  payers, pressing either spends both. A message posted before that key existed
+  claimed its toll per index, and that claim is still honoured.
 - **The toll is observed, not instrumented.** A card reaches the loadout by at
   least five routes — the recall button, either drag, the item sheet, a macro
   — so `ledger.ts`'s argument applies unchanged: one `updateItem` hook catches
