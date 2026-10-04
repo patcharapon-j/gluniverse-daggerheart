@@ -9,6 +9,7 @@
 
 import PRINTINGS from "./card-printings.mjs";
 import { modifiersFor } from "./passive-modifiers.mjs";
+import { kindOf } from "../module/ui/item-kind.js";
 
 const SYSTEM_PATH = "systems/gluniverse-daggerheart";
 
@@ -22,6 +23,15 @@ export const domainIcon = (domain) => `${SYSTEM_PATH}/assets/domains/${domain}.s
  * design's own type glyphs instead — the same ones `domains.js` loads.
  */
 export const typeGlyph = (kind) => `${SYSTEM_PATH}/assets/types/${kind}.svg`;
+
+/**
+ * The row icon for a piece of gear, picked the way its card's sigil is.
+ *
+ * `item-kind.js` is shared with `sheets/cards.ts` on purpose. The gear tab
+ * shows a row icon and a card for the same item, and two tables deciding
+ * which mark each one gets is two tables to keep in step.
+ */
+const gearGlyph = (type, name, floor) => typeGlyph(kindOf(type, name) ?? floor);
 
 /**
  * Where a card's painting lives, derived from its name.
@@ -398,7 +408,7 @@ export function weaponItem({
     name,
     type: "weapon",
     folder: slot === "secondary" ? "Secondary Weapons" : "Primary Weapons",
-    img: typeGlyph(slot === "secondary" ? "secondary" : "primary"),
+    img: gearGlyph("weapon", name, slot === "secondary" ? "secondary" : "primary"),
     system: {
       /* The arcane-frame wheelchair is the only weapon in the book that names
          no trait: it uses whatever your subclass casts with. The schema stores
@@ -438,7 +448,7 @@ export function armorItem({ name, tier, major, severe, score, feature = null }) 
     name,
     type: "armor",
     folder: "Armor",
-    img: typeGlyph("armor"),
+    img: gearGlyph("armor", name, "armor"),
     system: {
       description: "",
       tier,
@@ -475,7 +485,15 @@ export function lootItem({ name, description, roll, consumable = false, book = "
     name,
     type: consumable ? "consumable" : "loot",
     folder: consumable ? "Consumables" : "Items",
-    img: typeGlyph(consumable ? "consumable" : "gear"),
+    /* The floor for an item is `loot` and not `gear`. Loot rows have borrowed
+       the gear mark since the pack was first written, and their cards stopped
+       doing that when loot got a mark of its own. This is the row catching up
+       with the card rather than a new decision. */
+    img: gearGlyph(
+      consumable ? "consumable" : "loot",
+      name,
+      consumable ? "consumable" : "loot",
+    ),
     system: {
       description: rt(description),
       quantity: 1,
