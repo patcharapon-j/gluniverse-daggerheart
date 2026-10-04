@@ -581,13 +581,39 @@ function reclaim(id: string): HTMLElement | undefined {
    the GM has toggled invisible, which the GM can still see. */
 const visible = (token: any): boolean => token?.visible !== false && !token?.document?.hidden;
 
+/* ── a creature has more than one placeable ───────────────────────────
+   Foundry's drag ghost is `document.clone({keepId: true})` drawn as a second
+   Token object, so for the length of a drag one creature is on the board
+   twice and both copies answer to the same document id. That is not an edge
+   case to exclude: the ghost is the copy the person dragging is looking at,
+   and the readout belongs on the creature, so the chip rides it.
+
+   What it cannot survive is identity taken from the placeable. `_original`
+   is the real object behind a ghost and `isPreview` is how Foundry says
+   which is which. Every question about WHO this is goes through the first;
+   every question about WHERE to draw takes the object it was handed. The bug
+   this replaces deleted the live chip on `destroyToken` for the ghost,
+   because the ghost's id is the creature's id -- so the next hook built a
+   new one and the arrival replayed, on every drag, dropped or cancelled.
+
+   A creation preview -- dragging an actor onto the board -- has no
+   `_original` and no document id, so it falls out of `sync` before any of
+   this can apply to it. */
+const ghost = (token: any): boolean => token?.isPreview === true;
+const realOf = (token: any): any => token?._original ?? token;
+
 function sync(token: any): void {
-  const id = token?.document?.id ?? token?.id;
+  /* Who, from the real placeable; where, from the one we were handed. */
+  const subject = realOf(token);
+  const id = subject?.document?.id ?? subject?.id;
   if (!id) return;
 
   const enabled = game.settings?.get(SYSTEM_ID, "tokenChip") !== false;
-  const state = enabled ? stateOf(token) : null;
-  const gone = !state || (!token.isVisible && !isGM());
+  const state = enabled ? stateOf(subject) : null;
+  /* Visibility is the real token's. A ghost is created `visible = false` and
+     turned on a frame later by `clone().draw().then()`, so asking the ghost
+     would retire a living creature's chip on the frame a drag starts. */
+  const gone = !state || (!subject.isVisible && !isGM());
 
   if (gone) clearTokenConditionMaterial(token);
   else syncTokenConditionMaterial(token, state.materialIds ?? state.conditionIds ?? [], !!state.defeated,
@@ -624,7 +650,7 @@ function sync(token: any): void {
   }
 
   place(chip, token);
-  setChip(chip, { ...state, hidden: !visible(token) });
+  setChip(chip, { ...state, hidden: !visible(subject) });
 
   /* After `place`, and that ordering is the whole of it: the arrival is a
      scale about the chip's own centre, and a chip that has not been placed
@@ -820,6 +846,13 @@ export function registerTokenChips(): void {
      makes a ticker of our own unnecessary rather than merely redundant. */
   Hooks.on("refreshToken", (token: any) => {
     if (!layer) return;
+    /* While a creature is being dragged it is on the board twice and the chip
+       rides the ghost -- so the real token's own refreshes, which Foundry
+       raises for its dimmed drag state, must not pull it back. Both were
+       writing one element every frame. Matched on the preview's KIND rather
+       than on `hasPreview`, which is also true of a sheet's config preview,
+       and that one does not move the token at all. */
+    if (token?._preview?._previewType === "dragging") return;
     const chip = chips.get(token.document?.id ?? token.id);
     if (chip) place(chip, token);
     else sync(token);
@@ -827,10 +860,25 @@ export function registerTokenChips(): void {
 
   Hooks.on("drawToken", (token: any) => sync(token));
   Hooks.on("destroyToken", (token: any) => {
+    /* Keyed by the token object, so a ghost's filter goes and the real
+       creature's stays. */
+    clearTokenConditionMaterial(token);
+
+    /* A ghost being destroyed is a drag ending -- Foundry destroys the clone
+       on a drop and on a cancel alike -- and it carries the creature's own
+       document id, so deleting by id here is what deleted the live chip and
+       made the arrival replay. The chip is handed back to the real placeable
+       instead. A drop also raises `updateToken`; a cancel raises nothing at
+       all, so this is the only hook that can. */
+    if (ghost(token)) {
+      const real = realOf(token);
+      if (real && real !== token) sync(real);
+      return;
+    }
+
     const id = token.document?.id ?? token.id;
     chips.get(id)?.remove();
     chips.delete(id);
-    clearTokenConditionMaterial(token);
   });
 
   /* The state, from every direction it can move. An actor's tracks, a
