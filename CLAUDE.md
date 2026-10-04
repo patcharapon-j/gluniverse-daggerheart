@@ -2040,6 +2040,20 @@ in a slot whose card is in your hand, making the same claim: this is filed, not
 held. It falls on the only region of a spine carrying neither a word nor a
 number, and it lifts on hover.
 
+**That hatch did not survive the move to compact cards.** The vault is a grid
+of `.dh-cc.is-vaulted` now, in the same 100×140 bays as the loadout, and a
+hatch over a *painting* is this system's vocabulary for missing — the socket,
+the drag hole, homebrew with no art — so thirty of them read as thirty cards
+that had failed to load. A vaulted card is **mounted in a case** instead: a
+riveted gunmetal frame inside the bay (never round it, or the two grids stop
+being the same size), the domain hairline moved to the frame's inner edge, a
+recessed glass pane with one specular streak, and the painting cooled in
+storage. Reaching for it sweeps the streak off the glass and warms the
+painting back to full colour; a card you cannot afford fogs over and its
+clasp takes the Stress colour. All of it lives on `.dh-cc-static` and its two
+pseudo-elements — see the block in `design/compact.css`, and the vault row on
+`design/face.html`.
+
 ## Edit mode
 
 The sheet's derived numbers all hang off things you set once. Level drives

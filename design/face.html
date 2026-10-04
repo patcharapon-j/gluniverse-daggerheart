@@ -106,6 +106,20 @@ el.innerHTML = `
   <div class="row">${cards.slice(0,4).map(c => face(c,'slot','w132')).join('')}</div>
   <h2>Compact &mdash; the loadout bays</h2>
   <div class="grid">${cards.map(c => small(c,{ size:'s' })).join('')}</div>
+  <h2>The vault &mdash; the same bays, filed under glass</h2>
+  <!-- The Vault tab draws these exactly as the loadout above it does, with
+       \`is-vaulted\` added and the state reachRows writes. Within reach and
+       out of reach, a card with no painting, a long name and a Dread card. -->
+  <div class="grid vaultgrid">${[
+    small(cards[0], { size:'s', cls:'is-vaulted', state:'within-reach' }),
+    small(cards[1], { size:'s', cls:'is-vaulted', state:'out-of-reach' }),
+    small(cards[4], { size:'s', cls:'is-vaulted', state:'within-reach' }),
+    small(cards[3], { size:'s', cls:'is-vaulted', state:'within-reach', rc:1 }),
+    small(cards[2], { size:'s', cls:'is-vaulted', state:'within-reach', rc:0 }),
+    small(cards[1], { size:'s', cls:'is-vaulted', state:'within-reach',
+      name:'Rain of Blades and Every Other Falling Thing' }),
+    small(cards[4], { size:'s', cls:'is-vaulted', state:'out-of-reach', rc:3 }),
+  ].join('')}</div>
   <h2>Vault rows &mdash; the form a vault of dozens takes</h2>
   <ul class="dh-vrows vault">${
     [ VAULT_ROW({ ...cards[0], reach:true }),
