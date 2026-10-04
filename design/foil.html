@@ -1,0 +1,91 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Twilight Foil</title>
+<!-- The study page for design/foil.css: the two campaign decks on every surface
+     the ported card has, beside a Grace card as the control. Marked cards ship
+     with no painting, so the fallback plate is what a table actually sees, and
+     it is drawn first. A borrowed painting shows what the foil does the day art
+     lands. -->
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/face-tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/face.css">
+<link rel="stylesheet" href="/design/compact.css">
+<link rel="stylesheet" href="/design/vault.css">
+<link rel="stylesheet" href="/design/foil.css">
+<style>
+  body { background:var(--paper); color:var(--ink); font-family:var(--f-ui);
+         margin:0; padding:28px; }
+  h2 { font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+       opacity:.55; margin:30px 0 12px; font-weight:600 }
+  .row { display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap }
+  .host { container-type:inline-size }
+  .w264 { width:264px } .w132 { width:132px }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,100px); gap:14px 12px }
+  .vault { max-width:620px }
+</style>
+<body class="dh ramp">
+<div id="out"></div>
+<script type="module">
+import { byslug, icon } from '/design/domains.js'
+import { FACE } from '/design/face.js'
+import { COMPACT, VAULT_ROW } from '/design/compact.js'
+import { bindFaceFx } from '/design/face-fx.js'
+import { motifOf, ornamentImages } from '/design/ornaments.js'
+
+const seen = new Set()
+function motif(slug) {
+  const m = motifOf(slug)
+  if (!seen.has(m)) {
+    seen.add(m)
+    const { corner, seam } = ornamentImages(m)
+    const s = document.createElement('style')
+    s.textContent = `[data-motif="${m}"]{--dh-orn-corner:${corner};--dh-orn-seam:${seam}}`
+    document.head.append(s)
+  }
+  return m
+}
+
+const A = p => `/assets/cards/${p}`
+const mk = slug => `mk mk-${slug} mk-trim mk-cut mk-edge mk-motif`
+const cards = [
+  { d:byslug.root, lvl:3, rc:1, type:'Spell', name:'Feed', glyph:'primary', homebrew:true,
+    cls:mk('root'), code:'TM·ROOT',
+    text:'Make a **Melee** attack. On a hit, **clear a Hit Point** and gain a Hope.\n\nEach use costs the GM a Fear.' },
+  { d:byslug.void, lvl:5, rc:2, type:'Ability', name:'Geometry of Ruin', glyph:'primary', homebrew:true,
+    cls:mk('void'), code:'TM·VOID',
+    text:'**Make a Spellcast Roll (14)** against every adversary within Close range. Remove a Fear from the GM\'s pool for each target that fails.' },
+  { d:byslug.grace, lvl:1, rc:0, type:'Spell', name:'Deft Deceiver', glyph:'primary',
+    text:'Spend a Hope to gain advantage on a roll to deceive or trick someone into believing something false.',
+    art:A('domains/grace/deft-deceiver.webp'), code:'DH-CB 071' },
+]
+const painted = [
+  { ...cards[0], name:'Feed (painted)', art:A('domains/sage/conjure-swarm.webp') },
+  { ...cards[1], name:'Geometry (painted)', art:A('domains/codex/book-of-ava.webp') },
+]
+
+for (const c of cards.concat(painted)) {
+  c.sig = await icon(c.d.slug)
+  if (!c.art) c.fbsig = c.sig
+}
+
+const face = (o, size, cls) => `<div class="host ${cls}">${FACE({ ...o, size, motif:motif(o.d.slug) })}</div>`
+const small = o => COMPACT({ ...o, motif:motif(o.d.slug), size:'s' })
+
+document.getElementById('out').innerHTML = `
+  <h2>Full card &mdash; as shipped, no painting</h2>
+  <div class="row">${cards.map(c => face(c,'full','w264')).join('')}</div>
+  <h2>Full card &mdash; the day art lands</h2>
+  <div class="row">${painted.map(c => face(c,'full','w264')).join('')}</div>
+  <h2>Spent</h2>
+  <div class="row">${face({ ...cards[0], state:'used' },'full','w264')}${face({ ...cards[1], state:'used' },'full','w264')}</div>
+  <h2>Slot face &mdash; 132px</h2>
+  <div class="row">${cards.concat(painted).map(c => face(c,'slot','w132')).join('')}</div>
+  <h2>Compact</h2>
+  <div class="grid">${cards.concat(painted).map(small).join('')}</div>
+  <h2>Vault rows</h2>
+  <ul class="dh-vrows vault">${cards.map(c => VAULT_ROW({ ...c, reach:true })).join('')}</ul>`
+
+bindFaceFx(document.getElementById('out'))
+window.__ready = true
+</script>
