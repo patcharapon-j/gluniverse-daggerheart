@@ -689,6 +689,48 @@ function redraw(): void {
   }
 }
 
+/* ══ sight ════════════════════════════════════════════════════════════
+   A perception refresh is news about visibility and nothing else.
+
+   This used to call `redraw()`, which is a full `sync` of every token on the
+   scene: `stateOf` walking the actor, every condition uniform rewritten,
+   `place`, `setChip`. `sightRefresh` is raised from
+   `canvas.visibility.refresh()`, which a moving vision source asks for every
+   tick -- so this file's own header claim that only `place()` runs during a
+   gesture was false for every client with a token that can see.
+
+   What a perception refresh can actually change is whether this client may
+   see a creature at all, which is one boolean per token. Anything that
+   changes a VALUE arrives on its own hook and always did. */
+let pending = 0;
+
+function revisit(): void {
+  if (!layer || pending) return;
+  /* A macrotask rather than `requestAnimationFrame`, for `swap.js`'s reason:
+     what this wants is "after the current batch", and rAF does not fire at
+     all in a tab that is not painting. Twelve creatures' visibility asked
+     twelve times in one frame is the shape this is here to collapse. */
+  pending = window.setTimeout(() => {
+    pending = 0;
+    if (!layer) return;
+    const gm = isGM();
+    for (const token of canvas.tokens?.placeables ?? []) {
+      const id = token.document?.id ?? token.id;
+      if (!id) continue;
+      const chip = chips.get(id);
+      const hidden = !token.isVisible && !gm;
+      if (chip && hidden) {
+        clearTokenConditionMaterial(token);
+        retire(id, chip, true);
+      } else if (!chip && !hidden) {
+        /* Out of the fog is a creature appearing, and that is the one
+           direction here that genuinely wants the whole build. */
+        sync(token);
+      }
+    }
+  }, 0);
+}
+
 /* ══ the zoom ═════════════════════════════════════════════════════════
    The only thing pan and zoom still cost us. The layer is aligned by
    Foundry, so nothing of ours moves — but `data-t` is a question about how
@@ -922,8 +964,9 @@ export function registerTokenChips(): void {
      changed, so everything is asked again. */
   Hooks.on("daggerheart.tokenChipChanged", () => redraw());
 
-  /* Sight recomputed — a creature stepping out of the fog, or into it. */
-  Hooks.on("sightRefresh", () => redraw());
+  /* Sight recomputed — a creature stepping out of the fog, or into it. That
+     and nothing else: see `revisit`. */
+  Hooks.on("sightRefresh", () => revisit());
 
   /* Already up. See the note above: this is the case `canvasReady` cannot
      answer, because it has genuinely been and gone. */
