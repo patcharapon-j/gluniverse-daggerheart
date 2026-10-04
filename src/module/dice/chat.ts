@@ -19,7 +19,7 @@ import { frameArt } from "../apps/fit-cards.ts";
 import { loadSigils } from "../sheets/cards.ts";
 import { useOrnaments } from "../sheets/card-style.ts";
 import { bindFaceFx, stillCards } from "../ui/face-fx.js";
-import { cardWrapper, type CardAction } from "../sheets/post-card.ts";
+import { cardWrapper, livePostedCard, type CardAction } from "../sheets/post-card.ts";
 import { refreshedValue } from "../data/resources.ts";
 import { rollAdversaryDamage, rollWeaponDamage } from "./actions.ts";
 import { foeCrit } from "./plate.ts";
@@ -658,6 +658,9 @@ async function runCardAction(
       ui.notifications?.warn(
         game.i18n.format("DAGGERHEART.Warning.CardSpent", { name: item?.name ?? s.resource ?? "" }),
       );
+      // A card posted before its use went — spent from the sheet, say — is
+      // still drawn ready, so the refusal is also the moment to correct it.
+      await reflectCounters(chain, ctx);
       return;
     }
   }
@@ -677,15 +680,48 @@ async function runCardAction(
   /* The spends land beside the currency and ahead of everything else, so a
      roll the press opens is a roll whose use has already gone — cancelling the
      popover does not hand the use back, any more than it hands back the Hope. */
-  for (const s of spends) {
-    if (!(await runEffect(s, ctx))) return;
-  }
-  for (const step of chain) {
-    if (spends.includes(step)) continue;
-    if (!(await runEffect(step, ctx))) return;
+  try {
+    for (const s of spends) {
+      if (!(await runEffect(s, ctx))) return;
+    }
+    for (const step of chain) {
+      if (spends.includes(step)) continue;
+      if (!(await runEffect(step, ctx))) return;
+    }
+  } finally {
+    /* In a `finally` because the spends above have already landed: a step
+       after them that refuses — a roll popover dismissed — has not handed the
+       use back, so the card has to say it is gone either way. */
+    await reflectCounters(chain, ctx);
   }
 
   if (claims) finish(el);
+}
+
+/** The kinds that move one of the posted card's own counters. */
+const COUNTER_KINDS = new Set(["move-resource", "die-pool", "refresh"]);
+
+/**
+ * Redraw the posted card's counters and spent state after a press moved them.
+ *
+ * The press writes the Item, and the sheet follows on its own; the message is
+ * a stored drawing and does not. So a once-per-rest card whose use was just
+ * spent from chat went on showing a lit light and no stamp under the very
+ * button that spent it. See `livePostedCard` for what is redrawn and what is
+ * deliberately left as the record.
+ */
+async function reflectCounters(chain: CardAction[], ctx: ActionContext): Promise<void> {
+  const { actor, message } = ctx;
+  const card = message?.getFlag?.(SYSTEM_ID, "card");
+  const itemId = message?.getFlag?.(SYSTEM_ID, "itemId") ?? card?.id;
+  if (!card || !itemId || !message?.canUserModify?.(game.user, "update")) return;
+  if (!chain.some((a) => COUNTER_KINDS.has(a.kind) && (a.itemId ?? itemId) === itemId)) return;
+  const item = actor?.items?.get?.(itemId);
+  if (!item) return;
+  const next = livePostedCard(card, item, actor, message.getFlag(SYSTEM_ID, "feature"));
+  if (next.state === card.state && next.uses === card.uses
+    && JSON.stringify(next.feats ?? null) === JSON.stringify(card.feats ?? null)) return;
+  await message.update({ [`flags.${SYSTEM_ID}.card`]: next });
 }
 
 /** Can this actor afford every currency the chain asks for at once? */

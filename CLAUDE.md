@@ -3181,6 +3181,16 @@ checked with the purse, before anything moves, and refuse the whole press with
 ahead of any roll the press opens. Placing a counter is not a cost and still
 runs in order.
 
+**The posted card follows the press.** A chat card is a stored drawing, so a
+use spent from it left the sheet's copy stamped Used and the posted one still
+lit — the press read as having charged the Stress and forgotten the rest.
+After a press moves one of the card's own counters, `livePostedCard` redraws
+the stored card's `state` and counter readouts from the Item and nothing else;
+the text and the buttons stay the record. A feature post answers for its own
+rule, which is why the message now stores `feature`. And a spend resolves its
+counter by name **and** block: every budget is called "Use", so Aetheris's
+Celestial Wings press was spending Hallowed Aura's.
+
 **One rule says what spent means.** `cardSpent` in `data/resources.ts` is read
 by `system.isSpent` and by the cards: spent when every *fixed-ceiling* budget is
 empty and every rule on the card is budgeted. A domain card's budget is its own,
