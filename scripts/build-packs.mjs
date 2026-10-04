@@ -104,6 +104,26 @@ export const PACKS = [
     collection: "journal",
     docType: "JournalEntry",
   },
+
+  /* *The Twilight Marked*'s rules, and only its rules — the forty-two Root and
+     Void cards ride in the `domains` pack with the other 189, because a domain
+     card is a domain card and a GM looking for one looks where the cards are.
+     The frame around them is text nobody equips, so it is a JournalEntry for
+     the reason the variant frames above are.
+
+     Not gated by a switch, and that is the difference worth the comment. A
+     variant has one, so its pack is the coarse gate and `variants.ts` decides
+     what the browser offers. This frame has none: the cards are in the deck
+     list because `config.ts` puts Root and Void in `DOMAINS`, so a table not
+     running the frame is already carrying them, and one journal nobody opens
+     is the honest footprint of that. */
+  {
+    name: "marked-rules",
+    module: "marked-rules.mjs",
+    label: "The Twilight Marked",
+    collection: "journal",
+    docType: "JournalEntry",
+  },
 ];
 
 /**

@@ -210,13 +210,26 @@ const marks = Object.fromEntries(await Promise.all(
   ['root','void','midnight','grace','sage','valor','codex']
     .map(async s => [s, await icon(s)])));
 
+/* The two marked cards are their real selves, out of
+   `src/packs-src/marked-cards.mjs`: the text, the level, the recall cost, the
+   printed noun in the type cell, and `TM·ROOT` with no number after it.
+   This page cannot import the pack source — it runs with no build step — so
+   the four fields are copied, and the two chosen are the one-paragraph cards
+   because `text` lands in a single `<p class="tx">`.
+
+   What was here before was invented: a card called Excise saying something
+   Excise does not say, at a level and recall cost it does not have, a thread
+   in the cell that carries the card type, and `TM·ROOT·004` — a card number
+   `markedCode` exists to refuse, because these were never printed. A frame
+   study judged against made-up contents is a study of the frame alone, and
+   the frame is the one thing on this page that was never in doubt. */
 const CARDS = {
-  root: { d:byslug.root, sig:marks.root, lvl:2, rc:1, type:'GROWTH', name:'The Pack Knows',
-    code:'TM·ROOT·004',
-    text:'Mark a Stress to ask the GM what the nearest living thing wants. Spend a Hope to ask what it fears instead.' },
-  void: { d:byslug.void, sig:marks.void, lvl:3, rc:2, type:'UNMAKING', name:'Excise',
-    code:'TM·VOID·007',
-    text:'Spend a Hope and mark a Stress to remove one object or effect within Close range from the scene until your next rest.' },
+  root: { d:byslug.root, sig:marks.root, lvl:2, rc:1, type:'Ability', name:'The Pack Knows',
+    code:'TM·ROOT',
+    text:"When an ally within Far range makes an action roll, you can **spend a Hope** to add your Instinct to their roll. You don't need to be able to see or hear them." },
+  void: { d:byslug.void, sig:marks.void, lvl:2, rc:1, type:'Spell', name:'Fold',
+    code:'TM·VOID',
+    text:"**Spend a Hope** and make a **Spellcast Roll (13)**. On a success, you and any willing creatures you're touching teleport to a point within Far range you can see." },
   mid:  { d:byslug.midnight, sig:marks.midnight, lvl:2, rc:1, type:'SPELL', name:'Rain of Blades',
     text:'Spend a Hope to make a Spellcast Roll and conjure throwing blades that strike out at all targets within Very Close range.' },
 };

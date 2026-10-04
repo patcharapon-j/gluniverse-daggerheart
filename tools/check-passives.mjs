@@ -50,7 +50,7 @@ const DECLINED = {
  * waved through by a broad prose heuristic.
  */
 /*
- * Root and Void's thirty-one are at the foot of the list below, and they are
+ * Root and Void's thirty-two are at the foot of the list below, and they are
  * worth a word because they arrive as one block rather than one at a time.
  *
  * Two of the forty-two *are* automated and are therefore absent: Root-Touched
@@ -62,10 +62,25 @@ const DECLINED = {
  * Most are the STAT/EFFECT pair firing on the words "make a Spellcast Roll",
  * which every spell in the game says — the same over-match that put a hundred
  * and thirty-three printed domain cards on this list. The handful that really
- * do move a number move it either on a *target* (Crush, Rend, Thorn Spray) or
- * only after you have spent something to turn them on (Barkskin, The Beast,
- * Alpha, Apex), and an activated state is exactly what the note above DECLINED
- * says ownership cannot stand in for.
+ * do move a number move it either on a *target* (Crush, Rend) or only after
+ * you have spent something to turn them on (Barkskin, The Beast, Alpha, Apex),
+ * and an activated state is exactly what the note above DECLINED says
+ * ownership cannot stand in for.
+ *
+ * Thorn Spray used to be in the first of those two groups and is not any more.
+ * Its target-side "−1 penalty to their Difficulty" is off the card — what it
+ * leaves behind now is a patch of thorns that rolls its own 1d8 — so it is on
+ * this list for the Spellcast Roll over-match like the rest, and nothing on it
+ * moves a number on anybody's sheet.
+ *
+ * The Answer and No More Waiting are the same card in two decks — a once-per-
+ * long-rest extra action — and only one of them is on this list, which is the
+ * STAT/EFFECT pair being a reading of *wording* rather than of rules. The
+ * Answer fires "after you succeed on an action roll" and STAT knows the words
+ * action roll; No More Waiting fires "after you deal damage to an adversary"
+ * and STAT knows none of them, so it is never a candidate to classify.
+ * Neither is a passive: an extra action you choose to take, once per long
+ * rest, is as activated as a state you paid for.
  */
 const REVIEWED_MANUAL = new Set([
   ...Object.keys(DECLINED),
@@ -382,6 +397,7 @@ domainCard:Geometry of Ruin
 domainCard:Sever
 domainCard:Disjunction
 domainCard:Second Silence
+domainCard:The Answer
 domainCard:Barkskin
 domainCard:Hungry Fire
 domainCard:The Pack Knows

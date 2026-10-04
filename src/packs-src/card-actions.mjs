@@ -1624,8 +1624,7 @@ export const CARD_ACTIONS = {
       {
         kind: "pay",
         amount: { stress: 1 },
-        when: "Once per rest",
-        said: "<b>mark a Stress</b> and roar",
+        said: "<b>Mark a Stress</b> and roar",
       },
     ],
   },
@@ -1702,8 +1701,7 @@ export const CARD_ACTIONS = {
       {
         kind: "pay",
         amount: { stress: 1 },
-        when: "Once per rest",
-        said: "<b>mark a Stress</b> to harden",
+        said: "<b>Mark a Stress</b> to harden",
         steps: [
           {
             kind: "grant-effect",
@@ -2275,8 +2273,7 @@ export const CARD_ACTIONS = {
       {
         kind: "pay",
         amount: { hope: 1 },
-        when: "Once per rest",
-        said: "<b>spend a Hope</b>",
+        said: "<b>Spend a Hope</b>",
       },
     ],
   },
@@ -2340,13 +2337,17 @@ export const CARD_ACTIONS = {
       },
     ],
   },
+  /* The Stress is all this card has that a press can charge. The tokens are
+     the card's own pool and `card-resources.mjs` draws them; placing and
+     spending them is declined below, because a compendium document carries no
+     counter to name. */
   "domainCard:Cold Solution": {
     actions: [
       {
         kind: "pay",
         amount: { stress: 1 },
-        when: "Once per rest, when an ally within Far range fails an action roll",
-        said: "<b>mark a Stress</b> to let them reroll both dice instead",
+        when: "to put another token on the card",
+        said: "<b>Mark a Stress</b> to place a token on this card",
       },
     ],
   },
@@ -2424,24 +2425,29 @@ export const CARD_ACTIONS = {
       },
     ],
   },
+  /* Null Grip's shape at level 5, with one difference that matters to the
+     press: the −2 is not what the Stress buys. It lands on every success and
+     is declined below as the target's own number, so the Stress buys the
+     *duration* and nothing else — "make that penalty last until your next
+     rest instead" is the whole of what is charged for. */
   "domainCard:Crush": {
     actions: [
       {
         kind: "roll-trait",
         trait: "spellcast",
-        said: "Make a <b>Spellcast Roll</b>",
+        said: "Make a <b>Spellcast Roll</b> against a target within Far range",
       },
       {
         kind: "roll-card-damage",
         damageName: "",
         when: "On a success",
-        said: "they take <b>d12+4</b> magic damage",
+        said: "they take <b>d12+4</b> magic damage using your Proficiency",
       },
       {
         kind: "pay",
         amount: { stress: 1 },
-        when: "to give the target a −2 penalty to their damage thresholds",
-        said: "mark a Stress",
+        when: "to make the target's −2 threshold penalty last until your next rest",
+        said: "<b>mark a Stress</b> to make that penalty last until your next rest instead",
       },
     ],
   },
@@ -2521,14 +2527,22 @@ export const CARD_ACTIONS = {
       },
     ],
   },
+  /* Cold Solution's reading in the other deck. The token the roll costs is
+     declined below; the 2 Stress that buys one is the holder's and is here. */
   "domainCard:Deep Dreaming": {
     actions: [
       {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 15,
-        when: "Once per long rest",
+        when: "after spending a token",
         said: "make a <b>Spellcast Roll (15)</b>",
+      },
+      {
+        kind: "pay",
+        amount: { stress: 2 },
+        when: "to put another token on the card",
+        said: "<b>Mark 2 Stress</b> to place a token on this card",
       },
     ],
   },
@@ -2592,6 +2606,12 @@ export const CARD_ACTIONS = {
         dc: 18,
         when: "Once per long rest",
         said: "make a <b>Spellcast Roll (18)</b>",
+      },
+      {
+        kind: "pay",
+        amount: { stress: 2 },
+        when: "On a success, against a Difficulty of 20 or lower",
+        said: "<b>mark 2 Stress</b>",
       },
     ],
   },
@@ -2670,15 +2690,20 @@ export const CARD_ACTIONS = {
       {
         kind: "roll-trait",
         trait: "spellcast",
-        when: "Once per rest",
-        said: "make a <b>Spellcast Roll</b> against up to three targets within Close range",
+        said: "Make a <b>Spellcast Roll</b> against up to three targets within Close range",
       },
       {
-        kind: "apply-condition",
-        subject: "targets",
-        condition: "vulnerable",
-        when: "Targets you succeed against",
-        said: "are temporarily <i>Vulnerable</i>",
+        kind: "pay",
+        amount: { hope: 1 },
+        said: "<b>Spend a Hope</b> to leave them temporarily <i>Vulnerable</i> where they land",
+        steps: [
+          {
+            kind: "apply-condition",
+            subject: "targets",
+            condition: "vulnerable",
+            said: "leave them temporarily <i>Vulnerable</i> where they land",
+          }
+        ],
       },
     ],
   },
@@ -2724,14 +2749,17 @@ export const CARD_ACTIONS = {
       },
     ],
   },
+  /* The area belongs on the label, which is Geometry of Ruin's arrangement in
+     the same deck: one roll made against everybody in the band, and a reader
+     who cannot see that on the button will aim it at one adversary. */
   "domainCard:Erasure": {
     actions: [
       {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 16,
-        when: "Once per long rest",
-        said: "Spellcast Roll (16)",
+        when: "Once per long rest, against all targets within Close range",
+        said: "make a <b>Spellcast Roll (16)</b> against all targets within Close range",
       },
     ],
   },
@@ -2741,8 +2769,13 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 13,
-        when: "Once per rest",
-        said: "make a <b>Spellcast Roll (13)</b>",
+        said: "Make a <b>Spellcast Roll (13)</b>",
+      },
+      {
+        kind: "pay",
+        amount: { stress: 1 },
+        when: "to end a requirement-gated effect instead",
+        said: "<b>Mark a Stress</b> to instead end an effect that would otherwise be cleared only by meeting a specific requirement",
       },
     ],
   },
@@ -2760,20 +2793,23 @@ export const CARD_ACTIONS = {
       {
         kind: "pay",
         amount: { stress: 1 },
-        when: "Once per rest, when you deal damage to a target within Melee range",
-        said: "mark a Stress",
+        when: "When you deal damage to a target within Melee range",
+        said: "<b>mark a Stress</b> to clear a Hit Point",
         steps: [
           {
             kind: "clear",
             amount: { hitPoints: 1 },
             said: "clear a Hit Point",
-          },
-          {
-            kind: "gain",
-            amount: { hope: 1 },
-            said: "gain a Hope",
           }
         ],
+      },
+      /* The Hope is the kill's and not the hit's, and a step may not carry a
+         `when` — so it is a second press rather than a third link. */
+      {
+        kind: "gain",
+        amount: { hope: 1 },
+        when: "If that damage defeated the target",
+        said: "gain a Hope as well",
       },
     ],
   },
@@ -2927,7 +2963,7 @@ export const CARD_ACTIONS = {
         kind: "roll-card-damage",
         damageName: "",
         when: "Targets who fail",
-        said: "take <b>4d10+6</b> magic damage",
+        said: "take <b>4d12+8</b> magic damage",
       },
       {
         kind: "pay",
@@ -2957,12 +2993,16 @@ export const CARD_ACTIONS = {
       },
     ],
   },
+  /* The first question is free, so the Stress buys the second one and the
+     label has to say which — a bare "Mark a Stress" on a card that now asks
+     nothing for its first answer is a charge a reader cannot place. */
   "domainCard:Glimpse the Hunt": {
     actions: [
       {
         kind: "pay",
         amount: { stress: 1 },
-        said: "<b>Mark a Stress</b>",
+        when: "to ask a second question",
+        said: "<b>Mark a Stress</b> to ask a second question",
       },
     ],
   },
@@ -3151,11 +3191,17 @@ export const CARD_ACTIONS = {
         said: "they take <b>d8+2</b> magic damage using your Proficiency",
       },
       {
-        kind: "apply-condition",
-        subject: "targets",
-        condition: "ablaze",
-        when: "On a success",
-        said: "are temporarily <i>Ablaze</i>",
+        kind: "pay",
+        amount: { hope: 1 },
+        said: "<b>Spend a Hope</b> to set the fire in them, leaving them temporarily <i>Ablaze</i>",
+        steps: [
+          {
+            kind: "apply-condition",
+            subject: "targets",
+            condition: "ablaze",
+            said: "leaving them temporarily <i>Ablaze</i>",
+          }
+        ],
       },
     ],
   },
@@ -3498,21 +3544,30 @@ export const CARD_ACTIONS = {
       {
         kind: "roll-trait",
         trait: "spellcast",
-        when: "Once per rest",
-        said: "make a <b>Spellcast Roll</b> against a target within Close range",
+        said: "Make a <b>Spellcast Roll</b> against a target within Far range",
       },
       {
         kind: "roll-card-damage",
         damageName: "",
         when: "On a success",
-        said: "they take <b>2d8</b> magic damage",
+        said: "they take <b>d10+3</b> magic damage using your Proficiency",
       },
+      /* Vicious Entangle's shape: the damage lands on a success and the
+         condition is a second press the holder pays for, so the Hope is the
+         action and the condition is its step. Authoring the condition on its
+         own would apply it for free. */
       {
-        kind: "apply-condition",
-        subject: "targets",
-        condition: "restrained",
-        when: "On a success",
-        said: "are temporarily <i>Restrained</i>",
+        kind: "pay",
+        amount: { hope: 1 },
+        said: "<b>Spend a Hope</b> to also lock geometric force around them, leaving them temporarily <i>Restrained</i>",
+        steps: [
+          {
+            kind: "apply-condition",
+            subject: "targets",
+            condition: "restrained",
+            said: "leaving them temporarily <i>Restrained</i>",
+          }
+        ],
       },
     ],
   },
@@ -3645,12 +3700,25 @@ export const CARD_ACTIONS = {
       },
     ],
   },
+  /* The two facts are free and ask for nothing — asking the GM a question is
+     not a press, which is Glimpse the Hunt's reading in the other deck. The
+     Stress is, and what it buys is a Fear out of the GM's pool, so it is a
+     chain rather than a bare charge. Geometry of Ruin pays a Fear the same
+     way, and a chain aborts whole, which is the only arrangement in which the
+     Stress is not spent against a pool that had nothing in it. */
   "domainCard:Reckoning": {
     actions: [
       {
         kind: "pay",
         amount: { stress: 1 },
-        said: "<b>Mark a Stress</b>",
+        said: "<b>Mark a Stress</b> to remove a Fear from the GM's Fear Pool",
+        steps: [
+          {
+            kind: "pay",
+            amount: { fear: 1 },
+            said: "remove a Fear from the GM's Fear Pool",
+          }
+        ],
       },
     ],
   },
@@ -3680,14 +3748,20 @@ export const CARD_ACTIONS = {
         kind: "roll-trait",
         trait: "spellcast",
         dc: 14,
-        when: "Once per rest",
-        said: "make a <b>Spellcast Roll (14)</b>",
+        said: "Make a <b>Spellcast Roll (14)</b>",
       },
       {
-        kind: "clear",
-        amount: { hitPoints: 2 },
+        kind: "pay",
+        amount: { stress: 1 },
         when: "On a success - on yourself, or on an ally by hand",
-        said: "clear <b>2 Hit Points</b>",
+        said: "<b>mark a Stress</b> to clear <b>2 Hit Points</b>",
+        steps: [
+          {
+            kind: "clear",
+            amount: { hitPoints: 2 },
+            said: "clear <b>2 Hit Points</b>",
+          }
+        ],
       },
     ],
   },
@@ -3968,10 +4042,16 @@ export const CARD_ACTIONS = {
   "domainCard:Silence the Song": {
     actions: [
       {
-        kind: "roll-trait",
-        trait: "spellcast",
-        when: "Once per rest",
-        said: "make a <b>Spellcast Roll</b> against a target within Close range",
+        kind: "pay",
+        amount: { hope: 1 },
+        said: "<b>Spend a Hope</b> and make a <b>Spellcast Roll</b> against a target within Close range",
+        steps: [
+          {
+            kind: "roll-trait",
+            trait: "spellcast",
+            said: "make a <b>Spellcast Roll</b> against a target within Close range",
+          }
+        ],
       },
       {
         kind: "apply-condition",
@@ -4230,8 +4310,7 @@ export const CARD_ACTIONS = {
       {
         kind: "pay",
         amount: { stress: 1 },
-        when: "Once per rest",
-        said: "<b>mark a Stress</b> to give in",
+        said: "<b>Mark a Stress</b> to give in",
         steps: [
           {
             kind: "grant-effect",
@@ -4292,7 +4371,7 @@ export const CARD_ACTIONS = {
         kind: "roll-card-damage",
         damageName: "",
         when: "Targets who fail",
-        said: "take <b>3d12+8</b> physical damage",
+        said: "take <b>4d12+8</b> physical damage",
       },
       {
         kind: "apply-condition",
@@ -4327,16 +4406,30 @@ export const CARD_ACTIONS = {
   "domainCard:Thorn Spray": {
     actions: [
       {
-        kind: "roll-trait",
-        trait: "spellcast",
-        when: "Once per rest",
-        said: "make a <b>Spellcast Roll</b> against all targets within Very Close range",
+        kind: "pay",
+        amount: { stress: 1 },
+        said: "<b>Mark a Stress</b> and make a <b>Spellcast Roll</b> against all targets within Very Close range",
+        steps: [
+          {
+            kind: "roll-trait",
+            trait: "spellcast",
+            said: "make a <b>Spellcast Roll</b> against all targets within Very Close range",
+          }
+        ],
       },
       {
         kind: "roll-card-damage",
-        damageName: "",
+        damageName: "Spray",
         when: "Targets you succeed against",
-        said: "take <b>2d8+4</b> physical damage",
+        said: "take <b>2d8+3</b> physical damage",
+      },
+      /* Wall of Flame's press, one deck along: the thorns stay until your
+         next rest and the GM rolls them when something walks in. */
+      {
+        kind: "roll-card-damage",
+        damageName: "Thorns",
+        when: "For a creature that enters or acts within Very Close range of you",
+        said: "takes <b>1d8</b> physical damage",
       },
     ],
   },
@@ -4446,11 +4539,17 @@ export const CARD_ACTIONS = {
   "domainCard:Unmake": {
     actions: [
       {
-        kind: "roll-trait",
-        trait: "spellcast",
-        dc: 15,
-        when: "Once per long rest",
-        said: "make a <b>Spellcast Roll (15)</b>",
+        kind: "pay",
+        amount: { stress: 1 },
+        said: "<b>Mark a Stress</b> and make a <b>Spellcast Roll (15)</b>",
+        steps: [
+          {
+            kind: "roll-trait",
+            trait: "spellcast",
+            dc: 15,
+            said: "make a <b>Spellcast Roll (15)</b>",
+          }
+        ],
       },
     ],
   },
@@ -4598,16 +4697,22 @@ export const CARD_ACTIONS = {
   "domainCard:Weight of the Void": {
     actions: [
       {
-        kind: "roll-trait",
-        trait: "spellcast",
-        when: "Once per rest",
-        said: "make a <b>Spellcast Roll</b> against all targets within Close range",
+        kind: "pay",
+        amount: { hope: 1 },
+        said: "<b>Spend a Hope</b> and make a <b>Spellcast Roll</b> against all targets within Close range",
+        steps: [
+          {
+            kind: "roll-trait",
+            trait: "spellcast",
+            said: "make a <b>Spellcast Roll</b> against all targets within Close range",
+          }
+        ],
       },
       {
         kind: "roll-card-damage",
         damageName: "",
         when: "Targets you succeed against",
-        said: "take <b>2d8+4</b> magic damage",
+        said: "take <b>2d8+5</b> magic damage",
       },
     ],
   },
@@ -7802,6 +7907,9 @@ export const DECLINED = {
   "domainCard:Champion’s Edge": [
     "\"The target must mark an additional Hit Point.\" is the target's cost, not the holder's - the third option buys damage on somebody else and must not mark the holder's own track.",
   ],
+  "domainCard:Chariot of Thought": [
+    "\"Attacks made against a creature on the disk from beyond Close range have disadvantage\" applies to whoever is standing on the disk, holder or not, and disadvantage on somebody else's incoming attack has no modifier target here.",
+  ],
   "domainCard:Chokehold": [
     "\"they deal an extra <b>2d6</b> damage\" is damage rolled by whoever attacks the Vulnerable creature — anybody at the table — and not by the holder of this card.",
   ],
@@ -7817,6 +7925,7 @@ export const DECLINED = {
   ],
   "domainCard:Cold Solution": [
     "\"They reroll their Fear Die\" — the reroll is on the ally's own dice and costs the holder nothing",
+    "\"place a number of tokens on this card equal to the number of Fear in the GM's Fear Pool (minimum 1)\" and \"spend a token from this card\" move a counter this document does not carry, and the count is read off the Fear pool rather than printed. The tray is in `card-resources.mjs`.",
   ],
   "domainCard:Confusing Aura": [
     "\"Mark any number of Stress\" is genuinely the holder's price, but the amount is the player's choice at the moment of casting and this shape holds one fixed number — writing 1 would be inventing a figure the card does not print",
@@ -7839,7 +7948,8 @@ export const DECLINED = {
     "\"gain a bonus to your damage roll equal to either your Finesse or Agility\" is a passive bonus with no printed duration and nothing to press — it belongs to the modifier system, not to an authored action.",
   ],
   "domainCard:Crush": [
-    "\"give them a <b>−2</b> penalty to their damage thresholds until your next rest\" is a debuff on the target with a printed duration, and grant-effect has no subject - authoring it would drop the penalty on the caster's own thresholds.",
+    "\"temporarily gain a <b>−2</b> penalty to their damage thresholds\" is a debuff on the target, and grant-effect has no subject — authoring it would drop the penalty on the caster's own thresholds.",
+    "\"<b>mark a Stress</b> to make that penalty last until your next rest instead\" is the holder's price for the same target-side penalty, so it is charged in actions and the penalty itself stays declined.",
   ],
   "domainCard:Damnation": [
     "\"mark any number of Stress to roll an equal number of <b>d20s</b>\" is the holder’s price and the holder’s dice, but both counts are chosen at the moment of casting.",
@@ -7861,11 +7971,17 @@ export const DECLINED = {
   "domainCard:Deathrun": [
     "\"roll your weapon damage with a +1 bonus to your Proficiency\" cannot be roll-damage: that kind rolls the equipped weapon's own expression and has nowhere to carry the +1 Proficiency, and the sequence that follows removes a die per target, which nothing here can express",
   ],
+  "domainCard:Deep Dreaming": [
+    "\"place a number of tokens on this card equal to your Instinct (minimum 1)\" and \"Spend a token\" move a counter this document does not carry, and the count is the holder's Instinct rather than a printed number. The tray is in `card-resources.mjs`.",
+  ],
   "domainCard:Deft Maneuvers": [
     "\"gain a +1 bonus to the attack roll\" is conditional on how the sprint ends and carries no duration anybody grants by pressing, so it is a modifier on that one roll rather than an action.",
   ],
   "domainCard:Dire Strike": [
     "\"When a target marks any number of Hit Points\" is the target's mark - it is the trigger for this card, not a cost the holder pays.",
+  ],
+  "domainCard:Disjunction": [
+    "\"you place this card in your vault\" moves a card between loadout and vault, which is Codex-Touched's reading: there is no press in this vocabulary for a loadout swap.",
   ],
   "domainCard:Dread-Touched": [
     "\"you can gain a bonus to the roll equal to the number of Fear in the GM's pool\" scales off a world value at the moment of the roll; the bonus cannot be written and no press applies it",
@@ -7887,8 +8003,13 @@ export const DECLINED = {
   "domainCard:Enrapture": [
     "\"force the <i>Enraptured</i> target to mark a Stress as well\" — the second Stress is the target's; only the holder's own Mark a Stress is charged here",
   ],
+  "domainCard:Erasure": [
+    "\"The next time each of them is spotlighted, they can't target you\" is a restriction on the targets' next action, which is neither a registered condition nor a modifier this system carries.",
+    "\"This fails against a target who has marked Hit Points from you this scene\" is Excise's limit clause one deck along: it bounds what the spell reaches rather than asking for anything, and whose Hit Points were marked by whom this scene is the GM's to recall.",
+  ],
   "domainCard:Excise": [
-    "\"end one temporary condition or ongoing magical effect on a target within Far range\" removes an unnamed state from somebody else; nothing in the closed condition list is named and the removal is the GM's adjudication.",
+    "\"end one temporary condition or temporary effect on a target within Far range\" removes an unnamed state from somebody else; nothing in the closed condition list is named and the removal is the GM's adjudication.",
+    "\"Excise can't end a permanent condition or a Mark\" is a limit on what the spell reaches rather than anything to press.",
   ],
   "domainCard:Falling Sky": [
     "\"<b>Mark any number of Stress</b>\" is genuinely the holder’s price, but the amount is chosen at the moment of casting and a fixed number here would charge the wrong price on almost every cast.",
@@ -7968,7 +8089,7 @@ export const DECLINED = {
     "\"the GM spends 2 Fear on their turn to clear it\" is the GM’s cost, not the holder’s.",
   ],
   "domainCard:Hungry Fire": [
-    "\"An <i>Ablaze</i> creature takes an extra <b>1d8</b> magic damage the first time it's spotlighted in a scene\" — a second expression the document's cardDamage does not carry, and it fires on the target's spotlight rather than on any press of the holder's",
+    "\"An <i>Ablaze</i> creature takes an extra <b>2d6</b> magic damage each time it's spotlighted\" — a second expression the document's cardDamage does not carry, and it fires on the target's own spotlight rather than on any press of the holder's",
   ],
   "domainCard:Hypnotic Shimmer": [
     "\"forces them to mark a Stress\" — the Stress belongs to the stunned targets, not to the holder",
@@ -8039,6 +8160,7 @@ export const DECLINED = {
     "\"While <i>Horrified</i>, they’re <i>Vulnerable</i>\" describes what the condition already means; a second button would put Vulnerable on the targets twice.",
   ],
   "domainCard:No More Waiting": [
+    "\"immediately after you deal damage to an adversary, you can take an additional action\" hands the holder a second turn off damage they have already dealt. There is no kind for granting an action and the trigger is a thing that happened at the table, so the press would be a button that does nothing beside a sentence the GM has to adjudicate anyway.",
     "\"you gain <b>3 Mark</b> instead of 1\" changes the Marked deck’s toll, which the system applies automatically and which must never be authored.",
     "\"the GM gains <b>3 Fear</b> instead of 1\" is the same toll seen from the GM’s side — a gain button here would charge the pool a second time on top of the automatic one.",
   ],
@@ -8095,7 +8217,7 @@ export const DECLINED = {
   ],
   "domainCard:Root-Touched": [
     "\"<b>+1</b> bonus to your Spellcast Rolls\" is a passive bonus with no printed duration and nothing to press.",
-    "\"you don't gain a Mark and the GM doesn't gain a Fear\" waives the Marked deck’s toll, which the system applies by itself.",
+    "\"the GM doesn't gain a Fear and you don't gain a Mark\" waives the Marked deck’s toll, which the system applies by itself.",
   ],
   "domainCard:Rousing Strike": [
     "\"you and all allies who can see or hear you can clear a Hit Point or 1d4 Stress\" also clears on every ally in earshot; only the holder's own clear is authored, and the 1d4 is offered as a roll rather than as a clear whose amount is a die",
@@ -8112,6 +8234,9 @@ export const DECLINED = {
   ],
   "domainCard:Scramble": [
     "\"you can avoid the attack and safely move out of Melee range\" — a reaction that spends nothing and rolls nothing; the once-per-rest limit is a budget",
+  ],
+  "domainCard:Second Silence": [
+    "\"An ally within Far range can <b>mark 2 Stress</b> to be exempt\" is the ALLY's cost — the holder pays nothing when it fires.",
   ],
   "domainCard:Second Wind": [
     "\"you also clear 3 Stress or a Hit Point on an ally within Close range of you\" lands on the ALLY's tracks, not the holder's.",
@@ -8198,6 +8323,7 @@ export const DECLINED = {
     "\"the target marks <b>1d4</b> Stress\" — the die is the holder's to roll and is annotated as such, but the Stress it produces is the target's and is charged to nobody here",
   ],
   "domainCard:The Answer": [
+    "\"immediately after you succeed on an action roll, you can take an additional action\" is No More Waiting's reading off the other deck's trigger — the extra action is not a kind this vocabulary has, and the roll it rides on has already resolved somewhere a posted card cannot see.",
     "\"you gain <b>3 Mark</b> instead of 1\" changes the Marked deck’s toll, which the system applies automatically and which must never be authored.",
     "\"the GM gains <b>3 Fear</b> instead of 1\" is the same toll seen from the GM’s side — a gain button here would charge the pool a second time on top of the automatic one.",
   ],
@@ -8223,7 +8349,7 @@ export const DECLINED = {
     "\"spend any number of tokens to roll that number of <b>d6s</b>\" is a variable spend whose die count is the spend - no formula this card prints.",
   ],
   "domainCard:Thorn Spray": [
-    "\"temporarily gain a <b>−1</b> penalty to their Difficulty\" — a penalty on the targets' Difficulty, which is neither a registered condition nor a modifier target this system has",
+    "\"The thorns remain until your next rest\" is terrain the cast left behind rather than an effect on a sheet — there is no modifier target for a patch of ground, and the 1d8 it deals is annotated as this card's second printed expression",
   ],
   "domainCard:Through Your Eyes": [
     "\"You can transition between using your own senses or the target's freely\" — a state with a duration and no modifier, held by the fiction rather than by a track",
@@ -8283,7 +8409,7 @@ export const DECLINED = {
   ],
   "domainCard:Void-Touched": [
     "\"<b>+1</b> bonus to your Spellcast Rolls\" is a passive bonus with no printed duration and nothing to press.",
-    "\"you don't gain a Mark and the GM doesn't gain a Fear\" waives the Marked deck’s toll, which the system applies by itself; a button here would be a second opinion about a charge nobody made by pressing.",
+    "\"the GM doesn't gain a Fear and you don't gain a Mark\" waives the Marked deck’s toll, which the system applies by itself; a button here would be a second opinion about a charge nobody made by pressing.",
   ],
   "domainCard:Wall of Hunger": [
     "\"A creature inside the wall when it appears or that passes through it must <b>mark 2 Stress</b>\" is the creature’s cost, not the holder’s — exactly the reading that once charged the wielder for somebody else’s Stress.",
