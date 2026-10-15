@@ -112,7 +112,7 @@
       "NoTokenStudio": "Phil's Token Studio is not installed or is switched off in this world.",
       "TokenStudioFailed": "Phil's Token Studio could not be opened — see the console for what it said.",
       "TokenStudioNotYours": "That is not your actor to edit.",
-      "GunslingerDisabled": "The Gunslinger homebrew package is disabled in this world. Enable it in Configure Settings to add this content.",
+      "ContentDisabled": "{name} is switched off in this world's content library. A GM can turn it on from the compendium sidebar.",
       "AdversaryGMOnly": "Only a GM can roll an adversary's damage."
     },
     "TokenStudio": {
@@ -194,6 +194,34 @@
       "ChangeClassTitle": "Change class?",
       "ChangeClassHint": "Becoming a {name} takes these with it. Anything you dragged in yourself is left alone.",
       "ChangeClassOk": "Change it"
+    },
+    "Content": {
+      "Title": "Content library",
+      "Open": "Content library",
+      "MenuHint": "Choose which rulebooks, campaign frames and homebrew this world plays with. A source switched off stops being offered in the compendium browser, character creation, the card pickers and the players' compendium list. Characters keep everything they already hold.",
+      "Summary": "{on} of {all} sources on",
+      "Books": "Rulebooks",
+      "BooksNote": "What the table owns.",
+      "Frames": "Campaign frames",
+      "FramesNote": "Optional. Each one brings its own rules.",
+      "Homebrew": "Homebrew",
+      "HomebrewNote": "Ours, and every other compendium pack in this world.",
+      "HomebrewEmpty": "No other compendium packs are installed. A world compendium or a module's pack appears here as soon as it is.",
+      "Note": "<b>Characters keep what they hold.</b> A source switched off stops being offered. Nothing already on a sheet is removed or stops working.",
+      "Core": "Core Rulebook",
+      "CoreHint": "The nine classes and their subclasses, eighteen ancestries, nine communities, the nine domain decks, chapter 2's equipment and loot, and the core adversaries and environments.",
+      "HopeAndFear": "Hope and Fear",
+      "HopeAndFearHint": "The Assassin, Brawler, Warlock and Witch, the Dread deck, transformations, new ancestries and communities, equipment, loot, adversaries and environments.",
+      "TwilightMarked": "The Twilight Marked",
+      "TwilightMarkedHint": "The Root and Void decks and the frame's rules. Every use of a marked card costs the GM a Fear.",
+      "Gluniverse": "GLUniverse heritage",
+      "GluniverseHint": "This system's own homebrew ancestries.",
+      "Gunslinger": "Gunslinger",
+      "World": "World",
+      "Module": "Module",
+      "Journal": "Journal",
+      "GMOnly": "The content library is the GM's.",
+      "Failed": "The content library could not save that change. See the console."
     },
     "Browse": {
       "Title": "Compendium · Daggerheart",

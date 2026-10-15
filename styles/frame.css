@@ -808,3 +808,19 @@ button.dh-activity-btn[data-n]:not([data-n="0"])::after {
   letter-spacing: 0.04em;
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%);
 }
+
+/* ── a pack the content library has switched off ─────────────────────
+   Players do not see the row at all. The GM does, dimmed and struck, because
+   the GM is the one person who needs to find it again — and a row that simply
+   vanished would read as the pack having been uninstalled. See
+   `src/module/content.ts`. */
+.directory-item.dh-pack-off,
+li.dh-pack-off {
+  opacity: 0.45;
+}
+.directory-item.dh-pack-off .entry-name,
+li.dh-pack-off .entry-name,
+li.dh-pack-off .pack-title {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+}

@@ -35,6 +35,7 @@ const MODULES = [
   "counter.js",
   "ledger.js",
   "activity.js",
+  "library.js",
   "tile.js",
   "domains.js",
   "peek.js",

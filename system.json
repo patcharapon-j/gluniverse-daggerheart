@@ -34,6 +34,7 @@
     "styles/keep.css",
     "styles/ledger.css",
     "styles/activity.css",
+    "styles/library.css",
     "styles/roll.css",
     "styles/swap.css",
     "styles/sheet.css",

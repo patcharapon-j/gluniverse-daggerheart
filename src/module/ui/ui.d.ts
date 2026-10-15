@@ -762,3 +762,29 @@ declare module "*/ui/counter.js" {
   export const RAIL_LIGHTS: number;
   export const RAIL_DICE: number;
 }
+
+declare module "*/ui/library.js" {
+  /** One source's switch. Every string arrives localised and escaped. */
+  export interface LibraryRow {
+    id?: string;
+    name?: string;
+    hint?: string;
+    /** The package a homebrew pack came from. */
+    from?: string;
+    on?: boolean;
+    count?: string;
+    /** `[label, count]` for the subtypes the source holds most of. */
+    parts?: [string, string][];
+  }
+  export interface LibraryGroup {
+    id?: string;
+    title?: string;
+    note?: string;
+    rows?: LibraryRow[];
+    empty?: string;
+  }
+  export function LIBRARY_ROW(row: LibraryRow): string;
+  export function LIBRARY_GROUP(group: LibraryGroup): string;
+  export function LIBRARY(o: { title?: string; summary?: string; groups?: LibraryGroup[]; note?: string }): string;
+  export function setLibraryRow(row: Element | null, on: boolean): boolean;
+}

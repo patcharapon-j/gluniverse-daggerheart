@@ -42,6 +42,7 @@ import {
 } from "./settings.ts";
 import { closeCreationForContentChange, openCreation, refreshCreation } from "./apps/create.ts";
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
+import { openLibrary, registerLibrary } from "./apps/library.ts";
 import { registerFearHud } from "./fear-hud.ts";
 import { registerSpotlight, registerSpotlightKeys } from "./spotlight.ts";
 import {
@@ -131,6 +132,7 @@ Hooks.once("init", () => {
   registerBrawler();
   registerDice();
   registerBrowser();
+  registerLibrary();
   Hooks.on("daggerheart.contentChanged", closeCreationForContentChange);
 
   /* Vulnerable, kept in step with the Stress track — the one condition the
@@ -245,6 +247,7 @@ Hooks.once("ready", () => {
         button makes. Takes nothing: the browser is about the world's packs
         rather than about any one document. */
     browse: openBrowser,
+    library: openLibrary,
 
     /* `game.daggerheart.activity()` — the same call the chat sidebar's own
        button makes, and the same refusal: it is the GM's record, so a player

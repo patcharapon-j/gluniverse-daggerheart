@@ -32,7 +32,7 @@
  * leads with its own name in bold — which is how the page prints them.
  */
 
-import { classItem, feat, subclassCards } from "./_helpers.mjs";
+import { classItem, feat, fromSource, subclassCards } from "./_helpers.mjs";
 /* *Hope and Fear*'s four classes, in their own module because they are a
    different book with a different provenance — nothing upstream publishes them,
    so `tools/check-cards.mjs` has to be able to tell them apart from these nine.
@@ -298,7 +298,8 @@ their normal duration, and you can talk and communicate as normal. Additionally,
 Beastform’s features, add their Evasion bonus to your Evasion, and use the trait specified in
 their statistics for your attack. While you’re in a Beastform, your armor becomes part of your
 body and you mark Armor Slots as usual; when you drop out of a Beastform, those marked Armor
-Slots remain marked. If you mark your last Hit Point, you automatically drop out of this form.`,
+Slots remain marked. If you mark your last Hit Point, you automatically drop out of this form.
+`,
     ),
     feat(
       "Wildtouch",
@@ -685,7 +686,8 @@ const rogue = classItem({
       Any time you would be Hidden, you are instead Cloaked. In addition to the
 benefits of the Hidden condition, while Cloaked you remain unseen if you are stationary when
 an adversary moves to where they would normally see you. After you make an attack or end a
-move within line of sight of an adversary, you are no longer Cloaked.`,
+move within line of sight of an adversary, you are no longer Cloaked.
+`,
     ),
     feat(
       "Sneak Attack",
@@ -949,7 +951,8 @@ const sorcerer = classItem({
       `
       Make a Spellcast Roll (10). On a success, you create a minor visual
 illusion no larger than yourself within Close range. This illusion is convincing to anyone at
-Close range or farther.`,
+Close range or farther.
+`,
     ),
     feat(
       "Channel Raw Power",
@@ -1091,7 +1094,8 @@ on a success, or two if you critically succeed:
 
 - They can’t move from where they are.
 - You deal damage to them equal to your primary weapon’s damage.
-- You move with them.`,
+- You move with them.
+`,
     ),
     feat(
       "Combat Training",
@@ -1220,7 +1224,8 @@ const wizard = classItem({
       `
       You can perform harmless, subtle magical effects at will. For example,
 you can change an object’s color, create a smell, light a candle, cause a tiny object to
-float, illuminate a room, or repair a small object.`,
+float, illuminate a room, or repair a small object.
+`,
     ),
     feat(
       "Strange Patterns",
@@ -1348,6 +1353,7 @@ const schoolOfWar = subclassCards({
    ══════════════════════════════════════════════════════════════════════ */
 
 export default withDamage(withCounters([
+  ...fromSource("core", [
   bard,
   ...troubadour,
   ...wordsmith,
@@ -1376,5 +1382,6 @@ export default withDamage(withCounters([
   ...schoolOfKnowledge,
   ...schoolOfWar,
 
-  ...HOPE_AND_FEAR,
+  ]),
+  ...fromSource("hopeAndFear", HOPE_AND_FEAR),
 ]));

@@ -32,7 +32,7 @@
 import CARDS from "./domain-cards.mjs";
 import DREAD from "./dread-cards.mjs";
 import MARKED from "./marked-cards.mjs";
-import { domainCardItem } from "./_helpers.mjs";
+import { domainCardItem, fromSource } from "./_helpers.mjs";
 import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
 import { withErrata } from "./card-errata.mjs";
@@ -74,6 +74,10 @@ const MARKED_IN_DECK_ORDER = ["root", "void"].flatMap((d) =>
 
 export default withDamage(
   withCounters(
-    [...withErrata(CARDS), ...DREAD, ...MARKED_IN_DECK_ORDER].map(domainCardItem),
+    [
+      ...fromSource("core", withErrata(CARDS).map(domainCardItem)),
+      ...fromSource("hopeAndFear", DREAD.map(domainCardItem)),
+      ...fromSource("twilightMarked", MARKED_IN_DECK_ORDER.map(domainCardItem)),
+    ],
   ),
 );

@@ -56,8 +56,13 @@ import {
   TRAIT_LABELS,
   WEAPON_SLOTS,
 } from "../config.ts";
-import { contentPackAllowed, gunslingerEnabled } from "../gunslinger.ts";
-import { activeVariants } from "../variants.ts";
+import {
+  contentChoiceAllowed,
+  contentPackAllowed,
+  domainAvailable,
+  indexEntryAllowed,
+  indexWithSources,
+} from "../content.ts";
 import { SUBCLASS_RANKS } from "../data/items.ts";
 import { plain } from "../sheets/cards.ts";
 
@@ -232,7 +237,7 @@ const rangeAxis = (
 const domainAxis = (read: (s: any) => any[]): Axis => ({
   id: "domain",
   label: "Domain",
-  values: DOMAINS.filter(d => d !== "artifice" || gunslingerEnabled()).map((d) => ({
+  values: DOMAINS.filter(domainAvailable).map((d) => ({
     v: d,
     label: DOMAIN_CONFIG[d]?.label ?? d,
     hue: DOMAIN_CONFIG[d]?.light,
@@ -422,21 +427,6 @@ export function dropPack(pack?: string): void {
   else cache.clear();
 }
 
-/**
- * The one pack this window reads conditionally, and the reason it is by name.
- *
- * `variants` holds the supplemental campaign chapter's gear — 36 Everyday
- * Hero documents alone — and a table not running any of it should not meet a
- * Pitchfork while searching tier-1 primaries. That is a claim about *this
- * pack* rather than about a property its documents carry, so it is matched on
- * the pack's own name: a document has no field saying which optional chapter
- * printed it, and inventing one would put it on all 633 equipment documents
- * to serve 60.
- *
- * A world compendium of somebody's own is unaffected — this only ever
- * suppresses the pack this system ships.
- */
-const VARIANT_PACK = `${SYSTEM_ID}.variants`;
 
 /**
  * Packs this window is willing to read.
@@ -446,20 +436,18 @@ const VARIANT_PACK = `${SYSTEM_ID}.variants`;
  * from, and a browser that showed only ours would be wrong about the one
  * thing it exists to answer. `metadata.system` is what says a pack is ours.
  *
- * The variant gear is the single exception, and it is a **content gate rather
- * than a permission**: nothing is hidden from anybody, the pack is still in
- * the compendium sidebar, and a GM who wants a Pitchfork can open it. What
- * the switch buys is that a search for "axe" in a game nobody switched a
- * variant on for answers with the axes that game has.
+ * The content library is the gate: a pack whose every source is switched off
+ * is skipped whole, and inside a mixed pack each document is asked on its own
+ * (`readPack`, `survey`). It is a gate on *offering* rather than a permission
+ * — the GM still has the pack in the sidebar — so a search for "axe" in a
+ * corebook-only game answers with the axes that game has.
  */
 export function ourPacks(): any[] {
-  const variants = activeVariants().length > 0;
   return [...(game.packs ?? [])].filter(
     (p: any) =>
       p.metadata?.system === SYSTEM_ID &&
       contentPackAllowed(p.collection) &&
-      (p.metadata?.type === "Item" || p.metadata?.type === "Actor") &&
-      (variants || p.collection !== VARIANT_PACK),
+      (p.metadata?.type === "Item" || p.metadata?.type === "Actor"),
   );
 }
 
@@ -508,7 +496,7 @@ function haystackOf(doc: any): string {
 }
 
 async function readPack(pack: any): Promise<Entry[]> {
-  const docs = await pack.getDocuments();
+  const docs = (await pack.getDocuments()).filter(contentChoiceAllowed);
   const label = pack.metadata?.label ?? pack.title ?? pack.collection;
   return docs.map(
     (d: any, i: number): Entry => ({
@@ -585,7 +573,7 @@ export async function survey(): Promise<Survey> {
      world load, so this is normally six no-ops — but it costs an index and
      never a document, and a rail that silently reported zero because a
      pack had not got round to it would be worse than the call. */
-  await Promise.all(packs.map((p) => (p.index?.size ? null : p.getIndex())));
+  await Promise.all(packs.map(indexWithSources));
 
   const counts: Record<string, number> = {};
   const holders: Record<string, string[]> = {};
@@ -593,7 +581,7 @@ export async function survey(): Promise<Survey> {
     const seen = new Set<string>();
     for (const e of p.index ?? []) {
       const t = (e as any)?.type;
-      if (!t) continue;
+      if (!t || !indexEntryAllowed(e, p.collection)) continue;
       counts[t] = (counts[t] ?? 0) + 1;
       if (!seen.has(t)) {
         seen.add(t);

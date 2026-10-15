@@ -67,7 +67,7 @@
  * a price rather than a scope, and no refresh kind means that.
  */
 
-import { armorItem, lootItem, weaponItem } from "./_helpers.mjs";
+import { armorItem, fromSource, lootItem, weaponItem } from "./_helpers.mjs";
 import { TIER_PREFIX, VARIANT_GEAR, splitPrinted } from "./variant-tables.mjs";
 import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
@@ -159,7 +159,7 @@ export default withDamage(
         if (!spec) throw new Error(`variants: no builder for the "${group}" table of ${variant}`);
         return rows
           .flatMap((row) => BUILD[spec.kind](row, spec))
-          .map((doc) => ({ ...doc, folder: FOLDER[variant] }));
+          .map((doc) => ({ ...fromSource(`variant:${variant}`, [doc])[0], folder: FOLDER[variant] }));
       }),
     ),
   ),

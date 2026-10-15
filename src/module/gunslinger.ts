@@ -1,29 +1,24 @@
 /** Optional homebrew availability. Owned documents keep working when disabled. */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SYSTEM_ID } from "./config.ts";
+import {
+  CONTENT_CHANGED,
+  GUNSLINGER_PACK,
+  GUNSLINGER_RULES_PACK,
+  GUNSLINGER_SETTING,
+  gunslingerEnabled,
+} from "./content.ts";
 
-export const GUNSLINGER_PACK = `${SYSTEM_ID}.gunslinger`;
-export const GUNSLINGER_RULES_PACK = `${SYSTEM_ID}.gunslinger-rules`;
-export const GUNSLINGER_SETTING = "gunslingerContent";
-export const CONTENT_CHANGED = "daggerheart.contentChanged";
-
-export function gunslingerEnabled(): boolean {
-  try { return Boolean(game.settings?.get(SYSTEM_ID, GUNSLINGER_SETTING) ?? false); }
-  catch { return false; }
-}
-
-export function contentPackAllowed(pack: string): boolean {
-  return ![GUNSLINGER_PACK, GUNSLINGER_RULES_PACK].includes(pack) || gunslingerEnabled();
-}
-
-/** Guard stale picker results, including copies imported into a world directory. */
-export function contentChoiceAllowed(doc: any): boolean {
-  if (!doc || doc.parent?.documentName === "Actor") return true;
-  const source = doc._stats?.compendiumSource ?? "";
-  const ours = doc.flags?.[SYSTEM_ID]?.contentPackage === "gunslinger" ||
-    doc.pack === GUNSLINGER_PACK || source.startsWith(`Compendium.${GUNSLINGER_PACK}.`);
-  return !ours || gunslingerEnabled();
-}
+/* The general gate lives in `content.ts` now; these names stay importable
+   from here because the Gunslinger's own callers and checks use them. */
+export {
+  CONTENT_CHANGED,
+  GUNSLINGER_PACK,
+  GUNSLINGER_RULES_PACK,
+  GUNSLINGER_SETTING,
+  gunslingerEnabled,
+};
+export { contentChoiceAllowed, contentPackAllowed } from "./content.ts";
 
 export async function supplementalItems(key: string): Promise<any[]> {
   const types: Record<string, string[]> = { classes: ["class", "subclass"], domains: ["domainCard"], equipment: ["weapon"] };
@@ -44,7 +39,8 @@ export function registerGunslingerSettings(): void {
   });
   Hooks.on("renderCompendiumDirectory", (_app: any, html: any) => {
     const root = html instanceof HTMLElement ? html : html?.[0];
-    if (!root) return;
+    /* The GM keeps the row, dimmed by `content.ts`, to switch it back on. */
+    if (!root || game.user?.isGM) return;
     for (const pack of [GUNSLINGER_PACK, GUNSLINGER_RULES_PACK]) {
       for (const row of root.querySelectorAll(`[data-pack="${pack}"]`)) {
         row.hidden = !gunslingerEnabled();

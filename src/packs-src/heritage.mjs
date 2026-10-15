@@ -28,7 +28,7 @@
  * `communityItem` look them up by name in the generated `card-printings.mjs`.
  */
 
-import { ancestryItem, communityItem, feat } from "./_helpers.mjs";
+import { ancestryItem, communityItem, feat, fromSource } from "./_helpers.mjs";
 /* Nothing upstream publishes either of these, so `tools/check-cards.mjs` needs
    to tell them apart from the twenty-seven below. Importing the modules is how
    it tells: what they export is, by definition, what has no official card. */
@@ -448,9 +448,7 @@ const communities = [
    only grouping there is, and "the eighteen you know, then the six that are
    new" is the one a reader can use. */
 export default withDamage(withCounters([
-  ...ancestries,
-  ...communities,
-  ...HOPE_AND_FEAR,
-  ...TRANSFORMATIONS,
-  ...GLUNIVERSE,
+  ...fromSource("core", [...ancestries, ...communities]),
+  ...fromSource("hopeAndFear", [...HOPE_AND_FEAR, ...TRANSFORMATIONS]),
+  ...fromSource("gluniverse", GLUNIVERSE),
 ]));

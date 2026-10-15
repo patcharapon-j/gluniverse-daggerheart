@@ -65,6 +65,7 @@ const SHEETS = [
   "keep.css",
   "ledger.css",
   "activity.css",
+  "library.css",
   "roll.css",
   "swap.css",
   "sheet.css",

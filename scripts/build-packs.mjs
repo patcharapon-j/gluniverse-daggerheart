@@ -32,8 +32,8 @@ const stableId = (key) => createHash("sha1").update(key).digest("hex").slice(0, 
  * match `docType`.
  */
 export const PACKS = [
-  { name: "gunslinger", module: "gunslinger.mjs", label: "Gunslinger Homebrew", collection: "items", docType: "Item" },
-  { name: "gunslinger-rules", module: "gunslinger-rules.mjs", label: "Gunslinger Playtest Rules", collection: "journal", docType: "JournalEntry" },
+  { name: "gunslinger", module: "gunslinger.mjs", label: "Gunslinger Homebrew", collection: "items", docType: "Item", source: () => "gunslinger" },
+  { name: "gunslinger-rules", module: "gunslinger-rules.mjs", label: "Gunslinger Playtest Rules", collection: "journal", docType: "JournalEntry", source: () => "gunslinger" },
   {
     name: "classes",
     module: "classes.mjs",
@@ -103,6 +103,9 @@ export const PACKS = [
     label: "Variant Rules",
     collection: "journal",
     docType: "JournalEntry",
+    /* Each entry's `sourceKey` is its variant id, so a frame's rules switch
+       with its gear. */
+    source: (entry) => `variant:${entry.sourceKey}`,
   },
 
   /* *The Twilight Marked*'s rules, and only its rules — the forty-two Root and
@@ -111,20 +114,61 @@ export const PACKS = [
      The frame around them is text nobody equips, so it is a JournalEntry for
      the reason the variant frames above are.
 
-     Not gated by a switch, and that is the difference worth the comment. A
-     variant has one, so its pack is the coarse gate and `variants.ts` decides
-     what the browser offers. This frame has none: the cards are in the deck
-     list because `config.ts` puts Root and Void in `DOMAINS`, so a table not
-     running the frame is already carrying them, and one journal nobody opens
-     is the honest footprint of that. */
+     It switches with the cards: both are stamped `twilightMarked`, and the
+     content library turns the frame off as one thing. */
   {
     name: "marked-rules",
     module: "marked-rules.mjs",
     label: "The Twilight Marked",
     collection: "journal",
     docType: "JournalEntry",
+    source: () => "twilightMarked",
   },
 ];
+
+/**
+ * Every content source a built document may carry.
+ *
+ * Restated from `SOURCES` in `src/module/content.ts`, because this script runs
+ * on bare `node` and cannot import TypeScript. `tools/check-content.mjs`
+ * imports both and asserts they agree, so a source added on one side and not
+ * the other stops the build rather than shipping documents the library cannot
+ * switch.
+ */
+export const CONTENT_SOURCES = [
+  "core",
+  "hopeAndFear",
+  "twilightMarked",
+  "gluniverse",
+  "gunslinger",
+  ...[
+    "everydayHero", "feasts", "grimdark", "tech", "western",
+    "colossal", "magicSchool", "fairyTale", "monsterHunting", "hexCrawl",
+  ].map((v) => `variant:${v}`),
+];
+
+/**
+ * The source a document ships with: its own stamp, else its pack's.
+ *
+ * Throws on neither, or on one the library does not know. A document with no
+ * source is one no switch reaches, which is invisible from the table: it just
+ * keeps appearing after its book was turned off.
+ */
+function sourceOf(pack, entry) {
+  const source = entry.flags?.["gluniverse-daggerheart"]?.source ?? pack.source?.(entry);
+  if (!CONTENT_SOURCES.includes(source)) {
+    throw new Error(
+      `"${entry.name}" in "${pack.name}" has content source ${JSON.stringify(source)}. ` +
+        `Stamp it with fromSource() in its pack module, or give the pack a default.`,
+    );
+  }
+  return source;
+}
+
+const withSource = (flags, source) => ({
+  ...flags,
+  "gluniverse-daggerheart": { ...flags?.["gluniverse-daggerheart"], source },
+});
 
 /**
  * A feature living on an adversary or an environment.
@@ -196,6 +240,7 @@ function documentDoc(pack, entry, folderId) {
      retitling an entry does not orphan it. */
   const kind = pack.docType === "JournalEntry" ? "journal" : entry.type;
   const id = stableId(`${pack.name}:${kind}:${entry.sourceKey ?? entry.name}`);
+  const flags = withSource(entry.flags, sourceOf(pack, entry));
 
   if (pack.docType === "JournalEntry") {
     return {
@@ -206,7 +251,7 @@ function documentDoc(pack, entry, folderId) {
       folder: folderId,
       sort: entry.sort ?? 0,
       ownership: { default: 0 },
-      flags: {},
+      flags,
     };
   }
 
@@ -225,7 +270,7 @@ function documentDoc(pack, entry, folderId) {
     folder: folderId,
     sort: entry.sort ?? 0,
     ownership: { default: 0 },
-    flags: entry.flags ?? {},
+    flags,
   };
 }
 

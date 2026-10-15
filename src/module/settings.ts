@@ -9,6 +9,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { SYSTEM_ID } from "./config.ts";
+import { registerContentSettings } from "./content.ts";
 import { registerGunslingerSettings } from "./gunslinger.ts";
 import { registerVariantSettings } from "./variants.ts";
 
@@ -130,6 +131,7 @@ export function registerSettings(): void {
      settings above them that each say something different. */
   registerVariantSettings();
   registerGunslingerSettings();
+  registerContentSettings();
 
   game.settings.register(SYSTEM_ID, "theme", {
     name: "DAGGERHEART.Settings.Theme",

@@ -22,7 +22,7 @@
  * numeral cell, so nothing is lost by not foldering on it.
  */
 
-import { armorItem, lootItem, weaponItem } from "./_helpers.mjs";
+import { armorItem, fromSource, lootItem, weaponItem } from "./_helpers.mjs";
 import {
   ARMOR,
   PRIMARY_MAGIC,
@@ -56,6 +56,7 @@ const primary = (magic) => (row, tier) =>
   weaponItem({ ...row, tier, slot: "primary", magic });
 
 export default withDamage(withCounters([
+  ...fromSource("core", [
   ...tiered(PRIMARY_PHYSICAL, primary(false)),
   ...tiered(PRIMARY_MAGIC, primary(true)),
 
@@ -70,10 +71,12 @@ export default withDamage(withCounters([
 
   ...CONSUMABLES.map((row) => lootItem({ ...row, consumable: true })),
   ...ITEMS.map((row) => lootItem({ ...row, consumable: false })),
+  ]),
 
   /* Hope and Fear. Same mappers, same folders — the only difference is which
      table the row was read off, and `lootItem` records that in `source`
      because both books number their loot 1–60. */
+  ...fromSource("hopeAndFear", [
   ...tiered(HF_PRIMARY_PHYSICAL, primary(false)),
   ...tiered(HF_PRIMARY_MAGIC, primary(true)),
   ...tiered(HF_SECONDARY, (row, tier) => weaponItem({ ...row, tier, slot: "secondary" })),
@@ -81,4 +84,5 @@ export default withDamage(withCounters([
 
   ...HF_CONSUMABLES.map((row) => lootItem({ ...row, consumable: true })),
   ...HF_ITEMS.map((row) => lootItem({ ...row, consumable: false })),
+  ]),
 ]));

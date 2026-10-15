@@ -537,3 +537,38 @@ export function domainCardItem({
     },
   };
 }
+
+/**
+ * Stamp which publication a run of documents came from.
+ *
+ * The GM's content library (`src/module/content.ts`) switches whole sources on
+ * and off — the corebook, *Hope and Fear*, a campaign frame, a homebrew — and
+ * several packs hold more than one of them: the domain deck is the corebook's
+ * nine, Dread and Root and Void in one list. A pack cannot answer "which book",
+ * so every document carries the answer itself.
+ *
+ * Merged rather than replaced, so a document that already carries flags of its
+ * own (Gunslinger's `contentPackage`) keeps them. `build-packs.mjs` refuses a
+ * document that reaches it without a source.
+ */
+export const fromSource = (source, docs) =>
+  docs.map((d) => ({
+    ...d,
+    flags: { ...d.flags, "gluniverse-daggerheart": { ...d.flags?.["gluniverse-daggerheart"], source } },
+  }));
+
+/**
+ * A stat block's source, read off the book its `sourceKey` names.
+ *
+ * The snapshot already says which book printed each adversary and environment
+ * ("Core Rulebook:Acid Burrower"), so it is read rather than restated. A book
+ * this table does not know throws, because a third book silently filed under
+ * the corebook would be switched off with the wrong one.
+ */
+const BOOKS = { "Core Rulebook": "core", "Hope & Fear": "hopeAndFear" };
+export function bookSource(doc) {
+  const book = String(doc.sourceKey ?? "").split(":")[0];
+  const source = BOOKS[book];
+  if (!source) throw new Error(`no content source for "${doc.name}" (book "${book}")`);
+  return fromSource(source, [doc])[0];
+}

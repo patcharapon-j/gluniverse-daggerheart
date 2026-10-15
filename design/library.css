@@ -1,0 +1,116 @@
+/* ══════════════════════════════════════════════════════════════════
+   THE CONTENT LIBRARY
+
+   One window where the GM decides what this world plays with: which
+   rulebooks, which campaign frames, which homebrew. A switch per
+   source, grouped by the kind of decision it is.
+
+   ── it is the application's chrome, not a sheet ───────────────────
+   Nothing in here is a character or a card. It is a control panel the
+   GM opens twice a campaign, so it wears the frame tokens the activity
+   log wears rather than the paper a sheet is printed on, and it reads
+   as part of the application the way that window does.
+
+   ── a row is a switch ─────────────────────────────────────────────
+   The whole row is the press and `aria-pressed` is the state, which is
+   the Fear strip's view switch at a larger size: a rhombus pip that is
+   a socket when off and lit Hope when on. Gold rather than a new hue,
+   because on here means "the players may have this", and gold is the
+   colour this system already uses for what is the players'. An off
+   row keeps its place and its words and loses its ink, because a
+   switch that hid what it switched would make every press feel
+   destructive — the adjust tab's lesson.
+
+   ── the prefix ────────────────────────────────────────────────────
+   The root is `.cnl` and every member is `cl-`. `.row`, `.grp`, `.hd`
+   and `.pip` all belong to somebody else already, and everything here
+   loads into the same `.dh` root where scoping does nothing.
+   ══════════════════════════════════════════════════════════════════ */
+
+.cnl{display:flex;flex-direction:column;height:100%;min-height:0;
+  background:var(--frame);color:var(--frame-tx)}
+
+/* ── every press is an object ───────────────────────────────────────
+   Foundry's `elements` layer sizes every `<button>` to one centred
+   28px line with a matching `min-height`. A row here is two or three
+   lines tall; left unreset it is clipped to its name. Stated once at
+   the root, for `make.css`'s reason. */
+.cnl button{height:auto;min-height:0;max-height:none;width:100%;
+  margin:0;padding:0;border:0;border-radius:0;
+  font:inherit;color:inherit;background:none;text-align:left;
+  line-height:normal;justify-content:flex-start;align-items:stretch}
+
+.cnl > .cl-hd{flex:none;display:flex;align-items:baseline;gap:10px;
+  padding:11px 14px 10px;background:var(--frame-2);
+  border-bottom:1px solid var(--frame-line)}
+.cnl > .cl-hd > b{font:600 14px/1 var(--f-display);letter-spacing:-.01em;color:var(--frame-tx)}
+.cnl > .cl-hd > s{margin-left:auto;text-decoration:none;
+  font:700 7.5px/1 var(--f-mono);letter-spacing:.15em;text-transform:uppercase;
+  color:var(--frame-tx-3)}
+
+.cnl > .cl-bd{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;
+  padding:4px 14px 18px}
+
+/* ── a shelf ─────────────────────────────────────────────────────── */
+.cnl .cl-grp{display:flex;flex-direction:column;gap:4px;margin-top:14px}
+.cnl .cl-gh{display:flex;align-items:baseline;gap:9px;margin:0 0 4px;padding:0 0 6px;
+  border-bottom:1px solid var(--frame-line)}
+.cnl .cl-gh b{font:700 8px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--hope-tx)}
+.cnl .cl-gh s{text-decoration:none;font:400 10.5px/1.35 var(--f-ui);color:var(--frame-tx-3)}
+.cnl .cl-nil{margin:2px 0 0;font:400 11px/1.55 var(--f-ui);color:var(--frame-tx-3)}
+
+/* ── a source ────────────────────────────────────────────────────── */
+.cnl .cl-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  column-gap:11px;align-items:start;padding:9px 11px 10px 10px;cursor:pointer;
+  background:var(--frame-2);box-shadow:inset 0 0 0 1px var(--frame-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s}
+.cnl .cl-row:hover{background:color-mix(in srgb,var(--hope) 6%,var(--frame-2));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 34%,var(--frame-line))}
+.cnl .cl-row:focus-visible{outline:none;
+  box-shadow:inset 0 0 0 1px var(--hope),0 0 0 1px var(--hope)}
+.cnl .cl-row[aria-pressed="true"]{box-shadow:inset 2px 0 0 var(--hope),inset 0 0 0 1px var(--frame-line)}
+.cnl .cl-row[aria-pressed="true"]:hover{
+  box-shadow:inset 2px 0 0 var(--hope),inset 0 0 0 1px color-mix(in srgb,var(--hope) 34%,var(--frame-line))}
+
+/* The pip. A socket when off, lit Hope when on, sat on the name's
+   first line rather than centred against a block that may be three
+   lines tall. */
+.cnl .cl-pip{width:9px;height:9px;margin-top:3px;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  background:color-mix(in srgb,var(--frame-tx-3) 30%,var(--frame));
+  transition:background .18s,filter .18s}
+.cnl .cl-row[aria-pressed="true"] .cl-pip{background:var(--hope-tx);
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--hope) 80%,transparent))}
+
+.cnl .cl-tx{display:flex;flex-direction:column;gap:3px;min-width:0}
+.cnl .cl-tx > b{font:600 12.5px/1.25 var(--f-ui);color:var(--frame-tx);
+  overflow-wrap:anywhere;transition:color .18s}
+.cnl .cl-tx > em{font:700 7px/1 var(--f-mono);font-style:normal;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--frame-tx-3)}
+.cnl .cl-tx > span{font:400 10.5px/1.5 var(--f-ui);color:var(--frame-tx-2);transition:color .18s}
+
+.cnl .cl-ct{display:flex;flex-direction:column;align-items:flex-end;gap:3px;
+  min-width:72px;padding-top:1px}
+.cnl .cl-ct > b{font:600 15px/1 var(--f-display);letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--frame-tx);transition:color .18s}
+.cnl .cl-ct > s{text-decoration:none;display:flex;gap:5px;
+  font:700 6.5px/1.25 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--frame-tx-3);white-space:nowrap}
+.cnl .cl-ct > s u{text-decoration:none;color:var(--frame-tx-2);font-variant-numeric:tabular-nums}
+
+/* Off keeps its place and its words, and gives up its ink. */
+.cnl .cl-row[aria-pressed="false"] .cl-tx > b,
+.cnl .cl-row[aria-pressed="false"] .cl-ct > b{color:var(--frame-tx-3)}
+.cnl .cl-row[aria-pressed="false"] .cl-tx > span{color:var(--frame-tx-3)}
+
+.cnl .cl-note{margin:16px 0 0;padding:9px 11px 10px;
+  background:color-mix(in srgb,var(--hope) 6%,var(--frame-2));
+  box-shadow:inset 2px 0 0 var(--hope);
+  font:400 10.5px/1.55 var(--f-ui);color:var(--frame-tx-2)}
+.cnl .cl-note b{font-weight:600;color:var(--frame-tx)}
+
+@media (prefers-reduced-motion:reduce){
+  .cnl .cl-row,.cnl .cl-pip,.cnl .cl-tx > b,.cnl .cl-tx > span,.cnl .cl-ct > b{transition:none}
+}
