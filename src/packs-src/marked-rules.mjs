@@ -88,9 +88,8 @@ const PRINTED = [...PRINTED_CARDS, ...DREAD_CARDS];
    `variant-rules.mjs`'s pair, and they are copied here rather than moved
    somewhere shared for the reason that file gives for keeping them local: a
    helper with one caller in the file that calls it is easier to read than a
-   helper two directories away. Two pack sources is not yet the moment —
-   `gunslinger-rules.mjs` is generated and builds its own. If a fourth journal
-   ships, that is when these belong in `_helpers.mjs`.
+   helper two directories away. Two pack sources is not yet the moment. If a
+   third journal ships, that is when these belong in `_helpers.mjs`.
 
    `text.format` is 1 for HTML. `title.show` is true everywhere, because a
    page in a six-page reference is found by its name. */

@@ -81,7 +81,13 @@ export const DOMAINS = [
      preload rather than for the card. Change one, change both. */
   "root",
   "void",
-  // Registered even when unavailable so owned homebrew remains valid.
+
+  /* ── this system's own homebrew ──────────────────────────────────────
+     Flint is the Gunslinger's. Artifice was the 0.1 playtest Gunslinger's
+     and nothing offers it any more; it stays registered because the
+     schema reads a card's domain off this list, and a world still holding
+     an Artifice card would otherwise fail to load it. */
+  "flint",
   "artifice",
 ] as const;
 export type Domain = (typeof DOMAINS)[number];
@@ -209,6 +215,16 @@ export const DOMAIN_CONFIG: Record<string, DomainDef> = {
     dark: "#4b3216",
     icon: `${SYSTEM_PATH}/assets/domains/root.svg`,
     blurb: "Hunger and the dreaming root. What grows through you does not ask.",
+  },
+  /* Spark, not stone: the instant of the shot. Nearest printed hues are
+     Grace at 0.110 and Blade at 0.134 in OKLab, both wider than the books'
+     own Codex/Midnight pair. Mirrors `HOMEBREW` in `design/domains.js`. */
+  flint: {
+    label: "Flint",
+    light: "#c0462a",
+    dark: "#7a2816",
+    icon: `${SYSTEM_PATH}/assets/domains/flint.svg`,
+    blurb: "Aim and nerve. The steady hand, and the shot that ends it.",
   },
   artifice: {
     label: "Artifice",
@@ -895,7 +911,8 @@ export type ActionSubject = (typeof ACTION_SUBJECTS)[number];
 
 /* ── conditions ──────────────────────────────────────────────────────────
    The three the *core rules* name, plus thirteen the cards do, plus seven
-   the optional chapters and one class stance do.
+   the optional chapters and one class stance do, plus one a homebrew deck
+   does — twenty-four.
 
    "Daggerheart has no poisoned, no prone, no blinded" is still true and was
    never the whole claim. What this list said for a long time was that three
@@ -1129,6 +1146,19 @@ export const CONDITIONS: ConditionDef[] = [
     name: "Destroyed",
     img: `${SYSTEM_PATH}/assets/conditions/destroyed.svg`,
     rule: "A Destroyed segment can't use any of its features.",
+  },
+  /* ── the homebrew decks' ─────────────────────────────────────────────
+     Last because it is the only one no printed book names: the Gunslinger's
+     Covering Fire, in the Flint domain, makes its target "temporarily
+     Suppressed" and then says what that means, which is the same "While X"
+     shape every entry above passes on. */
+  {
+    id: "suppressed",
+    name: "Suppressed",
+    img: `${SYSTEM_PATH}/assets/conditions/suppressed.svg`,
+    rule:
+      "While Suppressed, a creature's attacks against anyone other than the " +
+      "creature who Suppressed it are made with disadvantage.",
   },
 ];
 

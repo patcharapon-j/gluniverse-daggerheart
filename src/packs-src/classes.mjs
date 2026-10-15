@@ -41,6 +41,10 @@ import { classItem, feat, fromSource, subclassCards } from "./_helpers.mjs";
    list rather than merged alphabetically, so the compendium's folder order says
    which nine arrived together. */
 import HOPE_AND_FEAR from "./hf-classes.mjs";
+/* This system's own Gunslinger and its Corsair subclass. Filed after the books
+   rather than among them, and stamped `gluniverse` so the content library
+   switches them with the rest of this system's homebrew. */
+import { GUNSLINGER_CLASSES } from "./gluniverse-gunslinger.mjs";
 import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
 
@@ -1384,4 +1388,5 @@ export default withDamage(withCounters([
 
   ]),
   ...fromSource("hopeAndFear", HOPE_AND_FEAR),
+  ...fromSource("gluniverse", GUNSLINGER_CLASSES),
 ]));

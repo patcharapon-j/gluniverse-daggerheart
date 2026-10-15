@@ -411,6 +411,27 @@ domainCard:Bloom
 domainCard:The Long Memory
 domainCard:The Undergrowth Wakes
 domainCard:The World Tree`.split("\n"),
+  /* The Gunslinger, Corsair and Flint. Every one is a roll's bonus, a die
+     added to one damage roll, a Hope Die swapped for one roll or a cost paid
+     on a press; none holds from ownership alone. Flint-Touched's +1 Finesse
+     is the one that does, and it is automated. */
+  ...`class:Gunslinger:Call Your Shot
+class:Gunslinger:Quickdraw
+subclass:Corsair: Mastery:Infamy
+domainCard:Draw a Bead
+domainCard:Under Fire
+domainCard:Cold Read
+domainCard:Long Shot
+domainCard:Name the Stakes
+domainCard:Grit
+domainCard:Trick Shot
+domainCard:Stare Down
+domainCard:Pick Your Spot
+domainCard:All In
+domainCard:Killshot
+domainCard:Poker Face
+domainCard:Through and Through
+domainCard:Parley`.split("\n"),
 ]);
 
 const TARGETS = new Set([

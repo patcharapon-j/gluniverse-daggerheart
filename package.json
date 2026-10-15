@@ -55,9 +55,8 @@
     "focus-points:check": "node tools/check-focus-points.mjs",
     "variants:check": "node tools/check-variants.mjs",
     "variant-rules:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/check-variant-rules.mjs",
-    "gunslinger:sync": "node scripts/sync-gunslinger.mjs",
     "content:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/check-content.mjs",
-    "gunslinger:check": "node scripts/sync-gunslinger.mjs --check && node --disable-warning=ExperimentalWarning --experimental-strip-types tools/check-gunslinger.mjs",
+    "gunslinger:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/check-gunslinger.mjs",
     "lifecycle:check": "node --disable-warning=ExperimentalWarning --experimental-strip-types tools/test-token-chip-lifecycle.mjs"
   },
   "devDependencies": {

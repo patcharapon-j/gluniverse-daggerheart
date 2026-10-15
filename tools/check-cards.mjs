@@ -219,6 +219,9 @@ const key = (name) => String(name).replace(/[‘’ʼ]/g, "'").toLowerCase();
 
 const NO_UPSTREAM = new Set([
   ...(await noUpstream("gluniverse-heritage.mjs")),
+  /* The Gunslinger, Corsair and Flint: this system's own, like the two
+     ancestries above. Subclass cards by subclass name, as below. */
+  ...(await noUpstream("gluniverse-gunslinger.mjs", (d) => d.system?.subclassName ?? d.name)),
   ...(await noUpstream("hf-heritage.mjs")),
   ...(await noUpstream("transformations.mjs")),
   ...(await noUpstream("dread-cards.mjs")),

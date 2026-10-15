@@ -27,7 +27,8 @@ const rgb = (hex: string): readonly [number, number, number] => {
 /**
  * One hue per condition, positional against `CONDITIONS`.
  *
- * The last seven are the optional chapters' and the Guardian's, and finding
+ * The seven before the homebrew Suppressed are the optional chapters' and the
+ * Guardian's, and finding
  * hues for them is where this palette started to strain — which the shader's
  * own notes predicted: at this count "the only thing separating them is hue,
  * which is the actual complaint". So the seven lean on the accent ramps below
@@ -45,9 +46,11 @@ const PALETTE = [
   "#e78ba7", "#9bc45b", "#f2c85c", "#55bff5",
   "#7785a1", "#8d55b8", "#86a7c9", "#f0783f",
   /* roped: hemp. frostbitten: rime. nauseated: bile. cursed: wine.
-     unstoppable: hot bronze. broken / destroyed: one stone, two values. */
+     unstoppable: hot bronze. broken / destroyed: one stone, two values.
+     suppressed: sulphur, black powder's own colour, and greener than both
+     Stunned's gold and Unstoppable's bronze so a gun is not a blow. */
   "#c9a06a", "#bfe6f2", "#6f8f5e", "#a03a6e",
-  "#c9922e", "#8c8378", "#5e5952",
+  "#c9922e", "#8c8378", "#5e5952", "#c8c040",
 ] as const;
 
 /**
@@ -1229,6 +1232,57 @@ vec2 conditionPattern(float id, vec2 p, float t, float d) {
                 seams * .22 + fall * .30);
   }
 
+  /* Suppressed — rounds going over, and a creature keeping its head down
+     under them. Covering Fire does not hit the thing it suppresses; it makes
+     it unwilling to look up. So the fire is in the upper body and passes
+     across rather than landing, and the weight is in the lower body, pressed
+     down and breathing with the volley.
+
+     Tracers rather than a wash, because the subject is that something is
+     MOVING past: a lit streak with a hot head and a fading tail is the one
+     shape that says "in flight". Each lane fires at its own spacing on its own
+     clock and some lanes are empty, which is the comb's fix applied before
+     it could ship — a row of identical streaks at one pitch is a flag.
+     Lanes lean a little off horizontal so this is not Spectral's scan lines,
+     and they are short-lived rather than standing, which is not Roped. */
+  if (id < 23.5) {
+    float across = p.y * .97 + p.x * .24;
+    float along  = p.x * .97 - p.y * .24;
+    /* About five lanes across the creature: a lane is .38 of the radius, so
+       even at the 40px column a streak is several pixels thick. */
+    float lane   = across * 2.60;
+    float laneId = floor(lane);
+    float seed   = hash21(vec2(laneId, 23.0));
+    float inLane = fract(lane) - .5;
+    /* Rounds follow each other down a lane at the lane's own spacing and
+       speed, so a point in the fire is crossed about once a second and no
+       two lanes keep time. The head is hot and the tail fades behind it,
+       which is what makes a streak read as travelling one way. */
+    float speed  = 1.60 + .70 * seed;
+    float gap    = 1.50 + .90 * hash21(vec2(laneId, 41.0));
+    float behind = fract((t * speed + seed * 7.0 - along) / gap) * gap;
+    float tail   = 1.0 - smoothstep(0.0, .55 + .40 * seed, behind);
+    float tip    = 1.0 - smoothstep(0.0, .14, behind);
+    float live   = step(.26, seed);
+    /* Over the head, not into the body: the fire thins out below the middle. */
+    float over   = smoothstep(.55, -.20, p.y);
+    float core   = band(inLane, 0.0, .085 + .030 * seed);
+    float wake   = band(inLane, 0.0, .20) * .45;
+    float tracer = (core + wake) * tail * live * over;
+    /* The weight. Powder smoke banked in the lower body and pressed down on
+       the volley's beat, so the flinch the warp makes is drawn here too. The
+       bank's edge is what carries it at 40px; the curl inside it is detail. */
+    float beat   = pow(1.0 - fract(t * .72), 4.0);
+    float smoke  = fbmD(p * 2.20 + vec2(-t * .30, t * .08), d);
+    float press  = smoothstep(.02, .70, p.y + .14 * beat + (smoke - .5) * .30);
+    float weight = press * (.62 + .22 * beat) + press * smoke * d * .30;
+    return vec2(clamp(tracer * 1.05 + weight * .78 + tip * core * live * over * .45, 0.0, 1.0),
+                /* Heat on the head only. A long thin streak given a high
+                   one is white tape, which is the sash's own lesson; the
+                   tail stays sulphur. */
+                core * tip * live * over * .70 + core * tail * live * over * .10);
+  }
+
   /* The seventeenth, and the only one whose subject is unknown: a condition
      a GM typed the name of. Everything above draws a THING — fire, rot,
      rope, a lattice — and this one may not, because it has not been told
@@ -1342,6 +1396,11 @@ vec2 conditionWarp(float id, vec2 p, float t, float value) {
   /* Destroyed pushes every fragment away from the centre as the seams open,
      on the same slow period the pattern widens on. */
   if(id<22.5)return radial*(.55+.45*sin(t*.22))*value*.022;
+  /* Suppressed flinches down on the volley's beat and eases back up: a
+     sharp dip and a slow recovery, which is a head being kept low rather
+     than a creature bobbing. Vertical only, and on the same .72 beat the
+     pattern's weight presses on. */
+  if(id<23.5)return vec2(0.0,-.018)*pow(1.0-fract(t*.72),4.0)*value;
   /* The unnamed one barely moves the artwork. It is a mark ON a creature
      rather than something happening TO one, and a displacement is the most
      literal claim in this shader about a subject it has not been told. */
@@ -1403,6 +1462,10 @@ vec3 conditionAccent(float id, vec3 base, vec2 p, float t, float value) {
      rules say Destroyed is. A second hue here would have made the pair two
      unrelated states a reader has to learn the order of. */
   if(id<22.5)return mix(vec3(.05,.048,.045),vec3(.40,.37,.34),pow(value,2.0));
+  /* Sulphur over gunsmoke. The low end is powder smoke, nearly neutral, so
+     the pressed-down weight reads as a shadow on the creature; only the
+     tracers reach the yellow, which is the one hue the smoke does not have. */
+  if(id<23.5)return mix(vec3(.07,.068,.055),vec3(.96,.90,.42),pow(value,1.4));
   /* Parchment, and deliberately the only warm neutral in the set. Every
      other ramp names a substance; this one names a note somebody wrote. */
   return mix(vec3(.13,.11,.09),vec3(.96,.89,.76),value*.80);

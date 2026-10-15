@@ -20,7 +20,6 @@
     STARTING_EXPERIENCES,
     STARTING_KIT,
     STARTING_TRAIT_SPREAD,
-    SYSTEM_ID,
     TRAITS,
     TRAIT_LABELS,
     TRAIT_VERBS,
@@ -761,8 +760,7 @@
      those folders by name and `VARIANT_FOLDERS` is where the names are
      declared, so the caption is the variant's own. */
   const bookOf = (w: any): string =>
-    w?.flags?.[SYSTEM_ID]?.contentPackage === "gunslinger" ? "Gunslinger homebrew" :
-      w?.pack === PACK.variants ? (w.folder?.name ?? "Variant") : "";
+    w?.pack === PACK.variants ? (w.folder?.name ?? "Variant") : "";
 
   const groupsOf = (list: any[], split: boolean): GearGroup[] => {
     const tiers = [...new Set(list.map((w: any) => w.system?.tier ?? 1))].sort(

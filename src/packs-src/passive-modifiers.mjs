@@ -24,6 +24,10 @@ export const ITEM_MODIFIERS = {
   "domainCard:Root-Touched": [domain("trait", 1, { trait: "instinct" })],
   "domainCard:Void-Touched": [domain("trait", 1, { trait: "knowledge" })],
 
+  /* The Gunslinger's deck, Bone-Touched's shape again. The other bullet is
+     a Stress paid on one roll, which is a press, not a passive. */
+  "domainCard:Flint-Touched": [domain("trait", 1, { trait: "finesse" })],
+
   "domainCard:Fortified Armor": [fixed("thresholds", 2, { condition: "armor" })],
   "domainCard:Untouchable": [from("evasion", "trait", { trait: "agility", scale: 0.5 })],
   "domainCard:Bare Bones": [fixed("bareBones", 1, { condition: "noArmor" })],

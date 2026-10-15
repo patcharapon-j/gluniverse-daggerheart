@@ -149,28 +149,6 @@
       }
     },
     {
-      "name": "gunslinger",
-      "label": "Gunslinger Homebrew",
-      "path": "packs/gunslinger",
-      "type": "Item",
-      "system": "gluniverse-daggerheart",
-      "ownership": {
-        "PLAYER": "OBSERVER",
-        "ASSISTANT": "OWNER"
-      }
-    },
-    {
-      "name": "gunslinger-rules",
-      "label": "Gunslinger Playtest Rules",
-      "path": "packs/gunslinger-rules",
-      "type": "JournalEntry",
-      "system": "gluniverse-daggerheart",
-      "ownership": {
-        "PLAYER": "OBSERVER",
-        "ASSISTANT": "OWNER"
-      }
-    },
-    {
       "name": "marked-rules",
       "label": "The Twilight Marked",
       "path": "packs/marked-rules",

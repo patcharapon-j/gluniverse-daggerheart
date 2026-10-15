@@ -1,4 +1,4 @@
-import { contentChoiceAllowed } from "../gunslinger.ts";
+import { contentChoiceAllowed } from "../content.ts";
 /**
  * Taking a domain card, wherever the reason came from.
  *

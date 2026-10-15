@@ -1,170 +1,131 @@
-# Design references and playtest notes
+# Gunslinger v2 design notes
 
-Version 0.1 · Written review completed; table play pending
+Draft 4 replaces the v0.1 package (Bone + Artifice, the Drifter and the Sharpshooter, 28 workshop firearms) entirely.
 
-## Decisions carried into the draft
+## In the system
 
-This package was agreed through the design interview. It creates a broadly usable Gunslinger, rather than converting every feat on Kass's sheet into a class feature. Its central choice is damage or control. Its 3-Hope feature attempts both. Drifter rewards close sword-and-pistol sequences; Sharpshooter rewards position and precision. Artifice is a full nonmagical second domain, and the firearm collection uses narrative reloading.
+These Markdown files are the design record. The rules text ships from `src/packs-src/gluniverse-gunslinger.mjs`, word for word, and the two are kept in step by hand.
 
-The package now includes Foundry compendium documents and an Artifice domain registration behind the Gunslinger homebrew package world setting. The switch defaults off. Owned items remain usable when disabled. Recoil and Artifice-Touched have passive automation; situational features use table adjudication. Full artwork, a published print layout, and table testing remain future work. Existing core, additional-class, and campaign content remains in its own compendiums.
+- **Where it lives:** the class and Corsair in the `classes` pack, Flint in `domains`. Everything is stamped with the `gluniverse` content source, so the GM's content library switches it together with Rattin and Avori. The v0.1 packs, their setting and the sync script are gone. Artifice stays registered as a domain so cards a character already holds still load.
+- **Marks:** `design/assets/domains/flint.svg` and `design/assets/classes/gunslinger.svg`, generated with the Codex CLI's image tool and traced with potrace. Flint's hue is `#c0462a`. No card art yet.
+- **Presses** (`card-actions.mjs`): Quickdraw pays 3 Hope. Expose and Pin each pay a Stress and put Vulnerable or Restrained on the GM's selected targets. Covering Fire applies the new **Suppressed** condition. Infamy rolls Presence (15) and takes a Fear on a success. Every other card that costs something has its pay, roll or clear button. What has no kind (attack rolls, the target's Stress, one-roll bonuses, the swapped Hope Die) is declined with a reason.
+- **Tracking** (`card-resources.mjs`): eleven once-per budgets, each spent by the press it limits. Grit is a token pile capped at Proficiency that a long rest clears. The Revolver's six Ammo tokens were already tracked on the weapon.
+- **Passive:** Flint-Touched gives +1 Finesse with four Flint cards in the loadout.
+- **Checks:** `tools/check-gunslinger.mjs` asserts the shape, the wiring and the presses. The coverage ratchets (`check-actions`, `check-resources`, `check-card-damage`, `check-passives`) read every rule unit like any printed card.
 
-## Reference scope
+## Sources
 
-The comparison covers the **13 classes and 26 subclasses currently present in the two local class source files**. Their headers group nine as core and four as Hope and Fear. That describes the repository's organization; it is not a claim that those files contain every class published anywhere as of this date.
+- **Daggerheart SRD 2.0** (2026-08-25): class shape, wording, Western Campaigns weapons (p. 197), temporary tags.
+- **Homebrew Kit v1.0** (2025-07-31): class and domain budgets, Recall Cost norms, the one-token-card guidance, wording order.
+- **The 189 printed domain cards** in `src/packs-src/official-cards.json`: the comparison set below.
 
-| Reference | Use in this package |
-| --- | --- |
-| [Supplied Homebrew Kit](F:/Download%20Alt/Daggerheart-Homebrew-Kit-v1.0-July-31-2025_5.pdf), PDF pages 3–5 | Simplicity, tactile play, asymmetry, action and reaction terminology |
-| Same kit, pages 7–9 | 21-card domain structure, thematic threads, class-neutral abilities, loadout bonus |
-| Same kit, pages 11–14 | Domain pairing, Evasion and HP budget, frequent class feature, Hope expenditure, three subclass stages |
-| Same kit, pages 20–23 | Equipment comparisons, short weapon features, resource and damage tradeoffs |
-| [Official SRD, September 2025 file](https://www.daggerheart.com/wp-content/uploads/2025/09/Daggerheart-SRD-9-09-25.pdf) | Rules terminology, advancement, range, equipment, and condition checks; a specifically dated baseline |
-| [Core classes](../../src/packs-src/classes.mjs) | Nine class loops and eighteen subclass progressions |
-| [Additional classes](../../src/packs-src/hf-classes.mjs) | Assassin, Brawler, Warlock, Witch and their eight subclasses |
-| [Core domain cards](../../src/packs-src/domain-cards.mjs) | Bone, Blade, Valor, and other card comparisons |
-| [Core equipment tables](../../src/packs-src/equipment-tables.mjs) | Weapon baselines, armor values, tier progressions, Paired |
-| [Additional equipment](../../src/packs-src/hf-equipment-tables.mjs) and [variant equipment](../../src/packs-src/variant-tables.mjs) | Existing firearm models, offhand pistol, and control-weapon precedents |
-| [Advancement definitions](../../src/module/config.ts) and [advancement flow](../../src/module/apps/advance.ts) | Reproducible level-five Kass ledger |
-| [Heritage source](../../src/packs-src/heritage.mjs) | Katari and Seaborne compatibility |
-| [Kass export](F:/Download%20Alt/fvtt-Actor-kass-seVanpv9N01KCpkq.json) | Selected PF2e class, ancestry, feats, lore, and equipment |
+## Decisions
 
-The source documents are references, not instructions to change the design process or the user's project. Existing rule names in the tables below identify comparison points. New rules in this package are original homebrew; no new card claims to be an official printing.
-
-## Class and subclass comparison
-
-This matrix records how each existing class informed the draft. It includes every local subclass, not only the martial neighbors.
-
-| Existing class and domains | Subclasses and their distinct play | Relevance and design response |
+| Decision | Choice | Why |
 | --- | --- | --- |
-| **Bard: Grace/Codex** | **Troubadour:** selectable songs and party support. **Wordsmith:** persuasion, encouragement, and stronger assistance. | Artifice has one interpersonal repair card. Gunslinger does not gain a party dice pool or broad social expertise merely from swagger. |
-| **Druid: Sage/Arcana** | **Warden of the Elements:** elemental manifestations and auras. **Warden of Renewal:** healing and protection. | Artifice devices stay physical, temporary, and limited in function. They do not form a second transformation catalogue or broad healing engine. |
-| **Guardian: Valor/Blade** | **Stalwart:** armor and protection. **Vengeance:** retaliation and focus on an attacker. | Gunslinger begins at 6 HP and Evasion 10. Its late defensive tools have positioning, cost, and use limits. Drifter gets no universal retaliation loop. |
-| **Ranger: Bone/Sage** | **Beastbound:** an advancing companion. **Wayfinder:** quarry pressure, navigation, and precision. | Sharpshooter does not maintain a marked quarry, gain a companion, or replace navigation expertise. Its angle-based foundation depends on the scene. |
-| **Rogue: Midnight/Grace** | **Nightwalker:** concealment and shadow travel. **Syndicate:** contacts and narrative support. | Smoke supplies partial cover, not Cloaked or teleportation. Kass's contacts are an Experience suggestion, not a guaranteed Syndicate-style contact network. |
-| **Seraph: Splendor/Valor** | **Divine Wielder:** a spirit weapon and support. **Winged Sentinel:** flight and aerial pressure. | Physical rigging needs anchors and routes; it does not grant general flight. The class has no Prayer Dice, healing pool, or spirit weapon. |
-| **Sorcerer: Arcana/Midnight** | **Elemental Origin:** an element's identity and power. **Primal Origin:** altering magical effects. | Gunslinger cannot freely alter a shot's range, targets, and damage together. Against the Odds is still one attack and one target. |
-| **Warrior: Blade/Bone** | **Call of the Brave:** courage, danger, and teamwork. **Call of the Slayer:** stored dice and multiple-weapon damage. | Bone/Artifice avoids repeating its domain pair. No Grit Dice recreate Slayer Dice. Drifter rolls one chosen weapon profile and never gains Warrior's blanket burden exemption or level-to-damage bonus. |
-| **Wizard: Codex/Splendor** | **School of Knowledge:** card and Experience breadth. **School of War:** combat spell power and protection. | Artifice uses ability cards, not multi-effect grimoires. No chosen-number Hope engine or general card-capacity expansion is added. |
-| **Assassin: Blade/Midnight** | **Executioners Guild:** opening burst and finishing a victim. **Poisoners Guild:** purchased on-hit afflictions. | Trick Shot normally replaces damage. It has no poison-like token pool or persistent victim mark. Against the Odds permits a limited combination for a large Hope payment. |
-| **Brawler: Valor/Bone** | **Juggernaut:** physical force and resilience. **Martial Artist:** learned stances. | Drifter's narrated sequence grants one attack, not a chain of accumulating combo rolls. Neither subclass introduces a stance sheet. |
-| **Warlock: Dread/Grace** | **Pact of the Endless:** survival and suppression. **Pact of the Wrathful:** aggression and reprisal. | No patron, Favor economy, or general failure reroll is attached to the word "luck." Gunslinger remains nonmagical. |
-| **Witch: Sage/Dread** | **Hedge:** preparations, remedies, and protective work. **Moon:** lunar magic and control. | Artifice devices overlap in preparation fantasy, but use mundane tools and avoid generating a stash of tradable magical consumables. Its class does not convert arbitrary failures into successes. |
+| Domains | Flint (new, primary) + Bone | Bone is all abilities, so the class has no Spellcast trait (the Brawler's arrangement). Bone moves you and Flint aims you. |
+| Evasion / HP | 11 / 6 = 17 | One over the Kit's 16 baseline, the same total as the Warrior and Assassin. The class feature costs no resource unless it is Expose or Pin. |
+| Hope feature | Quickdraw, 3 Hope | SRD 2.0 defines the Hope feature as a 3-Hope class feature. Compare Bone-Touched's 3-Hope "that attack fails": Quickdraw is weaker against the incoming attack (disadvantage, not failure) but adds your own attack. |
+| Class feature | Call Your Shot | A risk-for-reward wager no printed class does. |
+| Arsenal | SRD 2.0 Western guns | Covers the missing tier-1 firearm. Features say "ranged weapon", so core guns work too. |
+| Subclass | Corsair only | The single reference character is Kass. A second subclass is noted below. |
 
-## Closer mechanical benchmarks
+## Call Your Shot calibration
 
-| Benchmark | Risk it revealed | Response in v0.1 |
++2 Difficulty costs 11–15 points of hit chance (2d12 + trait, criticals counted):
+
+| Trait | D11 | D13 | D15 | D17 |
+| --- | --- | --- | --- | --- |
+| +1 | 78% → 65% | 65% → 50% | 50% → 36% | 36% → 25% |
+| +2 | 83% → 72% | 72% → 58% | 58% → 43% | 43% → 31% |
+| +3 | 88% → 78% | 78% → 65% | 65% → 50% | 50% → 36% |
+
+A successful called shot deals damage with +1 Proficiency. That pays back the lost hit chance at tiers 1–3 and breaks even at tier 4, so the option is the profit and the wager is real against high-Difficulty solos. Expected HP per attack (simulated, Revolver, median adversaries): uncalled 1.17 / 1.20 / 0.94 / 0.53 at levels 1 / 4 / 7 / 10, called about 1.43 / 1.07 / 0.86 / 0.51. Warrior is 1.64 / 1.51 / 1.28 / 0.92.
+
+Expose and Pin cost a **Stress**, not a Hope. Hope is reserved for Quickdraw and Flint, which is where round-1 play ran dry. Vulnerable on two allied attacks is worth about 0.34 HP at tier 1. That is in line with *Forceful Push* (a Hope) and well under *Square Up* (3 Hope, no roll).
+
+## Flint, card by card
+
+Recall average by level: L1 0.33, L2 1, L3 1, L4 1, L5 1.5, L6 1.5, L7 1, L8 1.5, L9 2, L10 2.5. That is on or a little above the printed curve. The only 3 is Last Word, which vaults itself.
+
+| Card | Nearest printed | Reading |
 | --- | --- | --- |
-| Slayer Dice and Weapon Specialist | Renaming an existing resource or duplicating free secondary damage | No class pool; choose one weapon profile; normal Paired remains a legal equipment bonus |
-| Ranger's Focus; Assassin's marked target | Sharpshooter becoming another persistent-mark specialist | Position and visible angle, with no stored aim or quarry |
-| Poisoners Guild | Trick shots becoming another paid menu added to every damaging hit | Normal trick shots give up all damage; damage-plus-control costs 3 Hope in advance |
-| Western Lasso's control-for-damage trade | Existing variant-equipment precedent for a weapon attack applying control instead of damage | Single effect, Hope cost, range and fiction restrictions; compare impact rather than invent a new condition |
-| Forceful Push, Valor 1 | Low-level melee attacks already combine damage and movement | Gunslinger pays for ranged reliability and broader choices; monitor whether it is too costly |
-| Whirlwind; existing shotgun features | One shot's control silently multiplying across a crowd | Trick Shot, Against the Odds, and Nothing Wasted exclude added targets and Tag Team rolls |
-| Deft Maneuvers; Boost | A subclass granting more free travel than movement cards | Foundation repositioning stays within Melee; longer specialization movement costs Hope |
-| Rapid Riposte; Blade's Glancing Blow | Miss recovery stealing spotlight or duplicating free attacks | Finish the Job is once per rest, costs Stress, deals fixed tier dice, and leaves failure consequences intact |
-| Bone's Breaking Blow and Wrangle | A basic shot outclassing late teamwork or mass movement | Expose uses normal Vulnerable; Herd moves only one target a short, safe distance |
-| Nightwalker's cover and movement | Smoke becoming a low-level invisibility or teleportation substitute | Partial cover only; source can be dispersed; no Cloaked, Hidden, or shadow travel |
-| Secondary Shortsword and Small Dagger | Sword/pistol equipment accidentally gaining two full damage rolls | Sleeve Flintlock uses a comparable Paired ladder and smaller die; no extra attack |
-| Core firearm Reloading; variant Six Shot | Class relies on waiving a penalty some weapons never had | New collection uses its own reduced, complete profiles with narrative reloads; old profiles remain unchanged |
-| Gloves of Alacrity | Reload refunds producing unintended free resources | No Gunslinger feature pays, refunds, or generates resources from reloads |
+| Draw a Bead (1) | Ranger's Focus; *Deadly Focus* | About 1.1 HP per Hope over three attacks at tier 1, on the printed rate. Reactions don't break the bead. |
+| Under Fire (1) | *Signature Move* (Bone 5) | Nerve: the hit you take buys a d20 Hope Die. Not printed at level 1, and gated on Major damage. |
+| Cold Read (1) | *Know Thy Enemy* | Social, once per rest, no combat stats. |
+| Long Shot (2) | *Menacing Reach* (Warlock) | The one card that rewards distance. Permanent and Far-only, plus a d6 at Very Far. Filler for Corsair; it belongs to the future long-range subclass. |
+| Name the Stakes (2) | *Inevitable* (Valor 6) | Advantage now, 2 Stress if it fails. |
+| Covering Fire (3) | *Goad Them On* | A lasting temporary state, distinct from Disarm's single attack. |
+| Grit (3) | *Know the Tide* (Seaborne), deliberately avoided | The token card. It feeds on failing with Fear and pays in damage dice, not roll bonuses. |
+| Trick Shot (4) | Western *Dynamite*; *Whirlwind* | A Hope per use against an object at Difficulty 12. Adversaries only. About 2.5 HP per Hope, level with Whirlwind. |
+| Stare Down (4) | *Goad Them On* | Social and combat, once per rest. |
+| Pick Your Spot (5) | *Cruel Precision*, *Rain of Blades* | +16% over Cruel Precision while active. The condition must already be on the target. |
+| All In (5) | *Full Surge* | Once per long rest, Stress per Hope if it fails. |
+| Shoot It Out of Their Hand (6) | none | Disables one Action feature until the GM pays a Fear. |
+| Nothing Left to Lose (6) | *Adrenaline* (Nightwalker) | Advantage only. The damage half was cut. |
+| Flint-Touched (7) | *Bone-Touched*, *Stealth Expertise* | The printed template. |
+| Steady Hand (7) | none | Ranged disadvantage immunity. Long Shot no longer overlaps it. |
+| Killshot (8) | *Breaking Blow*, *Ruthless Predator* | Paid after a hit: about 0.3 HP per Stress. Recall 2, and it ignores resistance, so it isn't a trap against resistant solos. |
+| Poker Face (8) | *Deft Deceiver* | Belief until disproved, never compulsion. Stakes 2 Stress. |
+| Through and Through (9) | *Hold Them Off*, *Splintering Strike* | Once per rest, so it stays under the Ranger's Hope feature. |
+| Parley (9) | none | Once per session, with clear end conditions. |
+| Deadeye (10) | *Reaper's Strike* | The single long shot: advantage, an automatic critical, +2 HP. About 2.7 HP, 26% over Reaper's Strike a level lower. |
+| Last Word (10) | *Unbreakable* | Always saves you, but heals less: 2 HP on a hit and 1 on a miss, against Unbreakable's d6 (3.5 on average). In exchange you get a maximum-damage shot. A different trade, not a better card. |
 
-These comparisons establish useful limits, not proof of equal power. In particular, a temporary condition can be more valuable than several damage dice when it changes which objectives an adversary can pursue.
+Social-nerve cards are Cold Read, Stare Down, Poker Face and Parley. All four are usage-limited, and two stake Stress.
 
-## Artifice progression rationale
+## Testing log
 
-| Thread | Early cards | Later expression | What should remain useful |
-| --- | --- | --- | --- |
-| Understanding and repair | Fieldwork, Fault Finder, Something Worth Keeping | Running Repairs, Rework, Master Mechanic | Tools, physical insight, and meaningful objects outside combat |
-| Devices and sabotage | Make Do, Catch Line, Tripwire | Flash Charge, Breaching Charge, Chain Reaction | Manipulating a fight through prepared or improvised physical means |
-| Routes and protection | Smoke Pot, Field Patch | Safety Line, Prepared Ground, Rigged Rescue, Escape Route | Helping the party survive and reach objectives |
+### Round 1 (draft 2)
 
-Artifice-Touched follows the normal level-seven concentrated-loadout pattern. Impossible Apparatus is an ambitious utility capstone. The domain contains no spells or grimoires, and no card requires a Gunslinger feature. It includes a few fixed Knowledge rolls, but a Finesse-oriented character has choices at every tier.
+Three reviewers ran: a balance Monte Carlo (200k trials per cell), a uniqueness and theme pass against all printed cards, subclasses and SRD 2.0, and three dice-rolled play scenes at levels 1, 5 and 9. All three said NEEDS WORK; fun was 7/10. What changed:
 
-The domain's scene-long devices remain an area to watch. Too much simultaneous deployed equipment could undermine the low-bookkeeping goal even without a token pool. Keep a deployed card visible, and record how many distinct effects each player actually tracks.
+- **Answer for It** dealt full weapon damage for 1 Stress with no roll and fired about five times a fight, roughly a free kill each fight. It now needs an attack roll and deals 1 HP.
+- **Hope starvation:** Expose and Pin moved from Hope to Stress.
+- **Drive** did nothing at range, so it became **Rattle**. Called shots gained +1 Proficiency, because the base damage ran 25–42% under the Warrior.
+- **Quickdraw** now always imposes disadvantage, with damage only on a hit. It states timing, Hope and Fear generation, and the spotlight.
+- **Duplicates replaced:** Steel Nerves copied Seaborne's *Know the Tide* and became **Grit**. Ricochet was Returning Blade's feature and became **Trick Shot**. Double Tap was the *Quick* stance and became **Shoot It Out of Their Hand**. Clear Line was made dead by Steady Hand and became **Long Shot**.
+- Through and Through is now once per rest. Killshot is paid after the hit. Deadeye is a single long shot. Last Word always saves. Nothing Left to Lose lost its damage half.
+- Poker Face no longer compels belief, and Parley got clear end conditions.
+- **Corsair:** Sea Legs became Unshackled (Kass the ex-slave). Steel and Shot dropped its no-op Finesse clause. All Hands clears 2 Stress. Infamy rolls against a flat 15.
 
-## Initial balance hypotheses
+### Round 2 (draft 3)
 
-1. **Ranged control might dominate repeat encounters.** Expose and Pin can consume an adversary's attention or improve several allied actions. Test enemies with ranged options and objective-driven behavior; don't automatically spend every spotlight clearing a condition.
-2. **Gunslinger might deal too little damage.** It gives up Warrior's permanent damage growth and does not have Blade. Track meaningful HP marks and objective progress, not just damage totals. If it is weak, first tune the frequency or value of its own features before adding a universal damage bonus.
-3. **Against the Odds might be too risky.** Three Hope paid before an attack is a real loss on failure. Record activations and failures. A later revision could change payment timing, but v0.1 keeps the agreed up-front expenditure.
-4. **Sharpshooter depends on encounter layout.** Open fields devalue its cover feature; firing galleries exaggerate it. Compare open ground, cluttered decks, and vertical terrain before changing the subclass.
-5. **Artifice may over-rely on convenient materials.** Track times a card is unusable because of the setting. The tool-kit convention should cover ordinary supplies without producing structures from nothing.
-6. **The late protection cards can compound armor.** Test Rigged Rescue with a Stalwart and Impossible Apparatus with several allies behind cover. Their resource costs and setup may or may not offset shared protection.
-7. **Nonmagical firearm specialization has a campaign-dependent weakness.** Gunslinger has no Spellcast trait, so the normal restriction on magic-damage weapons still matters. Test adversaries with physical resistance rather than assuming access to existing magic revolvers.
-8. **Kass already has another way to expose enemies.** Katari's Retracting Claws can inflict temporary Vulnerable through a melee Agility roll without spending Hope. Compare that option with the firearm's range and Drifter synergies before concluding that Expose is worth its price.
+Balance said GOOD. Corsair's damage per fight is level with the Warrior (9.2 / 9.4 / 7.8 / 4.9 HP at levels 1 / 4 / 7 / 10, against the Warrior's 9.4 / 8.4 / 7.1 / 5.0), behind the Ranger and ahead of the Brawler, Assassin and Rogue. Quickdraw comes to 1.3–2.2 HP dealt plus prevented, under Hold Them Off. Corsair wants about twice the Stress it has, which makes the spend a real choice; going Vulnerable is paid back by Nothing Left to Lose.
 
-## Interaction checks
+Play scored 8/10 and said GOOD once Answer for It was capped. Every call option got used: Rattle is the default, Disarm is for heavy hitters, Expose and Pin decide fights. Quickdraw fired twice as often as in round 1.
 
-| Situation | Required result in this draft |
-| --- | --- |
-| Trick Shot succeeds with Hope while the PC has no stored Hope | The newly earned Hope can pay its cost; no damage occurs |
-| Trick Shot fails | No 1-Hope payment; resolve the ordinary failure and Duality outcome |
-| Declared ordinary Trick Shot succeeds but player declines its cost | Normal attack resolves; the declared control does not occur |
-| Against the Odds fails | Lose the 3 Hope already spent; this feature itself deals no damage or control. Finish the Job remains available on an eligible Drifter failure |
-| Damage-replacing Trick Shot critically succeeds | Normal critical Hope/Stress recovery, but no damage, extra HP mark, or offensive rider |
-| Against the Odds critically succeeds | Normal critical damage and the declared control; no extra targets |
-| Paired, Rework, or an eligible damage reroll modifies Against the Odds | Apply it normally; these modify its permitted damage |
-| A damage-replacing Trick Shot would receive a damage bonus | No damage roll and no bonus damage |
-| A weapon normally forces Stress or adds a condition on a hit | Suppress that additional offensive rider when applying Trick Shot or Against the Odds |
-| Deck Blunderbuss uses Spread | It cannot also use Trick Shot on that attack |
-| A Gunslinger gains Whirlwind through multiclassing | It cannot spread Trick Shot or Against the Odds to additional targets |
-| Repeated Expose hits | Vulnerable does not stack; resolve its ordinary duration and clearing |
-| An enemy is Pinned | They can still attack or take another action that does not require movement |
-| Herd would send someone into a known harmful trap | Ineligible route; choose another route or a different action before rolling |
-| Manipulate attacks a rope beside an adversary | Target the rope's GM-set Difficulty; it is not a cheap attack against the adversary |
-| Drifter misses and uses Finish the Job | Fixed tier d6 damage once per rest; the original failure still stands; no recursive trigger |
-| Thread the Needle targets a complex combination lock | It cannot operate the entire sequence with one shot |
-| Smoke Pot is moved to the vault | Its maintained smoke ends; it cannot remain as free off-loadout cover |
-| Field Patch or Master Mechanic is moved to the vault after completion | Cleared Armor Slots or lasting mundane repairs are not undone |
-| Running Repairs is vaulted | Its temporary repair stops functioning; this is a maintained benefit |
-| A critical attack starts Chain Reaction | Copy half its complete damage before the first target's mitigation, including critical damage and bonuses; apply the second target's own mitigation |
-| Breaching Charge cannot reach enemies without crossing allies' positions | Use a different point or action; its selective clear-path attack is unavailable there |
+Uniqueness said NEEDS WORK, for Last Word alone: it had become a strictly better *Unbreakable*.
 
-These cases were checked against the written rules, not simulated in Foundry. The matrix is also a script for table adjudication tests.
+What changed:
 
-## Playtest procedure
+- **Answer for It:** once per GM turn, and it states Hope and Fear generation and what happens to the turn.
+- **Quickdraw:** covers multi-target attacks and states the GM's turn continues. The disadvantage still lands even when your shot misses. Balance and play both wanted that; it stays under *Hold Them Off*.
+- **Pin:** grounds a flying target.
+- **Two Birds:** stays at +2 Difficulty. At +3 it hit about 15% against tier-4 solos and was never chosen.
+- **Trick Shot:** a Hope per use, Difficulty 12 object, adversaries only.
+- **Killshot:** Recall 2, ignores resistance. **Deadeye:** +2 HP and "ignoring your weapon's range". **Last Word:** saves only on a hit.
+- **Wording:** Long Shot uses the printed range-step phrasing, Pick Your Spot is clearer, and Parley stakes a Stress.
 
-### Characters and equipment
+Known soft spot: a flying, physically resistant tier-4 solo frustrates any gun build. Killshot's resistance clause and Pin's grounding are the answers in the kit.
 
-Run the first comparison at levels **1, 5, and 8**. Use the same advancement and equipment budget for each character. Include Drifter, Sharpshooter, Slayer Warrior, and Wayfinder Ranger; then add Poisoners Guild Assassin for a control comparison. Bring in the other classes when testing a relevant interaction, such as armor rescue with Stalwart or damage modifiers from multiclassing.
+### Round 3 (draft 4)
 
-Use at least one Bone-heavy loadout, one mixed loadout, and an Artifice-heavy loadout at levels where enough cards exist. A character need not pick the same cards for every scene. Follow ordinary swap and recall rules, and charge the relevant Stress when swapping under pressure.
+Both the uniqueness and balance reviewers said GOOD, with no regressions. Final changes:
 
-### Scenes
+- **Last Word:** clears 1 HP on a miss rather than falling back to a death move. Hit-only saving came to 0.86 HP per use, too weak; always-save at 1–2 HP still heals less than Unbreakable.
+- **Trick Shot:** each object works once per scene.
+- **Deadeye:** "treat it as a critical success", so the Hope and the cleared Stress are intended.
+- **Killshot:** names resistance.
 
-1. **Boarding action:** a crowded deck, rigging, captives, and a moving objective. Test melee sequences, Expose, Disarm, and the difference between winning a fight and completing the rescue.
-2. **Open pursuit:** little cover, mobile enemies, and no helpful machinery. Test whether Sharpshooter and Artifice still contribute without specially prepared scenery.
-3. **Fortified approach:** partial cover, exposed mechanisms, mixed ranged and melee threats, and one dangerous hazard. Test cover rules, object Difficulties, Herd boundaries, and spreading effects.
-4. **Failure under pressure:** a damaged escape vehicle and scarce rest opportunities. Test Knowledge-dependent tools, improvisation, physical materials, and the cost of repeated failed rolls.
+The answer-capped Corsair comes to 10.7 / 9.1 / 6.5 HP per fight (its own damage plus ally HP saved) at levels 4 / 7 / 10. Its own damage stays within about 12% of the Warrior.
 
-Do not set an adversary's Difficulty lower simply because a player describes a clever shot. Establish the actual target and fiction first. A defenseless cord and an armed foe are different targets; they should also produce different consequences.
+**Watch in playtest:** Two Birds at +2 Difficulty is about 1.5× a printed Mastery, and almost all of that is support. If Corsair's called shots carry tier-4 tables, raise it to +3.
 
-### Record after each scene
+## The missing second subclass
 
-- Attacks attempted, hits, HP marked, and adversaries meaningfully affected by control.
-- Hope and Stress spent on each feature, including failed up-front payments.
-- Objectives advanced by tools, repairs, movement, or social features.
-- Adversary spotlights spent responding to control, and what alternatives they had.
-- Number of simultaneously maintained effects and rules lookups per player.
-- Features never chosen and situations where a player felt a choice was automatic.
-- Exact ambiguous wording, if any, with the table's ruling.
+A second subclass should cover what Corsair does not: **long range and patience**. That means a rifle at Very Far range, rewarded for not moving and for setting up the shot (the old v0.1 Sharpshooter's territory). The class has been balanced with only Corsair in mind and should be re-checked when the second arrives.
 
-A useful first session is not a balance verdict. Repeat scenes with changed terrain and different players before making broad adjustments. Change one major cost or benefit at a time so the next test can identify what mattered.
+## Kass
 
-## Playtest log
-
-| Session / version | Party and level | Scene | Observation | Proposed change | Retest result |
-| --- | --- | --- | --- | --- | --- |
-| Pending / 0.1 |: |: | No table sessions run |: |: |
-
-## Review record
-
-- Confirmed the local comparison includes 13 classes and 26 subclasses.
-- Confirmed all 21 Artifice cards have levels, Ability type, recall costs, and rules text, with the expected distribution.
-- Confirmed six subclass stages and 28 firearm profiles are present.
-- Reviewed resource timing, control clearing, multi-target exclusion, physical-device limits, and duplicated effects.
-- Revised Against the Odds to distinguish allowed damage modifiers from prohibited additional offensive riders.
-- Removed a redundant Sharpshooter cover upgrade; clarified smoke expiry, lasting repairs, and Chain Reaction damage.
-- The final structural and arithmetic check results are recorded in `validation.json` beside this document.
-
-Still unverified: table balance, actual printed card fit, artwork, Foundry automation, and play across every possible multiclass combination.
+Kass's pronouns are inconsistent in the Ourolyn vault. These notes use they/them until Kass's player confirms.

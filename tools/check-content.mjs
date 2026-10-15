@@ -14,8 +14,9 @@
  *   3. Every source's label and hint resolve in `lang/en.json`.
  *
  * Then the behaviour, against a stub Foundry: a disabled book stops being
- * offered and an owned copy of it does not; a variant and the Gunslinger
- * still read and write their own settings; a homebrew pack is its own source;
+ * offered and an owned copy of it does not; a variant still reads and writes
+ * its own setting; our own homebrew switches as one source, its domain with
+ * it; somebody else's homebrew pack is its own source;
  * a mixed pack stays while anything in it is on; and only a GM writes.
  *
  *     node --experimental-strip-types tools/check-content.mjs
@@ -35,7 +36,7 @@ import VARIANTS_PACK from "../src/packs-src/variants.mjs";
 const content = await import("../src/module/content.ts");
 const {
   SOURCES, sourceOf, sourceEnabled, contentChoiceAllowed, contentPackAllowed,
-  domainAvailable, setSourceEnabled, DISABLED_SOURCES, DISABLED_PACKS, GUNSLINGER_SETTING,
+  domainAvailable, setSourceEnabled, DISABLED_SOURCES, DISABLED_PACKS,
 } = content;
 
 const SYSTEM_ID = "gluniverse-daggerheart";
@@ -72,6 +73,15 @@ assert.equal(DOMAINS.filter((d) => d.flags[SYSTEM_ID].source === "twilightMarked
 assert.ok(CLASSES.some((d) => d.name === "Assassin" && d.flags[SYSTEM_ID].source === "hopeAndFear"));
 assert.ok(CLASSES.some((d) => d.name === "Wizard" && d.flags[SYSTEM_ID].source === "core"));
 assert.ok(VARIANTS_PACK.every((d) => d.flags[SYSTEM_ID].source.startsWith("variant:")));
+/* Our own homebrew is one source across three packs: two ancestries, the
+   Gunslinger and its three Corsair cards, and the twenty-one Flint cards. */
+assert.equal(DOMAINS.filter((d) => d.flags[SYSTEM_ID].source === "gluniverse").length, 21);
+assert.ok(DOMAINS.filter((d) => d.system.domain === "flint").every((d) => d.flags[SYSTEM_ID].source === "gluniverse"));
+assert.deepEqual(
+  CLASSES.filter((d) => d.flags[SYSTEM_ID].source === "gluniverse").map((d) => d.name),
+  ["Gunslinger", "Corsair: Foundation", "Corsair: Specialization", "Corsair: Mastery"],
+);
+assert.deepEqual(HERITAGE.filter((d) => d.flags[SYSTEM_ID].source === "gluniverse").map((d) => d.name), ["Rattin", "Avori"]);
 
 /* ── 3. every label resolves ──────────────────────────────────────── */
 const lang = JSON.parse(readFileSync("lang/en.json", "utf8"));
@@ -82,7 +92,7 @@ for (const s of SOURCES) {
 }
 
 /* ── behaviour ────────────────────────────────────────────────────── */
-const store = { [DISABLED_SOURCES]: [], [DISABLED_PACKS]: [], [GUNSLINGER_SETTING]: false, grimdark: false };
+const store = { [DISABLED_SOURCES]: [], [DISABLED_PACKS]: [], grimdark: false };
 let isGM = true;
 const writes = [];
 const packs = new Map();
@@ -122,10 +132,18 @@ assert.equal(sourceEnabled("variant:grimdark"), false);
 await setSourceEnabled("variant:grimdark", true);
 assert.equal(store.grimdark, true);
 assert.equal(sourceEnabled("variant:grimdark"), true);
-assert.equal(sourceEnabled("gunslinger"), false);
-assert.equal(sourceOf({ flags: { [SYSTEM_ID]: { contentPackage: "gunslinger" } } }), "gunslinger", "older Gunslinger marker");
-await setSourceEnabled("gunslinger", true);
-assert.equal(store[GUNSLINGER_SETTING], true);
+
+// Our homebrew switches as one, Flint with it, and goes back on.
+assert.equal(sourceEnabled("gluniverse"), true);
+await setSourceEnabled("gluniverse", false);
+assert.equal(domainAvailable("flint"), false);
+assert.equal(contentChoiceAllowed(stamp("gluniverse", { pack: `${SYSTEM_ID}.classes` })), false);
+await setSourceEnabled("gluniverse", true);
+assert.equal(domainAvailable("flint"), true);
+
+// A copy of the retired 0.1 Gunslinger, imported into the world from its old
+// pack, belongs to no source and stays offered.
+assert.equal(sourceOf({ _stats: { compendiumSource: `Compendium.${SYSTEM_ID}.gunslinger.Item.abc` } }), null);
 
 // Somebody else's pack is its own source, including a world copy imported from it.
 const foreign = { pack: "world.bestiary" };

@@ -32,8 +32,6 @@ const stableId = (key) => createHash("sha1").update(key).digest("hex").slice(0, 
  * match `docType`.
  */
 export const PACKS = [
-  { name: "gunslinger", module: "gunslinger.mjs", label: "Gunslinger Homebrew", collection: "items", docType: "Item", source: () => "gunslinger" },
-  { name: "gunslinger-rules", module: "gunslinger-rules.mjs", label: "Gunslinger Playtest Rules", collection: "journal", docType: "JournalEntry", source: () => "gunslinger" },
   {
     name: "classes",
     module: "classes.mjs",
@@ -140,7 +138,6 @@ export const CONTENT_SOURCES = [
   "hopeAndFear",
   "twilightMarked",
   "gluniverse",
-  "gunslinger",
   ...[
     "everydayHero", "feasts", "grimdark", "tech", "western",
     "colossal", "magicSchool", "fairyTale", "monsterHunting", "hexCrawl",

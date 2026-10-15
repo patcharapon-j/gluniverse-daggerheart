@@ -32,6 +32,7 @@
 import CARDS from "./domain-cards.mjs";
 import DREAD from "./dread-cards.mjs";
 import MARKED from "./marked-cards.mjs";
+import { FLINT } from "./gluniverse-gunslinger.mjs";
 import { domainCardItem, fromSource } from "./_helpers.mjs";
 import { withCounters } from "./card-resources.mjs";
 import { withDamage } from "./card-damage.mjs";
@@ -77,6 +78,12 @@ export default withDamage(
     [
       ...fromSource("core", withErrata(CARDS).map(domainCardItem)),
       ...fromSource("hopeAndFear", DREAD.map(domainCardItem)),
+      /* The Gunslinger's deck, after the books and before the campaign
+         frame's two, which `check-marked.mjs` holds to the very end. It is
+         this system's homebrew and switches with Rattin and Avori. Already
+         built by `domainCardItem` in its own module, which also carries its
+         actions. */
+      ...fromSource("gluniverse", FLINT),
       ...fromSource("twilightMarked", MARKED_IN_DECK_ORDER.map(domainCardItem)),
     ],
   ),

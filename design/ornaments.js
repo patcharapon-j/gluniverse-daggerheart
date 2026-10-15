@@ -333,9 +333,10 @@ const corners = {
      set. Three of those are not stand-ins here: Dread is a printed domain
      with its own cards, and Root and Void are the Twilight Marked's pair. A
      plain bracket beside nine motifs reads as a card that has not been
-     finished, so they get their own. Artifice stays plain: it is one homebrew
-     domain behind a setting, and inventing heraldry for it is further than
-     the evidence goes. */
+     finished, so they get their own. Flint stays plain, and so does the
+     retired Artifice: they are this system's own homebrew rather than any
+     book's, and inventing heraldry for them is further than the evidence
+     goes. */
 
   dread: () => [
     swash([2, 2], [18, 2.6], [32, 1.2], [46, 3], 1.2, 0.7, 0.08),

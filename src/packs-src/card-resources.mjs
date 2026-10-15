@@ -410,6 +410,17 @@ const PILES = {
       ],
     ]),
   ),
+
+  /* The Gunslinger's Flint deck carries the one token card the Homebrew Kit
+     allows a domain. Tokens come from failing with Fear, the pile is capped
+     at your Proficiency, and a long rest clears it. */
+  "domainCard:Grit": [
+    res({
+      max: prof(),
+      refresh: "longRest",
+      said: "place a token on this card, up to a maximum equal to your Proficiency",
+    }),
+  ],
 };
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -594,6 +605,20 @@ const BUDGETS = {
   "loot:Warp Pendant": [once("rest")],
   "loot:Communion Relic": [once("rest")],
   "loot:Augur’s Relic": [once("longRest")],
+
+  /* ── this system's own: the Gunslinger, Corsair and Flint ───────────── */
+  "subclass:Corsair: Foundation": [once("rest", "Unshackled")],
+  "subclass:Corsair: Specialization": [once("longRest", "All Hands")],
+  "subclass:Corsair: Mastery": [once("longRest", "Infamy")],
+  "domainCard:Cold Read": [once("rest")],
+  "domainCard:Name the Stakes": [once("rest")],
+  "domainCard:Stare Down": [once("rest")],
+  "domainCard:All In": [once("longRest")],
+  "domainCard:Flint-Touched": [once("rest")],
+  "domainCard:Poker Face": [once("session")],
+  "domainCard:Through and Through": [once("rest")],
+  "domainCard:Parley": [once("session")],
+  "domainCard:Deadeye": [once("longRest")],
 };
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -840,6 +865,11 @@ export const DECLINED = {
   "subclass:Pact of the Wrathful: Foundation":
     "Patron's Fury and Deadly Vengeance both roll Patron Dice. The die is " +
     "the Warlock class card's; nothing is kept here.",
+
+  /* ── the Gunslinger ─────────────────────────────────────────────────── */
+  "class:Gunslinger":
+    "Call Your Shot refunds the Ammo token a called shot spent. The tokens " +
+    "are the Revolver's Six Shot counter, on the weapon, and nothing here holds any.",
 };
 
 /* ══════════════════════════════════════════════════════════════════════

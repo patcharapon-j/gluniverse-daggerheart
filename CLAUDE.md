@@ -2991,7 +2991,7 @@ answer.
 
 ### Conditions are a press, never a consequence
 
-`apply-condition` puts one of the twenty-three registered conditions on
+`apply-condition` puts one of the twenty-four registered conditions on
 somebody through `damageRecipients` — a GM means the tokens they have
 **selected**, a player means their own character — so one button is correct on
 both sides of the screen. Never automatic, and that is the rule rather than an
@@ -5910,9 +5910,10 @@ heights. Negative-controlled.
 
 ## Conditions
 
-`CONDITIONS` in `config.ts` registers **twenty-three**: the three the *core
+`CONDITIONS` in `config.ts` registers **twenty-four**: the three the *core
 rules* name — Vulnerable, Hidden, Restrained — plus thirteen the *cards* do,
-plus seven the optional chapters and one class stance do. All as Foundry status
+plus seven the optional chapters and one class stance do, plus **Suppressed**,
+which the homebrew Gunslinger's Covering Fire (Flint) defines. All as Foundry status
 effects, with marks in `assets/conditions/`. Foundry's own list is
 blinded, deaf, paralysis and prone, and none of those words appear in this
 game; `dead` survives the replacement because it is what
@@ -5956,7 +5957,7 @@ drawing the actual substance, **with time in it** — the invariant
 through two review passes. And a `conditionWarp` branch, so none of them falls
 through to the material for a condition whose subject is unknown.
 
-At twenty-three the palette is straining, exactly as the shader's own notes
+At twenty-four the palette is straining, exactly as the shader's own notes
 predicted — "the only thing separating them is hue, which is the actual
 complaint" — so the seven lean on their ramps to tell themselves apart and the
 hex only has to be legible in the HUD sentence.

@@ -215,9 +215,12 @@ export function activeModifiers(actor: any): ActiveModifier[] {
 
   for (const item of [...(actor?.items ?? [])]) {
     if (!passiveItemActive(item)) continue;
-    // This package authors its modifiers explicitly. Similar feature names
-    // must not acquire corebook mechanics through the legacy fallback.
-    const authoredHomebrew = item.flags?.[SYSTEM_ID]?.contentPackage === "gunslinger";
+    // Our own homebrew authors its modifiers explicitly, so a feature that
+    // happens to share a printed name must not acquire that card's mechanics
+    // through the legacy fallback. `contentPackage` is the retired 0.1
+    // Gunslinger's marker, still on copies a character may be holding.
+    const flags = item.flags?.[SYSTEM_ID];
+    const authoredHomebrew = flags?.source === "gluniverse" || flags?.contentPackage === "gunslinger";
     const own = item.system?.modifiers?.length
       ? item.system.modifiers
       : authoredHomebrew ? [] : legacyItemModifiers(item);

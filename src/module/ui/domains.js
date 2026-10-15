@@ -92,9 +92,15 @@ export const MARKED = [
     blurb:'Unmaking and calculation. The cold arithmetic of a thing removed.' },
 ];
 
+// This system's own. Flint is the Gunslinger's, spark rather than stone:
+// 0.110 from Grace and 0.134 from Blade in OKLab. Artifice was the 0.1
+// playtest Gunslinger's; nothing offers it now, and it stays so a card a
+// world still holds keeps its colours.
 export const HOMEBREW = [
+  { slug:'flint', name:'Flint', light:'#c0462a', dark:'#7a2816', mk:'flint',
+    classes:['Gunslinger'], blurb:'Aim and nerve. The steady hand, and the shot that ends it.' },
   { slug:'artifice', name:'Artifice', light:'#b77946', dark:'#68422c', mk:'artifice',
-    classes:['Gunslinger'], blurb:'Understand, repair, and improvise useful things under pressure.' },
+    classes:[], blurb:'Understand, repair, and improvise useful things under pressure.' },
 ];
 
 export const byslug = Object.fromEntries([...DOMAINS, ...MARKED, ...HOMEBREW].map(d => [d.slug, d]));

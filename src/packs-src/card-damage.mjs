@@ -948,6 +948,35 @@ export const DECLINED = {
     },
   ],
 
+  /* The Gunslinger's Flint deck: three cards that add a die to the
+     weapon's damage roll, and one whose count is the tokens spent. */
+  "domainCard:Draw a Bead": [
+    {
+      said: "you add a d4 to your damage rolls against it",
+      why: "Added to the weapon's own damage roll against the bead's target.",
+    },
+  ],
+  "domainCard:Long Shot": [
+    {
+      said: "add a d6 to your damage roll",
+      why: "Added to the weapon's own damage roll at Very Far range.",
+    },
+  ],
+  "domainCard:Pick Your Spot": [
+    {
+      said: "add a d10 to your damage roll",
+      why: "Added to the weapon's own damage roll against a Vulnerable or Restrained target.",
+    },
+  ],
+  "domainCard:Grit": [
+    {
+      said: "add a d6 to the damage roll for each token spent",
+      why:
+        "Added to a damage roll already being made, and the count is however many tokens " +
+        "the press spends, so there is no fixed count to record.",
+    },
+  ],
+
   /* ── somebody else's stat line ──────────────────────────────────────
      Devastating swaps the die inside the weapon's own damage roll, and
      Versatile prints a second set of weapon statistics. A weapon's `damage`

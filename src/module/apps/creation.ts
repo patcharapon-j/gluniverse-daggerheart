@@ -44,7 +44,7 @@ import {
   TRAITS,
   type CreationStep,
 } from "../config.ts";
-import { contentChoiceAllowed, supplementalItems } from "../gunslinger.ts";
+import { contentChoiceAllowed } from "../content.ts";
 import { variantEnabled } from "../variants.ts";
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -77,8 +77,7 @@ export const PACK = {
  */
 export async function fromPack(key: keyof typeof PACK, type?: string): Promise<any[]> {
   const pack = game.packs?.get(PACK[key]);
-  const [base, extra] = await Promise.all([pack?.getDocuments() ?? [], supplementalItems(key)]);
-  const docs = [...base, ...extra].filter(contentChoiceAllowed);
+  const docs = ((await pack?.getDocuments()) ?? []).filter(contentChoiceAllowed);
   return type ? docs.filter((d: any) => d.type === type) : [...docs];
 }
 

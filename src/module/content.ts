@@ -3,13 +3,13 @@
  *
  * Content arrives from three kinds of place and used to be switched in three
  * different ways, or not at all. The ten SRD variants had ten checkboxes in
- * Configure Settings, the Gunslinger had an eleventh, and the corebook, *Hope
- * and Fear*, *The Twilight Marked* and every homebrew pack somebody installed
- * had none: a table running the corebook alone still met Dread cards in the
+ * Configure Settings, the 0.1 playtest Gunslinger had an eleventh, and the
+ * corebook, *Hope and Fear*, *The Twilight Marked* and every homebrew pack
+ * somebody installed had none: a table running the corebook alone still met Dread cards in the
  * deck, Assassins in creation and Hope and Fear's adversaries in the browser.
  *
  * So a **source** is the unit, and it is the unit a table actually decides in:
- * "we are playing core and Hope and Fear, with the Gunslinger". It is not the
+ * "we are playing core and Hope and Fear, with our own homebrew". It is not the
  * pack. The domain pack is the corebook's nine decks, Dread and Root and Void
  * in one list, and a pack switch would have been all of them or none. Every
  * document this system builds carries its source in a flag (`fromSource` in
@@ -25,7 +25,7 @@
  * The GM still sees every pack, dimmed, because the GM is who switches them.
  *
  * ── one store, and the old switches stay where they were ─────────────
- * The variants and the Gunslinger keep their own Boolean settings, because
+ * The variants keep their own Boolean settings, because
  * every reader of them already exists and a world upgrading has them set. The
  * library writes those settings rather than a copy of them, so the window and
  * Configure Settings cannot disagree. Everything new is one list of what is
@@ -38,18 +38,7 @@
 import { SYSTEM_ID } from "./config.ts";
 import { VARIANTS, variantEnabled, type Variant } from "./variants.ts";
 
-/* The Gunslinger's switch predates the library and keeps its own setting.
-   Declared here and re-exported by `gunslinger.ts`, so the two modules do not
-   import each other. */
-export const GUNSLINGER_PACK = `${SYSTEM_ID}.gunslinger`;
-export const GUNSLINGER_RULES_PACK = `${SYSTEM_ID}.gunslinger-rules`;
-export const GUNSLINGER_SETTING = "gunslingerContent";
 export const CONTENT_CHANGED = "daggerheart.contentChanged";
-
-export function gunslingerEnabled(): boolean {
-  try { return Boolean(game.settings?.get(SYSTEM_ID, GUNSLINGER_SETTING) ?? false); }
-  catch { return false; }
-}
 
 export type SourceKind = "book" | "frame" | "homebrew";
 
@@ -98,19 +87,21 @@ export const SOURCES: readonly SourceDef[] = [
       setting: v,
     }),
   ),
+  /* This system's own homebrew, as one switch: Rattin and Avori, and the
+     Gunslinger with its Corsair subclass and the Flint deck. They are filed in
+     the ordinary packs beside the books and stamped with this source.
+
+     The 0.1 playtest Gunslinger was a source of its own here, with its own
+     packs and its own setting. It is retired rather than carried: a copy a
+     character holds keeps working (`sourceOf` answers `null` for a document
+     from a pack that no longer exists, and owned copies are never refused),
+     and Artifice stays registered in `DOMAINS` so those cards still load. */
   {
     id: "gluniverse",
     kind: "homebrew",
     label: "DAGGERHEART.Content.Gluniverse",
     hint: "DAGGERHEART.Content.GluniverseHint",
-  },
-  {
-    id: "gunslinger",
-    kind: "homebrew",
-    label: "DAGGERHEART.Content.Gunslinger",
-    hint: "DAGGERHEART.Settings.GunslingerContentHint",
-    setting: GUNSLINGER_SETTING,
-    domains: ["artifice"],
+    domains: ["flint"],
   },
 ];
 
@@ -118,10 +109,7 @@ export const DISABLED_SOURCES = "disabledSources";
 export const DISABLED_PACKS = "disabledPacks";
 
 /** The flag paths a compendium index has to carry for `sourceOf` to answer. */
-export const INDEX_FIELDS = [
-  `flags.${SYSTEM_ID}.source`,
-  `flags.${SYSTEM_ID}.contentPackage`,
-] as const;
+export const INDEX_FIELDS = [`flags.${SYSTEM_ID}.source`] as const;
 
 const sourceById = new Map(SOURCES.map((s) => [s.id, s]));
 export const sourceDef = (id: string): SourceDef | undefined => sourceById.get(id);
@@ -150,20 +138,15 @@ const packOfUuid = (uuid: string): string | null => {
  * Which source a document or index entry came from, or `null` for one that
  * came from no source at all — an Item a GM made in the world directory.
  *
- * The flag is the answer. The two fallbacks are for documents built before
- * there was one: Gunslinger's own older marker, and the pack a document lives
- * in or was imported from.
+ * The flag is the answer. The fallback is for documents built before there
+ * was one: the pack a document lives in or was imported from.
  */
 export function sourceOf(doc: any, pack?: string): string | null {
-  const flags = doc?.flags?.[SYSTEM_ID];
-  const stamped = flags?.source ?? doc?.[`flags.${SYSTEM_ID}.source`];
+  const stamped = doc?.flags?.[SYSTEM_ID]?.source ?? doc?.[`flags.${SYSTEM_ID}.source`];
   if (stamped) return String(stamped);
-  const marker = flags?.contentPackage ?? doc?.[`flags.${SYSTEM_ID}.contentPackage`];
-  if (marker === "gunslinger") return "gunslinger";
 
   const from = pack ?? doc?.pack ?? packOfUuid(doc?._stats?.compendiumSource ?? "");
   if (!from) return null;
-  if (from === GUNSLINGER_PACK || from === GUNSLINGER_RULES_PACK) return "gunslinger";
   return isOurPack(from) ? null : `pack:${from}`;
 }
 
@@ -172,7 +155,6 @@ export function sourceEnabled(id: string | null): boolean {
   if (!id) return true;
   if (id.startsWith("pack:")) return !readList(DISABLED_PACKS).includes(id.slice(5));
   const def = sourceById.get(id);
-  if (def?.setting === GUNSLINGER_SETTING) return gunslingerEnabled();
   if (def?.setting) return variantEnabled(def.setting as Variant);
   return !readList(DISABLED_SOURCES).includes(id);
 }
@@ -199,8 +181,6 @@ export function contentChoiceAllowed(doc: any): boolean {
  * loaded before `INDEX_FIELDS` were registered — the index is read first.
  */
 const PACK_SOURCES: Record<string, string[]> = {
-  [GUNSLINGER_PACK]: ["gunslinger"],
-  [GUNSLINGER_RULES_PACK]: ["gunslinger"],
   [`${SYSTEM_ID}.marked-rules`]: ["twilightMarked"],
   [`${SYSTEM_ID}.variants`]: VARIANTS.map((v) => `variant:${v}`),
   [`${SYSTEM_ID}.variant-rules`]: VARIANTS.map((v) => `variant:${v}`),

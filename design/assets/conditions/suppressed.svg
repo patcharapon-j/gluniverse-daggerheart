@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round">
+  <!-- Pinned down. Two shots passing overhead and a head kept below them.
+       Suppressed is fire you are not hit by: its attacks on anyone but the
+       shooter are made with disadvantage, because it has to keep its head
+       down. So the mark is the streaks and the duck, and nothing is wounded.
+
+       The streaks are staggered rather than stacked, so they read as two
+       rounds in flight and not as an equals sign, and the head is a solid
+       dome rather than a chevron: a downward chevron would be Unstoppable
+       turned over, and this is not the opposite of a stance, it is somebody
+       else's covering fire. -->
+  <path d="M5 10H37"/>
+  <path d="M27 24H59"/>
+  <path d="M8 61C8 46 19 37 32 37S56 46 56 61Z" fill="#ffffff" stroke="none"/>
+</svg>

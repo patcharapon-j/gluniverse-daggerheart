@@ -1,119 +1,155 @@
-import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
-import ITEMS from '../src/packs-src/gunslinger.mjs';
-import RULES from '../src/packs-src/gunslinger-rules.mjs';
-import { DOMAINS, DOMAIN_CONFIG, RANGES, BURDENS, SYSTEM_ID } from '../src/module/config.ts';
-import { byslug, CLASSES } from '../src/module/ui/domains.js';
-import { fromPack, takeClass, takeSubclass, takeCard, takeWeapon } from '../src/module/apps/creation.ts';
-import { gunslingerEnabled, supplementalItems, contentChoiceAllowed, contentPackAllowed, registerGunslingerSettings, GUNSLINGER_PACK, GUNSLINGER_RULES_PACK, GUNSLINGER_SETTING, CONTENT_CHANGED } from '../src/module/gunslinger.ts';
-import { modifierTotal, traitPassiveTotal, weaponModifierTerms } from '../src/module/data/modifiers.ts';
-globalThis.foundry = { abstract: { TypeDataModel: class {} }, utils: { getRoute: path => path } };
-const { ourPacks } = await import('../src/module/apps/browse-index.ts');
-const { handleActorDrop } = await import('../src/module/apps/svelte-sheets.ts');
-const { cardOf } = await import('../src/module/sheets/cards.ts');
+/**
+ * The Gunslinger, Corsair and the Flint deck, as they ship.
+ *
+ * Nothing upstream publishes these, so `check-cards.mjs` skips them and the
+ * coverage ratchets (`check-actions`, `check-resources`, `check-card-damage`,
+ * `check-passives`) only prove every rule unit was *read*. This asserts the
+ * things a reading cannot: the shape the design in `homebrew/gunslinger/`
+ * settled on, that the deck is wired as a domain everywhere a domain has to
+ * be, and that the presses a table leans on are the ones it gets.
+ *
+ *     node --experimental-strip-types tools/check-gunslinger.mjs
+ */
 
-assert.equal(ITEMS.length, 56);
-assert.equal(new Set(ITEMS.map(i => i.name)).size, 56);
-assert.equal(ITEMS.filter(i => i.type === 'class').length, 1);
-const cls = ITEMS.find(i => i.type === 'class');
-assert.deepEqual(cls.system.domains, { primary: 'bone', secondary: 'artifice' });
-assert.equal(cls.system.startingEvasion, 10);
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+
+import ALL, { FLINT, GUNSLINGER_CLASSES } from "../src/packs-src/gluniverse-gunslinger.mjs";
+import CLASSES from "../src/packs-src/classes.mjs";
+import DOMAINS_PACK from "../src/packs-src/domains.mjs";
+import { CONDITIONS, DOMAINS, DOMAIN_CONFIG, SYSTEM_ID } from "../src/module/config.ts";
+import { byslug, CLASSES as CLASS_MARKS } from "../src/module/ui/domains.js";
+import { SOURCES } from "../src/module/content.ts";
+import { traitPassiveTotal } from "../src/module/data/modifiers.ts";
+
+globalThis.foundry = { abstract: { TypeDataModel: class {} }, utils: { getRoute: (path) => path } };
+const { cardOf } = await import("../src/module/sheets/cards.ts");
+
+const SOURCE = (d) => d.flags?.[SYSTEM_ID]?.source;
+const named = (name) => ALL.find((d) => d.name === name);
+const block = (doc, name) =>
+  [...(doc.system.classFeatures ?? []), doc.system.hopeFeature, ...(doc.system.features ?? [])]
+    .find((b) => b?.name === name);
+const shipped = (name) => [...CLASSES, ...DOMAINS_PACK].find((d) => d.name === name);
+
+/* ── the class ────────────────────────────────────────────────────── */
+const cls = named("Gunslinger");
+assert.equal(cls.type, "class");
+assert.deepEqual(cls.system.domains, { primary: "flint", secondary: "bone" });
+assert.equal(cls.system.startingEvasion, 11);
 assert.equal(cls.system.startingHitPoints, 6);
-assert.equal(cardOf(cls, {}).cls, 'grow', 'long class rules use the existing expandable card layout');
-assert.equal(cardOf(cls, {}).noart, false, 'Gunslinger uses its imported painting');
-assert.equal(cardOf(ITEMS.find(i => i.type === 'subclass'), {}).d2.slug, 'artifice');
-assert.match(cls.system.classFeatures[0].description, /instead of all damage/);
-assert.match(cls.system.classFeatures[0].description, /Disarm/);
-for (const subclass of ['Drifter', 'Sharpshooter']) {
-  const stages = ITEMS.filter(i => i.system.subclassName === subclass);
-  assert.deepEqual(stages.map(i => i.system.rank), ['foundation', 'specialization', 'mastery']);
-  assert.equal(new Set(stages.map(i => i.img)).size, 1, 'all ranks share their subclass painting');
-  for (const stage of stages) assert.equal(cardOf(stage, {}).noart, false);
-  for (const stage of stages) { assert.equal(stage.system.spellcastTrait, ''); assert.equal(stage.system.features.length, 2); }
-}
-const cards = ITEMS.filter(i => i.type === 'domainCard');
-for (const card of cards.filter(i => i.system.level <= 2)) assert.equal(cardOf(card, {}).noart, false);
-assert.equal(cards.length, 21);
-for (let level = 1; level <= 10; level++) assert.equal(cards.filter(i => i.system.level === level).length, level === 1 ? 3 : 2);
-for (const card of cards) { assert.equal(card.system.domain, 'artifice'); assert.equal(card.system.cardType, 'ability'); assert.ok(card.system.description.length > 100); }
-const weapons = ITEMS.filter(i => i.type === 'weapon');
-assert.equal(weapons.length, 28);
-for (let tier = 1; tier <= 4; tier++) {
-  assert.equal(weapons.filter(i => i.system.tier === tier && i.system.slot === 'primary').length, 6);
-  assert.equal(weapons.filter(i => i.system.tier === tier && i.system.slot === 'secondary').length, 1);
-}
-for (const item of ITEMS) {
-  assert.ok(existsSync(item.img.replace(`systems/${SYSTEM_ID}/`, '')), item.img);
-  assert.equal(item.flags[SYSTEM_ID].contentPackage, 'gunslinger');
-  if (item.type === 'weapon') { assert.ok(RANGES.includes(item.system.range)); assert.ok(BURDENS.includes(item.system.burden)); assert.equal(item.system.damage.type, 'physical'); }
-}
-assert.ok(DOMAINS.includes('artifice'));
-assert.equal(DOMAIN_CONFIG.artifice.light, byslug.artifice.light);
-assert.ok(CLASSES.includes('gunslinger'));
-assert.equal(RULES[0].pages.length, 5);
-assert.match(RULES[0].pages.find(p => p.name === 'Artifice').text.content, /Moving a card to your vault ends/);
-assert.match(RULES[0].pages.find(p => p.name === 'Expanded firearms').text.content, /<table>/);
-const manifest = JSON.parse(readFileSync('system.json', 'utf8'));
-for (const name of ['gunslinger', 'gunslinger-rules']) assert.equal(manifest.packs.filter(p => p.name === name).length, 1);
+assert.equal(cls.system.hopeFeature.name, "Quickdraw");
+assert.deepEqual(cls.system.classFeatures.map((f) => f.name), ["Call Your Shot"]);
+assert.equal(cls.system.backgroundQuestions.length, 3);
+assert.equal(cls.system.connectionQuestions.length, 3);
+assert.match(cls.system.suggestedTraits, /Finesse \+2/);
+assert.equal(cardOf(cls, {}).cls, "grow", "Call Your Shot's four options need the expandable card");
 
-// Exercise the real readers, registration, stale-choice guards, and owned passives.
-let enabled = false, supplementalReads = 0, registration, renders = 0;
-const hooks = new Map();
-globalThis.Hooks = { on: (key, fn) => hooks.set(key, fn), callAll: key => hooks.get(key)?.() };
-globalThis.ui = { compendium: { render: () => renders++ } };
-const pack = (collection, docs, type = 'Item') => ({ collection, metadata: { system: SYSTEM_ID, type }, getDocuments: async () => docs });
-const custom = pack(GUNSLINGER_PACK, ITEMS);
-custom.getDocuments = async () => { supplementalReads++; return ITEMS; };
-const core = { name: 'Existing class', type: 'class' };
-const packs = new Map([[`${SYSTEM_ID}.classes`, pack(`${SYSTEM_ID}.classes`, [core])], [GUNSLINGER_PACK, custom], [GUNSLINGER_RULES_PACK, pack(GUNSLINGER_RULES_PACK, RULES, 'JournalEntry')]]);
-packs[Symbol.iterator] = function* () { yield* this.values(); };
-globalThis.game = { packs, settings: { get: (_id, key) => key === GUNSLINGER_SETTING ? enabled : false, register: (_id, key, value) => { assert.equal(key, GUNSLINGER_SETTING); registration = value; } } };
-registerGunslingerSettings();
-assert.equal(registration.default, false); assert.equal(registration.scope, 'world'); assert.equal(registration.config, true);
-assert.equal(gunslingerEnabled(), false);
-assert.deepEqual(await fromPack('classes'), [core]);
-assert.equal(supplementalReads, 0);
-assert.equal(ourPacks().some(p => p.collection === GUNSLINGER_PACK), false);
-assert.equal(contentPackAllowed(GUNSLINGER_RULES_PACK), false);
-enabled = true;
-assert.equal((await fromPack('classes')).length, 8);
-assert.equal((await fromPack('classes', 'subclass')).length, 6);
-assert.equal((await fromPack('domains', 'domainCard')).length, 21, 'homebrew survives a missing core pack');
-assert.equal((await fromPack('equipment')).length, 28);
-assert.deepEqual(await supplementalItems('heritage'), []);
-assert.equal(ourPacks().some(p => p.collection === GUNSLINGER_PACK), true);
-assert.equal(contentPackAllowed(GUNSLINGER_RULES_PACK), true);
-// Turn off while a request is in flight. Its results must not leak through.
-custom.getDocuments = async () => { enabled = false; return ITEMS; };
-assert.deepEqual(await supplementalItems('classes'), []);
-const untouched = { update: () => assert.fail('Disabled choice modified actor'), createEmbeddedDocuments: () => assert.fail('Disabled choice granted item'), deleteEmbeddedDocuments: () => assert.fail('Disabled choice deleted item') };
-await takeClass(untouched, cls, null);
-await takeSubclass(untouched, ITEMS.find(i => i.type === 'subclass'));
-await takeCard(untouched, cards[0]);
-await takeWeapon(untouched, weapons[0], 'primary');
-let warned = false;
-ui.notifications = { warn: () => { warned = true; } };
-game.i18n = { localize: s => s };
-globalThis.fromUuid = async () => cls;
-assert.deepEqual(await handleActorDrop(untouched, { dataTransfer: { getData: () => JSON.stringify({ type: 'Item', uuid: 'test' }) } }), []);
-assert.ok(warned, 'a stale compendium drag explains why it was refused');
-assert.equal(contentChoiceAllowed({ _stats: { compendiumSource: `Compendium.${GUNSLINGER_PACK}.Item.abc` } }), false);
-assert.equal(contentChoiceAllowed({ ...cls, parent: { documentName: 'Actor' } }), true);
-let changed = false; hooks.set(CONTENT_CHANGED, () => { changed = true; });
-registration.onChange(); assert.ok(changed); assert.equal(renders, 1);
-globalThis.HTMLElement = class {};
-const rows = [{ hidden: false, style: {} }, { hidden: false, style: {} }];
-const root = new HTMLElement(); root.querySelectorAll = selector => [rows[selector.includes('gunslinger-rules') ? 1 : 0]];
-hooks.get('renderCompendiumDirectory')({}, root); assert.ok(rows.every(r => r.hidden));
-enabled = true; hooks.get('renderCompendiumDirectory')({}, [root]); assert.ok(rows.every(r => !r.hidden));
-enabled = false;
-const own = (item, fields = {}) => ({ ...structuredClone(item), id: item.name, system: { ...structuredClone(item.system), ...fields } });
-const cannon = own(weapons.find(i => i.name === 'Workshop Brace Cannon'), { equipped: true });
-assert.equal(modifierTotal({ items: [cannon] }, 'evasion'), -1, 'owned penalty survives toggle off');
-const touched = own(cards.find(i => i.name === 'Artifice-Touched'), { inLoadout: true });
-const actor = { items: [touched, ...cards.slice(0, 3).map(i => own(i, { inLoadout: true }))] };
-assert.equal(traitPassiveTotal(actor, 'finesse'), 1);
-actor.items.pop(); assert.equal(traitPassiveTotal(actor, 'finesse'), 0);
-const sleeve = own(weapons.find(i => i.name === 'Workshop Sleeve Flintlock'), { equipped: true });
-assert.deepEqual(weaponModifierTerms({ items: [sleeve] }, { id: 'primary', system: { slot: 'primary', range: 'melee' } }, 'damage'), [], 'situational Paired must not inherit legacy automation');
-console.log('Gunslinger: content, toggle, picker races, directory visibility, and owned passive checks passed.');
+/* ── the subclass ─────────────────────────────────────────────────── */
+const corsair = GUNSLINGER_CLASSES.filter((d) => d.type === "subclass");
+assert.deepEqual(corsair.map((d) => d.system.rank), ["foundation", "specialization", "mastery"]);
+for (const card of corsair) {
+  assert.equal(card.system.subclassName, "Corsair");
+  assert.equal(card.system.className, "Gunslinger");
+  assert.equal(card.system.spellcastTrait, "", "the Gunslinger casts nothing");
+  assert.equal(card.system.features.length, 2);
+}
+const sub = cardOf(corsair[0], {});
+assert.equal(sub.d.slug, "flint");
+assert.equal(sub.d2.slug, "bone");
+
+/* ── the deck ─────────────────────────────────────────────────────── */
+assert.equal(FLINT.length, 21);
+for (let level = 1; level <= 10; level++) {
+  assert.equal(FLINT.filter((c) => c.system.level === level).length, level === 1 ? 3 : 2, `level ${level}`);
+}
+const RECALL = {
+  "Draw a Bead": 0, "Under Fire": 1, "Cold Read": 0, "Long Shot": 1, "Name the Stakes": 1,
+  "Covering Fire": 1, "Grit": 1, "Trick Shot": 1, "Stare Down": 1, "Pick Your Spot": 1,
+  "All In": 2, "Shoot It Out of Their Hand": 2, "Nothing Left to Lose": 1, "Flint-Touched": 1,
+  "Steady Hand": 1, "Killshot": 2, "Poker Face": 1, "Through and Through": 2, "Parley": 2,
+  "Deadeye": 2, "Last Word": 3,
+};
+assert.deepEqual(Object.fromEntries(FLINT.map((c) => [c.name, c.system.recallCost])), RECALL);
+for (const card of FLINT) {
+  assert.equal(card.system.domain, "flint");
+  assert.equal(card.system.cardType, "ability", "Flint is all abilities");
+  assert.equal(card.folder, "Flint");
+}
+/* One token card per domain, as the Homebrew Kit asks. */
+const piles = FLINT.filter((c) => /\btokens?\b/i.test(c.system.description));
+assert.deepEqual(piles.map((c) => c.name), ["Grit"]);
+
+/* ── a domain everywhere a domain has to be ───────────────────────── */
+assert.ok(DOMAINS.includes("flint"));
+assert.ok(DOMAINS.includes("artifice"), "the retired deck stays registered so held cards still load");
+assert.equal(DOMAIN_CONFIG.flint.light, byslug.flint.light);
+assert.equal(DOMAIN_CONFIG.flint.dark, byslug.flint.dark);
+assert.ok(CLASS_MARKS.includes("gunslinger"));
+for (const path of [
+  "design/assets/domains/flint.svg", "assets/domains/flint.svg",
+  "design/assets/classes/gunslinger.svg", "assets/classes/gunslinger.svg",
+]) {
+  assert.ok(existsSync(path), `${path} is missing`);
+  assert.match(readFileSync(path, "utf8"), /fill="currentColor"/, `${path} must take its colour`);
+}
+
+/* ── filed with the books, switched with our homebrew ─────────────── */
+for (const d of ALL) assert.equal(SOURCE(shipped(d.name)), "gluniverse", `${d.name} is not stamped`);
+assert.deepEqual(SOURCES.find((s) => s.id === "gluniverse").domains, ["flint"]);
+assert.ok(!SOURCES.some((s) => s.id === "gunslinger"), "the 0.1 package's switch is retired");
+const manifest = JSON.parse(readFileSync("system.json", "utf8"));
+assert.ok(!manifest.packs.some((p) => p.name.startsWith("gunslinger")), "the 0.1 packs are retired");
+
+/* ── the presses a table leans on ─────────────────────────────────── */
+const built = (name) => shipped(name);
+const quick = block(built("Gunslinger"), "Quickdraw").actions;
+assert.deepEqual(quick.map((a) => [a.kind, a.amount?.hope]), [["pay", 3]]);
+const called = block(built("Gunslinger"), "Call Your Shot").actions;
+assert.deepEqual(
+  called.map((a) => [a.kind, a.amount.stress, a.steps[0].condition]),
+  [["pay", 1, "vulnerable"], ["pay", 1, "restrained"]],
+  "Expose and Pin each cost a Stress and put their condition on the target",
+);
+const suppress = built("Covering Fire").system.actions.find((a) => a.kind === "apply-condition");
+assert.equal(suppress.condition, "suppressed");
+assert.ok(CONDITIONS.some((c) => c.id === "suppressed"), "Suppressed is a registered condition");
+
+const grit = built("Grit").system.resources;
+assert.equal(grit.length, 1);
+assert.deepEqual(
+  [grit[0].max.kind, grit[0].refresh, grit[0].onRefresh, grit[0].value],
+  ["proficiency", "longRest", "clear", 0],
+);
+
+/* Every "once per" in the deck and the subclass is a budget a press spends. */
+const BUDGETED = {
+  "Cold Read": "rest", "Name the Stakes": "rest", "Stare Down": "rest", "All In": "longRest",
+  "Flint-Touched": "rest", "Poker Face": "session", "Through and Through": "rest",
+  "Parley": "session", "Deadeye": "longRest",
+};
+for (const [name, scope] of Object.entries(BUDGETED)) {
+  const doc = built(name);
+  const use = doc.system.resources?.find((r) => r.name === "Use");
+  assert.equal(use?.refresh, scope, `${name} budget`);
+  assert.ok(
+    doc.system.actions.some((a) => a.kind === "move-resource" && a.resource === "Use" ||
+      a.steps?.some((s) => s.kind === "move-resource" && s.resource === "Use")),
+    `${name}: no press spends its use`,
+  );
+}
+const corsairBudgets = corsair.map((c) => built(c.name).system.resources.map((r) => [r.feature, r.refresh]));
+assert.deepEqual(corsairBudgets, [[["Unshackled", "rest"]], [["All Hands", "longRest"]], [["Infamy", "longRest"]]]);
+
+/* Flint-Touched's +1 Finesse holds with four Flint cards in the loadout and not three. */
+const own = (item) => ({ ...structuredClone(item), id: item.name, system: { ...structuredClone(item.system), inLoadout: true } });
+const touched = own(built("Flint-Touched"));
+const actor = { items: [touched, ...FLINT.slice(0, 3).map(own)] };
+assert.equal(traitPassiveTotal(actor, "finesse"), 1);
+actor.items.pop();
+assert.equal(traitPassiveTotal(actor, "finesse"), 0);
+
+console.log(
+  `Gunslinger: the class, Corsair's ${corsair.length} cards and Flint's ${FLINT.length} are shaped, ` +
+    "registered, stamped gluniverse and carry their presses, budgets, pile and passive.",
+);

@@ -7509,6 +7509,315 @@ export const CARD_ACTIONS = {
       ],
     },
   },
+  /* ══════════════════════════════════════════════════════════════════════
+     THE GUNSLINGER — this system's own homebrew (`gluniverse-gunslinger.mjs`)
+
+     Read the way everything above was read: a press for what the holder
+     pays, rolls or puts on somebody, and a DECLINED line for the rest. The
+     class leans on attacks, and an attack roll has no kind, so most of what
+     these cards do happens on the weapon's own buttons; what lands here is
+     the price, the condition, and the budget.
+     ══════════════════════════════════════════════════════════════════════ */
+  "class:Gunslinger": {
+    features: {
+      "Quickdraw": [
+        {
+          kind: "pay",
+          amount: { hope: 3 },
+          when: "When an adversary within range of your active ranged weapon attacks you or an ally",
+          said: "spend 3 Hope",
+        },
+      ],
+      "Call Your Shot": [
+        {
+          kind: "pay",
+          label: "Expose: mark a Stress",
+          amount: { stress: 1 },
+          when: "Expose, on a successful called shot",
+          said: "Mark a Stress",
+          steps: [
+            {
+              kind: "apply-condition",
+              subject: "targets",
+              condition: "vulnerable",
+              said: "make the target temporarily <i>Vulnerable</i>",
+            },
+          ],
+        },
+        {
+          kind: "pay",
+          label: "Pin: mark a Stress",
+          amount: { stress: 1 },
+          when: "Pin, on a successful called shot",
+          said: "Mark a Stress",
+          steps: [
+            {
+              kind: "apply-condition",
+              subject: "targets",
+              condition: "restrained",
+              said: "make the target temporarily <i>Restrained</i>",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  "subclass:Corsair: Specialization": {
+    features: {
+      "Answer for It": [
+        {
+          kind: "pay",
+          amount: { stress: 1 },
+          when: "Once per GM turn, when an adversary within range succeeds on an attack against your allies",
+          said: "mark a Stress",
+        },
+      ],
+      "All Hands": [
+        {
+          kind: "clear",
+          amount: { stress: 2 },
+          when: "You and each ally who can hear you choose one",
+          said: "clear 2 Stress",
+        },
+        {
+          kind: "gain",
+          amount: { hope: 1 },
+          when: "You and each ally who can hear you choose one",
+          said: "gain a Hope",
+        },
+      ],
+    },
+  },
+  "subclass:Corsair: Mastery": {
+    features: {
+      "Infamy": [
+        {
+          kind: "roll-trait",
+          trait: "presence",
+          dc: 15,
+          when: "When you reveal yourself to your enemies",
+          said: "make a <b>Presence Roll (15)</b>",
+        },
+        {
+          kind: "pay",
+          amount: { fear: 1 },
+          when: "On a success",
+          said: "the GM loses a Fear",
+        },
+      ],
+    },
+  },
+  "domainCard:Draw a Bead": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { hope: 1 },
+        said: "Spend a Hope",
+        steps: [
+          {
+            kind: "grant-effect",
+            effect: { name: "Draw a Bead", duration: "temporary", modifiers: [{ target: "attackRoll", value: 1 }] },
+            said: "your attacks against it gain a +1 bonus",
+          },
+        ],
+      },
+    ],
+  },
+  "domainCard:Under Fire": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { stress: 1 },
+        when: "When you take Major or greater damage",
+        said: "mark a Stress",
+      },
+    ],
+  },
+  "domainCard:Cold Read": {
+    actions: [
+      {
+        kind: "roll-trait",
+        trait: "instinct",
+        when: "When you size someone up in a tense conversation",
+        said: "make an <b>Instinct Roll</b> against them",
+      },
+    ],
+  },
+  "domainCard:Name the Stakes": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { stress: 2 },
+        when: "If the roll fails",
+        said: "mark 2 Stress",
+      },
+    ],
+  },
+  "domainCard:Covering Fire": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { hope: 1 },
+        said: "Spend a Hope",
+      },
+      {
+        kind: "apply-condition",
+        subject: "targets",
+        condition: "suppressed",
+        when: "On a success",
+        said: "the target becomes temporarily <i>Suppressed</i>",
+      },
+    ],
+  },
+  "domainCard:Grit": {
+    actions: [
+      {
+        kind: "move-resource",
+        resource: "Tokens",
+        by: 1,
+        label: "Place a token",
+        when: "When you fail a roll with Fear",
+        said: "place a token on this card",
+      },
+      {
+        kind: "move-resource",
+        resource: "Tokens",
+        by: -1,
+        label: "Spend a token: add a d6",
+        when: "When you deal damage, once per d6 you add",
+        said: "spend any number of tokens from this card",
+      },
+    ],
+  },
+  "domainCard:Trick Shot": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { hope: 1 },
+        said: "Spend a Hope",
+      },
+      {
+        kind: "roll-damage",
+        when: "Each adversary who fails the Reaction Roll",
+        said: "take your weapon’s damage",
+      },
+      {
+        kind: "apply-condition",
+        subject: "targets",
+        condition: "restrained",
+        when: "Each adversary who fails the Reaction Roll",
+        said: "are temporarily <i>Restrained</i>",
+      },
+    ],
+  },
+  "domainCard:Stare Down": {
+    actions: [
+      {
+        kind: "roll-trait",
+        trait: "presence",
+        when: "When you face down a creature in a tense standoff",
+        said: "make a <b>Presence Roll</b> against them",
+      },
+    ],
+  },
+  "domainCard:Shoot It Out of Their Hand": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { hope: 1 },
+        when: "When you succeed on an attack with a ranged weapon",
+        said: "spend a Hope",
+      },
+    ],
+  },
+  "domainCard:Flint-Touched": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { stress: 1 },
+        when: "A ranged attack that rolls with Fear, to make it roll with Hope",
+        said: "mark a Stress",
+      },
+    ],
+  },
+  "domainCard:Killshot": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { stress: 2 },
+        when: "When you succeed on an attack with a ranged weapon",
+        said: "mark 2 Stress",
+      },
+    ],
+  },
+  "domainCard:Poker Face": {
+    actions: [
+      {
+        kind: "roll-trait",
+        trait: "presence",
+        when: "When someone calls your bluff, with advantage",
+        said: "Make a <b>Presence Roll</b> with advantage against them",
+      },
+      {
+        kind: "pay",
+        amount: { stress: 2 },
+        when: "On a failure",
+        said: "mark 2 Stress",
+      },
+    ],
+  },
+  "domainCard:Through and Through": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { hope: 2 },
+        when: "When you succeed on an attack with a ranged weapon",
+        said: "spend 2 Hope",
+      },
+    ],
+  },
+  "domainCard:Parley": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { stress: 1 },
+        when: "During a fight, call for a parley",
+        said: "mark a Stress",
+        steps: [
+          {
+            kind: "roll-trait",
+            trait: "presence",
+            said: "make a <b>Presence Roll</b> against the leader of your enemies",
+          },
+        ],
+      },
+    ],
+  },
+  "domainCard:Deadeye": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { hope: 2 },
+        said: "spend 2 Hope",
+      },
+    ],
+  },
+  "domainCard:Last Word": {
+    actions: [
+      {
+        kind: "clear",
+        amount: { hitPoints: 2 },
+        when: "When you mark your last Hit Point, on a success",
+        said: "clear 2 Hit Points",
+      },
+      {
+        kind: "clear",
+        amount: { hitPoints: 1 },
+        when: "When you mark your last Hit Point, on a failure",
+        said: "clear a Hit Point",
+      },
+    ],
+  },
 };
 
 /* ── declined ────────────────────────────────────────────────────────────
@@ -9490,6 +9799,90 @@ export const DECLINED = {
   "consumable:Glowmoss Mushroom": [
     "\"causing it to glow bright blue until your next long rest\" is a duration on the broken mushroom, a light source in the world, not an effect on whoever pressed it.",
   ],
+  /* ── the Gunslinger, Corsair and Flint ──────────────────────────────── */
+  "class:Gunslinger": [
+    "Quickdraw: \"make an attack against them with that weapon\" is an attack roll, which has no kind; the press pays the 3 Hope and the weapon's own buttons make the attack.",
+    "Quickdraw: \"Their attack is made with disadvantage\" is the adversary's roll, on the GM's side of the screen.",
+    "Call Your Shot: \"deal damage with a +1 bonus to your Proficiency\" is one damage roll's bonus with no printed duration; a temporary effect would outlive the shot it belongs to.",
+    "Call Your Shot: Rattle's \"The target must mark a Stress\" is the TARGET's Stress, not the holder's.",
+    "Call Your Shot: Disarm's \"next attack is made with disadvantage\" is the adversary's roll.",
+    "Call Your Shot: \"regain it\" refunds an Ammo token on the WEAPON's counter, and a press names only a counter its own document carries.",
+  ],
+  "subclass:Corsair: Foundation": [
+    "Unshackled: \"advantage on rolls to escape bindings\" is a situational advantage with no press.",
+    "Unshackled: \"clear the <i>Restrained</i> condition\" removes a condition, and no kind takes one off; the once-per-rest budget is a standalone press.",
+  ],
+  "subclass:Corsair: Specialization": [
+    "Answer for It: \"make an attack against them with that weapon\" is an attack roll, which has no kind; the press pays the Stress.",
+    "Answer for It: \"they must mark a Hit Point\" is the TARGET's Hit Point.",
+  ],
+  "subclass:Corsair: Mastery": [
+    "Infamy: \"each adversary who can hear you must mark a Stress\" is the adversaries' Stress, not the holder's.",
+  ],
+  "domainCard:Draw a Bead": [
+    "\"you add a <b>d4</b> to your damage rolls against it\" adds a die to the weapon's damage roll; see `card-damage.mjs`.",
+  ],
+  "domainCard:Under Fire": [
+    "\"you can roll a <b>d20</b> as your Hope Die\" changes which die the duality roll uses, which the roll popover composes; Signature Move's reading.",
+  ],
+  "domainCard:Cold Read": [
+    "\"gain advantage on your next action roll against that person\" is a one-roll advantage the popover takes, with no press.",
+  ],
+  "domainCard:Long Shot": [
+    "\"Increase the range of your ranged weapons\" changes the weapon's range band, which no modifier target holds.",
+    "\"add a <b>d6</b> to your damage roll\" adds a die to the weapon's damage roll; see `card-damage.mjs`.",
+  ],
+  "domainCard:Name the Stakes": [
+    "\"Gain advantage on the roll\" is the popover's advantage; the once-per-rest budget is a standalone press because a roll that succeeds pays nothing.",
+  ],
+  "domainCard:Covering Fire": [
+    "\"make an attack with a ranged weapon\" is an attack roll, which has no kind; the weapon's own buttons make it.",
+  ],
+  "domainCard:Grit": [
+    "\"add a <b>d6</b> to the damage roll for each token spent\" is a count only the press knows; see `card-damage.mjs`.",
+  ],
+  "domainCard:Trick Shot": [
+    "\"must make a <b>Reaction Roll (15)</b>\" is the adversaries' roll, on the other side of the exchange.",
+  ],
+  "domainCard:Stare Down": [
+    "\"<b>mark 2 Stress</b> and make their next attack against you with disadvantage\" is the TARGET's Stress and the target's roll.",
+  ],
+  "domainCard:Pick Your Spot": [
+    "\"add a <b>d10</b> to your damage roll\" adds a die to the weapon's damage roll; see `card-damage.mjs`.",
+  ],
+  "domainCard:All In": [
+    "\"spend any number of Hope\" prints no amount, and the +2 per Hope and the Stress per Hope on a failure scale with it; a pay would have to invent the number. The once-per-long-rest budget is a standalone press.",
+  ],
+  "domainCard:Shoot It Out of Their Hand": [
+    "\"until the GM spends a Fear to restore it\" is the GM's Fear, spent on the GM's turn.",
+  ],
+  "domainCard:Nothing Left to Lose": [
+    "\"your attack rolls have advantage\" while every Stress is marked is a standing advantage, which no modifier target holds.",
+  ],
+  "domainCard:Flint-Touched": [
+    "\"+1 bonus to Finesse\" is the standing loadout bonus in `passive-modifiers.mjs`, with no press.",
+    "\"make it roll with Hope instead\" changes which die won, which no kind does; the press pays the Stress.",
+  ],
+  "domainCard:Steady Hand": [
+    "\"can’t be made with disadvantage\" and the +1 instead are a per-roll rule the popover would have to be told about; no press.",
+  ],
+  "domainCard:Killshot": [
+    "\"with a +2 bonus to your Proficiency\" is one damage roll's bonus with no printed duration.",
+  ],
+  "domainCard:Through and Through": [
+    "\"Use the same attack roll against up to two other targets\" reuses a roll; the weapon's damage button rolls each target's damage.",
+  ],
+  "domainCard:Parley": [
+    "\"until the GM spends a Fear to end it\" is the GM's Fear.",
+  ],
+  "domainCard:Deadeye": [
+    "\"make an attack with a ranged weapon, with advantage\" is an attack roll, which has no kind.",
+    "\"the target must mark 2 additional Hit Points\" is the TARGET's Hit Points.",
+  ],
+  "domainCard:Last Word": [
+    "\"deal maximum damage\" is the weapon's damage at its maximum, which no damage button rolls.",
+    "\"place this card in your vault\" moves the card, which no kind does; the loadout's own vault press does it.",
+  ],
 };
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -10186,6 +10579,53 @@ export const GATES = {
   "weapon:Legendary Revolver": {
     /* Ammo is a pile of a fixed six rather than a once-per limit: each attack spends one, and the reload press (index 0) refills it rather than spending. */
     "Six Shot": { "Ammo": { said: "Spend 1 Ammo token to make an attack", label: "Spend 1 Ammo: attack" } },
+  },
+  /* ── the Gunslinger, Corsair and Flint ──────────────────────────────── */
+  "subclass:Corsair: Foundation": {
+    /* Clearing Restrained has no kind, so the use is its own press. */
+    "Unshackled": { "Use": "standalone" },
+  },
+  "subclass:Corsair: Specialization": {
+    /* Clearing 2 Stress and gaining a Hope are the two halves of one call;
+       either spends tonight's use. */
+    "All Hands": { "Use": [0, 1] },
+  },
+  "subclass:Corsair: Mastery": {
+    /* "Once per long rest, … make a Presence Roll": the roll is the use. */
+    "Infamy": { "Use": [0] },
+  },
+  "domainCard:Cold Read": {
+    /* The limit opens the sentence and governs the roll. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Name the Stakes": {
+    /* The advantage is the use and has no press; the Stress is paid only on a failure. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Stare Down": {
+    "": { "Use": [0] },
+  },
+  "domainCard:All In": {
+    /* Any number of Hope has no press, so the use is its own. */
+    "": { "Use": "standalone" },
+  },
+  "domainCard:Flint-Touched": {
+    /* The Stress is the limited use's cost. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Poker Face": {
+    /* Doubling down is the roll. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Through and Through": {
+    "": { "Use": [0] },
+  },
+  "domainCard:Parley": {
+    /* The Stress and the roll are one press; it is the use. */
+    "": { "Use": [0] },
+  },
+  "domainCard:Deadeye": {
+    "": { "Use": [0] },
   },
 };
 
