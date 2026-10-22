@@ -19,7 +19,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { REFRESHED_BY, type ResourceRefresh } from "../config.ts";
+import { REFRESHED_BY, type ResourceRefresh, SYSTEM_ID } from "../config.ts";
 
 export interface Resource {
   name: string;
@@ -73,7 +73,7 @@ export function traitValue(actor: any, trait: string): number {
  */
 function fearValue(): number {
   try {
-    return Number((globalThis as any).game?.settings?.get?.("daggerheart", "fear") ?? 0);
+    return Number((globalThis as any).game?.settings?.get?.(SYSTEM_ID, "fear") ?? 0);
   } catch {
     return 0;
   }
