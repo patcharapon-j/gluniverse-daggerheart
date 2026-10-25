@@ -7,6 +7,7 @@ import {
   CONDITION_MATERIALS,
   CONDITION_SLOTS,
   TOKEN_CONDITION_FRAGMENT,
+  conditionFragment,
   conditionMaterialsFor,
 } from "../src/module/token-conditions.ts";
 import {
@@ -308,6 +309,26 @@ assert.match(css, /\.dh\.tok \.tkcond\{[^}]*pointer-events:none/s);
 assert.doesNotMatch(css, /\.tkvuln/);
 assert.doesNotMatch(css, /\.tkarc|\.tkhope|\.tkdiff/,
   "Obsidian orbit replaced the outboard tracks; no legacy selector may survive");
+
+/* ── a token never compiles the general shader ─────────────────────────
+   Twenty-three seconds on Direct3D, on the main thread, because a uniform id
+   keeps every branch of every slot alive. The specialisation is a text
+   transform over the general source, so what has to stay true is that the
+   transform found its anchors: an unrolled body with a constant id per slot,
+   no loop, no uniform id read, and the break only where it was asked for. */
+for (let index = 0; index < CONDITION_MATERIALS.length; index++) {
+  const one = conditionFragment([index]);
+  assert.ok(!one.includes("for(int i=0;i<5;i++)"), `variant ${index} must not keep the slot loop`);
+  assert.doesNotMatch(one, /idAt\(i\)|colorAt\(i\)|ageAt\(i\)|uCount\)break/, `variant ${index} must not read a slot by index`);
+  assert.ok(one.includes(`const float id=${index}.0;`), `variant ${index} must fix its id`);
+  assert.ok(!one.includes("shattered(uv"), `a living variant (${index}) must not compile the break`);
+}
+const five = conditionFragment([0, 3, 7, 12, 24]);
+assert.equal(five.match(/const float id=/g).length, CONDITION_SLOTS);
+for (let i = 0; i < CONDITION_SLOTS; i++) assert.ok(five.includes(`uColor${i}`) && five.includes(`uAge${i}`));
+const breakOnly = conditionFragment([], true);
+assert.ok(breakOnly.includes("{gl_FragColor=shattered(uv,p,uTime,detail,ageAt(0));return;}"));
+assert.doesNotMatch(breakOnly, /const float id=|uDead>/);
 
 console.log(`token conditions: ${CONDITIONS.length} named materials plus the one a GM types, all animated, `
   + "a premultiplied break clipped to the cell, a colour per condition in one sentence, "
