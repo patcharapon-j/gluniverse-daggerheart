@@ -133,6 +133,8 @@ const MARK = Symbol("daggerheartConditionMaterial");
    see `onsets` below. */
 const AGES = Symbol("daggerheartConditionAges");
 const SLOTS = Symbol("daggerheartConditionSlots");
+/* Which specialised program a filter was built from. See conditionFragment. */
+const VARIANT = Symbol("daggerheartConditionVariant");
 /** Long enough that smoothstep is saturated: a condition that is just there. */
 const ARRIVED = 99;
 /* The break's own slot. Not a condition and not in CONDITIONS, because the
@@ -1941,6 +1943,60 @@ void main() {
   gl_FragColor=vec4(mix(original.rgb,color*original.a,circle),original.a);
 }`;
 
+/* ── what this shader costs to compile, and why a token never runs it ──
+   The program above is the general one: five slots, any of twenty-five
+   conditions in each, chosen at run time by a uniform. On Windows every
+   WebGL shader goes through ANGLE into Direct3D's HLSL compiler, which
+   inlines every function and unrolls every loop, so it compiles five copies
+   of all twenty-five patterns, warps and ramps. Measured on an RTX 4090:
+   twenty-three seconds, on the main thread, the first time any condition
+   lands on any token. The browser does not freeze for that because of
+   anything the shader draws; it freezes because nothing in it is known
+   until it runs.
+
+   So a token runs a specialisation instead. The slot loop is unrolled and
+   each slot's id becomes a constant, so every branch but the one condition
+   in that slot folds away before Direct3D ever sees it: 120ms for one
+   condition, 360 for five, 170 for the break. The pixels are the same
+   arithmetic -- the general source is still the only copy of it, and this
+   is a text transform over it rather than a second shader to keep true.
+   The anchors are exact strings and a missing one throws, because a
+   transform that silently matched nothing would ship the twenty-three
+   seconds straight back. */
+const SLOT_LOOP = "for(int i=0;i<5;i++){\n    if(float(i)>=uCount)break;";
+const DEAD_LINE = "if(uDead>.5){gl_FragColor=shattered(uv,p,uTime,detail,ageAt(0));return;}";
+const SLOT_ID = "float id=idAt(i);";
+
+/** A specialised key: the slot ids in slot order, or the break. */
+export const conditionVariantKey = (ids: readonly number[], dead: boolean): string =>
+  dead ? "dead" : ids.join(",");
+
+/**
+ * The fragment for one exact set of slots. `ids` are material indices in
+ * slot order; `dead` is the break, which has no slots at all.
+ */
+export function conditionFragment(ids: readonly number[], dead = false): string {
+  const src = TOKEN_CONDITION_FRAGMENT;
+  const start = src.indexOf(SLOT_LOOP);
+  const deadAt = src.indexOf(DEAD_LINE);
+  if (start < 0 || deadAt < 0 || deadAt > start) throw new Error("condition shader: specialisation anchors missing");
+  let depth = 0, end = -1;
+  for (let k = start + SLOT_LOOP.indexOf("{"); k < src.length; k++) {
+    if (src[k] === "{") depth++;
+    else if (src[k] === "}" && --depth === 0) { end = k; break; }
+  }
+  const body = src.slice(start + SLOT_LOOP.length, end);
+  if (end < 0 || !body.includes(SLOT_ID)) throw new Error("condition shader: slot body not found");
+  const slots = dead ? "" : ids.slice(0, CONDITION_SLOTS).map((id, i) => `{\n${body
+    .replace(SLOT_ID, `const float id=${Number(id).toFixed(1)};`)
+    .replace(/float\(i\)/g, `${i}.0`)
+    .replace(/colorAt\(i\)/g, `uColor${i}`)
+    .replace(/ageAt\(i\)/g, `uAge${i}`)}}\n`).join("");
+  /* The break is either the whole shader or none of it. */
+  const head = src.slice(0, start).replace(DEAD_LINE, dead ? DEAD_LINE.replace("if(uDead>.5){", "{") : "");
+  return head + slots + src.slice(end + 1);
+}
+
 function getFilterClass(): any {
   if (FilterClass) return FilterClass;
   const Base = (globalThis as any).foundry?.canvas?.rendering?.filters?.AbstractBaseFilter;
@@ -1957,10 +2013,148 @@ function getFilterClass(): any {
          them, and a flash the first frame if it ever does not. */
       uAge0: ARRIVED, uAge1: ARRIVED, uAge2: ARRIVED, uAge3: ARRIVED, uAge4: ARRIVED,
     };
-    static _createFragmentShader(): string { return TOKEN_CONDITION_FRAGMENT; }
+    static _createFragmentShader(options?: VariantOptions): string {
+      return options?.ids ? conditionFragment(options.ids, options.dead) : TOKEN_CONDITION_FRAGMENT;
+    }
   };
   return FilterClass;
 }
+
+interface VariantOptions { ids: readonly number[]; dead: boolean }
+
+/* ── compiling off the main thread ───────────────────────────────────
+   A specialisation is a few hundred milliseconds rather than twenty-three
+   seconds, and a few hundred milliseconds on the main thread is still a
+   hitch every time a new combination of conditions lands. PIXI compiles on
+   first draw and asks for the link status straight away, which is the call
+   that blocks. So the program is compiled here first, on the renderer's own
+   context, with KHR_parallel_shader_compile: the driver does the work on its
+   own threads and this polls for it, costing about a millisecond. When it is
+   done, PIXI's compile of the identical source is a cache hit -- 11 to 16ms,
+   measured, against 400 to 580 cold. Until then the token keeps whatever it
+   was wearing, and the condition arrives a moment later rather than the
+   whole board stopping for it.
+
+   PIXI links twice for GLSL 1 -- once to discover the attributes, then again
+   after binding them in name order -- and both links are mirrored, because
+   the second link is a different cache entry from the first.
+
+   No extension means no way to do it in the background; the variant is then
+   simply ready and PIXI compiles it synchronously, which the specialisation
+   has already made short. */
+const ready = new Set<string>();
+const warming = new Map<string, Promise<void>>();
+const queue: Array<{ key: string; run: () => Promise<void> }> = [];
+const CONCURRENT = 2;
+let running = 0;
+
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/* setTimeout rather than requestAnimationFrame, for swap.js's reason: rAF
+   does not fire in a tab that is not painting, and a compile finishing in a
+   background tab must still be noticed. */
+async function settled(gl: any, ext: any, program: any): Promise<void> {
+  while (!gl.isContextLost() && !gl.getProgramParameter(program, ext.COMPLETION_STATUS_KHR)) await wait(16);
+}
+
+async function compileInBackground(program: any): Promise<void> {
+  const renderer = (canvas as any)?.app?.renderer;
+  const gl = renderer?.gl;
+  if (!gl || program?.glPrograms?.[renderer.CONTEXT_UID]) return;
+  const ext = gl.getExtension?.("KHR_parallel_shader_compile");
+  if (!ext) return;
+  const vertex = gl.createShader(gl.VERTEX_SHADER);
+  const fragment = gl.createShader(gl.FRAGMENT_SHADER);
+  const linked = gl.createProgram();
+  try {
+    gl.shaderSource(vertex, program.vertexSrc); gl.compileShader(vertex);
+    gl.shaderSource(fragment, program.fragmentSrc); gl.compileShader(fragment);
+    gl.attachShader(linked, vertex); gl.attachShader(linked, fragment);
+    gl.linkProgram(linked);
+    await settled(gl, ext, linked);
+    if (gl.isContextLost() || !gl.getProgramParameter(linked, gl.LINK_STATUS)) return;
+    if (!/^[ \t]*#[ \t]*version[ \t]+300[ \t]+es[ \t]*$/m.test(program.vertexSrc)) {
+      const names: string[] = [];
+      const count = gl.getProgramParameter(linked, gl.ACTIVE_ATTRIBUTES);
+      for (let i = 0; i < count; i++) names.push(gl.getActiveAttrib(linked, i).name);
+      names.sort((a, b) => (a > b ? 1 : -1)).forEach((name, i) => gl.bindAttribLocation(linked, i, name));
+      gl.linkProgram(linked);
+      await settled(gl, ext, linked);
+    }
+  } finally {
+    if (!gl.isContextLost()) { gl.deleteShader(vertex); gl.deleteShader(fragment); gl.deleteProgram(linked); }
+  }
+}
+
+function pump(): void {
+  while (running < CONCURRENT && queue.length) {
+    const job = queue.shift()!;
+    running++;
+    job.run().finally(() => { running--; pump(); });
+  }
+}
+
+/**
+ * Resolves when a variant's program can be built without a stall. `urgent`
+ * is a token waiting on it, which goes ahead of anything only prewarming.
+ */
+function prepare(Klass: any, ids: readonly number[], dead: boolean, urgent: boolean): Promise<void> {
+  const key = conditionVariantKey(ids, dead);
+  if (ready.has(key)) return Promise.resolve();
+  const pending = warming.get(key);
+  if (pending) {
+    const at = queue.findIndex((job) => job.key === key);
+    if (urgent && at > 0) queue.unshift(...queue.splice(at, 1));
+    return pending;
+  }
+  const promise = new Promise<void>((resolve) => {
+    const run = async () => {
+      try {
+        /* Built the way the token's own filter will be, so the source is
+           byte for byte what PIXI compiles -- PIXI prefixes a SHADER_NAME and
+           a precision line, and a warm-up of anything else warms nothing.
+           The filter itself is thrown away; the program is cached by source
+           and the real filters share it. */
+        const probe = Klass.create({}, { ids, dead });
+        const program = probe.program;
+        probe.destroy?.();
+        await compileInBackground(program);
+      } catch (error) {
+        console.warn("Daggerheart | condition material could not be precompiled", error);
+      } finally {
+        ready.add(key);
+        warming.delete(key);
+        resolve();
+      }
+    };
+    if (urgent) queue.unshift({ key, run }); else queue.push({ key, run });
+  });
+  warming.set(key, promise);
+  pump();
+  return promise;
+}
+
+/* Every single condition and the break, compiled while nobody is looking.
+   One condition is by far the common case, and after this the first one
+   applied in a session is drawn on the frame it lands. Only with the
+   extension -- without it a prewarm would be the stall it exists to avoid.
+   Delayed so it does not compete with the scene's own first draw. */
+let prewarmed = false;
+function prewarm(): void {
+  if (prewarmed) return;
+  const Klass = getFilterClass();
+  const gl = (canvas as any)?.app?.renderer?.gl;
+  if (!Klass || !gl?.getExtension?.("KHR_parallel_shader_compile")) return;
+  prewarmed = true;
+  setTimeout(() => {
+    prepare(Klass, [], true, false);
+    CONDITION_MATERIALS.forEach((_, index) => prepare(Klass, [index], false, false));
+  }, 3000);
+}
+
+/* What a token waiting on a compile last asked for, so the answer is the
+   latest state rather than whatever was true when the wait began. */
+const waiting = new Map<any, { key: string; args: [readonly string[], boolean, number] }>();
 
 function detach(token: any): void {
   const mesh = token?.mesh;
@@ -1968,6 +2162,7 @@ function detach(token: any): void {
   if (mesh && filter) mesh.filters = (mesh.filters ?? []).filter((candidate: any) => candidate !== filter);
   filter?.destroy?.();
   filters.delete(token);
+  waiting.delete(token);
 }
 
 export function clearTokenConditionMaterial(token: any): void { detach(token); }
@@ -1984,11 +2179,40 @@ export function syncTokenConditionMaterial(
   subject = 1,
 ): void {
   const mesh = token?.mesh;
-  if (!mesh || (!dead && ids.length === 0)) { detach(token); return; }
+  if (!mesh || token.destroyed || (!dead && ids.length === 0)) { detach(token); return; }
   const Klass = getFilterClass();
   if (!Klass) return;
 
+  /* Slots in palette order rather than the order the effects happened to be
+     applied in. The program is per set of slots, so this is what makes
+     Hexed-and-Ablaze and Ablaze-and-Hexed one compile instead of two. */
+  const materials = dead ? [] : conditionMaterialsFor(ids).sort((a, b) => a.index - b.index);
+  const indices = materials.map((material) => material.index);
+  const variant = conditionVariantKey(indices, dead);
+
   let filter = filters.get(token);
+  if (filter?.[VARIANT] !== variant) {
+    if (!ready.has(variant)) {
+      /* Not compiled yet. The token goes on wearing what it had -- or
+         nothing -- until it is, and is synced again then with whatever it
+         has become in the meantime. Onsets are not started here, so a
+         condition that waited still arrives rather than appearing halfway
+         through its own onset. Only a new wait subscribes: sync runs on
+         every refresh, and a handler per refresh would pile up behind one
+         compile. */
+      const held = waiting.get(token);
+      waiting.set(token, { key: variant, args: [ids, dead, subject] });
+      if (held?.key !== variant) {
+        prepare(Klass, indices, dead, true).then(() => {
+          const entry = waiting.get(token);
+          if (entry?.key === variant) syncTokenConditionMaterial(token, ...entry.args);
+        });
+      }
+      return;
+    }
+    if (filter) { detach(token); filter = undefined; }
+  }
+  waiting.delete(token);
   if (!filter) {
     /* `sync` is called straight out of `drawToken`. A shader that fails to
        compile, or an `AbstractBaseFilter` that moves in a later Foundry,
@@ -1996,7 +2220,7 @@ export function syncTokenConditionMaterial(
        the canvas behind it — down with it. A condition material is worth
        less than a canvas, so it fails alone and says so once. */
     try {
-      filter = Klass.create();
+      filter = Klass.create({}, { ids: indices, dead });
     } catch (error) {
       if (!warned) {
         warned = true;
@@ -2005,6 +2229,7 @@ export function syncTokenConditionMaterial(
       return;
     }
     filter[MARK] = true;
+    filter[VARIANT] = variant;
     filter.padding = 0;
     /* autoFit shrinks outputFrame to the visible intersection, which would
        move token space the moment a creature touches the viewport edge. The
@@ -2021,7 +2246,6 @@ export function syncTokenConditionMaterial(
      travel once and stop, so the shader has to know where in that it is.
      Carried through the same slot-age machinery rather than a uniform of its
      own, because the question is identical -- when did this start. */
-  const materials = dead ? [] : conditionMaterialsFor(ids);
   const keys = dead ? [DEAD_KEY] : materials.map((material) => material.id);
 
   /* When each of these started being drawn. `sync` runs on every refresh of
@@ -2121,15 +2345,16 @@ function tick(): void {
 export function registerTokenConditionMaterials(): void {
   if (registered) return;
   registered = true;
-  Hooks.on("canvasReady", () => (canvas as any)?.app?.ticker?.add?.(tick));
+  Hooks.on("canvasReady", () => { (canvas as any)?.app?.ticker?.add?.(tick); prewarm(); });
   Hooks.on("canvasTearDown", () => {
     (canvas as any)?.app?.ticker?.remove?.(tick);
     for (const token of [...filters.keys()]) detach(token);
+    waiting.clear();
     onsets.clear();
   });
   /* The other end of a creature's presence. `detach` deliberately does not
      reach the onsets, since it also runs on a redraw -- so the one moment a
      creature is genuinely finished with is its document being deleted. */
   Hooks.on("deleteToken", (doc: any) => onsets.delete(String(doc?.id ?? "")));
-  if ((canvas as any)?.ready) (canvas as any)?.app?.ticker?.add?.(tick);
+  if ((canvas as any)?.ready) { (canvas as any)?.app?.ticker?.add?.(tick); prewarm(); }
 }

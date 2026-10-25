@@ -1856,6 +1856,40 @@ transform on one row cannot move another row's box, so no rect ever depended on
 the order, and one layout is also the only way the distances can be consistent
 with each other.
 
+**The condition material cost twenty-three seconds to compile, once, and it
+froze the browser for all of them.** On Windows every WebGL shader goes
+through ANGLE into Direct3D's HLSL compiler, which inlines every function and
+unrolls every loop — and the material picked each of its five slots'
+conditions by *uniform*, so it was five copies of twenty-five patterns, warps
+and ramps, compiled on the main thread the first time any condition landed on
+any token. Nothing on screen says that is what happened; the board simply
+stops.
+
+So no token runs that shader. `conditionFragment` in `token-conditions.ts`
+specialises it per set of slots — the loop unrolled, each id a constant, so
+every other branch folds away before Direct3D sees it — and measured on the
+real source that is 60–290ms against 23,000, pixel-identical to the general
+shader on twenty-eight of thirty variants and within a few dozen pixels of
+hash-noise drift on the other two. It is a text transform over the one
+source, not a second shader, and `test-token-conditions.mjs` holds its
+anchors. Slots are sorted by palette index so a set is one program whatever
+order it was applied in.
+
+The compile itself goes off the main thread too. `prepare` builds the
+program PIXI will build — the same object, so the same `SHADER_NAME`-prefixed
+source — and links it on the renderer's context with
+`KHR_parallel_shader_compile`, mirroring PIXI's GLSL 1 double link; PIXI's own
+compile afterwards is a cache hit at 11–16ms. A token whose new set is still
+compiling keeps what it was wearing and its onsets wait with it, so a
+condition arrives a moment late rather than the table stopping for it. Every
+single condition and the break are prewarmed three seconds after a scene
+loads, and only where the extension exists, because without it a prewarm is
+the stall it was meant to avoid.
+
+The design pages and the gate still compile the general shader, which is
+right — they exist to see every condition in one program — and on Windows
+they pay the twenty-three seconds to do it.
+
 **One thing was measured and left alone.** `hud-flow` animates a registered
 custom property feeding a conic gradient, so the Fear strip's rim repaints
 every frame, indefinitely, in the chrome above the canvas. It is real and it is
