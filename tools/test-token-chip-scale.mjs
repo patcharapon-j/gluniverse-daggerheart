@@ -42,8 +42,8 @@ near(RING_OUT * RING_IN, 1, "the two fit modes are one texture read two ways");
    The default has to be exactly 1 and not 0.999: every radius in
    token.css multiplies by it, so a chip on a table running none of this
    must land precisely where it landed before any of it existed. */
-assert.deepEqual(chipScale(), { readout: 1, subject: 1 });
-assert.deepEqual(chipScale({}), { readout: 1, subject: 1 });
+assert.deepEqual(chipScale(), { readout: 1, subject: 1, band: 1 });
+assert.deepEqual(chipScale({}), { readout: 1, subject: 1, band: 1 });
 
 /* ── subject fit: the collision this exists for ────────────────────
    The hole is matched to the cell, so the rim lands 1.0848 cells out —

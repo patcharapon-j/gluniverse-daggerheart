@@ -20,7 +20,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { TOKEN_CHIP } from "../src/module/ui/token.js";
+import { TOKEN_CHIP, chipScale } from "../src/module/ui/token.js";
 
 const chip = (max, value = 0, extra = {}) =>
   TOKEN_CHIP({ hp: { max: 6, marked: 0 }, hope: { value, max }, ...extra });
@@ -181,15 +181,26 @@ assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /var\(--tkr/,
 const CR = Number(chipJs.match(/const CR = ([\d.]+);/)?.[1]);
 assert.ok(CR > 48 && CR <= 49.2,
   `the sentence's baseline sits between the Armor rail and the rim — got ${CR}`);
-/* Radii only. A band's width is a thing you count and keeps its size at
-   every setting — the range ruler's rule arriving here. An inset is
-   measured from the EDGE and a radius from the centre, which is why every
-   one of those is written 50% minus a scaled radius rather than a scaled
-   inset: scaling the inset moves a rail the wrong way. */
-assert.doesNotMatch(css, /--rail:calc\(/,
-  "a rail's WIDTH must not scale — only its radius");
-assert.doesNotMatch(css, /\.er-hope\{[^}]*--sz:calc\(/s,
-  "a gem is a thing you count and keeps its size at every setting");
+/* An inset is measured from the EDGE and a radius from the centre, which is
+   why every one of those is written 50% minus a scaled radius rather than a
+   scaled inset: scaling the inset moves a rail the wrong way.
+
+   Widths read --tkb and never --tkv. --tkb is the art scale floored at 1 with
+   the dial left out, so an oversized creature gets thicker rails while the
+   dial still moves radii only. */
+for (const rail of ["armor", "hp", "stress"])
+  assert.match(css, new RegExp(`\\.er-ring\\.${rail}\\s*\\{[^}]*--rail:calc\\([\\d.]+cqw \\* var\\(--tkb`),
+    `the ${rail} rail's width follows the band scale`);
+assert.match(css, /\.er-hope\{[^}]*--sz:calc\(6\.5cqw \* var\(--tkb/s,
+  "so does a gem");
+/* Everything else on the creature follows it too. These sat on the grid
+   cell, so an oversized token wore its crown inside its own artwork. */
+for (const part of ["er-bloom", "er-crown", "er-reticle", "er-bed", "er-stamp"])
+  assert.match(css, new RegExp(`\\.${part}\\{[^}]*inset:calc\\([^;]*var\\(--tkv`, "s"),
+    `${part} must follow the subject`);
+assert.match(css, /\.er-diff\{[^}]*bottom:calc\([^;]*var\(--tkv/s, "the Difficulty sits on the creature's own edge");
+assert.ok(chipScale({ art: 1.5, manual: 1.3 }).band === 1.5, "the band follows the art and not the dial");
+assert.ok(chipScale({ art: 0.6 }).band === 1, "and is floored at 1");
 assert.match(css, /\.er-hope \.er-gem\{[^}]*transform:rotate\(var\(--a,0deg\)\) translateY\(var\(--hope-r\)\)/s,
   "the gems are placed by angle on the circle, not laid out in a row");
 assert.doesNotMatch(css, /\.er-hope\{[^}]*display:flex/s,

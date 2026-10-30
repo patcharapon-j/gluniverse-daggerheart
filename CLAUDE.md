@@ -4767,12 +4767,13 @@ correct that has corrected it for the rails and the material alike, and a dial
 that moved one and not the other would put two objects on one creature in two
 places.
 
-**Radii only.** A band's width, a gem and a numeral keep their size at every
-setting. That is the range ruler's own rule arriving here — the rings are
-geometry and scale with what they measure, the lettering is read and does not —
-and it is what stops the dial making one creature's Stress track fatter than
-its neighbour's. The obvious build is a `transform:scale` on the whole readout
-and it is the one `tools/verify/` fails.
+**The dial moves radii only.** Rail and gem thickness read `--tkb`, the third
+number `chipScale` answers: the art's own scale, floored at 1 and free of the
+dial. So an oversized creature gets rails as thick as its art, a small sprite
+keeps full rails, and the dial cannot make one creature's Stress track fatter
+than its neighbour's. Widths are `cqw`, so a 2×2 token keeps the same
+proportions. All three rails lie on one dark `.er-bed`, because a rail on
+somebody's painting loses to any pale passage however it is coloured.
 
 **The readout is floored at the grid cell** however small the art is. Following
 a 0.6-scale sprite inward would draw its Stress track at 0.6 the size of the
@@ -4998,10 +4999,17 @@ a chip, holding nothing but the word.
 is a fact about what this client knows, and an element carrying a creature's
 Stress is the wrong thing to leave in the DOM of somebody who has not found it
 yet. `.hidden` on the chip is the *other* case — a token the GM has toggled
-invisible, which the GM can still see. **Defeated keeps its marks and dims**,
-for the ledger's reason: a corpse's slots are what the table just spent the
-fight producing, and clearing them at the last one is the record vanishing at
-the moment it meant the most.
+invisible, which the GM can still see.
+
+**A corpse stays one piece.** `corpse` in `token-conditions.ts` greys the art,
+runs thin ember seams from one blow placed off the token's seed, and has no time
+in it, so it plays once and holds still. `.er-stamp` then lands on top: the
+skull in `design/assets/conditions/dead.svg`, tilted per token, outside the
+clip and the ladder. The rails, Hope, Difficulty and sentence all leave. The
+fall plays only when `sync` sees a creature go from alive to down, which is
+`markFallen` and `.falling`; a scene loading over a battlefield shows settled
+bodies. The chips switch does not hide any of it, because a corpse is not a
+readout.
 
 ### Foundry's bars
 

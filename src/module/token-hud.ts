@@ -146,6 +146,8 @@ import {
   conditionTint,
   registerTokenConditionMaterials,
   syncTokenConditionMaterial,
+  markFallen,
+  tokenSeed,
 } from "./token-conditions.ts";
 
 /** What the chip is told about a creature. Mirrors token.js's `s`. */
@@ -447,12 +449,14 @@ function subjectInFrame(token: any): number {
    comparison against one style write. */
 const scales = new WeakMap<HTMLElement, string>();
 
-function rescale(chip: HTMLElement, token: any): void {
+function rescale(chip: HTMLElement, token: any): number {
   const k = chipScale(wearOf(token) as any);
-  const key = String(k.subject);
-  if (scales.get(chip) === key) return;
+  const key = `${k.subject}/${k.band}`;
+  if (scales.get(chip) === key) return k.band;
   scales.set(chip, key);
   chip.style.setProperty("--tkv", String(k.subject));
+  chip.style.setProperty("--tkb", String(k.band));
+  return k.band;
 }
 
 function place(chip: HTMLElement, token: any): void {
@@ -476,8 +480,10 @@ function place(chip: HTMLElement, token: any): void {
     st.height = `${h}px`;
   }
 
-  rescale(chip, token);
-  setTier(chip, w * (canvas.stage?.scale?.x ?? 1));
+  /* Times the band: an oversized creature's rails are as thick as its art, so
+     they stay countable further down the zoom than its footprint alone says. */
+  const band = rescale(chip, token);
+  setTier(chip, w * band * (canvas.stage?.scale?.x ?? 1));
 }
 
 /* ══ arriving and leaving ═══════════════════════════════════════════
@@ -610,6 +616,11 @@ const visible = (token: any): boolean => token?.visible !== false && !token?.doc
 const ghost = (token: any): boolean => token?.isPreview === true;
 const realOf = (token: any): any => token?._original ?? token;
 
+/* Whether each creature was down the last time it was read. Absent means it
+   has not been read on this scene, which is how a body that was already dead
+   is told from one that just fell. */
+const down = new Map<string, boolean>();
+
 function sync(token: any): void {
   /* Who, from the real placeable; where, from the one we were handed. */
   const subject = realOf(token);
@@ -617,11 +628,18 @@ function sync(token: any): void {
   if (!id) return;
 
   const enabled = game.settings?.get(SYSTEM_ID, "tokenChip") !== false;
-  const state = enabled ? stateOf(subject) : null;
+  const read = stateOf(subject);
+  /* The chips switch hides a readout, and a corpse is not one. A body keeps
+     its grey and its stamp on every screen, without the selection chrome. */
+  const state = enabled ? read : read?.defeated ? { ...read, selected: false, targeted: false } : null;
   /* Visibility is the real token's. A ghost is created `visible = false` and
      turned on a frame later by `clone().draw().then()`, so asking the ghost
      would retire a living creature's chip on the frame a drag starts. */
   const gone = !state || (!subject.isVisible && !isGM());
+
+  const fell = !!read?.defeated && down.get(id) === false;
+  down.set(id, !!read?.defeated);
+  if (fell) markFallen(subject);
 
   if (gone) clearTokenConditionMaterial(token);
   else syncTokenConditionMaterial(token, state.materialIds ?? state.conditionIds ?? [], !!state.defeated,
@@ -655,6 +673,8 @@ function sync(token: any): void {
     chip = host.firstElementChild as HTMLElement;
     if (!chip) return;
     chip.dataset.shape = shape;
+    /* -8 to 8 degrees, off the token's own seed. */
+    chip.style.setProperty("--tkstamp", `${(tokenSeed(subject) % 1) * 16 - 8}deg`);
     chips.set(id, chip);
     layer?.appendChild(chip);
     appeared = !rebuilt;
@@ -673,6 +693,12 @@ function sync(token: any): void {
     const el = chip;
     el.classList.add("arrive");
     after(el, () => el.classList.remove("arrive"));
+  }
+
+  if (fell) {
+    const el = chip;
+    el.classList.add("falling");
+    after(el, () => el.classList.remove("falling"));
   }
 }
 
@@ -850,6 +876,7 @@ function build(): void {
      which is the exact mirror of the drag bug: that one deleted a live chip,
      this one resurrected a dead one. */
   leaving.clear();
+  down.clear();
   lastK = canvas.stage?.scale?.x ?? 1;
   redraw();
 }
@@ -917,8 +944,12 @@ export function registerTokenChips(): void {
        and that one does not move the token at all. */
     if (token?._preview?._previewType === "dragging") return;
     const chip = chips.get(token.document?.id ?? token.id);
-    if (chip) place(chip, token);
-    else sync(token);
+    if (chip) {
+      place(chip, token);
+      /* A new token is drawn `visible = false` and turned on a refresh later,
+         so a chip built on `drawToken` reads hidden until this says otherwise. */
+      chip.classList.toggle("hidden", !visible(realOf(token)));
+    } else sync(token);
   });
 
   Hooks.on("drawToken", (token: any) => sync(token));
