@@ -4,7 +4,7 @@ import { CONDITION_MATERIALS, TOKEN_CONDITION_FRAGMENT } from '../src/module/tok
 const states = [
   { title:'Vulnerable', ids:['vulnerable'], names:['Vulnerable'], copy:'Fracture pressure, colored material, and the repeated sentence share one circular read.' },
   { title:'Marked · Charged', ids:['markedForDeath','charged'], names:['Marked for Death','Charged'], copy:'Red and blue mix before portrait composition, producing a saturated purple material without washing out the face.' },
-  { title:'Shattered Effigy', ids:[], names:[], dead:true, copy:'Seven separately displaced portrait fragments, true void between them, no icon and no live condition ring.' },
+  { title:'Corpse', ids:[], names:[], dead:true, copy:'The portrait greyed and whole, thin ember seams from one blow, the red stamp and no live condition ring.' },
 ];
 
 const resource = { hp:{max:12,marked:5}, stress:{max:6,marked:2}, armor:{max:4,marked:1} };

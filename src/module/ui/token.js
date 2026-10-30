@@ -165,6 +165,10 @@ export function chipScale(t = {}) {
   return {
     readout: round(Math.max(1, out) * dial),
     subject: round(inn * dial),
+    /* The thickness of what you count, and the dial stays out of it: the dial
+       says where the creature ends, and a rail is only thicker because the
+       creature really is. Floored at 1 so a small sprite keeps full rails. */
+    band: round(Math.max(1, inn)),
   };
 }
 
@@ -351,8 +355,8 @@ const ringOf = (kind, t) => {
 const HOPE_R = 43.4;      // cqw — between the Hit Points rail and Stress
 const HOPE_PITCH = 10;    // degrees between gems, held for every character
 const HOPE_SPAN = 51;     // of the 60° opening, leaving the rail ends clear
-const HOPE_W = 6.5;       // px across the gem's own box
-const HOPE_GAP = 1.1;     // px of arc that must survive between neighbours
+const HOPE_W = 6.5;       // cqw across the gem's own box
+const HOPE_GAP = 1.1;     // cqw of arc that must survive between neighbours
 
 /* Gem 0 sits at the lower-LEFT end of the opening, so Hope fills the way
    the rails run and the way the sentence above it reads. A positive CSS
@@ -408,7 +412,7 @@ const bottomOf = (s) => {
        wraps `.fclsr` and `.abl .a` wraps `.abl .ap`. It is also the only
        way to hand a gem its own angle: GEM writes its own style attribute
        and takes no arbitrary one. */
-    return `<div class="er-hope" style="--hope-r:calc(${HOPE_R}cqw * var(--tkv,1));--sz:${width.toFixed(2)}px">${
+    return `<div class="er-hope" style="--hope-r:calc(${HOPE_R}cqw * var(--tkv,1));--sz:calc(${width.toFixed(2)}cqw * var(--tkb,1))">${
       Array.from({ length: n }, (_, i) => {
         const scar = i >= live;
         return `<i class="er-gem" style="--a:${angles[i].toFixed(2)}deg">${
@@ -549,11 +553,13 @@ export const TOKEN_CHIP = (s = {}) =>
   <div class="er-bloom"></div>
   <div class="er-shell">
     <i class="er-identity"></i>
+    ${s.armor?.max || s.hp?.max || s.stress?.max ? '<i class="er-bed"></i>' : ''}
     ${ringOf('armor', s.armor)}${ringOf('hp', s.hp)}${ringOf('stress', s.stress)}
     ${bottomOf(s)}
     <i class="er-crown"></i>
     <i class="er-reticle"></i>
   </div>
+  <i class="er-stamp"></i>
 </div>`;
 
 /* ── the tier ─────────────────────────────────────────────────────

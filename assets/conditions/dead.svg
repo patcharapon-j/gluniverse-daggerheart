@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- The stamp a corpse wears. Our own skull, cut as ink: the turbulence eats
+       the edge and pits the solid, so it reads as pressed onto the art rather
+       than drawn over it. -->
+  <defs>
+    <filter id="ink" x="-8%" y="-8%" width="116%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="7" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="2" result="rough"/>
+      <feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="2" seed="19"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -5 3.9"/>
+      <feComposite in="rough" operator="in"/>
+    </filter>
+  </defs>
+  <g filter="url(#ink)" fill="#b3121f">
+    <path fill-rule="evenodd" d="M50 5C26.6 5 10 21.2 10 42.6c0 13.2 6 23.7 15.4 30.4l-.9 13.6c-.2 2.7 2 5 4.7 5h5.1l1.1-8.4h4.3l-.5 8.4h7.9l.2-8.4h4.2l.2 8.4h7.9l-.5-8.4h4.3l1.1 8.4h5.1c2.7 0 4.9-2.3 4.7-5l-.9-13.6C84 66.3 90 55.8 90 42.6 90 21.2 73.4 5 50 5ZM33.4 34.2c7.5 0 13.3 6 13.1 13-.2 7.2-5.4 11.8-12.6 11.8-7.4 0-13.3-5.3-13.1-12.5.2-6.9 5.3-12.3 12.6-12.3Zm33.2 0c7.3 0 12.4 5.4 12.6 12.3.2 7.2-5.7 12.5-13.1 12.5-7.2 0-12.4-4.6-12.6-11.8-.2-7 5.6-13 13.1-13ZM50 60.4l6.9 12.7c.8 1.5-.3 3.3-2 3.3h-9.8c-1.7 0-2.8-1.8-2-3.3L50 60.4Z"/>
+  </g>
+</svg>

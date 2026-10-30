@@ -139,7 +139,7 @@
    chip itself (the real layer does, in scene coordinates) overrides it,
    and a host that wraps it is served by it. */
 .dh.tok{position:absolute;inset:0;pointer-events:none;container-type:inline-size;
-  --tkv:1}
+  --tkv:1;--tkb:1}
 .dh.tok *{pointer-events:none}
 
 /* == THE RING, AND THE ROOM IT TAKES ===============================
@@ -258,12 +258,13 @@
      anchors   a hairline every fifth slot
      impact    the landing, covering only the slot that moved
 
-   Radii are percentages and rail widths are px, which is the range
-   ruler's rule arriving here: geometry scales with the creature, the
-   thing you COUNT keeps its size. A .6-scale sprite must not get a
-   .6-scale Stress rail or two creatures in one fight have their Stress
-   drawn at two widths for a reason that is about somebody's PNG. */
-.dh .er-bloom{position:absolute;inset:-3px;border-radius:50%;opacity:0;
+   Radii are percentages of the subject and rail widths are cqw times
+   --tkb, which is the same subject floored at 1 with the dial left out.
+   A .6-scale sprite keeps a full Stress rail, because being countable is
+   the job. An oversized creature takes thicker rails, because 3px around a
+   creature a cell and a half wide reads as a hairline on the artwork. */
+.dh .er-bloom{position:absolute;inset:calc(50% - (50% + 3px) * var(--tkv,1));
+  border-radius:50%;opacity:0;
   box-shadow:0 0 13px color-mix(in srgb,var(--actor) 28%,transparent)}
 .dh.tok.is-selected .er-bloom{opacity:1;animation:tkCrown 4.2s cubic-bezier(.4,0,.2,1) infinite}
 
@@ -310,15 +311,22 @@
   -webkit-mask:radial-gradient(closest-side,transparent calc(100% - .7px),#000 calc(100% - .6px));
   mask:radial-gradient(closest-side,transparent calc(100% - .7px),#000 calc(100% - .6px))}
 
+/* The bed the rails lie on. Rails on somebody's painting lose to any pale or
+   busy passage however they are coloured, so all three share one dark band
+   and the portrait is what gives way. The inner edge is soft so it reads as
+   a vignette on the art and not a washer laid over it. */
+.dh .er-bed{position:absolute;inset:calc(50% - 49.2% * var(--tkv,1));border-radius:50%;
+  background:rgba(4,6,10,.66);
+  -webkit-mask:radial-gradient(closest-side,transparent 63%,#000 69%);
+  mask:radial-gradient(closest-side,transparent 63%,#000 69%)}
+
 .dh .er-ring{position:absolute;border-radius:50%}
-/* --rail is a px width and stays one at every setting, which is the
-   range ruler's rule arriving here: the ring is geometry and scales with
-   what it measures, the thing you COUNT is read and does not. A chip
-   whose Stress band is 8% fatter than its neighbour's is two tracks you
-   cannot compare at a glance. */
-.dh .er-ring.armor {inset:calc(50% - 48%   * var(--tkv,1));--rail:2.8px;--gl:rgba(230,237,244,.38)}
-.dh .er-ring.hp    {inset:calc(50% - 44.1% * var(--tkv,1));--rail:4.3px;--gl:rgba(239,73,86,.52)}
-.dh .er-ring.stress{inset:calc(50% - 38.7% * var(--tkv,1));--rail:2.9px;--gl:rgba(98,213,231,.42)}
+/* --rail is cqw so the rail keeps its share of the creature on a 2x2 token
+   as well as on an oversized one. --tkb leaves the dial out, so two chips at
+   one art scale still draw their tracks at one width. */
+.dh .er-ring.armor {inset:calc(50% - 48%   * var(--tkv,1));--rail:calc(3.4cqw * var(--tkb,1));--gl:rgba(230,237,244,.38)}
+.dh .er-ring.hp    {inset:calc(50% - 43.6% * var(--tkv,1));--rail:calc(5.2cqw * var(--tkb,1));--gl:rgba(239,73,86,.52)}
+.dh .er-ring.stress{inset:calc(50% - 37.4% * var(--tkv,1));--rail:calc(3.5cqw * var(--tkb,1));--gl:rgba(98,213,231,.42)}
 
 .dh .er-ring > i{position:absolute;inset:0;display:block;border-radius:50%;
   -webkit-mask:radial-gradient(closest-side,transparent calc(100% - var(--rail)),#000 calc(100% - var(--rail) + .3px));
@@ -370,12 +378,10 @@
    because a stylesheet that owned the radius and a module that owned the
    angles would eventually disagree about the same circle.
 
-   Sizes stay in px against a cqw radius on purpose: the circle belongs to
-   the creature and scales with it, the thing you COUNT does not. */
-/* The radius follows the subject and --sz does not, which is the same
-   split the rails draw one block up: the circle belongs to the creature
-   and the gem is a thing you count. */
-.dh .er-hope{position:absolute;inset:0;--hope-r:calc(43.4cqw * var(--tkv,1));--sz:6.5px;
+   The radius follows the subject and --sz follows --tkb, which is the
+   split the rails draw one block up. */
+.dh .er-hope{position:absolute;inset:0;--hope-r:calc(43.4cqw * var(--tkv,1));
+  --sz:calc(6.5cqw * var(--tkb,1));
   transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
 .dh .er-hope .er-gem{position:absolute;left:50%;top:50%;display:block;
   width:var(--sz);height:var(--sz);margin:calc(var(--sz) / -2);
@@ -414,8 +420,9 @@
 .dh .er-hope .gem{--socket:#080b10;--socket-line:rgba(212,167,44,.30);
   --scarbg:#1a0d10;--xmark:color-mix(in srgb,var(--wound,#e2545e) 78%,#000)}
 
-.dh .er-diff{position:absolute;left:50%;bottom:1px;min-width:20px;padding:2px 4px;
-  transform:translateX(-50%);color:#f4e7c1;
+.dh .er-diff{position:absolute;left:50%;bottom:calc(50% - (50% - 1px) * var(--tkv,1));
+  min-width:20px;padding:2px 4px;
+  transform:translateX(-50%);scale:var(--tkb,1);transform-origin:50% 100%;color:#f4e7c1;
   background:linear-gradient(155deg,#17130c,#08090c);
   box-shadow:inset 0 1px rgba(255,232,164,.22),0 0 6px rgba(0,0,0,.7);
   clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);
@@ -430,7 +437,7 @@
    you can target the token you have selected. */
 .dh .er-crown,.dh .er-reticle{position:absolute;border-radius:50%;opacity:0}
 
-.dh .er-crown{inset:1px;transform:scale(.94);
+.dh .er-crown{inset:calc(50% - (50% - 1px) * var(--tkv,1));transform:scale(.94);
   background:conic-gradient(from 11deg,var(--actor) 0 18deg,transparent 18deg 72deg,
     var(--actor) 72deg 90deg,transparent 90deg 162deg,var(--actor) 162deg 180deg,
     transparent 180deg 252deg,var(--actor) 252deg 270deg,transparent 270deg);
@@ -439,7 +446,7 @@
   filter:drop-shadow(0 0 3px color-mix(in srgb,var(--actor) 58%,transparent));
   transition:opacity .19s cubic-bezier(.2,.8,.2,1),transform .19s cubic-bezier(.16,1,.3,1)}
 
-.dh .er-reticle{inset:30%;transform:scale(1.1);
+.dh .er-reticle{inset:calc(50% - 20% * var(--tkv,1));transform:scale(1.1);
   background:conic-gradient(from 37deg,#ff6777 0 14deg,transparent 14deg 76deg,
     #ff6777 76deg 104deg,transparent 104deg 166deg,#ff6777 166deg 194deg,
     transparent 194deg 256deg,#ff6777 256deg 284deg,transparent 284deg);
@@ -600,18 +607,36 @@
 .dh.tok[data-lod="min"] .er-hope,
 .dh.tok[data-lod="min"] .er-diff,
 .dh.tok[data-lod="min"] .er-identity{opacity:0;transform:scale(.86)}
+.dh.tok[data-lod="min"] .er-bed{opacity:0}
 
 /* ── the states that belong to the token, not the actor ────────────
-   Defeated is terminal. The WebGL pass physically separates the portrait;
-   every live rail and every condition sentence leaves so the corpse cannot
-   be mistaken for a living token that happens to have one more condition.
+   Defeated is terminal. The WebGL pass greys and cracks the portrait; every
+   live rail and every condition sentence leaves so the corpse cannot be
+   mistaken for a living token that happens to have one more condition.
    Selection and targeting survive it, because you can still click a body. */
 .dh.tok.hidden{opacity:.42}
 .dh.tok.defeated .tkcond,
+.dh.tok.defeated .er-bed,
 .dh.tok.defeated .er-shell > .er-ring,
 .dh.tok.defeated .er-hope,
 .dh.tok.defeated .er-diff,
 .dh.tok.defeated .er-identity{display:none}
+
+/* The stamp sits outside the clip and outside the ladder, because "which of
+   these is dead" is asked at the zoom where everything else has been culled.
+   Ink on the art rather than a badge over it, so it stays a little thin. The
+   tilt is per token, or a room of corpses reads as one decal. */
+.dh .er-stamp{position:absolute;display:none;inset:calc(50% - 27.5% * var(--tkv,1));
+  background:url("../assets/conditions/dead.svg") center/contain no-repeat;
+  opacity:.9;transform:rotate(var(--tkstamp,-5deg));
+  filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55))}
+.dh.tok.defeated .er-stamp{display:block}
+.dh.tok.falling .er-stamp{animation:tkStamp .24s cubic-bezier(.3,0,.2,1) .98s backwards}
+
+@keyframes tkStamp{
+  from{opacity:0;transform:rotate(var(--tkstamp,-5deg)) scale(1.9)}
+  70%{opacity:.95;transform:rotate(var(--tkstamp,-5deg)) scale(.96)}
+  to{opacity:.9;transform:rotate(var(--tkstamp,-5deg)) scale(1)}}
 
 @media (prefers-reduced-motion:reduce){
   .dh.tok .tkcond .tkwr,
@@ -621,5 +646,6 @@
   .dh.tok .er-ring.go .impact,
   .dh.tok .er-ring.go .fill,
   .dh.tok.arrive,.dh.tok.arrive .er-ring,
+  .dh.tok.falling .er-stamp,
   .dh.tok.leaving{animation-duration:.01s;animation-delay:0s}
 }

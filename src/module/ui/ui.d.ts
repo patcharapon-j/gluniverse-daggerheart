@@ -557,11 +557,12 @@ declare module "*/ui/token.js" {
   /** Grid fit: how far short of the cell the subject stops. */
   export const RING_IN: number;
   /**
-   * The chip's two scales. `readout` is the three tracks, the Hope gems and
-   * the Difficulty, floored at the grid cell; `subject` is Vulnerable, which
-   * follows the creature inward and has no floor.
+   * The chip's scales. `readout` is the outward clearance, floored at the grid
+   * cell; `subject` is where the creature ends, which everything on it follows
+   * with no floor; `band` is rail and gem thickness, floored at 1 and free of
+   * the dial.
    */
-  export function chipScale(t?: ChipWear): { readout: number; subject: number };
+  export function chipScale(t?: ChipWear): { readout: number; subject: number; band: number };
 }
 
 declare module "*/ui/ruler.js" {

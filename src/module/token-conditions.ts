@@ -158,7 +158,7 @@ const DEAD_KEY = "dead";
  * genuinely different in every pattern rather than a third of the way into
  * the same one.
  */
-function tokenSeed(token: any): number {
+export function tokenSeed(token: any): number {
   const id = String(token?.document?.id ?? token?.id ?? "");
   let hash = 2166136261;
   for (let i = 0; i < id.length; i++) {
@@ -1491,207 +1491,79 @@ vec4 sampleArt(vec2 local){
   return texture2D(uSampler, clamp(tex, inputClamp.xy, inputClamp.zw));
 }
 
-/* -- the break ---------------------------------------------------------
+/* -- the corpse --------------------------------------------------------
    Dead is the only state in this shader that REPLACES the creature rather
-   than dressing it, so it is the one that has to hold up as a picture on
-   its own terms. Three things it did not have:
+   than dressing it. It used to break the portrait into shards, and a token
+   in pieces stopped being the creature that died, which is the one thing a
+   table still needs to read off a body. So nothing moves now: the art stays
+   whole and ashen, thin seams run through it from one blow, and the stamp
+   in token.css says the rest.
 
-   SEPARATION. The pieces used to be re-cut in place: each shard sampled
-   the artwork from a hand-written offset, and the gap between shards was a
-   constant. Each shard now carries its art along its own escape vector,
-   outward from the centre, and the gap opens on a long settle — so the
-   token is a thing that came apart, and is still coming apart while you
-   look at it.
+   It plays once off age and then holds. There is no time in here at all, so
+   a corpse is completely still. */
+vec4 corpse(vec2 uv, vec2 p, float d, float age) {
+  vec4 art = sampleArt(uv);
+  vec3 base = art.a > .001 ? art.rgb / art.a : vec3(0.0);
 
-   THICKNESS. Glass has an edge, and an edge has a side facing the light
-   and a side facing away. The direction across a seam is the vector
-   between the two nearest sites, so one dot product against a fixed key
-   gives every shard a lit lip on one side and a shadowed one on the other.
-   That single term is most of the difference between cut paper and a
-   broken pane.
-
-   A WORLD. Dust falls through it and a cold glint crosses the faces on a
-   twenty-second loop, so a dead token is still an object in a scene rather
-   than a decal of one. The loop is deliberately far slower than anything a
-   living condition does: it should register as stillness that happens to
-   be lit, not as an effect running. */
-vec4 shattered(vec2 uv, vec2 p, float t, float d, float age) {
-  /* A creature that has been destroyed, and the second attempt at it.
-
-     The first was nine shards on a golden-angle spiral. Three things were
-     wrong with that and all three are structural rather than tuning:
-
-     Nine sites on a fixed spiral means every corpse on the board breaks the
-     SAME WAY. The pattern was a constant of the shader, so a room of dead
-     adversaries was a room of identical fractures, which reads as a decal
-     the moment you see the second one.
-
-     Voronoi regions of nine evenly-spread sites are nine convex blobs of
-     roughly one size. Nothing breaks like that. A struck solid gives a few
-     large pieces away from the blow and a crowd of small ones around it,
-     and the pieces are angular, with long edges running away from where it
-     was hit.
-
-     And the settle was one global sin(t * .16), so all nine pieces breathed
-     together on a twenty-second loop -- out, back, out, back. A corpse that
-     re-assembles every ten seconds is the one thing a corpse must not do.
-
-     What replaces it: the fracture is built in the LOG-POLAR frame of an
-     impact point, which is where this gets most of its quality for free.
-     Uniform cells in that frame are small near the impact and large away
-     from it, and they come out as wedges and rings rather than blobs --
-     which is what percussion fracture actually looks like, without drawing
-     a single radial crack by hand. The impact is placed from uSeed, so no
-     two creatures break alike. And the motion runs off age rather than a
-     sine: it happens once, decays, and stops. */
+  /* The face stays readable: a lifted floor keeps the shadows open and the
+     ceiling is what makes it read as dead rather than desaturated. */
+  float lum = dot(base, vec3(.2126, .7152, .0722));
+  vec3 ash = (vec3(.055) + lum * .68) * vec3(.98, .99, 1.03);
+  vec3 color = mix(base, ash, smoothstep(0.0, .45, age));
 
   /* Where it was hit. Off centre, because a blow lands somewhere, and from
      the token's own seed so this corpse is not the one next to it. */
-  vec2 impact = vec2(hash21(vec2(uSeed, 11.0)) - .5, hash21(vec2(uSeed, 23.0)) - .5) * 1.05;
+  vec2 impact = vec2(hash21(vec2(uSeed, 11.0)) - .5, hash21(vec2(uSeed, 23.0)) - .5) * .7;
   vec2 q = p - impact;
   float rr = length(q);
   float aa = atan(q.y, q.x);
 
-  /* The grading is the thing worth having -- small pieces at the blow, large
-     ones away from it -- and the first attempt got it from a log-polar
-     frame, which was a mistake worth recording. Uniform cells in log-polar
-     do grade correctly, but they also come out as concentric rings of
-     wedges, so the corpse read as a dahlia: radially regular about the
-     impact, which is the same vignette-and-rosette failure this whole pass
-     exists to remove, arrived at by a cleverer route.
+  /* Fine cells at the blow, coarse away from it. A cartesian frame scaled by
+     distance, because cells in a log-polar frame come out as a flower.
+     Roughness goes on the lookup so it bends a seam rather than fading it. */
+  vec2 frac = p * (1.6 + 2.6 * exp(-rr * 2.1)) + uSeed;
+  frac += vec2(noise2(p * 4.1) - .5, noise2(p * 3.7 + 9.0) - .5) * .38;
+  float cells = voronoi3(frac).y;
 
-     So the frame stays cartesian, where voronoi is irregular in the way
-     fracture actually is, and the grading comes from scaling that frame by
-     distance from the impact instead. Cells are compressed near the blow and
-     stretched away from it. The scaling is not conformal, so the pieces come
-     out skewed -- which is correct here: a fragment near an impact is
-     stretched along the shock, not a regular polygon. */
-  float near = exp(-rr * 1.9);
-  /* Coarse on purpose. The first numbers here put the whole corpse somewhere
-     between four and seven cells across, which is crackle glaze: you could
-     see it had broken and not what had broken. A destroyed creature has to
-     stay recognisable as that creature, so most of it is a handful of large
-     fragments and only the ground around the blow is fine. */
-  vec2 frac = p * (1.45 + 3.30 * near) + uSeed;
-  /* Roughness on the lookup, not on the result: a fracture edge is ragged,
-     and perturbing the coordinate bends the seam instead of fading it. */
-  frac += vec2(noise2(p * 4.1) - .5, noise2(p * 3.7 + 9.0) - .5) * .55;
-
-  vec4 piece = voronoiSite(frac);
-  vec3 cellv = voronoi3(frac);
-  float seed = hash21(piece.zw + 3.3);
-
-  /* Radial cracks, which are the signature of a struck solid and the one
-     part of this that cannot come out of a cellular pattern: a few long
-     seams running away from the blow, right across whatever cells are in
-     the way. Five or six of them, each at its own angle with its own
-     wander and its own reach, and some absent. They CUT the piece mask
-     rather than being drawn over it, so a crack genuinely separates. */
+  /* Long seams leaving the blow, each with its own wander and reach, some
+     absent. offSpoke is an angle, so it is multiplied back into a distance:
+     as an angle the crack would widen the further it ran, and a real one
+     narrows. */
   float spoke = aa / (PI * 2.0) * 6.0 + hash21(vec2(uSeed, 5.0)) * 6.0;
   float spokeId = floor(spoke);
   float spokeSeed = hash21(vec2(spokeId, 41.0));
   float wander = (noise2(vec2(rr * 3.1, spokeId * 7.7)) - .5) * .30;
-  float offSpoke = abs(fract(spoke) - .5 + wander);
-  float crack = (1.0 - smoothstep(.030 + .030 * spokeSeed, .085, offSpoke))
-              * smoothstep(.06, .30, rr)
-              * (1.0 - smoothstep(.55 + .55 * spokeSeed, 1.45, rr))
-              * step(.26, spokeSeed);
+  float across = abs(fract(spoke) - .5 + wander) * rr * 1.05;
+  float length0 = .55 + .75 * spokeSeed;
+  float taper = 1.0 - smoothstep(.0, length0, rr);
+  float spokeOn = step(.26, spokeSeed) * (1.0 - smoothstep(length0 * .75, length0, rr));
 
-  float seam = min(cellv.y, mix(1.0, offSpoke * 1.6, crack));
+  /* Small seams: a pixel or so wide at any zoom, with the cell field kept
+     around the blow so the corpse never turns into crackle glaze. */
+  float wide = .004 + gPixel * .4;
+  float blow = 1.0 - smoothstep(.26, .78, rr);
+  float cellSeam = (1.0 - smoothstep(wide, wide + gPixel, cells)) * blow;
+  float spokeSeam = (1.0 - smoothstep(wide * (.5 + .9 * taper), wide + gPixel, across)) * spokeOn;
 
-  /* Once, and then it is over. 1 - exp is the shape of a thing that happened:
-     fast at the start, asymptotic, and it never comes back. Each piece has
-     its own rate, so they do not leave together. */
-  float settle = 1.0 - exp(-age * (.45 + .70 * seed));
-
-  /* The gaps open as the pieces go, and in pixels, so a small corpse is
-     still visibly in pieces instead of being one smooth disc. */
-  float gap = (.012 + .034 * settle) + gPixel * .5;
-  float solid = smoothstep(gap, gap + .050 + .022 * settle, seam);
-
-  /* Away from the blow, which is the direction a fragment of a struck thing
-     actually travels, plus its own scatter. Pieces further out move less:
-     the energy went into the ones near the impact. */
-  vec2 away = normalize(q + vec2(.0001));
-  vec2 scatter = vec2(hash21(piece.zw + 7.7) - .5, hash21(piece.zw + 13.1) - .5);
-  float throwDist = (.055 + .085 * seed) * settle * (1.0 - smoothstep(.1, 1.3, rr));
-  /* And they fall. Gravity is the cheapest signal in here that this is a
-     thing that has stopped rather than a thing that is happening. */
-  vec2 drop = vec2(0.0, -1.0) * settle * (.030 + .055 * seed);
-  vec2 travel = away * throwDist + scatter * throwDist * .8 + drop;
-
-  /* Each piece turns its own way, by an amount that also stops. */
-  float spin = (seed - .5) * 1.25 * settle;
-  vec2 rel = p - piece.zw * 0.0 - travel;
-  vec2 source = vec2(rel.x * cos(spin) - rel.y * sin(spin),
-                     rel.x * sin(spin) + rel.y * cos(spin));
-
-  /* Two circles, and shipping only the first is what let the break grow out
-     of the token into a square.
-
-     circle is the edge of the ARTWORK, and it has to be measured on
-     source, because a shard that has travelled carries its own edge with
-     it and clipping its art on p would shave the piece rather than move it.
-
-     cell is the creature's own circle, which is a fact about p and about
-     nothing the shards do. It is the same threshold the living branch
-     uses, so a corpse ends exactly where the creature it replaces did. */
-  float circle = 1.0 - smoothstep(.93, .995, length(source));
+  /* Grown out from the blow, once, with the front ragged so it reads as a
+     crack travelling rather than a circle being revealed. The cell test is
+     the creature's own circle, so a square token's corners stay clean. */
+  float reach = 2.5 * smoothstep(.30, .95, age);
+  float grown = 1.0 - smoothstep(reach - .20, reach, rr + (noise2(p * 6.0) - .5) * .25);
   float cell = 1.0 - smoothstep(.94, 1.0, length(p));
-  vec4 art = sampleArt(source * .5 + .5);
-  float lum = dot(art.rgb, vec3(.2126, .7152, .0722));
+  float line = max(cellSeam, spokeSeam) * grown * cell;
+  float glow = max(exp(-cells * cells * 420.0) * blow, exp(-across * across * 520.0) * spokeOn)
+             * grown * cell;
 
-  /* The lit and shadowed lips of the break. across is the direction from
-     this piece to its neighbour, so the bevel knows which way the edge
-     faces rather than shading every seam the same. */
-  vec2 across = normalize(piece.zw - cellv.z * vec2(1.0, 1.0) + vec2(.0001));
-  float lipWidth = .085 + gPixel;
-  float lip = 1.0 - smoothstep(.0, lipWidth, seam);
-  float bevel = lip * dot(across, normalize(vec2(-.45, -.89)));
+  const vec3 EMBER = vec3(.92, .17, .07);
+  color *= 1.0 - line * .84;
+  color = mix(color, EMBER * .72, line * .26);
+  color += EMBER * glow * (.05 + .05 * d);
 
-  /* Each piece catches the light at its own angle, which is what stops nine
-     fragments of the same portrait reading as one cracked photograph. The
-     old version shaded only the seams, so the faces were all identical. */
-  float facet = .80 + .34 * cos(seed * 6.2831853 + spin * 2.4);
-
-  /* Crazing on the piece, in the piece's own frame, concentrated near the
-     impact where the stone is worst hit. */
-  vec2 inside = (frac - piece.zw) * (3.4 + 2.2 * seed);
-  float craze = (1.0 - smoothstep(.05, .22, voronoiEdge(inside)))
-              * smoothstep(.07, .26, seam) * d
-              * (1.0 - smoothstep(.0, 1.1, rr));
-  /* Bought with pixels, like every other fine register: at 40px this was
-     per-frame white noise on a forty-pixel disc. */
-  float grain = (noise2(source * 82.0) - .5) * d;
-  float glint = band(fract(p.x * .62 + p.y * .38 - t * .052), .5, .075);
-  /* Dust still falls, and it is the only thing in here that keeps moving
-     once the pieces have stopped -- which is the point of it. */
-  float dust = smoothstep(.10, .015, voronoiCell(vec2(p.x * 5.5 + sin(t * .20),
-                                                      p.y * 5.5 + t * .16)));
-
-  vec3 cold = mix(vec3(lum), vec3(.62, .72, .88) * lum, .62) * facet;
-  cold *= .66 + .34 * smoothstep(-.95, .85, -source.y);
-  cold += vec3(.80, .86, .94) * max(bevel, 0.0) * (.34 + .58 * glint);
-  cold *= 1.0 - max(-bevel, 0.0) * .55;
-  cold += vec3(.70, .78, .90) * craze * .30;
-  cold += vec3(.66, .74, .86) * dust * .22;
-  cold += grain * .05;
-  /* PREMULTIPLIED, and the clipping above is worth nothing without it.
-     PIXI composites a filter's output with ONE / ONE_MINUS_SRC_ALPHA, which
-     adds the colour at full strength whatever the alpha says -- so a fragment
-     that returns a lit shard face and an alpha of zero draws the lit shard
-     face. That is what the square was: not a clipping failure at all, but
-     every clipped fragment painting its colour anyway, out to the edges of
-     the filter's own frame, in whatever the artwork was there. On a dark
-     portrait it read as a slightly wrong edge; on a pale one it was a
-     bright square around the corpse.
-
-     Three passes of the design gate could not show it, because that page
-     asked for premultipliedAlpha:false and drew with blending off, where an
-     alpha of zero really does mean nothing appears. It composites the way
-     PIXI does now. */
-  float alpha = art.a * solid * circle * cell;
-  return vec4(clamp(cold, 0.0, 1.0) * alpha, alpha);
+  /* PREMULTIPLIED. PIXI composites a filter's output with ONE /
+     ONE_MINUS_SRC_ALPHA, so a fragment returning a colour at an alpha of zero
+     still draws that colour, out to the edges of the filter's square frame. */
+  return vec4(clamp(color, 0.0, 1.0) * art.a, art.a);
 }
 
 void main() {
@@ -1740,7 +1612,7 @@ void main() {
      exists so the division cannot produce an edge wider than the token. */
   gPixel = 2.0 / max(frame, 12.0);
 
-  if(uDead>.5){gl_FragColor=shattered(uv,p,uTime,detail,ageAt(0));return;}
+  if(uDead>.5){gl_FragColor=corpse(uv,p,detail,ageAt(0));return;}
 
   vec4 original=sampleArt(uv);
   float circle=1.0-smoothstep(.94,1.0,length(p));
@@ -1964,7 +1836,7 @@ void main() {
    transform that silently matched nothing would ship the twenty-three
    seconds straight back. */
 const SLOT_LOOP = "for(int i=0;i<5;i++){\n    if(float(i)>=uCount)break;";
-const DEAD_LINE = "if(uDead>.5){gl_FragColor=shattered(uv,p,uTime,detail,ageAt(0));return;}";
+const DEAD_LINE = "if(uDead>.5){gl_FragColor=corpse(uv,p,detail,ageAt(0));return;}";
 const SLOT_ID = "float id=idAt(i);";
 
 /** A specialised key: the slot ids in slot order, or the break. */
@@ -2167,6 +2039,9 @@ function detach(token: any): void {
 
 export function clearTokenConditionMaterial(token: any): void { detach(token); }
 
+/** This creature died just now, so the next sync plays the fall from the top. */
+export function markFallen(token: any): void { agesFor(token).set(DEAD_KEY, clock()); }
+
 /**
  * @param subject where the creature ends as a fraction of the filter frame;
  *   1 is a plain token, and the caller measures it because the answer is a
@@ -2241,11 +2116,11 @@ export function syncTokenConditionMaterial(
     filters.set(token, filter);
   }
 
-  /* A defeated creature has no conditions in the slots, and the break needs
-     one number the living branch does not: how long ago it died. The shards
-     travel once and stop, so the shader has to know where in that it is.
-     Carried through the same slot-age machinery rather than a uniform of its
-     own, because the question is identical -- when did this start. */
+  /* A defeated creature has no conditions in the slots, and the corpse needs
+     one number the living branch does not: how long ago it died. The grey and
+     the cracks play once and hold, so the shader has to know where in that it
+     is. Carried through the same slot-age machinery rather than a uniform of
+     its own, because the question is identical -- when did this start. */
   const keys = dead ? [DEAD_KEY] : materials.map((material) => material.id);
 
   /* When each of these started being drawn. `sync` runs on every refresh of
@@ -2257,7 +2132,9 @@ export function syncTokenConditionMaterial(
   const ages: Map<string, number> = filter[AGES] ?? (filter[AGES] = agesFor(token));
   const live = new Set(keys);
   for (const key of [...ages.keys()]) if (!live.has(key)) ages.delete(key);
-  for (const key of keys) if (!ages.has(key)) ages.set(key, now);
+  /* A body nobody saw fall is already settled. `markFallen` is what starts the
+     clock, so a scene loading over a battlefield does not replay every death. */
+  for (const key of keys) if (!ages.has(key)) ages.set(key, key === DEAD_KEY ? now - ARRIVED : now);
   filter[SLOTS] = keys;
   /* Clamped rather than trusted. Above 1 the material would be asked to
      cover more than the frame holds, which it cannot — there is nothing
@@ -2330,12 +2207,6 @@ function tick(): void {
     return;
   }
   const time = clock();
-  /* The break used to be held at a fixed time because it was a still image
-     and advancing it would only have burned a uniform write. It is not still
-     any more: the shards separate on a settle, dust falls through the gaps and
-     a glint crosses the faces on a twenty-second loop, all of them far slower
-     than any living condition so a corpse reads as stillness that happens to
-     be lit rather than as an effect running. */
   for (const filter of filters.values()) {
     filter.uniforms.uTime = time;
     writeAges(filter, time);

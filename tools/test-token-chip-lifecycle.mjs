@@ -275,4 +275,17 @@ const returned = chipOf();
 assert.ok(returned, "a creature back in view gets a chip again");
 assert.equal(added.get("arrive"), 2, "coming out of the fog is an appearance and animates");
 
+/* ══ 5 — a new token is drawn hidden and turned on a refresh later ═══
+   Foundry sets `visible` after `drawToken`, and nothing else re-reads it, so
+   every chip on a freshly placed token stayed hidden until the actor changed. */
+
+game.user.isGM = true;
+token.visible = false;
+fire("drawToken", token);
+assert.ok(chipOf().classList.contains("hidden"), "drawn before Foundry turned it on");
+
+token.visible = true;
+fire("refreshToken", token);
+assert.equal(chipOf().classList.contains("hidden"), false, "the refresh that turns it on shows the chip");
+
 console.log("token chip lifecycle: a drag, a rebuild and a return all behave");

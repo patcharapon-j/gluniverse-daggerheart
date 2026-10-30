@@ -107,27 +107,19 @@ assert.doesNotMatch(untinted, /--tkw/);
 const dead = TOKEN_CHIP({ conditions: ["Ablaze"], tints: ["#f0783f"], defeated: true });
 assert.match(dead, /class="dh tok defeated"/);
 assert.doesNotMatch(dead, /ABLAZE/);
-assert.doesNotMatch(dead, /<img|death-glyph|skull/);
+assert.match(dead, /class="er-stamp"/, "a corpse wears the stamp");
+assert.doesNotMatch(dead, /<img|death-glyph/);
 
-assert.match(TOKEN_CONDITION_FRAGMENT, /vec4 shattered\(/);
-/* The nine-shard loop this used to assert is gone. It pinned a break that
-   was the SAME on every corpse on the board, built from nine evenly spread
-   sites that gave nine convex blobs of one size. What replaces it is pinned
-   instead: an impact placed from the token's own seed, a fracture built in
-   the log-polar frame of that impact so the pieces grade from small at the
-   blow to large away from it, and a settle that happens once. */
+/* The corpse stays one piece: the art is sampled at uv, so nothing moves. It
+   also takes no time, which is what makes it hold still once it has played. */
+assert.match(TOKEN_CONDITION_FRAGMENT, /vec4 corpse\(vec2 uv, vec2 p, float d, float age\)/);
+assert.doesNotMatch(TOKEN_CONDITION_FRAGMENT, /shattered\(/, "a token no longer breaks into pieces");
 assert.match(TOKEN_CONDITION_FRAGMENT, /vec2 impact = vec2\(hash21\(vec2\(uSeed, 11\.0\)\)/,
   "where a corpse was struck is a fact about that creature, not a constant of the shader");
-assert.match(TOKEN_CONDITION_FRAGMENT, /vec2 frac = p \* \(1\.45 \+ 3\.30 \* near\) \+ uSeed;/,
-  "the pieces grade small at the blow by scaling a CARTESIAN frame, not by going log-polar");
+assert.match(TOKEN_CONDITION_FRAGMENT, /vec2 frac = p \* \(1\.6 \+ 2\.6 \* exp\(-rr \* 2\.1\)\) \+ uSeed;/,
+  "the seams grade fine at the blow by scaling a CARTESIAN frame, not by going log-polar");
 assert.doesNotMatch(TOKEN_CONDITION_FRAGMENT, /log\(rr/,
   "log-polar cells grade correctly and come out as rings of wedges, which read as a flower");
-assert.match(TOKEN_CONDITION_FRAGMENT, /float seam = min\(cellv\.y, mix\(1\.0, offSpoke \* 1\.6, crack\)\);/,
-  "radial cracks cut the piece mask, so a crack separates rather than being drawn over the top");
-assert.match(TOKEN_CONDITION_FRAGMENT, /float settle = 1\.0 - exp\(-age \* \(\.45 \+ \.70 \* seed\)\)/,
-  "a corpse settles once and stays settled; the old sine re-assembled it every ten seconds");
-assert.doesNotMatch(TOKEN_CONDITION_FRAGMENT, /shardSite\(/,
-  "the fixed spiral of sites is what made every corpse break alike");
 assert.match(TOKEN_CONDITION_FRAGMENT, /if\(uDead>\.5\)/);
 
 /* Detail is bought with pixels, and outputFrame.z is the only place in this
@@ -269,19 +261,14 @@ assert.match(TOKEN_CONDITION_FRAGMENT, /uv=tokenUv\(vTextureCoord\)/);
 assert.equal((TOKEN_CONDITION_FRAGMENT.match(/texture2D\(/g) ?? []).length, 1,
   "every art read goes through sampleArt, which clamps to inputClamp");
 
-/* The break may not leave the creature's own circle. It shipped clipped on
-   `source` alone, which is p pulled inward by the shard's escape push, so a
-   fragment a push outside the token still read as inside the artwork and
-   drew — and the only thing out there to stop it was the filter's square
-   frame, which is what the break grew into. The cell test is on p and there
-   is nothing clever about it; the bug was that it was missing. */
-const shatter = code.slice(code.indexOf("vec4 shattered("), code.indexOf("void main()"));
-assert.match(shatter, /float cell = 1\.0 - smoothstep\(\.94, 1\.0, length\(p\)\);/,
-  "the break needs the creature's own circle, measured on p");
-assert.match(shatter, /art\.a \* solid \* circle \* cell/,
-  "and it has to reach the alpha, or it is a local nobody reads");
-assert.match(shatter, /return vec4\(clamp\(cold, 0\.0, 1\.0\) \* alpha, alpha\);/,
-  "and the colour has to be premultiplied by it, or the clipping does nothing");
+/* The art stays whole, and the seams stop at the creature's own circle. */
+const body = code.slice(code.indexOf("vec4 corpse("), code.indexOf("void main()"));
+assert.match(body, /vec4 art = sampleArt\(uv\);/, "the art is sampled where it is, so it stays in one piece");
+assert.doesNotMatch(body, /uTime|float t\b/, "a corpse has no time in it, so it holds still");
+assert.match(body, /float cell = 1\.0 - smoothstep\(\.94, 1\.0, length\(p\)\);/,
+  "the seams need the creature's own circle, measured on p");
+assert.match(body, /return vec4\(clamp\(color, 0\.0, 1\.0\) \* art\.a, art\.a\);/,
+  "and the colour has to be premultiplied, or PIXI paints the filter's square frame");
 
 /* The gate has to composite the way PIXI does, or it cannot show either of
    the two above going wrong. It could not, for three passes. */
@@ -302,7 +289,18 @@ for (const file of ["token-hud.ts", "range-ruler.ts"]) {
     `${file} may not hang a layer directly on #hud`);
 }
 
+/* A body nobody saw fall is already settled, or every scene load replays
+   every death on the board. And a corpse outlives the chips switch. */
+const hud = readFileSync(new URL("../src/module/token-hud.ts", import.meta.url), "utf8");
+assert.match(hud, /const fell = !!read\?\.defeated && down\.get\(id\) === false;/,
+  "the fall plays only when this client saw the creature alive first");
+assert.match(hud, /const state = enabled \? read : read\?\.defeated \?/,
+  "the chips switch hides a readout and a corpse is not one");
+assert.match(readFileSync(new URL("../src/module/token-conditions.ts", import.meta.url), "utf8"),
+  /key === DEAD_KEY \? now - ARRIVED : now/, "an unmarked death starts settled");
+
 const css = readFileSync(new URL("../styles/token.css", import.meta.url), "utf8");
+assert.match(css, /\.dh\.tok\.defeated \.er-stamp\{display:block\}/, "only a corpse wears the stamp");
 assert.match(css, /\.dh\.tok\.defeated \.tkcond/);
 assert.match(css, /\.dh\.tok\.defeated \.er-shell > \.er-ring/);
 assert.match(css, /\.dh\.tok \.tkcond\{[^}]*pointer-events:none/s);
@@ -315,21 +313,21 @@ assert.doesNotMatch(css, /\.tkarc|\.tkhope|\.tkdiff/,
    keeps every branch of every slot alive. The specialisation is a text
    transform over the general source, so what has to stay true is that the
    transform found its anchors: an unrolled body with a constant id per slot,
-   no loop, no uniform id read, and the break only where it was asked for. */
+   no loop, no uniform id read, and the corpse only where it was asked for. */
 for (let index = 0; index < CONDITION_MATERIALS.length; index++) {
   const one = conditionFragment([index]);
   assert.ok(!one.includes("for(int i=0;i<5;i++)"), `variant ${index} must not keep the slot loop`);
   assert.doesNotMatch(one, /idAt\(i\)|colorAt\(i\)|ageAt\(i\)|uCount\)break/, `variant ${index} must not read a slot by index`);
   assert.ok(one.includes(`const float id=${index}.0;`), `variant ${index} must fix its id`);
-  assert.ok(!one.includes("shattered(uv"), `a living variant (${index}) must not compile the break`);
+  assert.ok(!one.includes("corpse(uv"), `a living variant (${index}) must not compile the corpse`);
 }
 const five = conditionFragment([0, 3, 7, 12, 24]);
 assert.equal(five.match(/const float id=/g).length, CONDITION_SLOTS);
 for (let i = 0; i < CONDITION_SLOTS; i++) assert.ok(five.includes(`uColor${i}`) && five.includes(`uAge${i}`));
-const breakOnly = conditionFragment([], true);
-assert.ok(breakOnly.includes("{gl_FragColor=shattered(uv,p,uTime,detail,ageAt(0));return;}"));
-assert.doesNotMatch(breakOnly, /const float id=|uDead>/);
+const corpseOnly = conditionFragment([], true);
+assert.ok(corpseOnly.includes("{gl_FragColor=corpse(uv,p,detail,ageAt(0));return;}"));
+assert.doesNotMatch(corpseOnly, /const float id=|uDead>/);
 
 console.log(`token conditions: ${CONDITIONS.length} named materials plus the one a GM types, all animated, `
-  + "a premultiplied break clipped to the cell, a colour per condition in one sentence, "
+  + "a whole, premultiplied corpse, a colour per condition in one sentence, "
   + "icon-free terminal override");
