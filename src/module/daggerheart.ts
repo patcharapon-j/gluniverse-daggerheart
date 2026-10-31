@@ -53,6 +53,7 @@ import {
   reportTokenChips,
 } from "./token-hud.ts";
 import { registerAdhocConditions } from "./adhoc-conditions.ts";
+import { registerTrackVisibility } from "./track-visibility.ts";
 import { registerRangeRuler, reportRangeRuler } from "./range-ruler.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
 import { openActivity, registerActivityLog } from "./activity-log.ts";
@@ -112,6 +113,7 @@ Hooks.once("init", () => {
      one only asks `Hooks.on("renderTokenHUD")` and could wait, but it is the
      other half of `CONFIG.statusEffects` above and belongs beside it. */
   registerAdhocConditions();
+  registerTrackVisibility();
   registerDataModels();
   registerSheets();
   registerChat();

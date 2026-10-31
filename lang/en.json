@@ -59,6 +59,8 @@
       "RangeRulerHint": "Draws Melee, Very Close, Close and Far as rings around whichever token you have selected, measured from its edge and in the scene's own units. Yours only — a selection exists on one screen.",
       "AdversaryChip": "What players see on adversary tokens",
       "AdversaryChipHint": "A GM always sees everything. This is what everybody else sees on an adversary: nothing, the tracks without the numbers behind them, or the same chip the GM has. Vulnerable is shown either way — a creature that is easier to hit is a fact the table has already earned.",
+      "AdversaryTracks": "Adversary tracks on tokens",
+      "AdversaryTracksHint": "Whether adversary tokens draw Hit Points, Stress, Armor and Difficulty at all, for everyone including the GM. Hide them when you improvise creatures with no stat block. Any single token can be switched either way from its Token HUD.",
       "DataVersion": "World data version",
       "MassiveDamage": "Massive Damage (optional rule)",
       "MassiveDamageHint": "Damage at or above twice your Severe threshold marks 4 Hit Points rather than 3. The SRD prints this as optional; this system has always applied it, so it is on by default — turning it off changes what a hit costs at your table.",
@@ -76,6 +78,12 @@
       "Full": "Full",
       "Reduced": "Reduced",
       "Off": "Off"
+    },
+    "Tracks": {
+      "Shown": "Shown",
+      "Hidden": "Hidden",
+      "Hide": "Hide this token's tracks",
+      "Show": "Show this token's tracks"
     },
     "AdversaryChip": {
       "None": "Nothing",

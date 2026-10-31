@@ -139,6 +139,7 @@
 import { adhocConditions } from "./adhoc-conditions.ts";
 import { boardStack, boardStackHosted } from "./board-layers.ts";
 import { CONDITIONS, SYSTEM_ID } from "./config.ts";
+import { tracksHidden } from "./track-visibility.ts";
 import { TOKEN_CHIP, chipScale, setChip, setTier } from "./ui/token.js";
 import {
   ADHOC_CONDITION_ID,
@@ -309,6 +310,12 @@ function stateOf(token: any): ChipState | null {
   };
 
   const see = reading(actor);
+  /* Hidden tracks are not a permission: the creature has no numbers worth
+     drawing, for anybody. A viewer who could have read it keeps the chip's
+     chrome (crown, reticle, hairline) so it still sits on the creature. */
+  if (see !== "none" && tracksHidden(token?.document)) {
+    return { conditions, conditionIds, materialIds, tints, tint, defeated, ...chrome };
+  }
   if (see === "none") {
     return conditions.length || defeated
       ? { conditions, conditionIds, materialIds, tints, tint, defeated, ...chrome }
