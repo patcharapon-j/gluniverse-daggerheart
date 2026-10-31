@@ -320,6 +320,24 @@ export function registerSettings(): void {
     onChange: () => Hooks.callAll("daggerheart.tokenChipChanged"),
   });
 
+  /* Whether adversaries draw tracks at all, for anybody — the GM included.
+     Not a permission: an improvised creature has no stat block, and arcs
+     counting schema defaults are worse than none. Each token can override
+     it from the Token HUD; see `track-visibility.ts`. */
+  game.settings.register(SYSTEM_ID, "adversaryTracks", {
+    name: "DAGGERHEART.Settings.AdversaryTracks",
+    hint: "DAGGERHEART.Settings.AdversaryTracksHint",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      shown: "DAGGERHEART.Tracks.Shown",
+      hidden: "DAGGERHEART.Tracks.Hidden",
+    },
+    default: "shown",
+    onChange: () => Hooks.callAll("daggerheart.tokenChipChanged"),
+  });
+
   game.settings.register(SYSTEM_ID, "activity", {
     name: "DAGGERHEART.Settings.Activity",
     scope: "world",
