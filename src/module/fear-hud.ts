@@ -80,7 +80,7 @@
 
 import { SYSTEM_ID } from "./config.ts";
 import { FEAR_MAX, getFear, getSpotlight, setFear, toggleSpotlight } from "./settings.ts";
-import { intensity, setPool } from "./ui/gem.js";
+import { setFearHud } from "./ui/pool.js";
 import { FEAR_HUD } from "./ui/pool.js";
 
 /** Where the strip docks. See the note above on v13 versus v14. */
@@ -242,12 +242,7 @@ async function onPress(event: Event): Promise<void> {
  * own because `GEMS` is also drawn on sheets that have no strip around it.
  */
 function show(cur: number): void {
-  if (!strip) return;
-  const row = strip.querySelector(".gems");
-  if (row) setPool(row, cur, { fear: true, max: FEAR_MAX });
-  const tally = strip.querySelector(".tally");
-  if (tally) tally.innerHTML = `${cur}<s>/${FEAR_MAX}</s>`;
-  strip.style.setProperty("--i", intensity(cur, FEAR_MAX).toFixed(3));
+  if (strip) setFearHud(strip, cur, FEAR_MAX);
 }
 
 /**
