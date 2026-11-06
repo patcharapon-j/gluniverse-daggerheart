@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Bottom HUD</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/face-tokens.css">
+<link rel="stylesheet" href="/design/card.css">
+<link rel="stylesheet" href="/design/face.css">
+<link rel="stylesheet" href="/design/compact.css">
+<link rel="stylesheet" href="/design/vault.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/pool.css">
+<link rel="stylesheet" href="/design/seat.css">
+<link rel="stylesheet" href="/design/hud.css">
+<style>
+/* ── studio furniture: none of this ships ── */
+body{padding-bottom:60px}
+.note{max-width:860px;color:#aeb6c1;font:400 13.5px/1.6 var(--f-ui);margin:6px 0 14px}
+.note b{color:#e6eaef}
+.ctl{display:flex;flex-wrap:wrap;gap:16px 22px;align-items:center;margin:14px 0 14px}
+.ctl label{display:flex;align-items:center;gap:8px;font:500 12px/1 var(--f-ui);color:#9aa3ae}
+.ctl input[type=range]{width:110px}
+.ctl select,.ctl .btn{font:600 12px/1 var(--f-ui);color:#e6eaef;background:#1c2027;border:1px solid #2f3641;
+  padding:6px 10px;cursor:pointer}
+.ctl .btn:hover{background:#262b33}
+
+/* A Foundry viewport: the board, the chat sidebar, the Fear strip docked
+   top. 1440×640 is a 1080p window with the browser's chrome and the scene
+   controls taken off; narrow mode is a 1400px window with the sidebar out. */
+.stagewrap{overflow-x:auto;margin:0 -26px;padding:0 26px 6px}
+.stage{position:relative;width:1440px;height:640px;overflow:hidden;
+  background:#0e1311 center/cover;box-shadow:inset 0 0 0 1px #222831}
+.stage.narrow{width:1400px}
+.stage .board{position:absolute;inset:0;
+  background:
+    radial-gradient(60% 50% at 38% 38%,rgba(122,150,96,.34),transparent 70%),
+    radial-gradient(40% 40% at 70% 30%,rgba(70,96,120,.30),transparent 70%),
+    radial-gradient(120% 90% at 50% 40%,#22301f 0%,#141c14 55%,#0a0e0a 100%)}
+.stage .board::after{content:"";position:absolute;inset:0;opacity:.55;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:70px 70px}
+.stage .tok{position:absolute;width:62px;height:62px;border-radius:50%;
+  background:center/cover;box-shadow:0 0 0 2px rgba(0,0,0,.6),0 6px 12px rgba(0,0,0,.5)}
+.stage .side{position:absolute;top:0;right:0;bottom:0;width:300px;background:#0b0d10;
+  border-left:1px solid #1d2229;padding:10px}
+.stage .side i{display:block;height:74px;margin-bottom:8px;background:#14171c;box-shadow:inset 0 0 0 1px #1f242b}
+.stage.wide-side .side{width:300px}
+.stage .ctrls{position:absolute;left:8px;top:8px;width:38px;height:260px;background:rgba(11,13,16,.8);
+  box-shadow:inset 0 0 0 1px #1f242b}
+.stage .feardock{position:absolute;top:8px;left:calc((100% - 300px) / 2);transform:translateX(-50%);z-index:5}
+.stage .bhud{--bh-gutter-r:312px}
+.stage .bh-peek{left:var(--peek-x,560px);bottom:178px}
+.stage .bh-peek.is-rule{bottom:170px}
+/* ?still: a capture is of the settled state, never a frame of an entrance. */
+.still *,.still *::before,.still *::after{animation:none !important;transition:none !important}
+</style>
+</head>
+<body class="dh ramp">
+
+<div class="bar"><div class="wrap">
+  <b>hud</b>
+  <a href="/design/hud.html" class="on">bottom hud</a>
+  <a href="/design/seat.html">seat</a>
+  <a href="/design/hope.html">hope</a>
+  <a href="/design/face.html">face</a>
+  <a href="/design/token.html">token</a>
+  <a href="/design/">sweep</a>
+</div></div>
+
+<div class="wrap">
+
+<h2><span>// THE PLAYER</span>Play without the sheet</h2>
+<p class="note">One rail, 96px, on the bottom edge. <b>Two things stand on it</b>: the character, rising out of
+the plinth, and the hand of cards. Everything else is a readout or a press inside the rail's height:
+Hope and the tracks, the traits over both weapons, and the class's features as rows of rules, the Hope
+feature first. Hope lights a halo behind the figure — gain one and the character warms before you have
+counted the gems. Synthetic sample data throughout; the portrait is the repo's art sample.</p>
+
+<div class="ctl" id="pctl">
+  <label>Hope <input type="range" id="hope" min="0" max="6" value="4"></label>
+  <label>HP <input type="range" id="hp" min="0" max="6" value="2"></label>
+  <label>Stress <input type="range" id="st" min="0" max="6" value="3"></label>
+  <label>Armor spent <input type="range" id="ar" min="0" max="3" value="1"></label>
+  <label>Drawer <select id="drawer"><option value="">closed</option><option value="vault">vault</option></select></label>
+  <label>Peek <select id="peek"><option value="card">a card</option><option value="feat">a feature</option><option value="">nothing</option></select></label>
+  <label class="tg"><input type="checkbox" id="vuln"> vulnerable</label>
+  <label class="tg"><input type="checkbox" id="fold"> folded</label>
+  <label class="tg"><input type="checkbox" id="narrow"> 1088px free</label>
+  <button class="btn" id="swap">change character</button>
+  <button class="btn" id="arrive">replay arrival</button>
+</div>
+<div class="stagewrap"><div class="stage" id="P"></div></div>
+
+<h2><span>// THE GM</span>Adversaries, and the whole party in one row</h2>
+<p class="note">Same rail, same rules. The plinth is the selected adversary; the panel leads with its
+<b>Difficulty</b> in the family's diamond, then the tracks the GM marks, then every move as a chip — the one
+that spends Fear wears violet and nothing else does. The adversaries in play are <b>a hand of compact
+cards</b>, the same object as a player's loadout, each with its Hit Points along the top edge; the one on the
+plinth is lifted. The party stands where it does on a player's rail, above the plinth, as ringed seats.</p>
+<div class="stagewrap"><div class="stage" id="G"></div></div>
+
+</div>
+
+<script type="module">
+import { byslug, icon } from '/design/domains.js'
+import { FACE } from '/design/face.js'
+import { COMPACT } from '/design/compact.js'
+import { motifOf, ornamentImages } from '/design/ornaments.js'
+import { FEAR_HUD } from '/design/pool.js'
+import { setPool } from '/design/gem.js'
+import { setSeat } from '/design/seat.js'
+import { nameFit } from '/design/face-fx.js'
+import { HUD, DRAWER, PEEK, RULE_PEEK, setStrip, flinch } from '/design/hud.js'
+
+/* one <style> per motif, as face.html does */
+const seen = new Set()
+const motif = slug => { const m = motifOf(slug); if (!seen.has(m)) { seen.add(m)
+  const { corner, seam } = ornamentImages(m); const s = document.createElement('style')
+  s.textContent = `[data-motif="${m}"]{--dh-orn-corner:${corner};--dh-orn-seam:${seam}}`; document.head.append(s) } return m }
+
+const A = p => `/assets/cards/${p}`
+const C = (slug, name, lvl, rc, type, extra = {}) => ({ d: byslug[slug], lvl, rc, type, name, glyph: 'primary',
+  art: A(`domains/${slug}/${name.toLowerCase().replace(/[^a-z]+/g, '-')}.webp`), ...extra })
+
+const hand = [
+  C('midnight', 'Pick and Pull', 1, 0, 'Ability'),
+  C('midnight', 'Shadowbind', 2, 1, 'Spell', { text: '**Make a Spellcast Roll (15)** against all adversaries within Very Close range. Targets you succeed against are temporarily *Restrained* as their shadow is tethered to the ground.' }),
+  C('grace', 'Deft Deceiver', 1, 0, 'Ability'),
+  C('grace', 'Inspirational Words', 1, 1, 'Ability'),
+]
+const vault = [
+  C('midnight', 'Rain of Blades', 1, 1, 'Spell'),
+  C('grace', 'Enrapture', 2, 1, 'Spell'),
+  C('midnight', 'Chokehold', 3, 2, 'Ability'),
+]
+for (const c of [...hand, ...vault]) { c.sig = await icon(c.d.slug); c.motif = motif(c.d.slug) }
+
+const party = [
+  { id: 'orrin', name: 'Orrin', sub: 'Guardian', img: A('ancestry/dwarf.webp'), hp: [2, 7], st: [1, 6], ar: [1, 4], hope: [3, 6] },
+  { id: 'ysolde', name: 'Ysolde', sub: 'Vulnerable', state: 'vulnerable', img: A('ancestry/elf.webp'), hp: [1, 6], st: [6, 6], ar: [3, 3], hope: [1, 6] },
+  { id: 'thane', name: 'Thane', sub: 'Druid', img: A('ancestry/faun.webp'), hp: [4, 6], st: [0, 6], ar: [0, 2], hope: [2, 6, 1] },
+]
+/* Class features are the book's, by name; the Hope feature leads. Kael is
+   the Sorcerer so the study shows the fourth row and a once-per-rest budget. */
+const FEATS = {
+  bex: [
+    { name: "Rogue's Dodge", hope: 3, from: 'Hope feature · <em>3 Hope</em>', text: 'Spend 3 Hope to gain a <b>+2 bonus to your Evasion</b> until the next time an attack succeeds against you. Otherwise, this bonus lasts until your next rest.' },
+    { name: 'Cloaked', cond: '/assets/conditions/cloaked.svg', condName: 'Cloaked', from: 'Class feature · Rogue', text: 'Any time you would be <b>Hidden</b>, you are instead <b>Cloaked</b>. In addition to the benefits of the Hidden condition, while Cloaked you remain unseen if you are stationary when an adversary moves to where they would normally see you. After you make an attack or end a move within line of sight of an adversary, you are no longer Cloaked.' },
+    { name: 'Sneak Attack', dice: '+2d6', from: 'Class feature · Rogue', text: 'When you succeed on an attack while Cloaked, or while an ally is within Melee range of your target, <b>add a number of d6s equal to your tier</b> to your damage roll.' },
+  ],
+  kael: [
+    { name: 'Volatile Magic', hope: 3, from: 'Hope feature · <em>3 Hope</em>', text: 'Spend 3 Hope to reroll any number of your damage dice on an attack that deals magic damage.' },
+    { name: 'Arcane Sense', from: 'Class feature · Sorcerer', text: 'You can sense the presence of magical people and objects within Close range.' },
+    { name: 'Minor Illusion', from: 'Class feature · Sorcerer', text: 'Make a Spellcast Roll (10). On a success, you create a minor visual illusion no larger than yourself within Close range.' },
+    { name: 'Channel Raw Power', uses: [1, 1], from: 'Class feature · Sorcerer · once per long rest', text: 'Once per long rest, you can place a domain card from your loadout into your vault and choose to either gain Hope equal to the level of the card or enhance a spell that deals damage.' },
+  ],
+}
+const ME = [
+  { id: 'bex', name: 'Bex Varro', cls: 'Rogue', lvl: 3, ev: 12, img: '/design/assets/art-sample-01.png', frame: { x: 46, y: 12, z: 1.9 } },
+  { id: 'kael', name: 'Kael', cls: 'Sorcerer', lvl: 3, ev: 10, img: A('ancestry/katari.webp'), frame: { x: 50, y: 18, z: 1.6 } },
+]
+let who = 0
+
+const S = { hope: 4, hp: 2, st: 3, ar: 1, drawer: '', peek: 'card', vuln: false, fold: false, narrow: false }
+const P = document.getElementById('P'), G = document.getElementById('G')
+
+const stageChrome = (gm) => `
+  <div class="board"></div>
+  <div class="tok" style="left:520px;top:250px;background-image:url(${A('ancestry/dwarf.webp')})"></div>
+  <div class="tok" style="left:600px;top:300px;background-image:url(${ME[0].img});box-shadow:0 0 0 2px #ecedf2,0 6px 12px rgba(0,0,0,.5)"></div>
+  <div class="tok" style="left:820px;top:200px;background-image:url(${A('ancestry/drakona.webp')})"></div>
+  <div class="ctrls"></div><div class="side">${'<i></i>'.repeat(7)}</div>
+  <div class="feardock">${FEAR_HUD({ cur: 5, gm, chips: true, ruler: false })}</div>`
+
+function playerHTML() {
+  const me = ME[who]
+  const conds = S.vuln ? [{ id: 'vulnerable', name: 'Vulnerable', tone: 'danger', icon: '/assets/conditions/vulnerable.svg' }] : []
+  const peekCard = hand[1], feats = FEATS[me.id], pf = feats[0]
+  return HUD({
+    role: 'player', folded: S.fold,
+    stack: party,
+    plinth: { name: me.name, sub: `${me.cls} ${me.lvl} · Evasion <em>${me.ev}</em>`, img: me.img, frame: me.frame,
+      hopeLit: (S.hope / 6), hope: S.hope, conds },
+    vitals: { hope: [S.hope, 6], hp: [S.hp, 6], st: [S.st, 6], ar: [S.ar, 3], thresholds: [7, 14] },
+    actions: {
+      traits: { agility: 2, strength: -1, finesse: 1, instinct: 0, presence: 1, knowledge: 0 }, marked: ['agility'],
+      weapon: { name: 'Dagger', meta: 'Melee · Finesse', dmg: '2d8+1' },
+      secondary: { name: 'Small Dagger', meta: 'Melee', dmg: 'd8' },
+    },
+    features: { list: feats, hope: S.hope },
+    hand: { cards: hand, limit: 5 },
+    drawers: { open: S.drawer, counts: { vault: vault.length, cards: 3, bag: 7, experiences: 2 } },
+    drawer: S.drawer === 'vault' ? DRAWER({ title: 'Vault', note: 'Recall costs <em>Stress</em> · drag a card into the hand',
+      body: `<ul class="bh-vault">${vault.map((c, i) => COMPACT({ ...c, size: 's', cls: 'is-vaulted', state: c.rc > 6 - S.st ? 'out-of-reach' : 'within-reach' })).join('')}</ul>` }) : '',
+    peek: S.drawer ? '' : S.peek === 'feat' ? RULE_PEEK({ ...pf,
+      actions: [{ label: 'Use', cost: `${pf.hope ?? 0} Hope`, tone: 'hope', said: 'Spend 3 Hope', short: pf.hope > S.hope ? `Needs ${pf.hope} Hope` : '' }, { label: 'Post', said: 'Show to chat' }] })
+    : S.peek === 'card' ? PEEK({ face: `<div class="host" style="container-type:inline-size;width:264px">${FACE({ ...peekCard, size: 'full' })}</div>`,
+      actions: [{ label: 'Spellcast Roll (15)', cost: 'Roll', said: 'Make a Spellcast Roll (15)' },
+                { label: 'Post', said: 'Show to chat' },
+                { label: 'Vault', cost: 'Free', said: 'Move it to the vault. Recalling it later costs its Recall Cost in Stress.' }] }) : '',
+  })
+}
+
+function gmHTML() {
+  return HUD({
+    role: 'gm',
+    stack: [
+      { id: 'bex', name: 'Bex Varro', sub: 'Rogue', img: ME[0].img, hp: [S.hp, 6], st: [S.st, 6], ar: [S.ar, 3], hope: [S.hope, 6] },
+      ...party,
+    ],
+    foes: { selected: 'boss', foes: [
+      { id: 'boss', name: 'Jagged Knife Lieutenant', role: 'Leader', tier: 1, img: A('ancestry/drakona.webp'), hp: [3, 6] },
+      { id: 'b1', name: 'Jagged Knife Bandit', role: 'Minion', tier: 1, img: A('ancestry/goblin.webp'), hp: [0, 1] },
+      { id: 'b1b', name: 'Jagged Knife Bandit', role: 'Minion', tier: 1, img: A('ancestry/goblin.webp'), hp: [1, 1] },
+      { id: 'b2', name: 'Jagged Knife Sniper', role: 'Ranged', tier: 1, img: A('ancestry/orcs.webp'), hp: [2, 3] },
+      { id: 'b3', name: 'Jagged Knife Kneebreaker', role: 'Bruiser', tier: 1, img: A('ancestry/firbolg.webp'), hp: [5, 7] },
+    ] },
+    plinth: { name: 'Jagged Knife Lieutenant', sub: 'Leader · Tier 1', img: A('ancestry/drakona.webp'), frame: { x: 50, y: 18, z: 1.5 }, hopeLit: 0, fold: false },
+    adversary: { difficulty: 13, hp: [3, 6], st: [1, 3], thresholds: [8, 15],
+      attack: { name: 'Cutlass', mod: 2, range: 'Melee', dmg: '1d8+3 phy' },
+      features: [
+        { name: 'Tactician', kind: 'Action', fear: 1, text: 'Spend a Fear to spotlight this adversary and two allies within Close range.' },
+        { name: 'More Where That Came From', kind: 'Action', text: 'Summon three Jagged Knife Lackeys.' },
+        { name: 'Coward', kind: 'Passive', text: 'When three or more allies are defeated, this adversary flees.' },
+      ] },
+  })
+}
+
+/* The stage is a 1440px screen; on a narrower study window it is scaled to
+   fit rather than scrolled, so a capture is always the whole rail. */
+const fit = () => !new URLSearchParams(location.search).has('full') && document.querySelectorAll('.stage').forEach(st => {
+  st.style.zoom = ''; const w = st.parentElement.clientWidth - 52
+  st.style.zoom = Math.min(1, w / st.offsetWidth).toFixed(4) })
+addEventListener('resize', fit)
+function draw(arrive) {
+  P.classList.toggle('narrow', S.narrow); queueMicrotask(() => { fit(); document.fonts.ready.then(() => nameFit(document)) })
+  P.innerHTML = stageChrome(false) + playerHTML()
+  G.innerHTML = stageChrome(true) + gmHTML()
+  if (S.narrow) P.querySelector('.bhud').style.setProperty('--bh-gutter-r', '324px')
+  if (arrive) for (const h of document.querySelectorAll('.bhud')) {
+    h.classList.add('is-arriving'); setTimeout(() => h.classList.remove('is-arriving'), 700) }
+  /* The peek stands over what it is a peek of. Measured in the stage's own
+     (unzoomed) pixels, since fit() may have scaled it. */
+  const peek = P.querySelector('.bh-peek')
+  const src = S.peek === 'feat' ? P.querySelector('.bh-feat') : P.querySelectorAll('.bh-held')[1]
+  if (peek && src) {
+    src.classList.add('is-peek')
+    const z = parseFloat(P.style.zoom) || 1, r = src.getBoundingClientRect(), pr = P.getBoundingClientRect()
+    const x = (r.left - pr.left) / z + r.width / z / 2 - 132
+    P.style.setProperty('--peek-x', `${Math.round(Math.max(56, x))}px`)
+  }
+}
+
+/* Live values go through the setters, never a redraw — what the host will do. */
+const hud = () => P.querySelector('.bhud')
+const on = (id, fn) => document.getElementById(id).addEventListener('input', fn)
+on('hope', e => { S.hope = +e.target.value
+  setPool(hud().querySelector('.bh-hope .gems'), S.hope)
+  hud().querySelector('.bh-hn b').textContent = S.hope
+  hud().querySelector('.bh-ph b').textContent = S.hope
+  for (const f of hud().querySelectorAll('.bh-feat[data-hope]')) {
+    const short = S.hope < +f.dataset.hope
+    short ? f.setAttribute('aria-disabled', 'true') : f.removeAttribute('aria-disabled')
+    short ? f.title = `Needs ${f.dataset.hope} Hope` : f.removeAttribute('title') }
+  const gseat = G.querySelector('[data-seat="bex"]'); if (gseat) setSeat(gseat, { hope: [S.hope, 6] })
+  hud().querySelector('[data-plinth]').style.setProperty('--bh-hope', (S.hope / 6).toFixed(3)) })
+for (const k of ['hp', 'st', 'ar']) on(k, e => { const was = S[k]; S[k] = +e.target.value
+  if (k === 'hp' && S[k] > was) flinch(hud().querySelector('[data-plinth]'))
+  if (k === 'st' && S.drawer === 'vault') draw()
+  setStrip(hud().querySelector(`[data-strip="${k}"]`), S[k])
+  const gseat = G.querySelector('[data-seat="bex"]'); if (gseat) setSeat(gseat, { [k]: [S[k], k === 'ar' ? 3 : 6] }) })
+/* Closing plays its exit before the redraw takes the element away. */
+const closing = (sel, next) => { const el = P.querySelector(sel)
+  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return next()
+  el.classList.add('is-closing'); setTimeout(next, 130) }
+on('drawer', e => { const v = e.target.value; !v && S.drawer ? closing('.bh-drawer', () => { S.drawer = v; draw() }) : (S.drawer = v, draw()) })
+on('peek', e => { const v = e.target.value; !v && S.peek ? closing('.bh-peek', () => { S.peek = v; draw() }) : (S.peek = v, draw()) })
+for (const k of ['vuln', 'narrow']) on(k, e => { S[k] = e.target.checked; draw() })
+const setFold = v => { S.fold = v; document.getElementById('fold').checked = v
+  hud().toggleAttribute('data-folded', v); hud().querySelector('.bh-fold')?.setAttribute('aria-expanded', String(!v)) }
+on('fold', e => setFold(e.target.checked))
+document.addEventListener('click', e => { if (e.target.closest('#P [data-act="fold"]')) setFold(!S.fold) })
+document.getElementById('arrive').onclick = () => draw(true)
+document.getElementById('swap').onclick = () => {
+  const h = hud(); h.classList.add('is-leaving')
+  setTimeout(() => { who = 1 - who; draw(); const n = hud(); n.classList.add('is-arriving'); setTimeout(() => n.classList.remove('is-arriving'), 600) }, 150)
+}
+/* Press a strip box to mark up to it, as the rail does. */
+document.addEventListener('click', e => {
+  const b = e.target.closest('.bh-box'); if (!b) return
+  const strip = b.closest('[data-strip]'), k = strip.dataset.strip, i = +b.dataset.i, max = +strip.dataset.max
+  const cur = k === 'ar' ? S.ar : S[k]
+  let next = k === 'ar' ? (i < max - cur ? max - i - 1 : max - i - 1) : (i + 1 === cur ? i : i + 1)
+  if (k === 'ar') next = (max - cur) === i + 1 ? max - i : max - i - 1
+  if (strip.closest('#P')) { S[k] = Math.max(0, Math.min(max, next)); document.getElementById(k).value = S[k] }
+  setStrip(strip, Math.max(0, Math.min(max, next)))
+})
+/* The Hope feature charges for itself; short of Hope, the row flinches. */
+const ab = () => P.querySelector('.bh-feat.is-hope')
+document.addEventListener('click', e => {
+  if (!e.target.closest('#P .bh-feat.is-hope')) return
+  if (S.hope < 3) { ab().animate([{ translate: '0 0' }, { translate: '-3px 0' }, { translate: '3px 0' }, { translate: '0 0' }], 220); return }
+  S.hope -= 3; document.getElementById('hope').value = S.hope
+  document.getElementById('hope').dispatchEvent(new Event('input'))
+})
+/* ?hope=6&peek=feat&drawer=vault&narrow=1&who=1&still — a state by URL, so a
+   headless capture can take any of them without driving the controls. */
+const q = new URLSearchParams(location.search)
+for (const k of ['hope', 'hp', 'st', 'ar']) if (q.has(k)) { S[k] = +q.get(k); document.getElementById(k).value = S[k] }
+for (const k of ['peek', 'drawer']) if (q.has(k)) { S[k] = q.get(k); document.getElementById(k).value = S[k] }
+for (const k of ['vuln', 'fold', 'narrow']) if (q.has(k)) { S[k] = true; document.getElementById(k).checked = true }
+if (q.has('who')) who = +q.get('who')
+if (q.has('still')) document.documentElement.classList.add('still')
+if (q.has('full')) document.querySelectorAll('.wrap').forEach(w => w.style.maxWidth = '1560px')
+draw(!q.has('still'))
+
+/* ?bench — what the rail costs, measured on the paths a host takes: a full
+   render (only on mount or an actor swap), and the setters a live change
+   goes through instead. Numbers are written onto the page so a headless
+   capture can read them. Each forces layout, so the time is the real one. */
+if (q.has('bench')) { let msg; try {
+  const t = (n, fn) => { const a = performance.now(); for (let i = 0; i < n; i++) fn(i); return (performance.now() - a) / n }
+  const lay = () => void P.offsetHeight
+  const full = t(20, () => { draw(); lay() })
+  const hope = t(200, i => { const g = hud().querySelector('.bh-hope .gems'); setPool(g, i % 7); lay() })
+  const strip = t(200, i => { setStrip(hud().querySelector('[data-strip="hp"]'), i % 7); lay() })
+  const seat = t(200, i => { setSeat(G.querySelector('[data-seat="bex"]'), { st: [i % 7, 6], hope: [i % 7, 6] }); lay() })
+  const nodes = P.querySelector('.bhud').querySelectorAll('*').length + G.querySelector('.bhud').querySelectorAll('*').length
+  msg = `full render ${full.toFixed(2)}ms · hope ${hope.toFixed(3)}ms · strip ${strip.toFixed(3)}ms · seat ${seat.toFixed(3)}ms · ${nodes} nodes`
+  } catch (e) { msg = 'bench failed: ' + e.message }
+  const out = document.createElement('pre'); out.id = 'bench'
+  out.style.cssText = 'position:fixed;left:0;top:0;z-index:99;margin:0;padding:12px 16px;background:#000;color:#fff;font:600 16px/1.5 monospace'
+  out.textContent = msg
+  document.body.append(out)
+}
+</script>
+</body>
+</html>

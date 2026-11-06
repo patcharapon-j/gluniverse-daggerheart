@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DH · Seat</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/seat.css">
+<style>
+.note{max-width:860px;color:#aeb6c1;font:400 13.5px/1.6 var(--f-ui);margin:6px 0 14px}
+.note b{color:#e6eaef}
+.ground{display:flex;flex-wrap:wrap;gap:22px 40px;align-items:center;padding:26px 28px;
+  background:radial-gradient(120% 120% at 30% 20%,#2c3b28,#141b13 60%,#0a0e0a);box-shadow:inset 0 0 0 1px #222831}
+.ground.pale{background:radial-gradient(120% 120% at 30% 20%,#d9d2bd,#a99f86 60%,#7d745e)}
+.ctl{display:flex;flex-wrap:wrap;gap:16px 22px;align-items:center;margin:14px 0}
+.ctl label{display:flex;align-items:center;gap:8px;font:500 12px/1 var(--f-ui);color:#9aa3ae}
+.ctl input[type=range]{width:110px}
+.size{font:600 10px/1 var(--f-mono);letter-spacing:.14em;color:#7d8794;text-transform:uppercase;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <b>seat</b>
+  <a href="/design/hud.html">bottom hud</a>
+  <a href="/design/seat.html" class="on">seat</a>
+  <a href="/design/token.html">token</a>
+  <a href="/design/">sweep</a>
+</div></div>
+<div class="wrap">
+
+<h2><span>// THE SEAT</span>One character, at a glance</h2>
+<p class="note">The stream kit's rings, so the table and the broadcast draw the party the same way:
+every ring runs 110°→300°, up from under the portrait, round its left and over the top, stopping short of
+the name. Two departures, both this system's: <b>Armor is outermost</b>, because armour stands between a hit
+and your Hit Points, and <b>Armor lights what is left</b>, because it is a purse rather than a wound. Marked
+boxes gather at the far end of the ring, over the portrait, where the eye already is.</p>
+
+<div class="ctl">
+  <label>HP <input type="range" id="hp" min="0" max="6" value="2"></label>
+  <label>Stress <input type="range" id="st" min="0" max="6" value="3"></label>
+  <label>Armor spent <input type="range" id="ar" min="0" max="3" value="1"></label>
+</div>
+<div class="ground" id="live"></div>
+
+<h2><span>// STATES</span>Vulnerable, down, scarred, no Hope</h2>
+<div class="ground" id="states"></div>
+
+<h2><span>// SIZES</span>52 for the GM's selection, 60 for the party, 76 on stream</h2>
+<div class="ground" id="sizes"></div>
+
+<h2><span>// ON PALE ART</span>The band is what survives a pale passage</h2>
+<div class="ground pale" id="pale"></div>
+
+</div>
+<script type="module">
+import { SEAT, setSeat } from '/design/seat.js'
+const A = p => `/assets/cards/ancestry/${p}.webp`
+const base = { id: 'bex', name: 'Bex Varro', sub: 'Rogue', img: '/design/assets/art-sample-01.png', hp: [2, 6], st: [3, 6], ar: [1, 3], hope: [4, 6] }
+document.getElementById('live').innerHTML = SEAT({ ...base, size: 76 })
+const live = document.querySelector('#live .vseat')
+const v = { hp: 2, st: 3, ar: 1 }
+for (const k of ['hp', 'st', 'ar']) document.getElementById(k).addEventListener('input', e => {
+  v[k] = +e.target.value; setSeat(live, { [k]: [v[k], k === 'ar' ? 3 : 6] }) })
+
+document.getElementById('states').innerHTML = [
+  { id: 's1', name: 'Ysolde', sub: 'Vulnerable', state: 'vulnerable', img: A('elf'), hp: [1, 6], st: [6, 6], ar: [3, 3], hope: [1, 6] },
+  { id: 's2', name: 'Orrin', sub: 'Down', state: 'down', img: A('dwarf'), hp: [7, 7], st: [4, 6], ar: [4, 4], hope: [0, 6] },
+  { id: 's3', name: 'Thane', sub: 'Druid · one scar', img: A('faun'), hp: [4, 6], st: [0, 6], ar: [0, 2], hope: [2, 6, 1] },
+  { id: 's4', name: 'Jagged Knife', sub: 'Leader', img: A('drakona'), hp: [3, 6], st: [1, 3] },
+  { id: 's5', name: 'Twelve-box giant', sub: 'Solo · Tier 3', img: A('giant'), hp: [5, 12], st: [2, 5] },
+].map(s => SEAT({ size: 64, ...s })).join('')
+
+document.getElementById('sizes').innerHTML = [52, 60, 76, 96].map(n =>
+  `<div>${SEAT({ ...base, id: 'z' + n, size: n })}<div class="size">${n}px</div></div>`).join('')
+document.getElementById('pale').innerHTML = SEAT({ ...base, id: 'p1', size: 64 }) + SEAT({ id: 'p2', name: 'Orrin', sub: 'Guardian', img: A('dwarf'), hp: [2, 7], st: [1, 6], ar: [1, 4], hope: [3, 6], size: 64 })
+</script>
+</body>
+</html>
