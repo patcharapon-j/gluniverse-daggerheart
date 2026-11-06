@@ -332,10 +332,10 @@ export const RULE_PEEK = ({ name, from, text, actions = [] }) => PEEK({ actions,
    shape: a diamond, the family's mark, at display size. Then the tracks the
    GM marks, the two thresholds, and every move as a chip the GM presses. A
    move that spends Fear wears violet; nothing else does. */
-/* Two rows of chips is what the panel holds. A solo with eight features
+/* The attack on its own row, then two rows of two: that is what the panel holds. A solo with eight features
    says how many more on its last chip — the features plate's answer — and
    never loses one silently under the panel's edge. */
-const MOVES = 5;
+const MOVES = 4;
 const moveChip = f => `<button type="button" class="bh-move" data-feature="${esc(f.name)}"${f.fear ? ' data-tone="fear"' : ''} title="${esc(f.kind)} · ${esc(f.text)}">
       <b>${esc(f.name)}</b>${f.fear ? `<span>${f.fear} Fear</span>` : ''}</button>`;
 export const ADVERSARY = (o) => `

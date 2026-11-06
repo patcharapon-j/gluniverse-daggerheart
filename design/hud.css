@@ -360,7 +360,8 @@
    pennant's "Tier" word goes: the numeral is the tier. */
 .bh-hand .dh-cc-pennant small,.bh-hand:not(.bh-foes) .dh-cc-kind{display:none}
 .bh-foes .dh-cc-kind{font-size:11px;letter-spacing:.03em}
-.bh-hand .dh-cc-stamp{font-size:11px}
+.bh-hand .dh-cc-stamp,.bh-vault .dh-cc-stamp,.bh-vault .dh-cc-kind{font-size:11px}
+.bh-vault .dh-cc-pennant small{display:none}
 /* The selected foe is already lifted and underlined; parting the rest
    round it would only push the last card off the rail. */
 .bh-foes .is-sel ~ .bh-held{translate:none}
@@ -464,7 +465,7 @@
 .bh-diff span{position:relative;font:750 22px/1 var(--bh-font);font-variant-numeric:tabular-nums;font-stretch:var(--w-figures,82%)}
 .bh-advt{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;min-width:0}
 .bh-thr2{margin-top:5px}
-.bh-moves{display:flex;flex-wrap:wrap;align-content:center;gap:4px;height:100%;padding:8px 0;overflow:hidden}
+.bh-moves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:24px;align-content:center;gap:4px;height:100%;padding:8px 0;overflow:hidden}
 .bh-move{display:flex;align-items:baseline;gap:6px;height:24px;min-height:24px;max-height:24px;padding:0 9px 0 8px;min-width:0;max-width:100%;
   align-items:center;
   background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line);
@@ -478,6 +479,7 @@
 /* The attack is the move the GM reaches for most, so it is the lit chip. */
 .bh-move.is-attack{background:var(--bh-ink-5);box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line)}
 .bh-move.is-attack span{color:var(--bh-dim)}
+.bh-move.is-attack{grid-column:1/-1}
 .bh-move.is-more{background:transparent}
 .bh-move.is-more b{font-weight:500;color:var(--bh-dim)}
 .bh-move[data-tone="fear"]{background:color-mix(in srgb,var(--fear) 18%,var(--bh-ink-2));

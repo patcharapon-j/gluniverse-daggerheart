@@ -265,6 +265,10 @@ on('hope', e => { S.hope = +e.target.value
     const short = S.hope < +f.dataset.hope
     short ? f.setAttribute('aria-disabled', 'true') : f.removeAttribute('aria-disabled')
     short ? f.title = `Needs ${f.dataset.hope} Hope` : f.removeAttribute('title') }
+  const use = hud().querySelector('.bh-peek .bh-pa[data-tone="hope"]'), cost = +(hud().querySelector('.bh-feat.is-hope')?.dataset.hope ?? 0)
+  if (use) { const short = S.hope < cost
+    short ? use.setAttribute('aria-disabled', 'true') : use.removeAttribute('aria-disabled')
+    use.title = short ? `Needs ${cost} Hope` : `Spend ${cost} Hope` }
   const gseat = G.querySelector('[data-seat="bex"]'); if (gseat) setSeat(gseat, { hope: [S.hope, 6] })
   hud().querySelector('[data-plinth]').style.setProperty('--bh-hope', (S.hope / 6).toFixed(3)) })
 for (const k of ['hp', 'st', 'ar']) on(k, e => { const was = S[k]; S[k] = +e.target.value
@@ -292,11 +296,16 @@ document.getElementById('swap').onclick = () => {
 document.addEventListener('click', e => {
   const b = e.target.closest('.bh-box'); if (!b) return
   const strip = b.closest('[data-strip]'), k = strip.dataset.strip, i = +b.dataset.i, max = +strip.dataset.max
-  const cur = k === 'ar' ? S.ar : S[k]
-  let next = k === 'ar' ? (i < max - cur ? max - i - 1 : max - i - 1) : (i + 1 === cur ? i : i + 1)
-  if (k === 'ar') next = (max - cur) === i + 1 ? max - i : max - i - 1
-  if (strip.closest('#P')) { S[k] = Math.max(0, Math.min(max, next)); document.getElementById(k).value = S[k] }
-  setStrip(strip, Math.max(0, Math.min(max, next)))
+  /* Read the strip's own marks, so the GM's adversary strips keep their
+     own state; the player's go through the slider, so a click and a drag
+     reach the same updates. */
+  const lit = strip.querySelectorAll('.bh-box.on').length
+  const cur = k === 'ar' ? max - lit : lit
+  const next = Math.max(0, Math.min(max, k === 'ar'
+    ? ((max - cur) === i + 1 ? max - i : max - i - 1)
+    : (i + 1 === cur ? i : i + 1)))
+  if (strip.closest('#P')) { const el = document.getElementById(k); el.value = next; el.dispatchEvent(new Event('input')); return }
+  setStrip(strip, next)
 })
 /* The Hope feature charges for itself; short of Hope, the row flinches. */
 const ab = () => P.querySelector('.bh-feat.is-hope')
