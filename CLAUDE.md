@@ -4279,6 +4279,46 @@ steppers looking enabled and doing nothing, which has no visual symptom
 whatsoever. And `#ui-top` stacks its children flush against the top edge, where
 a chamfered dark strip reads as a browser artefact rather than as an object.
 
+### Fear lands on the map, and leaves it broken
+
+The strip used to change and stop. It now says where Fear comes from and
+where it goes. `design/ember.js` is a Canvas 2D layer that hangs off the
+strip, with 320px of headroom below it, so it draws *over the board*:
+
+- **Gaining** Fear pulls embers up off the map into each socket. The socket
+  lights when they arrive, `ARRIVE` (520ms) after the press, so the pip
+  answers the motion rather than racing it. Rapid presses retarget the
+  embers already in flight and never push the landing back.
+- **Spending** Fear shatters the pip. Glass shards fall across the board,
+  a shock ring crosses the strip, and smoke rises. Heavier spends hit harder:
+  `--heft` scales the strip's jolt and the shard count.
+- **A full pool smoulders**, shedding a spark every few seconds and nothing
+  more.
+
+`setFearHud` is the driver now, so `fear-hud.ts` and the study page make one
+call, not three writes.
+
+Spending is the louder of the two on purpose. Fear entering the pool is a
+threat building; Fear leaving it is the moment the table was dreading.
+
+The strip took a bolder ramp with it:
+
+- a heavier rim;
+- a shadow that grows with `--i`;
+- a 36px tally that drops on a spend;
+- a `.hsurge` sweep, a light band on a gain and a dark band on a spend.
+
+The jolt is declared before the spotlight's `.flare`, so a hand-off landing
+on the same frame wins rather than being cut off.
+
+**The engine is idle when nothing is moving.** rAF runs only while particles
+are alive, the canvas is made lazily on the first burst, landing uses
+`setTimeout` for the reason the swap does, and the smoulder skips a hidden
+tab. Every glow is a cached sprite drawn with `globalAlpha`, not a radial
+gradient built per particle per frame. The stops are linear in alpha, so the
+pixels match, and 20,000 glows dropped from 148ms to 54ms. Reduced motion
+gets no particles at all.
+
 ### What the study page could not see, a third time
 
 The stepper is the one control in this component that genuinely *is* a button,

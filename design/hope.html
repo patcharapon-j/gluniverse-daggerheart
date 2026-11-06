@@ -183,7 +183,7 @@ declare, and what your own screen draws never was.</p>
 
 <script type="module">
 import { GEM, GEMS, setPool, intensity } from './gem.js';
-import { POOL, FEAR_HUD } from './pool.js';
+import { POOL, FEAR_HUD, setFearHud } from './pool.js';
 
 const st = {h:4, f:7, scars:0};
 
@@ -231,14 +231,12 @@ function setH(v){
 }
 function setF(v){
   st.f = Math.max(0, Math.min(12, v));
-  rows('#frow .gems, #fhud .gems, #fhud2 .gems').forEach(r => setPool(r, st.f, {fear:true, max:12}));
+  rows('#frow .gems').forEach(r => setPool(r, st.f, {fear:true, max:12}));
   fn.textContent = `${st.f} / 12`;
   f.value = st.f;
-  rows('#fhud .tally, #fhud2 .tally').forEach(t => t.innerHTML = `${st.f}<s>/12</s>`);
-  // and `--i`, which every layer on the strip ramps against. Exactly what
-  // `fear-hud.ts` does — see the note in pool.js.
-  rows('#fhud .hud, #fhud2 .hud').forEach(h =>
-    h.style.setProperty('--i', intensity(st.f, 12).toFixed(3)));
+  // The strip is driven exactly as `fear-hud.ts` drives it, through the one
+  // function in pool.js — pips, count, `--i`, and the surge or the ebb.
+  rows('#fhud .hud, #fhud2 .hud').forEach(h => setFearHud(h, st.f, 12));
 }
 
 document.addEventListener('click', e => {

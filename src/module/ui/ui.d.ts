@@ -113,6 +113,9 @@ declare module "*/ui/pool.js" {
     ruler?: boolean;
     spot?: "off" | "hope" | "fear";
   }): string;
+
+  /** Tell the strip what the pool now is; plays the surge or the ebb when it moved. */
+  export function setFearHud(strip: Element, cur: number, max?: number): void;
 }
 
 declare module "*/ui/spotlight.js" {

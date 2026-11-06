@@ -27,6 +27,7 @@ const MODULES = [
   "settle.js",
   "mark.js",
   "gem.js",
+  "ember.js",
   "pool.js",
   "card.js",
   "chit.js",
