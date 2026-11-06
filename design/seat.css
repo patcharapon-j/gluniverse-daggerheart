@@ -1,0 +1,101 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH SEAT — a character at a glance, as rings round a portrait
+
+   The party stack, the GM's roster and the GM's selected-adversary chips
+   are all this one object, so a reader learns it once. The geometry is the
+   stream kit's (see seat.js); the materials are this system's three marks:
+   a wound bleeds, a strain is scored, a plate catches light.
+
+   Drawn on the map rather than on paper, so every ring sits in a dark band
+   that is wider than its boxes — the band is what lets a 3px arc survive a
+   pale passage of somebody's painting, the token chip's lesson.
+
+   Nothing here is pressable. The seat is a readout; what a press on one
+   does (pan to the token, select it if you own it) is the host's business
+   and attaches to [data-seat].
+   ══════════════════════════════════════════════════════════════════ */
+
+.vseat{
+  --vs:64px;
+  --vs-ink:#05060a;
+  --vs-text:#f4f4f7; --vs-dim:#b3b5c2; --vs-faint:#7f8291;
+  display:flex;align-items:center;gap:7px;
+  min-width:0;position:relative;
+  font-family:var(--f-flex,"Google Sans"),system-ui,sans-serif;
+}
+.vs-ring{flex:none;width:var(--vs);height:var(--vs);overflow:visible;
+  /* One contour for the whole object rather than one per ring: three
+     drop-shadows would triple the cost on a twenty-token roster. */
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.65))}
+
+.vs-well{fill:var(--vs-ink)}
+.vs-lip{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1}
+
+.vs-band{fill:none;stroke:rgba(5,6,10,.82);stroke-width:var(--wb);stroke-linecap:butt}
+.vs-b{fill:none;stroke-width:var(--w);stroke-linecap:butt;
+  stroke:rgba(255,255,255,.13);
+  transition:stroke .18s ease-out}
+
+/* The three materials. A ring is told apart by radius first and hue
+   second, so these stay the sheet's own track tokens. */
+.vs-r[data-k="hp"] .vs-b.on{stroke:var(--wound,#c8484f)}
+.vs-r[data-k="st"] .vs-b.on{stroke:var(--strain,#8fd0e0)}
+.vs-r[data-k="ar"] .vs-b.on{stroke:var(--plate,#e6edf4)}
+/* Spent armour is not an empty box, it is a hollow where a plate was: an
+   outline of the slot, so a three-slot purse with nothing left still says
+   it was three. */
+.vs-r[data-k="ar"] .vs-b:not(.on){stroke:rgba(230,237,244,.16)}
+
+/* ── landing ── a box that changes flashes once. A mark is a thing that has
+   happened, not a gesture you watch: a flash, not a travel. */
+.vs-b.land{animation:vs-land .42s cubic-bezier(.16,1,.3,1)}
+.vs-b.drop{animation:vs-drop .36s ease-out}
+@keyframes vs-land{
+  0%  {stroke:#fff;stroke-width:calc(var(--w) * 1.9)}
+  100%{stroke-width:var(--w)}}
+@keyframes vs-drop{
+  0%  {stroke:rgba(255,255,255,.55)}
+  100%{}}
+
+/* ── the words ── */
+.vs-id{display:grid;gap:2px;min-width:0;padding:3px 10px 3px 5px;margin-left:-3px;
+  /* The words sit on somebody's painting. A shadow holds them on dark art
+     and loses on pale; a scrim that fades out to the right holds them on
+     both without drawing a box round them. */
+  background:linear-gradient(90deg,rgba(5,6,10,.84),rgba(5,6,10,.74) 72%,rgba(5,6,10,0));
+  text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.6)}
+.vs-name{font:700 13px/1.1 var(--f-flex,"Google Sans");color:var(--vs-text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vs-sub{font:500 11px/1.15 var(--f-flex,"Google Sans");color:var(--vs-dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vs-hope{display:block;margin-top:2px;line-height:0}
+.vs-hope .gems{--gap:3px}
+
+/* ── ring only ── where a row cannot afford the words (the GM's roster on a
+   narrow screen), the seat keeps its rings and says Hope as a numeral set in
+   the ring's own opening, lower right, where no track runs. The name is
+   still in the sentence the seat reads out, and on hover. */
+.vs-hn{display:none;position:absolute;left:calc(var(--vs) * .66);top:calc(var(--vs) * .66);
+  min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;place-items:center;
+  font:700 11px/1 var(--f-flex,"Google Sans");font-variant-numeric:tabular-nums;
+  color:#1a1405;background:var(--hope,#d4a72c);
+  clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px);
+  box-shadow:0 0 0 1px rgba(5,6,10,.9)}
+.vseat.is-ring .vs-id{display:none}
+.vseat.is-ring .vs-hn{display:grid}
+
+/* ── states ── */
+.vseat[data-state="vulnerable"] .vs-sub{color:#ff6b74;font-weight:700}
+.vseat[data-state="vulnerable"] .vs-lip{stroke:#ff4d5a;stroke-width:1.5}
+/* Down: the portrait drains and the rings go quiet, but they stay — the
+   table still needs to read how far down. */
+.vseat[data-state="down"] image{filter:grayscale(1) brightness(.55)}
+.vseat[data-state="down"] .vs-name{color:var(--vs-dim)}
+
+/* The viewer's own seat, where it appears in somebody else's list (the
+   GM's roster seen by a player is never drawn; this is for the GM). */
+.vseat.is-self .vs-lip{stroke:rgba(236,237,242,.7)}
+
+@media (prefers-reduced-motion:reduce){
+  .vs-b.land,.vs-b.drop{animation:none}
+}

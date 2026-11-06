@@ -1,0 +1,543 @@
+/* ══════════════════════════════════════════════════════════════════
+   DH HUD — the bottom rail, for playing without the sheet
+
+   Ink and Signal's frame, this system's objects. The frame says nothing:
+   black plates a step apart, a 1px inset hairline, the bottom-right cut,
+   one type family at five sizes, nothing under 11px. So the only colour on
+   the rail is a signal, and the signals are Daggerheart's own — Hope gold,
+   Fear violet, the three marks, the domain hues on the cards. If removing a
+   colour loses no information, it is ink.
+
+   The rail is 96px and is never taller. Two things stand ON it and rise
+   above: the character (the plinth) and the hand. Both are objects rather
+   than readouts, and the 52–76px they take above the rail is the whole of
+   what this surface asks of the map.
+
+   Every name is `bh-`-prefixed and the root is `.bhud`: `.hud` is the Fear
+   strip, `.rail` is the sheet's, `.hd` is the ledger's, and all of them load
+   into one `.dh` root where scoping does nothing.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* `--bh-hope` is animated, so it is registered: an unregistered custom
+   property interpolates as a token stream, which is to say it snaps. */
+@property --bh-hope{syntax:"<number>";inherits:true;initial-value:0}
+
+.bhud{
+  /* The rail is ink in both themes, so the three currency inks are pinned
+     to their dark-ground values: the light theme's darker golds and teals
+     are tuned for paper and fall under 4:1 on these plates. */
+  --hope-tx:#e0b647;--strain:#8fd0e0;--fear-tx:#a688ea;
+  /* The Ink and Signal values, aliased under our prefix rather than read off
+     the suite's `--gl-is-*`: this system must draw correctly in a world that
+     does not have the suite installed. ADR 0012's alias rule, from the
+     other side of the fence. */
+  --bh-ink-0:#05060a; --bh-ink-1:#0a0b11; --bh-ink-2:#0f1017; --bh-ink-3:#15171f;
+  --bh-ink-4:#1c1e28; --bh-ink-5:#272a36; --bh-ink-6:#353846;
+  --bh-text:#f4f4f7; --bh-paper:#ecedf2; --bh-dim:#b3b5c2; --bh-faint:#7f8291;
+  --bh-line:rgba(255,255,255,.08); --bh-line-2:rgba(255,255,255,.16);
+  --bh-hover:rgba(255,255,255,.05); --bh-sel:rgba(255,255,255,.09);
+  --bh-red:#ff4d5a;
+  --bh-cut:10px; --bh-cut-sm:5px; --bh-cut-xs:3px;
+  --bh-font:var(--f-flex,"Google Sans Flex","Google Sans"),system-ui,sans-serif;
+  --bh-ease:cubic-bezier(.16,1,.3,1);
+  --bh-h:96px;
+  /* how far the picture is allowed out of the top of the plinth */
+  --bh-rise:76px;
+
+  position:absolute;left:12px;right:var(--bh-gutter-r,12px);bottom:10px;
+  container:bhud / inline-size;
+  font-family:var(--bh-font);color:var(--bh-text);
+  -webkit-font-smoothing:antialiased;
+}
+.bhud *,.bhud *::before,.bhud *::after{box-sizing:border-box}
+.bhud ::selection{background:color-mix(in srgb,var(--hope) 45%,transparent);color:#fff}
+
+/* Every control on this rail is a <button>, and Foundry's elements layer
+   sizes every button to one centred 28px line. Nothing here is that, so the
+   reset is stated once at the root and each control states its own metrics
+   after it. A floor with no competitor simply applies — min-height and
+   max-height are named, not left to chance. */
+.bhud :where(button[class*="bh-"]){
+  all:unset;box-sizing:border-box;cursor:pointer;
+  height:auto;min-height:0;max-height:none;line-height:1;
+  font-family:var(--bh-font);color:inherit;
+  -webkit-tap-highlight-color:transparent;
+}
+.bhud :where(button[class*="bh-"]):focus-visible{outline:2px solid var(--bh-paper);outline-offset:-2px}
+/* An outline outside the box would be cut away by every plate's chamfer
+   clip, so the ring is drawn inside it. */
+.bh-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.bh-rail{display:flex;align-items:flex-end;gap:6px;height:var(--bh-h)}
+.bh-body{flex:1 1 auto;min-width:0;display:flex;align-items:flex-end;gap:6px;height:var(--bh-h);
+  transition:opacity .2s ease-out,translate .26s var(--bh-ease)}
+
+/* ── the plate ── one surface for everything on the rail. */
+.bh-pl{
+  position:relative;height:var(--bh-h);
+  background:var(--bh-ink-1);
+  /* the top hairline is stronger than the sides: the rail's one lit edge,
+     where it meets the map */
+  box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%);
+}
+
+/* ══ THE PLINTH ══════════════════════════════════════════════════ */
+.bh-plinth{position:relative;flex:none;width:148px;height:var(--bh-h)}
+.bh-plate{position:absolute;inset:0;background:var(--bh-ink-1);
+  box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%)}
+
+/* The picture is the plinth's width and the rail's height plus the rise.
+   Inside the plate it is whole; above the plate it fades, top and sides, so
+   a rectangular painting leaves the rail as a figure rather than as a card
+   with its top cut off. Three mask layers, read bottom-up: the side fade
+   intersected with the top fade, then the plate's own rectangle added back
+   at full strength. */
+.bh-fig{
+  position:absolute;left:0;right:0;bottom:0;height:calc(var(--bh-h) + var(--bh-rise));
+  background-repeat:no-repeat;
+  background-size:calc(100% * var(--bh-fz,1)) auto;
+  background-position:var(--bh-fx,50%) var(--bh-fy,22%);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%);
+  -webkit-mask-image:
+    linear-gradient(#000,#000),
+    linear-gradient(to bottom,transparent 0,#000 46%),
+    linear-gradient(to right,transparent 0,#000 18%,#000 82%,transparent 100%);
+  -webkit-mask-size:100% var(--bh-h),100% 100%,100% 100%;
+  -webkit-mask-position:bottom,0 0,0 0;
+  -webkit-mask-repeat:no-repeat;
+  -webkit-mask-composite:source-over,source-in;
+  mask-image:
+    linear-gradient(#000,#000),
+    linear-gradient(to bottom,transparent 0,#000 46%),
+    linear-gradient(to right,transparent 0,#000 18%,#000 82%,transparent 100%);
+  mask-size:100% var(--bh-h),100% 100%,100% 100%;
+  mask-position:bottom,0 0,0 0;
+  mask-repeat:no-repeat;
+  mask-composite:add,intersect;
+  transition:opacity .22s ease-out,translate .3s var(--bh-ease);
+}
+/* A cut-out has its own edge, so the fade comes off and the drop shadow
+   that seats it on the rail goes on. */
+.bh-plinth.is-cut .bh-fig{-webkit-mask-image:none;mask-image:none;clip-path:none;
+  background-size:contain;background-position:50% 100%;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.7))}
+
+/* THE SIGNATURE: Hope as light. The pool's fullness is a halo behind the
+   figure's head and shoulders: the cut-out stands in front of it, so the
+   light reads as coming from behind the character rather than painted over
+   the face. (Lighting the base was tried three ways: under the nameplate's
+   shade it vanished, over it it bleached the face, and as a backlight in the
+   plinth's own column the figure covered all of it.) Its strength is linear
+   in Hope so every step is a step you can see, it stays inside the plinth's
+   width so it never reaches the party stack, and it eases over half a
+   second. At zero it is gone, not dim. */
+.bh-glow{position:absolute;left:-6px;right:-6px;bottom:calc(var(--bh-h) - 24px);height:150px;pointer-events:none;
+  background:
+    radial-gradient(40% 34% at 50% 52%,color-mix(in srgb,var(--hope) calc(var(--bh-hope) * 62%),transparent),transparent 100%),
+    radial-gradient(50% 46% at 50% 56%,color-mix(in srgb,var(--hope) calc(var(--bh-hope) * 24%),transparent),transparent 100%);
+  mix-blend-mode:plus-lighter;
+  transition:--bh-hope .55s cubic-bezier(.2,.7,.2,1);
+  z-index:0}
+
+.bh-nameplate{position:absolute;left:0;right:0;bottom:0;z-index:2;
+  display:grid;gap:3px;padding:20px 10px 9px;
+  background:linear-gradient(to top,rgba(5,6,10,.94) 0,rgba(5,6,10,.78) 58%,transparent 100%);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%)}
+.bh-nameplate b{font:750 15px/1.1 var(--bh-font);letter-spacing:-.005em;text-wrap:balance;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bh-nameplate span{font:500 11px/1.2 var(--bh-font);color:var(--bh-dim);
+  font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bh-nameplate span em{font-style:normal;color:var(--bh-text);font-weight:700}
+
+/* Conditions ride just above the name, where the figure meets the rail —
+   a state of the character, on the character, and clear of its face. Icon chips; the one that
+   changes how everyone rolls against you says its own name. */
+.bh-conds{position:absolute;left:8px;bottom:52px;z-index:3;display:flex;gap:3px;margin:0;padding:0;list-style:none}
+.bh-cond{display:flex;align-items:center;gap:4px;height:20px;padding:0 5px;
+  background:rgba(5,6,10,.86);box-shadow:inset 0 0 0 1px var(--bh-line-2);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%)}
+.bh-cond img{width:12px;height:12px;display:block}
+.bh-cond span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;font:700 11px/1 var(--bh-font);letter-spacing:.02em}
+.bh-cond[data-tone="danger"]{background:color-mix(in srgb,var(--bh-red) 24%,var(--bh-ink-0));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bh-red) 70%,transparent)}
+.bh-cond[data-tone="danger"] span{position:static;width:auto;height:auto;overflow:visible;clip:auto;color:#ffd6d9}
+
+.bh-fold{position:absolute;right:5px;top:5px;z-index:3;width:22px;height:22px;min-height:22px;max-height:22px;display:grid;place-items:center;
+  background:rgba(5,6,10,.82);color:var(--bh-dim);box-shadow:inset 0 0 0 1px var(--bh-line-2);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
+  transition:color .15s,background .15s}
+.bh-fold:hover{color:var(--bh-text);background:var(--bh-ink-4)}
+
+/* Folded, the rail is under the edge and the Hope count with it — but Hope
+   is the one number this HUD exists to keep in view, so the plinth keeps
+   it: a gold numeral on the cut corner, only while folded. */
+.bh-ph{display:none;position:absolute;right:8px;top:32px;z-index:3;
+  font:750 22px/1 var(--bh-font);color:var(--hope-tx,#e0b647);font-variant-numeric:tabular-nums;
+  font-stretch:var(--w-figures,82%);text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.bhud[data-folded] .bh-ph{display:block}
+.bh-fold .bh-ic{width:12px;height:12px;transition:rotate .26s var(--bh-ease)}
+.bhud[data-folded] .bh-fold .bh-ic{rotate:180deg}
+
+.bh-ic{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;flex:none}
+.bh-ic .f{fill:currentColor}
+
+/* ══ VITALS ═══════════════════════════════════════════════════════ */
+.bh-vitals{flex:none;width:218px;padding:9px 10px 8px 11px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:22px 1fr 16px;gap:4px}
+/* The plate's chamfer is a clip-path, and a clip cuts anything that
+   overflows it without a trace — which is how a count came to read "2"
+   instead of "2/6". So nothing in here is allowed a fixed column: the
+   counts and the Hit press size to what they say, and the boxes, which
+   carry no words, are the part that gives. */
+
+.bh-hope{display:flex;align-items:center;gap:8px;min-width:0}
+.bh-hope .gems{--gap:8px}
+.bh-hn{margin-left:auto;flex:none;white-space:nowrap;display:flex;align-items:baseline;gap:1px;
+  font-variant-numeric:tabular-nums}
+.bh-hn b{font:750 22px/1 var(--bh-font);color:var(--hope-tx,#e0b647);letter-spacing:-.02em;
+  font-stretch:var(--w-figures,82%)}
+.bh-hn s{text-decoration:none;font:600 11px/1 var(--bh-font);color:var(--bh-faint)}
+
+.bh-strips{display:grid;align-content:center;gap:0}
+.bh-strip{display:grid;grid-template-columns:20px minmax(0,1fr) max-content;column-gap:6px;align-items:center;height:13px}
+.bh-sk{font:700 11px/1 var(--bh-font);letter-spacing:.04em;color:var(--bh-faint)}
+.bh-seg{display:flex;gap:2px;height:13px}
+.bh-sn{justify-self:end;min-width:3.2ch;text-align:right;white-space:nowrap;font:600 11px/1 var(--bh-font);color:var(--bh-faint);font-variant-numeric:tabular-nums}
+.bh-sn b{font-weight:700;color:var(--bh-dim)}
+
+/* A box is a 13px press with a 5px mark in it. */
+.bh-box{position:relative;flex:1 1 0;height:13px;min-height:13px;max-height:13px;min-width:0}
+.bh-box::before{content:"";position:absolute;left:0;right:0;top:4px;height:5px;
+  background:var(--bh-ink-5);
+  box-shadow:inset 0 1px 0 rgba(0,0,0,.55);
+  transition:background .16s ease-out,box-shadow .16s ease-out}
+.bh-box:hover::before{background:var(--bh-ink-6)}
+
+/* The three materials, at the size of a sliver: a wound is lit from within
+   and bleeds a little light, a strain is scored, a plate carries a specular
+   along its top edge. Told apart by substance before hue — the sheet's
+   rule, surviving five pixels. */
+.bh-strip[data-strip="hp"] .bh-box.on::before{
+  background:linear-gradient(to bottom,var(--wound-gl,#e4545c),var(--wound,#c8484f));
+  box-shadow:0 0 6px -1px color-mix(in srgb,var(--wound-gl,#e4545c) 75%,transparent)}
+.bh-strip[data-strip="st"] .bh-box.on::before{
+  background:
+    repeating-linear-gradient(115deg,rgba(5,6,10,.42) 0 1px,transparent 1px 3px),
+    var(--strain,#8fd0e0)}
+.bh-strip[data-strip="ar"] .bh-box.on::before{
+  background:linear-gradient(to bottom,#fff 0 1px,var(--plate,#e6edf4) 1px,var(--plate-d,#6f7986) 100%)}
+/* Spent armour is a hollow where a plate was, not an empty box. */
+.bh-strip[data-strip="ar"] .bh-box:not(.on)::before{background:transparent;
+  box-shadow:inset 0 0 0 1px rgba(230,237,244,.2)}
+/* Last box of Hit Points or Stress: the track is one mark from its end and
+   says so in the count, not in a flashing bar. */
+.bh-strip[data-full] .bh-sn b{color:var(--bh-red)}
+
+/* landing — a flash, not a travel */
+.bh-box.land::before{animation:bh-land .4s var(--bh-ease)}
+.bh-box.drop::before{animation:bh-drop .34s ease-out}
+@keyframes bh-land{0%{transform:scaleY(2.4);filter:brightness(2.2)}100%{transform:none;filter:none}}
+@keyframes bh-drop{0%{background:rgba(255,255,255,.5)}100%{}}
+
+.bh-foot{display:flex;align-items:center;gap:6px;min-width:0}
+.bh-thr{flex:0 1 auto;display:flex;align-items:center;gap:4px;min-width:0;height:16px;white-space:nowrap}
+.bh-thr .z{font:600 11px/1 var(--bh-font);color:var(--bh-faint)}
+.bh-thr b{font:700 12px/1 var(--bh-font);color:var(--bh-text);font-variant-numeric:tabular-nums;
+  padding:2px 3px;background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line)}
+.bh-hit{flex:none;margin-left:auto;white-space:nowrap;display:flex;align-items:center;gap:3px;height:16px;min-height:16px;max-height:16px;padding:0 5px 0 4px;
+  font:700 11px/1 var(--bh-font);color:var(--bh-dim);
+  background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
+  transition:background .15s,color .15s}
+.bh-hit .bh-ic{width:11px;height:11px}
+.bh-hit:hover{background:color-mix(in srgb,var(--wound,#c8484f) 30%,var(--bh-ink-3));color:#fff}
+
+/* ══ ACTIONS ══════════════════════════════════════════════════════ */
+.bh-actions{flex:none;width:204px;padding:7px;display:grid;grid-template-rows:40px 1fr;gap:4px}
+.bh-traits{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.bh-trait{display:grid;place-content:center;justify-items:center;gap:3px;height:40px;min-height:40px;max-height:40px;
+  background:var(--bh-ink-3);box-shadow:inset 0 1px 0 var(--bh-line),inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-sm)),calc(100% - var(--bh-cut-sm)) 100%,0 100%);
+  transition:background .15s ease-out,transform .12s ease-out}
+.bh-trait span{font:700 11px/1 var(--bh-font);letter-spacing:.06em;text-transform:uppercase;color:var(--bh-faint)}
+.bh-trait b{font:650 16px/1 var(--bh-font);font-variant-numeric:tabular-nums;font-stretch:var(--w-figures,82%)}
+.bh-trait:hover{background:var(--bh-ink-4)}
+.bh-trait:hover span{color:var(--bh-dim)}
+.bh-trait:active{transform:scale(.96)}
+/* A marked trait (an advancement took it) is quieter, not hidden: still
+   rollable, just not raisable again this tier. */
+.bh-trait.is-marked b{color:var(--bh-dim)}
+.bh-trait.is-marked::after{content:"";position:absolute;top:4px;right:4px;width:4px;height:4px;
+  background:var(--bh-faint);rotate:45deg}
+
+.bh-weapons{display:grid;align-content:end;gap:3px}
+.bh-wpn{min-width:0;display:flex;align-items:center;gap:7px;height:20px;min-height:20px;max-height:20px;padding:0 8px;
+  background:var(--bh-ink-2);box-shadow:inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
+  transition:background .15s}
+.bh-wpn:hover{background:var(--bh-ink-4)}
+.bh-wpn:hover span{color:var(--bh-dim)}
+.bh-wpn b{font:650 12px/1 var(--bh-font);white-space:nowrap}
+.bh-wpn span{font:500 11px/1 var(--bh-font);color:var(--bh-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bh-wpn em{margin-left:auto;font:650 12px/1 var(--bh-font);font-style:normal;color:var(--bh-dim);font-variant-numeric:tabular-nums}
+/* The secondary is the one you reach for second, so it says so in weight. */
+.bh-wpn[data-weapon="secondary"] b{font-weight:550;color:var(--bh-dim)}
+
+/* ══ FEATURES ═════════════════════════════════════════════════════
+   Rules, not objects: rows, never tiles. The Hope feature is the one row
+   tinted with Hope, because it is the one that spends it. */
+.bh-feats{flex:none;width:158px;padding:6px;display:grid;align-content:center;gap:2px}
+.bh-feat{display:flex;align-items:center;gap:6px;height:19px;min-height:19px;max-height:19px;padding:0 6px 0 7px;min-width:0;
+  background:var(--bh-ink-2);box-shadow:inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
+  transition:background .15s}
+.bh-feat:hover,.bh-feat.is-peek{background:var(--bh-ink-4)}
+.bh-feat b{font:600 12px/1 var(--bh-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bh-fr{margin-left:auto;flex:none;display:flex;align-items:center;gap:2px;line-height:0}
+.bh-fr img{width:12px;height:12px;opacity:.85}
+.bh-fr .bh-ic{width:12px;height:12px;color:var(--bh-faint)}
+.bh-fr.is-dice,.bh-fr.is-st{font:650 11px/1 var(--bh-font);font-variant-numeric:tabular-nums;color:var(--bh-dim)}
+.bh-fr.is-st{color:var(--strain,#8fd0e0)}
+/* A budget is the family's diamond: lit is a use you still have. */
+.bh-uses i{width:6px;height:6px;rotate:45deg;box-shadow:inset 0 0 0 1px var(--bh-faint)}
+.bh-uses i.on{background:var(--bh-paper);box-shadow:none}
+.bh-feat.is-hope{background:color-mix(in srgb,var(--hope) 10%,var(--bh-ink-2));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 30%,transparent)}
+.bh-feat.is-hope b{color:var(--hope-tx,#e0b647);font-weight:650}
+.bh-feat.is-hope:hover,.bh-feat.is-hope.is-peek{background:color-mix(in srgb,var(--hope) 17%,var(--bh-ink-2))}
+/* Spent for the rest: still readable, still peekable, visibly put down. */
+.bh-feat.is-spent b{color:var(--bh-faint);font-weight:500}
+.bh-feat.is-spent:is(:hover,.is-peek) b{color:var(--bh-dim)}
+.bh-feat.is-more{background:transparent;box-shadow:inset 0 0 0 1px var(--bh-line)}
+.bh-feat.is-more b{font-weight:500;color:var(--bh-dim)}
+/* Short of Hope: the row stays and says why on itself. */
+.bh-feat[aria-disabled="true"]{cursor:not-allowed}
+.bh-feat.is-hope[aria-disabled="true"]{background:var(--bh-ink-2);box-shadow:inset 0 0 0 1px var(--bh-line)}
+.bh-feat.is-hope[aria-disabled="true"] b{color:var(--bh-dim);font-weight:550}
+.bh-feat[aria-disabled="true"] .bh-fr .gem{opacity:.38}
+.bh-pa[aria-disabled="true"]{cursor:not-allowed;color:var(--bh-faint)}
+.bh-pa[aria-disabled="true"] .bh-pc{color:var(--bh-faint);box-shadow:inset 0 0 0 1px var(--bh-line)}
+
+/* ══ THE HAND ═════════════════════════════════════════════════════
+   The only plate without a width. It grows until the cards stand side by
+   side and no further, and closes to an advance of 30 before anything
+   else on the rail gives way. That order is deliberate: a fanned card is
+   still a card — its pennant and the head of its name show, and hover
+   lifts it out whole — where a feature row that has lost its name, or a
+   track count that has lost its maximum, is simply a wrong reading. The
+   fan reads
+   its own width back through a container query, so the overlap is
+   arithmetic rather than a breakpoint. */
+.bh-hand{
+  --bh-full:calc(40px + var(--dh-cc-s-w,100px) + (var(--n) - 1) * (var(--dh-cc-s-w,100px) + 6px));
+  flex:0 1 var(--bh-full);min-width:calc(40px + var(--dh-cc-s-w,100px) + (var(--n) - 1) * 30px);
+  container:bhand / inline-size;
+  overflow:visible;clip-path:none;
+  /* the tray keeps its cut through a pseudo, since the cards must not be
+     clipped by it */
+  background:none;box-shadow:none}
+.bh-hand::before{content:"";position:absolute;inset:0;background:var(--bh-ink-1);
+  box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%)}
+.bh-fan{position:absolute;left:20px;bottom:8px;
+  height:calc(var(--dh-cc-s-w,100px) * 1.4)}
+.bh-held{
+  /* 40 = the fan's 20px inset at each end, which is the outer cards' tilt
+     overhang */
+  --bh-adv:min(var(--dh-cc-s-w,100px) + 6px,(100cqw - 40px - var(--dh-cc-s-w,100px)) / max(var(--n) - 1,1));
+  position:absolute;bottom:0;left:calc((var(--z) - 1) * var(--bh-adv));z-index:var(--z);
+  transform-origin:50% 135%;
+  transform:translateY(calc(var(--t) * var(--t) * 1.6px)) rotate(calc(var(--t) * 2.6deg));
+  transition:transform .24s var(--bh-ease),translate .24s var(--bh-ease),filter .2s}
+.bh-cc1{margin:0;padding:0;list-style:none}
+/* The compact card's furniture was drawn for a sheet, read at arm's length
+   at 8.5px; the rail is read at a glance and held to 11. In a fanned hand
+   the kind line is also the part the next card covers, and the peek prints
+   it whole, so the player's hand drops it. A foe card keeps its role, at
+   the floor, because the role is what tells a Minion from a Leader. The
+   pennant's "Tier" word goes: the numeral is the tier. */
+.bh-hand .dh-cc-pennant small,.bh-hand:not(.bh-foes) .dh-cc-kind{display:none}
+.bh-foes .dh-cc-kind{font-size:11px;letter-spacing:.03em}
+.bh-hand .dh-cc-stamp,.bh-vault .dh-cc-stamp,.bh-vault .dh-cc-kind{font-size:11px}
+.bh-vault .dh-cc-pennant small{display:none}
+/* The selected foe is already lifted and underlined; parting the rest
+   round it would only push the last card off the rail. */
+.bh-foes .is-sel ~ .bh-held{translate:none}
+.bh-held .dh-cc{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+.bh-held:is(:hover,:focus-within,.is-peek){z-index:30;transform:translateY(-16px) rotate(0)}
+/* A socket is where a card is not, so it stands behind the cards that are:
+   at 4/5 the hollow must not be the one face the hand shows whole. */
+.bh-held.is-socket{z-index:0}
+.bh-held.is-socket .dh-cc{filter:none}
+/* The neighbours part, so the card you reached for comes out of the fan
+   rather than only up it. */
+.bh-held:is(:hover,:focus-within,.is-peek,.is-sel) ~ .bh-held{translate:18px 0}
+.bh-held:has(~ .bh-held:is(:hover,:focus-within,.is-peek,.is-sel)){translate:-18px 0}
+/* While a drawer is open the hand tucks into its tray: the drawer is what
+   you are looking at and the hand is under it. Not the vault: the vault
+   says "drag a card into the hand", and the hand is the target. The tuck takes the cards'
+   tops just under the drawer's foot; what that pushes below the rail is
+   below the screen edge, which is where a hand you have put down goes. */
+.bhud[data-drawer]:not([data-drawer="vault"]) .bh-held{transform:translateY(44px) rotate(calc(var(--t) * 1.4deg));filter:brightness(.55)}
+
+/* The GM's hand. A foe card carries no recall and no domain, so its foot is
+   the token's painting and its pennant the tier; what it adds is a strip of
+   Hit Points along its top edge beside the pennant, where a foe card has
+   no recall cost and nothing is written. */
+.bh-mini{position:absolute;left:30px;right:8px;top:7px;z-index:2;display:flex;gap:1px;height:4px;pointer-events:none;
+  box-shadow:0 0 0 1px rgba(5,6,10,.8)}
+.bh-mini i{flex:1 1 0;background:rgba(255,255,255,.24)}
+.bh-mini i.on{background:var(--wound-gl,#e4545c)}
+.bh-foes .bh-held.is-sel{transform:translateY(-6px) rotate(0)}
+.bh-foes .bh-held.is-sel::after{content:"";position:absolute;left:14px;right:14px;bottom:-6px;height:2px;background:var(--bh-paper)}
+.bh-foes .bh-held:not(.is-sel) .dh-cc{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55)) brightness(.82)}
+.bh-foes .bh-held:not(.is-sel):hover .dh-cc{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+
+/* ══ DRAWERS ══════════════════════════════════════════════════════ */
+.bh-drawers{flex:none;margin-left:auto;width:72px;padding:6px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:3px}
+.bh-dw{position:relative;height:26px;min-height:26px;max-height:26px;display:flex;align-items:center;justify-content:center;gap:4px;
+  color:var(--bh-dim);background:var(--bh-ink-2);box-shadow:inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
+  transition:background .15s,color .15s}
+.bh-dw b{font:650 11px/1 var(--bh-font);color:var(--bh-faint);font-variant-numeric:tabular-nums}
+.bh-dw:hover{background:var(--bh-ink-4);color:var(--bh-text)}
+.bh-dw:hover b{color:var(--bh-dim)}
+.bh-dw.on{background:var(--bh-ink-4);color:var(--bh-text);box-shadow:inset 0 -2px 0 var(--bh-paper),inset 0 0 0 1px var(--bh-line-2)}
+.bh-dw.on b{color:var(--bh-dim)}
+
+/* A drawer rises above the rail from its right end, clear of the cards
+   that stand on it. */
+.bh-drawer{position:absolute;right:0;bottom:calc(var(--bh-h) + 60px);z-index:40;width:max-content;min-width:280px;max-width:432px;
+  background:var(--bh-ink-1);
+  box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%);
+  transform-origin:100% 100%;
+  animation:bh-rise .26s var(--bh-ease)}
+.bh-drawer header{display:flex;align-items:baseline;gap:10px;padding:11px 14px 9px;
+  box-shadow:inset 0 -1px 0 var(--bh-line)}
+.bh-drawer header b{font:700 15px/1.2 var(--bh-font)}
+.bh-drawer header span{font:500 11px/1.2 var(--bh-font);color:var(--bh-faint)}
+.bh-drawer header span em{font-style:normal;color:var(--strain,#8fd0e0);font-weight:700}
+.bh-dbody{padding:12px 14px 14px}
+.bh-dbody .bh-vault{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
+@keyframes bh-rise{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+
+/* ══ THE PEEK ═════════════════════════════════════════════════════ */
+.bh-peek{position:absolute;z-index:50;width:264px;pointer-events:auto;
+  animation:bh-rise .22s var(--bh-ease)}
+.bh-pface{filter:drop-shadow(0 18px 28px rgba(0,0,0,.6))}
+.bh-pacts{display:flex;gap:4px;margin-top:6px}
+/* The rule peek: rules text on a plate, the name over where it comes from. */
+.bh-rule{background:var(--bh-ink-1);
+  box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%)}
+.bh-rule header{display:grid;gap:3px;padding:12px 14px 10px;box-shadow:inset 0 -1px 0 var(--bh-line)}
+.bh-rule header b{font:700 15px/1.15 var(--bh-font)}
+.bh-rule header span{font:500 11px/1.2 var(--bh-font);color:var(--bh-faint)}
+.bh-rule header span em{font-style:normal;color:var(--hope-tx,#e0b647);font-weight:700}
+.bh-rule p{margin:0;padding:11px 14px 14px;font:400 13px/1.5 var(--bh-font);color:var(--bh-dim);text-wrap:pretty}
+.bh-rule p b{color:var(--bh-text);font-weight:650}
+.bh-pa{flex:1 1 auto;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;height:28px;min-height:28px;max-height:28px;padding:0 9px;
+  font:650 12px/1 var(--bh-font);color:var(--bh-text);
+  background:var(--bh-ink-3);box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-sm)),calc(100% - var(--bh-cut-sm)) 100%,0 100%);
+  transition:background .15s}
+.bh-pa:hover{background:var(--bh-ink-4)}
+.bh-pc{font:700 11px/1 var(--bh-font);letter-spacing:.04em;text-transform:uppercase;padding:3px 5px;background:var(--bh-ink-0);color:var(--bh-dim)}
+.bh-pa[data-tone="hope"] .bh-pc{color:var(--hope-tx,#e0b647);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 40%,transparent)}
+.bh-pa[data-tone="stress"] .bh-pc{color:var(--strain,#8fd0e0);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--strain,#8fd0e0) 40%,transparent)}
+
+/* ══ THE STACK ════════════════════════════════════════════════════
+   The party, above the plinth, standing clear of the figure's rise. */
+.bh-stack{position:absolute;left:0;bottom:calc(var(--bh-h) + var(--bh-rise) + 12px);
+  display:flex;flex-direction:column;gap:4px;width:200px}
+/* The GM watches four characters, not three, and a fourth seat in the column
+   reaches the scene controls; two by two it is half as tall. */
+.bhud[data-role="gm"] .bh-stack{display:grid;grid-template-columns:repeat(2,168px);gap:6px 10px;width:auto}
+
+/* ══ THE GM ═══════════════════════════════════════════════════════ */
+.bh-adv{flex:none;width:530px;display:grid;grid-template-columns:62px 164px 1fr;align-items:center;gap:0 12px;padding:0 10px 0 6px}
+.bh-diff{display:grid;place-items:center;width:62px;height:62px;position:relative}
+.bh-diff::before{content:"";position:absolute;inset:9px;rotate:45deg;background:var(--bh-ink-3);
+  box-shadow:inset 0 0 0 1px var(--bh-line-2),inset 0 0 14px rgba(0,0,0,.55)}
+.bh-diff span{position:relative;font:750 22px/1 var(--bh-font);font-variant-numeric:tabular-nums;font-stretch:var(--w-figures,82%)}
+.bh-advt{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;min-width:0}
+.bh-thr2{margin-top:5px}
+.bh-moves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:24px;align-content:center;gap:4px;height:100%;padding:8px 0;overflow:hidden}
+.bh-move{display:flex;align-items:baseline;gap:6px;height:24px;min-height:24px;max-height:24px;padding:0 9px 0 8px;min-width:0;max-width:100%;
+  align-items:center;
+  background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
+  transition:background .15s}
+.bh-move:hover{background:var(--bh-ink-4)}
+.bh-move:hover span{color:var(--bh-dim)}
+.bh-move b{font:650 12px/1 var(--bh-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bh-move b i{font-style:normal;color:var(--bh-dim);font-variant-numeric:tabular-nums}
+.bh-move span{font:600 11px/1 var(--bh-font);color:var(--bh-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+/* The attack is the move the GM reaches for most, so it is the lit chip. */
+.bh-move.is-attack{background:var(--bh-ink-5);box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line)}
+.bh-move.is-attack span{color:var(--bh-dim)}
+.bh-move.is-attack{grid-column:1/-1}
+.bh-move.is-more{background:transparent}
+.bh-move.is-more b{font-weight:500;color:var(--bh-dim)}
+.bh-move[data-tone="fear"]{background:color-mix(in srgb,var(--fear) 18%,var(--bh-ink-2));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fear) 55%,transparent)}
+.bh-move[data-tone="fear"] span{color:var(--fear-tx,#a688ea)}
+
+/* ══ FOLDED ══ the plinth and the stack stay; the rest goes under the edge. */
+.bhud[data-folded] .bh-body{opacity:0;translate:0 calc(var(--bh-h) + 20px);pointer-events:none}
+.bhud[data-folded] :is(.bh-drawer,.bh-peek){display:none}
+
+/* ══ ARRIVING / CHANGING ACTOR ══
+   The rail rises once when it arrives. Changing whose HUD it is crossfades
+   the plinth and the body with a short lift — one object re-pointed, not
+   two objects swapping, so nothing slides sideways. */
+.bhud.is-arriving :is(.bh-plinth,.bh-body > *,.bh-stack){animation:bh-arrive .42s var(--bh-ease) both}
+.bhud.is-arriving .bh-stack{animation-delay:.16s}
+.bhud.is-arriving .bh-body > *:nth-child(2){animation-delay:.04s}
+.bhud.is-arriving .bh-body > *:nth-child(3){animation-delay:.08s}
+.bhud.is-arriving .bh-body > *:nth-child(4){animation-delay:.12s}
+@keyframes bh-arrive{from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
+
+/* Leaving is shorter than arriving and goes the same way back: a peek or
+   a drawer that is dismissed settles into the rail it rose from. */
+.bh-peek.is-closing,.bh-drawer.is-closing{animation:bh-sink .13s ease-in forwards;pointer-events:none}
+@keyframes bh-sink{to{opacity:0;transform:translateY(8px)}}
+
+/* The flinch: transform and opacity only, so it composites. */
+.bh-plinth::after{content:"";position:absolute;inset:auto 0 0 0;height:60%;z-index:1;pointer-events:none;opacity:0;
+  background:linear-gradient(to top,color-mix(in srgb,var(--bh-red) 50%,transparent),transparent)}
+.bh-plinth.is-hit::after{animation:bh-bleed .5s ease-out}
+.bh-plinth.is-hit .bh-fig{animation:bh-recoil .34s var(--bh-ease)}
+@keyframes bh-recoil{22%{translate:-3px 2px}55%{translate:1px 0}}
+@keyframes bh-bleed{0%{opacity:.85}100%{opacity:0}}
+.bhud.is-leaving .bh-rail,.bhud.is-leaving .bh-stack{opacity:0;translate:0 6px;
+  transition:opacity .14s ease-in,translate .14s ease-in}
+
+/* ══ NARROW ══ under about 1100px of free width the rail keeps its height
+   and gives up overlap, not meaning. The hand closes up on its own (see the
+   hand); the weapons drop range and trait, which the attack's card prints
+   anyway. The vitals keep their width, because every count there is a
+   number somebody is about to act on, and the traits keep their names,
+   because six bare modifiers are six numbers nobody can place. */
+@container bhud (max-width:1100px){
+  .bh-actions{width:188px}
+  .bh-wpn span{display:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .bhud *,.bhud *::before,.bhud *::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+
+/* ── cost ─────────────────────────────────────────────────────────────
+   Every live change goes through a setter that touches one plate, and a
+   fixed-width plate cannot change its neighbours' geometry — so it says
+   so, and a Hope spend relayouts the vitals plate rather than the rail.
+   Not the hand (its cards overhang it on purpose) and not the plinth (the
+   figure rises out of it): containment would clip both. ?bench on this
+   page measures no difference — setters are ~0.15ms with a forced layout
+   either way, because the page is small. It is for Foundry, where the rail
+   shares a document with the sidebar, the chat log and the canvas HUD. */
+.bh-vitals,.bh-actions,.bh-feats,.bh-drawers,.bh-adv{contain:layout style}
