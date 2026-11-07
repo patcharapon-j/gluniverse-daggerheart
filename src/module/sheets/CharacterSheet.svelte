@@ -2780,18 +2780,13 @@
              matched numbers, which they are not; one is on every character
              and the other is on one.
 
-             **They are both gold, and that is a deferral rather than a
-             choice.** A diamond is the mark of a spendable pool here and it
-             has exactly two hues: gold for the pool you hold, violet for the
-             pool the GM holds. Focus is the first, so it is gold. A third
-             hue is a claim `design/gem.css` makes — `--tone` is declared on
-             `.gem` itself, so it cannot be overridden from a sheet without
-             adding a modifier class beside `.gem.fear` — and a hue invented
-             in a Svelte style block is a hue the study pages do not know
-             about. What tells the two rows apart until then is the heading
-             directly above each and the size: these are 22px against Hope's
-             32, which is also the honest ranking of a subclass pool against
-             one every character has. -->
+             **It is not a diamond.** A diamond is Hope's and Fear's mark,
+             and a second gold row of them under Hope read as Hope twice. So
+             Focus passes `focus` and draws as a round jade bead — a filled
+             disc with a seed when lit, a hollow ring when empty — and the
+             argument for the shape and the hue lives in the FOCUS block of
+             `design/gem.css`, where the study pages can see it. Size still
+             ranks them: 22px against Hope's 32. -->
         {#if martialArtist}
           <div class="sec">
             <div class="pool" data-p="focus">
@@ -2807,6 +2802,7 @@
               <Gems
                 value={focus}
                 max={focusMax}
+                focus
                 size={22}
                 gap={8}
                 ground="paper"

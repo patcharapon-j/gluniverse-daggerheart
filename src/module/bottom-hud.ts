@@ -10,7 +10,10 @@
  *
  *   trait            `askRoll`              (apps/ask-roll.ts — the chat card's seam)
  *   weapon           `askAttack`            (moved there from the sheet for this)
- *   a strip box      `actor.markTrack`
+ *   a track box      `system.resources.<track>.marked` (the sheet's `Marks` write)
+ *   a Hope gem       `system.resources.hope.value`    (the sheet's `Gems` write)
+ *   the portrait     `system.portrait.hud`            (framed on the plinth)
+ *   a GM strip box   `actor.markTrack`
  *   Hit              `takeDamage`           (apps/damage.ts)
  *   a feature        `postCard`             with the rule's own authored actions
  *   the Hope feature `postCard` + its price (the sheet's `useHopeAction`)
@@ -74,14 +77,15 @@ import {
   type Sigils,
 } from "./sheets/cards.ts";
 import { postCard } from "./sheets/post-card.ts";
-import { canAct, liveOf, pressBox, shapeOf, tookHit, type Live } from "./bottom-hud-shape.ts";
+import { canAct, liveOf, pressBox, pressMark, sameFrame, shapeOf, tookHit, type Live } from "./bottom-hud-shape.ts";
 import { rich } from "./ui/card.js";
 import { FACE } from "./ui/face.js";
 import { fit, nameFit } from "./ui/face-fx.js";
 import { setPool } from "./ui/gem.js";
 import { COMPACT } from "./ui/compact.js";
 import { setSeat } from "./ui/seat.js";
-import { DLIST, DRAWER, HUD, PEEK, REST, RULE_PEEK, flinch, setStrip } from "./ui/hud.js";
+import { DLIST, DRAWER, HUD, PEEK, REST, RULE_PEEK, flinch, framePlinth, placeDrawer, setFrame, setStrip } from "./ui/hud.js";
+import { setMarks } from "./ui/mark.js";
 
 const TRACK = { hp: "hitPoints", st: "stress", ar: "armorSlots" } as const;
 type StripKind = keyof typeof TRACK;
@@ -108,6 +112,8 @@ let peek: { kind: PeekKind; id: string; pinned: boolean } | null = null;
 let peekTimer: ReturnType<typeof setTimeout> | null = null;
 /** The GM's pick among the adversaries in play, by token id, when nothing is controlled. */
 let gmPick: string | null = null;
+/** Puts the portrait-framing gesture down, while one is up. */
+let framing: (() => void) | null = null;
 
 interface Feat {
   name: string;
@@ -161,6 +167,8 @@ export function registerBottomHud(): void {
   wall.append(host);
 
   host.addEventListener("click", onClick);
+  host.addEventListener("keydown", onPressKey);
+  host.addEventListener("contextmenu", onContext);
   host.addEventListener("pointerover", onOver);
   host.addEventListener("pointerout", onOut);
   host.addEventListener("dragstart", onDragStart);
@@ -472,6 +480,10 @@ function playerModel(actor: any): Model {
       name: actor.name,
       sub: `${esc(cls?.name ?? "")} ${sys.level ?? 1} · Evasion <em>${sys.evasion?.value ?? 0}</em>`,
       img: portraitOf(actor) ?? actor.img,
+      /* The plinth's own crop of the same picture the sheet and the card
+         frame — `portraitOf` above, so all three are of one image. */
+      frame: { x: 0, y: 0, scale: 1, ...(sys.portrait?.hud ?? {}) },
+      frameable: canAct("player", game.user, actor),
       hopeLit: hopeMax ? hope / (hopeMax + scars) : 0,
       hope,
       conds: conditionsOf(actor),
@@ -595,6 +607,7 @@ function refresh(force: boolean): void {
   const who = enabled() ? subject() : null;
   document.body.classList.toggle("dh-bhud-on", !!who);
   if (!who) {
+    framing?.();
     host.replaceChildren();
     drawn = model = null;
     lift();
@@ -641,6 +654,8 @@ const folded = (): boolean => game.settings?.get(SYSTEM_ID, "bottomHudFolded") =
 
 function paint(arrive: boolean): void {
   if (!host || !model) return;
+  /* The plinth is about to be replaced; the gesture on it commits and ends. */
+  framing?.();
   const o = model.opts;
   host.innerHTML = HUD({
     ...o,
@@ -653,7 +668,11 @@ function paint(arrive: boolean): void {
      the other, because nothing on this edge is inside a sheet. */
   root.classList.add("dh");
   gutter();
-  if (!canAct(model.role, game.user, model.actor)) root.setAttribute("data-readonly", "");
+  if (!canAct(model.role, game.user, model.actor)) {
+    root.setAttribute("data-readonly", "");
+    /* An observer's boxes and gems offer nothing, so they are not tab stops. */
+    for (const el of root.querySelectorAll('[role="button"][tabindex="0"]')) el.setAttribute("tabindex", "-1");
+  }
   if (arrive && !reduced()) {
     root.classList.add("is-arriving");
     setTimeout(() => root.classList.remove("is-arriving"), 700);
@@ -675,6 +694,8 @@ function drive(root: HTMLElement, prev: Live, next: Live): void {
     const plinth = root.querySelector<HTMLElement>("[data-plinth]");
     const of = (next.hopeMax ?? 0) || 1;
     plinth?.style.setProperty("--bh-hope", ((next.hope ?? 0) / of).toFixed(3));
+    /* While the picture is in the hand, the hand is the record. */
+    if (plinth && next.frame && !framing && !sameFrame(next.frame, prev.frame)) setFrame(plinth, next.frame);
     if (next.focus && next.focus[0] !== prev.focus?.[0]) {
       const fg = root.querySelector<HTMLElement>(".bh-focus .gems");
       if (fg) setPool(fg, next.focus[0]);
@@ -692,11 +713,16 @@ function drive(root: HTMLElement, prev: Live, next: Live): void {
       }
     }
   }
-  const strips = root.querySelector(next.role === "gm" ? ".bh-adv" : ".bh-vitals");
   for (const k of ["hp", "st", "ar"] as StripKind[]) {
     const v = next[k];
-    const el = strips?.querySelector<HTMLElement>(`[data-strip="${k}"]`);
-    if (v && el && v[0] !== prev[k]?.[0]) setStrip(el, v[0]);
+    if (!v || v[0] === prev[k]?.[0]) continue;
+    if (next.role === "gm") {
+      const el = root.querySelector<HTMLElement>(`.bh-adv [data-strip="${k}"]`);
+      if (el) setStrip(el, v[0]);
+    } else {
+      const mk = root.querySelector<HTMLElement>(`.bh-vitals [data-track="${k}"] .mk`);
+      if (mk) setMarks(mk, v[0]);
+    }
   }
   if (tookHit(prev, next)) {
     const p = root.querySelector<HTMLElement>("[data-plinth]");
@@ -885,6 +911,7 @@ function showDrawer(k: string, animate = true): void {
   }
   if (old) old.replaceWith(el);
   else root.append(el);
+  placeDrawer(root);
 }
 
 function closeDrawer(): void {
@@ -1045,6 +1072,17 @@ function onOutside(e: Event): void {
   if (peek) closePeek();
 }
 
+/* The boxes and Hope gems are the sheet's `<i>`s wearing role="button"; a
+   real button turns Enter and Space into a click by itself, and these are
+   handed the same click so a key goes through exactly the pointer's path. */
+function onPressKey(e: KeyboardEvent): void {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const t = e.target as HTMLElement | null;
+  if (!t || t.tagName === "BUTTON" || t.getAttribute("role") !== "button") return;
+  e.preventDefault();
+  t.click();
+}
+
 function onKey(e: KeyboardEvent): void {
   if (e.key !== "Escape") return;
   if (peek) closePeek();
@@ -1132,8 +1170,13 @@ async function onClick(e: MouseEvent): Promise<void> {
     return void askAttack(a, w, wpn);
   }
 
-  const box = t.closest<HTMLElement>(".bh-vitals .bh-box");
-  if (box) return void pressStrip(a, box);
+  if (t.closest('[data-act="frame"]')) return void (framing ? framing() : startFraming(root));
+
+  const mark = t.closest<HTMLElement>('.bh-vitals [data-track] .mk .row > i');
+  if (mark) return void pressTrack(a, mark);
+
+  const gem = t.closest<HTMLElement>(".bh-hope .gem");
+  if (gem) return void pressHope(a, gem);
 
   if (t.closest('[data-act="damage"]')) return void takeDamage(a, 0, { ask: true });
 
@@ -1171,7 +1214,7 @@ async function onClick(e: MouseEvent): Promise<void> {
     if (drawer === "vault") {
       const plan = await placeCard(a, m.limit, cid, "loadout");
       if (!plan) deny(root.querySelector(".bh-hand"));
-      else if ("refuse" in plan) deny(root.querySelector('.bh-vitals [data-strip="st"]'));
+      else if ("refuse" in plan) deny(root.querySelector('.bh-vitals [data-track="st"]'));
       return;
     }
     const c = m.cards.get(cid);
@@ -1212,6 +1255,55 @@ async function useFeat(f: Feat, use: boolean, root: HTMLElement): Promise<void> 
     return;
   }
   await postCard(f.card, a, { feature: f.bind, resourceIndexes: f.resourceIndexes });
+}
+
+/* A box on the player's rail is the sheet's box, so it writes what the sheet's
+   `Marks` writes: the new count, by path. */
+async function pressTrack(actor: any, box: HTMLElement): Promise<void> {
+  const kind = box.closest<HTMLElement>("[data-track]")?.dataset.track as StripKind | undefined;
+  if (!kind || !actor) return;
+  const track = actor.system?.resources?.[TRACK[kind]];
+  if (!track) return;
+  const i = [...(box.parentElement?.children ?? [])].indexOf(box);
+  if (i < 0) return;
+  const next = pressMark(i, Number(track.marked ?? 0), Number(track.max ?? 0));
+  if (next !== track.marked) await actor.update({ [`system.resources.${TRACK[kind]}.marked`]: next });
+}
+
+/* And a gem is the sheet's gem. A scar is a slot out of play, not a press. */
+async function pressHope(actor: any, gem: HTMLElement): Promise<void> {
+  if (!actor || gem.classList.contains("scar")) return;
+  const hope = actor.system?.resources?.hope;
+  if (!hope) return;
+  const i = [...(gem.parentElement?.querySelectorAll(".gem") ?? [])].indexOf(gem);
+  if (i < 0) return;
+  const next = pressMark(i, Number(hope.value ?? 0), Number(hope.max ?? 0));
+  if (next !== hope.value) await actor.update({ "system.resources.hope.value": next });
+}
+
+/* Framing the plinth's portrait: the gesture is the design's, the write is
+   this file's. Owner only — the press is not drawn otherwise, and a
+   right-click on an observer's plinth is left to the browser. */
+function startFraming(root: HTMLElement): void {
+  const m = model;
+  const plinth = root.querySelector<HTMLElement>("[data-plinth]");
+  if (!m || m.role !== "player" || !plinth || framing) return;
+  if (!canAct("player", game.user, m.actor)) return;
+  const actor = m.actor;
+  closePeek();
+  framing = framePlinth(plinth, m.opts.plinth?.frame, {
+    onCommit: (f: any) => void actor.update({ "system.portrait.hud": f }),
+    onExit: () => (framing = null),
+  });
+}
+
+function onContext(e: MouseEvent): void {
+  const root = rail();
+  if (!root || model?.role !== "player") return;
+  if (!(e.target as HTMLElement).closest?.(".bh-plinth")) return;
+  if (!canAct("player", game.user, model.actor)) return;
+  e.preventDefault();
+  startFraming(root);
 }
 
 async function pressStrip(actor: any, box: HTMLElement): Promise<void> {
@@ -1279,7 +1371,7 @@ async function onDrop(e: DragEvent): Promise<void> {
   const plan = await placeCard(model.actor, model.limit, id, "loadout", target);
   const root = rail();
   if (!plan) deny(root?.querySelector(".bh-hand"));
-  else if ("refuse" in plan) deny(root?.querySelector('.bh-vitals [data-strip="st"]'));
+  else if ("refuse" in plan) deny(root?.querySelector('.bh-vitals [data-track="st"]'));
 }
 
 /** For `game.daggerheart.bottomHud()`: what the rail is of and why. */

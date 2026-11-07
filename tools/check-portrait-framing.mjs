@@ -17,6 +17,11 @@
  * why it lasted. Nothing on either side is wrong about the field it names,
  * which is the shape of gap `check-item-sheet.mjs` exists for.
  *
+ * The bottom HUD's plinth is a third surface and a third frame, `hud`, and
+ * the last block holds it to the same premise: the same three numbers, read
+ * from `portrait.hud`, written back to it, over the picture `portraitOf`
+ * names, through the same custom properties.
+ *
  * Six assertions, each one a failure that has actually happened here:
  *
  *   1. the schema still declares both frames, and declares them the same way —
@@ -55,6 +60,9 @@ const sheet = read("src/module/sheets/CharacterSheet.svelte");
 const rolls = read("src/module/dice/rolls.ts");
 const shipped = read("src/module/dice/plate.ts");
 const studied = read("design/plate.js");
+const hudHost = read("src/module/bottom-hud.ts");
+const hudDesign = read("design/hud.js");
+const hudCss = read("design/hud.css");
 
 const fail = [];
 const want = (ok, why) => ok || fail.push(why);
@@ -71,7 +79,7 @@ const bodyOf = (src, opening) => {
 
 const portrait = schema.match(/portrait:\s*schema\(\{([\s\S]*?)\}\)/);
 want(portrait, "CharacterData no longer declares system.portrait");
-for (const which of ["sheet", "plate"]) {
+for (const which of ["sheet", "plate", "hud"]) {
   want(
     portrait && new RegExp(`\\b${which}:\\s*frame\\(\\)`).test(portrait[1]),
     `system.portrait.${which} is not a frame(). Both surfaces store the same ` +
@@ -163,6 +171,36 @@ want(
     "that look exactly as plausible here, and it is the wrong panel's",
 );
 
+/* ── 7. the plinth is the third frame, of the same picture ──────────── */
+
+want(
+  /system\?\.portrait\?\.hud|sys\.portrait\?\.hud/.test(hudHost),
+  "bottom-hud.ts does not read portrait.hud. The plinth would wear the " +
+    "diorama's or the card's crop, which is three plausible numbers for a " +
+    "differently shaped box",
+);
+want(
+  /"system\.portrait\.hud"/.test(hudHost),
+  "bottom-hud.ts no longer writes the plinth's framing to system.portrait.hud",
+);
+want(
+  /img:\s*portraitOf\(actor\)/.test(hudHost),
+  "the plinth no longer draws portraitOf's picture, so its framing is judged " +
+    "against a different image from the sheet's and the card's",
+);
+for (const v of ["--fdx", "--fdy", "--fz"]) {
+  want(
+    hudDesign.includes(v) && hudCss.includes(`var(${v}`),
+    `the plinth does not write and spend ${v}. It is the same three numbers ` +
+      "as the other two frames, in the same custom properties",
+  );
+}
+want(
+  !/--fd[xy]:\$\{[^}]*\}%/.test(hudDesign),
+  "design/hud.js writes the plinth's offsets as percentages. hud.css " +
+    "multiplies them by 1%, and a percentage there is invalid",
+);
+
 /* ── report ─────────────────────────────────────────────────────────── */
 
 if (fail.length) {
@@ -177,5 +215,5 @@ if (fail.length) {
 }
 
 console.log(
-  "portrait framing: two frames, one picture, and both builders spend it.",
+  "portrait framing: three frames, one picture, and every builder spends it.",
 );

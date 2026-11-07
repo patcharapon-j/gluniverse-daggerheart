@@ -15,8 +15,11 @@ import { settled } from './settle.js';
    along it, which is the difference between a light and a thing that is
    alive. Hope never sets it, and the animations that read it are all under
    `.gem.fear`. */
-export const GEM = ({on = true, scar = false, fear = false, i = 1, n = 0, sz}) => `
-<i class="gem${fear ? ' fear' : ''}${scar ? ' scar' : on ? ' on' : ''}"
+/* `focus` is the Martial Artist's pool, and it is the one pip here that is
+   not a diamond: see the FOCUS block in gem.css for why a hue was not
+   enough. Same members, same `setPool`, a different silhouette. */
+export const GEM = ({on = true, scar = false, fear = false, focus = false, i = 1, n = 0, sz}) => `
+<i class="gem${fear ? ' fear' : focus ? ' focus' : ''}${scar ? ' scar' : on ? ' on' : ''}"
    style="${sz ? `--sz:${sz}px;` : ''}${fear ? `--i:${i.toFixed(3)};--n:${n}` : ''}">
   <b class="lamp"><b class="pit"></b><b class="edge"><i></i></b><b class="rim"></b></b>
   <b class="fx"></b>
@@ -30,11 +33,11 @@ export const intensity = (cur, max) => Math.pow(cur / max, .72);
 /* `ground` names what the row is sitting on. A bloom needs somewhere dark
    to fall, so on paper it tightens and the rim carries the light instead —
    see the .gems.paper rules. Dark is the default because the HUD is dark. */
-export const GEMS = ({cur = 4, max = 6, scars = 0, fear = false, sz, gap, ground}) => {
+export const GEMS = ({cur = 4, max = 6, scars = 0, fear = false, focus = false, sz, gap, ground}) => {
   const live = max - scars;
   const i = fear ? intensity(cur, max) : 1;
   const row = Array.from({length: max}, (_, n) =>
-    GEM({fear, sz, i, n, on: n < cur, scar: n >= live})).join('');
+    GEM({fear, focus, sz, i, n, on: n < cur, scar: n >= live})).join('');
   return `<div class="gems${ground === 'paper' ? ' paper' : ''}"${
     gap ? ` style="--gap:${gap}px"` : ''}>${row}</div>`;
 };

@@ -27,6 +27,17 @@
      to their dark-ground values: the light theme's darker golds and teals
      are tuned for paper and fall under 4:1 on these plates. */
   --hope-tx:#e0b647;--strain:#8fd0e0;--fear-tx:#a688ea;
+  /* …and so are the tokens mark.js's boxes are drawn from, for the same
+     reason: the light theme's recess is paper, and a paper box on a black
+     plate is a hole in the rail. */
+  --sunk:#0f1216;--sunk-2:#1c2027;
+  /* The recess line is lifted off the sheet's value: an empty box is drawn
+     by nothing but this hairline, and the sheet's #2b313a is 1.5:1 on the
+     rail's ink — a 4/6 track read as two crosses and nothing, worst of all
+     on a stream capture. #4a5260 clears 3:1; the hover steps up again. */
+  --line:#4a5260;--line-2:#6a7482;
+  --wound:#c8484f;--wound-d:#7d1a20;--wound-gl:#e4545c;--strain-d:#1d5162;
+  --plate:#e6edf4;--plate-d:#6f7986;--plate-fl:#ffd97a;
   /* The Ink and Signal values, aliased under our prefix rather than read off
      the suite's `--gl-is-*`: this system must draw correctly in a world that
      does not have the suite installed. ADR 0012's alias rule, from the
@@ -64,6 +75,11 @@
   -webkit-tap-highlight-color:transparent;
 }
 .bhud :where(button[class*="bh-"]):focus-visible{outline:2px solid var(--bh-paper);outline-offset:-2px}
+/* The boxes and Hope gems are <i role="button">, not buttons, and a box's
+   recess is clipped — so their ring sits just outside them, where nothing
+   clips it. */
+.bhud :is(.bh-trk .mk .row i,.bh-hope .gem)[role="button"]:focus-visible{outline:2px solid var(--bh-paper);outline-offset:1px}
+.bhud :is(.bh-trk .mk .row i,.bh-hope .gem)[role="button"]:focus:not(:focus-visible){outline:none}
 /* An outline outside the box would be cut away by every plate's chamfer
    clip, so the ring is drawn inside it. */
 .bh-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -96,9 +112,7 @@
    at full strength. */
 .bh-fig{
   position:absolute;left:0;right:0;bottom:0;height:calc(var(--bh-h) + var(--bh-rise));
-  background-repeat:no-repeat;
-  background-size:calc(100% * var(--bh-fz,1)) auto;
-  background-position:var(--bh-fx,50%) var(--bh-fy,22%);
+  overflow:hidden;
   clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%);
   -webkit-mask-image:
     linear-gradient(#000,#000),
@@ -118,11 +132,40 @@
   mask-composite:add,intersect;
   transition:opacity .22s ease-out,translate .3s var(--bh-ease);
 }
+/* The picture itself, inside the figure's fade. `system.portrait.hud` moves
+   it: `--fdx`/`--fdy` are percent of the figure (translate percentages are
+   of the element's own box, which is the figure's), `--fz` scales about the
+   face line. Translate before scale, so an offset is worth the same pixels
+   at any zoom — the sheet's diorama rule, in the unit this box can use. */
+.bh-img{position:absolute;inset:0;background-repeat:no-repeat;background-size:100% auto;background-position:50% 22%;
+  transform-origin:50% 22%;
+  transform:translate(calc(var(--fdx,0) * 1%),calc(var(--fdy,0) * 1%)) scale(var(--fz,1))}
 /* A cut-out has its own edge, so the fade comes off and the drop shadow
    that seats it on the rail goes on. */
-.bh-plinth.is-cut .bh-fig{-webkit-mask-image:none;mask-image:none;clip-path:none;
-  background-size:contain;background-position:50% 100%;
+.bh-plinth.is-cut .bh-fig{-webkit-mask-image:none;mask-image:none;clip-path:none;overflow:visible;
   filter:drop-shadow(0 6px 8px rgba(0,0,0,.7))}
+.bh-plinth.is-cut .bh-img{background-size:contain;background-position:50% 100%;transform-origin:50% 100%}
+
+/* Framing. The press is the fold's twin in the other top corner; while it is
+   on, the whole plinth is the handle, the nameplate steps aside so the face
+   can be placed under where it will sit, and a hairline says the picture is
+   held. Nothing animates under the hand. */
+.bh-frm{position:absolute;left:5px;top:5px;z-index:3;width:22px;height:22px;min-height:22px;max-height:22px;display:grid;place-items:center;
+  background:rgba(5,6,10,.82);color:var(--bh-dim);box-shadow:inset 0 0 0 1px var(--bh-line-2);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
+  opacity:.35;transition:opacity .15s,color .15s,background .15s}
+.bh-frm .bh-ic{width:12px;height:12px}
+.bh-plinth:is(:hover,:focus-within) .bh-frm,.bh-plinth[data-framing] .bh-frm{opacity:1}
+.bh-frm:hover{color:var(--bh-text);background:var(--bh-ink-4)}
+.bh-plinth[data-framing] .bh-frm{color:var(--hope-tx,#e0b647);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 60%,transparent)}
+.bh-frhint{display:none;position:absolute;left:32px;top:9px;z-index:3;padding:3px 5px;
+  font:600 11px/1 var(--bh-font);color:var(--bh-text);background:rgba(5,6,10,.86);white-space:nowrap}
+.bh-plinth[data-framing]{cursor:grab}
+.bh-plinth[data-framing]:active{cursor:grabbing}
+.bh-plinth[data-framing] .bh-frhint{display:block}
+.bh-plinth[data-framing] .bh-plate{box-shadow:inset 0 0 0 1px var(--hope-tx,#e0b647)}
+.bh-plinth[data-framing] :is(.bh-nameplate,.bh-conds){opacity:.25;pointer-events:none;transition:opacity .15s}
+.bh-plinth[data-framing] .bh-fig{transition:none}
 
 /* THE SIGNATURE: Hope as light. The pool's fullness is a halo behind the
    figure's head and shoulders: the cut-out stands in front of it, so the
@@ -184,23 +227,55 @@
   stroke-linecap:round;stroke-linejoin:round;flex:none}
 .bh-ic .f{fill:currentColor}
 
-/* ══ VITALS ═══════════════════════════════════════════════════════ */
-.bh-vitals{flex:none;width:218px;padding:9px 10px 8px 11px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:22px 1fr 16px;gap:4px}
+/* ══ VITALS ═══════════════════════════════════════════════════════
+   Hope, the three tracks, the thresholds: 7 + 18 + 3 + 46 + 3 + 13 + 6 is
+   the rail's 96 exactly. The plate sizes to its longest track rather than
+   to a fixed width, so a six-box character does not carry a twelve-box
+   character's empty column, and a twelve-box one is not squeezed. */
+.bh-vitals{flex:none;width:auto;min-width:218px;padding:7px 10px 6px 11px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:18px 46px 13px;gap:3px}
 /* The plate's chamfer is a clip-path, and a clip cuts anything that
    overflows it without a trace — which is how a count came to read "2"
-   instead of "2/6". So nothing in here is allowed a fixed column: the
-   counts and the Hit press size to what they say, and the boxes, which
-   carry no words, are the part that gives. */
+   instead of "2/6". So nothing in here is allowed a fixed column that the
+   words have to fit into: the counts size to what they say. */
 
 .bh-hope{display:flex;align-items:center;gap:8px;min-width:0}
-.bh-hope .gems{--gap:8px}
+.bh-hope .gems{--gap:6px}
+/* Hope is pressed the way the sheet's Hope is: a gem marks up to it, the
+   last lit one gives it back. */
+.bh-hope .gem:not(.scar){cursor:pointer}
 .bh-hn{margin-left:auto;flex:none;white-space:nowrap;display:flex;align-items:baseline;gap:1px;
   font-variant-numeric:tabular-nums}
-.bh-hn b{font:750 22px/1 var(--bh-font);color:var(--hope-tx,#e0b647);letter-spacing:-.02em;
+.bh-hn b{font:750 20px/1 var(--bh-font);color:var(--hope-tx,#e0b647);letter-spacing:-.02em;
   font-stretch:var(--w-figures,82%)}
 .bh-hn s{text-decoration:none;font:600 11px/1 var(--bh-font);color:var(--bh-faint)}
 
-.bh-strips{display:grid;align-content:center;gap:0}
+/* A track is mark.js's MARKS, unwrapped into one grid row: the key, the
+   boxes, the count. The header is `display:contents` so its two spans are
+   the row's first and last cells while staying where setMarks looks for
+   the count. */
+.bh-trks{display:grid;grid-template-rows:repeat(3,14px);gap:2px}
+.bh-trk .mk{display:grid;grid-template-columns:18px max-content 1fr;align-items:center;column-gap:6px;height:14px}
+.bh-trk .mk > .hd{display:contents}
+.bh-trk .mk > .hd .k{grid-column:1;grid-row:1;font:700 11px/1 var(--bh-font);letter-spacing:.04em;text-indent:0;color:var(--bh-faint)}
+.bh-trk .mk > .hd .n{grid-column:3;grid-row:1;justify-self:end;margin:0;white-space:nowrap;
+  font:700 12px/1 var(--bh-font);color:var(--bh-dim);font-variant-numeric:tabular-nums}
+.bh-trk .mk > .hd .n s{font:600 11px/1 var(--bh-font);color:var(--bh-faint)}
+.bh-trk .mk > .row{grid-column:2;grid-row:1;--gap:3px}
+.bh-trk .mk .row i{width:14px}
+/* The recess's chamfer is 5px on the sheet's 26px box; at 14 that is a
+   third of the box, so it is restated at the rail's own scale. */
+.bh-trk .mk .row i > u{clip-path:polygon(0 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%)}
+.bh-trk .mk.armor .row i > u{clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0 calc(100% - 4px))}
+.bh-trk .mk.armor .row i.on > u{clip-path:polygon(34% 0,100% 0,100% 26%,88% 40%,100% 53%,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0 calc(100% - 4px),0 40%,13% 24%,3% 14%)}
+/* The last box of Stress is the Vulnerable one; the sheet says so with a
+   strip this row has no room for, so the count says it. */
+.bh-trk .mk.max > .hd .n{color:var(--bh-red)}
+/* An observer's rail draws everything and offers nothing. */
+.bhud[data-readonly] :is(.bh-trk .mk .row i,.bh-hope .gem){cursor:default}
+.bhud[data-readonly] .bh-trk .mk .row i:hover > u{box-shadow:inset 0 0 0 1.5px var(--line)}
+
+/* ── the GM's adversary strips ── five pixels of boxes and a count, in a
+   column an adversary's twelve Hit Points have to fit. */
 .bh-strip{display:grid;grid-template-columns:20px minmax(0,1fr) max-content;column-gap:6px;align-items:center;height:13px}
 .bh-sk{font:700 11px/1 var(--bh-font);letter-spacing:.04em;color:var(--bh-faint)}
 .bh-seg{display:flex;gap:2px;height:13px}
@@ -214,11 +289,6 @@
   box-shadow:inset 0 1px 0 rgba(0,0,0,.55);
   transition:background .16s ease-out,box-shadow .16s ease-out}
 .bh-box:hover::before{background:var(--bh-ink-6)}
-
-/* The three materials, at the size of a sliver: a wound is lit from within
-   and bleeds a little light, a strain is scored, a plate carries a specular
-   along its top edge. Told apart by substance before hue — the sheet's
-   rule, surviving five pixels. */
 .bh-strip[data-strip="hp"] .bh-box.on::before{
   background:linear-gradient(to bottom,var(--wound-gl,#e4545c),var(--wound,#c8484f));
   box-shadow:0 0 6px -1px color-mix(in srgb,var(--wound-gl,#e4545c) 75%,transparent)}
@@ -226,33 +296,33 @@
   background:
     repeating-linear-gradient(115deg,rgba(5,6,10,.42) 0 1px,transparent 1px 3px),
     var(--strain,#8fd0e0)}
-.bh-strip[data-strip="ar"] .bh-box.on::before{
-  background:linear-gradient(to bottom,#fff 0 1px,var(--plate,#e6edf4) 1px,var(--plate-d,#6f7986) 100%)}
-/* Spent armour is a hollow where a plate was, not an empty box. */
-.bh-strip[data-strip="ar"] .bh-box:not(.on)::before{background:transparent;
-  box-shadow:inset 0 0 0 1px rgba(230,237,244,.2)}
-/* Last box of Hit Points or Stress: the track is one mark from its end and
-   says so in the count, not in a flashing bar. */
 .bh-strip[data-full] .bh-sn b{color:var(--bh-red)}
-
-/* landing — a flash, not a travel */
 .bh-box.land::before{animation:bh-land .4s var(--bh-ease)}
 .bh-box.drop::before{animation:bh-drop .34s ease-out}
 @keyframes bh-land{0%{transform:scaleY(2.4);filter:brightness(2.2)}100%{transform:none;filter:none}}
 @keyframes bh-drop{0%{background:rgba(255,255,255,.5)}100%{}}
 
 .bh-foot{display:flex;align-items:center;gap:6px;min-width:0}
-.bh-thr{flex:0 1 auto;display:flex;align-items:center;gap:4px;min-width:0;height:16px;white-space:nowrap}
+.bh-thr{flex:0 1 auto;display:flex;align-items:center;gap:4px;min-width:0;height:13px;white-space:nowrap}
 .bh-thr .z{font:600 11px/1 var(--bh-font);color:var(--bh-faint)}
-.bh-thr b{font:700 12px/1 var(--bh-font);color:var(--bh-text);font-variant-numeric:tabular-nums;
-  padding:2px 3px;background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line)}
-.bh-hit{flex:none;margin-left:auto;white-space:nowrap;display:flex;align-items:center;gap:3px;height:16px;min-height:16px;max-height:16px;padding:0 5px 0 4px;
-  font:700 11px/1 var(--bh-font);color:var(--bh-dim);
+.bh-thr b{font:700 11px/1 var(--bh-font);color:var(--bh-text);font-variant-numeric:tabular-nums;
+  padding:1px 3px;background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line)}
+/* Thirteen pixels is what the vitals plate has room to draw, and not what a
+   press under time pressure deserves. The chamfer is a clip-path, which
+   clips hit-testing with it, so the plate is drawn on ::before and the
+   button itself is unclipped: ::after then reaches past the drawing to a
+   target about 23px tall without moving a pixel of it. */
+.bh-hit{flex:none;margin-left:auto;white-space:nowrap;display:flex;align-items:center;gap:3px;height:13px;min-height:13px;max-height:13px;padding:0 5px 0 4px;
+  position:relative;isolation:isolate;
+  font:700 11px/1 var(--bh-font);color:var(--bh-dim);transition:color .15s}
+.bh-hit::before{content:"";position:absolute;inset:0;z-index:-1;
   background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
-  transition:background .15s,color .15s}
-.bh-hit .bh-ic{width:11px;height:11px}
-.bh-hit:hover{background:color-mix(in srgb,var(--wound,#c8484f) 30%,var(--bh-ink-3));color:#fff}
+  transition:background .15s}
+.bh-hit::after{content:"";position:absolute;inset:-6px -3px -4px}
+.bh-hit .bh-ic{width:10px;height:10px}
+.bh-hit:hover{color:#fff}
+.bh-hit:hover::before{background:color-mix(in srgb,var(--wound,#c8484f) 30%,var(--bh-ink-3))}
 
 /* ══ ACTIONS ══════════════════════════════════════════════════════ */
 .bh-actions{flex:none;width:204px;padding:7px;display:grid;grid-template-rows:40px 1fr;gap:4px}
@@ -324,13 +394,15 @@
 
 /* ══ THE STANCE ═══════════════════════════════════════════════════
    Three lines at the features' pitch: the Focus purse, the stance you are
-   in, and the way into the rest. Focus is gold for the same reason the sheet
-   draws it gold — a third hue is the design system's call, not a plate's. */
-.bh-stance{flex:none;width:132px;padding:6px;display:grid;align-content:center;gap:4px}
+   in, and the way into the rest. Focus is jade, gem.css's bead: its count
+   takes the bead's hue and prints its ceiling the way Hope's does, or a row
+   of jade ends in a gold numeral and reads as Hope a second time. */
+.bh-stance{flex:none;width:140px;padding:6px;display:grid;align-content:center;gap:4px}
 .bh-focus{display:flex;align-items:center;gap:6px;height:16px;min-width:0;padding:0 2px 0 4px}
 .bh-focus .gems{--gap:5px}
-.bh-fn{margin-left:auto;flex:none;display:flex;align-items:baseline}
-.bh-fn b{font:750 14px/1 var(--bh-font);color:var(--hope-tx,#e0b647);font-variant-numeric:tabular-nums}
+.bh-fn{margin-left:auto;flex:none;display:flex;align-items:baseline;gap:1px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bh-fn b{font:750 14px/1 var(--bh-font);color:#35b89a}
+.bh-fn s{text-decoration:none;font:600 10px/1 var(--bh-font);color:var(--bh-faint)}
 /* In stance: the one rule on the rail switched on right now, so it is lit. */
 .bh-stn{background:color-mix(in srgb,var(--hope) 10%,var(--bh-ink-2));
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 30%,transparent)}
@@ -417,7 +489,7 @@
 .bh-foes .bh-held:not(.is-sel):hover .dh-cc{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
 
 /* ══ DRAWERS ══════════════════════════════════════════════════════ */
-.bh-drawers{flex:none;margin-left:auto;width:72px;padding:6px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:3px}
+.bh-drawers{flex:none;width:72px;padding:6px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:3px}
 .bh-dw{position:relative;height:26px;min-height:26px;max-height:26px;display:flex;align-items:center;justify-content:center;gap:4px;
   color:var(--bh-dim);background:var(--bh-ink-2);box-shadow:inset 0 0 0 1px var(--bh-line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
@@ -428,9 +500,11 @@
 .bh-dw.on{background:var(--bh-ink-4);color:var(--bh-text);box-shadow:inset 0 -2px 0 var(--bh-paper),inset 0 0 0 1px var(--bh-line-2)}
 .bh-dw.on b{color:var(--bh-dim)}
 
-/* A drawer rises above the rail from its right end, clear of the cards
-   that stand on it. */
-.bh-drawer{position:absolute;right:0;bottom:calc(var(--bh-h) + 60px);z-index:40;width:max-content;min-width:280px;max-width:432px;
+/* The tiles stand right after the hand, so the hand and what it is drawn
+   from read as one group and the rail's slack falls after both. A drawer
+   rises over its own tiles — its right edge on theirs, measured by
+   placeDrawer — clear of the cards that stand on it. */
+.bh-drawer{position:absolute;right:var(--bh-drawer-r,0);bottom:calc(var(--bh-h) + 60px);z-index:40;width:max-content;min-width:280px;max-width:432px;
   background:var(--bh-ink-1);
   box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut)),calc(100% - var(--bh-cut)) 100%,0 100%);

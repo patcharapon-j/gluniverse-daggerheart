@@ -246,9 +246,10 @@ function show(cur: number): void {
 }
 
 /**
- * The refusal, and it is the pool that shakes rather than the strip: `.deny`
- * is `pool.css`'s own animation and the character sheet's `refusePool` plays
- * exactly this on the Hope gems. One gesture, both sides of the table.
+ * The refusal, and it is the pool that answers rather than the strip: `.deny`
+ * is `pool.css`'s own animation, which the character sheet's `refusePool`
+ * plays as a shake on the Hope gems and the strip plays as a brief dim — the
+ * strip is always on screen, so it says no without moving.
  *
  * Also what `payFearFor` fires instead of a notification. A warning toast is
  * a panel explaining itself over the top of the number that already said no,

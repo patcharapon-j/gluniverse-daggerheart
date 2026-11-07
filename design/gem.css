@@ -122,9 +122,9 @@
     color-mix(in srgb,var(--tone) calc(12% + 32% * var(--i)),transparent))}
 
 /* ══ IDLE — FEAR ONLY ═══════════════════════════════════════════════
-   Two loops, both slow, both offset by the pip's own place in the row so
-   the strip reads as one thing moving rather than twelve things blinking.
-   `--n` is written by `GEMS()` and is only ever set on Fear.
+   One loop, slow, offset by the pip's own place in the row so the strip
+   reads as one thing moving rather than twelve things blinking. `--n` is
+   written by `GEMS()` and is only ever set on Fear.
 
    ── the breath ────────────────────────────────────────────────────
    The refraction band, and nothing else. `.edge` is the light *inside* the
@@ -141,15 +141,11 @@
    about four seconds to cross twelve pips: slower than anything else that
    moves in this system, which is the point.
 
-   ── the swim ──────────────────────────────────────────────────────
-   One soft band turning inside the face, clipped by `.pit`'s own diamond,
-   twenty-three seconds to the turn. It is what makes the gem read as
-   liquid rather than as a lit tile — the same claim the strip's rotating
-   rim makes at the other scale, and deliberately at a different period so
-   the two never sit in step. A transform on a pseudo-element, so it is a
-   composite and not a repaint.
+   There was a second loop, a band swimming round inside each face, and it
+   went with the strip's shake and shards: the brief for this strip is
+   simple and calm, and one breath is enough to say the pool is alive.
 
-   Neither runs on an unlit pip, on a scarred one, or while the pip is
+   It does not run on an unlit pip, on a scarred one, or while the pip is
    playing a gain or a spend: `:not(.gain):not(.spend)` is what hands the
    element back for those, since both set `animation` on the same targets
    at lower specificity and would otherwise lose to these. */
@@ -160,21 +156,60 @@
   0%,100%{opacity:calc(.28 + .57 * var(--i))}
   50%    {opacity:calc((.28 + .57 * var(--i)) * .42)}}
 
-.gem.fear.on .pit::after{content:"";position:absolute;inset:-32%;
-  background:linear-gradient(96deg,transparent 38%,
-    color-mix(in srgb,#fff calc(5% + 13% * var(--i)),transparent) 50%,transparent 62%);
-  animation:fear-swim 23s linear infinite;
-  animation-delay:calc(var(--n,0) * -1.6s)}
-@keyframes fear-swim{to{transform:rotate(360deg)}}
-
 /* Idle motion is the one kind this setting is unambiguously about: it is
    ambient, it is indefinite, and nothing is lost by stopping it — the pip
    settles on the value both keyframes are written around. The gain and the
    spend are left alone, because those are the feedback for a press and a
    press with no answer is a control that looks broken. */
 @media (prefers-reduced-motion:reduce){
-  .gem.fear.on:not(.gain):not(.spend) .edge,
-  .gem.fear.on .pit::after{animation:none}}
+  .gem.fear.on:not(.gain):not(.spend) .edge{animation:none}}
+
+/* ══ FOCUS — THE MARTIAL ARTIST'S POOL ══════════════════════════════
+   The diamond is Hope's and Fear's, and the header above says why: it is
+   the one silhouette that belongs to nothing else, so it carries the two
+   metacurrencies and nothing borrows it. Focus borrowed it, in gold, and
+   a row of gold diamonds under a row of gold diamonds is Hope twice — the
+   heading was the only thing telling them apart. A hue alone would not
+   fix that: at 11px on the bottom HUD a diamond is read by its shape long
+   before its colour, and the shape said Hope.
+
+   So Focus is a **bead**: a round pip with a bright seed at its centre —
+   the point a breath is gathered to. Round because nothing else spendable
+   in this system is; every pool, counter and chit is a rhombus. Lit is a
+   full jade disc with its seed; empty is a hollow ring, so the two states
+   differ in *figure* (filled versus open) and not only in lightness, which
+   is what survives at 11px.
+
+   Jade because the hue had to belong to nothing: gold is Hope, violet is
+   Fear, red/cyan/white are the three tracks, and the nine domains take
+   the rest. The nearest neighbours are Midnight's deep teal and Stress's
+   pale cyan, and jade sits between them in lightness and away from both
+   in hue. The shape is the claim; the hue only has to not contradict it.
+
+   Calm, like Hope: no idle animation. The gain and spend are the shared
+   ones, with the diamond ring swapped for a round one. Every override is
+   a member the diamond already has, so `setPool` drives it unchanged. */
+.gem.focus{--tone:#35b89a; --deep:#0f4a3c}
+/* border-radius rather than clip-path on the face, for the afterglow's
+   reason: an inset shadow follows a radius and does not follow a clip. */
+.gem.focus .pit{clip-path:none;border-radius:50%;
+  box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .09)) var(--socket-line,#2b313a)}
+.gem.focus .edge{clip-path:circle(50%)}
+.gem.focus .edge > i{clip-path:none;border-radius:50%;background:none;
+  box-shadow:inset 0 0 0 calc(var(--sz,30px) * .17) rgba(255,255,255,.5)}
+.gem.focus .rim,.gem.focus.on .rim{clip-path:none;border-radius:50%;background:none;
+  box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .07)) var(--socket-line,#2b313a)}
+.gem.focus.on .pit{box-shadow:none}
+.gem.focus.on .rim{box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .07))
+  color-mix(in srgb,var(--tone) 40%,#fff)}
+.gem.focus.on .pit::before{content:"";position:absolute;inset:34%;border-radius:50%;
+  background:color-mix(in srgb,var(--tone) 22%,#fff)}
+.gem.focus.gain .fx{clip-path:none;border-radius:50%;background:none;
+  box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .1)) color-mix(in srgb,var(--tone) 68%,#fff)}
+:root.light .gems.paper .gem.focus.on .rim,:root.light .paper .gems .gem.focus.on .rim{
+  background:none;box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .07))
+  color-mix(in srgb,var(--tone) 62%,#0d3a30)}
+:root.light .gem.focus{--tone:#24997e}
 
 /* ── scarred ──────────────────────────────────────────────────────
    Struck out, not emptied. A hatch fill said "unavailable"; this is a

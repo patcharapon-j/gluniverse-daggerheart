@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/design/compact.css">
 <link rel="stylesheet" href="/design/vault.css">
 <link rel="stylesheet" href="/design/gem.css">
+<link rel="stylesheet" href="/design/mark.css">
 <link rel="stylesheet" href="/design/pool.css">
 <link rel="stylesheet" href="/design/seat.css">
 <link rel="stylesheet" href="/design/hud.css">
@@ -75,7 +76,11 @@ body{padding-bottom:60px}
 the plinth, and the hand of cards. Everything else is a readout or a press inside the rail's height:
 Hope and the tracks, the traits over both weapons, and the class's features as rows of rules, the Hope
 feature first. Hope lights a halo behind the figure — gain one and the character warms before you have
-counted the gems. Synthetic sample data throughout; the portrait is the repo's art sample.</p>
+counted the gems. <b>Press a gem or a box</b> and it does what the sheet does: mark up to it, or give back
+the last one — the boxes are the sheet's own, wound, strain and plate. The six drawer tiles stand
+<b>right beside the hand</b>, and a drawer rises over them. Hover the portrait and press the corner frame
+(or right-click it) to <b>frame it</b>: drag, scroll, double-click to reset, Enter to finish. Synthetic
+sample data throughout; the portrait is the repo's art sample.</p>
 
 <div class="ctl" id="pctl">
   <label>Hope <input type="range" id="hope" min="0" max="6" value="4"></label>
@@ -112,7 +117,8 @@ import { FEAR_HUD } from '/design/pool.js'
 import { setPool } from '/design/gem.js'
 import { setSeat } from '/design/seat.js'
 import { nameFit } from '/design/face-fx.js'
-import { HUD, DRAWER, DLIST, REST, PEEK, RULE_PEEK, setStrip, flinch } from '/design/hud.js'
+import { HUD, DRAWER, DLIST, REST, PEEK, RULE_PEEK, setStrip, flinch, framePlinth, placeDrawer } from '/design/hud.js'
+import { setMarks } from '/design/mark.js'
 
 /* one <style> per motif, as face.html does */
 const seen = new Set()
@@ -158,8 +164,8 @@ const FEATS = {
   ],
 }
 const ME = [
-  { id: 'bex', name: 'Bex Varro', cls: 'Rogue', lvl: 3, ev: 12, img: '/design/assets/art-sample-01.png', frame: { x: 46, y: 12, z: 1.9 } },
-  { id: 'kael', name: 'Kael', cls: 'Sorcerer', lvl: 3, ev: 10, img: A('ancestry/katari.webp'), frame: { x: 50, y: 18, z: 1.6 } },
+  { id: 'bex', name: 'Bex Varro', cls: 'Rogue', lvl: 3, ev: 12, img: '/design/assets/art-sample-01.png', frame: { x: -4, y: -8, scale: 1.9 } },
+  { id: 'kael', name: 'Kael', cls: 'Sorcerer', lvl: 3, ev: 10, img: A('ancestry/katari.webp'), frame: { x: 0, y: -3, scale: 1.6 } },
 ]
 let who = 0
 
@@ -181,7 +187,7 @@ function playerHTML() {
   return HUD({
     role: 'player', folded: S.fold,
     stack: party,
-    plinth: { name: me.name, sub: `${me.cls} ${me.lvl} · Evasion <em>${me.ev}</em>`, img: me.img, frame: me.frame,
+    plinth: { name: me.name, sub: `${me.cls} ${me.lvl} · Evasion <em>${me.ev}</em>`, img: me.img, frame: me.frame, frameable: true,
       hopeLit: (S.hope / 6), hope: S.hope, conds },
     vitals: { hope: [S.hope, 6], hp: [S.hp, 6], st: [S.st, 6], ar: [S.ar, 3], thresholds: [7, 14] },
     actions: {
@@ -234,7 +240,7 @@ function gmHTML() {
       { id: 'b2', name: 'Jagged Knife Sniper', role: 'Ranged', tier: 1, img: A('ancestry/orcs.webp'), hp: [2, 3] },
       { id: 'b3', name: 'Jagged Knife Kneebreaker', role: 'Bruiser', tier: 1, img: A('ancestry/firbolg.webp'), hp: [5, 7] },
     ] },
-    plinth: { name: 'Jagged Knife Lieutenant', sub: 'Leader · Tier 1', img: A('ancestry/drakona.webp'), frame: { x: 50, y: 18, z: 1.5 }, hopeLit: 0, fold: false },
+    plinth: { name: 'Jagged Knife Lieutenant', sub: 'Leader · Tier 1', img: A('ancestry/drakona.webp'), frame: { x: 0, y: -3, scale: 1.5 }, hopeLit: 0, fold: false },
     adversary: { difficulty: 13, hp: [3, 6], st: [1, 3], thresholds: [8, 15],
       attack: { name: 'Cutlass', mod: 2, range: 'Melee', dmg: '1d8+3 phy' },
       features: [
@@ -268,6 +274,7 @@ function draw(arrive) {
     const x = (r.left - pr.left) / z + r.width / z / 2 - 132
     hud().style.setProperty('--bh-peek-x', `${Math.round(Math.max(56, x))}px`)
   }
+  placeDrawer(hud(), parseFloat(P.style.zoom) || 1)
 }
 
 /* Live values go through the setters, never a redraw — what the host will do. */
@@ -290,7 +297,7 @@ on('hope', e => { S.hope = +e.target.value
 for (const k of ['hp', 'st', 'ar']) on(k, e => { const was = S[k]; S[k] = +e.target.value
   if (k === 'hp' && S[k] > was) flinch(hud().querySelector('[data-plinth]'))
   if (k === 'st' && S.drawer === 'vault') draw()
-  setStrip(hud().querySelector(`[data-strip="${k}"]`), S[k])
+  setMarks(hud().querySelector(`[data-track="${k}"] .mk`), S[k])
   const gseat = G.querySelector('[data-seat="bex"]'); if (gseat) setSeat(gseat, { [k]: [S[k], k === 'ar' ? 3 : 6] }) })
 /* Closing plays its exit before the redraw takes the element away. */
 const closing = (sel, next) => { const el = P.querySelector(sel)
@@ -308,7 +315,30 @@ document.getElementById('swap').onclick = () => {
   const h = hud(); h.classList.add('is-leaving')
   setTimeout(() => { who = 1 - who; draw(); const n = hud(); n.classList.add('is-arriving'); setTimeout(() => n.classList.remove('is-arriving'), 600) }, 150)
 }
-/* Press a strip box to mark up to it, as the rail does. */
+/* Press a box or a gem: the sheet's rule — the last marked one clears,
+   anything else marks up to it. Armour included. */
+const press = (i, cur) => i + 1 === cur ? i : i + 1
+document.addEventListener('click', e => {
+  const box = e.target.closest('#P .bh-trk .mk .row > i')
+  if (box) { const trk = box.closest('[data-track]'), k = trk.dataset.track
+    const i = [...trk.querySelectorAll('.row > i')].indexOf(box), el = document.getElementById(k)
+    el.value = press(i, S[k]); el.dispatchEvent(new Event('input')); return }
+  const gem = e.target.closest('#P .bh-hope .gem:not(.scar)')
+  if (gem) { const i = [...hud().querySelectorAll('.bh-hope .gem')].indexOf(gem), el = document.getElementById('hope')
+    el.value = press(i, S.hope); el.dispatchEvent(new Event('input')) }
+})
+/* The boxes and gems are role="button" <i>s; the host answers Enter and
+   Space with the same click, and so does the study. */
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('#P i[role="button"]')) { e.preventDefault(); e.target.click() }
+})
+/* Framing: the study keeps the frame on the sample character, as the host
+   writes it to system.portrait.hud. */
+const frame = () => { const pl = hud().querySelector('[data-plinth]'); if (!pl || pl.hasAttribute('data-framing')) return
+  framePlinth(pl, ME[who].frame, { onCommit: f => { ME[who].frame = f } }) }
+document.addEventListener('click', e => { if (e.target.closest('#P [data-act="frame"]')) frame() })
+document.addEventListener('contextmenu', e => { if (e.target.closest('#P [data-plinth]')) { e.preventDefault(); frame() } })
+/* The GM's adversary strips keep the 5px strip. */
 document.addEventListener('click', e => {
   const b = e.target.closest('.bh-box'); if (!b) return
   const strip = b.closest('[data-strip]'), k = strip.dataset.strip, i = +b.dataset.i, max = +strip.dataset.max
@@ -351,7 +381,7 @@ if (q.has('bench')) { let msg; try {
   const lay = () => void P.offsetHeight
   const full = t(20, () => { draw(); lay() })
   const hope = t(200, i => { const g = hud().querySelector('.bh-hope .gems'); setPool(g, i % 7); lay() })
-  const strip = t(200, i => { setStrip(hud().querySelector('[data-strip="hp"]'), i % 7); lay() })
+  const strip = t(200, i => { setMarks(hud().querySelector('[data-track="hp"] .mk'), i % 7); lay() })
   const seat = t(200, i => { setSeat(G.querySelector('[data-seat="bex"]'), { st: [i % 7, 6], hope: [i % 7, 6] }); lay() })
   const nodes = P.querySelector('.bhud').querySelectorAll('*').length + G.querySelector('.bhud').querySelectorAll('*').length
   msg = `full render ${full.toFixed(2)}ms · hope ${hope.toFixed(3)}ms · strip ${strip.toFixed(3)}ms · seat ${seat.toFixed(3)}ms · ${nodes} nodes`

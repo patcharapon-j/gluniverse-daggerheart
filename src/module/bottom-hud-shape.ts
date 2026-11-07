@@ -42,6 +42,9 @@ export interface Live {
   ar?: Pair;
   /** A Martial Artist's Focus, `[value, max]`; absent for everyone else. */
   focus?: Pair;
+  /** The plinth's framing, `system.portrait.hud`: a value, so placing the
+      picture never rebuilds the rail it is placed in. */
+  frame?: { x: number; y: number; scale: number };
   /** The party, by actor id. */
   seats: Record<string, SeatLive>;
   /** Each foe card's Hit Points, by token id. */
@@ -70,6 +73,7 @@ export function liveOf(o: any): Live {
     st: live(o?.vitals?.st),
     ar: live(o?.vitals?.ar),
     focus: live(o?.stance?.focus),
+    frame: o?.plinth?.frame ? { ...o.plinth.frame } : undefined,
     seats,
     foes,
   };
@@ -95,6 +99,7 @@ export function shapeOf(o: any): string {
   if (c.plinth) {
     delete c.plinth.hopeLit;
     delete c.plinth.hope;
+    delete c.plinth.frame;
   }
   /* Which features the purse can pay for is a reading of Hope, not a shape:
      the setter dims and lights them from their own `data-hope`. */
@@ -138,7 +143,23 @@ export function canAct(role: "player" | "gm", user: any, actor: any): boolean {
 }
 
 /**
- * The next marked count for a press on box `i` of a strip, given what is marked.
+ * The next count for a press on box or gem `i` of a player's track or Hope.
+ *
+ * The sheet's rule, verbatim (`Marks.svelte`, `Gems.svelte`): pressing the
+ * last marked one clears it, pressing anywhere else marks up to it. Armor is
+ * not mirrored — on the sheet a slot is marked from the left like any track,
+ * and the rail now draws the sheet's boxes.
+ */
+export function pressMark(i: number, marked: number, max: number): number {
+  return Math.max(0, Math.min(max, i + 1 === marked ? i : i + 1));
+}
+
+/** Two frames are the same crop. */
+export const sameFrame = (a?: { x: number; y: number; scale: number }, b?: { x: number; y: number; scale: number }): boolean =>
+  (a?.x ?? 0) === (b?.x ?? 0) && (a?.y ?? 0) === (b?.y ?? 0) && (a?.scale ?? 1) === (b?.scale ?? 1);
+
+/**
+ * The next marked count for a press on box `i` of a GM's adversary strip.
  *
  * Pressing the box at the edge of the run toggles it; pressing anywhere else
  * marks up to it. Armor reads the other way round — the strip lights what is

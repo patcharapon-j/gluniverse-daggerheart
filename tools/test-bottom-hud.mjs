@@ -18,7 +18,7 @@
  */
 
 import assert from "node:assert/strict";
-import { liveOf, shapeOf, tookHit, canAct, pressBox } from "../src/module/bottom-hud-shape.ts";
+import { liveOf, shapeOf, tookHit, canAct, pressBox, pressMark, sameFrame } from "../src/module/bottom-hud-shape.ts";
 import { planPlace, canPayRecall } from "../src/module/loadout.ts";
 
 let n = 0;
@@ -31,7 +31,7 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
 
 const player = () => ({
   role: "player",
-  plinth: { name: "Bex", sub: "Rogue 1", hope: 4, hopeLit: 4 },
+  plinth: { name: "Bex", sub: "Rogue 1", hope: 4, hopeLit: 4, frame: { x: 0, y: 0, scale: 1 }, frameable: true },
   vitals: { hope: [4, 6, 0], hp: [2, 6], st: [5, 7], ar: [0, 3] },
   features: { hope: 4, rows: [{ id: "a", name: "Rogue's Dodge", hope: 3 }] },
   hand: [{ id: "c1" }, { id: "c2" }],
@@ -105,6 +105,20 @@ ok("Focus is a value and the stance is a shape", () => {
   assert.notEqual(shapeOf(a), shapeOf(shifted));
 });
 
+ok("the portrait's framing is a value, so placing it never rebuilds the rail", () => {
+  const a = player();
+  const b = clone(a);
+  b.plinth.frame = { x: -6.5, y: 12, scale: 1.8 };
+  assert.equal(shapeOf(a), shapeOf(b));
+  assert.deepEqual(liveOf(b).frame, { x: -6.5, y: 12, scale: 1.8 });
+  assert.equal(sameFrame(liveOf(a).frame, liveOf(b).frame), false);
+  assert.equal(sameFrame(liveOf(a).frame, { x: 0, y: 0, scale: 1 }), true);
+  /* Who may frame it is not: the press appears or goes. */
+  const c = clone(a);
+  c.plinth.frameable = false;
+  assert.notEqual(shapeOf(a), shapeOf(c));
+});
+
 ok("shapeOf does not mutate its input", () => {
   const a = player();
   const before = JSON.stringify(a);
@@ -146,7 +160,29 @@ ok("the GM rail is the GM's", () => {
   assert.equal(canAct("gm", { isGM: false }, null), false);
 });
 
-console.log("pressing a box");
+console.log("pressing a box or a gem — the player's rail is the sheet's");
+
+ok("the last marked box clears; any other marks up to it, as Marks.svelte does", () => {
+  assert.equal(pressMark(2, 2, 6), 3);
+  assert.equal(pressMark(2, 3, 6), 2);
+  assert.equal(pressMark(0, 4, 6), 1);
+  assert.equal(pressMark(0, 1, 6), 0);
+});
+
+ok("armour is not mirrored on the player's rail: a slot marks from the left", () => {
+  /* 3 slots, none marked: pressing the first marks one, the last marks three. */
+  assert.equal(pressMark(0, 0, 3), 1);
+  assert.equal(pressMark(2, 0, 3), 3);
+  assert.equal(pressMark(2, 3, 3), 2);
+});
+
+ok("a Hope gem is the same press, and never past the pool", () => {
+  assert.equal(pressMark(3, 2, 6), 4);
+  assert.equal(pressMark(3, 4, 6), 3);
+  assert.equal(pressMark(7, 0, 4), 4, "a scarred slot cannot be bought back");
+});
+
+console.log("pressing a GM's adversary strip");
 
 ok("the box at the edge of the run toggles; any other marks up to it", () => {
   assert.equal(pressBox("hp", 2, 2, 6), 3);

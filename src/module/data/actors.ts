@@ -299,10 +299,16 @@ export class CharacterData extends (TypeDataModel() as any) {
          subject to an edge or off it. Scale goes below 1 for the same
          reason — a full-body drawing that should sit *inside* the band
          rather than fill it is a legitimate thing to want, and the band has
-         a colour underneath it for exactly that case. */
+         a colour underneath it for exactly that case.
+
+         `hud` is the third surface: the bottom HUD's plinth, a tall narrow
+         figure rising out of the rail, which is neither of the other two
+         shapes. `frame()` initialises to the neutral crop, so an actor made
+         before it existed reads cleanly with no migration. */
       portrait: schema({
         sheet: frame(),
         plate: frame(),
+        hud: frame(),
       }),
 
       biography: schema({

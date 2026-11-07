@@ -59,6 +59,8 @@ declare module "*/ui/gem.js" {
     on?: boolean;
     scar?: boolean;
     fear?: boolean;
+    /** The Martial Artist's pool: a round jade bead, not a diamond. */
+    focus?: boolean;
     i?: number;
     /** The pip's place in the row. Fear's idle breath is offset by it. */
     n?: number;
@@ -70,6 +72,8 @@ declare module "*/ui/gem.js" {
     max?: number;
     scars?: number;
     fear?: boolean;
+    /** The Martial Artist's pool: a round jade bead, not a diamond. */
+    focus?: boolean;
     sz?: number;
     gap?: number;
     /** "paper" tightens the bloom — it needs somewhere dark to fall. */
@@ -818,6 +822,21 @@ declare module "*/ui/hud.js" {
   export function setStrip(strip: Element, marked: number): void;
   /** The figure takes the hit: a recoil and a red pass up from its foot. */
   export function flinch(plinth: Element): void;
+  /** A player's track: mark.js's MARKS in a `[data-track]` row; drive it with setMarks. */
+  export function TRACK(kind: "hp" | "st" | "ar", v: [number, number]): string;
+  type HudFrame = { x: number; y: number; scale: number };
+  export const FRAME0: HudFrame;
+  /** The plinth's `--fdx`/`--fdy`/`--fz`, from a `system.portrait.hud` frame. */
+  export function frameVars(f?: HudFrame | null): string;
+  export function setFrame(plinth: HTMLElement, f: HudFrame): void;
+  /** Drag, wheel and double-click framing on the plinth; returns the function that ends it. */
+  export function framePlinth(
+    plinth: HTMLElement,
+    start: HudFrame | null | undefined,
+    hooks?: { onCommit?: (f: HudFrame) => void; onExit?: (f: HudFrame) => void },
+  ): () => void;
+  /** Anchor an open drawer's right edge on the drawer tiles' right edge. */
+  export function placeDrawer(root: HTMLElement, zoom?: number): void;
   export function VITALS(opts: any): string;
   export function ACTIONS(opts: any): string;
   export function FEATURES(opts: any): string;

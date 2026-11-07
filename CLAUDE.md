@@ -4226,29 +4226,26 @@ it sitting there between the moments anybody touches it. A pool that is
 completely still until a button is pressed is a number; a pool that is barely
 alive is a thing in the room.
 
-So a lit fear pip carries two loops, both slow, both offset by the pip's own
-place in the row — `--n`, written by `GEMS()` and set on nothing else — so the
-strip reads as one thing moving rather than as twelve things blinking:
+So a lit fear pip carries one loop, slow, offset by the pip's own place in the
+row — `--n`, written by `GEMS()` and set on nothing else — so the strip reads as
+one thing moving rather than as twelve things blinking: **the breath**, an
+opacity on `.edge` and nothing else. That is the light *inside* the glass, so
+dimming and recovering it is the one part of this object that can waver without
+the object appearing to move: the silhouette stays exact and the face stays
+flat, which is the rule the whole component is drawn on. It floors at .42 of the
+settled value rather than at zero, because a band that goes out entirely reads
+as a pip flickering, which is a fault rather than a mood. 5.4s, offset a third
+of a second, so the wave takes about four seconds to cross twelve pips.
 
-- **the breath**, an opacity on `.edge` and nothing else. That is the light
-  *inside* the glass, so dimming and recovering it is the one part of this
-  object that can waver without the object appearing to move: the silhouette
-  stays exact and the face stays flat, which is the rule the whole component is
-  drawn on. It floors at .42 of the settled value rather than at zero, because
-  a band that goes out entirely reads as a pip flickering, which is a fault
-  rather than a mood. 5.4s, offset a third of a second, so the wave takes about
-  four seconds to cross twelve pips.
-- **the swim**, one soft band turning inside the face, clipped by `.pit`'s own
-  diamond, 23 seconds to the turn. It is what makes the gem read as liquid
-  rather than as a lit tile — the strip's rotating rim making the same claim at
-  the other scale, deliberately at a period that never falls into step with it.
+There was a second loop — a band swimming round inside each face — and it went
+with the strip's shake, shards and embers when the strip was calmed: the brief
+is simple and quiet, and one breath is enough to say the pool is alive.
 
-Both are ramped on `--i` as well, so at one Fear they are very nearly nothing
-and it is only at ten or eleven that the motion is something you notice you have
-been watching. Neither runs on an unlit pip, a scarred one, or a pip playing a
+It is ramped on `--i` as well, so at one Fear it is very nearly nothing and it
+is only at ten or eleven that it is something you notice you have been
+watching. It does not run on an unlit pip, a scarred one, or a pip playing a
 gain or a spend — `:not(.gain):not(.spend)` is what hands the element back for
-those. Both are cheap by construction: an opacity and a transform, no filter
-interpolated and no colour mixed per frame. Both stop under
+those. It is an opacity, so it is cheap by construction, and it stops under
 `prefers-reduced-motion`, which the gain and the spend do **not**: those are the
 answer to a press, and a press with no answer is a control that looks broken.
 
@@ -4279,45 +4276,25 @@ steppers looking enabled and doing nothing, which has no visual symptom
 whatsoever. And `#ui-top` stacks its children flush against the top edge, where
 a chamfered dark strip reads as a browser artefact rather than as an object.
 
-### Fear lands on the map, and leaves it broken
+### A change is quiet
 
-The strip used to change and stop. It now says where Fear comes from and
-where it goes. `design/ember.js` is a Canvas 2D layer that hangs off the
-strip, with 320px of headroom below it, so it draws *over the board*:
+For one release the strip answered a press with embers rising off the board,
+glass shards falling across the map, a shock ring, smoke, a jolt scaled to
+the size of the spend, a sweep of light across the strip and a full pool
+that smouldered. It was too much, and the reason is where the strip lives:
+**it is the one object always on screen**, docked above the map, and motion
+there competes with whatever the table is actually looking at. All of it is
+gone, `design/ember.js` included.
 
-- **Gaining** Fear pulls embers up off the map into each socket. The socket
-  lights when they arrive, `ARRIVE` (520ms) after the press, so the pip
-  answers the motion rather than racing it. Rapid presses retarget the
-  embers already in flight and never push the landing back.
-- **Spending** Fear shatters the pip. Glass shards fall across the board,
-  a shock ring crosses the strip, and smoke rises. Heavier spends hit harder:
-  `--heft` scales the strip's jolt and the shard count.
-- **A full pool smoulders**, shedding a spark every few seconds and nothing
-  more.
-
-`setFearHud` is the driver now, so `fear-hud.ts` and the study page make one
-call, not three writes.
-
-Spending is the louder of the two on purpose. Fear entering the pool is a
-threat building; Fear leaving it is the moment the table was dreading.
-
-The strip took a bolder ramp with it:
-
-- a heavier rim;
-- a shadow that grows with `--i`;
-- a 36px tally that drops on a spend;
-- a `.hsurge` sweep, a light band on a gain and a dark band on a spend.
-
-The jolt is declared before the spotlight's `.flare`, so a hand-off landing
-on the same frame wins rather than being cut off.
-
-**The engine is idle when nothing is moving.** rAF runs only while particles
-are alive, the canvas is made lazily on the first burst, landing uses
-`setTimeout` for the reason the swap does, and the smoulder skips a hidden
-tab. Every glow is a cached sprite drawn with `globalAlpha`, not a radial
-gradient built per particle per frame. The stops are linear in alpha, so the
-pixels match, and 20,000 glows dropped from 148ms to 54ms. Reduced motion
-gets no particles at all.
+What is left is the pip — gem.css's own catch and douse — and the count
+fading in at its new value, opacity only. `setFearHud` in `pool.js` is still
+the one driver, so `fear-hud.ts` and the study page make one call; it paints
+at once and writes `surge` or `ebb` for the direction, which only the tally
+reads. Nothing moves the strip. The `--i` ramp stays and is gentler: a 1.5px
+rim, a shadow that warms rather than grows, and a field that gets richer
+rather than louder. The spotlight flare is softened to match. A refusal on
+the strip is `.hud .pool.deny`, a brief dim of the pips rather than the
+sheet's shake. Reduced motion drops the count's fade.
 
 ### What the study page could not see, a third time
 
@@ -5968,11 +5945,20 @@ one; with two rows of gold diamonds on one rail, a Focus refusal would have
 shaken the Hope gems. Both rows carry `data-p` now and the flinch is asked for
 by name.
 
-Both pools being gold is a **deferral and not a decision**: `--tone` is
-declared on `.gem` itself in `design/gem.css`, so a third hue means a modifier
-class beside `.gem.fear`, which is the design system's call rather than a
-sheet's. Size (22 against Hope's 32) and the heading are what tell them apart
-meanwhile.
+**Focus is not a diamond, and that is the decision the gold was deferring.**
+Both pools were gold diamonds for a while, told apart by the heading and the
+size, and at a table that read as Hope twice — on the bottom HUD's 11px
+stance plate the heading is not there to help. A third hue alone would not
+have fixed it: at that size a diamond is read by its shape before its colour,
+and the shape said Hope. So `GEMS({focus:true})` draws a **round jade bead** —
+lit is a filled disc with a bright seed at its centre, empty is a hollow ring,
+so the two states differ in figure and not only in lightness. Round because
+every other spendable thing in this system is a rhombus; jade because gold,
+violet, the three track hues and the domains are all taken, and it sits clear
+of Midnight's teal and Stress's cyan. Calm like Hope, no idle motion. It is a
+modifier class beside `.gem.fear` overriding only members the diamond already
+has, so `setPool` drives it unchanged. The FOCUS block in `design/gem.css` is
+the argument and `design/hope.html` studies it beside Hope.
 
 **The currency was built first and the stances were built on it** — see
 the next section.
@@ -6466,9 +6452,10 @@ would refuse looks exactly like a press that did nothing.
 **Rendered once and driven afterwards**, which is `setMarks`' contract
 arriving on the largest object in the system. `shapeOf` in
 `bottom-hud-shape.ts` is the one decision: it blanks the handful of paths that
-are *values* — the marked half of every track, Hope, the plinth's halo, each
-seat's and each foe's numbers — and compares what is left. Equal means the
-host drives the rail through `setStrip`, `setPool`, `setSeat` and `flinch`, so
+are *values* — the marked half of every track, Hope, the plinth's halo and
+framing, each seat's and each foe's numbers — and compares what is left. Equal
+means the host drives the rail through `setMarks`, `setStrip`, `setPool`,
+`setSeat`, `setFrame` and `flinch`, so
 a box landing plays its landing and nothing else replays. Unequal means a
 redraw. Shape is the default, and that fails in the safe direction: a field
 missing from that list costs one redraw, where a value mistaken for shape is a
@@ -6494,12 +6481,54 @@ popover's base arithmetic in one place. `attackBase`, `damageLine` and
 `damageProficiency` went with it, and the sheet's own copies are one line each
 on top of them.
 
+**The boxes and Hope gems are keyboard presses too.** They are `mark.js`'s
+and `gem.js`'s own `<i>`s, which draw for the sheet as well, so `hud.js` hands
+them `role="button"`, a tab stop and a name ("Hit Points 3 of 6") in `TRACK`
+and `VITALS` rather than in either shared builder, and the host answers Enter
+and Space with the same click a pointer makes. An observer's rail takes the
+tab stops back. The thirteen-pixel presses — `.bh-hit` and the Fear strip's
+steppers and plinth presses — keep their drawing and reach past it with a
+transparent `::after`; `.bh-hit` draws its chamfer on `::before` for it,
+because a clip-path clips hit-testing with the paint.
+
 **A peek is the card itself**, the full `FACE` at its printed size. The rail
 draws the hand at hand size, and a card you are about to spend has to be read.
 Hovering opens a peek after 140ms with a 250ms grace on the way out, a click
 pins it, and Escape or a press anywhere else closes it. The rule rows peek the
 same way and carry their own press, which charges what the row prints: the
 Hope feature refuses on a short purse by flinching rather than with a dialog.
+
+**The player's tracks are the sheet's boxes.** They were 5px strips, which
+said how much was gone and were a hard thing to hit mid-fight. `TRACK` is
+`mark.js`'s `MARKS` at 14px, unwrapped by CSS into one grid row of key, boxes
+and count, and driven by `setMarks`, so the wound, the strain and the plate
+land exactly as they do on the sheet. A press writes what the sheet's `Marks`
+writes, and so does a press on a Hope gem: `pressMark` is the sheet's rule,
+where the last marked one clears and anything else marks up to it. Armour is
+no longer mirrored on this rail, because the sheet marks it from the left. The
+vitals plate sizes to its longest track, and its rows add up to the rail's 96
+exactly. The GM's adversary panel keeps the 5px `STRIP` and its mirrored
+`pressBox`, because twelve adversary Hit Points have to fit a 164px column.
+`.bhud` pins the box tokens (`--sunk`, `--line`, the three materials) to their
+dark values, so a light-theme recess does not punch a paper hole in the rail.
+
+**The portrait has a third frame, `system.portrait.hud`.** The plinth is a
+tall narrow figure, which is neither the diorama's shape nor the plate's. It
+uses the same three numbers and the same `--fdx`/`--fdy`/`--fz`, over the same
+`portraitOf` picture, spent as a translate (percent of the figure) and a scale
+on `.bh-img` inside the figure's fade. An owner gets a frame press in the
+plinth's top-left corner, and a right-click on the plinth does the same.
+`framePlinth` in `design/hud.js` is the gesture: drag pans, the wheel zooms,
+a double-click resets, and Enter, Escape or a press off the plinth ends it. It
+lives in the design because it moves a picture and reports numbers, and the
+host writes them. The frame is a value in `shapeOf`, so placing it never
+rebuilds the rail, and the drive leaves the frame alone while the gesture is
+up. `tools/check-portrait-framing.mjs` holds the third frame to the premise.
+
+**The drawer tiles sit right after the hand**, not at the rail's far end, so
+the hand and what it draws from read as one group and the slack falls after
+both. A drawer's right edge is measured onto the tiles' (`placeDrawer`, which
+the study page calls too), so it still rises over the press that opened it.
 
 **A Martial Artist gets a stance plate after the features**, gated as the
 sheet's Focus row is, on `subclassName`. It is three lines: the Focus gems,
@@ -6515,8 +6544,9 @@ shape.
 
 `tools/test-bottom-hud.mjs` is the ratchet. It runs in `typecheck` and is
 negative-controlled. It asserts that marks are values and maxima are shape,
-that the foe order is shape, that a player rail acts only for an owner, that
-a box press is the study page's toggle (armour mirrored), and the loadout
+that the foe order is shape, that the framing is a value, that a player rail
+acts only for an owner, that a player's box or gem press is the sheet's rule
+(armour from the left), that a GM strip press still mirrors armour, and the loadout
 placement rules: refusal before anything moves, a gutter drop at 5/5 does
 nothing, a traded card goes to the head of the vault, and a no-op writes
 nothing.
