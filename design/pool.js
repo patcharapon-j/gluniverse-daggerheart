@@ -78,8 +78,8 @@ export const FEAR_HUD = ({cur = 4, max = 12, gm = true, chips = true, ruler = tr
   <b class="hglow"></b>
   <b class="hface"></b>
   ${POOL({cur, max, tone: 'fear', dark: true, head: false, sz: 24, gap: 7})}
-  <span class="tally"><b>${cur}</b><s>/${max}</s></span>
-  ${gm ? `<div class="stp"><button data-f="1">+</button><button data-f="-1">−</button></div>` : ''}
+  <span class="tally" role="status" aria-live="polite" aria-atomic="true"><b>${cur}</b><s>/${max}</s><span class="sr"> Fear</span></span>
+  ${gm ? `<div class="stp"><button data-f="1" aria-label="Gain a Fear" title="Gain a Fear">+</button><button data-f="-1" aria-label="Spend a Fear" title="Spend a Fear">−</button></div>` : ''}
   ${SWITCH(chips, ruler)}
   ${gm ? `<div class="cyc">${SPOT(spot)}<button data-refresh="scene" title="Refresh all once-per-scene counters and dice">scene</button><button data-refresh="session" title="Refresh all once-per-session counters and dice">session</button></div>` : ''}
 </div>`;

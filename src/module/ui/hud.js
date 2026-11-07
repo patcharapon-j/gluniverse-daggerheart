@@ -163,16 +163,32 @@ const THRESHOLDS = ([major, severe]) => `
    unchanged and its header is unwrapped by CSS into the row, so `setMarks`
    finds its count exactly where it always does. */
 const MK_KIND = { hp: 'hp', st: 'stress', ar: 'armor' };
+
+/* The boxes and gems are the sheet's own `<i>`s, and on the rail they are
+   presses — so each is handed a role, a tab stop and a name here rather
+   than in mark.js or gem.js, which draw for surfaces where they are not.
+   Only the top-level element of each is rewritten: a box opens
+   `<i class="">` or `<i class="on">`, a gem `<i class="gem…`, and nothing
+   nested inside either starts that way. Enter and Space are answered by
+   the host, which turns them into the same click a pointer makes. */
+const pressable = (html, re, name) => {
+  let n = 0;
+  return html.replace(re, (m) => `${m.slice(0, 2)} role="button" tabindex="0" aria-label="${name(++n)}"${m.slice(2)}`);
+};
+const BOX_RE = /<i class="(?:on)?"(?=><u>)/g;
+const GEM_RE = /<i class="gem(?![^"]*\bscar\b)[^"]*"/g;
+
 export const TRACK = (kind, [m, max]) => `
 <div class="bh-trk" data-track="${kind}" role="group" aria-label="${STRIP_NAME[kind]}" title="${STRIP_NAME[kind]}">${
-  MARKS({ label: STRIP_KEY[kind], total: max, marked: Math.max(0, Math.min(max, m)), kind: MK_KIND[kind] })}</div>`;
+  pressable(MARKS({ label: STRIP_KEY[kind], total: max, marked: Math.max(0, Math.min(max, m)), kind: MK_KIND[kind] }),
+    BOX_RE, (i) => `${STRIP_NAME[kind]} ${i} of ${max}`)}</div>`;
 
 export const VITALS = (o) => {
   const [cur, max, scars = 0] = o.hope;
   return `
 <section class="bh-pl bh-vitals" data-vitals>
   <div class="bh-hope" data-pool="hope">
-    ${GEMS({ cur, max, scars, sz: 15, gap: 6 })}
+    ${pressable(GEMS({ cur, max, scars, sz: 15, gap: 6 }), GEM_RE, (i) => `Hope ${i} of ${max - scars}`)}
     <span class="bh-hn"><b>${cur}</b><s>/${max - scars}</s><span class="bh-sr"> Hope</span></span>
   </div>
   <div class="bh-trks">
@@ -263,7 +279,7 @@ export const STANCE = ({ focus: [cur, max], active, known = 0 }) => `
 <section class="bh-pl bh-stance" aria-label="Stance">
   <div class="bh-focus" data-pool="focus">
     ${GEMS({ cur, max, focus: true, sz: 11, gap: 5 })}
-    <span class="bh-fn"><b>${cur}</b><span class="bh-sr"> Focus</span></span>
+    <span class="bh-fn"><b>${cur}</b><s>/${max}</s><span class="bh-sr"> Focus</span></span>
   </div>
   ${active
     ? `<button type="button" class="bh-feat bh-stn" data-stance="${esc(active.id)}" title="${esc(active.name)}, in stance"><b>${esc(active.name)}</b><span class="bh-fr is-dice">T${active.tier}</span></button>`

@@ -30,7 +30,12 @@
   /* …and so are the tokens mark.js's boxes are drawn from, for the same
      reason: the light theme's recess is paper, and a paper box on a black
      plate is a hole in the rail. */
-  --sunk:#0f1216;--sunk-2:#1c2027;--line:#2b313a;--line-2:#3a424e;
+  --sunk:#0f1216;--sunk-2:#1c2027;
+  /* The recess line is lifted off the sheet's value: an empty box is drawn
+     by nothing but this hairline, and the sheet's #2b313a is 1.5:1 on the
+     rail's ink — a 4/6 track read as two crosses and nothing, worst of all
+     on a stream capture. #4a5260 clears 3:1; the hover steps up again. */
+  --line:#4a5260;--line-2:#6a7482;
   --wound:#c8484f;--wound-d:#7d1a20;--wound-gl:#e4545c;--strain-d:#1d5162;
   --plate:#e6edf4;--plate-d:#6f7986;--plate-fl:#ffd97a;
   /* The Ink and Signal values, aliased under our prefix rather than read off
@@ -70,6 +75,11 @@
   -webkit-tap-highlight-color:transparent;
 }
 .bhud :where(button[class*="bh-"]):focus-visible{outline:2px solid var(--bh-paper);outline-offset:-2px}
+/* The boxes and Hope gems are <i role="button">, not buttons, and a box's
+   recess is clipped — so their ring sits just outside them, where nothing
+   clips it. */
+.bhud :is(.bh-trk .mk .row i,.bh-hope .gem)[role="button"]:focus-visible{outline:2px solid var(--bh-paper);outline-offset:1px}
+.bhud :is(.bh-trk .mk .row i,.bh-hope .gem)[role="button"]:focus:not(:focus-visible){outline:none}
 /* An outline outside the box would be cut away by every plate's chamfer
    clip, so the ring is drawn inside it. */
 .bh-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -143,7 +153,7 @@
 .bh-frm{position:absolute;left:5px;top:5px;z-index:3;width:22px;height:22px;min-height:22px;max-height:22px;display:grid;place-items:center;
   background:rgba(5,6,10,.82);color:var(--bh-dim);box-shadow:inset 0 0 0 1px var(--bh-line-2);
   clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
-  opacity:0;transition:opacity .15s,color .15s,background .15s}
+  opacity:.35;transition:opacity .15s,color .15s,background .15s}
 .bh-frm .bh-ic{width:12px;height:12px}
 .bh-plinth:is(:hover,:focus-within) .bh-frm,.bh-plinth[data-framing] .bh-frm{opacity:1}
 .bh-frm:hover{color:var(--bh-text);background:var(--bh-ink-4)}
@@ -297,13 +307,22 @@
 .bh-thr .z{font:600 11px/1 var(--bh-font);color:var(--bh-faint)}
 .bh-thr b{font:700 11px/1 var(--bh-font);color:var(--bh-text);font-variant-numeric:tabular-nums;
   padding:1px 3px;background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line)}
+/* Thirteen pixels is what the vitals plate has room to draw, and not what a
+   press under time pressure deserves. The chamfer is a clip-path, which
+   clips hit-testing with it, so the plate is drawn on ::before and the
+   button itself is unclipped: ::after then reaches past the drawing to a
+   target about 23px tall without moving a pixel of it. */
 .bh-hit{flex:none;margin-left:auto;white-space:nowrap;display:flex;align-items:center;gap:3px;height:13px;min-height:13px;max-height:13px;padding:0 5px 0 4px;
-  font:700 11px/1 var(--bh-font);color:var(--bh-dim);
+  position:relative;isolation:isolate;
+  font:700 11px/1 var(--bh-font);color:var(--bh-dim);transition:color .15s}
+.bh-hit::before{content:"";position:absolute;inset:0;z-index:-1;
   background:var(--bh-ink-3);box-shadow:inset 0 0 0 1px var(--bh-line);
   clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
-  transition:background .15s,color .15s}
+  transition:background .15s}
+.bh-hit::after{content:"";position:absolute;inset:-6px -3px -4px}
 .bh-hit .bh-ic{width:10px;height:10px}
-.bh-hit:hover{background:color-mix(in srgb,var(--wound,#c8484f) 30%,var(--bh-ink-3));color:#fff}
+.bh-hit:hover{color:#fff}
+.bh-hit:hover::before{background:color-mix(in srgb,var(--wound,#c8484f) 30%,var(--bh-ink-3))}
 
 /* ══ ACTIONS ══════════════════════════════════════════════════════ */
 .bh-actions{flex:none;width:204px;padding:7px;display:grid;grid-template-rows:40px 1fr;gap:4px}
@@ -375,13 +394,15 @@
 
 /* ══ THE STANCE ═══════════════════════════════════════════════════
    Three lines at the features' pitch: the Focus purse, the stance you are
-   in, and the way into the rest. Focus is gold for the same reason the sheet
-   draws it gold — a third hue is the design system's call, not a plate's. */
-.bh-stance{flex:none;width:132px;padding:6px;display:grid;align-content:center;gap:4px}
+   in, and the way into the rest. Focus is jade, gem.css's bead: its count
+   takes the bead's hue and prints its ceiling the way Hope's does, or a row
+   of jade ends in a gold numeral and reads as Hope a second time. */
+.bh-stance{flex:none;width:140px;padding:6px;display:grid;align-content:center;gap:4px}
 .bh-focus{display:flex;align-items:center;gap:6px;height:16px;min-width:0;padding:0 2px 0 4px}
 .bh-focus .gems{--gap:5px}
-.bh-fn{margin-left:auto;flex:none;display:flex;align-items:baseline}
-.bh-fn b{font:750 14px/1 var(--bh-font);color:var(--hope-tx,#e0b647);font-variant-numeric:tabular-nums}
+.bh-fn{margin-left:auto;flex:none;display:flex;align-items:baseline;gap:1px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bh-fn b{font:750 14px/1 var(--bh-font);color:#35b89a}
+.bh-fn s{text-decoration:none;font:600 10px/1 var(--bh-font);color:var(--bh-faint)}
 /* In stance: the one rule on the rail switched on right now, so it is lit. */
 .bh-stn{background:color-mix(in srgb,var(--hope) 10%,var(--bh-ink-2));
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 30%,transparent)}

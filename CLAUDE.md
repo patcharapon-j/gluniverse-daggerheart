@@ -4226,29 +4226,26 @@ it sitting there between the moments anybody touches it. A pool that is
 completely still until a button is pressed is a number; a pool that is barely
 alive is a thing in the room.
 
-So a lit fear pip carries two loops, both slow, both offset by the pip's own
-place in the row — `--n`, written by `GEMS()` and set on nothing else — so the
-strip reads as one thing moving rather than as twelve things blinking:
+So a lit fear pip carries one loop, slow, offset by the pip's own place in the
+row — `--n`, written by `GEMS()` and set on nothing else — so the strip reads as
+one thing moving rather than as twelve things blinking: **the breath**, an
+opacity on `.edge` and nothing else. That is the light *inside* the glass, so
+dimming and recovering it is the one part of this object that can waver without
+the object appearing to move: the silhouette stays exact and the face stays
+flat, which is the rule the whole component is drawn on. It floors at .42 of the
+settled value rather than at zero, because a band that goes out entirely reads
+as a pip flickering, which is a fault rather than a mood. 5.4s, offset a third
+of a second, so the wave takes about four seconds to cross twelve pips.
 
-- **the breath**, an opacity on `.edge` and nothing else. That is the light
-  *inside* the glass, so dimming and recovering it is the one part of this
-  object that can waver without the object appearing to move: the silhouette
-  stays exact and the face stays flat, which is the rule the whole component is
-  drawn on. It floors at .42 of the settled value rather than at zero, because
-  a band that goes out entirely reads as a pip flickering, which is a fault
-  rather than a mood. 5.4s, offset a third of a second, so the wave takes about
-  four seconds to cross twelve pips.
-- **the swim**, one soft band turning inside the face, clipped by `.pit`'s own
-  diamond, 23 seconds to the turn. It is what makes the gem read as liquid
-  rather than as a lit tile — the strip's rotating rim making the same claim at
-  the other scale, deliberately at a period that never falls into step with it.
+There was a second loop — a band swimming round inside each face — and it went
+with the strip's shake, shards and embers when the strip was calmed: the brief
+is simple and quiet, and one breath is enough to say the pool is alive.
 
-Both are ramped on `--i` as well, so at one Fear they are very nearly nothing
-and it is only at ten or eleven that the motion is something you notice you have
-been watching. Neither runs on an unlit pip, a scarred one, or a pip playing a
+It is ramped on `--i` as well, so at one Fear it is very nearly nothing and it
+is only at ten or eleven that it is something you notice you have been
+watching. It does not run on an unlit pip, a scarred one, or a pip playing a
 gain or a spend — `:not(.gain):not(.spend)` is what hands the element back for
-those. Both are cheap by construction: an opacity and a transform, no filter
-interpolated and no colour mixed per frame. Both stop under
+those. It is an opacity, so it is cheap by construction, and it stops under
 `prefers-reduced-motion`, which the gain and the spend do **not**: those are the
 answer to a press, and a press with no answer is a control that looks broken.
 
@@ -6483,6 +6480,16 @@ between the two. The attack press is `askAttack` in `apps/ask-roll.ts`, beside
 popover's base arithmetic in one place. `attackBase`, `damageLine` and
 `damageProficiency` went with it, and the sheet's own copies are one line each
 on top of them.
+
+**The boxes and Hope gems are keyboard presses too.** They are `mark.js`'s
+and `gem.js`'s own `<i>`s, which draw for the sheet as well, so `hud.js` hands
+them `role="button"`, a tab stop and a name ("Hit Points 3 of 6") in `TRACK`
+and `VITALS` rather than in either shared builder, and the host answers Enter
+and Space with the same click a pointer makes. An observer's rail takes the
+tab stops back. The thirteen-pixel presses — `.bh-hit` and the Fear strip's
+steppers and plinth presses — keep their drawing and reach past it with a
+transparent `::after`; `.bh-hit` draws its chamfer on `::before` for it,
+because a clip-path clips hit-testing with the paint.
 
 **A peek is the card itself**, the full `FACE` at its printed size. The rail
 draws the hand at hand size, and a card you are about to spend has to be read.

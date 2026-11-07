@@ -167,6 +167,7 @@ export function registerBottomHud(): void {
   wall.append(host);
 
   host.addEventListener("click", onClick);
+  host.addEventListener("keydown", onPressKey);
   host.addEventListener("contextmenu", onContext);
   host.addEventListener("pointerover", onOver);
   host.addEventListener("pointerout", onOut);
@@ -666,7 +667,11 @@ function paint(arrive: boolean): void {
      the other, because nothing on this edge is inside a sheet. */
   root.classList.add("dh");
   gutter();
-  if (!canAct(model.role, game.user, model.actor)) root.setAttribute("data-readonly", "");
+  if (!canAct(model.role, game.user, model.actor)) {
+    root.setAttribute("data-readonly", "");
+    /* An observer's boxes and gems offer nothing, so they are not tab stops. */
+    for (const el of root.querySelectorAll('[role="button"][tabindex="0"]')) el.setAttribute("tabindex", "-1");
+  }
   if (arrive && !reduced()) {
     root.classList.add("is-arriving");
     setTimeout(() => root.classList.remove("is-arriving"), 700);
@@ -1064,6 +1069,17 @@ function onOutside(e: Event): void {
   const t = e.target as HTMLElement;
   if (t.closest?.(".dh-bhud-host")) return;
   if (peek) closePeek();
+}
+
+/* The boxes and Hope gems are the sheet's `<i>`s wearing role="button"; a
+   real button turns Enter and Space into a click by itself, and these are
+   handed the same click so a key goes through exactly the pointer's path. */
+function onPressKey(e: KeyboardEvent): void {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const t = e.target as HTMLElement | null;
+  if (!t || t.tagName === "BUTTON" || t.getAttribute("role") !== "button") return;
+  e.preventDefault();
+  t.click();
 }
 
 function onKey(e: KeyboardEvent): void {

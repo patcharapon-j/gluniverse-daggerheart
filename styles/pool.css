@@ -230,6 +230,18 @@
   background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.13);
   color:#d8d2e6;font:700 11px/1 var(--f-mono);transition:background .14s,color .14s}
 .dh.hud .stp button:hover{background:var(--fear);color:#fff;box-shadow:none}
+
+/* The presses on and under the strip are drawn at 14–15px because the strip
+   is 51px and its plinths are type, not controls — and a 14px target is a
+   miss under time pressure. So each reaches past its drawing with a
+   transparent ::after: the steppers sideways into the strip's own margin,
+   the plinth presses into their plinth's padding (the plinth's clip ends
+   the reach exactly at its edge, which is where it should end). Nothing is
+   drawn larger; only the target is. */
+.dh.hud :is(.stp,.vis,.cyc) button{position:relative}
+.dh.hud .stp button::after{content:"";position:absolute;inset:-1.5px -6px}
+.dh.hud :is(.vis,.cyc) button::after{content:"";position:absolute;inset:-3px -2px}
+.dh.hud .tally .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .dh.hud .cyc{position:absolute;z-index:3;right:12px;bottom:-21px;display:flex;gap:4px;
   padding:3px 4px;background:rgba(11,13,17,.9);backdrop-filter:blur(10px);
   box-shadow:inset 0 0 0 1px rgba(171,136,234,.13);

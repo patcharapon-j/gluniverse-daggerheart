@@ -327,6 +327,11 @@ document.addEventListener('click', e => {
   if (gem) { const i = [...hud().querySelectorAll('.bh-hope .gem')].indexOf(gem), el = document.getElementById('hope')
     el.value = press(i, S.hope); el.dispatchEvent(new Event('input')) }
 })
+/* The boxes and gems are role="button" <i>s; the host answers Enter and
+   Space with the same click, and so does the study. */
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('#P i[role="button"]')) { e.preventDefault(); e.target.click() }
+})
 /* Framing: the study keeps the frame on the sample character, as the host
    writes it to system.portrait.hud. */
 const frame = () => { const pl = hud().querySelector('[data-plinth]'); if (!pl || pl.hasAttribute('data-framing')) return
