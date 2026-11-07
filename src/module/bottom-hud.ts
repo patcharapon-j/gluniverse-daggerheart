@@ -901,8 +901,11 @@ function peekHTML(kind: PeekKind, id: string): string {
   const m = model;
   if (!m) return "";
   if (kind === "stance") {
-    const st = m.actor?.items?.get?.(id);
-    if (!isStance(st)) return "";
+    /* Only the stance you are in has a peek: a drop the rail did not make —
+       Severe damage, the scene ending, another client shifting — has to take
+       a pinned one down rather than leave Drop pointing at the wrong stance. */
+    const st = activeStance(m.actor);
+    if (st?.id !== id) return "";
     return RULE_PEEK({
       name: st.name,
       from: `${game.i18n.localize("DAGGERHEART.Stance.Active")} · Tier ${stanceTier(st)}`,
@@ -1088,7 +1091,7 @@ async function onClick(e: MouseEvent): Promise<void> {
       if (f) await useFeat(f, which === "use", root);
     } else if (p.kind === "stance") {
       const st = a?.items?.get?.(p.id);
-      if (which === "drop") await dropStance(a, "manual");
+      if (which === "drop" && activeStance(a)?.id === p.id) await dropStance(a, "manual");
       if (which === "post" && st) {
         const card = cardOf(snapOf(st), sigils, ctxOf(a));
         if (card) await postCard(card, a);
