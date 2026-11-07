@@ -40,6 +40,8 @@ export interface Live {
   hp?: Pair;
   st?: Pair;
   ar?: Pair;
+  /** A Martial Artist's Focus, `[value, max]`; absent for everyone else. */
+  focus?: Pair;
   /** The party, by actor id. */
   seats: Record<string, SeatLive>;
   /** Each foe card's Hit Points, by token id. */
@@ -67,6 +69,7 @@ export function liveOf(o: any): Live {
     hp: live(o?.vitals?.hp),
     st: live(o?.vitals?.st),
     ar: live(o?.vitals?.ar),
+    focus: live(o?.stance?.focus),
     seats,
     foes,
   };
@@ -96,6 +99,9 @@ export function shapeOf(o: any): string {
   /* Which features the purse can pay for is a reading of Hope, not a shape:
      the setter dims and lights them from their own `data-hope`. */
   if (c.features) delete c.features.hope;
+  /* Focus is a pool like Hope: spending one is a value. Which stance you are
+     in is not — the plate's middle row is a different rule. */
+  if (c.stance) c.stance.focus = blank(c.stance.focus);
   for (const s of c.stack ?? []) {
     s.hp = blank(s.hp);
     s.st = blank(s.st);

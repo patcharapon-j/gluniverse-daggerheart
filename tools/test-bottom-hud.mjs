@@ -94,6 +94,17 @@ ok("the foe order is shape — which is why it must be stable", () => {
   assert.notEqual(shapeOf(a), shapeOf(b));
 });
 
+ok("Focus is a value and the stance is a shape", () => {
+  const a = { ...player(), stance: { focus: [3, 6], active: { id: "s1", name: "Coiled", tier: 1 }, known: 2 } };
+  const spent = clone(a);
+  spent.stance.focus[0] = 2;
+  assert.equal(shapeOf(a), shapeOf(spent));
+  assert.deepEqual(liveOf(spent).focus, [2, 6]);
+  const shifted = clone(a);
+  shifted.stance.active = { id: "s2", name: "Rooted", tier: 1 };
+  assert.notEqual(shapeOf(a), shapeOf(shifted));
+});
+
 ok("shapeOf does not mutate its input", () => {
   const a = player();
   const before = JSON.stringify(a);

@@ -41,6 +41,8 @@
 import {
   ADVERSARY_TYPE_LABELS,
   FEATURE_KIND_LABELS,
+  FOCUS_MAX,
+  FOCUS_SUBCLASS,
   LOADOUT_LIMIT,
   SYSTEM_ID,
   rangeLabel,
@@ -55,6 +57,8 @@ import { resourcesFor } from "./data/resources.ts";
 import { rollAdversaryAttack } from "./dice/actions.ts";
 import { portraitOf } from "./dice/rolls.ts";
 import { placeCard } from "./loadout.ts";
+import { activeStance, dropStance, hasFlowState, isStance, knownStances, stancePayer, stanceTier } from "./stances.ts";
+import { shiftStance } from "./stance-actions.ts";
 import {
   authoredPrice,
   cardOf,
@@ -99,7 +103,8 @@ let drawn: { key: string; shape: string; live: Live; opts: any } | null = null;
 let model: Model | null = null;
 
 let drawer = "";
-let peek: { kind: "card" | "feat"; id: string; pinned: boolean } | null = null;
+type PeekKind = "card" | "feat" | "stance";
+let peek: { kind: PeekKind; id: string; pinned: boolean } | null = null;
 let peekTimer: ReturnType<typeof setTimeout> | null = null;
 /** The GM's pick among the adversaries in play, by token id, when nothing is controlled. */
 let gmPick: string | null = null;
@@ -370,7 +375,9 @@ function featsOf(actor: any): Feat[] {
       });
     });
   }
-  for (const f of itemsOf(actor, "feature")) {
+  /* Stances are features, and a Martial Artist knows up to sixteen of them:
+     they have their own plate and drawer rather than flooding this one. */
+  for (const f of itemsOf(actor, "feature").filter((x) => !isStance(x))) {
     const price = authoredPrice(f.system?.actions);
     out.push({
       name: f.name,
@@ -386,6 +393,22 @@ function featsOf(actor: any): Feat[] {
     });
   }
   return out;
+}
+
+/**
+ * The stance plate's options, for a character holding the Martial Artist
+ * subclass and nobody else — the sheet's gate, matched on `subclassName`
+ * because a Martial Artist holds one to three differently named cards.
+ */
+function stanceOf(actor: any): any {
+  if (!itemsOf(actor, "subclass").some((s) => s.system?.subclassName === FOCUS_SUBCLASS)) return null;
+  const f = actor.system?.resources?.focus ?? {};
+  const on = activeStance(actor);
+  return {
+    focus: [Number(f.value ?? 0), Number(f.max ?? FOCUS_MAX)],
+    active: on ? { id: on.id, name: on.name, tier: stanceTier(on) } : null,
+    known: knownStances(actor).filter((x) => x.id !== on?.id).length,
+  };
 }
 
 /** The row's readout: its price, or the uses it has left, or nothing. */
@@ -462,6 +485,7 @@ function playerModel(actor: any): Model {
     },
     actions: { traits, marked, weapon: weapon("primary"), secondary: weapon("secondary") },
     features: { list: feats.map((f) => featRow(actor, f)), hope },
+    stance: stanceOf(actor),
     hand: { cards: hand, limit },
     drawers: {
       counts: {
@@ -651,6 +675,12 @@ function drive(root: HTMLElement, prev: Live, next: Live): void {
     const plinth = root.querySelector<HTMLElement>("[data-plinth]");
     const of = (next.hopeMax ?? 0) || 1;
     plinth?.style.setProperty("--bh-hope", ((next.hope ?? 0) / of).toFixed(3));
+    if (next.focus && next.focus[0] !== prev.focus?.[0]) {
+      const fg = root.querySelector<HTMLElement>(".bh-focus .gems");
+      if (fg) setPool(fg, next.focus[0]);
+      const fn = root.querySelector(".bh-fn b");
+      if (fn) fn.textContent = String(next.focus[0]);
+    }
     for (const f of root.querySelectorAll<HTMLElement>(".bh-feat[data-hope]")) {
       const short = (next.hope ?? 0) < Number(f.dataset.hope);
       if (short) {
@@ -773,6 +803,35 @@ function drawerBody(k: string): string {
     }));
     return DRAWER({ title: "Features", note: "Press one to read and use it", body: DLIST({ rows }) });
   }
+  /* Every stance this character knows. A row is the shift itself — the shared
+     `shiftStance`, which pays and posts — and shift-click asks for the
+     Stress, Flow State's trade, exactly as the sheet's own row does. */
+  if (k === "stances") {
+    const on = activeStance(a);
+    const flow = hasFlowState(a);
+    const rows = knownStances(a).map((x) => ({
+      key: `stance:${x.id}`,
+      name: x.name,
+      meta: `Tier ${stanceTier(x)}`,
+      n: x.id === on?.id ? game.i18n.localize("DAGGERHEART.Stance.Active") : undefined,
+      act: x.id !== on?.id,
+      title: game.i18n.format(
+        !stancePayer(a)
+          ? "DAGGERHEART.Stance.CannotShift"
+          : Number(sys.resources?.focus?.value ?? 0) < 1
+            ? "DAGGERHEART.Stance.ShiftStressHint"
+            : flow
+              ? "DAGGERHEART.Stance.ShiftFlowHint"
+              : "DAGGERHEART.Stance.ShiftHint",
+        { stance: x.name },
+      ),
+    }));
+    return DRAWER({
+      title: game.i18n.localize("DAGGERHEART.Stance.Heading"),
+      note: flow ? "Press to spend a Focus and shift · shift-click marks a Stress" : "Press to spend a Focus and shift",
+      body: DLIST({ rows, empty: game.i18n.localize("DAGGERHEART.Stance.Empty") }),
+    });
+  }
   if (k === "bag") {
     const label: Record<string, string> = { weapon: "Weapon", armor: "Armor", consumable: "Consumable", loot: "Item" };
     const rows = ["weapon", "armor", "consumable", "loot"].flatMap((t) =>
@@ -838,9 +897,22 @@ function closeDrawer(): void {
 
 /* ── peeks ────────────────────────────────────────────────────────── */
 
-function peekHTML(kind: "card" | "feat", id: string): string {
+function peekHTML(kind: PeekKind, id: string): string {
   const m = model;
   if (!m) return "";
+  if (kind === "stance") {
+    const st = m.actor?.items?.get?.(id);
+    if (!isStance(st)) return "";
+    return RULE_PEEK({
+      name: st.name,
+      from: `${game.i18n.localize("DAGGERHEART.Stance.Active")} · Tier ${stanceTier(st)}`,
+      text: rich(plain(st.system?.description)),
+      actions: [
+        { id: "drop", label: game.i18n.localize("DAGGERHEART.Stance.Drop"), said: game.i18n.format("DAGGERHEART.Stance.DropHint", { stance: st.name }) },
+        { id: "post", label: "Post", said: "Show to chat" },
+      ],
+    });
+  }
   if (kind === "feat") {
     const f = m.feats.find((x) => x.name === id);
     if (!f) return "";
@@ -877,7 +949,7 @@ function peekHTML(kind: "card" | "feat", id: string): string {
   });
 }
 
-function showPeek(kind: "card" | "feat", id: string, pinned: boolean, animate = true): void {
+function showPeek(kind: PeekKind, id: string, pinned: boolean, animate = true): void {
   const root = rail();
   if (!root) return;
   const html = peekHTML(kind, id);
@@ -888,6 +960,8 @@ function showPeek(kind: "card" | "feat", id: string, pinned: boolean, animate = 
   const src =
     kind === "feat"
       ? root.querySelector<HTMLElement>(`.bh-feat[data-feature="${CSS.escape(id)}"]`)
+      : kind === "stance"
+      ? root.querySelector<HTMLElement>(`.bh-stn[data-stance="${CSS.escape(id)}"]`)
       : root.querySelector(`.bh-hand:not(.bh-foes) [data-card="${CSS.escape(id)}"]`)?.closest<HTMLElement>(".bh-held") ?? null;
   src?.classList.add("is-peek");
   const tpl = document.createElement("template");
@@ -922,8 +996,10 @@ function closePeek(): void {
 }
 
 /** What a pointer over this element would peek, if anything. */
-function peekTarget(t: HTMLElement): { kind: "card" | "feat"; id: string } | null {
+function peekTarget(t: HTMLElement): { kind: PeekKind; id: string } | null {
   if (model?.role !== "player") return null;
+  const stn = t.closest<HTMLElement>(".bh-stn[data-stance]");
+  if (stn) return { kind: "stance", id: stn.dataset.stance! };
   const feat = t.closest<HTMLElement>(".bh-feat[data-feature]");
   if (feat) return { kind: "feat", id: feat.dataset.feature! };
   const held = t.closest(".bh-hand:not(.bh-foes) .bh-held");
@@ -1010,6 +1086,13 @@ async function onClick(e: MouseEvent): Promise<void> {
     if (p.kind === "feat") {
       const f = m.feats.find((x) => x.name === p.id);
       if (f) await useFeat(f, which === "use", root);
+    } else if (p.kind === "stance") {
+      const st = a?.items?.get?.(p.id);
+      if (which === "drop") await dropStance(a, "manual");
+      if (which === "post" && st) {
+        const card = cardOf(snapOf(st), sigils, ctxOf(a));
+        if (card) await postCard(card, a);
+      }
     } else {
       const c = m.cards.get(p.id);
       if (which === "post" && c) await postCard(c.card, a);
@@ -1026,6 +1109,7 @@ async function onClick(e: MouseEvent): Promise<void> {
   const dw = t.closest<HTMLElement>(".bh-dw[data-drawer], .bh-feat.is-more[data-drawer]");
   if (dw) {
     const k = dw.dataset.drawer!;
+    if (dw.getAttribute("aria-disabled") === "true") return deny(dw);
     if (k === "sheet") return void a?.sheet?.render(true);
     closePeek();
     if (drawer === k) closeDrawer();
@@ -1059,6 +1143,16 @@ async function onClick(e: MouseEvent): Promise<void> {
     return void useFeat(f, true, root);
   }
 
+  /* The stance you are in: like a held card, the press pins its peek, which
+     is where Drop lives. */
+  const stn = t.closest<HTMLElement>(".bh-stn[data-stance]");
+  if (stn) {
+    const sid = stn.dataset.stance!;
+    if (peek?.id === sid && peek.pinned) return closePeek();
+    if (peekTimer) clearTimeout(peekTimer);
+    return showPeek("stance", sid, true, peek?.id !== sid);
+  }
+
   /* A held card: the press pins its peek, which is where its actions are. */
   const held = t.closest(".bh-hand .bh-held");
   const id = held?.querySelector<HTMLElement>("[data-card]")?.dataset.card;
@@ -1084,6 +1178,13 @@ async function onClick(e: MouseEvent): Promise<void> {
 
   const row = t.closest<HTMLElement>(".bh-drawer button.bh-drow[data-row]");
   if (row?.dataset.row?.startsWith("feat:")) return void showPeek("feat", row.dataset.row.slice(5), true);
+  if (row?.dataset.row?.startsWith("stance:")) {
+    const pay = e.shiftKey && hasFlowState(a) ? "stress" : "auto";
+    if (!(await shiftStance(a, row.dataset.row.slice(7), { pay }))) {
+      return deny(root.querySelector('[data-pool="focus"]'));
+    }
+    return closeDrawer();
+  }
   if (row) {
     const c = m.cards.get(row.dataset.row!);
     if (c) await postCard(c.card, a);

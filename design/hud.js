@@ -212,6 +212,26 @@ export const FEATURES = ({ list, hope = Infinity, max = 4 }) => {
 </section>`;
 };
 
+/* ── the stance ───────────────────────────────────────────────────
+   A Martial Artist's second currency and what it buys, on one plate after
+   the features. Focus is a pool like Hope, so it is the same gems, smaller;
+   the stance you are in is the one rule switched on right now, so it is a
+   row you can peek; every other stance you know is one press away in the
+   Stances drawer, because a shift is a decision made between turns and
+   sixteen names do not fit at the rail's height. Drawn only for a character
+   holding the subclass, exactly as the sheet draws its Focus row. */
+export const STANCE = ({ focus: [cur, max], active, known = 0 }) => `
+<section class="bh-pl bh-stance" aria-label="Stance">
+  <div class="bh-focus" data-pool="focus">
+    ${GEMS({ cur, max, sz: 11, gap: 5 })}
+    <span class="bh-fn"><b>${cur}</b><span class="bh-sr"> Focus</span></span>
+  </div>
+  ${active
+    ? `<button type="button" class="bh-feat bh-stn" data-stance="${esc(active.id)}" title="${esc(active.name)}, in stance"><b>${esc(active.name)}</b><span class="bh-fr is-dice">T${active.tier}</span></button>`
+    : `<span class="bh-stn is-none">No stance</span>`}
+  <button type="button" class="bh-feat is-more" data-drawer="stances"${known ? '' : ' aria-disabled="true"'}><b>Shift</b><span class="bh-fr is-dice">${known}</span></button>
+</section>`;
+
 /* ── the hand ─────────────────────────────────────────────────────
    The loadout is held, not filed, so it is drawn the way a hand of cards is
    held: true-size compact cards, fanned, standing up out of the rail the
@@ -388,7 +408,7 @@ export const HUD = (o) => `
     ${PLINTH(o.plinth)}
     <div class="bh-body">${o.role === 'gm'
       ? o.adversary ? ADVERSARY(o.adversary) + (o.foes?.foes?.length ? FOES(o.foes) : '') : EMPTY(o.empty)
-      : VITALS(o.vitals) + ACTIONS(o.actions) + FEATURES(o.features) + HAND(o.hand) + DRAWERS(o.drawers ?? {})}</div>
+      : VITALS(o.vitals) + ACTIONS(o.actions) + FEATURES(o.features) + (o.stance ? STANCE(o.stance) : '') + HAND(o.hand) + DRAWERS(o.drawers ?? {})}</div>
   </div>
   ${o.drawer ?? ''}
   ${o.peek ?? ''}

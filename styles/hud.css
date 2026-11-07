@@ -324,6 +324,25 @@
 .dh .bh-pa[aria-disabled="true"]{cursor:not-allowed;color:var(--bh-faint)}
 .dh .bh-pa[aria-disabled="true"] .bh-pc{color:var(--bh-faint);box-shadow:inset 0 0 0 1px var(--bh-line)}
 
+/* ══ THE STANCE ═══════════════════════════════════════════════════
+   Three lines at the features' pitch: the Focus purse, the stance you are
+   in, and the way into the rest. Focus is gold for the same reason the sheet
+   draws it gold — a third hue is the design system's call, not a plate's. */
+.dh .bh-stance{flex:none;width:132px;padding:6px;display:grid;align-content:center;gap:4px}
+.dh .bh-focus{display:flex;align-items:center;gap:6px;height:16px;min-width:0;padding:0 2px 0 4px}
+.dh .bh-focus .gems{--gap:5px}
+.dh .bh-fn{margin-left:auto;flex:none;display:flex;align-items:baseline}
+.dh .bh-fn b{font:750 14px/1 var(--bh-font);color:var(--hope-tx,#e0b647);font-variant-numeric:tabular-nums}
+/* In stance: the one rule on the rail switched on right now, so it is lit. */
+.dh .bh-stn{background:color-mix(in srgb,var(--hope) 10%,var(--bh-ink-2));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 30%,transparent)}
+.dh .bh-stn b{color:var(--hope-tx,#e0b647);font-weight:650}
+.dh .bh-stn:hover,.dh .bh-stn.is-peek{background:color-mix(in srgb,var(--hope) 17%,var(--bh-ink-2))}
+.dh .bh-stn.is-none{display:flex;align-items:center;height:19px;padding:0 7px;background:none;box-shadow:inset 0 0 0 1px var(--bh-line);
+  font:500 11px/1 var(--bh-font);color:var(--bh-faint)}
+.dh .bh-stance .is-more[aria-disabled="true"]{cursor:not-allowed}
+.dh .bh-stance .is-more[aria-disabled="true"] b{color:var(--bh-faint)}
+
 /* ══ THE HAND ═════════════════════════════════════════════════════
    The only plate without a width. It grows until the cards stand side by
    side and no further, and closes to an advance of 30 before anything
@@ -574,4 +593,4 @@
    page measures no difference — setters are ~0.15ms with a forced layout
    either way, because the page is small. It is for Foundry, where the rail
    shares a document with the sidebar, the chat log and the canvas HUD. */
-.dh .bh-vitals,.dh .bh-actions,.dh .bh-feats,.dh .bh-drawers,.dh .bh-adv{contain:layout style}
+.dh .bh-vitals,.dh .bh-actions,.dh .bh-feats,.dh .bh-stance,.dh .bh-drawers,.dh .bh-adv{contain:layout style}

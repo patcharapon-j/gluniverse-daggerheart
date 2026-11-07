@@ -6495,6 +6495,18 @@ pins it, and Escape or a press anywhere else closes it. The rule rows peek the
 same way and carry their own press, which charges what the row prints: the
 Hope feature refuses on a short purse by flinching rather than with a dialog.
 
+**A Martial Artist gets a stance plate after the features**, gated as the
+sheet's Focus row is, on `subclassName`. It is three lines: the Focus gems,
+the stance you are in (a press that pins its peek, where Drop is), and a Shift
+press opening a Stances drawer. Every row there is `shiftStance` from
+`stance-actions.ts`, and shift-click asks for Stress when Flow State is held.
+A refusal flinches the Focus row, which is the sheet's `refusePool("focus")`
+in the rail's own vocabulary. Nothing here re-derives a stance rule: the
+payer, the drop and the active stance are all `stances.ts`. Stances are
+`feature` Items, so they are kept off the Features plate, since sixteen names
+would bury the class's own rules. Focus is a value and the active stance is a
+shape.
+
 `tools/test-bottom-hud.mjs` is the ratchet. It runs in `typecheck` and is
 negative-controlled. It asserts that marks are values and maxima are shape,
 that the foe order is shape, that a player rail acts only for an owner, that
