@@ -324,6 +324,24 @@ async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promis
  * of live buttons three hours later is an invitation to collect the same Hope
  * again. `runAction` writes these; `bindActions` reads them back.
  */
+/**
+ * The wait between two Combo Dice: until the die just written has landed.
+ *
+ * Dice So Nice announces the animation for an updated message from its own
+ * update hook, which may run a beat after `update()` resolves — so look once
+ * after a short delay. No animation (no module, 3D dice off, a hidden roll)
+ * gets a beat of its own instead, so the card still reveals one die at a time.
+ */
+async function comboPace(messageId: string): Promise<void> {
+  const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
+  await sleep(80);
+  const dice = waitFor3dDice(messageId);
+  if (dice) {
+    await dice;
+    await sleep(250);
+  } else await sleep(650);
+}
+
 /** Damage messages with an Apply dialog or a combo strike in progress here. */
 const BUSY = new Set<string>();
 
@@ -563,6 +581,7 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
           act === "combo-strike-focus" ? "focus" : "stress",
           (key) => claimOnce(message, key),
           (plate, rolls) => rewritePlate(message, plate, rolls),
+          () => comboPace(message.id),
         );
         if (refused) return warn(refused);
       } finally {
@@ -575,6 +594,9 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
       BUSY.add(message.id);
       try {
         const plate = message.getFlag(SYSTEM_ID, "plate");
+        /* A combo still being rolled, on another client: its total is not
+           the total yet. */
+        if (plate?.combo?.live) return warn("ComboRolling");
         const applied = await applyDamageToTargets(plate?.total ?? 0, plate?.dtype);
         if (!applied.length) return;
         if (!(await claimOnce(message, "applied"))) return;

@@ -6038,6 +6038,12 @@ mark a Stress" (and a Focus button under Flow State) as a shared one-shot
 claim. The press rolls a real `Roll` per die until one comes up *lower* than
 the one before — ties continue and the lower die counts — and adds the chain
 to `plate.combo`, which `settle` sums into the total "Apply to target" lands.
+**The chain is thrown one die at a time.** Each die is written to the card on
+its own and the next waits until it has landed — Dice So Nice's animation
+where the table runs it, a short beat where it does not — because the whole
+excitement of a combo is the next throw, and rolling the chain in one update
+answered that before anybody asked. While it runs the combo is `live` and
+Apply refuses, or a hit could land on the first two dice and never the third.
 The combo dice are drawn with no `data-rr`, because "the results can't be
 modified by any means", and a card whose damage was applied refuses, or the
 extra damage would be on the card and never on the creature. The Combo Die's

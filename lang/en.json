@@ -104,6 +104,7 @@
       "CardSpent": "{name} is spent — it comes back when it refreshes.",
       "AlreadyClaimed": "That has already been taken from this roll.",
       "RollSettled": "Something on this roll has already been claimed, so its dice are settled.",
+      "ComboRolling": "The combo strike is still rolling. Apply the damage once the chain has broken.",
       "NoTarget": "Target a token first.",
       "NoWeapon": "The weapon this attack was made with is no longer on the sheet.",
       "NotEnoughHope": "An Experience costs a Hope, and you are short {need}.",

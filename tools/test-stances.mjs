@@ -37,8 +37,17 @@ globalThis.Hooks = {
   callAll() {},
 };
 globalThis.foundry = {
-  utils: { deepClone: structuredClone, getRoute: (path) => `/${path}`, escapeHTML: (v) => String(v) },
+  utils: { deepClone: structuredClone, mergeObject: merge, getRoute: (path) => `/${path}`, escapeHTML: (v) => String(v) },
 };
+/* Foundry's recursive merge, as far as a flag update uses it: plain objects
+   merge key by key, anything else (arrays included) is replaced. */
+function merge(into, from) {
+  for (const [k, v] of Object.entries(from ?? {})) {
+    const plain = (x) => x && typeof x === "object" && !Array.isArray(x);
+    into[k] = plain(v) && plain(into[k]) ? merge(into[k], v) : v;
+  }
+  return into;
+}
 const notes = [];
 globalThis.ui = { notifications: { warn: (m) => notes.push(m), info: (m) => notes.push(m) } };
 const me = { id: "u1", active: true };
@@ -200,7 +209,9 @@ function makeActor({ flow = false, focus = 2, stress = 0, hp = 0 } = {}) {
     async update(data) {
       this.rolls = data.rolls;
       this.content = data.content;
-      flags.plate = data[`flags.${SYSTEM_ID}.plate`];
+      /* Foundry merges a flag object into the stored one, so a key left out
+         keeps its old value — model that, or a stale live flag hides here. */
+      flags.plate = foundry.utils.mergeObject(flags.plate ?? {}, data[`flags.${SYSTEM_ID}.plate`]);
     },
   };
   const html = damagePlate(flags.plate);
@@ -209,10 +220,32 @@ function makeActor({ flow = false, focus = 2, stress = 0, hp = 0 } = {}) {
 
   const claim = async (k) => (flags.claimed[k] ? false : (flags.claimed[k] = true));
   faces = [4, 5, 2];
-  const refused = await strikeCombo(message, a, "stress", claim, (p, r) => rewritePlate(message, p, r));
+  /* One die at a time: every write carries exactly one new die, and the
+     chain waits (`pace`) between throws but not after the one that broke. */
+  const writes = [];
+  let paced = 0;
+  const refused = await strikeCombo(
+    message, a, "stress", claim,
+    async (p, r) => {
+      writes.push({ dice: r.length, rolls: [...p.combo.rolls], live: !!p.combo.live, paced });
+      await rewritePlate(message, p, r);
+    },
+    async () => { paced++; },
+  );
   assert.equal(refused, null);
+  assert.deepEqual(
+    writes,
+    [
+      { dice: 1, rolls: [4], live: true, paced: 0 },
+      { dice: 1, rolls: [4, 5], live: true, paced: 1 },
+      { dice: 1, rolls: [4, 5, 2], live: false, paced: 2 },
+    ],
+    "the chain is written die by die, live until it breaks",
+  );
+  assert.equal(paced, 2, "no wait after the die that broke the chain");
+  assert.equal(flags.plate.combo.live, false, "the stored combo is no longer live, so Apply can land it");
   assert.equal(a.system.resources.stress.marked, 1, "a Stress marked");
-  assert.deepEqual(flags.plate.combo, { die: "d6", rolls: [4, 5, 2] });
+  assert.deepEqual(flags.plate.combo, { die: "d6", rolls: [4, 5, 2], live: false });
   assert.equal(flags.plate.total, 8 + 11, "the combo adds to the total Apply lands");
   assert.equal(message.rolls.length, 3, "one real Roll per combo die");
   const combo = message.content.slice(message.content.lastIndexOf('<span class="op">+</span>'));
