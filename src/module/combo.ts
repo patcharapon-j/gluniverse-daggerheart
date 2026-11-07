@@ -142,7 +142,9 @@ export async function strikeCombo(
   const die = plate.cmb as string;
   await rollComboChain(die, async (roll, sofar) => {
     const done = chainEnds(sofar);
-    plate.combo = done ? { die, rolls: sofar } : { die, rolls: sofar, live: true };
+    /* `live: false` and not an omitted key: Foundry merges a flag object
+       into the stored one, so a missing `live` would keep the last `true`. */
+    plate.combo = { die, rolls: sofar, live: !done };
     await rewrite(plate, [roll]);
     if (!done) await pace();
   });
