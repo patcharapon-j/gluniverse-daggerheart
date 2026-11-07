@@ -16,6 +16,7 @@ const DECLINED = {
   "subclass:Call of the Slayer: Foundation:Slayer": "Optional spendable Slayer Dice.",
   "feature:Favored": "Requires a selected trait the Item does not record.",
   "feature:Isolating": "Depends on owner and target positions.",
+  "subclass:Martial Artist: Foundation:Focus": "Refills the character's Focus pool; the rail's Refocus press.",
   "ancestry:Simiah:Natural Climber": "Only balancing and climbing rolls.",
   "community:Ridgeborne:Steady": "Only narrative circumstances.",
   "ancestry:Aetheris:Celestial Wings": "Optional spend while flying.",

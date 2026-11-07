@@ -58,6 +58,8 @@ import { registerRangeRuler, reportRangeRuler } from "./range-ruler.ts";
 import { registerLedger, withoutLedger } from "./ledger.ts";
 import { openActivity, registerActivityLog } from "./activity-log.ts";
 import { registerBrawler } from "./brawler.ts";
+import { dropStance, registerStances } from "./stances.ts";
+import { stanceApi } from "./stance-actions.ts";
 import { openTokenStudio } from "./token-studio.ts";
 import { clearMark, isMarkedCharacter, markedSpellcast, payUpkeep, registerMarked, rollOffMark } from "./marked.ts";
 import { migrateOnReady, migrateWorld } from "./migration/index.ts";
@@ -132,6 +134,7 @@ Hooks.once("init", () => {
      and the same reason: a weapon becomes active by five routes and the
      document is the record. */
   registerBrawler();
+  registerStances();
   registerDice();
   registerBrowser();
   registerLibrary();
@@ -194,6 +197,9 @@ async function refreshScope(scope: "scene" | "session", actor?: any): Promise<nu
        ending is bookkeeping across the whole table, and the notification below
        is the record of it. */
     moved += (await withoutLedger(a, () => expireEffects(a, [scope]))).length;
+    /* "Otherwise, you drop the stance and end its effects at the end of the
+       scene." A session ending ends its last scene too. */
+    if (a.system?.stance && a.isOwner && (await dropStance(a, "scene"))) moved += 1;
   }
 
   if (moved) {
@@ -287,6 +293,11 @@ Hooks.once("ready", () => {
       return moved;
     },
     endSession: (actor?: any) => refreshScope("session", actor),
+
+    /* The Martial Artist's stances — `shift(actor, itemId, {pay})`, `drop`,
+       `active`, `known`. The sheet's stance row and the bottom HUD call the
+       same functions; see `stance-actions.ts`. */
+    stance: stanceApi,
 
     /* The spotlight. `set` and `toggle` are GM-only and answer a player
        with the side unchanged; see settings.ts. */

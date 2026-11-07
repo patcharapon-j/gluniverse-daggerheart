@@ -5,6 +5,9 @@
 import { isBrawlerStrike } from "../brawler.ts";
 import { SYSTEM_ID, TRAITS, type Trait } from "../config.ts";
 import { temporaryModifiers } from "../effects.ts";
+import { isStance } from "../stances.ts";
+// @ts-expect-error - content module, deliberately untyped
+import { STANCE_MODIFIERS } from "../../packs-src/passive-modifiers.mjs";
 
 /* ── the closed sets, stated ──────────────────────────────────────────────
    These three lived only as `switch` cases — `modifierValue`'s sources,
@@ -81,6 +84,10 @@ const m = (target: string, value = 0, extra: Partial<PassiveModifier> = {}): Pas
  * same authored facts. It is a compatibility table, not prose parsing.
  */
 function legacyItemModifiers(item: any): PassiveModifier[] {
+  /* A stance dragged before stances carried their modifiers. Keyed on the
+     stance gate rather than on `feature:<name>` alone, because "Reliable" and
+     "Aggressive" are names an adversary's feature could just as well carry. */
+  if (isStance(item)) return (STANCE_MODIFIERS as Record<string, PassiveModifier[]>)[item.name] ?? [];
   const key = `${item?.type}:${item?.name}`;
   const domain = (target: string, value: number, extra = {}) =>
     m(target, value, { condition: "domain", minimum: 4, ...extra });
@@ -155,6 +162,11 @@ function legacyFeatureModifiers(item: any, feature: any): PassiveModifier[] {
 
 /** A document is passive only while it is in the rules state that makes it live. */
 export const passiveItemActive = (item: any): boolean => {
+  /* A martial stance is a passive you hold *while you are in it*, and the one
+     stance you are in is a single id on the character. Gating the document
+     rather than each modifier is what makes every stance obey it, including
+     one a table authored on the item sheet. See `stances.ts`. */
+  if (isStance(item)) return !!item.id && item.parent?.system?.stance === item.id;
   if (item?.type === "domainCard") return !!item.system?.inLoadout;
   if (item?.type === "weapon" || item?.type === "armor") return !!item.system?.equipped;
   // Consumables describe an effect after use. Merely carrying one is never

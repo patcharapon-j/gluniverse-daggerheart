@@ -44,6 +44,8 @@
     setAdvancement,
   } from "../apps/advance.ts";
   import { addDomainCard } from "../apps/domain-cards.ts";
+  import { dropStance, hasFlowState, isStance, stanceTier } from "../stances.ts";
+  import { shiftStance } from "../stance-actions.ts";
   import { takeDamage } from "../apps/damage.ts";
   import { rest } from "../apps/rest.ts";
   import { cssUrl } from "../assets.ts";
@@ -1173,6 +1175,51 @@
   const focusDice = $derived(
     Number(sys.traits?.[FOCUS_TRAIT]?.total ?? sys.traits?.[FOCUS_TRAIT]?.value ?? 0),
   );
+
+  /* ── the stance ─────────────────────────────────────────────────────
+     Every stance the character holds, and the one they are in. Off the
+     snapshot rather than the document so the row follows the sheet's own
+     revision — a shift is one write, and the next pass draws it. See
+     `stances.ts` for the rule and `stance-actions.ts` for the press. */
+  const stances = $derived(
+    snap
+      .of("feature")
+      .filter((f) => isStance(f))
+      .sort((a, b) => stanceTier(a) - stanceTier(b) || a.name.localeCompare(b.name)),
+  );
+  const stance = $derived(stances.find((s) => s.id === sys.stance) ?? null);
+  const stanceRule = $derived(stance ? rich(plain(stance.system?.description ?? "")) : "");
+  /* Flow State turns the Stress track into a second purse for a shift. Read
+     off the document, and keyed on the revision so a card arriving redraws. */
+  const flow = $derived.by(() => {
+    void snap.rev;
+    return hasFlowState(doc);
+  });
+  const stressRoom = $derived(
+    Number(sys.resources?.stress?.marked ?? 0) < Number(sys.resources?.stress?.max ?? 0),
+  );
+  const canShift = $derived(focus >= 1 || (flow && stressRoom));
+
+  /* Focus first, because it is the printed price; shift-click asks for the
+     Stress deliberately, which is the whole of what Flow State offers a
+     Martial Artist saving their last Focus. A refusal is the Focus row
+     flinching, `refocus`'s answer. */
+  async function shift(event: MouseEvent, id: string) {
+    if (!ed) return;
+    const pay = event.shiftKey && flow ? "stress" : "auto";
+    if (!(await shiftStance(doc, id, { pay }))) refusePool("focus");
+  }
+
+  function shiftTitle(name: string): string {
+    if (focus < 1 && flow && stressRoom) {
+      return game.i18n.format("DAGGERHEART.Stance.ShiftStressHint", { stance: name });
+    }
+    if (!canShift) return game.i18n.format("DAGGERHEART.Stance.CannotShift", { stance: name });
+    return game.i18n.format(
+      flow ? "DAGGERHEART.Stance.ShiftFlowHint" : "DAGGERHEART.Stance.ShiftHint",
+      { stance: name },
+    );
+  }
 
   /* ── the feature list ──────────────────────────────────────────────
      What a class *is*, and it stopped being a card to say it.
@@ -2864,6 +2911,59 @@
                 </span>
                 <p>{game.i18n.localize("DAGGERHEART.Focus.Rule")}</p>
               </button>
+
+              <!-- The stance Focus buys. The one you are in prints its rule,
+                   because it is the one rule on this sheet switched on right
+                   now; the ones you know are presses. See `.stn` in
+                   design/sheet.css. -->
+              <div class="stn">
+                <div class="hd">
+                  <span class="k">{game.i18n.localize("DAGGERHEART.Stance.Heading")}</span>
+                  {#if stance && ed}
+                    <button
+                      type="button"
+                      class="dr"
+                      title={game.i18n.format("DAGGERHEART.Stance.DropHint", { stance: stance.name })}
+                      onclick={() => dropStance(doc, "manual")}
+                    >{game.i18n.localize("DAGGERHEART.Stance.Drop")}</button>
+                  {/if}
+                </div>
+                {#if stance}
+                  <!-- Pressing it shows the stance to the table, as any
+                       feature row does; `data-pk` gives it the menu and the
+                       peek the rest of the sheet's cards have. -->
+                  <button
+                    type="button"
+                    class="hact on"
+                    data-pk={stance.id}
+                  >
+                    <span class="hd">
+                      <b>{stance.name}</b>
+                      <s>{game.i18n.localize("DAGGERHEART.Stance.Active")} · T{stanceTier(stance)}</s>
+                    </span>
+                    <p>{@html stanceRule}</p>
+                  </button>
+                {:else}
+                  <p class="none">
+                    {stances.length
+                      ? game.i18n.localize("DAGGERHEART.Stance.NoneHint")
+                      : game.i18n.localize("DAGGERHEART.Stance.Empty")}
+                  </p>
+                {/if}
+                {#if stances.some((s) => s.id !== stance?.id)}
+                  <div class="opts">
+                    {#each stances.filter((s) => s.id !== stance?.id) as s (s.id)}
+                      <button
+                        type="button"
+                        class="o"
+                        class:no={!canShift}
+                        title={shiftTitle(s.name)}
+                        onclick={(e) => shift(e, s.id)}
+                      >{s.name}<s>T{stanceTier(s)}</s></button>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
             </div>
           </div>
         {/if}

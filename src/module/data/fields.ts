@@ -188,7 +188,7 @@ export const modifierField = (): any =>
    this kind does not use.
    ─────────────────────────────────────────────────────────────────────── */
 
-/** The five currencies a press can move, in one block. See `ACTION_AMOUNTS`. */
+/** The six currencies a press can move, in one block. See `ACTION_AMOUNTS`. */
 const amountField = (): any =>
   schema({
     hope: int(0, { min: 0 }),
@@ -196,6 +196,7 @@ const amountField = (): any =>
     hitPoints: int(0, { min: 0 }),
     armorSlots: int(0, { min: 0 }),
     fear: int(0, { min: 0 }),
+    focus: int(0, { min: 0 }),
   });
 
 /** Everything an action is, except the two things a *step* may not have. */
@@ -647,7 +648,7 @@ const completeAction = (a: any): any => ({
   kind: "pay",
   label: "",
   subject: "self",
-  amount: { hope: 0, stress: 0, hitPoints: 0, armorSlots: 0, fear: 0, ...(a.amount ?? {}) },
+  amount: { hope: 0, stress: 0, hitPoints: 0, armorSlots: 0, fear: 0, focus: 0, ...(a.amount ?? {}) },
   resource: "",
   by: 0,
   op: "place",

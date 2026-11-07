@@ -821,6 +821,9 @@ export const DICE = {
    ══════════════════════════════════════════════════════════════════════ */
 
 export const DECLINED = {
+  "subclass:Martial Artist: Foundation":
+    "Focus's \"Once per rest\" is the refill of a pool the character carries " +
+    "(system.resources.focus), pressed from the rail's Refocus row; nothing on this card is counted.",
   "subclass:Troubadour: Mastery":
     "Virtuoso raises the Foundation card's per-song limit to two; it limits " +
     "nothing of its own, and a budget here was a counter for a rule on another card.",

@@ -16,6 +16,7 @@ import { attackTarget } from "../apps/targets.ts";
 import { plain } from "../sheets/cards.ts";
 import { getFear, setFear } from "../settings.ts";
 import { rollDamage, rollDuality, rollFoe } from "./rolls.ts";
+import { comboOffer } from "../combo.ts";
 import type { Note, Term } from "./types.ts";
 
 interface Common {
@@ -236,6 +237,7 @@ export async function rollWeaponDamage(actor: any, weapon: any, { critical = fal
     mods,
     damageType: dmg.type,
     critical,
+    combo: comboOffer(actor, weapon),
   });
 }
 

@@ -289,6 +289,28 @@
       "Rule": "Clear your Focus, roll a d6 per point of Instinct, and gain Focus equal to the highest result.",
       "NoDice": "Refocus rolls a d6 per point of Instinct — at {mod} there is nothing to roll, so the pool is left where it is."
     },
+    "Stance": {
+      "Heading": "Stance",
+      "None": "No stance",
+      "NoneHint": "Spend a Focus to shift into a known stance. It lasts until you take Severe damage, mark your last Hit Point, shift again, or the scene ends.",
+      "Known": "Shift into",
+      "Active": "in stance",
+      "Drop": "Drop",
+      "DropHint": "Drop out of {stance} and end its effects.",
+      "ShiftHint": "Spend a Focus to shift into {stance}.",
+      "ShiftFlowHint": "Spend a Focus to shift into {stance} — shift-click to mark a Stress instead (Flow State).",
+      "ShiftStressHint": "No Focus left — mark a Stress to shift into {stance} (Flow State).",
+      "CannotShift": "No Focus left to shift into {stance}.",
+      "ShiftFocus": "{actor} spends a Focus and shifts into the {stance} stance",
+      "ShiftStress": "{actor} marks a Stress and shifts into the {stance} stance (Flow State)",
+      "Empty": "No stances yet. Drag two Tier 1 stances in from the Classes compendium.",
+      "Dropped": {
+        "severe": "{actor} takes Severe damage and drops out of {stance}.",
+        "lastHitPoint": "{actor} marks their last Hit Point and drops out of {stance}.",
+        "scene": "The scene ends — {actor} drops out of {stance}.",
+        "manual": "{actor} drops out of {stance}."
+      }
+    },
     "Plate": {
       "DealDamage": "Deal {damage}",
       "DealDamageMax": "Deal {damage}, starting at maximum",
@@ -333,7 +355,10 @@
       "Maximum": "{dice} maximum",
       "Hit": "hit {name}",
       "Missed": "missed {name}",
-      "CriticalHit": "critical hit {name}"
+      "CriticalHit": "critical hit {name}",
+      "ComboStress": "Combo strike · {die} · mark a Stress",
+      "ComboFocus": "Combo strike · {die} · spend a Focus",
+      "ComboTerm": "combo {n}{die}"
     },
     "Spotlight": {
       "KeyPlayer": "Player spotlight",

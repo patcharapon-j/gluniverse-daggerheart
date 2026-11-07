@@ -528,7 +528,18 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
     ...groups.map((g) => ({ k: `${g.n}${g.die}`, v: sum(g.rolls) })),
     ...(r.bonus ? [{ k: r.bonus.k, v: r.bonus.v }] : []),
     ...r.mods,
+    ...(r.combo ? [{ k: t("ComboTerm", { n: r.combo.rolls.length, die: r.combo.die }), v: sum(r.combo.rolls) }] : []),
   ];
+
+  /* Combo Strike is offered as a claim rather than a trailing button: it is
+     a thing the roller may take once, before the damage lands, and the claim
+     flag is what makes "once" true on every client. Both payers share it. */
+  const combo: Claim[] = r.cmb
+    ? [
+        { t: t("ComboStress", { die: r.cmb }), mine: true, act: "combo-strike" },
+        ...(r.cmbF ? [{ t: t("ComboFocus", { die: r.cmb }), mine: true, act: "combo-strike-focus" }] : []),
+      ]
+    : [];
 
   /* Two runs and one operator, not one run per group: the division that
      matters on a critical is awarded-versus-rolled, and the groups inside each
@@ -574,11 +585,20 @@ export const damagePlate = (r: DamagePlate, next?: string, nextAct?: string): st
         ? `<span class="op">+</span><span class="grp">${DIE(r.bonus.v, "sq a", 26, r.bonus.mx ?? 6)}</span>`
         : ""
     }
+    ${
+      /* No key on these: a key is what makes a die pressable, and the card
+         says the combo's results can't be modified by any means. */
+      r.combo?.rolls.length
+        ? `<span class="op">+</span><span class="grp">${r.combo.rolls
+            .map((v) => DIE(v, `${shapeOf(r.combo!.die)} w`, 26, facesOf(r.combo!.die)))
+            .join("")}</span>`
+        : ""
+    }
   </div>
   ${TERMS(terms, "dmg-a")}
   <div class="pl-meta"><span>${t(crit ? "KindCriticalDamage" : "KindDamage")}</span><s>${notation}</s></div>
   ${TGT(r.tgt)}
-  ${ACT([], next ?? t("ApplyToTarget"), nextAct ?? "apply-damage")}
+  ${ACT(combo, next ?? t("ApplyToTarget"), nextAct ?? "apply-damage")}
 </div>`;
 };
 

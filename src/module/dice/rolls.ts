@@ -215,6 +215,8 @@ export interface DamageOptions {
    * half never tumbles because it was not rolled.
    */
   critical?: boolean;
+  /** Combo Strike, offered on this card — see `DamagePlate.cmb`. */
+  combo?: { die: string; focus: boolean } | null;
   next?: string;
   nextAct?: string;
 }
@@ -271,6 +273,7 @@ export async function rollDamage(opts: DamageOptions): Promise<{ plate: DamagePl
     ...first,
     ...(rest.length ? { extra: rest } : {}),
     dtype: opts.damageType ?? "physical",
+    ...(opts.combo ? { cmb: opts.combo.die, ...(opts.combo.focus ? { cmbF: true } : {}) } : {}),
     /* Resolved with the same call the button will make, so the card names
        the people it would actually hit rather than the ones aimed at. It is
        a forecast and the press re-resolves: `applyDamageToTargets` reads

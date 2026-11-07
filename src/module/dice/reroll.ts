@@ -200,6 +200,7 @@ function settle(kind: Kind, plate: any): void {
       sum(groups.map((g) => sum(g.rolls))) +
       sum(groups.map((g) => sum(g.max ?? []))) +
       (r.bonus?.v ?? 0) +
+      sum(r.combo?.rolls ?? []) +
       flat(r.mods);
     return;
   }
@@ -234,6 +235,31 @@ const rebuild = (kind: Kind, plate: any, next?: string, nextAct?: string): strin
   // declared and Foundry's chat log is not our substrate.
   return `<div class="dh dh-plate">${inner}</div>`;
 };
+
+/**
+ * Write a plate the caller has already changed back onto its message.
+ *
+ * The rest of {@link rerollDie}, for a caller that adds dice rather than
+ * replacing one — Combo Strike. Same rules: the stored options are the record,
+ * the content is rebuilt by the builder that wrote it, and every die that was
+ * rolled joins the message's own `rolls`.
+ */
+export async function rewritePlate(message: any, plate: any, rolls: any[]): Promise<void> {
+  const kind = message.getFlag(SYSTEM_ID, "kind") as Kind | undefined;
+  if (!kind) return;
+  settle(kind, plate);
+  const [oldNext, oldNextAct] = legacyNext(message, kind);
+  await message.update({
+    content: rebuild(
+      kind,
+      plate,
+      message.getFlag(SYSTEM_ID, "next") ?? oldNext,
+      message.getFlag(SYSTEM_ID, "nextAct") ?? oldNextAct,
+    ),
+    rolls: [...(message.rolls ?? []), ...rolls],
+    [`flags.${SYSTEM_ID}.plate`]: plate,
+  });
+}
 
 /**
  * Roll one die again.

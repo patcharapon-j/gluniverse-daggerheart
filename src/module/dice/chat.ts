@@ -23,7 +23,8 @@ import { cardWrapper, livePostedCard, type CardAction } from "../sheets/post-car
 import { refreshedValue } from "../data/resources.ts";
 import { rollAdversaryDamage, rollWeaponDamage } from "./actions.ts";
 import { foeCrit } from "./plate.ts";
-import { canReroll, rerollDie } from "./reroll.ts";
+import { canReroll, rerollDie, rewritePlate } from "./reroll.ts";
+import { strikeCombo } from "../combo.ts";
 import { applyFearClaim, rollDamage } from "./rolls.ts";
 import { hold, play } from "./arrival.ts";
 import { waitFor3dDice } from "./dsn.ts";
@@ -314,6 +315,10 @@ const CLAIM_OF: Record<string, string> = {
   "roll-foe-damage": "damage",
   "apply-damage": "applied",
   "gain-fear": "fear",
+  /* Both payers of one combo strike: the claim is the attack's, not the
+     button's. */
+  "combo-strike": "combo",
+  "combo-strike-focus": "combo",
 };
 
 /**
@@ -521,6 +526,18 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
        with this button (press first, target second) burned the button and
        left the damage unapplied with no way back. Now nothing is claimed
        unless something was actually hit. */
+    case "combo-strike":
+    case "combo-strike-focus": {
+      const refused = await strikeCombo(
+        message,
+        actor,
+        act === "combo-strike-focus" ? "focus" : "stress",
+        (key) => claimOnce(message, key),
+        (plate, rolls) => rewritePlate(message, plate, rolls),
+      );
+      if (refused) return warn(refused);
+      return;
+    }
     case "apply-damage": {
       const plate = message.getFlag(SYSTEM_ID, "plate");
       const applied = await applyDamageToTargets(plate?.total ?? 0, plate?.dtype);
@@ -574,9 +591,10 @@ interface Purse {
   hitPoints: number;
   armor: number;
   fear: number;
+  focus: number;
 }
 
-const EMPTY: Purse = { hope: 0, stress: 0, hitPoints: 0, armor: 0, fear: 0 };
+const EMPTY: Purse = { hope: 0, stress: 0, hitPoints: 0, armor: 0, fear: 0, focus: 0 };
 
 const sum = (chain: CardAction[], kind: string): Purse =>
   chain.filter((a) => a.kind === kind).reduce<Purse>((p, a) => ({
@@ -585,9 +603,11 @@ const sum = (chain: CardAction[], kind: string): Purse =>
     hitPoints: p.hitPoints + (a.hitPoints ?? 0),
     armor: p.armor + (a.armor ?? 0),
     fear: p.fear + (a.fear ?? 0),
+    focus: p.focus + (a.focus ?? 0),
   }), { ...EMPTY });
 
-const any = (p: Purse): boolean => !!(p.hope || p.stress || p.hitPoints || p.armor || p.fear);
+const any = (p: Purse): boolean =>
+  !!(p.hope || p.stress || p.hitPoints || p.armor || p.fear || p.focus);
 
 /**
  * Which kinds spend a claim.
@@ -639,7 +659,7 @@ async function runCardAction(
   /* Everything that is not purely the GM's Fear needs the actor. A pure Fear
      press has no actor at all — the GM posted somebody else's card — which is
      why this is not an unconditional ownership gate. */
-  const needsActor = chain.some((a) => a.kind !== "pay-cost" || a.hope || a.stress || a.hitPoints || a.armor);
+  const needsActor = chain.some((a) => a.kind !== "pay-cost" || a.hope || a.stress || a.hitPoints || a.armor || a.focus);
   if (needsActor && !actor?.isOwner) return warn("NotYours");
 
   if (actor && any(cost) && !canPay(actor, cost)) return warn("CannotPay");
@@ -731,7 +751,8 @@ function canPay(actor: any, cost: Purse): boolean {
   return cost.hope <= (r.hope?.value ?? 0)
     && cost.stress <= left(r.stress)
     && cost.hitPoints <= left(r.hitPoints)
-    && cost.armor <= left(r.armorSlots);
+    && cost.armor <= left(r.armorSlots)
+    && cost.focus <= (r.focus?.value ?? 0);
 }
 
 /**
@@ -759,6 +780,14 @@ function currencyUpdate(actor: any, cost: Purse, gain: Purse, clear: Purse): Rec
     // Clearing Hope is not a thing any card says, so it folds into gaining.
     out["system.resources.hope.value"] =
       Math.max(0, Math.min(max, now - cost.hope + gain.hope + clear.hope));
+  }
+  /* Focus is a pool like Hope — held and spent — and "clear" folds into
+     gaining for the same reason Hope's does. Capped at the printed six. */
+  if (cost.focus || gain.focus || clear.focus) {
+    const now = Number(r.focus?.value ?? 0);
+    const max = Number(r.focus?.max ?? 0);
+    out["system.resources.focus.value"] =
+      Math.max(0, Math.min(max, now - cost.focus + gain.focus + clear.focus));
   }
   track("stress", r.stress, cost.stress, clear.stress);
   track("hitPoints", r.hitPoints, cost.hitPoints, clear.hitPoints);

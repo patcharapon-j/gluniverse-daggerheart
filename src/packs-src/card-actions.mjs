@@ -658,22 +658,6 @@ export const CARD_ACTIONS = {
   },
   "class:Brawler": {
     features: {
-      "Combo Strike": [
-        {
-          kind: "pay",
-          amount: { stress: 1 },
-          when: "After rolling damage on a successful attack with a Melee weapon",
-          said: "mark a Stress",
-          steps: [
-            {
-              kind: "die-pool",
-              resource: "Combo Die",
-              op: "roll",
-              said: "roll your Combo Die and note the result",
-            }
-          ],
-        },
-      ],
       "Square Up": [
         {
           kind: "pay",
@@ -4889,9 +4873,25 @@ export const CARD_ACTIONS = {
     actions: [
       {
         kind: "pay",
+        amount: { focus: 1 },
+        when: "On a successful attack within Melee range",
+        said: "you can spend a Focus",
+      },
+      {
+        kind: "pay",
         amount: { stress: 1 },
         when: "On a successful attack within Melee range",
         said: "mark a Stress",
+      },
+    ],
+  },
+  "feature:Honed": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { focus: 1 },
+        when: "Before you make an attack roll",
+        said: "Spend a Focus before you make an attack roll",
       },
     ],
   },
@@ -4903,15 +4903,37 @@ export const CARD_ACTIONS = {
         when: "On a successful attack",
         said: "roll a <b>d4</b>",
       },
+      {
+        kind: "gain",
+        amount: { focus: 1 },
+        when: "On a result of 4",
+        said: "gain a Focus",
+      },
     ],
   },
   "feature:Quick": {
     actions: [
       {
         kind: "pay",
+        amount: { focus: 1 },
+        when: "When you make an attack",
+        said: "you can spend a Focus",
+      },
+      {
+        kind: "pay",
         amount: { stress: 1 },
         when: "When you make an attack",
         said: "mark a Stress",
+      },
+    ],
+  },
+  "feature:Stable": {
+    actions: [
+      {
+        kind: "pay",
+        amount: { focus: 1 },
+        when: "Instead of an Armor Slot, to reduce damage",
+        said: "You can spend a Focus instead of an Armor Slot to reduce damage",
       },
     ],
   },
@@ -5520,14 +5542,6 @@ export const CARD_ACTIONS = {
   },
   "subclass:Martial Artist: Mastery": {
     features: {
-      "Flow State": [
-        {
-          kind: "pay",
-          label: "Shift stance",
-          amount: { stress: 1 },
-          said: "<b>mark a Stress</b> instead of spending a Focus to shift into a different stance",
-        },
-      ],
       "Limit Breaker": [
         {
           kind: "gain",
@@ -5547,12 +5561,25 @@ export const CARD_ACTIONS = {
   },
   "subclass:Martial Artist: Specialization": {
     features: {
+      "Keen Defenses": [
+        {
+          kind: "pay",
+          amount: { focus: 1 },
+          when: "When you’re targeted by an attack",
+          said: "you can spend a Focus",
+        },
+      ],
       "Focus Cannon": [
         {
-          kind: "roll-trait",
-          trait: "instinct",
-          when: "Spend a Focus",
-          said: "make an <b>Instinct Roll</b> against an adversary within Far range",
+          kind: "pay",
+          amount: { focus: 1 },
+          said: "Spend a Focus",
+          steps: [
+            {
+              kind: "roll-trait",
+              trait: "instinct",
+            }
+          ],
         },
         {
           kind: "roll-card-damage",
@@ -8056,6 +8083,7 @@ export const DECLINED = {
     "I Am the Weapon: \"deals <b>d8+d6</b> physical damage using your Proficiency\" is the Brawler’s Strike WEAPON's own stat line, rolled from the weapon Item. It is not a damage expression this document carries.",
     "I Am the Weapon: \"you gain a +1 bonus to your Evasion\" is a passive modifier that holds while the weapon is active — a state, with no press and no printed duration.",
     "Combo Strike: \"you can increase your Combo Die by one step as a level advancement option\" changes the pool's die SIZE and is bought with an advancement, not stepped by a press.",
+    "Combo Strike: \"you can <b>mark a Stress</b> to start a combo strike\" is offered on the Melee weapon's own damage card, where the chain is rolled and added to the total the Apply button lands — see `src/module/combo.ts`. A press here would charge the Stress and roll beside a damage card that never heard of it.",
   ],
   "class:Druid": [
     "Beastform: \"you mark Armor Slots as usual\" describes ordinary armour marking continuing while transformed. It is a statement about how the form behaves, not a press.",
@@ -8960,7 +8988,7 @@ export const DECLINED = {
     "\"they reduce it by the die’s value\" is the ally's damage reduction, not a resource the holder spends.",
   ],
   "feature:Aggressive": [
-    "\"Gain a −1 penalty to your Evasion\" is a permanent passive modifier with no press and no duration.",
+    "\"Gain a −1 penalty to your Evasion\" is a passive modifier, live only while this is the active stance (`passiveItemActive`), with no press.",
     "\"roll an additional damage die and discard the lowest result\" names no die — it is the equipped weapon's own, so there is no formula to write.",
   ],
   "feature:Anchored": [
@@ -8979,15 +9007,10 @@ export const DECLINED = {
     "\"Gain a bonus to damage rolls equal to a trait of your choice\" is a standing passive modifier, not a `gain` — and the bonus is a trait score the card never names as a number.",
   ],
   "feature:Grappling": [
-    "\"you can spend a Focus\" — Focus is not a currency `amount` can hold, so only the Stress half is offered.",
     "\"temporarily *Restrain* the target or throw the target up to Close range\" is a choice between two outcomes, so no `apply-condition` is attached to the press — a button that Restrained would take the branch away from the player.",
   ],
   "feature:Honed": [
-    "\"Spend a Focus before you make an attack roll\" is a Focus cost, which is not one of the five currencies `amount` can hold.",
     "\"+1 bonus to your Proficiency for that attack\" lasts one attack, which is not one of the printed durations `grant-effect` accepts.",
-  ],
-  "feature:Invigorating": [
-    "\"gain a Focus\" names the Martial Artist's Focus pool, which is not one of hope/stress/hitPoints/armorSlots/fear and is not a counter this document carries — there is nothing for an action to move",
   ],
   "feature:Isolating": [
     "\"Gain advantage on attack rolls\" is a conditional passive with no printed duration and nothing to press",
@@ -8995,17 +9018,11 @@ export const DECLINED = {
   "feature:Otherworldly": [
     "\"you can deal physical or magic damage\" chooses the damage type of the weapon's own roll; it is not a second damage roll and this document carries no damage expression",
   ],
-  "feature:Quick": [
-    "\"you can spend a Focus\" is the alternative cost, and Focus is not one of the five currencies `amount` can hold, so only the Stress half of the offer is pressable.",
-  ],
   "feature:Reliable": [
     "\"Gain a +1 bonus to your attack rolls\" is a passive modifier with no printed duration and nothing to press; it belongs to the modifier system, not to grant-effect",
   ],
   "feature:Scary": [
     "\"the target must mark a Stress\" is the TARGET's cost, not the holder's — this is the exact clause the old parser charged the wielder for",
-  ],
-  "feature:Stable": [
-    "\"You can spend a Focus instead of an Armor Slot to reduce damage\" is entirely a Focus cost, which `amount` cannot express, and the Armor Slot is what it avoids rather than what it charges.",
   ],
   "feature:Vigilant": [
     "\"gain a <b>d6</b> bonus to your Evasion against the attack\" is a die-sized bonus; a modifier carries a fixed value or a scaled source and cannot express a rolled one",
@@ -9254,14 +9271,17 @@ export const DECLINED = {
     "\"spend any number of Hope\" prints no amount; a pay of one would invent a unit the card never states.",
     "\"to force them to mark the same number of Hit Points\" is the ADVERSARY's cost, and the number is not printed",
   ],
+  "subclass:Martial Artist: Foundation": [
+    "Stance Fighter: \"You can spend a Focus to shift into a known martial stance\" is the Focus row's stance control on the sheet, which pays and shifts in one write and drops the stance on Severe damage, the last Hit Point or the scene's end — see `src/module/stances.ts`. A press here would spend the Focus and name no stance.",
+    "Focus: \"clear your Focus track, then roll a number of d6s equal to your Instinct\" is the rail's Refocus press, which rolls a real keep-highest and writes the pool — see `refocus` on the Actor. The pool is the character's, not this card's.",
+  ],
   "subclass:Martial Artist: Mastery": [
     "\"Once per rest\" is a use budget and this document carries no counter",
-    "\"you can spend a Focus instead of marking a Stress to start a combo strike\" spends Focus, which is not a currency an amount carries and is not a counter this document declares.",
+    "Flow State: \"<b>mark a Stress</b> instead of spending a Focus to shift into a different stance\" is the stance row's second payer — shifting writes the Stress and the stance in one update (`stance-actions.ts`). A press here would charge the Stress and shift nothing.",
+    "Flow State: \"you can spend a Focus instead of marking a Stress to start a combo strike\" is the damage card's second Combo Strike button, offered while this card is held — see `src/module/combo.ts`.",
   ],
   "subclass:Martial Artist: Specialization": [
-    "\"you can spend a Focus\" — Focus is not one of the five currencies an amount can carry, and this document declares no counter named Focus.",
     "\"gain a bonus to your Evasion equal to your tier against the attack\" is a modifier on one attack, not a granted effect with a printed duration.",
-    "\"Spend a Focus\" is a real holder's cost with no home: the amount vocabulary has no Focus, and this document carries no counter of that name. The roll is annotated with the price stated on its label instead",
   ],
   "subclass:Moon: Foundation": [
     "\"<i>Glamour</i> yourself\" and \"While <i>Glamoured</i>\" name a state that is not in the registered condition list — Glamoured has no status effect to apply",
