@@ -136,6 +136,20 @@ export interface DamagePlate extends PlateBase, DiceGroup {
    * "this card never knew", which is what it was.
    */
   tgt?: { n: string }[];
+  /**
+   * The Brawler's Combo Strike, offered: the Combo Die's notation. Present
+   * only on a Melee weapon's damage rolled by somebody holding the feature.
+   * `cmbF` adds Flow State's second payer, a Focus instead of the Stress.
+   */
+  cmb?: string;
+  cmbF?: boolean;
+  /**
+   * The combo, struck: every Combo Die result in the order it was rolled. Its
+   * own run rather than a term in `mods`, because "the results can't be
+   * modified by any means" — no `data-rr` is ever drawn on these dice, so the
+   * reroll press cannot reach them.
+   */
+  combo?: { die: string; rolls: number[] };
 }
 
 /** An adversary's d20 attack or reaction. A null DC is intentionally unresolved. */

@@ -74,6 +74,8 @@ export interface CardAction {
   stress?: number;
   armor?: number;
   fear?: number;
+  /** The Martial Artist's pool — see `ACTION_AMOUNTS`. */
+  focus?: number;
   itemId?: string;
   resourceIndex?: number;
   by?: number;
@@ -105,6 +107,12 @@ export interface PostCardOptions {
   price?: Price;
   /** Only the counters owned by the posted feature. Omit for the whole Item. */
   resourceIndexes?: number[];
+  /**
+   * A line in the message header saying why the card was posted — "Bex
+   * spends a Focus and shifts into Anchored". Absent on an ordinary show,
+   * where the card is the whole statement.
+   */
+  flavor?: string;
 }
 
 /**
@@ -484,6 +492,7 @@ const AMOUNT_WORDS: Array<[string, string]> = [
   ["hitPoints", "Hit Point"],
   ["armorSlots", "Armor Slot"],
   ["fear", "Fear"],
+  ["focus", "Focus"],
 ];
 
 /** "2 Hope · 1 Stress", pluralised, in the order the sheet's rail draws them. */
@@ -491,7 +500,7 @@ const amountLabel = (amount: any): string =>
   AMOUNT_WORDS.filter(([key]) => Number(amount?.[key]) > 0)
     .map(([key, word]) => {
       const n = Number(amount[key]);
-      return `${n} ${word}${n === 1 || word === "Hope" || word === "Stress" || word === "Fear" ? "" : "s"}`;
+      return `${n} ${word}${n === 1 || word === "Hope" || word === "Stress" || word === "Fear" || word === "Focus" ? "" : "s"}`;
     })
     .join(" · ");
 
@@ -535,6 +544,7 @@ function resolveAction(
         armor: Number(amount.armorSlots) || 0,
         hitPoints: Number(amount.hitPoints) || 0,
         fear: Number(amount.fear) || 0,
+        focus: Number(amount.focus) || 0,
       };
     }
     case "gain":
@@ -551,6 +561,7 @@ function resolveAction(
         armor: Number(amount.armorSlots) || 0,
         hitPoints: Number(amount.hitPoints) || 0,
         fear: Number(amount.fear) || 0,
+        focus: Number(amount.focus) || 0,
       };
     }
     case "move-resource": {
@@ -811,6 +822,7 @@ export async function postCard(
   return ChatMessage.create({
     style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     speaker: ChatMessage.getSpeaker({ actor }),
+    ...(options.flavor ? { flavor: options.flavor } : {}),
     content: cardWrapper(actionable),
     flags: {
       [SYSTEM_ID]: {

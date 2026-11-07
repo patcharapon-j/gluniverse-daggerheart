@@ -833,7 +833,13 @@ export const ACTION_KIND_LABELS: Record<string, string> = {
 };
 
 /**
- * The five things a press can move, in one block, shared by three verbs.
+ * The six things a press can move, in one block, shared by three verbs.
+ *
+ * `focus` is the Martial Artist's pool and the newest of the six. Until it was
+ * here every "spend a Focus" in the Martial Stances, Keen Defenses, Focus
+ * Cannon and Flow State was declined — not because the reading was hard but
+ * because the block had no word for the currency. A character with no Focus
+ * pool simply cannot afford a Focus price, which is the refusal it deserves.
  *
  * Several at once is the common case rather than an edge — the corpus is full
  * of "Spend a Hope and mark a Stress", which is one act at the table and must
@@ -844,7 +850,7 @@ export const ACTION_KIND_LABELS: Record<string, string> = {
  * could not name would be a currency the author has to work around, and both
  * of those are printed on cards.
  */
-export const ACTION_AMOUNTS = ["hope", "stress", "hitPoints", "armorSlots", "fear"] as const;
+export const ACTION_AMOUNTS = ["hope", "stress", "hitPoints", "armorSlots", "fear", "focus"] as const;
 export type ActionAmount = (typeof ACTION_AMOUNTS)[number];
 
 /** What a `die-pool` press does to the tray it names. */

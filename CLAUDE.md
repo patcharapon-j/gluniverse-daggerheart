@@ -5974,11 +5974,8 @@ class beside `.gem.fear`, which is the design system's call rather than a
 sheet's. Size (22 against Hope's 32) and the heading are what tell them apart
 meanwhile.
 
-**This is the currency and not the stances.** There is no `shiftStance`,
-nothing drops you out of one on Severe damage, and the sixteen stance Items
-are untouched — a stance is a state with three different exits printed on
-three different cards, which is exactly the shape this system declines to
-guess at.
+**The currency was built first and the stances were built on it** — see
+the next section.
 
 `tools/check-focus.mjs` is the ratchet, and it exists because
 `check-actor-sheets.mjs` covers only the three non-character sheets — the
@@ -5989,6 +5986,71 @@ writes its value, the gate is `FOCUS_SUBCLASS` and never the literal string,
 `refocus` builds a real `Roll` with `kh` and does not reach for `Math.random`,
 every rail pool carries `data-p`, and the press states all three of its
 heights. Negative-controlled.
+
+## The Martial Artist's stances, and the Brawler's Combo Strike
+
+The Stance Fighter card prints the whole rule, and it is the one this
+section implements clause by clause: *"You can spend a Focus to shift into a
+known martial stance, gaining its effects until you take Severe damage, mark
+your last Hit Point, or shift into a different stance. Otherwise, you drop
+the stance and end its effects at the end of the scene."* The repo's copy of
+that card had lost the sentence — it ended at "choose an additional stance"
+— and so had the subclass's second foundation feature, **Focus**, the
+once-per-rest refill `refocus` has always performed. Both are restored from
+the SRD 2.0 wording.
+
+`src/module/stances.ts` is the rule and imports nothing, because
+`data/modifiers.ts` reads it on every derivation pass. `stance-actions.ts` is
+the press — pay, write, post — and is what the sheet, the bottom HUD and
+`game.daggerheart.stance.shift(actor, itemId, {pay})` all call.
+
+- **One at a time is the field's shape.** `system.stance` is one Item id, so
+  "shift into a different stance" is a write that replaces it. An id rather
+  than a name for `mark`'s reason. A stance is a `feature` Item whose
+  `origin` opens "Martial Stance" — not a name, because "Reliable" is a
+  weapon feature and "Aggressive" could be an adversary's.
+- **"Gaining its effects" is `passiveItemActive` saying no** for every stance
+  but the active one. Gating the *document* rather than each modifier means
+  Reliable's +1 attack, Aggressive's −1 Evasion and Anchored's +2 thresholds
+  switch together through the one function every derived number reads, and a
+  homebrew stance authored on the item sheet obeys it for free. A stance
+  copied before it carried modifiers gets them from `STANCE_MODIFIERS`
+  through the same gate.
+- **The shift is one update**: the Focus (or, under Flow State, the Stress)
+  and the stance land together, so no client sees one without the other. It
+  posts the stance's card with a header line saying what was paid. Refused,
+  it is the Focus row flinching. Shift-click asks for the Stress on purpose.
+- **The three exits are three places**, each the one that already owns the
+  event: Severe (and Massive) damage in `applyDamage`, after armour — the one
+  implementation the dialog and the chat card share; the last Hit Point by an
+  `updateActor` observer, `syncVulnerable`'s arrangement; the scene end in
+  `endScene()`'s `refreshScope`.
+
+**Focus is a currency now.** `ACTION_AMOUNTS` grew `focus`, which retired a
+whole class of declines — Quick, Grappling, Honed, Stable, Invigorating's
+gain, Keen Defenses and Focus Cannon all said "Focus is not a currency
+`amount` can hold". A character with no pool simply cannot afford the price.
+
+**Combo Strike lives on the damage card**, which is where its subject is: it
+acts on a damage roll that has already happened. A Melee weapon's damage
+plate, rolled by somebody holding Combo Strike, offers "Combo strike · d4 ·
+mark a Stress" (and a Focus button under Flow State) as a shared one-shot
+claim. The press rolls a real `Roll` per die until one comes up *lower* than
+the one before — ties continue and the lower die counts — and adds the chain
+to `plate.combo`, which `settle` sums into the total "Apply to target" lands.
+The combo dice are drawn with no `data-rr`, because "the results can't be
+modified by any means", and a card whose damage was applied refuses, or the
+extra damage would be on the card and never on the creature. The Combo Die's
+size is the class card's tray (`faces`), so an advancement that steps it is
+an item-sheet edit. The class card's own press went to `DECLINED`.
+
+`tools/test-stances.mjs` is the ratchet, in the stub-Foundry idiom, and is
+negative-controlled on the gate and on the chain's stopping rule.
+
+**Not modelled:** Favored's "a trait of your choice" (the Item records no
+choice), Isolating's positional advantage, Defensive's attacker-side
+disadvantage, Exacting's rewrite of a die rolled elsewhere — all printed,
+none guessed at.
 
 ## Conditions
 
@@ -6394,7 +6456,7 @@ place in the world that knows the import path.
   against a source, which is a different and much smaller job. The Druid's
   core feature and three subclass features still point at a list that does not
   exist.
-- **Four SRD 2.0 rules are read and not implemented**, all of them out of
+- **Three SRD 2.0 rules are read and not implemented**, all of them out of
   scope for the pass that brought the errata in. *Downtime consequences* — the
   GM gains 1d4 Fear on a short rest and 1d4 plus the number of PCs on a long
   one — is pure wiring, since `setFear` and the HUD both exist and
@@ -6403,9 +6465,7 @@ place in the world that knows the import path.
   `data/actors.ts` today. The *multiclass domain-card ceiling* — cards at or
   below half your level, rounded up, from the second class's domain — is
   stated twice in the SRD and appears nowhere in `apps/domain-cards.ts`, which
-  offers every domain at full level. And the *Martial Artist's stances* are
-  sixteen Items with a currency now and still no shifting, dropping out, or
-  one-active-at-a-time.
+  offers every domain at full level.
 - **Equipment artwork.** None, and it is blocked rather than skipped — see the
   equipment tables section. If stable asset URLs ever appear, the fetch is one
   tool and `img` is already per document.

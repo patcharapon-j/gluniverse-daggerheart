@@ -31,6 +31,7 @@
  */
 
 import { cardArt, classItem, feat, subclassCards, featureItem } from "./_helpers.mjs";
+import { stanceModifiers } from "./passive-modifiers.mjs";
 
 /* One painting per subclass, shared by its three cards — see the same note in
    `hf-heritage.mjs`. A class has no painting anywhere in this system and none
@@ -342,7 +343,19 @@ const martialArtist = subclass({
         benefits in combat.
 
         Take the Martial Stances sheet and choose two martial stances from Tier 1. Each time you
-        level up your character, choose an additional stance from your tier or lower.`,
+        level up your character, choose an additional stance from your tier or lower.
+
+        You can spend a Focus to shift into a known martial stance, gaining its effects until you
+        take Severe damage, mark your last Hit Point, or shift into a different stance. Otherwise,
+        you drop the stance and end its effects at the end of the scene.`,
+      ),
+      feat(
+        "Focus",
+        `
+        Once per rest during a moment of calm, you can clear your mind and refocus your martial
+        instincts. When you do, clear your Focus track, then roll a number of d6s equal to your
+        Instinct and gain Focus equal to the highest result rolled. You can hold a maximum of 6
+        Focus.`,
       ),
     ],
     specialization: [
@@ -393,14 +406,19 @@ const martialArtist = subclass({
    sixteen.
    ══════════════════════════════════════════════════════════════════════ */
 
-const stance = (tier, name, text) =>
-  featureItem({
+const stance = (tier, name, text) => {
+  const item = featureItem({
     name,
     kind: "passive",
     origin: `Martial Stance · Tier ${tier}`,
     folder: "Brawler",
     text,
   });
+  /* The three stances whose effect is a number carry it as a modifier, and it
+     is live only while the character is in the stance — see `stances.ts`. */
+  item.system.modifiers = stanceModifiers(name);
+  return item;
+};
 
 const STANCES = [
   stance(1, "Favored", "Gain a bonus to damage rolls equal to a trait of your choice."),

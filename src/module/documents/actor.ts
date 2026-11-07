@@ -19,6 +19,7 @@ import {
   type Severity,
 } from "../config.ts";
 import { massiveDamage } from "../settings.ts";
+import { dropStance } from "../stances.ts";
 
 /**
  * Marks the Vulnerable effect as one the Stress track applied, so that the
@@ -141,14 +142,10 @@ export class DaggerheartActor extends (Actor as any) {
      The Martial Artist's pool, and the only currency in this game that
      belongs to one subclass.
 
-     **This is the currency and not the thing it buys.** Sixteen Martial
-     Stances are `feature` Items in the compendium and shifting into one is
-     "spend a Focus" — but *which* stance you are in, whether you may hold
-     more than one, and what dropping out of one costs are rules about the
-     stance sheet rather than about the pool, and none of them is implemented
-     here or anywhere. What a reader will look for below and not find is
-     `shiftStance`. `spendFocus` is what a stance would call when somebody
-     builds it, which is why the refusal is a boolean rather than a throw. */
+     **This is the currency and not the thing it buys.** Which stance you are
+     in, one at a time, and the three ways out of one are `stances.ts`; the
+     press that pays and shifts is `stance-actions.ts`. `spendFocus` stays
+     the pool's own refusal-as-a-boolean. */
 
   /**
    * Spend Focus. Nothing is written when the purse is short.
@@ -342,6 +339,14 @@ export class DaggerheartActor extends (Actor as any) {
     if (plan.stress) await this.markTrack("stress", plan.stress);
     if (plan.hope) await this.spendHope(plan.hope);
     const marked = await this.markTrack("hitPoints", SEVERITY_COST[plan.severity] ?? 0);
+    /* "until you take Severe damage" — the rung that actually landed, after
+       armour, which is the only rung the character *took*. Massive is above
+       Severe and is Severe damage for every rule that asks. Decided here
+       because this is the one place the dialog and the chat card's apply
+       button both land a hit. */
+    if (plan.severity === "severe" || plan.severity === "massive") {
+      await dropStance(this, "severe");
+    }
     return { ...plan, marked };
   }
 

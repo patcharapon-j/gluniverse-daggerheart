@@ -181,6 +181,16 @@ export class CharacterData extends (TypeDataModel() as any) {
       mark: int(0, { min: 0 }),
       surging: bool(false),
 
+      /* The Martial Artist's active stance: the id of the `feature` Item it
+         names, or blank. One field and not a flag per stance, because the
+         rule is "shift into a *different* stance" — one at a time is the
+         shape, and a single id cannot express two. An id rather than a name
+         for `mark`'s reason above: a player may rename the stance Item.
+
+         Blank for every character not holding one, which is what a subclass
+         nobody at the table has taken should look like. See `stances.ts`. */
+      stance: str(),
+
       /* Which advancement slots are filled, keyed `"<tier>.<option>"` against
          the count taken — so `{"2.0": 2}` is "the trait option, twice, in
          tier 2". Keyed rather than a field per option because the option
@@ -514,6 +524,7 @@ export class CharacterData extends (TypeDataModel() as any) {
   declare loadoutLimit: number;
   declare mark: number;
   declare surging: boolean;
+  declare stance: string;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

@@ -511,6 +511,48 @@
 .dh .hact.no p{color:var(--ink-3)}
 .dh .hact.no .c i{background:var(--line-2)}
 
+/* ── the stance ────────────────────────────────────────────────────
+   The Martial Artist's, under the Focus that pays for it, because "can I
+   afford to shift" and "what am I in" are one question asked mid-turn.
+
+   The stance you are in is a move row (.hact) with its rule printed on it:
+   it is the one rule on the sheet whose effects are switched on right now,
+   and a hover to read it would be a hover every time the GM asks "are you
+   still Anchored". The rim is Hope's gold, the pool that paid for it.
+
+   The stances you know are a row of presses, not a list of rules — you read
+   one when you shift into it, and nine rows of prose under the rail would be
+   the stance sheet printed twice. Each says its tier, because the tier is
+   the one fact a stance's text never states.
+
+   Every press states all three heights. Foundry's elements layer gives a
+   button 28px and a matching floor, and a floor with nothing of ours to beat
+   simply applies — the trap this file has met four times. */
+.dh .stn{margin-top:var(--run, 8px)}
+.dh .stn .hact{margin-top:6px}
+.dh .stn .hact.on{background:color-mix(in srgb,var(--hope) 7%,var(--sunk));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 55%,var(--line))}
+.dh .stn .hact.on s{color:var(--hope-tx)}
+.dh .stn .none{margin:6px 0 0;font:400 11px/1.45 var(--f-ui);color:var(--ink-3)}
+.dh .stn .opts{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.dh .stn .o{display:inline-flex;align-items:baseline;gap:5px;
+  height:auto;min-height:0;max-height:none;padding:4px 7px 5px;
+  border:0;border-radius:0;cursor:pointer;
+  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);
+  font:600 11px/1.2 var(--f-ui);color:var(--ink);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%);
+  transition:background .14s,box-shadow .14s,color .14s}
+.dh .stn .o s{text-decoration:none;font:700 8px/1 var(--f-mono);letter-spacing:.12em;color:var(--ink-3)}
+.dh .stn .o:hover{background:var(--sunk-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+/* Short of Focus and of Flow State's Stress: legible, grey, still pressable
+   so the refusal can be the Focus row flinching rather than silence. */
+.dh .stn .o.no{cursor:not-allowed;color:var(--ink-3)}
+.dh .stn .o.no:hover{background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line)}
+.dh .stn .dr{flex:none;height:auto;min-height:0;max-height:none;margin:0 0 0 auto;padding:0 0 0 6px;
+  border:0;border-radius:0;background:none;cursor:pointer;
+  font:700 8px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.dh .stn .dr:hover{color:var(--ink)}
+
 /* ── experience ────────────────────────────────────────────────────
    In the rail rather than behind a tab, because an Experience is consulted
    at exactly the moment you are deciding whether to spend a Hope, and Hope

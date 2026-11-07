@@ -49,5 +49,19 @@ export const ITEM_MODIFIERS = {
 
 };
 
+/* The Martial Stances whose effect is a number. They are live only while the
+   character is *in* the stance — `passiveItemActive` gates the whole document
+   on `system.stance` — so these read as unconditional and are not. The other
+   thirteen are presses, choices or adjudication: Favored's trait is the
+   player's to name, Isolating's advantage turns on who is standing where. */
+export const STANCE_MODIFIERS = {
+  Reliable: [fixed("attackRoll", 1)],
+  Aggressive: [fixed("evasion", -1)],
+  Anchored: [fixed("thresholds", 2)],
+};
+
+export const stanceModifiers = (name) =>
+  (STANCE_MODIFIERS[name] ?? []).map((m) => ({ source: "fixed", scale: 1, condition: "always", minimum: 0, value: 0, trait: "", ...m }));
+
 export const modifiersFor = (type, name) =>
   (ITEM_MODIFIERS[`${type}:${name}`] ?? []).map((m) => ({ source: "fixed", scale: 1, condition: "always", minimum: 0, value: 0, trait: "", ...m }));

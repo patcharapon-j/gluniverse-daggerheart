@@ -97,7 +97,7 @@
     kind: "pay",
     label: "",
     subject: "self",
-    amount: { hope: 0, stress: 0, hitPoints: 0, armorSlots: 0, fear: 0 },
+    amount: { hope: 0, stress: 0, hitPoints: 0, armorSlots: 0, fear: 0, focus: 0 },
     resource: "",
     by: 0,
     op: "place",
@@ -217,6 +217,7 @@
     ["hitPoints", "HP"],
     ["armorSlots", "Armor"],
     ["fear", "Fear"],
+    ["focus", "Focus"],
   ];
 </script>
 
