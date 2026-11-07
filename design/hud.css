@@ -284,6 +284,8 @@
 .bh-wpn em{margin-left:auto;font:650 12px/1 var(--bh-font);font-style:normal;color:var(--bh-dim);font-variant-numeric:tabular-nums}
 /* The secondary is the one you reach for second, so it says so in weight. */
 .bh-wpn[data-weapon="secondary"] b{font-weight:550;color:var(--bh-dim)}
+.bh-wpn.is-none{cursor:default;font:500 11px/1 var(--bh-font);color:var(--bh-faint)}
+.bh-wpn.is-none:hover{background:var(--bh-ink-2)}
 
 /* ══ FEATURES ═════════════════════════════════════════════════════
    Rules, not objects: rows, never tiles. The Hope feature is the one row
@@ -319,6 +321,25 @@
 .bh-feat[aria-disabled="true"] .bh-fr .gem{opacity:.38}
 .bh-pa[aria-disabled="true"]{cursor:not-allowed;color:var(--bh-faint)}
 .bh-pa[aria-disabled="true"] .bh-pc{color:var(--bh-faint);box-shadow:inset 0 0 0 1px var(--bh-line)}
+
+/* ══ THE STANCE ═══════════════════════════════════════════════════
+   Three lines at the features' pitch: the Focus purse, the stance you are
+   in, and the way into the rest. Focus is gold for the same reason the sheet
+   draws it gold — a third hue is the design system's call, not a plate's. */
+.bh-stance{flex:none;width:132px;padding:6px;display:grid;align-content:center;gap:4px}
+.bh-focus{display:flex;align-items:center;gap:6px;height:16px;min-width:0;padding:0 2px 0 4px}
+.bh-focus .gems{--gap:5px}
+.bh-fn{margin-left:auto;flex:none;display:flex;align-items:baseline}
+.bh-fn b{font:750 14px/1 var(--bh-font);color:var(--hope-tx,#e0b647);font-variant-numeric:tabular-nums}
+/* In stance: the one rule on the rail switched on right now, so it is lit. */
+.bh-stn{background:color-mix(in srgb,var(--hope) 10%,var(--bh-ink-2));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 30%,transparent)}
+.bh-stn b{color:var(--hope-tx,#e0b647);font-weight:650}
+.bh-stn:hover,.bh-stn.is-peek{background:color-mix(in srgb,var(--hope) 17%,var(--bh-ink-2))}
+.bh-stn.is-none{display:flex;align-items:center;height:19px;padding:0 7px;background:none;box-shadow:inset 0 0 0 1px var(--bh-line);
+  font:500 11px/1 var(--bh-font);color:var(--bh-faint)}
+.bh-stance .is-more[aria-disabled="true"]{cursor:not-allowed}
+.bh-stance .is-more[aria-disabled="true"] b{color:var(--bh-faint)}
 
 /* ══ THE HAND ═════════════════════════════════════════════════════
    The only plate without a width. It grows until the cards stand side by
@@ -421,11 +442,36 @@
 .bh-drawer header span{font:500 11px/1.2 var(--bh-font);color:var(--bh-faint)}
 .bh-drawer header span em{font-style:normal;color:var(--strain,#8fd0e0);font-weight:700}
 .bh-dbody{padding:12px 14px 14px}
-.bh-dbody .bh-vault{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
+.bh-dbody .bh-vault{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none;
+  max-width:404px;max-height:340px;overflow-y:auto}
+/* Row drawers: a column read top to bottom, the number at the right edge. */
+.bh-dlist{margin:0;padding:0;list-style:none;display:grid;gap:2px;min-width:252px;max-height:320px;overflow-y:auto}
+.bh-drow{display:flex;align-items:baseline;gap:8px;width:100%;min-width:0;height:28px;min-height:28px;max-height:28px;padding:0 10px;
+  background:var(--bh-ink-2);box-shadow:inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-xs)),calc(100% - var(--bh-cut-xs)) 100%,0 100%);
+  align-items:center;transition:background .15s}
+button.bh-drow:hover{background:var(--bh-ink-4)}
+.bh-drow.is-read{cursor:default}
+.bh-drow b{font:600 12px/1 var(--bh-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bh-drow span{font:500 11px/1 var(--bh-font);color:var(--bh-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bh-drow em{margin-left:auto;flex:none;font:700 12px/1 var(--bh-font);font-style:normal;color:var(--bh-dim);font-variant-numeric:tabular-nums}
+.bh-dnone{margin:0;font:500 12px/1.4 var(--bh-font);color:var(--bh-faint)}
+/* The two rests, side by side: one decision, two answers. */
+.bh-rest{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:300px}
+.bh-rb{display:grid;gap:5px;align-content:center;height:56px;min-height:56px;max-height:56px;padding:0 12px;
+  background:var(--bh-ink-3);box-shadow:inset 0 1px 0 var(--bh-line-2),inset 0 0 0 1px var(--bh-line);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - var(--bh-cut-sm)),calc(100% - var(--bh-cut-sm)) 100%,0 100%);
+  transition:background .15s}
+.bh-rb:hover{background:var(--bh-ink-4)}
+.bh-rb b{font:700 13px/1 var(--bh-font)}
+.bh-rb span{font:500 11px/1.2 var(--bh-font);color:var(--bh-faint)}
 @keyframes bh-rise{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
 
 /* ══ THE PEEK ═════════════════════════════════════════════════════ */
+/* Placed by the host over whatever it is a peek of: `--bh-peek-x` is the
+   left edge in the rail's own pixels, measured at the moment it opens. */
 .bh-peek{position:absolute;z-index:50;width:264px;pointer-events:auto;
+  left:var(--bh-peek-x,50%);bottom:var(--bh-peek-y,178px);
   animation:bh-rise .22s var(--bh-ease)}
 .bh-pface{filter:drop-shadow(0 18px 28px rgba(0,0,0,.6))}
 .bh-pacts{display:flex;gap:4px;margin-top:6px}
@@ -447,6 +493,7 @@
 .bh-pa:hover{background:var(--bh-ink-4)}
 .bh-pc{font:700 11px/1 var(--bh-font);letter-spacing:.04em;text-transform:uppercase;padding:3px 5px;background:var(--bh-ink-0);color:var(--bh-dim)}
 .bh-pa[data-tone="hope"] .bh-pc{color:var(--hope-tx,#e0b647);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hope) 40%,transparent)}
+.bh-peek.is-rule{--bh-peek-y:170px}
 .bh-pa[data-tone="stress"] .bh-pc{color:var(--strain,#8fd0e0);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--strain,#8fd0e0) 40%,transparent)}
 
 /* ══ THE STACK ════════════════════════════════════════════════════
@@ -458,6 +505,10 @@
 .bhud[data-role="gm"] .bh-stack{display:grid;grid-template-columns:repeat(2,168px);gap:6px 10px;width:auto}
 
 /* ══ THE GM ═══════════════════════════════════════════════════════ */
+/* With nothing to run, one plate says so in the panel's place. */
+.bh-empty{flex:0 1 auto;display:grid;align-content:center;gap:6px;padding:0 18px 0 16px}
+.bh-empty b{font:700 14px/1.15 var(--bh-font)}
+.bh-empty span{font:500 11px/1.3 var(--bh-font);color:var(--bh-faint)}
 .bh-adv{flex:none;width:530px;display:grid;grid-template-columns:62px 164px 1fr;align-items:center;gap:0 12px;padding:0 10px 0 6px}
 .bh-diff{display:grid;place-items:center;width:62px;height:62px;position:relative}
 .bh-diff::before{content:"";position:absolute;inset:9px;rotate:45deg;background:var(--bh-ink-3);
@@ -540,4 +591,4 @@
    page measures no difference — setters are ~0.15ms with a forced layout
    either way, because the page is small. It is for Foundry, where the rail
    shares a document with the sidebar, the chat log and the canvas HUD. */
-.bh-vitals,.bh-actions,.bh-feats,.bh-drawers,.bh-adv{contain:layout style}
+.bh-vitals,.bh-actions,.bh-feats,.bh-stance,.bh-drawers,.bh-adv{contain:layout style}

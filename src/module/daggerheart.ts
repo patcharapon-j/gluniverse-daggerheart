@@ -44,6 +44,7 @@ import { closeCreationForContentChange, openCreation, refreshCreation } from "./
 import { openBrowser, registerBrowser } from "./apps/browse.ts";
 import { openLibrary, registerLibrary } from "./apps/library.ts";
 import { registerFearHud } from "./fear-hud.ts";
+import { redrawBottomHud, registerBottomHud, reportBottomHud } from "./bottom-hud.ts";
 import { registerSpotlight, registerSpotlightKeys } from "./spotlight.ts";
 import {
   applyTokenConditions,
@@ -221,10 +222,18 @@ Hooks.once("ready", () => {
   /* After the strip, because the spotlight's label and headline are placed
      against it. */
   registerSpotlight();
+  /* After the Fear strip for no reason but reading order: both write to
+     Foundry's chrome, and `#interface` exists only once the game view has
+     been drawn. */
+  registerBottomHud();
 
   /** Public API for macros and modules: `game.daggerheart.rollTrait(actor, "agility")`. */
   (game as any).daggerheart = {
     rollTrait,
+    /* What the bottom HUD is drawing and why — whose rail, which drawer, a
+       peek, folded — because "it is not showing" has five causes and only
+       one of them is a bug. `.redraw()` rebuilds it from scratch. */
+    bottomHud: Object.assign(reportBottomHud, { redraw: redrawBottomHud }),
     /* A console for the token chips. Both bugs in the first build were
        silent — a hook registered after it had fired, and a clip on a
        transformed box — so the component answers questions as well as

@@ -792,3 +792,44 @@ declare module "*/ui/library.js" {
   export function LIBRARY(o: { title?: string; summary?: string; groups?: LibraryGroup[]; note?: string }): string;
   export function setLibraryRow(row: Element | null, on: boolean): boolean;
 }
+
+declare module "*/ui/seat.js" {
+  /** Where the seat's arcs start and stop, in degrees clockwise from three o'clock. */
+  export const SEAT_FROM: number;
+  export const SEAT_TO: number;
+  /** Which boxes are lit, in ring order. Armor lights what is left. */
+  export function litOf(kind: "hp" | "st" | "ar", marked: number, max: number): boolean[];
+  /** A ringed party seat: portrait, three partial-ring tracks, Hope. */
+  export function SEAT(opts: any): string;
+  /** Drive a drawn seat to new values; only the boxes that moved land. */
+  export function setSeat(
+    seat: Element,
+    v: { hp?: number[]; st?: number[]; ar?: number[]; hope?: number[] | null },
+  ): void;
+}
+
+declare module "*/ui/hud.js" {
+  /** The rail's own icons, one stroke weight, drawn for 15px. */
+  export const ICON: Record<string, string>;
+  export function PLINTH(opts: any): string;
+  export function stripLit(kind: string, marked: number, max: number): boolean[];
+  export function STRIP(kind: string, v: [number, number]): string;
+  /** Drive a drawn track strip to a new marked count; only moved boxes land. */
+  export function setStrip(strip: Element, marked: number): void;
+  /** The figure takes the hit: a recoil and a red pass up from its foot. */
+  export function flinch(plinth: Element): void;
+  export function VITALS(opts: any): string;
+  export function ACTIONS(opts: any): string;
+  export function FEATURES(opts: any): string;
+  export function HAND(opts: any): string;
+  export function FOES(opts: any): string;
+  export function DRAWERS(opts: any): string;
+  export function DRAWER(opts: { title: string; note?: string; body: string }): string;
+  export function DLIST(opts: { rows: any[]; empty?: string }): string;
+  export function REST(): string;
+  export function PEEK(opts: { face: string; actions?: any[]; rule?: boolean }): string;
+  export function RULE_PEEK(opts: { name: string; from: string; text: string; actions?: any[] }): string;
+  export function ADVERSARY(opts: any): string;
+  /** The whole rail, for a player or for the GM. */
+  export function HUD(opts: any): string;
+}

@@ -49,12 +49,7 @@
   import { takeDamage } from "../apps/damage.ts";
   import { rest } from "../apps/rest.ts";
   import { cssUrl } from "../assets.ts";
-  import { rollAttack, rollFree, rollTrait, rollWeaponDamage } from "../dice/actions.ts";
-  import {
-    modifierTotal,
-    rollModifierTerms,
-    weaponModifierTerms,
-  } from "../data/modifiers.ts";
+  import { rollFree, rollWeaponDamage } from "../dice/actions.ts";
   import { platePortrait } from "../dice/plate.ts";
   /* The one answer to "which picture does this actor's card draw" — see
      `portraitOf`. Imported rather than restated, because the framing is
@@ -114,6 +109,14 @@
     type LiveResource,
   } from "../data/resources.ts";
   import { postCard } from "./post-card.ts";
+  import {
+    askAttack as askAttackRoll,
+    askRoll,
+    attackBase,
+    damageProficiency as proficiencyOf,
+    weaponDamageBonus,
+  } from "../apps/ask-roll.ts";
+  import { canPayRecall, commitPlace, planPlace, recallCostOf, type Zone } from "../loadout.ts";
   import { openTokenStudio, tokenStudioActive } from "../token-studio.ts";
   import Rail from "./parts/Rail.svelte";
   import { liveDicePools, dicePoolsFor, type LiveDicePool } from "../data/dice-pools.ts";
@@ -1558,28 +1561,11 @@
       Math.round(Number((e.currentTarget as HTMLInputElement).value) || 0),
     );
 
-  async function askTrait(event: MouseEvent, trait: Trait, reaction: boolean | "only" = true) {
-    const o = await prep(event.currentTarget as Element, {
-      kind: reaction === "only" ? "reaction roll" : `${traitLabel(trait).toLowerCase()} roll`,
-      label: traitLabel(trait),
-      base:
-        (doc as any).traitMod(trait) +
-        sumTerms(rollModifierTerms(doc, reaction === "only" ? "reactionRoll" : "actionRoll")) +
-        (trait === sys.spellcastTrait ? sumTerms(rollModifierTerms(doc, "spellcastRoll")) : 0),
-      experiences: xpList,
-      purse,
-      reaction,
-    });
-    if (!o) return;
-    await rollTrait(doc, trait, {
-      advantage: o.advantage,
-      experiences: o.experiences,
-      extra: o.extra,
-      reaction: o.reaction,
-      hopeDie: o.hope,
-      fearDie: o.fear,
-    });
-  }
+  /* The popover and its arithmetic are `ask-roll.ts`'s — one seam for the
+     sheet, the chat card and the bottom HUD, so a passive term added to one
+     surface's base is added to all three. */
+  const askTrait = (event: MouseEvent, trait: Trait, reaction: boolean | "only" = true) =>
+    askRoll(doc, trait, event.currentTarget as Element, { reaction });
 
   /* The pair with nothing attached to it.
      `base: 0` is the claim: the popover opens at zero because the sheet is
@@ -1610,25 +1596,8 @@
   /* An attack is an action by definition, so the reaction button is not
      offered here — a weapon you swing in response to something is still a
      reaction roll made with the trait, and that is the trait cell's job. */
-  async function askAttack(event: MouseEvent, weaponId: string) {
-    const weapon = item(weaponId);
-    const o = await prep(event.currentTarget as Element, {
-      kind: "attack roll",
-      label: weapon?.name ?? "Attack",
-      base: attackTotal(weapon as any),
-      experiences: xpList,
-      purse,
-      reaction: false,
-    });
-    if (!o) return;
-    await rollAttack(doc, weapon, {
-      advantage: o.advantage,
-      experiences: o.experiences,
-      extra: o.extra,
-      hopeDie: o.hope,
-      fearDie: o.fear,
-    });
-  }
+  const askAttack = (event: MouseEvent, weaponId: string) =>
+    askAttackRoll(doc, item(weaponId), event.currentTarget as Element);
 
   function onCardClick(event: MouseEvent) {
     const t = event.target as HTMLElement;
@@ -1896,14 +1865,20 @@
 
   const armedCard = $derived(vault.find((c) => c.id === armed) ?? null);
 
-  const recallCost = (c: ItemSnapshot | null) => (resting ? 0 : (c?.system.recallCost ?? 0));
-  const canPay = (c: ItemSnapshot | null) => {
-    const cost = recallCost(c);
-    return (
-      cost === 0 ||
-      (sys.resources?.stress?.marked ?? 0) + cost <= (sys.resources?.stress?.max ?? 6)
+  const recallCost = (c: ItemSnapshot | null) => recallCostOf(c, resting);
+  const canPay = (c: ItemSnapshot | null) =>
+    canPayRecall(
+      {
+        cards,
+        limit: loadoutLimit,
+        stress: {
+          marked: sys.resources?.stress?.marked ?? 0,
+          max: sys.resources?.stress?.max ?? 6,
+        },
+        resting,
+      },
+      c,
     );
-  };
   const stressLeft = $derived(
     (sys.resources?.stress?.max ?? 6) - (sys.resources?.stress?.marked ?? 0),
   );
@@ -1971,7 +1946,6 @@
      split by `inLoadout`, so numbering them separately would interleave
      their values, and a card crossing between them would land wherever the
      arithmetic put it rather than where you let go of it. */
-  type Zone = "loadout" | "vault";
 
   let dragId = $state<string | null>(null);
   /** The row the pointer is over, and which of its two gutters is the mark. */
@@ -2041,73 +2015,32 @@
    */
   async function place(id: string, to: Zone, target: string | null, after: boolean) {
     if (!ed) return;
-    const card = cards.find((c) => c.id === id);
-    if (!card) return;
-    const from: Zone = card.system.inLoadout ? "loadout" : "vault";
-
-    /* Coming into a full loadout, something has to leave, and the only card
-       that can name itself is the one you dropped on top of. Landing in the
-       gutter at 5/5 therefore does nothing at all, rather than evicting
-       whichever card the arithmetic reached first — that is the swap's
-       decision and it is not a drop's to make. */
-    let traded: string | null = null;
-    if (from === "vault" && to === "loadout") {
-      if (!canPay(card)) return refuse();
-      if (loadoutFull) {
-        if (!target || !loadout.some((c) => c.id === target)) return;
-        traded = target;
-      }
-    }
-
-    const l = loadout.map((c) => c.id).filter((x) => x !== id && x !== traded);
-    const v = vault.map((c) => c.id).filter((x) => x !== id);
-    /* The traded card goes to the head of the vault, not its tail. It is the
-       thing you just made a decision about; burying it under twenty cards
-       you did not touch is the sheet hiding its own answer. */
-    if (traded) v.unshift(traded);
-
-    const dest = to === "loadout" ? l : v;
-    let at = dest.length;
-    if (traded) at = loadout.findIndex((c) => c.id === traded);
-    else if (target) {
-      const i = dest.indexOf(target);
-      if (i >= 0) at = after ? i + 1 : i;
-    } else if (from !== to && to === "vault") {
-      /* Anything leaving the loadout surfaces at the top of the vault. It is
-         the card you have just made a decision about, and the commonest next
-         thought is that you would like it back; twentieth of twenty-two is
-         the sheet filing its own answer where you have to go looking for it.
-         A card being reordered *within* the vault still goes where you put
-         it — end of the list if you aimed at no gap, because there you did
-         mean the end. */
-      at = 0;
-    }
-    dest.splice(Math.max(0, at), 0, id);
-
-    /* Only what moved. A card dropped back where it started writes nothing,
-       which is what makes it a true no-op — no update, no re-render, and so
-       no travel either. */
-    const order = [...l, ...v];
-    const updates = order.flatMap((x, i) => {
-      const cur = cards.find((c) => c.id === x);
-      const wants = i < l.length;
-      const u: any = {};
-      if (cur?.sort !== (i + 1) * 100) u.sort = (i + 1) * 100;
-      if (!!cur?.system.inLoadout !== wants) u["system.inLoadout"] = wants;
-      return Object.keys(u).length ? [{ _id: x, ...u }] : [];
-    });
-    if (!updates.length) return;
-
-    const cost = from === "vault" && to === "loadout" ? recallCost(card) : 0;
-    // A reorder travels and says nothing: it is a move, and the recall's
-    // sweep and brackets mean "this card is in your hand now".
-    travels(id, from === to ? null : to === "loadout" ? "recall" : "shelve");
-    await doc.updateEmbeddedDocuments("Item", updates);
-    if (cost) {
-      await doc.update({
-        "system.resources.stress.marked": (sys.resources?.stress?.marked ?? 0) + cost,
-      });
-    }
+    /* The arithmetic — who leaves at 5/5, where a crossing card lands, what
+       the recall costs, which rows actually moved — is `planPlace` in
+       loadout.ts, because the bottom HUD recalls and shelves too and two
+       copies of it are two orders a card can arrive in. What stays here is
+       the sheet's own half: the refusal is the Stress track flinching, and
+       the FLIP has to measure between the plan and the write. */
+    const plan = planPlace(
+      {
+        cards,
+        limit: loadoutLimit,
+        stress: {
+          marked: sys.resources?.stress?.marked ?? 0,
+          max: sys.resources?.stress?.max ?? 6,
+        },
+        resting,
+      },
+      id,
+      to,
+      target,
+      after,
+    );
+    if (!plan) return;
+    if ("refuse" in plan) return refuse();
+    if (!plan.updates.length) return;
+    travels(id, plan.mode);
+    await commitPlace(doc, plan);
     armed = null;
   }
 
@@ -2292,18 +2225,11 @@
 
   const item = (id: string) => doc.items.get(id);
 
-  const sumTerms = (terms: { v: number }[]) => terms.reduce((n, t) => n + t.v, 0);
-  const attackTotal = (w: ItemSnapshot) =>
-    Number(sys.traits?.[w.system.trait]?.total ?? sys.traits?.[w.system.trait]?.value ?? 0) +
-    sumTerms(rollModifierTerms(doc, "actionRoll", item(w.id))) +
-    sumTerms(rollModifierTerms(doc, "attackRoll", item(w.id))) +
-    sumTerms(weaponModifierTerms(doc, item(w.id), "attack"));
-  const damageBonus = (w: ItemSnapshot) =>
-    Number(w.system.damage?.bonus ?? 0) +
-    sumTerms(rollModifierTerms(doc, "damageRoll", item(w.id))) +
-    sumTerms(weaponModifierTerms(doc, item(w.id), "damage"));
-  const damageProficiency = () =>
-    Number(sys.proficiency ?? 1) + modifierTotal(doc, "damageProficiency");
+  /* The three numbers the attack bar prints are `ask-roll.ts`'s, because the
+     bottom HUD prints them too — see `attackBase`. */
+  const attackTotal = (w: ItemSnapshot) => attackBase(doc, item(w.id));
+  const damageBonus = (w: ItemSnapshot) => weaponDamageBonus(doc, item(w.id));
+  const damageProficiency = () => proficiencyOf(doc);
 
   /* ── taking a thing *into* the sheet ───────────────────────────────
      One handler on the root, and it always was — every subtype this

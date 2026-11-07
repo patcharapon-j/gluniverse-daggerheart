@@ -168,7 +168,7 @@ export const ACTIONS = (o) => `
     <button type="button" class="bh-trait${o.marked?.includes(k) ? ' is-marked' : ''}" data-trait="${k}" title="Roll ${k[0].toUpperCase() + k.slice(1)}${o.marked?.includes(k) ? ' · marked this tier' : ''}">
       <span>${short}</span><b>${sign(o.traits[k] ?? 0)}</b></button>`).join('')}
   </div>
-  <div class="bh-weapons">${WEAPON(o.weapon, 'primary')}${o.secondary ? WEAPON(o.secondary, 'secondary') : ''}</div>
+  <div class="bh-weapons">${o.weapon ? WEAPON(o.weapon, 'primary') : '<span class="bh-wpn is-none">No weapon equipped</span>'}${o.secondary ? WEAPON(o.secondary, 'secondary') : ''}</div>
 </section>`;
 
 /* ── features ─────────────────────────────────────────────────────
@@ -208,9 +208,29 @@ export const FEATURES = ({ list, hope = Infinity, max = 4 }) => {
   <button type="button" class="bh-feat${f.hope ? ' is-hope' : ''}${f.spent ? ' is-spent' : ''}" data-feature="${esc(f.name)}"${f.hope ? ` data-hope="${f.hope}"` : ''}${
       short ? ` aria-disabled="true" title="Needs ${f.hope} Hope"` : ''}>
     <b>${esc(f.name)}</b>${f.spent ? SR(', spent until it refreshes') : ''}${FEAT_READ(f)}</button>`; }).join('')}${more ? `
-  <button type="button" class="bh-feat is-more" data-drawer="cards"><b>${more} more</b><span class="bh-fr">${ICON.cards}</span></button>` : ''}
+  <button type="button" class="bh-feat is-more" data-drawer="feats"><b>${more} more</b><span class="bh-fr">${ICON.cards}</span></button>` : ''}
 </section>`;
 };
+
+/* ── the stance ───────────────────────────────────────────────────
+   A Martial Artist's second currency and what it buys, on one plate after
+   the features. Focus is a pool like Hope, so it is the same gems, smaller;
+   the stance you are in is the one rule switched on right now, so it is a
+   row you can peek; every other stance you know is one press away in the
+   Stances drawer, because a shift is a decision made between turns and
+   sixteen names do not fit at the rail's height. Drawn only for a character
+   holding the subclass, exactly as the sheet draws its Focus row. */
+export const STANCE = ({ focus: [cur, max], active, known = 0 }) => `
+<section class="bh-pl bh-stance" aria-label="Stance">
+  <div class="bh-focus" data-pool="focus">
+    ${GEMS({ cur, max, sz: 11, gap: 5 })}
+    <span class="bh-fn"><b>${cur}</b><span class="bh-sr"> Focus</span></span>
+  </div>
+  ${active
+    ? `<button type="button" class="bh-feat bh-stn" data-stance="${esc(active.id)}" title="${esc(active.name)}, in stance"><b>${esc(active.name)}</b><span class="bh-fr is-dice">T${active.tier}</span></button>`
+    : `<span class="bh-stn is-none">No stance</span>`}
+  <button type="button" class="bh-feat is-more" data-drawer="stances"${known ? '' : ' aria-disabled="true"'}><b>Shift</b><span class="bh-fr is-dice">${known}</span></button>
+</section>`;
 
 /* ── the hand ─────────────────────────────────────────────────────
    The loadout is held, not filed, so it is drawn the way a hand of cards is
@@ -305,6 +325,26 @@ export const DRAWER = ({ title, note, body }) => `
   <div class="bh-dbody">${body}</div>
 </section>`;
 
+/* A drawer that holds rows rather than cards — the bag, the Experiences.
+   A row is a name and what it says about itself, and a row with `act` is a
+   press: the bag's items post to chat, an Experience is a readout. The
+   count or the modifier sits at the right edge, where the eye goes down a
+   column of numbers. */
+export const DLIST = ({ rows, empty = 'Nothing here.' }) => rows.length ? `
+<ul class="bh-dlist">${rows.map(r => `
+  <li>${r.act ? `<button type="button" class="bh-drow" data-row="${esc(r.key)}"${r.title ? ` title="${esc(r.title)}"` : ''}>` : '<div class="bh-drow is-read">'}
+    <b>${esc(r.name)}</b>${r.meta ? `<span>${esc(r.meta)}</span>` : ''}${r.n != null ? `<em>${esc(r.n)}</em>` : ''}
+  ${r.act ? '</button>' : '</div>'}</li>`).join('')}
+</ul>` : `<p class="bh-dnone">${esc(empty)}</p>`;
+
+/* The rest drawer is the two rests and nothing else: which one is a
+   decision, and the dialog each opens is where the moves are taken. */
+export const REST = () => `
+<div class="bh-rest">
+  <button type="button" class="bh-rb" data-rest="short"><b>Short rest</b><span>Two moves · a few minutes</span></button>
+  <button type="button" class="bh-rb" data-rest="long"><b>Long rest</b><span>Two moves · several hours</span></button>
+</div>`;
+
 /* ── the peek ─────────────────────────────────────────────────────
    The full card, above the hand, with the card's own authored actions in a
    strip under it — the same presses the chat card offers, so a card can be
@@ -314,7 +354,7 @@ export const PEEK = ({ face, actions = [], rule = false }) => `
 <div class="bh-peek${rule ? ' is-rule' : ''}">
   <div class="bh-pface">${face}</div>
   ${actions.length ? `<div class="bh-pacts">${actions.map(a => `
-    <button type="button" class="bh-pa" data-tone="${a.tone ?? ''}" title="${esc(a.short ?? a.said ?? '')}"${a.short ? ' aria-disabled="true"' : ''}>${
+    <button type="button" class="bh-pa"${a.id ? ` data-pa="${esc(a.id)}"` : ''} data-tone="${a.tone ?? ''}" title="${esc(a.short || a.said || '')}"${a.short ? ' aria-disabled="true"' : ''}>${
       a.cost ? `<span class="bh-pc">${a.cost}</span>` : ''}<b>${esc(a.label)}</b></button>`).join('')}</div>` : ''}
 </div>`;
 
@@ -354,6 +394,12 @@ export const ADVERSARY = (o) => `
 </section>`;
 
 
+/* A GM with nothing on the scene to run. The rail stays — the party is
+   still above it — and says what would fill it, rather than vanishing and
+   leaving the table to wonder whether the HUD broke. */
+const EMPTY = (note = 'No adversaries on this scene') => `
+<section class="bh-pl bh-empty"><b>${esc(note)}</b><span>Place an adversary token, or select one, to run it from here.</span></section>`;
+
 /* ── the whole rail ───────────────────────────────────────────────── */
 export const HUD = (o) => `
 <div class="bhud" data-role="${o.role}"${o.folded ? ' data-folded' : ''}${o.drawer ? ` data-drawer="${o.drawers?.open ?? ''}"` : ''}>
@@ -361,8 +407,8 @@ export const HUD = (o) => `
   <div class="bh-rail">
     ${PLINTH(o.plinth)}
     <div class="bh-body">${o.role === 'gm'
-      ? ADVERSARY(o.adversary) + FOES(o.foes)
-      : VITALS(o.vitals) + ACTIONS(o.actions) + FEATURES(o.features) + HAND(o.hand) + DRAWERS(o.drawers ?? {})}</div>
+      ? o.adversary ? ADVERSARY(o.adversary) + (o.foes?.foes?.length ? FOES(o.foes) : '') : EMPTY(o.empty)
+      : VITALS(o.vitals) + ACTIONS(o.actions) + FEATURES(o.features) + (o.stance ? STANCE(o.stance) : '') + HAND(o.hand) + DRAWERS(o.drawers ?? {})}</div>
   </div>
   ${o.drawer ?? ''}
   ${o.peek ?? ''}

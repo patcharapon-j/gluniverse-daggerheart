@@ -49,6 +49,8 @@
     "styles/token.css",
     "styles/ruler.css",
     "styles/spotlight.css",
+    "styles/seat.css",
+    "styles/hud.css",
     "styles/daggerheart-components.css",
     "styles/actor-sheets.css"
   ],
