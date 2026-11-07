@@ -208,7 +208,7 @@ export const FEATURES = ({ list, hope = Infinity, max = 4 }) => {
   <button type="button" class="bh-feat${f.hope ? ' is-hope' : ''}${f.spent ? ' is-spent' : ''}" data-feature="${esc(f.name)}"${f.hope ? ` data-hope="${f.hope}"` : ''}${
       short ? ` aria-disabled="true" title="Needs ${f.hope} Hope"` : ''}>
     <b>${esc(f.name)}</b>${f.spent ? SR(', spent until it refreshes') : ''}${FEAT_READ(f)}</button>`; }).join('')}${more ? `
-  <button type="button" class="bh-feat is-more" data-drawer="cards"><b>${more} more</b><span class="bh-fr">${ICON.cards}</span></button>` : ''}
+  <button type="button" class="bh-feat is-more" data-drawer="feats"><b>${more} more</b><span class="bh-fr">${ICON.cards}</span></button>` : ''}
 </section>`;
 };
 

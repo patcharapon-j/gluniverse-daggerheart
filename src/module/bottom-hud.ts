@@ -556,8 +556,18 @@ function gmModel(): Model {
 
 /* ── drawing ──────────────────────────────────────────────────────── */
 
+let swapTimer = 0;
+
 function refresh(force: boolean): void {
   if (!host) return;
+  /* A swap still fading out is superseded by whatever this refresh decides:
+     left to land, it would paint the subject of a selection that has since
+     been released. */
+  if (swapTimer) {
+    clearTimeout(swapTimer);
+    swapTimer = 0;
+    rail()?.classList.remove("is-leaving");
+  }
   const who = enabled() ? subject() : null;
   document.body.classList.toggle("dh-bhud-on", !!who);
   if (!who) {
@@ -594,7 +604,10 @@ function refresh(force: boolean): void {
   };
   if (swapped && root && !reduced()) {
     root.classList.add("is-leaving");
-    setTimeout(draw, 150);
+    swapTimer = window.setTimeout(() => {
+      swapTimer = 0;
+      draw();
+    }, 150);
   } else draw();
 }
 
@@ -743,6 +756,22 @@ function drawerBody(k: string): string {
             .join("")}</ul>`
         : DLIST({ rows: [], empty: "No subclass or heritage cards yet." }),
     });
+  }
+  /* The rows the Features plate had no room for — every one, so the list is
+     one place to look. A row opens the same peek a plate row does, pinned,
+     which is where Use and Post live. */
+  if (k === "feats") {
+    const rows = m.feats.map((f) => ({
+      key: `feat:${f.name}`,
+      name: f.name,
+      /* `from` is set for the plate, with its cost in markup; a row prints
+         text, and the Hope feature's cost is already in it. */
+      meta: f.from.replace(/<[^>]+>/g, ""),
+      n: f.isHope ? undefined : priceLabel(f.price) || undefined,
+      act: true,
+      title: "Read it, and use it from there",
+    }));
+    return DRAWER({ title: "Features", note: "Press one to read and use it", body: DLIST({ rows }) });
   }
   if (k === "bag") {
     const label: Record<string, string> = { weapon: "Weapon", armor: "Armor", consumable: "Consumable", loot: "Item" };
@@ -1054,6 +1083,7 @@ async function onClick(e: MouseEvent): Promise<void> {
   }
 
   const row = t.closest<HTMLElement>(".bh-drawer button.bh-drow[data-row]");
+  if (row?.dataset.row?.startsWith("feat:")) return void showPeek("feat", row.dataset.row.slice(5), true);
   if (row) {
     const c = m.cards.get(row.dataset.row!);
     if (c) await postCard(c.card, a);
