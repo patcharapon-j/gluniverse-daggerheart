@@ -80,6 +80,8 @@ const SHEETS = [
   "token.css",
   "ruler.css",
   "spotlight.css",
+  "seat.css",
+  "hud.css",
 ];
 
 /**
@@ -308,6 +310,12 @@ function port(name) {
     // the members take a different prefix so this rewrite reaches only the
     // root.
     .replaceAll(".spl", ".dh.spl")
+    // The bottom HUD, ninth: docked in Foundry's `#interface` along the
+    // bottom edge, outside every root of ours, for the Fear strip's reason.
+    // `.bhud` was checked against the whole stack — no other sheet has a
+    // class beginning with those five letters, and its members are `bh-`,
+    // which `.bhud` is not a prefix of, so this reaches only the root.
+    .replaceAll(".bhud", ".dh.bhud")
     /* `../assets/`, not `systems/gluniverse-daggerheart/assets/`.
        A relative `url()` resolves against the stylesheet it is written in,
        and these end up in `styles/` — so the absolute-looking form was

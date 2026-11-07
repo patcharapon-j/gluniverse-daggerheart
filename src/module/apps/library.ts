@@ -231,15 +231,26 @@ export async function openLibrary(): Promise<any> {
  * The settings menu's entry. Foundry constructs the class it is handed and
  * calls `render`, so this is a door rather than a window: it routes to the
  * singleton, and a second press brings the open one forward.
+ *
+ * It has to *be* an ApplicationV2 all the same, and that is v14's rule rather
+ * than ours: `registerMenu` throws unless the type is a FormApplication or an
+ * ApplicationV2 subclass. A plain class with a `render` was accepted by v13 and
+ * refused by v14 — and the refusal is thrown inside the `init` hook, so on v14
+ * every registration after this one never ran. The Vulnerable sync and the
+ * creation window's refresh hooks were the casualties, and both fail silently:
+ * a character at full Stress simply never became Vulnerable. Built at
+ * registration time, because `foundry` is not there when this module loads.
  */
-class LibraryMenu {
-  render(): Promise<any> {
-    return openLibrary();
-  }
-}
+const libraryMenu = (): any =>
+  class LibraryMenu extends (foundry as any).applications.api.ApplicationV2 {
+    render(): Promise<any> {
+      return openLibrary();
+    }
+  };
 
 /** The sidebar button, the settings menu and the cross-client sync. */
 export function registerLibrary(): void {
+  const LibraryMenu = libraryMenu();
   game.settings.registerMenu(SYSTEM_ID, "contentLibrary", {
     name: "DAGGERHEART.Content.Title",
     label: "DAGGERHEART.Content.Open",

@@ -6417,6 +6417,100 @@ class Foundry puts on the window and neither file says so.
 `game.daggerheart.tokenStudio(actor)` is the same call, for a macro — the one
 place in the world that knows the import path.
 
+## The bottom HUD
+
+A rail along the foot of the screen that plays the game without the sheet.
+A player gets their own character on it: portrait, Hope, the three tracks, the
+six traits, both weapons, every feature, the loadout as a hand of cards, and
+the rest of the party as seats. A GM gets the adversary in play, the foes on
+the scene as a row of cards, and every PC. `design/hud.*` and `design/seat.*`
+are the component and its study page, and `src/module/bottom-hud.ts` is the
+half a study page cannot have. It is on by default and is a **client**
+setting, `bottomHud`, because it is a preference about one screen and not a
+ruling about the table.
+
+**It replaces the hotbar rather than sitting on top of it.** Both claim the
+same strip of screen, and a macro bar under a rail that already holds every
+action is two answers to "what do I press". `body.dh-bhud-on #hotbar` hides it
+while the rail is up, and the setting's hint says so, because a hotbar that
+disappears with no explanation is something a player files as a bug. The
+players list is **lifted** by the rail's own height (`--dh-bhud-lift`) instead
+of being covered.
+
+**It docks in `#interface`, not in `#ui-bottom`.** On v14 `#ui-middle` is 60%
+wide with its pointer events off, and the hotbar's band is narrower again, so
+a rail inside either one is clipped or dead. The host is `inset:0` over the
+whole interface with `pointer-events:none`, and the rail takes its own pointer
+events back. That is the Fear strip's and the activity log's door's lesson a
+third time. The right edge is the sidebar's width, kept current by a
+`ResizeObserver`, so the rail follows the sidebar when somebody collapses or
+drags it.
+
+**Whose rail it is gets decided in one place.** `subject()` gives one
+controlled token whose character you own that character's player rail. A GM
+with nothing like that gets the GM rail, and anybody else gets
+`game.user.character`. So a GM who picks up a PC's token sees that PC's rail,
+which is how a GM runs a character for an absent player. **It acts on the
+token's actor**, which is a synthetic actor for an unlinked token, so pressing
+a box on a bandit's rail marks *that* bandit and not the prototype every
+bandit shares. `canAct` decides whether the rail takes presses at all, and a
+rail drawn for an observer wears `data-readonly`, because a press the server
+would refuse looks exactly like a press that did nothing.
+
+**Rendered once and driven afterwards**, which is `setMarks`' contract
+arriving on the largest object in the system. `shapeOf` in
+`bottom-hud-shape.ts` is the one decision: it blanks the handful of paths that
+are *values* — the marked half of every track, Hope, the plinth's halo, each
+seat's and each foe's numbers — and compares what is left. Equal means the
+host drives the rail through `setStrip`, `setPool`, `setSeat` and `flinch`, so
+a box landing plays its landing and nothing else replays. Unequal means a
+redraw. Shape is the default, and that fails in the safe direction: a field
+missing from that list costs one redraw, where a value mistaken for shape is a
+number on screen that never moves.
+
+**The foes are in the scene's order, never the canvas's**, and a live Foundry
+is how we found that out. `canvas.tokens.placeables` is z-order, and
+controlling or redrawing a token re-sorts it. So every HP change on the
+selected adversary arrived with the foe list in a new order, read as a shape
+change, rebuilt the rail and shuffled the cards under the GM's pointer. Every
+card was correct, so nothing looked wrong. The list is built from
+`canvas.scene.tokens` now, and `tools/test-bottom-hud.mjs` asserts that order
+is shape, which is exactly why it has to be stable.
+
+**Two seams were lifted out of the sheet rather than copied.** The rail
+recalls from its vault drawer and shelves from a card's peek, which are the
+sheet's own two gestures, so `place()`'s arithmetic moved to `loadout.ts` as
+`planPlace` plus `commitPlace`, and the sheet calls it now as well. The plan
+is pure and the write is separate because the sheet has to start its FLIP
+between the two. The attack press is `askAttack` in `apps/ask-roll.ts`, beside
+`askRoll`, for `ask-roll.ts`'s own reason: one call, several callers, and the
+popover's base arithmetic in one place. `attackBase`, `damageLine` and
+`damageProficiency` went with it, and the sheet's own copies are one line each
+on top of them.
+
+**A peek is the card itself**, the full `FACE` at its printed size. The rail
+draws the hand at hand size, and a card you are about to spend has to be read.
+Hovering opens a peek after 140ms with a 250ms grace on the way out, a click
+pins it, and Escape or a press anywhere else closes it. The rule rows peek the
+same way and carry their own press, which charges what the row prints: the
+Hope feature refuses on a short purse by flinching rather than with a dialog.
+
+`tools/test-bottom-hud.mjs` is the ratchet. It runs in `typecheck` and is
+negative-controlled. It asserts that marks are values and maxima are shape,
+that the foe order is shape, that a player rail acts only for an owner, that
+a box press is the study page's toggle (armour mirrored), and the loadout
+placement rules: refusal before anything moves, a gutter drop at 5/5 does
+nothing, a traded card goes to the head of the vault, and a no-op writes
+nothing.
+
+**Fixed on the way, and older than all of this.** `registerLibrary` passed a
+plain class to `registerMenu`, and v14 requires an ApplicationV2 or
+FormApplication subclass and **throws** otherwise. The throw happened inside
+`init`, so everything registered after it never ran on v14, the Vulnerable
+sync and the creation window's refresh hooks among them. A full Stress track
+was not making anyone Vulnerable. The menu is an ApplicationV2 now, built at
+registration because `foundry.applications` does not exist at import time.
+
 ## Not done yet
 
 - Compendium content — character creation is covered: classes, subclasses,

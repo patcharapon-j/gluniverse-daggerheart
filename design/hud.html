@@ -52,8 +52,6 @@ body{padding-bottom:60px}
   box-shadow:inset 0 0 0 1px #1f242b}
 .stage .feardock{position:absolute;top:8px;left:calc((100% - 300px) / 2);transform:translateX(-50%);z-index:5}
 .stage .bhud{--bh-gutter-r:312px}
-.stage .bh-peek{left:var(--peek-x,560px);bottom:178px}
-.stage .bh-peek.is-rule{bottom:170px}
 /* ?still: a capture is of the settled state, never a frame of an entrance. */
 .still *,.still *::before,.still *::after{animation:none !important;transition:none !important}
 </style>
@@ -84,7 +82,7 @@ counted the gems. Synthetic sample data throughout; the portrait is the repo's a
   <label>HP <input type="range" id="hp" min="0" max="6" value="2"></label>
   <label>Stress <input type="range" id="st" min="0" max="6" value="3"></label>
   <label>Armor spent <input type="range" id="ar" min="0" max="3" value="1"></label>
-  <label>Drawer <select id="drawer"><option value="">closed</option><option value="vault">vault</option></select></label>
+  <label>Drawer <select id="drawer"><option value="">closed</option><option value="vault">vault</option><option value="cards">cards</option><option value="bag">bag</option><option value="experiences">experiences</option><option value="rest">rest</option></select></label>
   <label>Peek <select id="peek"><option value="card">a card</option><option value="feat">a feature</option><option value="">nothing</option></select></label>
   <label class="tg"><input type="checkbox" id="vuln"> vulnerable</label>
   <label class="tg"><input type="checkbox" id="fold"> folded</label>
@@ -113,7 +111,7 @@ import { FEAR_HUD } from '/design/pool.js'
 import { setPool } from '/design/gem.js'
 import { setSeat } from '/design/seat.js'
 import { nameFit } from '/design/face-fx.js'
-import { HUD, DRAWER, PEEK, RULE_PEEK, setStrip, flinch } from '/design/hud.js'
+import { HUD, DRAWER, DLIST, REST, PEEK, RULE_PEEK, setStrip, flinch } from '/design/hud.js'
 
 /* one <style> per motif, as face.html does */
 const seen = new Set()
@@ -194,7 +192,18 @@ function playerHTML() {
     hand: { cards: hand, limit: 5 },
     drawers: { open: S.drawer, counts: { vault: vault.length, cards: 3, bag: 7, experiences: 2 } },
     drawer: S.drawer === 'vault' ? DRAWER({ title: 'Vault', note: 'Recall costs <em>Stress</em> · drag a card into the hand',
-      body: `<ul class="bh-vault">${vault.map((c, i) => COMPACT({ ...c, size: 's', cls: 'is-vaulted', state: c.rc > 6 - S.st ? 'out-of-reach' : 'within-reach' })).join('')}</ul>` }) : '',
+      body: `<ul class="bh-vault">${vault.map((c, i) => COMPACT({ ...c, size: 's', cls: 'is-vaulted', state: c.rc > 6 - S.st ? 'out-of-reach' : 'within-reach' })).join('')}</ul>` })
+    : S.drawer === 'cards' ? DRAWER({ title: 'Subclass and heritage', note: 'Press a card to show it',
+      body: `<ul class="bh-vault">${vault.slice(0, 3).map(c => COMPACT({ ...c, size: 's' })).join('')}</ul>` })
+    : S.drawer === 'bag' ? DRAWER({ title: 'Bag', note: 'Press an item to show it', body: DLIST({ rows: [
+        { key: 'a', name: 'Minor Health Potion', meta: 'Consumable', n: '×2', act: true },
+        { key: 'b', name: 'Leather Armor', meta: 'Armor · equipped', act: true },
+        { key: 'c', name: 'Rope', meta: 'Item', n: '×1', act: true },
+      ] }) })
+    : S.drawer === 'experiences' ? DRAWER({ title: 'Experiences', note: 'Add one to a roll from its popover', body: DLIST({ rows: [
+        { key: 'x1', name: 'Grew up on the docks', n: '+2' }, { key: 'x2', name: 'Knows every guard by name', n: '+2' },
+      ] }) })
+    : S.drawer === 'rest' ? DRAWER({ title: 'Rest', body: REST() }) : '',
     peek: S.drawer ? '' : S.peek === 'feat' ? RULE_PEEK({ ...pf,
       actions: [{ label: 'Use', cost: `${pf.hope ?? 0} Hope`, tone: 'hope', said: 'Spend 3 Hope', short: pf.hope > S.hope ? `Needs ${pf.hope} Hope` : '' }, { label: 'Post', said: 'Show to chat' }] })
     : S.peek === 'card' ? PEEK({ face: `<div class="host" style="container-type:inline-size;width:264px">${FACE({ ...peekCard, size: 'full' })}</div>`,
@@ -250,7 +259,7 @@ function draw(arrive) {
     src.classList.add('is-peek')
     const z = parseFloat(P.style.zoom) || 1, r = src.getBoundingClientRect(), pr = P.getBoundingClientRect()
     const x = (r.left - pr.left) / z + r.width / z / 2 - 132
-    P.style.setProperty('--peek-x', `${Math.round(Math.max(56, x))}px`)
+    hud().style.setProperty('--bh-peek-x', `${Math.round(Math.max(56, x))}px`)
   }
 }
 

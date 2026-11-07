@@ -38,8 +38,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { traitLabel, type Trait } from "../config.ts";
-import { rollModifierTerms } from "../data/modifiers.ts";
-import { rollTrait } from "../dice/actions.ts";
+import { damageDice } from "../data/damage.ts";
+import { modifierTotal, rollModifierTerms, weaponModifierTerms } from "../data/modifiers.ts";
+import { rollAttack, rollTrait } from "../dice/actions.ts";
 import { prep } from "../ui/prep.js";
 
 export interface AskRollOptions {
@@ -112,5 +113,81 @@ export async function askRoll(
     hopeDie: chosen.hope,
     fearDie: chosen.fear,
     dc: o.dc ?? null,
+  });
+}
+
+/* ── attacking ────────────────────────────────────────────────────────
+   The same seam for a weapon, and it moved here from the character sheet for
+   the reason the trait half did: the sheet is no longer the only surface that
+   swings one. The bottom HUD's two weapon rows ask exactly the sentence the
+   sheet's attack bar asks, and two copies of "trait plus every passive term
+   in scope" is two answers the first time a term is added to one of them.
+
+   The numbers are read off the live actor rather than a snapshot, which is
+   what the sheet's own figures were derived from anyway — a snapshot is a
+   deep clone of `actor.system`, so the two agree by construction. */
+
+const termsOf = (terms: { v: number }[]): number => terms.reduce((n, t) => n + t.v, 0);
+
+/** Everything an attack roll adds before the dice: the trait and every passive term. */
+export function attackBase(actor: any, weapon: any): number {
+  const t = actor?.system?.traits?.[weapon?.system?.trait];
+  return (
+    Number(t?.total ?? t?.value ?? 0) +
+    termsOf(rollModifierTerms(actor, "actionRoll", weapon)) +
+    termsOf(rollModifierTerms(actor, "attackRoll", weapon)) +
+    termsOf(weaponModifierTerms(actor, weapon, "attack"))
+  );
+}
+
+/** The flat number a weapon's damage adds, its own and every passive effect's. */
+export function weaponDamageBonus(actor: any, weapon: any): number {
+  return (
+    Number(weapon?.system?.damage?.bonus ?? 0) +
+    termsOf(rollModifierTerms(actor, "damageRoll", weapon)) +
+    termsOf(weaponModifierTerms(actor, weapon, "damage"))
+  );
+}
+
+/** How many copies of a weapon's dice are thrown. */
+export const damageProficiency = (actor: any): number =>
+  Number(actor?.system?.proficiency ?? 1) + modifierTotal(actor, "damageProficiency");
+
+/** The expression a press of this weapon's damage throws — "2d8+1". */
+export function damageLine(actor: any, weapon: any): string {
+  const bonus = weaponDamageBonus(actor, weapon);
+  return (
+    damageDice(weapon?.system?.damage, damageProficiency(actor)) +
+    (bonus ? `${bonus > 0 ? "+" : "−"}${Math.abs(bonus)}` : "")
+  );
+}
+
+/**
+ * Open the popover beside `anchor` for an attack with `weapon`, and roll it.
+ *
+ * An attack is an action by definition, so the reaction button is not offered —
+ * a weapon swung in response to something is still a reaction roll made with the
+ * trait, and that is the trait's own press.
+ */
+export async function askAttack(actor: any, weapon: any, anchor: Element): Promise<any> {
+  if (!weapon) return null;
+  const chosen = await prep(anchor, {
+    kind: "attack roll",
+    label: weapon.name ?? "Attack",
+    base: attackBase(actor, weapon),
+    experiences: (actor?.system?.experiences ?? []).map((x: any) => ({
+      name: x.name,
+      modifier: x.modifier,
+    })),
+    purse: actor?.system?.resources?.hope?.value ?? 0,
+    reaction: false,
+  });
+  if (!chosen) return null;
+  return rollAttack(actor, weapon, {
+    advantage: chosen.advantage,
+    experiences: chosen.experiences,
+    extra: chosen.extra,
+    hopeDie: chosen.hope,
+    fearDie: chosen.fear,
   });
 }

@@ -674,6 +674,36 @@
   margin-top: 8px;
 }
 
+/* ── the bottom HUD, docked ──────────────────────────────────────────
+   `hud.css` draws the rail; these are the facts about where it stands, for
+   the Fear strip's reason. The host covers `#interface` and takes no pointer
+   events, so the board under it stays the board; the rail takes them back,
+   and only the rail and what rises off it.
+
+   Two pieces of Foundry's own furniture share that edge. The macro hotbar is
+   hidden while the rail is up: two bars along one edge, one of them centred
+   over the other's hand of cards, is the screen arguing with itself about
+   where the bottom is — and a table that wants its macros has the switch.
+   The players list is lifted clear of the party stack by however tall the
+   rail's left end measures, which `bottom-hud.ts` writes as `--dh-bhud-lift`. */
+
+#interface > .dh-bhud-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-index-app);
+}
+#interface > .dh-bhud-host > .dh.bhud {
+  pointer-events: auto;
+}
+body.dh-bhud-on #hotbar {
+  display: none;
+}
+body.dh-bhud-on #players {
+  margin-bottom: var(--dh-bhud-lift, 0px);
+  transition: margin-bottom 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ── scrollbars ──────────────────────────────────────────────────────
    Scoped, because a system that restyles every scrollbar in the client is
    a system that has restyled the module sidebar too. */

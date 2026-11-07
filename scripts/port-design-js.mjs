@@ -58,6 +58,9 @@ const MODULES = [
   "framing.js",
   "face.js",
   "compact.js",
+  /* The bottom HUD: the ringed seat it stacks the party in, and the rail. */
+  "seat.js",
+  "hud.js",
   "face-fx.js",
 ];
 

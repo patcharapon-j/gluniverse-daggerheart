@@ -242,6 +242,32 @@ export function registerSettings(): void {
     onChange: () => Hooks.callAll("daggerheart.tokenChipChanged"),
   });
 
+  /* The bottom HUD, and client-scoped for the token chip's reason: whether
+     you play from the rail or from the sheet is a decision about your own
+     screen, and one player preferring the sheet changes nothing for anybody
+     else. On by default, because a HUD nobody knows exists is a HUD nobody
+     uses — and turning it off is one checkbox. */
+  game.settings.register(SYSTEM_ID, "bottomHud", {
+    name: "DAGGERHEART.Settings.BottomHud",
+    hint: "DAGGERHEART.Settings.BottomHudHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => Hooks.callAll("daggerheart.bottomHudChanged"),
+  });
+
+  /* Whether the rail is folded down to the portrait. Remembered, because a
+     player who folds it away mid-session wants it to stay folded across a
+     reload; not in the settings window, because the chevron on the rail is
+     where it is set. */
+  game.settings.register(SYSTEM_ID, "bottomHudFolded", {
+    scope: "client",
+    config: false,
+    type: Boolean,
+    default: false,
+  });
+
   /* The range rings under the selected token, and it is client-scoped for
      the reason the chip's switch is rather than a similar one: a selection
      only ever exists on one screen, so a ruler is only ever drawn on the
