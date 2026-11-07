@@ -27,6 +27,13 @@
  * - **The chain is a real `Roll` per die**, for `reroll.ts`'s reason: the
  *   dice log, seeded randomness and the table's 3D dice stay honest. Ties
  *   continue; only a *lower* result ends it, and that last die counts.
+ * - **One die at a time.** The whole point of a combo is the next throw: will
+ *   it climb or break? So each die is written to the card on its own, and the
+ *   next one waits until the last has landed — Dice So Nice's animation where
+ *   the table runs it, a short beat where it does not. The chain rolled all at
+ *   once, which answered the question before anybody had asked it. While it
+ *   runs the combo is `live`, and Apply refuses, or a hit could land on the
+ *   chain's first two dice and never its third.
  * - **Can't be modified.** The combo dice are drawn with no `data-rr`, so the
  *   reroll press cannot reach them — and the claim settles the whole card,
  *   which is `canReroll`'s rule already.
@@ -69,17 +76,32 @@ export function comboOffer(actor: any, weapon: any): { die: string; focus: boole
   return die ? { die, focus: hasFlowState(actor) } : null;
 }
 
-/** Roll the chain: until the latest is lower than the one before it. */
-export async function rollComboChain(die: string): Promise<{ rolls: any[]; faces: number[] }> {
+/** Whether this die ends the chain: lower than the one before, or the cap. */
+export function chainEnds(faces: number[]): boolean {
+  const n = faces.length;
+  return n >= CHAIN_CAP || (n > 1 && faces[n - 1]! < faces[n - 2]!);
+}
+
+/**
+ * Roll the chain: until the latest is lower than the one before it.
+ *
+ * `onDie` is awaited after every die, before the next is rolled, which is
+ * what lets the card show the chain one throw at a time.
+ */
+export async function rollComboChain(
+  die: string,
+  onDie?: (roll: any, faces: number[]) => Promise<void>,
+): Promise<{ rolls: any[]; faces: number[] }> {
   const rolls: any[] = [];
   const faces: number[] = [];
-  while (faces.length < CHAIN_CAP) {
+  for (;;) {
     const roll = new Roll(`1${die}`);
     await roll.evaluate();
     const face = Number(roll.dice[0]?.results?.[0]?.result ?? roll.total ?? 0);
     rolls.push(roll);
     faces.push(face);
-    if (faces.length > 1 && face < faces[faces.length - 2]!) break;
+    if (onDie) await onDie(roll, [...faces]);
+    if (chainEnds(faces)) break;
   }
   return { rolls, faces };
 }
@@ -95,6 +117,8 @@ export async function strikeCombo(
   payer: "stress" | "focus",
   claim: (key: string) => Promise<boolean>,
   rewrite: (plate: any, rolls: any[]) => Promise<void>,
+  /** Waits for the die just written to land, before the next is thrown. */
+  pace: () => Promise<void> = async () => {},
 ): Promise<string | null> {
   const plate = foundry.utils.deepClone(message.getFlag(SYSTEM_ID, "plate") ?? null);
   if (!plate?.cmb || plate.combo) return "AlreadyClaimed";
@@ -115,8 +139,12 @@ export async function strikeCombo(
   if (!(await claim("combo"))) return null;
   await actor.update(pay);
 
-  const { rolls, faces } = await rollComboChain(plate.cmb);
-  plate.combo = { die: plate.cmb, rolls: faces };
-  await rewrite(plate, rolls);
+  const die = plate.cmb as string;
+  await rollComboChain(die, async (roll, sofar) => {
+    const done = chainEnds(sofar);
+    plate.combo = done ? { die, rolls: sofar } : { die, rolls: sofar, live: true };
+    await rewrite(plate, [roll]);
+    if (!done) await pace();
+  });
   return null;
 }

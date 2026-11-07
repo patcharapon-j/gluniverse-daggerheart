@@ -149,7 +149,7 @@ export interface DamagePlate extends PlateBase, DiceGroup {
    * modified by any means" — no `data-rr` is ever drawn on these dice, so the
    * reroll press cannot reach them.
    */
-  combo?: { die: string; rolls: number[] };
+  combo?: { die: string; rolls: number[]; live?: boolean };
 }
 
 /** An adversary's d20 attack or reaction. A null DC is intentionally unresolved. */
