@@ -7,7 +7,8 @@
    * A spent Hope has an afterglow that outlives the click, and re-rendering
    * the row would cut it off mid-fade.
    *
-   * A diamond is Hope and Fear and nothing else on this sheet.
+   * A diamond is Hope and Fear and nothing else on this sheet; Focus passes
+   * `focus` and draws as a bead.
    */
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -22,6 +23,8 @@
     scars?: number;
     /** Violet, and glowing by pool size rather than per pip. */
     fear?: boolean;
+    /** The Martial Artist's pool: a round jade bead rather than a diamond. */
+    focus?: boolean;
     size?: number;
     gap?: number;
     /** "paper" tightens the bloom — it needs somewhere dark to fall. */
@@ -35,6 +38,7 @@
     max,
     scars = 0,
     fear = false,
+    focus = false,
     size = 32,
     gap = 10,
     ground = "paper",
@@ -45,7 +49,7 @@
   // untrack() is the point, not a workaround: this markup is built from the
   // values as they were at mount and must never be rebuilt from them again.
   const initial = untrack(() =>
-    GEMS({ cur: value, max, scars, fear, sz: size, gap, ground }),
+    GEMS({ cur: value, max, scars, fear, focus, sz: size, gap, ground }),
   );
 
   let root: HTMLElement;

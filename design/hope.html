@@ -156,6 +156,35 @@ on paper, not a hatch fill that reads as merely unavailable.</p>
   </div>
 </div>
 
+<h2><span>// FOCUS</span>The Martial Artist's pool is a bead, not a diamond</h2>
+<p class="note">Focus is a pool like Hope — held, spent one at a time, refilled in a lump — and it was drawn
+as Hope's gold diamond, so a Martial Artist's rail read as Hope twice. The diamond stays Hope's and Fear's.
+Focus is a <b>round jade bead</b>: lit is a full disc with a bright seed at its centre, empty is a hollow
+ring, so the two states differ in figure and not only in lightness. Same builder, same <code>setPool</code>,
+same calm: no idle motion, only the gain and the spend.</p>
+<div class="grid">
+  <div class="card2">
+    <h4>Focus <span class="tot" id="fon">3 / 6</span></h4>
+    <div class="spec" id="fospec"></div>
+    <p class="rowlab">on paper · 22px, the sheet's rail, under Hope</p>
+    <div class="sheet paper" id="forow"></div>
+    <p class="rowlab">dark · 11px, the bottom HUD's stance plate</p>
+    <div class="band" id="forow2"></div>
+    <div class="btns">
+      <button data-fo="1">gain 1</button>
+      <button data-fo="-1">spend 1</button>
+      <button data-fo="reset">reset</button>
+    </div>
+  </div>
+  <div class="card2">
+    <h4>Beside Hope <span class="tot">shape first</span></h4>
+    <p class="rowlab">Hope · 32px</p>
+    <div class="sheet paper" id="fohope"></div>
+    <p class="rowlab">Focus · 22px</p>
+    <div class="sheet paper" id="fofocus"></div>
+  </div>
+</div>
+
 <h2><span>// IN PLACE</span>Hope in the sheet header band</h2>
 <p class="note">The band carries identity, the four always-visible numbers, and Hope. Nothing else on the
 sheet is gold-filled, so the eye goes straight to it without the pool needing to be large.</p>
@@ -235,7 +264,7 @@ function setF(v){
   fn.textContent = `${st.f} / 12`;
   f.value = st.f;
   // The strip is driven exactly as `fear-hud.ts` drives it, through the one
-  // function in pool.js — pips, count, `--i`, and the surge or the ebb.
+  // function in pool.js — pips, count and `--i`, with a short fade on the count.
   rows('#fhud .hud, #fhud2 .hud').forEach(h => setFearHud(h, st.f, 12));
 }
 
@@ -260,6 +289,23 @@ h.oninput = e => setH(+e.target.value);
 f.oninput = e => setF(+e.target.value);
 sc.onchange = e => { st.scars = e.target.checked ? 2 : 0;
   st.h = Math.min(st.h, 6 - st.scars); paint(); setH(st.h); };
+</script>
+<script type="module">
+import { GEM, GEMS, setPool } from './gem.js';
+let fo = 3;
+fospec.innerHTML = GEM({focus:true, sz:76}) + GEM({focus:true, sz:44}) + GEM({focus:true, sz:22})
+                 + GEM({focus:true, on:false, sz:44}) + GEM({focus:true, on:false, sz:22})
+                 + GEM({focus:true, sz:11}) + GEM({focus:true, on:false, sz:11});
+forow.innerHTML  = GEMS({cur:fo, max:6, focus:true, sz:22, gap:8, ground:'paper'});
+forow2.innerHTML = GEMS({cur:fo, max:6, focus:true, sz:11, gap:5});
+fohope.innerHTML  = GEMS({cur:4, max:6, sz:32, gap:10, ground:'paper'});
+fofocus.innerHTML = GEMS({cur:3, max:6, focus:true, sz:22, gap:8, ground:'paper'});
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-fo]'); if(!b) return;
+  fo = b.dataset.fo === 'reset' ? 3 : Math.max(0, Math.min(6, fo + +b.dataset.fo));
+  document.querySelectorAll('#forow .gems, #forow2 .gems').forEach(r => setPool(r, fo));
+  fon.textContent = `${fo} / 6`;
+});
 </script>
 </body>
 </html>

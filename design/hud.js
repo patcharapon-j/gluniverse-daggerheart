@@ -5,14 +5,16 @@
 // system's own objects. Left to right for a player:
 //
 //   plinth    the portrait, standing ON the rail and rising above it
-//   vitals    Hope first and loudest, then three 5px track strips and the
-//             threshold line
+//   vitals    Hope first and loudest, then the sheet's own three box tracks
+//             (mark.js) and the threshold line
 //   actions   six traits over both weapons
 //   features  the Hope feature first, then every class feature, each with
 //             its price or its readout printed on the row
 //   hand      the loadout as compact cards held up out of the rail; it takes
 //             whatever width the rest leaves and overlaps to fit
-//   drawers   six tiles: vault, cards, bag, experiences, rest, sheet
+//   drawers   six tiles right beside the hand — vault, cards, bag,
+//             experiences, rest, sheet — so the hand and what it is drawn
+//             from read as one group, with the rail's slack after them
 //
 // The GM's rail swaps vitals + actions + features + hand for the adversary
 // panel and a hand of the adversaries in play — the same compact card, so
@@ -24,10 +26,14 @@
 // rail once and drives it afterwards — the contract setMarks, setPool and
 // setRail already keep. Nothing in here knows what a press does; gestures
 // attach to the data-* handles: [data-trait], [data-weapon], [data-ability],
-// [data-strip], [data-card], [data-drawer], [data-seat], [data-act].
+// [data-track], [data-strip], [data-card], [data-drawer], [data-seat],
+// [data-act]. The one gesture that lives here is the portrait's framing
+// (framePlinth), because it moves a picture and reports three numbers — what
+// those numbers are written to is still the host's business.
 import { GEMS, GEM } from './gem.js';
 import { SEAT } from './seat.js';
 import { COMPACT } from './compact.js';
+import { MARKS } from './mark.js';
 
 /* ── icons ────────────────────────────────────────────────────────
    Authored, one stroke weight (1.6 on a 16 grid), drawn for this rail. The
@@ -44,6 +50,7 @@ export const ICON = {
   hit: I('<path d="M3 13 12.5 3.5"/><path d="M10 2.5l3.5 3.5"/><path d="M2 10.5l3.5 3.5"/>'),
   swap: I('<path d="M3 5.5h9.5l-2.5-2.5"/><path d="M13 10.5H3.5L6 13"/>'),
   fold: I('<path d="M4 6.5 8 10.5l4-4"/>'),
+  frame: I('<path d="M2.5 5.5v-3h3"/><path d="M10.5 2.5h3v3"/><path d="M13.5 10.5v3h-3"/><path d="M5.5 13.5h-3v-3"/><path d="M8 6v4M6 8h4"/>'),
 };
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -59,13 +66,23 @@ const sign = n => n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0';
 
    `--bh-hope` is the signature: the pool's fullness, 0–1, as a halo behind
    the figure's head and shoulders. Gaining Hope lights a gem and the halo
-   with it; spending one dims both, a step per Hope. */
+   with it; spending one dims both, a step per Hope.
+
+   The framing is `system.portrait.hud` — the third frame beside the sheet's
+   diorama and the roll plate's panel, for the sheet's reason: a crop judged
+   in a wide band is a chin in a tall one. Same three numbers, same unit and
+   the same custom properties (`--fdx`/`--fdy` in percent of the frame,
+   `--fz` the zoom), so one picture wears three crops and none of them is a
+   conversion of another. `frameable` draws the press that starts framing,
+   for an owner only. */
+export const frameVars = (f) => f ? `--fdx:${+f.x || 0};--fdy:${+f.y || 0};--fz:${+f.scale || 1}` : '';
 export const PLINTH = (o) => `
-<section class="bh-plinth${o.cutout ? ' is-cut' : ''}" data-plinth style="--bh-hope:${(o.hopeLit ?? 0).toFixed(3)};${
-    o.frame ? `--bh-fx:${o.frame.x ?? 50}%;--bh-fy:${o.frame.y ?? 22}%;--bh-fz:${o.frame.z ?? 1}` : ''}">
+<section class="bh-plinth${o.cutout ? ' is-cut' : ''}" data-plinth style="--bh-hope:${(o.hopeLit ?? 0).toFixed(3)};${frameVars(o.frame)}">
   <span class="bh-plate"></span>
   <span class="bh-glow" aria-hidden="true"></span>
-  <span class="bh-fig" aria-hidden="true" style="background-image:url('${esc(o.cutout || o.img)}')"></span>
+  <span class="bh-fig" aria-hidden="true"><span class="bh-img" style="background-image:url('${esc(o.cutout || o.img)}')"></span></span>
+  ${o.frameable ? `<button type="button" class="bh-frm" data-act="frame" title="Frame the portrait — drag to pan, scroll to zoom, double-click to reset, Enter to finish" aria-label="Frame the portrait">${ICON.frame}</button>
+  <span class="bh-frhint" aria-hidden="true">Drag · scroll · Enter</span>` : ''}
   ${o.conds?.length ? `<ul class="bh-conds">${o.conds.map(c => `
     <li class="bh-cond" data-cond="${c.id}"${c.tone ? ` data-tone="${c.tone}"` : ''} title="${esc(c.name)}">
       <img src="${esc(c.icon)}" alt=""><span>${esc(c.name)}</span></li>`).join('')}</ul>` : ''}
@@ -78,7 +95,8 @@ export const PLINTH = (o) => `
 </section>`;
 
 /* ── a track strip ────────────────────────────────────────────────
-   Five pixels of boxes and a count. The box count already says how much
+   The GM's adversary panel only, now. Five pixels of boxes and a count, in
+   a 164px column that an adversary's twelve Hit Points have to fit. The box count already says how much
    there is; the strip only has to say how much of it is gone. The row is
    the hit target, not the strip — thirteen pixels tall for a five-pixel
    mark, because a press on a strip is a press under time pressure. */
@@ -116,7 +134,7 @@ export function setStrip(strip, m) {
 
 /* Damage is felt the way Hope is: when Hit Points land, the figure takes
    the hit — a short recoil and a red pass up from its foot — so a mark on
-   a 5px strip is also an event at the size of the character. */
+   a 14px box is also an event at the size of the character. */
 export function flinch(plinth) {
   plinth.classList.remove('is-hit'); void plinth.offsetWidth; plinth.classList.add('is-hit');
 }
@@ -129,16 +147,34 @@ const THRESHOLDS = ([major, severe]) => `
   <span class="z">Minor</span><b>${major}</b><span class="z">Major</span><b>${severe}</b><span class="z">Severe</span>
 </div>`;
 
+/* ── the player's tracks ──────────────────────────────────────────
+   The sheet's own boxes, from mark.js, at 14px: the wound's tear, the
+   strain's scratch, the plate's chisel, and the same landings. A 5px strip
+   said how much was gone and was a hard thing to hit under time pressure;
+   a box is the object you cross off on paper, it is the thing the sheet
+   draws, and a press on it does what a press on the sheet does — mark up to
+   it, or clear it if it is the last one marked, Armor included (the sheet
+   marks armour from the left like any track, and so does this).
+
+   Each track is one row of the vitals grid: the key, the boxes, and the
+   count the sheet prints — what is left, over the total. `MARKS` is called
+   unchanged and its header is unwrapped by CSS into the row, so `setMarks`
+   finds its count exactly where it always does. */
+const MK_KIND = { hp: 'hp', st: 'stress', ar: 'armor' };
+export const TRACK = (kind, [m, max]) => `
+<div class="bh-trk" data-track="${kind}" role="group" aria-label="${STRIP_NAME[kind]}" title="${STRIP_NAME[kind]}">${
+  MARKS({ label: STRIP_KEY[kind], total: max, marked: Math.max(0, Math.min(max, m)), kind: MK_KIND[kind] })}</div>`;
+
 export const VITALS = (o) => {
   const [cur, max, scars = 0] = o.hope;
   return `
 <section class="bh-pl bh-vitals" data-vitals>
   <div class="bh-hope" data-pool="hope">
-    ${GEMS({ cur, max, scars, sz: 17, gap: 8 })}
+    ${GEMS({ cur, max, scars, sz: 15, gap: 6 })}
     <span class="bh-hn"><b>${cur}</b><s>/${max - scars}</s><span class="bh-sr"> Hope</span></span>
   </div>
-  <div class="bh-strips">
-    ${STRIP('hp', o.hp)}${STRIP('st', o.st)}${STRIP('ar', o.ar)}
+  <div class="bh-trks">
+    ${TRACK('hp', o.hp)}${TRACK('st', o.st)}${TRACK('ar', o.ar)}
   </div>
   <div class="bh-foot">
     ${THRESHOLDS(o.thresholds)}
@@ -214,7 +250,8 @@ export const FEATURES = ({ list, hope = Infinity, max = 4 }) => {
 
 /* ── the stance ───────────────────────────────────────────────────
    A Martial Artist's second currency and what it buys, on one plate after
-   the features. Focus is a pool like Hope, so it is the same gems, smaller;
+   the features. Focus is a pool like Hope, so it is the gem row, smaller and
+   drawn as Focus's own round bead rather than Hope's diamond;
    the stance you are in is the one rule switched on right now, so it is a
    row you can peek; every other stance you know is one press away in the
    Stances drawer, because a shift is a decision made between turns and
@@ -223,7 +260,7 @@ export const FEATURES = ({ list, hope = Infinity, max = 4 }) => {
 export const STANCE = ({ focus: [cur, max], active, known = 0 }) => `
 <section class="bh-pl bh-stance" aria-label="Stance">
   <div class="bh-focus" data-pool="focus">
-    ${GEMS({ cur, max, sz: 11, gap: 5 })}
+    ${GEMS({ cur, max, focus: true, sz: 11, gap: 5 })}
     <span class="bh-fn"><b>${cur}</b><span class="bh-sr"> Focus</span></span>
   </div>
   ${active
@@ -317,8 +354,9 @@ export const DRAWERS = ({ open, counts = {} }) => `
     ${ICON[k]}${counts[k] != null ? `<b>${counts[k]}</b>` : ''}</button>`).join('')}
 </nav>`;
 
-/* A drawer is a plate that rises above the rail, pinned to its right end
-   so it never covers the figure. One at a time. */
+/* A drawer is a plate that rises above the rail, its right edge on the
+   right edge of the tiles that opened it (placeDrawer), so it never covers
+   the figure. One at a time. */
 export const DRAWER = ({ title, note, body }) => `
 <section class="bh-drawer" role="dialog" aria-label="${esc(title)}">
   <header><b>${esc(title)}</b>${note ? `<span>${note}</span>` : ''}</header>
@@ -413,3 +451,90 @@ export const HUD = (o) => `
   ${o.drawer ?? ''}
   ${o.peek ?? ''}
 </div>`;
+
+/* ── framing the portrait ─────────────────────────────────────────
+   The sheet's diorama gesture at the plinth's size: drag pans, the wheel
+   zooms multiplicatively, a double-click puts it back, and Enter, Escape or
+   a press anywhere off the plinth puts the gesture down. Each finished
+   drag, each settled zoom and the exit report the frame through `onCommit`,
+   so a picture placed and then left is still saved. The offsets are percent
+   of the figure's own box — `translate()` percentages, which is what
+   `.bh-img` spends them as — so a pixel of pointer is a pixel of picture at
+   any zoom and on a study page scaled to fit. */
+export const FRAME0 = { x: 0, y: 0, scale: 1 };
+const r2 = n => Math.round(n * 100) / 100;
+
+export function setFrame(plinth, f) {
+  plinth.style.setProperty('--fdx', String(+f.x || 0));
+  plinth.style.setProperty('--fdy', String(+f.y || 0));
+  plinth.style.setProperty('--fz', String(+f.scale || 1));
+}
+
+export function framePlinth(plinth, start, { onCommit, onExit } = {}) {
+  let f = { ...FRAME0, ...(start ?? {}) };
+  let wheelT = 0;
+  const fig = plinth.querySelector('.bh-fig') ?? plinth;
+  const commit = () => { clearTimeout(wheelT); wheelT = 0; onCommit?.({ ...f }); };
+  plinth.setAttribute('data-framing', '');
+  setFrame(plinth, f);
+
+  const down = (e) => {
+    if (e.button !== 0 || e.target.closest('button')) return;
+    e.preventDefault(); e.stopPropagation();
+    const r = fig.getBoundingClientRect();
+    const x0 = e.clientX, y0 = e.clientY, from = { ...f };
+    const move = (ev) => {
+      f = { ...from, x: r2(from.x + (ev.clientX - x0) / r.width * 100), y: r2(from.y + (ev.clientY - y0) / r.height * 100) };
+      setFrame(plinth, f);
+    };
+    const up = () => {
+      plinth.removeEventListener('pointermove', move);
+      plinth.removeEventListener('pointerup', up);
+      plinth.removeEventListener('pointercancel', up);
+      commit();
+    };
+    plinth.setPointerCapture?.(e.pointerId);
+    plinth.addEventListener('pointermove', move);
+    plinth.addEventListener('pointerup', up);
+    plinth.addEventListener('pointercancel', up);
+  };
+  const wheel = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    f = { ...f, scale: Math.round(Math.min(8, Math.max(0.1, f.scale * (e.deltaY < 0 ? 1.08 : 1 / 1.08))) * 1000) / 1000 };
+    setFrame(plinth, f);
+    clearTimeout(wheelT); wheelT = setTimeout(commit, 300);
+  };
+  const reset = (e) => { e.preventDefault(); f = { ...FRAME0 }; setFrame(plinth, f); commit(); };
+  const key = (e) => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); stop(); } };
+  const outside = (e) => { if (!plinth.contains(e.target)) stop(); };
+
+  plinth.addEventListener('pointerdown', down);
+  plinth.addEventListener('wheel', wheel, { passive: false });
+  plinth.addEventListener('dblclick', reset);
+  document.addEventListener('keydown', key, true);
+  document.addEventListener('pointerdown', outside, true);
+
+  let live = true;
+  function stop() {
+    if (!live) return; live = false;
+    plinth.removeEventListener('pointerdown', down);
+    plinth.removeEventListener('wheel', wheel);
+    plinth.removeEventListener('dblclick', reset);
+    document.removeEventListener('keydown', key, true);
+    document.removeEventListener('pointerdown', outside, true);
+    plinth.removeAttribute('data-framing');
+    if (wheelT) commit();
+    onExit?.({ ...f });
+  }
+  return stop;
+}
+
+/* A drawer rises over its own tiles. They sit beside the hand now rather
+   than at the rail's far end, so its right edge is measured off theirs, in
+   the rail's own (unscaled) pixels. `zoom` is the study page's fit. */
+export function placeDrawer(root, zoom = 1) {
+  const nav = root?.querySelector('.bh-drawers');
+  if (!nav) return;
+  const rr = root.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+  root.style.setProperty('--bh-drawer-r', `${Math.max(0, Math.round((rr.right - nr.right) / zoom))}px`);
+}

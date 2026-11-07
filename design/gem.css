@@ -176,6 +176,53 @@
   .gem.fear.on:not(.gain):not(.spend) .edge,
   .gem.fear.on .pit::after{animation:none}}
 
+/* ══ FOCUS — THE MARTIAL ARTIST'S POOL ══════════════════════════════
+   The diamond is Hope's and Fear's, and the header above says why: it is
+   the one silhouette that belongs to nothing else, so it carries the two
+   metacurrencies and nothing borrows it. Focus borrowed it, in gold, and
+   a row of gold diamonds under a row of gold diamonds is Hope twice — the
+   heading was the only thing telling them apart. A hue alone would not
+   fix that: at 11px on the bottom HUD a diamond is read by its shape long
+   before its colour, and the shape said Hope.
+
+   So Focus is a **bead**: a round pip with a bright seed at its centre —
+   the point a breath is gathered to. Round because nothing else spendable
+   in this system is; every pool, counter and chit is a rhombus. Lit is a
+   full jade disc with its seed; empty is a hollow ring, so the two states
+   differ in *figure* (filled versus open) and not only in lightness, which
+   is what survives at 11px.
+
+   Jade because the hue had to belong to nothing: gold is Hope, violet is
+   Fear, red/cyan/white are the three tracks, and the nine domains take
+   the rest. The nearest neighbours are Midnight's deep teal and Stress's
+   pale cyan, and jade sits between them in lightness and away from both
+   in hue. The shape is the claim; the hue only has to not contradict it.
+
+   Calm, like Hope: no idle animation. The gain and spend are the shared
+   ones, with the diamond ring swapped for a round one. Every override is
+   a member the diamond already has, so `setPool` drives it unchanged. */
+.gem.focus{--tone:#35b89a; --deep:#0f4a3c}
+/* border-radius rather than clip-path on the face, for the afterglow's
+   reason: an inset shadow follows a radius and does not follow a clip. */
+.gem.focus .pit{clip-path:none;border-radius:50%;
+  box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .09)) var(--socket-line,#2b313a)}
+.gem.focus .edge{clip-path:circle(50%)}
+.gem.focus .edge > i{clip-path:none;border-radius:50%;background:none;
+  box-shadow:inset 0 0 0 calc(var(--sz,30px) * .17) rgba(255,255,255,.5)}
+.gem.focus .rim,.gem.focus.on .rim{clip-path:none;border-radius:50%;background:none;
+  box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .07)) var(--socket-line,#2b313a)}
+.gem.focus.on .pit{box-shadow:none}
+.gem.focus.on .rim{box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .07))
+  color-mix(in srgb,var(--tone) 40%,#fff)}
+.gem.focus.on .pit::before{content:"";position:absolute;inset:34%;border-radius:50%;
+  background:color-mix(in srgb,var(--tone) 22%,#fff)}
+.gem.focus.gain .fx{clip-path:none;border-radius:50%;background:none;
+  box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .1)) color-mix(in srgb,var(--tone) 68%,#fff)}
+:root.light .gems.paper .gem.focus.on .rim,:root.light .paper .gems .gem.focus.on .rim{
+  background:none;box-shadow:inset 0 0 0 max(1px,calc(var(--sz,30px) * .07))
+  color-mix(in srgb,var(--tone) 62%,#0d3a30)}
+:root.light .gem.focus{--tone:#24997e}
+
 /* ── scarred ──────────────────────────────────────────────────────
    Struck out, not emptied. A hatch fill said "unavailable"; this is a
    character taking a permanent wound, and crossing out the last slot ends
