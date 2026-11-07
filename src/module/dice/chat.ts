@@ -305,6 +305,9 @@ async function drawCard(message: any, host: HTMLElement, fresh: boolean): Promis
  * of live buttons three hours later is an invitation to collect the same Hope
  * again. `runAction` writes these; `bindActions` reads them back.
  */
+/** Damage messages with an Apply dialog or a combo strike in progress here. */
+const BUSY = new Set<string>();
+
 const CLAIM_OF: Record<string, string> = {
   "gain-hope": "hope",
   "clear-stress": "stress",
@@ -526,29 +529,45 @@ async function runAction(act: string, ctx: ActionContext): Promise<void> {
        with this button (press first, target second) burned the button and
        left the damage unapplied with no way back. Now nothing is claimed
        unless something was actually hit. */
+    /* Combo Strike changes the total and Apply reads it, so on one message
+       neither may run while the other is open: Apply's dialog can sit for
+       as long as somebody is deciding on armour, and a combo struck under it
+       would spend its Stress on damage the target never receives. */
     case "combo-strike":
     case "combo-strike-focus": {
-      const refused = await strikeCombo(
-        message,
-        actor,
-        act === "combo-strike-focus" ? "focus" : "stress",
-        (key) => claimOnce(message, key),
-        (plate, rolls) => rewritePlate(message, plate, rolls),
-      );
-      if (refused) return warn(refused);
+      if (BUSY.has(message.id)) return warn("RollSettled");
+      BUSY.add(message.id);
+      try {
+        const refused = await strikeCombo(
+          message,
+          actor,
+          act === "combo-strike-focus" ? "focus" : "stress",
+          (key) => claimOnce(message, key),
+          (plate, rolls) => rewritePlate(message, plate, rolls),
+        );
+        if (refused) return warn(refused);
+      } finally {
+        BUSY.delete(message.id);
+      }
       return;
     }
     case "apply-damage": {
-      const plate = message.getFlag(SYSTEM_ID, "plate");
-      const applied = await applyDamageToTargets(plate?.total ?? 0, plate?.dtype);
-      if (!applied.length) return;
-      if (!(await claimOnce(message, "applied"))) return;
-      /* After the claim, so a second client that lost the race leaves the
-         first one's record alone rather than overwriting it with its own
-         empty one. */
-      await message.setFlag(SYSTEM_ID, "applied", applied);
-      finish(el);
-      state(el, appliedLabel(applied));
+      if (BUSY.has(message.id)) return warn("RollSettled");
+      BUSY.add(message.id);
+      try {
+        const plate = message.getFlag(SYSTEM_ID, "plate");
+        const applied = await applyDamageToTargets(plate?.total ?? 0, plate?.dtype);
+        if (!applied.length) return;
+        if (!(await claimOnce(message, "applied"))) return;
+        /* After the claim, so a second client that lost the race leaves the
+           first one's record alone rather than overwriting it with its own
+           empty one. */
+        await message.setFlag(SYSTEM_ID, "applied", applied);
+        finish(el);
+        state(el, appliedLabel(applied));
+      } finally {
+        BUSY.delete(message.id);
+      }
       return;
     }
     default:
