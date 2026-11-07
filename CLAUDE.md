@@ -6525,6 +6525,12 @@ host writes them. The frame is a value in `shapeOf`, so placing it never
 rebuilds the rail, and the drive leaves the frame alone while the gesture is
 up. `tools/check-portrait-framing.mjs` holds the third frame to the premise.
 
+**The unframed default is the whole painting.** `.bh-img` is `contain`,
+standing on the rail at `50% 100%` and scaled from the same point. It used to
+be `100% auto` anchored at 22%, which took the top off any tall portrait
+before anybody had framed anything, under a top fade that ate nearly half the
+figure. A frame now zooms in from the full art rather than out from a crop.
+
 **The drawer tiles sit right after the hand**, not at the rail's far end, so
 the hand and what it draws from read as one group and the slack falls after
 both. A drawer's right edge is measured onto the tiles' (`placeDrawer`, which
@@ -6533,7 +6539,9 @@ the study page calls too), so it still rises over the press that opened it.
 **A Martial Artist gets a stance plate after the features**, gated as the
 sheet's Focus row is, on `subclassName`. It is three lines: the Focus gems,
 the stance you are in (a press that pins its peek, where Drop is), and a Shift
-press opening a Stances drawer. Every row there is `shiftStance` from
+press opening a Stances drawer. The Focus beads are presses with the sheet's
+`pressMark` rule, like the Hope gems, so a Brawler never has to open the sheet
+to spend or restore one. Every row there is `shiftStance` from
 `stance-actions.ts`, and shift-click asks for Stress when Flow State is held.
 A refusal flinches the Focus row, which is the sheet's `refusePool("focus")`
 in the rail's own vocabulary. Nothing here re-derives a stance rule: the

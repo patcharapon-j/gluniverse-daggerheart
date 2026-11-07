@@ -276,7 +276,7 @@ export const FEATURES = ({ list, hope = Infinity, max = 4 }) => {
 export const STANCE = ({ focus: [cur, max], active, known = 0 }) => `
 <section class="bh-pl bh-stance" aria-label="Stance">
   <div class="bh-focus" data-pool="focus">
-    ${GEMS({ cur, max, focus: true, sz: 11, gap: 5 })}
+    ${pressable(GEMS({ cur, max, focus: true, sz: 11, gap: 5 }), GEM_RE, (i) => `Focus ${i} of ${max}`)}
     <span class="bh-fn"><b>${cur}</b><s>/${max}</s><span class="bh-sr"> Focus</span></span>
   </div>
   ${active

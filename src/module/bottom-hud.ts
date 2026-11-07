@@ -1178,6 +1178,9 @@ async function onClick(e: MouseEvent): Promise<void> {
   const gem = t.closest<HTMLElement>(".bh-hope .gem");
   if (gem) return void pressHope(a, gem);
 
+  const bead = t.closest<HTMLElement>(".bh-focus .gem");
+  if (bead) return void pressFocus(a, bead);
+
   if (t.closest('[data-act="damage"]')) return void takeDamage(a, 0, { ask: true });
 
   const feat = t.closest<HTMLElement>(".bh-feat[data-feature]");
@@ -1279,6 +1282,16 @@ async function pressHope(actor: any, gem: HTMLElement): Promise<void> {
   if (i < 0) return;
   const next = pressMark(i, Number(hope.value ?? 0), Number(hope.max ?? 0));
   if (next !== hope.value) await actor.update({ "system.resources.hope.value": next });
+}
+
+/* A Focus bead is the sheet's Focus row: the same rule, on its own pool. */
+async function pressFocus(actor: any, gem: HTMLElement): Promise<void> {
+  const focus = actor?.system?.resources?.focus;
+  if (!focus) return;
+  const i = [...(gem.parentElement?.querySelectorAll(".gem") ?? [])].indexOf(gem);
+  if (i < 0) return;
+  const next = pressMark(i, Number(focus.value ?? 0), Number(focus.max ?? FOCUS_MAX));
+  if (next !== focus.value) await actor.update({ "system.resources.focus.value": next });
 }
 
 /* Framing the plinth's portrait: the gesture is the design's, the write is
