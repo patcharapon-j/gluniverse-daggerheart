@@ -154,9 +154,28 @@ async function applyFear(message: any): Promise<void> {
   const plate = message.getFlag(SYSTEM_ID, "plate");
   if (plate?.out !== "fear" || plate.rxn) return;
 
+  /* Not before the dice land. The message exists the moment the roll is made,
+     but the dice may still be in the air, or, with GLUniverse Dice's grab and
+     roll, still waiting in the roller's hand for as long as they like. A Fear
+     pool that ticks up now tells the whole table the roll went with Fear
+     before anyone has seen it. Dice So Nice's own wait resolves at once when
+     this client is not animating the message, so a table without 3D dice
+     keeps the immediate claim. No timeout on purpose: a held roll can wait
+     minutes, and the module plays it on its own if the roller leaves. */
+  await waitForLanding(message);
   if (message.getFlag(SYSTEM_ID, "claimed.fear")) return;
   await message.setFlag(SYSTEM_ID, "claimed.fear", true);
   await applyFearClaim(1);
+}
+
+async function waitForLanding(message: any): Promise<void> {
+  const wait = (game as any).dice3d?.waitFor3DAnimationByMessageID;
+  if (typeof wait !== "function") return;
+  try {
+    await wait.call((game as any).dice3d, message.id);
+  } catch (err) {
+    console.warn(`${SYSTEM_ID} | could not wait for the dice`, err);
+  }
 }
 
 /* ── the pointer, bound once ───────────────────────────────────────────

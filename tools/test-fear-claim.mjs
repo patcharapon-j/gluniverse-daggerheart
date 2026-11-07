@@ -162,6 +162,25 @@ for (const [flags, why] of [
   assert.equal(r.pool, 0, `${why} banked a Fear`);
 }
 
+/* ── not before the dice land ───────────────────────────────────────────
+   The message exists while the dice are still in the air, or still held in
+   GLUniverse Dice's grab-and-roll hand. A pool that ticks up then spoils the
+   roll for the whole table. */
+
+reset();
+let land;
+game.dice3d = { waitFor3DAnimationByMessageID: () => new Promise((done) => { land = done; }) };
+const held = messageOf(duality("fear"));
+applyFear(held);
+await new Promise((done) => setTimeout(done, 0));
+assert.equal(store.get(`${SYS}.fear`), 0, "the Fear was banked while the dice were still in the air");
+assert.equal(held.getFlag(SYS, "claimed.fear"), undefined, "the claim was drawn before the dice landed");
+land(true);
+// the handler is a void call: give its awaits a few turns
+for (let i = 0; i < 5; i++) await new Promise((done) => setTimeout(done, 0));
+assert.equal(store.get(`${SYS}.fear`), 1, "the Fear was never banked once the dice landed");
+delete game.dice3d;
+
 console.log(
-  "fear claim: the createChatMessage hook is registered, the active GM alone banks it, once per message, and only a non-reaction Fear outcome owes one",
+  "fear claim: the createChatMessage hook is registered, the active GM alone banks it, once per message, after the dice land, and only a non-reaction Fear outcome owes one",
 );
