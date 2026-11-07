@@ -493,6 +493,7 @@ export function framePlinth(plinth, start, { onCommit, onExit } = {}) {
   const commit = () => { clearTimeout(wheelT); wheelT = 0; onCommit?.({ ...f }); };
   plinth.setAttribute('data-framing', '');
   setFrame(plinth, f);
+  let endDrag = null;
 
   const down = (e) => {
     if (e.button !== 0 || e.target.closest('button')) return;
@@ -507,8 +508,11 @@ export function framePlinth(plinth, start, { onCommit, onExit } = {}) {
       plinth.removeEventListener('pointermove', move);
       plinth.removeEventListener('pointerup', up);
       plinth.removeEventListener('pointercancel', up);
+      if (plinth.hasPointerCapture?.(e.pointerId)) plinth.releasePointerCapture(e.pointerId);
+      endDrag = null;
       commit();
     };
+    endDrag = up;
     plinth.setPointerCapture?.(e.pointerId);
     plinth.addEventListener('pointermove', move);
     plinth.addEventListener('pointerup', up);
@@ -539,7 +543,8 @@ export function framePlinth(plinth, start, { onCommit, onExit } = {}) {
     document.removeEventListener('keydown', key, true);
     document.removeEventListener('pointerdown', outside, true);
     plinth.removeAttribute('data-framing');
-    if (wheelT) commit();
+    if (endDrag) endDrag();
+    else if (wheelT) commit();
     onExit?.({ ...f });
   }
   return stop;

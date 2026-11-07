@@ -607,6 +607,7 @@ function refresh(force: boolean): void {
   const who = enabled() ? subject() : null;
   document.body.classList.toggle("dh-bhud-on", !!who);
   if (!who) {
+    framing?.();
     host.replaceChildren();
     drawn = model = null;
     lift();
